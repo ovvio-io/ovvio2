@@ -8,63 +8,14 @@
  *    It closely relates to how php's hash_init works
  *
  * Modified by James Hartig <fastest963@gmail.com>
- *
- * Ovvio Changes:
- * 05/11/20 - changed export to work with esm
  */
 
-const HAS_BUFFERS = false;
-const HAS_UINT8ARRAY = true;
+/**
+ * Converted to Typescript by Ofri Wolfus on 12/10/22. Also dropped support for
+ * input types other than string which we don't use.
+ */
 
-// function uint8ArraySubstring(
-//   uint8Array: Uint8Array,
-//   start: number,
-//   end: number
-// ) {
-//   return uint8Array.subarray(start, end);
-// }
-
-function uint8ArrayConcat(uint8Array1: Uint8Array, uint8Array2: Uint8Array) {
-  if (uint8Array1 === null) {
-    return uint8Array2;
-  }
-  const tmp = new Uint8Array(uint8Array1.length + uint8Array2.length);
-  tmp.set(uint8Array1, 0);
-  tmp.set(uint8Array2, uint8Array1.length);
-  return tmp;
-}
-
-// function stringCharCodeAt(str: string, offset: number) {
-//   return str.charCodeAt(offset);
-// }
-// function stringSubstring(str: string, start: number, end: number) {
-//   return str.substring(start, end);
-// }
-
-// function stringConcat(str1: string | null, str2: string) {
-//   if (str1 === null) {
-//     return str2;
-//   }
-//   return str1 + str2;
-// }
-
-// function arrayCharCodeAt(array, offset) {
-//   return array[offset];
-// }
-// function arrayStringCharCodeAt(array, offset) {
-//   return array[offset].charCodeAt(0);
-// }
-// function arraySubstring(array, start, end) {
-//   return array.slice(start, end);
-// }
-// function arrayConcat(array, array2) {
-//   if (array === null) {
-//     return array2;
-//   }
-//   return array.concat(array2);
-// }
-
-function md5cycle(x, k) {
+function md5cycle(x: MD5State, k: number[]) {
   var a = x[0],
     b = x[1],
     c = x[2],
@@ -144,24 +95,56 @@ function md5cycle(x, k) {
   x[3] = add32(d, x[3]);
 }
 
-function cmn(q, a, b, x, s, t) {
+function cmn(q: number, a: number, b: number, x: number, s: number, t: number) {
   a = add32(add32(a, q), add32(x, t));
   return add32((a << s) | (a >>> (32 - s)), b);
 }
 
-function ff(a, b, c, d, x, s, t) {
+function ff(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: number,
+  s: number,
+  t: number
+) {
   return cmn((b & c) | (~b & d), a, b, x, s, t);
 }
 
-function gg(a, b, c, d, x, s, t) {
+function gg(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: number,
+  s: number,
+  t: number
+) {
   return cmn((b & d) | (c & ~d), a, b, x, s, t);
 }
 
-function hh(a, b, c, d, x, s, t) {
+function hh(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: number,
+  s: number,
+  t: number
+) {
   return cmn(b ^ c ^ d, a, b, x, s, t);
 }
 
-function ii(a, b, c, d, x, s, t) {
+function ii(
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: number,
+  s: number,
+  t: number
+) {
   return cmn(c ^ (b | ~d), a, b, x, s, t);
 }
 
@@ -191,11 +174,11 @@ export function update(state: MD5State, s: string): MD5State {
   return state;
 }
 
-function finalize(state) {
-  var n = state[4],
-    s = state[5],
-    i,
-    l;
+export function finalize(state: MD5State): string {
+  let n = state[4];
+  let s = state[5];
+  let i: number;
+  let l: number;
   //if we have trailing data
   if (s !== null && s.length >= 64) {
     //clear out last buffer since we're sending it to update
@@ -203,33 +186,14 @@ function finalize(state) {
     state = update(state, s);
     s = state[5];
   }
-  //todo: clean this up somehow
-  var substring, charCodeAt;
-  if (HAS_BUFFERS && s instanceof Buffer) {
-    substring = bufferSubstring;
-    charCodeAt = bufferCharCodeAt;
-  } else if (s instanceof Array) {
-    substring = arraySubstring;
-    if (typeof s[0] === 'string') {
-      charCodeAt = arrayStringCharCodeAt;
-    } else {
-      charCodeAt = arrayCharCodeAt;
-    }
-  } else if (HAS_UINT8ARRAY && s instanceof Uint8Array) {
-    substring = uint8ArraySubstring;
-    charCodeAt = arrayCharCodeAt;
-  } else {
-    substring = stringSubstring;
-    charCodeAt = stringCharCodeAt;
-  }
-  var tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   if (s !== null) {
     for (i = 0, l = s.length; i < l; i++) {
-      tail[i >> 2] |= charCodeAt(s, i) << (i % 4 << 3);
+      tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
     }
   }
-  tail[i >> 2] |= 0x80 << (i % 4 << 3);
-  if (i > 55) {
+  tail[i! >> 2] |= 0x80 << (i! % 4 << 3);
+  if (i! > 55) {
     md5cycle(state, tail);
     for (i = 0; i < 16; i++) tail[i] = 0;
   }
@@ -241,30 +205,30 @@ function finalize(state) {
   return hex(state);
 }
 
-function md51(s, substring, charCodeAt) {
+export function md51(s: string) {
   var state = init();
   state[4] = s.length;
   state[5] = s;
   return finalize(state);
 }
 
-function md5blk(s, charCodeAt) {
+function md5blk(s: string) {
   /* I figured global was faster.   */
   var md5blks = [],
     i; /* Andy King said do it this way. */
   for (i = 0; i < 64; i += 4) {
     md5blks[i >> 2] =
-      charCodeAt(s, i) +
-      (charCodeAt(s, i + 1) << 8) +
-      (charCodeAt(s, i + 2) << 16) +
-      (charCodeAt(s, i + 3) << 24);
+      s.charCodeAt(i) +
+      (s.charCodeAt(i + 1) << 8) +
+      (s.charCodeAt(i + 2) << 16) +
+      (s.charCodeAt(i + 3) << 24);
   }
   return md5blks;
 }
 
-var hex_chr = '0123456789abcdef'.split('');
+const hex_chr = '0123456789abcdef'.split('');
 
-function rhex(n) {
+function rhex(n: number) {
   var s = '',
     j = 0;
   for (; j < 4; j++)
@@ -272,33 +236,15 @@ function rhex(n) {
   return s;
 }
 
-function hex(x) {
-  for (var i = 0; i < x.length; i++) x[i] = rhex(x[i]);
+function hex(x: MD5State) {
+  for (var i = 0; i < x.length; i++) x[i] = rhex(x[i] as number);
   return x.join('');
 }
 
-function add32(a, b) {
+function add32(a: number, b: number) {
   return (a + b) & 0xffffffff;
 }
 
-function hash(s) {
+export function hash(s: string) {
   return md51(s);
 }
-
-//detect if in older IE and fallback to stupid version of add32
-if (hash('hello') != '5d41402abc4b2a76b9719d911017c592') {
-  function add32(x, y) {
-    var lsw = (x & 0xffff) + (y & 0xffff),
-      msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-    return (msw << 16) | (lsw & 0xffff);
-  }
-}
-
-var StreamMD5 = {
-  init: init,
-  update: update,
-  finalize: finalize,
-  hash: hash,
-};
-
-export { StreamMD5 };

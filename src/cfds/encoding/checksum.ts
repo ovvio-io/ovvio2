@@ -14,6 +14,7 @@ import {
 } from '../core-types/base.ts';
 import { getCoreType } from '../core-types/utils.ts';
 import { SerializeValueTypeOptions } from '../base/types/index.ts';
+import * as StreamMD5 from '../../external/md5.ts';
 
 export interface ChecksumEncoderOpts extends SerializeValueTypeOptions {
   typeSafe?: boolean;
