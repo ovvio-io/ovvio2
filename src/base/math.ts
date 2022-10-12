@@ -34,3 +34,13 @@ export class MovingAverage implements NumberAggregator {
     values.push(v);
   }
 }
+
+// min - inclusive, max - exclusive
+// See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
+export function randomInt(min: number, max: number): number {
+  if (min === max) return min;
+
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}

@@ -1,24 +1,21 @@
-import Utils from '@ovvio/base/lib/utils';
-import { Record } from './record';
+import { assert } from '../../base/error.ts';
+import { Record } from './record.ts';
 import {
   anyChanges,
   concatChanges,
   DataChanges,
   DecodedDataChange,
   decodedDataChanges,
-} from './object';
-import { Scheme } from './scheme';
-import {
-  JSONValue,
-  ReadonlyJSONObject,
-} from '@ovvio/base/lib/utils/interfaces';
-import { JSONDecoder, JSONEncoder } from '../encoding/json';
+} from './object.ts';
+import { Scheme } from './scheme.ts';
+import { JSONValue, ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { JSONDecoder, JSONEncoder } from '../encoding/json.ts';
 import {
   ConstructorDecoderConfig,
   Decoder,
   isDecoderConfig,
-} from '../encoding';
-import { Encodable, Encoder } from '../core-types';
+} from '../encoding/index.ts';
+import { Encodable, Encoder } from '../core-types/index.ts';
 
 /**
  * A single set of changes that should be applied to a specific record.
@@ -238,7 +235,7 @@ export class DiffSyncState {
 
       peerVersion.normalize();
       // Make sure we're referring to the same start record
-      Utils.assert(
+      assert(
         e.srcChecksum === peerVersion.checksum,
         `${context || ''}apply edits, index: ${i + 1}/${
           edits.length
@@ -254,7 +251,7 @@ export class DiffSyncState {
       peerVersion.patch(e.changes);
       // Sanity check - if the result doesn't match the expected checksum,
       // then something's wrong with our patch implementation.
-      Utils.assert(
+      assert(
         e.dstChecksum === peerVersion.checksum,
         `${context || ''}apply edits, ${i + 1}/${
           edits.length

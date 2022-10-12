@@ -1,22 +1,22 @@
-import { Utils, Logger } from '@ovvio/base';
+import { assert } from '../../base/error.ts';
 import {
   DecodedValue,
   Decoder,
   ReadonlyDecodedArray,
   ReadonlyDecodedObject,
-} from '../encoding';
-import { Scheme } from './scheme';
-import { DataType, SchemeFields } from './scheme-types';
+} from '../encoding/index.ts';
+import { Scheme } from './scheme.ts';
+import { DataType, SchemeFields } from './scheme-types.ts';
 import {
   getTypeOperations,
   SerializeValueTypeOptions,
   ValueType,
   valueTypeEquals,
   ValueTypeOptions,
-} from './types';
-import { Change, EncodedChange } from '../change';
-import { decodeChange } from '../change/decode';
-import { CoreObject, Encoder } from '../core-types';
+} from './types/index.ts';
+import { Change, EncodedChange } from '../change/index.ts';
+import { decodeChange } from '../change/decode.ts';
+import { CoreObject, Encoder } from '../core-types/index.ts';
 
 export function isValidData(scheme: Scheme, data: DataType) {
   const requiredFields = scheme.getRequiredFields();
@@ -68,14 +68,17 @@ export function serialize(
   }
   for (const [key, value] of Object.entries(data)) {
     const type = fieldsScheme[key];
-    Utils.assert(type !== undefined, `Unknown field ${key}`);
+    assert(type !== undefined, `Unknown field ${key}`);
 
     if (overrides[type]) {
       try {
         overrides[type](encoder, key, value, options);
         continue;
       } catch (e) {
-        Logger.error(`serialize override error. key: ${key}, type: ${type}`, e);
+        console.error(
+          `serialize override error. key: ${key}, type: ${type}`,
+          e
+        );
       }
     }
 
@@ -99,7 +102,7 @@ export function deserialize(
   const data: DataType = {};
 
   for (const [key, type] of Object.entries(fieldsScheme)) {
-    Utils.assert(type !== undefined, `Unknown field ${key}`);
+    assert(type !== undefined, `Unknown field ${key}`);
 
     const decValue = decoder.get(key);
     if (decValue === undefined) continue;
@@ -112,7 +115,10 @@ export function deserialize(
         }
         continue;
       } catch (e) {
-        Logger.error(`serialize override error. key: ${key}, type: ${type}`, e);
+        console.error(
+          `serialize override error. key: ${key}, type: ${type}`,
+          e
+        );
       }
     }
 
@@ -277,7 +283,7 @@ export function normalize(scheme: Scheme, data: DataType) {
   for (const [key, type] of Object.entries(scheme.fields)) {
     let value = data[key];
 
-    const typeOP = getTypeOperations(type);
+    const typeOP = getTypeOperations(type as ValueType);
 
     if (value === undefined || typeOP.isEmpty(value)) {
       if (scheme.hasInitForField(key)) {
@@ -297,7 +303,7 @@ export function needGC(scheme: Scheme, data: DataType): boolean {
     let value = data[key];
     if (value === undefined) continue;
 
-    const typeOP = getTypeOperations(type);
+    const typeOP = getTypeOperations(type as ValueType);
 
     if (typeOP.needGC(value)) {
       return true;
@@ -312,7 +318,7 @@ export function gc(scheme: Scheme, data: DataType): boolean {
     let value = data[key];
     if (value === undefined) continue;
 
-    const typeOP = getTypeOperations(type);
+    const typeOP = getTypeOperations(type as ValueType);
     const newValue = typeOP.gc(value);
     if (newValue !== undefined) {
       data[key] = newValue;
@@ -369,7 +375,7 @@ export function decodedDataChanges(dec: DecodedDataChange) {
   const changes: DataChanges = {};
 
   for (const key in dec) {
-    changes[key] = (dec[key] as ReadonlyDecodedArray).map(v =>
+    changes[key] = (dec[key] as ReadonlyDecodedArray).map((v) =>
       decodeChange(v as Decoder)
     );
   }

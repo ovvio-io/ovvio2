@@ -1,9 +1,6 @@
-import * as ELEN from 'https://esm.sh/elen@1.0.10';
-import { commonPrefixLen } from '../../base/string.ts';
-import { assert } from '../../base/error.ts';
-import { randomInt } from '../../base/math.ts';
-import { serializeDate } from '../../base/date.ts';
-import { uniqueId } from '../../base/common.ts';
+import * as ELEN from 'elen';
+import Utils from '@ovvio/base/lib/utils';
+import { commonPrefixLen } from './plaintext';
 
 const CHAR_CODE_MIN = 1; // Skip the null character to avoid possible problems
 // Note: Theoretically we can use the entire UTF-16 character space, however
@@ -20,16 +17,16 @@ const MIN_REF_DATE = new Date(1420074000000); // 1/1/2015 @ 01:00:00 GMT
  *
  * The result should be used to insert at the edge of the list.
  */
-export function present(): string {
-  return fromTimestamp(new Date(), uniqueId());
+export function present() {
+  return fromTimestamp(new Date(), Utils.uniqueId());
 }
 
 /**
  * Returns a fixed order stamp in the past which can be used to insert at the
  * opposite edge from now().
  */
-export function past(): string {
-  return fromTimestamp(MIN_REF_DATE, uniqueId());
+export function past() {
+  return fromTimestamp(MIN_REF_DATE, Utils.uniqueId());
 }
 
 /**
@@ -37,8 +34,8 @@ export function past(): string {
  * You should pass the key of the item (card) you're dealing with rather than
  * generate a unique id on every call.
  */
-export function fromTimestamp(timestamp: Date, key?: string) {
-  return ELEN.encode(serializeDate(timestamp)) + key || '';
+export function fromTimestamp(timestamp, key) {
+  return ELEN.encode(Utils.serializeDate(timestamp)) + key;
 }
 
 /**
@@ -48,10 +45,10 @@ export function fromTimestamp(timestamp: Date, key?: string) {
  *
  * Note: You can pass the values in any order you like.
  */
-export function between(prev: string, next: string): string {
+export function between(prev, next) {
   // Sanity check. If prev and next are equal, there's no way to generate a
   // value between them.
-  assert(prev !== next);
+  Utils.assert(prev !== next);
 
   // Make sure values are in the correct order
   if (prev > next) {
@@ -71,7 +68,7 @@ export function between(prev: string, next: string): string {
   const maxChar = next.charCodeAt(prefixLen);
   // Append a random char between prev[prefixLen] and next[prefixLen]. This
   // will place our result before next but also before prev.
-  result += String.fromCharCode(randomInt(minChar, maxChar));
+  result += String.fromCharCode(Utils.randomInt(minChar, maxChar));
 
   // Search prev from prefixLen+1 to its end
   for (let i = prefixLen + 1; i < prev.length; ++i) {
@@ -79,7 +76,9 @@ export function between(prev: string, next: string): string {
     // If we found a char less than MAX, generate a char greater than that
     // which will place our result *after* next.
     if (charCode < CHAR_CODE_MAX) {
-      result += String.fromCharCode(randomInt(charCode + 1, CHAR_CODE_MAX));
+      result += String.fromCharCode(
+        Utils.randomInt(charCode + 1, CHAR_CODE_MAX)
+      );
       break;
     } else {
       // If we found the MAX char, copy it and try again on the following char.
@@ -103,7 +102,9 @@ export function between(prev: string, next: string): string {
   //    generate a stamp between the same values. This creates a (random) total
   //    order on the results of all parties.
   for (let j = 0; j < RANDOM_SUFFIX_LEN; ++j) {
-    result += String.fromCharCode(randomInt(CHAR_CODE_MIN, CHAR_CODE_MAX));
+    result += String.fromCharCode(
+      Utils.randomInt(CHAR_CODE_MIN, CHAR_CODE_MAX)
+    );
   }
   return result;
 }

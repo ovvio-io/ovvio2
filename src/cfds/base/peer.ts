@@ -1,6 +1,6 @@
-import { Repository } from './repo';
-import { BloomFilter } from '@ovvio/base/lib/utils/bloom';
-import { Commit } from './commit';
+import { Repository } from './repo.ts';
+import { BloomFilter } from '../../base/bloom.ts';
+import { Commit } from './commit.ts';
 
 export interface BroadcastPayload {
   filter: BloomFilter;

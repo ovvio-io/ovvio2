@@ -32,13 +32,13 @@ export abstract class Listenable<T> {
     this._listeners.push(f);
     if (fireOnStart) {
       if (typeof window !== 'undefined') {
-        window.setTimeout(() => {
+        setTimeout(() => {
           if (this._listeners.indexOf(f) !== -1) {
             this.triggerListener(f);
           }
         }, 0);
       } else {
-        global.setTimeout(() => {
+        setTimeout(() => {
           if (this._listeners.indexOf(f) !== -1) {
             this.triggerListener(f);
           }

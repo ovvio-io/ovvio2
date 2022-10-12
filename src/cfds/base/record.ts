@@ -1,5 +1,5 @@
-import Utils, { assert } from '@ovvio/base/lib/utils';
-import { Scheme } from './scheme';
+import { assert } from '../../base/error.ts';
+import { Scheme } from './scheme.ts';
 import {
   isValidData,
   serialize,
@@ -15,18 +15,18 @@ import {
   gc,
   needGC,
   rewriteRefs,
-} from './object';
+} from './object.ts';
 import {
   ConstructorDecoderConfig,
   Decoder,
   isDecoderConfig,
   ReadonlyDecodedObject,
-} from '../encoding';
-import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json';
-import { DataType } from './scheme-types';
-import { ChecksumEncoderOpts, MD5Checksum } from '../encoding/checksum';
-import { ReadonlyJSONObject } from '@ovvio/base/lib/utils/interfaces';
-import { CoreValue, Encodable, Encoder } from '../core-types';
+} from '../encoding/index.ts';
+import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json.ts';
+import { DataType } from './scheme-types.ts';
+import { ChecksumEncoderOpts, MD5Checksum } from '../encoding/checksum.ts';
+import { ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { CoreValue, Encodable, Encoder } from '../core-types/index.ts';
 
 export interface ReadonlyRecord {
   readonly isNull: boolean;

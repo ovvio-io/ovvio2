@@ -1,13 +1,3 @@
-// min - inclusive, max - exclusive
-// See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
-export function randomInt(min: number, max: number): number {
-  if (min === max) return min;
-
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
-}
-
 export function cartesianProduct<T>(...allEntries: T[][]): T[][] {
   return allEntries.reduce<T[][]>(
     (results, entries) =>
@@ -58,4 +48,8 @@ export function* unionIter<T>(...args: Iterable<T>[]): Generator<T> {
       yield v;
     }
   }
+}
+
+export function newInstance<T = any>(instance: any, ...args: any[]): T {
+  return new (instance.constructor as any)(...args) as T;
 }
