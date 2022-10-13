@@ -1,4 +1,5 @@
 import { assert } from '../../base/error.ts';
+import { isNoValue, isObject } from '../../base/comparisons.ts';
 import { Scheme } from './scheme.ts';
 import {
   isValidData,
@@ -21,12 +22,21 @@ import {
   Decoder,
   isDecoderConfig,
   ReadonlyDecodedObject,
-} from '../encoding/index.ts';
-import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json.ts';
+} from '../../base/core-types/encoding/index.ts';
+import {
+  JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
+} from '../../base/core-types/encoding/json.ts';
 import { DataType } from './scheme-types.ts';
-import { ChecksumEncoderOpts, MD5Checksum } from '../encoding/checksum.ts';
+import { MD5Checksum } from '../../base/core-types/encoding/checksum.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
-import { CoreValue, Encodable, Encoder } from '../core-types/index.ts';
+import {
+  ConcreteCoreValue,
+  CoreValue,
+  Encodable,
+  Encoder,
+} from '../../base/core-types/index.ts';
+import { SerializeValueTypeOptions } from './types/index.ts';
 
 export interface ReadonlyRecord {
   readonly isNull: boolean;
@@ -57,7 +67,7 @@ export interface EncodedRecord {
   serverVersion?: number;
 }
 
-const checksumSerOptions: ChecksumEncoderOpts = {
+const checksumSerOptions: SerializeValueTypeOptions = {
   // For checksum purposes we need to use the flat rep or we won't account
   // for depth changes. Computing the checksum on a DFS run of the tree
   // completely strips out the depth info.
@@ -71,14 +81,14 @@ export class Record implements ReadonlyRecord, Encodable {
   private _data!: DataType;
   private _checksum: string | undefined;
   private _cachedRefs: Set<string> | undefined;
-  private _normalized: boolean = false;
+  private _normalized = false;
   private _serverVersion!: number;
 
   constructor(config: RecordConfig | ConstructorDecoderConfig<EncodedRecord>) {
     if (isDecoderConfig(config)) {
       this.deserialize(config.decoder);
     } else {
-      Utils.assert(Utils.isObject(config.data));
+      assert(isObject(config.data));
       this._scheme = config.scheme;
       this._data = config.data;
       this._serverVersion = config.serverVersion || 0;
@@ -144,7 +154,10 @@ export class Record implements ReadonlyRecord, Encodable {
     this._serverVersion = v;
   }
 
-  get<T = any>(key: string, defaultValue?: T): T {
+  get<T extends ConcreteCoreValue = ConcreteCoreValue>(
+    key: string,
+    defaultValue?: T
+  ): T {
     assert(
       this.scheme.hasField(key),
       `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
@@ -152,9 +165,9 @@ export class Record implements ReadonlyRecord, Encodable {
     const data = this._data;
 
     if (data.hasOwnProperty(key)) {
-      return data[key];
+      return data[key] as T;
     }
-    return (!Utils.isNoValue(defaultValue) ? defaultValue : undefined) as T;
+    return (!isNoValue(defaultValue) ? defaultValue : undefined) as T;
   }
 
   has(key: string): boolean {
@@ -237,7 +250,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   diff(other: Record, local: boolean) {
-    Utils.assert(other instanceof Record);
+    assert(other instanceof Record);
 
     this.normalize();
     other.normalize();
@@ -264,7 +277,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   upgradeScheme(newScheme: Scheme) {
-    Utils.assert(newScheme.allowsAutoUpgradeFrom(this.scheme));
+    assert(newScheme.allowsAutoUpgradeFrom(this.scheme));
     this._data = newScheme.upgradeData(this.scheme, this._data);
     this._scheme = newScheme;
     this._invalidateCaches();
@@ -341,7 +354,7 @@ export class Record implements ReadonlyRecord, Encodable {
 
   assertValidData() {
     const [valid, msg] = isValidData(this.scheme, this._data);
-    Utils.assert(<boolean>valid, <string>msg);
+    assert(<boolean>valid, <string>msg);
   }
 
   private _invalidateCaches() {

@@ -95,23 +95,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // https://github.com/jensyt/imurmurhash-js
 // Modified to a TypeScript class by Ofri Wolfus
 export class MurmurHash3 {
-  private _seed: number;
   private h1: number;
   private rem: number;
   private k1: number;
   private len: number;
 
+  public seed: number;
+
   constructor(seed?: number) {
     if (seed === undefined) {
       seed = randomInt(0, Number.MAX_SAFE_INTEGER);
     }
-    this._seed = seed;
-    this.h1 = seed;
+    this.seed = seed!;
+    this.h1 = seed!;
     this.rem = this.k1 = this.len = 0;
-  }
-
-  get seed() {
-    return this._seed;
   }
 
   /**
@@ -120,9 +117,9 @@ export class MurmurHash3 {
    */
   reset(seed?: number): MurmurHash3 {
     if (seed !== undefined) {
-      this._seed = seed;
+      this.seed = seed;
     }
-    this.h1 = this._seed;
+    this.h1 = this.seed;
     this.rem = this.k1 = this.len = 0;
     return this;
   }

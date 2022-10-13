@@ -1,11 +1,14 @@
-import { Utils } from '@ovvio/base';
-import { uniqueId } from '@ovvio/base/lib/utils';
-import { coreValueCompare, coreValueEquals } from '../core-types';
-import { Dictionary } from '../collections/dict';
-import { Code, ServerError, serviceUnavailable } from '../server/errors';
-import { Commit } from './commit';
-import { concatChanges, DataChanges } from './object';
-import { Record } from './record';
+import { uniqueId } from '../../base/common.ts';
+import {
+  coreValueCompare,
+  coreValueEquals,
+} from '../../base/core-types/index.ts';
+import * as SetUtils from '../../base/set.ts';
+import { Dictionary } from '../../base/collections/dict.ts';
+import { Code, ServerError, serviceUnavailable } from './errors.ts';
+import { Commit, commitInit } from './commit.ts';
+import { concatChanges, DataChanges } from './object.ts';
+import { Record } from './record.ts';
 
 export class Repository {
   // Key -> Commit Id -> Commit
@@ -43,7 +46,7 @@ export class Repository {
     if (!keyMap) {
       return [];
     }
-    return Utils.Set.mapToArray(keyMap, id => this.getCommit(id));
+    return SetUtils.mapToArray(keyMap, (id) => this.getCommit(id));
   }
 
   leavesForKey(key: string): Commit[] {
@@ -187,12 +190,12 @@ export class Repository {
       }
       const mergeRecord = base.clone();
       mergeRecord.patch(changes);
-      const mergeCommit = new Commit(
+      const mergeCommit = commitInit(
         uniqueId(),
         session,
         key,
         mergeRecord,
-        leaves.map(c => c.id)
+        leaves.map((c) => c.id)
       );
       this.persistCommit(mergeCommit);
       return mergeCommit;
@@ -233,14 +236,17 @@ export class Repository {
     if (!head && value.isNull) {
       return;
     }
-    this.persistCommit(new Commit(uniqueId(), session, key, value, head?.id));
+    this.persistCommit(commitInit(uniqueId(), session, key, value, head?.id));
   }
 
   hasKey(key: string): boolean {
     return this.headForKey(key, '') !== undefined;
   }
 
-  private persistCommit(c: Commit): void {
+  persistCommit(c: Commit): void {
+    if (this._commitsById.has(c.id)) {
+      return;
+    }
     this._commitsById.set(c.id, c);
     let set = this._commitsByRecordKey.get(c.key);
     if (!set) {

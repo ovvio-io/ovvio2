@@ -1,21 +1,21 @@
-import { coreValueCompare } from '../../core-types/comparable';
-import { GraphManager } from './graph-manager';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
+import { GraphManager } from './graph-manager.ts';
 import {
   EVENT_LOADING_FINISHED,
   EVENT_VERTEX_CHANGED,
   EVENT_VERTEX_DELETED,
   VertexSource,
-} from './vertex-source';
-import { Vertex } from './vertex';
-import { VertexManager } from './vertex-manager';
-import { assert, unionIter } from '@ovvio/base/lib/utils';
-import { MicroTaskTimer, SimpleTimer, Timer } from '../timer';
+} from './vertex-source.ts';
+import { Vertex } from './vertex.ts';
+import { VertexManager } from './vertex-manager.ts';
+import { assert, notReached } from '../../../base/error.ts';
+import { unionIter } from '../../../base/common.ts';
+import { MicroTaskTimer, SimpleTimer, Timer } from '../timer.ts';
 import {
   CoroutineQueue,
   CoroutineScheduler,
   SchedulerPriority,
-} from '../coroutine';
-import { notReached } from '@ovvio/base/lib/utils/error';
+} from '../coroutine.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -78,7 +78,7 @@ export class Query<
     let resolve: (
       value: QueryResults<OT> | PromiseLike<QueryResults<OT>>
     ) => void;
-    const promise = new Promise<QueryResults<OT>>(res => (resolve = res));
+    const promise = new Promise<QueryResults<OT>>((res) => (resolve = res));
     const query = new this(source, predicate, sortDescriptor, name);
     query.on(EVENT_QUERY_RESULTS_CHANGED, () => {
       if (!query.isLoading) {
@@ -158,8 +158,8 @@ export class Query<
   ) {
     super();
     this._id = ++gQueryId;
-    this._vertexChangedListener = key => this.vertexChanged(key);
-    this._vertexDeletedListener = key => this.vertexDeleted(key);
+    this._vertexChangedListener = (key) => this.vertexChanged(key);
+    this._vertexDeletedListener = (key) => this.vertexDeleted(key);
     this._closeListener = () => this.close();
     this._resultKeys = new Set();
     this._clientsNotifyTimer = new SimpleTimer(50, false, () =>
@@ -423,7 +423,7 @@ export class UnionQuery<
   *keys(): Generator<string> {
     const processedKeys = new Set<string>();
     for (const key of unionIter(
-      ...Array.from(this.queries()).map(q => q.keys())
+      ...Array.from(this.queries()).map((q) => q.keys())
     )) {
       if (!processedKeys.has(key)) {
         processedKeys.add(key);
@@ -456,7 +456,7 @@ export class UnionQuery<
   private changeListenerForQuery(src: Query<IT, OT>): (key: string) => void {
     let result = this._changeListeners.get(src);
     if (result === undefined) {
-      result = key => {
+      result = (key) => {
         this.emit(
           this.hasVertex(key) ? EVENT_VERTEX_CHANGED : EVENT_VERTEX_DELETED,
           key

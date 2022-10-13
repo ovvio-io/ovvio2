@@ -1,9 +1,6 @@
-import {
-  JSONObject,
-  ReadonlyJSONObject,
-} from '@ovvio/base/lib/utils/interfaces';
-import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json';
-import { dfs, isTextNode, RichText, TextNode } from './tree';
+import { JSONObject, ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json.ts';
+import { dfs, isTextNode, RichText, TextNode } from './tree.ts';
 
 export function findFirstTextNode(rt: RichText): TextNode | undefined {
   for (const [node] of dfs(rt.root)) {

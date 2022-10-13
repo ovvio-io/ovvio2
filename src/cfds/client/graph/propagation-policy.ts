@@ -1,8 +1,8 @@
-import { assert } from 'console';
-import { SchemeNamespace } from 'src/base/scheme-types';
-import { CoreValue } from 'src/core-types';
-import { Mutation } from './mutations';
-import { Vertex } from './vertex';
+import { assert } from '../../../base/error.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { CoreValue } from '../../../base/core-types/index.ts';
+import { Mutation } from './mutations.ts';
+import { Vertex } from './vertex.ts';
 
 export type MutationSource = [scheme: SchemeNamespace, fieldName: string];
 
@@ -14,26 +14,6 @@ export interface NeighborDidMutateCallback {
   (local: boolean, oldValue: CoreValue, neighbor: Vertex): void;
 }
 
-export interface FieldRelationship {
-  src: MutationSource;
-  dst: DestinationResolver;
-}
-
-export type VertexRelationships<T extends Vertex> = {
-  [key in keyof T]?: () => void;
-};
-
-export class PropagationPolicy {
-  private readonly _relationships: Map<
-    SchemeNamespace,
-    Map<string, DestinationResolver>
-  >;
-
-  constructor(relationships: FieldRelationship[]) {
-    this._relationships = new Map();
-  }
-}
-
 export function parentDestinationResolver<T extends Vertex>(
   vertCallback: keyof T
 ): DestinationResolver<T> {
@@ -43,7 +23,9 @@ export function parentDestinationResolver<T extends Vertex>(
       const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
       assert(
         callback !== undefined,
-        `Parent mutation handler '${vertCallback}' does not exist on vertex of type '${vert.namespace}'`
+        `Parent mutation handler '${String(
+          vertCallback
+        )}' does not exist on vertex of type '${vert.namespace}'`
       );
       callback(mutation[1], mutation[2], vert);
     }
@@ -60,7 +42,9 @@ export function childrenDestinationResolver<T extends Vertex>(
       ] as any;
       assert(
         callback !== undefined,
-        `Parent mutation handler '${vertCallback}' does not exist on vertex of type '${vert.namespace}'`
+        `Parent mutation handler '${String(
+          vertCallback
+        )}' does not exist on vertex of type '${vert.namespace}'`
       );
       callback(mutation[1], mutation[2], vert);
     }

@@ -4,7 +4,7 @@ import {
   ValueTypeOptions,
 } from './index.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
-import { CoreValue } from '../../core-types/index.ts';
+import { CoreValue } from '../../../base/core-types/index.ts';
 
 export function diff(
   value1: CoreValue,

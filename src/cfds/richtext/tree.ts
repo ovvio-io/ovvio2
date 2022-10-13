@@ -1,6 +1,5 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { Dictionary } from '../collections/dict';
+import { assert, notReached } from '../../base/error.ts';
+import { Dictionary } from '../../base/collections/dict.ts';
 import {
   coreValueClone,
   isReadonlyCoreObject,
@@ -11,9 +10,9 @@ import {
   CoreValueCloneOpts,
   getCoreType,
   ReadonlyCoreObject,
-} from '../core-types';
-import { OrderedMap } from '../collections/orderedmap';
-import { kElementSpacer } from './flat-rep';
+} from '../../base/core-types/index.ts';
+import { OrderedMap } from '../../base/collections/orderedmap.ts';
+import { kElementSpacer, FlatRepAtom } from './flat-rep.ts';
 
 export const kCoreValueTreeNodeOpts = {
   objectFilterFields: treeAtomKeyFilterIgnoreText,
@@ -119,6 +118,7 @@ export function isTrivialTextNode(node: TreeNode): node is TextNode {
     return false;
   }
   for (const k in node) {
+    // deno-lint-ignore no-prototype-builtins
     if (node.hasOwnProperty(k) && k !== 'text') {
       return false;
     }
@@ -126,7 +126,7 @@ export function isTrivialTextNode(node: TreeNode): node is TextNode {
   return true;
 }
 
-export function copyTreeAtom<T extends TreeNode>(node: TreeNode): T {
+export function copyTreeAtom<T extends FlatRepAtom>(node: FlatRepAtom): T {
   if (node === kElementSpacer) {
     return node as T;
   }
@@ -134,9 +134,9 @@ export function copyTreeAtom<T extends TreeNode>(node: TreeNode): T {
     objectFilterFields: treeAtomKeyFilter,
   });
   if (isTextNode(node)) {
-    result.text = '';
+    (result as TextNode).text = '';
   } else if (isElementNode(node)) {
-    result.children = [];
+    (result as ElementNode).children = [];
   }
   return result as T;
 }
@@ -256,7 +256,7 @@ export function pointFromAbsOffset(
   // First, find the node which holds our absolute offset
   let targetNodeOffset = 0;
   let targetNode = offsetsMap.startKey!;
-  for (let [node, nodeOffset] of offsetsMap) {
+  for (const [node, nodeOffset] of offsetsMap) {
     if (nodeOffset > offset) {
       break;
     }
@@ -367,7 +367,7 @@ export function* pointersForNode(
 export function cleanCloneTreeAtom(
   obj: ReadonlyCoreObject | CoreDictionary,
   key: string,
-  opts?: CoreValueCloneOpts
+  _opts?: CoreValueCloneOpts
 ): CoreValue {
   if (key === 'children' && isElementNode(obj as CoreValue)) {
     return [];

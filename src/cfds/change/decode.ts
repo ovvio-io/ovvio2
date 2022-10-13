@@ -1,8 +1,8 @@
-import { Change, ChangeType, EncodedChange } from '.';
-import { Decoder } from '../encoding';
-import { FieldChange } from './field-change';
-import { RichTextChange } from './richtext-change';
-import { RichText2Change } from './richtext2-change';
+import { Change, ChangeType, EncodedChange } from './index.ts';
+import { Decoder } from '../../base/core-types/encoding/index.ts';
+import { FieldChange } from './field-change.ts';
+import { RichTextChange } from './richtext-change.ts';
+import { notReached } from '../../base/error.ts';
 
 export function decodeChange<EC extends EncodedChange = EncodedChange>(
   decoder: Decoder<keyof EC & string>
@@ -13,7 +13,7 @@ export function decodeChange<EC extends EncodedChange = EncodedChange>(
       return new FieldChange({ decoder });
     case 'rt':
       return new RichTextChange({ decoder });
-    case 'rt-2':
-      return new RichText2Change({ decoder });
+    default:
+      notReached('Unsupported format: ' + type);
   }
 }

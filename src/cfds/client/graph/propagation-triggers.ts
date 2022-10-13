@@ -2,11 +2,11 @@
  * This file contains a set of common field triggers that can be installed
  * on specific Vertex fields.
  */
-import { assert } from '@ovvio/base/lib/utils';
-import { SchemeNamespace } from 'src/base/scheme-types';
-import { CoreValue } from '../../core-types';
-import { Mutation, MutationPack, mutationPackIsEmpty } from './mutations';
-import { FieldChangeTrigger, Vertex } from './vertex';
+import { assert } from '../../../base/error.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { CoreValue } from '../../../base/core-types/index.ts';
+import { Mutation, MutationPack, mutationPackIsEmpty } from './mutations.ts';
+import { FieldChangeTrigger, Vertex } from './vertex.ts';
 
 /**
  * An interface of a method that gets called in response to a neighboring
@@ -51,7 +51,9 @@ export function triggerParent<T extends Vertex>(
       const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
       assert(
         callback !== undefined,
-        `Parent mutation handler '${vertCallback}' does not exist on vertex of type '${vert.namespace}'`
+        `Parent mutation handler '${String(
+          vertCallback
+        )}' does not exist on vertex of type '${vert.namespace}'`
       );
       const sideEffects = callback.call(parent, mutation[1], mutation[2], vert);
       if (!mutationPackIsEmpty(sideEffects)) {
@@ -93,7 +95,9 @@ export function triggerChildren<T extends Vertex>(
       ] as any;
       assert(
         callback !== undefined,
-        `Parent mutation handler '${vertCallback}' does not exist on vertex of type '${vert.namespace}'`
+        `Parent mutation handler '${String(
+          vertCallback
+        )}' does not exist on vertex of type '${vert.namespace}'`
       );
       const sideEffects = callback.call(child, mutation[1], mutation[2], vert);
       if (!mutationPackIsEmpty(sideEffects)) {

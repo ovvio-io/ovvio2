@@ -1,13 +1,18 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { coreValueClone } from '../core-types';
+import { assert } from '../../base/error.ts';
 import {
   reconstructRichText,
   flattenRichText,
   FlatRepAtom,
   DepthMarker,
   isDepthMarker,
-} from './flat-rep';
-import { isRefNode, RefMarker, RefNode, RefType, isRefMarker } from './model';
+} from './flat-rep.ts';
+import {
+  isRefNode,
+  RefMarker,
+  RefNode,
+  RefType,
+  isRefMarker,
+} from './model.ts';
 import {
   ElementNode,
   TextNode,
@@ -15,7 +20,7 @@ import {
   dfs,
   isElementNode,
   isRichText,
-} from './tree';
+} from './tree.ts';
 
 export enum RefPlaceholder {
   Deleted,

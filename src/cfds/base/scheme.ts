@@ -1,12 +1,20 @@
-import Utils, { assert } from '@ovvio/base/lib/utils';
+import { assert } from '../../base/error.ts';
+import { isString, isNoValue } from '../../base/comparisons.ts';
+import { JSONValue, ReadonlyJSONObject } from '../../base/interfaces.ts';
 import {
-  JSONValue,
-  ReadonlyJSONObject,
-} from '@ovvio/base/lib/utils/interfaces';
-import { Encodable, Encoder } from '../core-types';
-import { ConstructorDecoderConfig, isDecoderConfig } from '../encoding';
-import { JSONDecoder, JSONEncoder } from '../encoding/json';
-import { clone } from './object';
+  Encodable,
+  Encoder,
+  coreValueEquals,
+} from '../../base/core-types/index.ts';
+import {
+  ConstructorDecoderConfig,
+  isDecoderConfig,
+} from '../../base/core-types/encoding/index.ts';
+import {
+  JSONDecoder,
+  JSONEncoder,
+} from '../../base/core-types/encoding/json.ts';
+import { clone } from './object.ts';
 import {
   SchemeDef,
   ISchemeManagerRegister,
@@ -19,15 +27,15 @@ import {
   SchemeFields,
   DataType,
   NS_DRAFTS,
-} from './scheme-types';
-import { runRegister } from './scheme-versions';
-import { isRefValueType, ValueType } from './types';
+} from './scheme-types.ts';
+import { runRegister } from './scheme-versions.ts';
+import { isRefValueType, ValueType } from './types/index.ts';
 
 function normalizeFieldDescriptors(descriptors: any) {
   const types: SchemeFields = {};
   const requiredFields: string[] = [];
   for (let [k, desc] of Object.entries<any>(descriptors)) {
-    if (Utils.isString(desc)) {
+    if (isString(desc)) {
       desc = {
         type: desc,
       };
@@ -118,7 +126,7 @@ export class Scheme implements Encodable {
   getFieldType(fieldName: string): ValueType {
     const type: ValueType | undefined = this.getFields()[fieldName];
     assert(
-      !Utils.isNoValue(type),
+      !isNoValue(type),
       `Unknown field ${this.getNamespace()}/${fieldName}`
     );
     return type;
@@ -126,12 +134,12 @@ export class Scheme implements Encodable {
 
   hasField(fieldName: string): boolean {
     const desc = this._fieldDescriptors[fieldName];
-    return !Utils.isNoValue(desc);
+    return !isNoValue(desc);
   }
 
   isRefField(fieldName: string): boolean {
     const type: ValueType | undefined = this.getFields()[fieldName];
-    return !Utils.isNoValue(type) && isRefValueType(type);
+    return !isNoValue(type) && isRefValueType(type);
   }
 
   isRequiredField(fieldName: string): boolean {
@@ -169,7 +177,7 @@ export class Scheme implements Encodable {
     }
 
     const oldNS = oldScheme.getNamespace();
-    Utils.assert(!oldNS || this.getNamespace() === oldScheme.getNamespace());
+    assert(!oldNS || this.getNamespace() === oldScheme.getNamespace());
 
     if (oldScheme.isNull) {
       return true;
@@ -181,16 +189,19 @@ export class Scheme implements Encodable {
     }
 
     if (oldVersion > this.getVersion()) {
+      // deno-lint-ignore no-debugger
       debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, oldVersion + 1)) {
+      // deno-lint-ignore no-debugger
       debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, this.getVersion())) {
+      // deno-lint-ignore no-debugger
       debugger;
       return false;
     }
@@ -203,9 +214,9 @@ export class Scheme implements Encodable {
     return latest.version > this._version;
   }
 
-  upgradeData(oldScheme: Scheme, oldData: any): any {
+  upgradeData(oldScheme: Scheme, oldData: DataType): DataType {
     const oldNS = oldScheme.getNamespace();
-    Utils.assert(!oldNS || this.getNamespace() === oldScheme.getNamespace());
+    assert(!oldNS || this.getNamespace() === oldScheme.getNamespace());
 
     if (oldScheme.isNull) {
       return oldData;
@@ -240,7 +251,7 @@ export class Scheme implements Encodable {
       return false;
     }
 
-    return Utils.deepEqual(
+    return coreValueEquals(
       this._fieldDescriptors,
       otherScheme._fieldDescriptors
     );
@@ -328,7 +339,7 @@ export class Scheme implements Encodable {
     for (end = start; end < keyLen && key[end] !== '/'; ++end) {
       // Find the end of the type part
     }
-    Utils.assert(start <= end || start >= keyLen, 'Unsupported key format');
+    assert(start <= end || start >= keyLen, 'Unsupported key format');
     const type = key.substring(start, end);
     switch (type) {
       case NS_WORKSPACE:
@@ -355,11 +366,11 @@ export class Scheme implements Encodable {
 class SchemeVersion {
   private _version: number;
   private _namespaces: Map<string, Scheme>;
-  private _upFunc?: (namespace: string, data: any) => void;
+  private _upFunc?: (namespace: string, data: DataType) => void;
 
   constructor(
     version: number,
-    upFunc?: (namespace: string, data: any) => void
+    upFunc?: (namespace: string, data: DataType) => void
   ) {
     this._version = version;
     this._namespaces = new Map<string, Scheme>();
@@ -453,13 +464,13 @@ export class SchemeManager implements ISchemeManagerRegister {
     extraNamespaces: string[],
     upFunc?: (namespace: string, data: any) => void
   ) {
-    Utils.assert(this._currVersion + 1 === version);
+    assert(this._currVersion + 1 === version);
     if (version === 1) {
-      Utils.assert(Utils.isNoValue(upFunc));
-      Utils.assert(extraNamespaces.length === 0);
+      assert(isNoValue(upFunc));
+      assert(extraNamespaces.length === 0);
     }
     if (version > 1) {
-      Utils.assert(!Utils.isNoValue(upFunc));
+      assert(!isNoValue(upFunc));
     }
     const schVersion = new SchemeVersion(version, upFunc);
 

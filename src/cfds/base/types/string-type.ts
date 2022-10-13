@@ -1,5 +1,5 @@
 import { ValueType } from './index.ts';
-import { CoreType } from '../../core-types/index.ts';
+import { CoreType } from '../../../base/core-types/index.ts';
 import { PrimitiveTypeOperations } from './primitive-type.ts';
 
 export class StringTypeOperations extends PrimitiveTypeOperations<string> {

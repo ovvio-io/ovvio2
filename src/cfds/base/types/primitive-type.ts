@@ -2,7 +2,7 @@ import { valueTypeEquals, ValueTypeOptions } from './index.ts';
 import { CoreTypeOperations } from './core-type.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
 import { FieldChange, FieldOperation } from '../../change/field-change.ts';
-import { ConcreteCoreValue } from '../../core-types/index.ts';
+import { ConcreteCoreValue } from '../../../base/core-types/index.ts';
 
 export class PrimitiveTypeOperations<
   TValue extends ConcreteCoreValue

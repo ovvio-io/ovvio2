@@ -1,12 +1,15 @@
-import { Utils } from '@ovvio/base';
-import { ConstructorDecoderConfig, isDecoderConfig } from '../encoding';
+import { assert } from '../../base/error.ts';
+import {
+  ConstructorDecoderConfig,
+  isDecoderConfig,
+} from '../../base/core-types/encoding/index.ts';
 import {
   CoreValue,
   Encodable,
   Encoder,
   Equatable,
   ReadonlyCoreObject,
-} from '../core-types';
+} from '../../base/core-types/index.ts';
 
 export type ChangeType = 'fd' | 'rt' | 'rt-2';
 
@@ -21,7 +24,7 @@ export abstract class Change<EC extends EncodedChange>
 {
   constructor(config?: ChangeValueConfig | ConstructorDecoderConfig<EC>) {
     if (isDecoderConfig(config)) {
-      Utils.assert(config.decoder.get('changeType') === this.getType());
+      assert(config.decoder.get('changeType') === this.getType());
     }
   }
 

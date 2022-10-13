@@ -4,7 +4,7 @@ import {
   Decoder,
   ReadonlyDecodedArray,
   ReadonlyDecodedObject,
-} from '../encoding/index.ts';
+} from '../../base/core-types/encoding/index.ts';
 import { Scheme } from './scheme.ts';
 import { DataType, SchemeFields } from './scheme-types.ts';
 import {
@@ -16,7 +16,7 @@ import {
 } from './types/index.ts';
 import { Change, EncodedChange } from '../change/index.ts';
 import { decodeChange } from '../change/decode.ts';
-import { CoreObject, Encoder } from '../core-types/index.ts';
+import { CoreObject, Encoder } from '../../base/core-types/index.ts';
 
 export function isValidData(scheme: Scheme, data: DataType) {
   const requiredFields = scheme.getRequiredFields();

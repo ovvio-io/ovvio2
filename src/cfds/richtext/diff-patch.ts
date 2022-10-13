@@ -1,20 +1,23 @@
 import {
   RichTextChange,
   RichTextChangeConfig,
-} from '../change/richtext-change';
-import { isElementNode, kCoreValueTreeNodeOpts, RichText } from './tree';
-import { MergeContext } from './merge-context';
-import { StringRep } from './string-rep';
-import { kDMP } from '../base/defs';
+} from '../change/richtext-change.ts';
+import { isElementNode, kCoreValueTreeNodeOpts, RichText } from './tree.ts';
+import { MergeContext } from './merge-context.ts';
+import { StringRep } from './string-rep.ts';
+import { kDMP } from '../base/defs.ts';
 import {
   convertPtrsToValues,
   FlatRepAtom,
   flattenRichText,
   reconstructRichText,
   reconstructTextNodes,
-} from './flat-rep';
-import { Diff } from 'diff-match-patch-typescript';
-import { coreValueClone, coreValueEquals } from '../core-types';
+} from './flat-rep.ts';
+import { Diff } from '../../external/diff-match-patch.ts';
+import {
+  coreValueClone,
+  coreValueEquals,
+} from '../../base/core-types/index.ts';
 
 /**
  * This function copies each element node and returns the copy with empty

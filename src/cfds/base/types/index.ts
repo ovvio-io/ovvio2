@@ -1,4 +1,4 @@
-import { DecodedValue } from '../../encoding/index.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
 import { MapTypeOperations } from './map-type.ts';
 import { PrimitiveTypeOperations } from './primitive-type.ts';
@@ -12,8 +12,9 @@ import {
   CoreValue,
   Encoder,
   getCoreType,
-} from '../../core-types/index.ts';
+} from '../../../base/core-types/index.ts';
 import { DateTypeOperations } from './date-type.ts';
+import { ChecksumEncoderOpts } from '../../../base/core-types/encoding/checksum.ts';
 
 export enum ValueType {
   STRING = 'string',
@@ -42,7 +43,7 @@ export interface ValueTypeOptions {
   local?: boolean;
 }
 
-export interface SerializeValueTypeOptions extends CoreOptions {
+export interface SerializeValueTypeOptions extends ChecksumEncoderOpts {
   local?: boolean;
   flatRep?: boolean;
 }

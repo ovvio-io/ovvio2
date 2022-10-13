@@ -1,16 +1,26 @@
-import { assert } from './index.ts';
+import {
+  encode as b64Encode,
+  decode as b64Decode,
+} from 'https://deno.land/std@0.159.0/encoding/base64.ts';
+import { assert } from './error.ts';
 import { MurmurHash3 } from './hash.ts';
+import { CoreValue, Encodable, Encoder } from './core-types/base.ts';
+import {
+  Decodable,
+  DecodedValue,
+  Decoder,
+} from './core-types/encoding/index.ts';
 
 /**
  * A buffer that provides access to single bits by index.
  * Designed as storage for BloomFilter.
  */
 class BitField {
-  private _buffer: Uint8Array;
+  buffer: Uint8Array;
 
   constructor(size: number) {
     const byteLength = Math.ceil(size / 8);
-    this._buffer = new Uint8Array(byteLength);
+    this.buffer = new Uint8Array(byteLength);
   }
 
   get bitSize() {
@@ -18,19 +28,19 @@ class BitField {
   }
 
   get byteSize() {
-    return this._buffer.byteLength;
+    return this.buffer.byteLength;
   }
 
   get(idx: number): boolean {
     const byteOffset = idx >> 3; // floor(idx / 8)
     const bitMask = 1 << idx % 8;
-    return (this._buffer[byteOffset] & bitMask) !== 0;
+    return (this.buffer[byteOffset] & bitMask) !== 0;
   }
 
   set(idx: number, value: boolean): void {
     const byteOffset = idx >> 3; // floor(idx / 8)
     const bitMask = 1 << idx % 8;
-    const buf = this._buffer;
+    const buf = this.buffer;
     if (value) {
       buf[byteOffset] = buf[byteOffset] | bitMask;
     } else {
@@ -39,7 +49,7 @@ class BitField {
   }
 
   clear(): void {
-    this._buffer.fill(0);
+    this.buffer.fill(0);
   }
 }
 
@@ -59,7 +69,7 @@ export interface BloomFilterOptions {
 /**
  * A simple Bloom Filter implementation using MurmurHash3.
  */
-export class BloomFilter {
+export class BloomFilter implements Encodable, Decodable {
   private _filter: BitField;
   private _hashes: MurmurHash3[];
 
@@ -140,5 +150,26 @@ export class BloomFilter {
       hash.resetSeed();
     }
     return this;
+  }
+
+  serialize(
+    encoder: Encoder<string, CoreValue, unknown, unknown>,
+    _options?: unknown
+  ): void {
+    encoder.set('d', b64Encode(this._filter.buffer));
+    encoder.set(
+      's',
+      this._hashes.map((h) => h.seed)
+    );
+  }
+
+  deserialize(
+    decoder: Decoder<string, DecodedValue>,
+    _options?: unknown
+  ): void {
+    this._filter.buffer = b64Decode(decoder.get('d')!);
+    this._hashes = decoder
+      .get<number[]>('s')!
+      .map((seed) => new MurmurHash3(seed));
   }
 }

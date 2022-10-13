@@ -3,8 +3,8 @@ import {
   dictFromPrimitive,
   Dictionary,
   PrimitiveMap,
-} from '../../../collections/dict.ts';
-import { DecodedValue } from '../../encoding/index.ts';
+} from '../../../base/collections/dict.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
 import { CoreTypeOperations } from './core-type.ts';
 import { FieldChange, FieldOperation } from '../../change/field-change.ts';
@@ -13,7 +13,7 @@ import {
   CoreKey,
   CoreType,
   coreValueEquals,
-} from '../../core-types/index.ts';
+} from '../../../base/core-types/index.ts';
 
 export class MapTypeOperations extends CoreTypeOperations<
   Dictionary<CoreKey, ConcreteCoreValue>

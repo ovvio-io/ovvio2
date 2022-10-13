@@ -2,8 +2,8 @@ import { ValueType, ValueTypeOptions } from './index.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
 import { CoreTypeOperations } from './core-type.ts';
 import { FieldChange, FieldOperation } from '../../change/field-change.ts';
-import { ConcreteCoreValue, CoreType } from '../../core-types/index.ts';
-import { DecodedValue } from '../../encoding/index.ts';
+import { ConcreteCoreValue, CoreType } from '../../../base/core-types/index.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import * as SetUtils from '../../../base/set.ts';
 
 export class SetTypeOperations extends CoreTypeOperations<

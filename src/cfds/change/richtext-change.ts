@@ -1,14 +1,17 @@
-import { EncodedChange, Change, ChangeType } from '.';
+import { EncodedChange, Change, ChangeType } from './index.ts';
 import {
   CoreValue,
   Encoder,
   coreValueClone,
   CoreOptions,
   coreValueEquals,
-} from '../core-types';
-import { ConstructorDecoderConfig, isDecoderConfig } from '../encoding';
-import { Operation } from '../richtext/merge-context';
-import { TreeNode } from '../richtext/tree';
+} from '../../base/core-types/index.ts';
+import {
+  ConstructorDecoderConfig,
+  isDecoderConfig,
+} from '../../base/core-types/encoding/index.ts';
+import { Operation } from '../richtext/merge-context.ts';
+import { TreeNode } from '../richtext/tree.ts';
 
 export interface EncodedRTChange extends EncodedChange {
   readonly changeType: 'rt';

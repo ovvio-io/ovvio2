@@ -1,8 +1,11 @@
-import { Record } from '../../base/record';
-import { VertexManager } from './vertex-manager';
-import { GraphManager } from './graph-manager';
-import { Dictionary, isDictionary, ReadonlyDict } from '../../collections/dict';
-import { COWMap } from '../../collections/cow-map';
+import { Record } from '../../base/record.ts';
+import { VertexManager } from './vertex-manager.ts';
+import { GraphManager } from './graph-manager.ts';
+import {
+  Dictionary,
+  isDictionary,
+  ReadonlyDict,
+} from '../../../base/collections/dict.ts';
 import {
   MutationPack,
   mutationPackIsEmpty,
@@ -12,21 +15,21 @@ import {
   mutationPackClone,
   Mutation,
   mutationPackIter,
-} from './mutations';
-import { IVertex } from './types';
+} from './mutations.ts';
+import { IVertex } from './types.ts';
 import {
   CoreObject,
   CoreValue,
   CoreValueCloneOpts,
   coreValueCompare,
-} from '../../core-types';
-import { extractRefs as extractRefsFromRT } from '../../richtext/composer';
-import { RichText, isRichText } from '../../richtext/tree';
-import { isGenerator } from '@ovvio/base/lib/utils/comparisons';
-import { assert, notImplemented } from '@ovvio/base/lib/utils';
-import { SchemeNamespace } from '../../base/scheme-types';
-import { triggerChildren, triggerCompose } from './propagation-triggers';
-import { ValueType } from '../../base/types';
+} from '../../../base/core-types/index.ts';
+import { extractRefs as extractRefsFromRT } from '../../richtext/composer.ts';
+import { RichText, isRichText } from '../../richtext/tree.ts';
+import { isGenerator } from '../../../base/comparisons.ts';
+import { assert, notImplemented } from '../../../base/error.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { triggerChildren, triggerCompose } from './propagation-triggers.ts';
+import { ValueType } from '../../base/types/index.ts';
 
 /**
  * A marker for VertexManager indicating a specific field contains no refs by
@@ -247,7 +250,7 @@ export class Vertex implements IVertex {
   }
 
   set isDeleted(_val: number) {
-    notImplemented('isDeleted is not implemented on class Vertex');
+    notImplemented();
   }
 
   get lastModified(): Date | undefined {
@@ -255,7 +258,7 @@ export class Vertex implements IVertex {
   }
 
   set lastModified(v: Date | undefined) {
-    notImplemented('lastModified is not implemented on class Vertex');
+    notImplemented();
   }
 
   get depth(): number {
@@ -501,7 +504,7 @@ export class Vertex implements IVertex {
   }
 
   protected vertSetForField<T extends Vertex>(fieldName: string): Set<T> {
-    const keys = this.record.get(fieldName);
+    const keys = this.record.get<Set<string>>(fieldName);
     if (!keys?.size) {
       return new Set();
     }
@@ -549,7 +552,7 @@ export function keyDictToVertDict<K extends Vertex, V extends Vertex>(
 export function vertDictToKeyDict(
   vertDict: ReadonlyDict<Vertex, Vertex>
 ): Dictionary<string, string> {
-  const result = new COWMap<string, string>();
+  const result = new Map<string, string>();
   for (const [k, v] of vertDict) {
     result.set(k.key, v.key);
   }

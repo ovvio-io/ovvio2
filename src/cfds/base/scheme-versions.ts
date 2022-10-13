@@ -1,4 +1,4 @@
-import { COWMap } from '../collections/cow-map';
+import { isString } from '../../base/comparisons.ts';
 import {
   SchemeDef,
   ISchemeManagerRegister,
@@ -23,10 +23,9 @@ import {
   TYPE_RICHTEXT_V3,
   SchemeNamespace,
   TYPE_REF_MAP,
-} from './scheme-types';
-import Utils from '@ovvio/base/lib/utils';
-import { migrationToRichtextV3 } from '../richtext/migration';
-import { initRichText } from '../richtext/tree';
+} from './scheme-types.ts';
+import { initRichText } from '../richtext/tree.ts';
+import { notReached } from '../../base/error.ts';
 
 //BASE SCHEMES
 const SCHEME_BASE_1 = new SchemeDef('', {
@@ -70,11 +69,11 @@ const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   icon: TYPE_STR,
   noteTags: {
     type: TYPE_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
   taskTags: {
     type: TYPE_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
   exportImage: TYPE_STR,
   footerHtml: TYPE_STR,
@@ -93,11 +92,11 @@ const SCHEME_WORKSPACE_2 = SCHEME_WORKSPACE_1.derive(
 const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
   noteTags: {
     type: TYPE_REF_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
   taskTags: {
     type: TYPE_REF_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
 });
 
@@ -162,7 +161,7 @@ const SCHEME_NOTE_2 = SCHEME_NOTE_1.derive(NS_NOTES, {
   parentNote: TYPE_REF,
   tags: {
     type: TYPE_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
 });
 
@@ -184,7 +183,7 @@ const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   },
   tags: {
     type: TYPE_REF_MAP,
-    init: () => new COWMap(),
+    init: () => new Map(),
   },
   pinnedBy: {
     type: TYPE_SET,
@@ -267,13 +266,13 @@ export function runRegister(manager: ISchemeManagerRegister) {
       if (namespace === NS_NOTES) {
         if (data.attachments) {
           let att = data.attachments;
-          if (Utils.isString(att)) {
+          if (isString(att)) {
             att = JSON.parse(att);
           }
           data.attachments = new Set(att);
         }
         if (data.tags) {
-          const tagMap = new COWMap();
+          const tagMap = new Map();
           for (const v of data.tags) {
             tagMap.set(v, v);
           }
@@ -296,10 +295,12 @@ export function runRegister(manager: ISchemeManagerRegister) {
     (namespace, data) => {
       if (namespace === NS_NOTES) {
         if (data.title) {
-          data.title = migrationToRichtextV3(data.title);
+          notReached('Unsupported old format RichText v2');
+          // data.title = migrationToRichtextV3(data.title);
         }
         if (data.body) {
-          data.body = migrationToRichtextV3(data.body);
+          notReached('Unsupported old format RichText v2');
+          // data.body = migrationToRichtextV3(data.body);
         }
       }
     }

@@ -1,4 +1,4 @@
-import EventEmitter from 'eventemitter3';
+import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 
 export const EVENT_LOADING_FINISHED = 'LOADING_FINISHED';
 export const EVENT_VERTEX_CHANGED = 'VERTEX_CHANGED';

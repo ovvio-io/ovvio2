@@ -1,7 +1,7 @@
 import { deserializeDate } from '../../../base/date.ts';
 import { ValueType, ValueTypeOptions } from './index.ts';
-import { CoreType } from '../../core-types/index.ts';
-import { DecodedValue } from '../../encoding/index.ts';
+import { CoreType } from '../../../base/core-types/index.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import { PrimitiveTypeOperations } from './primitive-type.ts';
 
 export class DateTypeOperations extends PrimitiveTypeOperations<Date> {

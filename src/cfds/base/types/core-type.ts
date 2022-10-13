@@ -1,5 +1,5 @@
 import { IValueTypeOperations, ValueType, ValueTypeOptions } from './index.ts';
-import { DecodedValue } from '../../encoding/index.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import { Change, EncodedChange } from '../../change/index.ts';
 import { FieldChange } from '../../change/field-change.ts';
 import {
@@ -9,7 +9,7 @@ import {
   coreValueEquals,
   Encoder,
   getCoreTypeOrUndef,
-} from '../../core-types/index.ts';
+} from '../../../base/core-types/index.ts';
 
 export abstract class CoreTypeOperations<
   TValue extends ConcreteCoreValue = ConcreteCoreValue

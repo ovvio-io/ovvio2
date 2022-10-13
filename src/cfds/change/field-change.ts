@@ -1,9 +1,21 @@
-import { Utils } from '@ovvio/base';
-import { JSONValue } from '@ovvio/base/lib/utils/interfaces';
-import { getTypeOperations, ValueType, valueTypeEquals } from '../base/types';
-import { ConstructorDecoderConfig, isDecoderConfig } from '../encoding';
-import { Change, ChangeType, ChangeValueConfig, EncodedChange } from '.';
-import { CoreValue, Encoder } from '../core-types';
+import { assert } from '../../base/error.ts';
+import { JSONValue } from '../../base/interfaces.ts';
+import {
+  getTypeOperations,
+  ValueType,
+  valueTypeEquals,
+} from '../base/types/index.ts';
+import {
+  ConstructorDecoderConfig,
+  isDecoderConfig,
+} from '../../base/core-types/encoding/index.ts';
+import {
+  Change,
+  ChangeType,
+  ChangeValueConfig,
+  EncodedChange,
+} from './index.ts';
+import { CoreValue, Encoder } from '../../base/core-types/index.ts';
 
 export enum FieldOperation {
   Insert = 1,
@@ -47,7 +59,7 @@ export class FieldChange<TValue> extends Change<EncodedFieldChange> {
       this.valueType = config.valueType;
 
       const typeOP = getTypeOperations(this.valueType);
-      Utils.assert(
+      assert(
         typeOP.validate(config.value),
         `Invalid Field value for type: ${this.valueType}`
       );

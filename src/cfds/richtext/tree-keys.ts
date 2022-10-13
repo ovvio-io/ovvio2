@@ -1,14 +1,13 @@
-import { Dictionary } from '../collections/dict';
-import { HashMap } from '../collections/hash-map';
+import { Dictionary } from '../../collections/dict.ts';
+import { HashMap } from '../../collections/hash-map.ts';
 import {
-  Comparable,
   Clonable,
   Equatable,
   CoreValue,
   coreValueEquals,
-} from '../core-types';
-import { encodableValueHash } from '../encoding';
-import { dfs, ElementNode, kCoreValueTreeNodeOpts, TreeNode } from './tree';
+} from '../core-types/index.ts';
+import { encodableValueHash } from '../encoding/index.ts';
+import { dfs, ElementNode, kCoreValueTreeNodeOpts } from './tree.ts';
 
 export type NodeKey = { id: string };
 
@@ -24,7 +23,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
     this._root = root;
     this._keys = new Map();
     this._counts = new HashMap<CoreValue, number>(
-      v => encodableValueHash(v, kCoreValueTreeNodeOpts),
+      (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
       (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts)
     );
     for (const [node] of dfs(root)) {

@@ -12,8 +12,8 @@ import {
   coreValueClone,
   coreValueEquals,
   Encoder,
-} from '../../core-types/index.ts';
-import { DecodedValue } from '../../encoding/index.ts';
+} from '../../../base/core-types/index.ts';
+import { DecodedValue } from '../../../base/core-types/encoding/index.ts';
 import { diff, patch } from '../../richtext/diff-patch.ts';
 import { flattenRichText } from '../../richtext/flat-rep.ts';
 import { normalizeRichText } from '../../richtext/normalize/index.ts';

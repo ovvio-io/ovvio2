@@ -1,11 +1,11 @@
-import { ConcreteCoreValue, CoreObject } from '../core-types';
+import { ConcreteCoreValue, CoreObject } from '../../base/core-types/index.ts';
 // import { COWMap } from '../collections/cow-map';
 
 // import { RichText as OldRichText } from '../primitives-old/richtext2';
-import { RichText } from '../richtext/tree';
-import { Record as RecordObj } from './record';
-import { ValueType } from './types';
-import { Dictionary } from '../collections/dict';
+import { RichText } from '../richtext/tree.ts';
+import { Record as RecordObj } from './record.ts';
+import { ValueType } from './types/index.ts';
+import { Dictionary } from '../../base/collections/dict.ts';
 
 export enum SchemeNamespace {
   WORKSPACE = 'workspaces',
@@ -46,7 +46,7 @@ export const TYPE_MAP = ValueType.MAP;
 export const TYPE_REF_MAP = ValueType.REF_MAP;
 
 export type DataType = {
-  [key: string]: any;
+  [key: string]: ConcreteCoreValue;
 };
 
 export type FieldValue = {
@@ -55,7 +55,7 @@ export type FieldValue = {
   [TYPE_DATE]: Date;
   // [TYPE_RICHTEXT]: OldRichText;
   [TYPE_STR_SET]: Set<string>;
-  [TYPE_SET]: Set<any>;
+  [TYPE_SET]: Set<ConcreteCoreValue>;
   [TYPE_REF]: string;
   [TYPE_REF_SET]: Set<string>;
   [TYPE_MAP]: Dictionary<string, ConcreteCoreValue>;

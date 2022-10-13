@@ -1,6 +1,9 @@
-import { AttachmentData } from '../base/scheme-types';
-import { CoreValue, isReadonlyCoreObject } from '../core-types';
-import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree';
+import { AttachmentData } from '../base/scheme-types.ts';
+import {
+  CoreValue,
+  isReadonlyCoreObject,
+} from '../../base/core-types/index.ts';
+import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
 
 export type MarkupNode =
   | ParagraphNode

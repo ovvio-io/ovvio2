@@ -9,13 +9,16 @@ import {
 } from './object.ts';
 import { Scheme } from './scheme.ts';
 import { JSONValue, ReadonlyJSONObject } from '../../base/interfaces.ts';
-import { JSONDecoder, JSONEncoder } from '../encoding/json.ts';
+import {
+  JSONDecoder,
+  JSONEncoder,
+} from '../../base/core-types/encoding/json.ts';
 import {
   ConstructorDecoderConfig,
   Decoder,
   isDecoderConfig,
-} from '../encoding/index.ts';
-import { Encodable, Encoder } from '../core-types/index.ts';
+} from '../../base/core-types/encoding/index.ts';
+import { Encodable, Encoder } from '../../base/core-types/index.ts';
 
 /**
  * A single set of changes that should be applied to a specific record.
