@@ -1,14 +1,13 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { easeInOutSine } from '@ovvio/base/lib/utils/time';
-import { clearTimeout } from 'timers';
-import { SortedQueue } from '../collections/queue';
+import { assert } from '../../base/error.ts';
+import { easeInOutSine } from '../../base/time.ts';
+import { SortedQueue } from '../../base/collections/queue.ts';
 
 const MAX_TIMER_PROCESSING_MS = 30;
 
 const gScheduledTimers = new SortedQueue<BaseTimer>(
   (t1: BaseTimer, t2: BaseTimer) => t1.compare(t2)
 );
-let gTimerTicker: NodeJS.Timer | undefined = setInterval(() => {
+let gTimerTicker: number | undefined = setInterval(() => {
   const startTime = performance.now();
 
   for (
@@ -29,7 +28,7 @@ let gTimerTicker: NodeJS.Timer | undefined = setInterval(() => {
     }
   }
 }, 20);
-let gTimerId: number = 0;
+let gTimerId = 0;
 
 export function stopTimerTicker() {
   if (gTimerTicker) {
@@ -318,7 +317,7 @@ export class MicroTaskTimer implements Timer {
 }
 
 let gScheduledNextEventLoopCycleTimers: NextEventLoopCycleTimer[] = [];
-let gScheduledTimeoutHandler: NodeJS.Timeout | undefined;
+let gScheduledTimeoutHandler: number | undefined;
 
 function processPendingNextEventLoopTimers(): void {
   const scheduledTimers = gScheduledNextEventLoopCycleTimers;

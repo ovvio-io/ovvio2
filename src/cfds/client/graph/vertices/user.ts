@@ -1,11 +1,11 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { Workspace } from './workspace';
-import { BaseVertex } from './base';
-import { Record } from '../../../base/record';
-import { Utils } from '@ovvio/base';
-import { VertexManager } from '../vertex-manager';
-import { Vertex, VertexConfig } from '../vertex';
-import { OnboardingStep } from '../../../base/scheme-versions';
+import { assert } from '../../../../base/error.ts';
+import { Workspace } from './workspace.ts';
+import { BaseVertex } from './base.ts';
+import { Record } from '../../../base/record.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { Vertex, VertexConfig } from '../vertex.ts';
+import { OnboardingStep } from '../../../base/scheme-versions.ts';
+import * as SetUtils from '../../../../base/set.ts';
 
 export class User extends BaseVertex {
   constructor(
@@ -21,7 +21,7 @@ export class User extends BaseVertex {
   }
 
   get avatarUrl(): string | undefined {
-    return this.record.get('avatarUrl');
+    return this.record.get<string>('avatarUrl');
   }
 
   set avatarUrl(url: string | undefined) {
@@ -33,7 +33,7 @@ export class User extends BaseVertex {
   }
 
   get email(): string {
-    const email = this.record.get('email');
+    const email = this.record.get<string>('email');
     assert(typeof email === 'string' && email.length > 0);
     return email;
   }
@@ -44,7 +44,7 @@ export class User extends BaseVertex {
   }
 
   get lastLoggedIn(): Date | undefined {
-    return this.record.get('lastLoggedIn');
+    return this.record.get<Date>('lastLoggedIn');
   }
 
   set lastLoggedIn(d: Date | undefined) {
@@ -79,7 +79,7 @@ export class User extends BaseVertex {
   set workspaces(s: Set<Workspace>) {
     this.record.set(
       'workspaces',
-      Utils.Set.map(s, (ws: Workspace) => ws.key)
+      SetUtils.map(s, (ws: Workspace) => ws.key)
     );
   }
 
@@ -93,12 +93,12 @@ export class User extends BaseVertex {
       return new Set<string>();
     }
 
-    const copy = Utils.Set.map(seenTutorials, v => v);
+    const copy = SetUtils.map(seenTutorials, (v) => v);
     return copy;
   }
 
   set seenTutorials(set: Set<string>) {
-    const copy = Utils.Set.map(set, v => v);
+    const copy = SetUtils.map(set, (v) => v);
     this.record.set('seenTutorials', copy);
   }
 

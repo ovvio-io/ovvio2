@@ -1,15 +1,15 @@
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { NS_NOTES, NS_TAGS, NS_WORKSPACE } from '../../base/scheme-types';
-import { GraphManager } from './graph-manager';
+import { notReached } from '../../../base/error.ts';
+import { NS_NOTES, NS_TAGS, NS_WORKSPACE } from '../../base/scheme-types.ts';
+import { GraphManager } from './graph-manager.ts';
 import {
   EVENT_QUERY_DID_CLOSE,
   Predicate,
   Query,
   SortDescriptor,
   UnionQuery,
-} from './query';
-import { Vertex } from './vertex';
-import { Note, Tag, Workspace } from './vertices';
+} from './query.ts';
+import { Vertex } from './vertex.ts';
+import { Tag, Workspace } from './vertices/index.ts';
 
 export class SharedQueriesManager {
   private _vertexQueries: Map<string, Map<string, Query>>;
@@ -23,25 +23,25 @@ export class SharedQueriesManager {
     this._vertexQueries = new Map();
     this.notDeletedQuery = new Query(
       graph,
-      vert => vert.isDeleted === 0,
+      (vert) => vert.isDeleted === 0,
       undefined,
       'SharedNotDeleted'
     ).lock();
     this.noNotesQuery = new Query(
       this.notDeletedQuery,
-      vert => vert.namespace !== NS_NOTES,
+      (vert) => vert.namespace !== NS_NOTES,
       undefined,
       'SharedNoNotes'
     ).lock();
     this.workspacesQuery = new Query<Vertex, Workspace>(
       this.notDeletedQuery,
-      vert => vert.namespace === NS_WORKSPACE,
+      (vert) => vert.namespace === NS_WORKSPACE,
       undefined,
       'SharedWorkspaces'
     ).lock();
     this.tagsQuery = new Query<Vertex, Tag>(
       this.notDeletedQuery,
-      vert => vert.namespace === NS_TAGS,
+      (vert) => vert.namespace === NS_TAGS,
       undefined,
       'SharedTags'
     ).lock();

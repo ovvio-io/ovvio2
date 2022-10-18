@@ -1,53 +1,48 @@
-import { Utils } from '@ovvio/base';
-import { User } from './user';
-import { ContentVertex } from './base';
+import { User } from './user.ts';
+import { ContentVertex } from './base.ts';
 import {
   AttachmentData,
   NS_NOTES,
   SchemeNamespace,
-} from '../../../base/scheme-types';
-import {
-  initRichText,
-  RichText,
-  treeToPlaintext,
-} from '../../../richtext/tree';
+} from '../../../base/scheme-types.ts';
+import { initRichText, RichText } from '../../../richtext/tree.ts';
 import {
   composeRichText,
   decomposeRichText,
   extractRefs,
   RefPlaceholder,
-} from '../../../richtext/composer';
+} from '../../../richtext/composer.ts';
 import {
   FieldTriggers,
   keyDictToVertDict,
   vertDictToKeyDict,
   Vertex,
   VertexConfig,
-} from '../vertex';
-import { Dictionary } from '../../../collections/dict';
-import { Tag } from './tag';
-import { MutationPack, mutationPackAppend } from '../mutations';
+} from '../vertex.ts';
+import { Dictionary } from '../../../../base/collections/dict.ts';
+import { Tag } from './tag.ts';
+import { MutationPack, mutationPackAppend } from '../mutations.ts';
 import {
   docFromRT,
   docToRT,
   Document,
   projectRanges,
   UnkeyedDocument,
-} from '../../../richtext/doc-state';
-import { coreObjectClone } from '../../../core-types/clone';
+} from '../../../richtext/doc-state.ts';
+import { coreObjectClone } from '../../../../base/core-types/clone.ts';
 import {
   flattenRichText,
   projectPointers,
   reconstructRichText,
   stripFormattingFilter,
-} from '../../../richtext/flat-rep';
-import { treeToMarkdown } from '../../../richtext/markdown';
-import { triggerParent, triggerChildren } from '../propagation-triggers';
-import { coreValueEquals } from '../../../core-types';
-import { VertexManager } from '../vertex-manager';
-import { Record } from '../../../base/record';
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { assert } from '@ovvio/base/lib/utils';
+} from '../../../richtext/flat-rep.ts';
+import { treeToMarkdown } from '../../../richtext/markdown.ts';
+import { triggerParent, triggerChildren } from '../propagation-triggers.ts';
+import { coreValueEquals } from '../../../../base/core-types/index.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { Record } from '../../../base/record.ts';
+import { notReached, assert } from '../../../../base/error.ts';
+import * as SetUtils from '../../../../base/set.ts';
 
 export enum NoteType {
   Task = 'task',
@@ -97,7 +92,7 @@ export class Note extends ContentVertex {
   set assignees(users: Set<User>) {
     this.record.set(
       'assignees',
-      Utils.Set.map(users, u => u.key)
+      SetUtils.map(users, (u) => u.key)
     );
   }
 
@@ -111,12 +106,12 @@ export class Note extends ContentVertex {
       return new Set<AttachmentData>();
     }
 
-    const copy = Utils.Set.map(attachments, v => coreObjectClone(v));
+    const copy = SetUtils.map(attachments, (v) => coreObjectClone(v));
     return copy;
   }
 
   set attachments(set: Set<AttachmentData>) {
-    const copy = Utils.Set.map(set, v => coreObjectClone(v));
+    const copy = SetUtils.map(set, (v) => coreObjectClone(v));
     this.record.set('attachments', copy);
   }
 
@@ -129,7 +124,7 @@ export class Note extends ContentVertex {
       const graph = this.graph;
       this._cachedBody = docFromRT(
         composeRichText(
-          key => {
+          (key) => {
             const note = graph.getVertex<Note>(key);
             if (note.isNull) {
               return RefPlaceholder.Loading;
@@ -150,7 +145,9 @@ export class Note extends ContentVertex {
   set body(rt: UnkeyedDocument) {
     // Take a snapshot of the out refs before changing the value
     const oldRefs = this.getBodyRefs();
-    rt = projectRanges(this.body, rt, ptr => this.graph.ptrFilterFunc(ptr.key));
+    rt = projectRanges(this.body, rt, (ptr) =>
+      this.graph.ptrFilterFunc(ptr.key)
+    );
     this._cachedBody = undefined;
     const graph = this.graph;
     //  Update our body while applying edits to inner tasks' titles
@@ -190,7 +187,7 @@ export class Note extends ContentVertex {
     // Get out refs after the update
     const newRefs = this.getBodyRefs();
     // Compare them with old refs to find deleted tasks
-    const deletedKeys = Utils.Set.subtract(oldRefs, newRefs);
+    const deletedKeys = SetUtils.subtract(oldRefs, newRefs);
     // Mark deleted tasks as such
     for (const key of deletedKeys) {
       graph.getVertex<Note>(key).isDeleted = 1;
@@ -202,7 +199,7 @@ export class Note extends ContentVertex {
   }
 
   getBodyRefs(): Set<string> {
-    const bodyRT = this.record.get('body');
+    const bodyRT = this.record.get<RichText>('body');
     if (bodyRT === undefined) {
       return new Set();
     }
@@ -210,7 +207,7 @@ export class Note extends ContentVertex {
   }
 
   getRawBody(): RichText | undefined {
-    return this.record.get('body');
+    return this.record.get<RichText>('body');
   }
 
   get bodyPreview(): string {
@@ -290,7 +287,7 @@ export class Note extends ContentVertex {
   }
 
   get dueDate(): Date | undefined {
-    return this.record.get('dueDate');
+    return this.record.get<Date>('dueDate');
   }
 
   set dueDate(d: Date | undefined) {
@@ -338,7 +335,7 @@ export class Note extends ContentVertex {
     rt = projectPointers(
       this.titleRT,
       rt,
-      ptr => this.graph.ptrFilterFunc(ptr.key),
+      (ptr) => this.graph.ptrFilterFunc(ptr.key),
       true,
       true
     );
@@ -357,7 +354,7 @@ export class Note extends ContentVertex {
   }
 
   get parentNote(): Note | undefined {
-    const parentKey = this.record.get('parentNote');
+    const parentKey = this.record.get<string>('parentNote');
     return parentKey !== undefined
       ? this.graph.getVertex<Note>(parentKey)
       : undefined;
@@ -380,7 +377,7 @@ export class Note extends ContentVertex {
   }
 
   get tags(): Dictionary<Tag, Tag> {
-    const map: Dictionary | undefined = this.record.get('tags');
+    const map = this.record.get<Map<string, string>>('tags');
     return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
   }
 
@@ -412,11 +409,11 @@ export class Note extends ContentVertex {
   }
 
   get isPinned(): boolean {
-    return this.record.get('pinnedBy').has(this.graph.rootKey);
+    return this.record.get<Set<string>>('pinnedBy').has(this.graph.rootKey);
   }
 
   set isPinned(val: boolean) {
-    const current = Utils.Set.map(this.pinnedBy, x => x);
+    const current = SetUtils.map(this.pinnedBy, (x) => x);
     if (val) {
       current.add(this.graph.rootKey);
     } else if (current.has(this.graph.rootKey)) {
@@ -470,7 +467,7 @@ export const kFieldTriggersNote: FieldTriggers<Note> = {
   title: triggerParent('childTitleDidMutate', SchemeNamespace.NOTES),
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
-  isLoading: triggerParent('childIsLoadingDidMutate', SchemeNamespace.NOTES),
+  // isLoading: triggerParent('childIsLoadingDidMutate', SchemeNamespace.NOTES),
   isDeleted: triggerParent(
     'childNoteIsDeletedDidMutate',
     SchemeNamespace.NOTES

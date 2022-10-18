@@ -14,8 +14,6 @@ export interface IVertex
   readonly key: string;
   readonly record: Record;
   readonly namespace: string;
-  readonly isLoading: boolean;
-  readonly errorCode: number | undefined;
   readonly isDeleted: number;
 
   cloneData(): DataType;
@@ -31,6 +29,6 @@ export function isVertex(val: any): val is IVertex {
 }
 
 export interface VertexSnapshot {
-  data: ReadonlyCoreObject;
+  data: DataType;
   local: ReadonlyCoreObject;
 }

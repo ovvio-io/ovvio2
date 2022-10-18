@@ -1,13 +1,12 @@
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { Record } from '../../../base/record';
-import { SchemeNamespace } from '../../../base/scheme-types';
-import { Vertex, VertexConfig } from '../vertex';
-import { VertexManager } from '../vertex-manager';
-import { Invite } from './invite';
-import { Note } from './note';
-import { Tag } from './tag';
-import { User } from './user';
-import { Workspace } from './workspace';
+import { Record } from '../../../base/record.ts';
+import { SchemeNamespace } from '../../../base/scheme-types.ts';
+import { Vertex, VertexConfig } from '../vertex.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { Invite } from './invite.ts';
+import { Note } from './note.ts';
+import { Tag } from './tag.ts';
+import { User } from './user.ts';
+import { Workspace } from './workspace.ts';
 
 export default function vertexBuilder(
   manager: VertexManager,

@@ -1,22 +1,21 @@
-import EventEmitter from 'eventemitter3';
-import { NS_NOTES, Record } from '../..';
-import { DiffSyncState, Edit } from '../../base/ds-state';
-import { Scheme } from '../../base/scheme';
+import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
+import { Record } from '../../base/record.ts';
+import { Scheme } from '../../base/scheme.ts';
 import {
   Code,
   ErrorType,
   ServerError,
   typeFromCode,
-} from '../../server/errors';
-import { CacheStatus, GraphManager } from './graph-manager';
+} from '../../base/errors.ts';
+import { GraphManager } from './graph-manager.ts';
 import {
   MutationPack,
   mutationPackIter,
   mutationPackAppend,
   mutationPackIsEmpty,
   mutationPackOptimize,
-} from './mutations';
-import { RichText } from '../../richtext/tree';
+} from './mutations.ts';
+import { RichText } from '../../richtext/tree.ts';
 import {
   Comparable,
   CoreObject,
@@ -25,34 +24,27 @@ import {
   coreValueEquals,
   coreValueClone,
   Equatable,
-} from '../../core-types';
-import vertexBuilder from './vertices/vertex-builder';
+} from '../../../base/core-types/index.ts';
+import vertexBuilder from './vertices/vertex-builder.ts';
 import {
   BaseDynamicTimer,
   EaseInOutSineTimer,
   NextEventLoopCycleTimer,
   SimpleTimer,
-} from '../timer';
-import { Request, Response } from '../net/socket';
-import { ListResponse, RequestCommand } from '../../server/types';
-import { VertexSnapshot } from './types';
-import Severity from '@ovvio/base/lib/logger/severity';
-import { PointerValue, projectPointers } from '../../richtext/flat-rep';
-import { ValueType } from '../../base/types';
-import { CacheData } from '../client-cache';
-import { Logger, Utils } from '@ovvio/base';
-import { assert, EnvVars, randomInt } from '@ovvio/base/lib/utils';
-import { delay } from '@ovvio/base/lib/utils/time';
-import { extractFieldRefs, kNoRefsValue, Vertex, VertexConfig } from './vertex';
-import { kSharedSyncScheduler } from './sync-scheduler';
-
-const K_SYNC_FREQ_MIN_MS = 200;
-const K_SYNC_FREQ_MAX_MS = 2 * 1000;
-const K_SYNC_TOTAL_DUR_MS = 10 * 1000;
+} from '../timer.ts';
+import { VertexSnapshot } from './types.ts';
+import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
+import { ValueType } from '../../base/types/index.ts';
+import { assert } from '../../../base/error.ts';
+import {
+  extractFieldRefs,
+  kNoRefsValue,
+  Vertex,
+  VertexConfig,
+} from './vertex.ts';
+import * as SetUtils from '../../../base/set.ts';
 
 export const K_VERT_DEPTH = 'depth';
-
-const WINDOW_DEBUG_TRACE = '__vertex_trace';
 
 export type Edge = [key: string, fieldName: string];
 
@@ -83,9 +75,7 @@ export interface VertexBuilder {
 }
 
 interface DynamicFieldsSnapshot {
-  readonly isLoading: boolean;
   readonly hasPendingChanges: boolean;
-  readonly errorCode: number | undefined;
   readonly isLocal: boolean;
 }
 
@@ -97,17 +87,10 @@ export class VertexManager<V extends Vertex = Vertex>
 {
   private readonly _graph: GraphManager;
   private readonly _key: string;
-  private readonly _syncState: DiffSyncState;
-  private readonly _discoveredBy: string | undefined;
   private readonly _vertexConfig: VertexConfig;
-  private _syncTimer: BaseDynamicTimer;
-  private _errorCode: number | undefined;
+  private _record: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
-  private _syncActive: boolean;
-  private _listCursor: number | undefined;
-  private _inCriticalError = false;
-  private _cacheLoaded = false;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -117,31 +100,17 @@ export class VertexManager<V extends Vertex = Vertex>
     graph: GraphManager,
     key: string,
     initialState?: Record,
-    discoveredBy?: string,
     local?: boolean
   ) {
     super();
     this._graph = graph;
     this._key = key;
-    this._syncState = new DiffSyncState(true);
-    this._syncTimer = new EaseInOutSineTimer(
-      K_SYNC_FREQ_MIN_MS,
-      K_SYNC_FREQ_MAX_MS,
-      K_SYNC_TOTAL_DUR_MS,
-      () => {
-        this.scheduleSync();
-      },
-      false,
-      'VertexManager: sync timer'
-    );
-    this._syncActive = false;
-    this._discoveredBy = discoveredBy;
     this._vertexConfig = {
       isLocal: local === true,
     };
-    if (initialState) {
-      this._syncState.setState(initialState.clone(), Record.nullRecord());
-    }
+    this._record = initialState || Record.nullRecord();
+    this.rebuildVertex();
+    this.reportInitialFields(true);
   }
 
   /********************************/
@@ -162,65 +131,8 @@ export class VertexManager<V extends Vertex = Vertex>
     return this._key;
   }
 
-  /**
-   * Returns the last error received from the server, or undefined if no error
-   * had occurred.
-   * See @ovvio/cfds/server/errors.js for possible error codes. The UI layer
-   * is expected to handle ACCESS_DENIED and NOT_FOUND, and can safely ignore
-   * other errors.
-   */
-  get errorCode(): number | undefined {
-    return this._errorCode;
-  }
-
-  /**
-   * Returns whether the vertex managed by this manager is a null record.
-   * You must set a scheme for the record (using update()) before editing
-   * the actual data fields.
-   */
-  get isNull(): boolean {
-    return this._syncState.wc.isNull;
-  }
-
-  /**
-   * Returns whether this manager's vertex is currently being loaded.
-   */
-  get isLoading(): boolean {
-    if (this.isDeleted) {
-      return false;
-    }
-
-    if (!this.graph.cacheLoaded) {
-      return true;
-    }
-
-    if (
-      this.graph.cacheStatus === CacheStatus.NoCache &&
-      this.shouldList() &&
-      this._listCursor === undefined
-    ) {
-      return true;
-    }
-
-    if (
-      !this.isNull ||
-      (this.errorCode !== undefined &&
-        typeFromCode(this.errorCode) === ErrorType.NoAccess)
-    ) {
-      return false;
-    }
-
-    if (this.isRoot) {
-      return true;
-    }
-    // If we have an in-edge while we're null, it must be what caused us to load
-    // as opposed to being just created
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const edge of this.inEdges()) {
-      return true;
-    }
-
-    return this._discoveredBy !== undefined;
+  get record(): Record {
+    return this._record;
   }
 
   /**
@@ -228,11 +140,8 @@ export class VertexManager<V extends Vertex = Vertex>
    * on the server.
    */
   get hasPendingChanges(): boolean {
-    return this._syncState.hasUnSyncedChanges;
-  }
-
-  get inCriticalError(): boolean {
-    return this._inCriticalError;
+    // TODO
+    return false;
   }
 
   get isRoot(): boolean {
@@ -244,19 +153,19 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   get namespace(): string {
-    return this._syncState.wc.scheme.namespace;
+    return this.record.scheme.namespace;
   }
 
   get scheme(): Scheme {
-    return this._syncState.wc.scheme;
+    return this.record.scheme;
   }
 
   set scheme(scheme: Scheme) {
-    const wc = this._syncState.wc;
-    if (scheme.isEqual(wc.scheme)) {
+    const record = this.record;
+    if (scheme.isEqual(record.scheme)) {
       return;
     }
-    wc.upgradeScheme(scheme);
+    record.upgradeScheme(scheme);
     this.rebuildVertex();
   }
 
@@ -270,14 +179,6 @@ export class VertexManager<V extends Vertex = Vertex>
       this.record.get('isDeleted', 0) !== 0 &&
       this.getVertexProxy().isDeleted !== 0
     );
-  }
-
-  get syncActive(): boolean {
-    return this._syncActive;
-  }
-
-  get cacheLoaded(): boolean {
-    return this._cacheLoaded;
   }
 
   getVertexProxy<T extends Vertex = V>(): T {
@@ -308,329 +209,6 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
-  scheduleSync(): void {
-    kSharedSyncScheduler.sync(this);
-  }
-
-  async _sync(): Promise<void> {
-    assert(this.cacheLoaded);
-    if (this._syncActive || this._inCriticalError || this.isLocal) {
-      return;
-    }
-    const socket = this.graph.socket;
-    if (socket === undefined || !socket.isOnline) {
-      new SimpleTimer(
-        500,
-        false,
-        () => {
-          this.scheduleSync();
-        },
-        `Vertex: ${this._key} retry sync - Socket Offline`
-      ).schedule();
-      return;
-    }
-    // Lock diff
-    this._syncActive = true;
-    // Build request
-    const shouldList = this.shouldList();
-    const syncState = this._syncState;
-    const shadow = syncState.shadow;
-    let req: Request;
-    if (this.isNull) {
-      req = {
-        cmd: RequestCommand.GET,
-        list: shouldList,
-      };
-      if (shadow.serverVersion > 0) {
-        req.version = shadow.serverVersion;
-        req.checksum = shadow.checksum;
-      }
-    } else {
-      syncState.markLastEditAsRetry();
-      const edits = syncState.captureDiff();
-      req = {
-        cmd: RequestCommand.SYNC,
-        list: shouldList,
-        edits: edits,
-        version: shadow.serverVersion,
-        checksum:
-          edits.length > 0 ? edits[0].srcChecksum : syncState.shadow.checksum,
-      };
-    }
-    if (shouldList && this._listCursor !== undefined) {
-      req.cursor = this._listCursor;
-    }
-
-    this.traceLog('Sending sync request', req);
-    // Send our request and process response
-    try {
-      const resp = await socket.send(this.key, req);
-      if (resp.error && typeFromCode(resp.error.code) !== ErrorType.NoAccess) {
-        this.log(Severity.WARN, 'Received sync response', resp);
-      } else {
-        this.traceLog('Received sync response', resp);
-      }
-
-      const dynamicFields = this.captureDynamicFields();
-      let mutations = this.processSyncResponse(resp);
-      this.vertexDidMutate(mutations, dynamicFields);
-
-      this._syncActive = false;
-      if (this.hasPendingChanges || this.isLoading) {
-        this.scheduleSync();
-      }
-    } catch (err: any) {
-      this.log(Severity.DEBUG, `Sync Network error: ${err}`);
-      this._syncActive = false;
-      // Try again as this sync will eventually need to be issued
-      new NextEventLoopCycleTimer(() => this.scheduleSync()).schedule();
-    }
-  }
-
-  private processSyncResponse(resp: Response): MutationPack {
-    if (resp.list) {
-      // Handle list response
-      this.processListResponse(resp.list);
-    }
-    const shouldList = this.shouldList();
-    this._syncTimer.continuous = shouldList;
-    if (shouldList) {
-      this._syncTimer.schedule();
-    }
-    let mutations: MutationPack = undefined;
-    // Handle error
-    mutations = this.updateError(resp.error, mutations);
-    // Merge full remote state
-    if (resp.state !== undefined) {
-      mutations = this.mergeRemoteState(resp.state.wc, mutations);
-    }
-    // Merge remote edits
-    if (resp.edits) {
-      assert(resp.edits !== undefined);
-      mutations = this.mergeRemoteEdits(
-        resp.edits!,
-        resp.serverVersion,
-        mutations
-      );
-    }
-    return mutations;
-  }
-
-  private updateError(
-    err: ServerError | undefined,
-    outMutations: MutationPack
-  ): MutationPack {
-    const errorCode = err?.code;
-    if (this._errorCode !== undefined && errorCode === undefined) {
-      //Error removed
-      outMutations = mutationPackAppend(outMutations, [
-        'errorCode',
-        false,
-        this._errorCode,
-      ]);
-      this._errorCode = undefined;
-    } else if (errorCode === Code.NotFound || errorCode === Code.AccessDenied) {
-      if (errorCode !== this._errorCode) {
-        outMutations = mutationPackAppend(outMutations, [
-          'errorCode',
-          false,
-          this._errorCode,
-        ]);
-        this._errorCode = errorCode;
-
-        const cache = this.graph.cache;
-        if (cache) {
-          cache.persistError(this._key, errorCode).then(saved => {
-            if (saved) {
-              this.traceLog(`Cached. updated errorCode: ${errorCode}`);
-            }
-          });
-        }
-      }
-    } else if (errorCode !== undefined) {
-      if (errorCode === Code.BadRequest) {
-        this.markInCriticalError();
-      }
-      // Test: Instead of polling, count on list response to trigger a sync
-      // else {
-      //   // Transient error. Keep quite and try again
-      //   new SimpleTimer(100, false, () => {
-      //     this.sync();
-      //   }).schedule();
-      // }
-    }
-    return outMutations;
-  }
-
-  private markInCriticalError() {
-    if (!this._inCriticalError) {
-      this._inCriticalError = true;
-      this.emit(EVENT_CRITICAL_ERROR);
-      this.vertexDidMutate(['inCriticalError', true, false]);
-    }
-  }
-
-  private updateCache(): void {
-    // Never persist local records
-    if (this.isLocal) {
-      return;
-    }
-    // If we have un-synced changes than our shadow is dirty an must not be
-    // persisted. Skipping this check will throw the next run out of sync with
-    // the server.
-    if (this._syncState.pendingEdits.length > 0) {
-      return;
-    }
-    const cache = this.graph.cache;
-    if (undefined !== cache) {
-      const didList = this._listCursor !== undefined;
-      cache
-        .persistVersion(
-          this._key,
-          this._syncState.shadow,
-          didList,
-          this.isDeleted
-        )
-        .then(saved => {
-          if (saved) {
-            this.traceLog(
-              `Version Cached. version: ${this._syncState.shadow.serverVersion}, didList: ${didList}`
-            );
-          }
-        });
-    }
-  }
-
-  private processListResponse(resp: ListResponse): void {
-    const isFirstList = this._listCursor === undefined;
-    this._listCursor = resp.cursor;
-    const graph = this.graph;
-    for (const lr of resp.result) {
-      const mgr = graph.getVertexManager(lr.key, this.key); // Ensure the vert exists
-      if (lr.hotFlag) {
-        mgr.onRemoteEditDetected(); // Also mark as hot if needed
-      } else {
-        // if (isFirstList) {
-        //   // Spread out the initial sync so we don't block the UI
-        //   mgr._syncOnFirstListResponse();
-        // } else {
-        mgr.scheduleSync(); // Single sync if the target vertex is cold
-        // }
-      }
-    }
-    if (resp.result.length > 0) {
-      this.onRemoteEditDetected();
-    }
-  }
-
-  private mergeRemoteEdits(
-    edits: Edit[],
-    serverVersion: number | undefined,
-    outPack: MutationPack
-  ): MutationPack {
-    const fields = new Set<string>();
-    for (const e of edits) {
-      Utils.Set.update(fields, e.affectedKeys);
-    }
-    const vert = this.getVertex();
-    for (const fieldName of fields) {
-      outPack = mutationPackAppend(outPack, [
-        fieldName,
-        false,
-        (vert as any)[fieldName],
-      ]);
-    }
-
-    const syncState = this._syncState;
-    const applyContext = `key: ${this._key}, editsLength: ${edits.length}, serverVersion: ${serverVersion}, shadowVersion: ${this._syncState.shadow.serverVersion}. `;
-
-    const origShadow = syncState.shadow;
-    syncState.applyEdits(edits, applyContext);
-
-    // Project local pointers so remote edits won't mess them up
-    if (edits.length > 0) {
-      projectRichTextPointers(
-        origShadow,
-        syncState.wc,
-        ptr => !this.graph.ptrFilterFunc(ptr.key)
-      );
-    }
-    // Update our cache if possible with the latest copy from the server
-    if (serverVersion !== undefined) {
-      syncState.wc.serverVersion = serverVersion;
-      syncState.shadow.serverVersion = serverVersion;
-    }
-
-    this.updateCache();
-
-    if (edits.length > 0) {
-      this.rebuildVertex();
-    }
-
-    return outPack;
-  }
-
-  private mergeRemoteState(
-    remoteRecord: Record,
-    outPack: MutationPack
-  ): MutationPack {
-    const syncState = this._syncState;
-    const vert = this.getVertex();
-    for (const fieldName of remoteRecord.keys) {
-      outPack = mutationPackAppend(outPack, [
-        fieldName,
-        false,
-        (vert as any)[fieldName],
-      ]);
-    }
-    const origShadow = syncState.shadow;
-    syncState.mergePeerRecord(remoteRecord);
-    syncState.wc.serverVersion = remoteRecord.serverVersion;
-    syncState.shadow.serverVersion = remoteRecord.serverVersion;
-    // Project local pointers so remote edits won't mess them up
-    projectRichTextPointers(
-      origShadow,
-      syncState.wc,
-      ptr => !this.graph.ptrFilterFunc(ptr.key)
-    );
-    this.updateCache();
-    this.rebuildVertex();
-    return outPack;
-  }
-
-  private shouldList(): boolean {
-    if (this.isLocal) {
-      return false;
-    }
-
-    if (this.isRoot) {
-      return true;
-    }
-
-    if (this.isDeleted) {
-      return false;
-    }
-
-    if (
-      this.isNull &&
-      (this.errorCode === undefined ||
-        typeFromCode(this.errorCode) !== ErrorType.NoAccess)
-    ) {
-      // Don't actively sync vertices that are stuck. Instead, wait for the
-      // list response from the root vertex to re-sync them if needed.
-      return false;
-      // return this._discoveredBy === this.graph.rootKey;
-    }
-
-    const vert = this.getVertex();
-    const parentVert = vert.parent;
-    return parentVert !== undefined && parentVert.isRoot;
-  }
-
-  get record(): Record {
-    return this._syncState.wc;
-  }
-
   private rebuildVertex(): void {
     this._vertex = gVertexBuilder(
       this,
@@ -653,7 +231,9 @@ export class VertexManager<V extends Vertex = Vertex>
         const oldValue = target[prop as keyof T] as unknown as CoreValue;
         let success: boolean;
         const deleteMethodName = getDeleteMethodName(prop);
+        // deno-lint-ignore no-explicit-any
         if (typeof (target as any)[deleteMethodName] === 'function') {
+          // deno-lint-ignore no-explicit-any
           success = (target as any)[deleteMethodName]() !== false;
         } else if (this.scheme.hasField(prop)) {
           assert(
@@ -668,9 +248,9 @@ export class VertexManager<V extends Vertex = Vertex>
           const mut = target.onUserUpdatedField([prop, true, oldValue]);
           this.vertexDidMutate(mut, dynamicFields);
           // Trigger sync on persistent prop updates
-          if (this.scheme.hasField(prop)) {
-            this.scheduleSync();
-          }
+          // if (this.scheme.hasField(prop)) {
+          //   this.scheduleSync();
+          // }
         }
         return success;
       },
@@ -692,9 +272,9 @@ export class VertexManager<V extends Vertex = Vertex>
         const mut = target.onUserUpdatedField([prop, true, oldValue]);
         this.vertexDidMutate(mut, dynamicFields);
         // Trigger sync on persistent prop updates
-        if (this.scheme.hasField(prop)) {
-          this.scheduleSync();
-        }
+        // if (this.scheme.hasField(prop)) {
+        //   this.scheduleSync();
+        // }
         return true;
       },
     };
@@ -731,8 +311,8 @@ export class VertexManager<V extends Vertex = Vertex>
       if (oldRefs.size > 0 || newRefs.size > 0) {
         const graph = this.graph;
         const adjList = graph.adjacencyList;
-        const addedRefs = Utils.Set.subtract(newRefs, oldRefs);
-        const removedRefs = Utils.Set.subtract(oldRefs, newRefs);
+        const addedRefs = SetUtils.subtract(newRefs, oldRefs);
+        const removedRefs = SetUtils.subtract(oldRefs, newRefs);
         const srcKey = this.key;
         for (const dstKey of addedRefs) {
           adjList.addEdge(srcKey, dstKey, prop);
@@ -762,16 +342,14 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
-    if (this.hasPendingChanges) {
-      this.scheduleSync();
-    }
+    // if (this.hasPendingChanges) {
+    //   this.scheduleSync();
+    // }
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {
     return {
-      isLoading: this.isLoading,
       hasPendingChanges: this.hasPendingChanges,
-      errorCode: this.errorCode,
       isLocal: this.isLocal,
     };
   }
@@ -780,25 +358,11 @@ export class VertexManager<V extends Vertex = Vertex>
     outMutations: MutationPack,
     snapshot: DynamicFieldsSnapshot
   ): MutationPack {
-    if (snapshot.isLoading !== this.isLoading) {
-      outMutations = mutationPackAppend(outMutations, [
-        'isLoading',
-        true,
-        snapshot.isLoading,
-      ]);
-    }
     if (snapshot.hasPendingChanges !== this.hasPendingChanges) {
       outMutations = mutationPackAppend(outMutations, [
         'hasPendingChanges',
         true,
         snapshot.hasPendingChanges,
-      ]);
-    }
-    if (snapshot.errorCode !== this.errorCode) {
-      outMutations = mutationPackAppend(outMutations, [
-        'errorCode',
-        true,
-        snapshot.errorCode,
       ]);
     }
     if (snapshot.isLocal !== this.isLocal) {
@@ -817,7 +381,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
   getCurrentStateMutations(local: boolean): MutationPack {
     let pack: MutationPack;
-    for (const fieldName of this._syncState.wc.keys) {
+    for (const fieldName of this.record.keys) {
       pack = mutationPackAppend(pack, [fieldName, local, undefined]);
     }
 
@@ -845,8 +409,8 @@ export class VertexManager<V extends Vertex = Vertex>
 
     for (const fieldName in snapshot.data) {
       const oldValue = vertex[fieldName as keyof Vertex] as CoreValue;
-      const oldRecValue = vertex.record.get(fieldName);
-      let newRecValue = snapshot.data[fieldName];
+      const oldRecValue = vertex.record.get<RichText>(fieldName);
+      let newRecValue = snapshot.data[fieldName] as RichText | undefined;
 
       if (!coreValueEquals(oldRecValue, newRecValue)) {
         if (
@@ -854,10 +418,8 @@ export class VertexManager<V extends Vertex = Vertex>
           newRecValue &&
           vertex.record.scheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
         ) {
-          newRecValue = projectPointers(
-            oldRecValue,
-            newRecValue as RichText,
-            ptr => this.graph.ptrFilterFunc(ptr.key)
+          newRecValue = projectPointers(oldRecValue, newRecValue, (ptr) =>
+            this.graph.ptrFilterFunc(ptr.key)
           );
         }
         vertex.record.set(fieldName, newRecValue);
@@ -870,7 +432,7 @@ export class VertexManager<V extends Vertex = Vertex>
       const oldValue = vertex[fieldName as keyof Vertex] as CoreValue;
 
       if (!coreValueEquals(oldValue, snapshot.local[fieldName])) {
-        //@ts-ignore
+        //@ts-ignore // shut the f*** up
         vertex[fieldName] = snapshot[fieldName];
         pack = mutationPackAppend(pack, [fieldName, true, oldValue]);
         changed = true;
@@ -911,115 +473,12 @@ export class VertexManager<V extends Vertex = Vertex>
   //   }
   // }
 
-  /**
-   * Called after loading a cache entry for our vertex. This method won't be
-   * called for vertices created after the initial cache load.
-   *
-   * @param entry The cache entry found for this vertex, or undefined if this
-   *              vertex has no cache entry.
-   */
-  onCacheLoaded(cacheData: CacheData | undefined): void {
-    this._cacheLoaded = true;
-    const record = cacheData && cacheData.record;
-    if (record !== undefined) {
-      this._syncState.setState(record.clone(), record.clone());
-    }
-    if (cacheData) {
-      if (cacheData.errorCode !== undefined) {
-        this._errorCode = cacheData.errorCode;
-      }
-    }
-
-    // this.fixDuplicateTitleBug();
-    this.rebuildVertex();
-    this.reportInitialFields(cacheData === undefined);
-
-    // if (this.hasPendingChanges) {
-    //   this.scheduleSync();
-    // }
-
-    // All list records need to synced after being loaded from cache. This
-    // creates a waterfall effect where all vertices will be synced at least
-    // once as a result of the initial list response. From this point on, only
-    // vertices that have changed in some way will be synced.
-    //
-    // NOTE: We currently ignore deleted vertices as there's no way to un-delete
-    // a record at the time of this writing.
-    if (
-      !this.isDeleted &&
-      (this.errorCode === undefined ||
-        typeFromCode(this.errorCode) !== ErrorType.NoAccess) &&
-      (this.shouldList() || this.isNull)
-    ) {
-      this.scheduleSync();
-    }
-  }
-
-  onGraphCacheLoaded(): void {
-    if (!this.isLoading) {
-      this.vertexDidMutate(['isLoading', true, undefined]);
-    }
-    if (this.isRoot) {
-      this.scheduleSync();
-    }
-  }
-
-  onRemoteEditDetected(): void {
-    const syncTimer = this._syncTimer;
-    syncTimer.unschedule();
-    syncTimer.reset();
-    syncTimer.schedule();
-  }
-
   isEqual(other: VertexManager): boolean {
     return this._key === other.key;
   }
 
   compareTo(other: VertexManager): number {
     return coreValueCompare(this._key, other.key);
-  }
-
-  log(severity: Severity, message: string, extra?: any, err?: any) {
-    Logger.log(severity, `${this.displayName}: ${message}`, extra, err);
-  }
-
-  /**
-   * All Trace logs start with prefix of: ${this.namespace}/${this.key}
-   * @param message
-   * @param extra
-   */
-  traceLog(message: string, extra?: any) {
-    if (Logger.isEnabled(Severity.DEBUG)) {
-      let willLog = false;
-      if (window !== undefined) {
-        let traceVal: string[] | boolean | undefined = (window as any)[
-          WINDOW_DEBUG_TRACE
-        ];
-
-        if (traceVal === undefined || traceVal === null) {
-          const envTraceValue = EnvVars.getBool('CFDS_VERTEX_TRACE');
-          if (!envTraceValue) {
-            return;
-          }
-          traceVal = envTraceValue;
-        }
-
-        if (traceVal === undefined || traceVal === null) {
-          return;
-        }
-
-        if (typeof traceVal === 'boolean') {
-          if (traceVal) {
-            willLog = true;
-          }
-        } else if (traceVal.includes(this._key)) {
-          willLog = true;
-        }
-      }
-      if (willLog) {
-        this.log(Severity.DEBUG, message, extra);
-      }
-    }
   }
 }
 
@@ -1039,8 +498,8 @@ function projectRichTextPointers(
       srcScheme.hasField(fieldName) &&
       srcScheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
     ) {
-      const srcRt: RichText | undefined = srcRec.get(fieldName);
-      const dstRt: RichText | undefined = dstRec.get(fieldName);
+      const srcRt: RichText | undefined = srcRec.get<RichText>(fieldName);
+      const dstRt: RichText | undefined = dstRec.get<RichText>(fieldName);
       if (srcRt !== undefined && dstRt !== undefined) {
         dstRec.set(fieldName, projectPointers(srcRt, dstRt, filter, false));
       }

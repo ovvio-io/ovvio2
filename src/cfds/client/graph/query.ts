@@ -401,6 +401,7 @@ export class UnionQuery<
   }
 
   // eslint-disable-next-line getter-return
+  // deno-lint-ignore getter-return
   get graph(): GraphManager {
     for (const q of this.queries()) {
       return q.graph;

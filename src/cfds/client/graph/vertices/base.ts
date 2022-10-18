@@ -1,13 +1,13 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { FieldTriggers, Vertex } from '../vertex';
-import * as OrderStamp from '../../../base/orderstamp';
+import { assert } from '../../../../base/error.ts';
+import { FieldTriggers, Vertex } from '../vertex.ts';
+import * as OrderStamp from '../../../base/orderstamp.ts';
 import {
   MutationPack,
   mutationPackAppend,
   mutationPackIter,
-} from '../mutations';
-import { Workspace } from './workspace';
-import { triggerChildren } from '../propagation-triggers';
+} from '../mutations.ts';
+import { Workspace } from './workspace.ts';
+import { triggerChildren } from '../propagation-triggers.ts';
 
 export class BaseVertex extends Vertex {
   // ============================= //
@@ -23,7 +23,7 @@ export class BaseVertex extends Vertex {
   // }
 
   get lastModified(): Date {
-    const d = this.record.get('lastModified');
+    const d = this.record.get<Date>('lastModified');
     assert(d instanceof Date);
     return d;
   }
@@ -40,7 +40,7 @@ export class BaseVertex extends Vertex {
     if (parentDeleted) {
       return parentDeleted;
     }
-    const v = this.record.get('isDeleted');
+    const v = this.record.get<number>('isDeleted');
     assert(typeof v === 'number');
     return v;
   }
@@ -125,7 +125,7 @@ export class ContentVertex extends BaseVertex {
   }
 
   get createdBy(): Vertex | undefined {
-    const key = this.record.get<string | undefined>('createdBy');
+    const key = this.record.get<string>('createdBy');
     return key ? this.graph.getVertex(key) : undefined;
   }
 
@@ -139,7 +139,7 @@ export class ContentVertex extends BaseVertex {
   }
 
   get workspace(): Workspace {
-    const key = this.record.get('workspace');
+    const key = this.record.get<string>('workspace');
     assert(typeof key === 'string');
     return this.graph.getVertex<Workspace>(key);
   }

@@ -1,23 +1,19 @@
-import { Utils } from '@ovvio/base';
-import { assert } from '@ovvio/base/lib/utils';
-import { COWMap } from '../../../collections/cow-map';
-import { Dictionary } from '../../../collections/dict';
+import * as SetUtils from '../../../../base/set.ts';
+import { Dictionary } from '../../../../base/collections/dict.ts';
 import {
-  FieldTriggers,
   keyDictToVertDict,
   vertDictToKeyDict,
   Vertex,
   VertexConfig,
-} from '../vertex';
-import { VertexManager } from '../vertex-manager';
-import { BaseVertex } from './base';
-import { Tag } from './tag';
-import { User } from './user';
-import { Record } from '../../../base/record';
-import { triggerChildren } from '../propagation-triggers';
-import { NS_NOTES, NS_TAGS, SchemeNamespace } from '../../../base/scheme-types';
-import { Query } from '../query';
-import { Note } from './note';
+} from '../vertex.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { BaseVertex } from './base.ts';
+import { Tag } from './tag.ts';
+import { User } from './user.ts';
+import { Record } from '../../../base/record.ts';
+import { NS_TAGS } from '../../../base/scheme-types.ts';
+import { Query } from '../query.ts';
+import { Note } from './note.ts';
 
 export class Workspace extends BaseVertex {
   private _parentTagsQuery: Query<Tag> | undefined;
@@ -68,7 +64,7 @@ export class Workspace extends BaseVertex {
   set users(users: Set<User>) {
     this.record.set(
       'users',
-      Utils.Set.map(users, (u: User) => u.key)
+      SetUtils.map(users, (u: User) => u.key)
     );
   }
 
@@ -77,7 +73,7 @@ export class Workspace extends BaseVertex {
   }
 
   get icon(): string | undefined {
-    return this.record.get('icon');
+    return this.record.get<string>('icon');
   }
 
   set icon(icon: string | undefined) {
@@ -89,7 +85,7 @@ export class Workspace extends BaseVertex {
   }
 
   get noteTags(): Dictionary<Tag, Tag> {
-    const map: COWMap | undefined = this.record.get('noteTags');
+    const map = this.record.get<Map<string, string>>('noteTags');
     return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
   }
 
@@ -102,7 +98,7 @@ export class Workspace extends BaseVertex {
   }
 
   get taskTags(): Dictionary<Tag, Tag> {
-    const map: COWMap | undefined = this.record.get('taskTags');
+    const map = this.record.get<Map<string, string>>('taskTags');
     return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
   }
 
@@ -115,7 +111,7 @@ export class Workspace extends BaseVertex {
   }
 
   get exportImage(): string | undefined {
-    return this.record.get('exportImage');
+    return this.record.get<string>('exportImage');
   }
 
   set exportImage(img: string | undefined) {
@@ -123,7 +119,7 @@ export class Workspace extends BaseVertex {
   }
 
   get footerHtml(): string | undefined {
-    return this.record.get('footerHtml');
+    return this.record.get<string>('footerHtml');
   }
 
   set footerHtml(html: string | undefined) {
@@ -133,8 +129,8 @@ export class Workspace extends BaseVertex {
   get parentTags(): Tag[] {
     return Query.blocking(
       this.graph.sharedQueriesManager.tagsQuery,
-      tag => tag.workspace === this && !tag.parentTag
-    ).map(mgr => mgr.getVertexProxy());
+      (tag) => tag.workspace === this && !tag.parentTag
+    ).map((mgr) => mgr.getVertexProxy());
   }
 
   get tagsQuery(): Query<Vertex, Tag> {
@@ -142,7 +138,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'tagsQuery',
       this.graph.sharedQueriesManager.noNotesQuery,
-      vert => vert.namespace === NS_TAGS
+      (vert) => vert.namespace === NS_TAGS
     );
   }
 
@@ -151,7 +147,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'parentTagsQuery',
       this.tagsQuery,
-      tag => tag.parentTag === undefined
+      (tag) => tag.parentTag === undefined
     );
   }
 
@@ -160,7 +156,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'statusTagQuery',
       this.parentTagsQuery,
-      vert => vert.name.toLowerCase() === 'status'
+      (vert) => vert.name.toLowerCase() === 'status'
     );
   }
 
@@ -169,7 +165,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'notesQuery',
       this.graph.sharedQueriesManager.notDeletedQuery,
-      vert => vert instanceof Note && vert.workspace === this
+      (vert) => vert instanceof Note && vert.workspace === this
     );
   }
 
@@ -178,7 +174,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'pinnedNotesQuery',
       this.notesQuery,
-      note => note.isPinned
+      (note) => note.isPinned
     );
   }
 }

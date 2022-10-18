@@ -1,10 +1,10 @@
-import { EqualOptions } from '../../core-types/equals';
-import { isRichText } from '../../richtext/tree';
-import { GraphManager } from '../graph/graph-manager';
-import { MutationPack, mutationPackHasRemote } from '../graph/mutations';
-import { IVertex, VertexSnapshot } from '../graph/types';
-import { VertexManager } from '../graph/vertex-manager';
-import { SingleUndoManager } from './single';
+import { EqualOptions } from '../../../base/core-types/equals.ts';
+import { isRichText } from '../../richtext/tree.ts';
+import { GraphManager } from '../graph/graph-manager.ts';
+import { MutationPack, mutationPackHasRemote } from '../graph/mutations.ts';
+import { IVertex, VertexSnapshot } from '../graph/types.ts';
+import { VertexManager } from '../graph/vertex-manager.ts';
+import { SingleUndoManager } from './single.ts';
 
 export interface UndoContextOptions {
   vertices?: UndoVertexOptions[];

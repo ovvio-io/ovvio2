@@ -1,9 +1,4 @@
-import {
-  NextEventLoopCycleTimer,
-  SimpleTimer,
-  Timer,
-  TimerCallback,
-} from './timer';
+import { NextEventLoopCycleTimer, Timer, TimerCallback } from './timer.ts';
 
 const kSingleFrameTime = 1000 / 60; // 60 fps
 // 1/3 of a frame every event loop cycle
@@ -23,7 +18,7 @@ class Coroutine {
     name?: string
   ): [Coroutine, Promise<void>] {
     let resolve: () => void;
-    const promise = new Promise<void>(res => {
+    const promise = new Promise<void>((res) => {
       resolve = res;
     });
     return [new Coroutine(id, g, resolve!, name), promise];
@@ -208,7 +203,7 @@ export class CoroutineQueue implements Scheduler {
 
   schedule(
     g: Generator,
-    priority?: SchedulerPriority,
+    _priority?: SchedulerPriority,
     name?: string
   ): Promise<void> {
     const [coroutine, promise] = Coroutine.pack(++this._id, g, name);

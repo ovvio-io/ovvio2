@@ -94,7 +94,7 @@ export interface CoreValueCloneOpts extends CoreOptions {
 export interface Encoder<
   K = CoreKey,
   V = CoreValue,
-  T = unknown,
+  T = CoreValue,
   OT = unknown
 > {
   set(key: K, value: V, options?: OT): void;
@@ -105,7 +105,7 @@ export interface Encoder<
 export interface Encodable<
   K = CoreKey,
   V = CoreValue,
-  T = unknown,
+  T = CoreValue,
   OT = unknown
 > {
   serialize(encoder: Encoder<K, V, T>, options?: OT): void;

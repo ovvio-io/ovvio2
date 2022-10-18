@@ -1,12 +1,12 @@
-import { MutationPack, mutationPackAppend } from '../mutations';
-import { FieldTriggers, Vertex, VertexConfig } from '../vertex';
-import { VertexManager } from '../vertex-manager';
-import { ContentVertex } from './base';
-import { Workspace } from './workspace';
-import { Record } from '../../../base/record';
-import { triggerParent } from '../propagation-triggers';
-import { SchemeNamespace } from '../../../base/scheme-types';
-import { Query } from '../query';
+import { MutationPack, mutationPackAppend } from '../mutations.ts';
+import { FieldTriggers, Vertex, VertexConfig } from '../vertex.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { ContentVertex } from './base.ts';
+import { Workspace } from './workspace.ts';
+import { Record } from '../../../base/record.ts';
+import { triggerParent } from '../propagation-triggers.ts';
+import { SchemeNamespace } from '../../../base/scheme-types.ts';
+import { Query } from '../query.ts';
 
 export class Tag extends ContentVertex {
   private _cachedTagFamily: Tag[] | undefined;
@@ -31,8 +31,8 @@ export class Tag extends ContentVertex {
   get childTags(): Tag[] {
     return Query.blocking(
       this.graph.sharedQueriesManager.tagsQuery,
-      tag => tag.parentTag === this
-    ).map(mgr => mgr.getVertexProxy());
+      (tag) => tag.parentTag === this
+    ).map((mgr) => mgr.getVertexProxy());
   }
 
   private _invalidateChildTags(local: boolean): MutationPack {
@@ -83,7 +83,7 @@ export class Tag extends ContentVertex {
   }
 
   get parentTag(): Tag | undefined {
-    const key: string | undefined = this.record.get('parentTag');
+    const key: string | undefined = this.record.get<string>('parentTag');
     if (key !== undefined && key.length > 0) {
       return this.graph.getVertex<Tag>(key);
     }

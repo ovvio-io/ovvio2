@@ -27,7 +27,7 @@ import { extractRefs as extractRefsFromRT } from '../../richtext/composer.ts';
 import { RichText, isRichText } from '../../richtext/tree.ts';
 import { isGenerator } from '../../../base/comparisons.ts';
 import { assert, notImplemented } from '../../../base/error.ts';
-import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { DataType, SchemeNamespace } from '../../base/scheme-types.ts';
 import { triggerChildren, triggerCompose } from './propagation-triggers.ts';
 import { ValueType } from '../../base/types/index.ts';
 
@@ -84,7 +84,6 @@ export class Vertex implements IVertex {
 
   private static _didFinalizeFieldTriggers = false;
 
-  private readonly _compositeFieldsCache: Map<string, CoreValue>;
   private _cachedDepth: number;
 
   private readonly _manager: VertexManager;
@@ -183,7 +182,6 @@ export class Vertex implements IVertex {
   ) {
     this._manager = mgr;
     this._record = record;
-    this._compositeFieldsCache = new Map();
     this._cachedDepth = -1;
     this._isLocal =
       prevVertex !== undefined ? prevVertex._isLocal : config?.isLocal === true;
@@ -203,15 +201,7 @@ export class Vertex implements IVertex {
   }
 
   get isNull() {
-    return this.manager.isNull;
-  }
-
-  get isLoading() {
-    return this.manager.isLoading;
-  }
-
-  get errorCode(): number | undefined {
-    return this.manager.errorCode;
+    return this.record.isNull;
   }
 
   // Static value. Does not change during the lifetime of a vertex.
@@ -233,16 +223,6 @@ export class Vertex implements IVertex {
 
   get outRefs(): Set<string> {
     return this._record.refs;
-  }
-
-  get outRefsLoading(): boolean {
-    const graph = this.graph;
-    for (const key of this.outRefs) {
-      if (graph.getVertexManager(key).isLoading) {
-        return true;
-      }
-    }
-    return false;
   }
 
   get isDeleted(): number {
@@ -276,11 +256,6 @@ export class Vertex implements IVertex {
   set isLocal(flag: boolean) {
     this._isLocal = flag;
   }
-
-  get inCriticalError(): boolean {
-    return this.manager.inCriticalError;
-  }
-
   parentDidMutate(
     local: boolean,
     oldValue: Vertex | undefined,
@@ -306,7 +281,7 @@ export class Vertex implements IVertex {
     return this._record.diffKeys(other.record, local);
   }
 
-  cloneData(onlyFields?: string[]): CoreObject {
+  cloneData(onlyFields?: string[]): DataType {
     return this._record.cloneData(onlyFields);
   }
 
@@ -333,27 +308,12 @@ export class Vertex implements IVertex {
   }
 
   *outEdges(
-    fieldName?: string,
-    graphLayer?: string
+    fieldName?: string
   ): Generator<[vertex: Vertex, fieldName: string]> {
     const graph = this.graph;
     for (const edge of graph.adjacencyList.outEdges(this.key, fieldName)) {
       yield [graph.getVertex(edge.vertex), edge.fieldName];
     }
-  }
-
-  getCompositeValue<T extends CoreValue = CoreValue>(
-    fieldName: string
-  ): T | undefined {
-    const impl = this.graph.getCompositeField(this.namespace, fieldName);
-    if (impl === undefined) {
-      return undefined;
-    }
-    const cache = this._compositeFieldsCache;
-    if (!cache.has(fieldName)) {
-      cache.set(fieldName, impl.calcValue(this));
-    }
-    return cache.get(fieldName) as T;
   }
 
   /******************************************************************
@@ -382,20 +342,6 @@ export class Vertex implements IVertex {
         );
       }
       remainingMutations = mutationPackDeleteFirst(remainingMutations);
-    }
-
-    // Let composite fields a chance to invalidate
-    for (const [key, impl] of this.graph.compositeFieldsForNamespace(
-      this.namespace
-    )) {
-      if (impl.shouldInvalidate(pack)) {
-        result = mutationPackAppend(result, [
-          key,
-          true,
-          this.getCompositeValue(key),
-        ]);
-        this._compositeFieldsCache.delete(key);
-      }
     }
     return result;
   }

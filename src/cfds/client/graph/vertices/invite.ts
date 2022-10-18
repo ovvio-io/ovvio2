@@ -1,6 +1,6 @@
-import { InviteStatus } from '../../../base/scheme-types';
-import { ContentVertex } from './base';
-import { User } from './user';
+import { InviteStatus } from '../../../base/scheme-types.ts';
+import { ContentVertex } from './base.ts';
+import { User } from './user.ts';
 
 export class Invite extends ContentVertex {
   get status(): InviteStatus {
@@ -40,7 +40,7 @@ export class Invite extends ContentVertex {
   }
 
   get invitee(): string | undefined {
-    return this.record.get('invitee');
+    return this.record.get<string>('invitee');
   }
 
   set invitee(name: string | undefined) {
@@ -52,7 +52,7 @@ export class Invite extends ContentVertex {
   }
 
   get inviteeUser(): User | undefined {
-    const key = this.record.get('inviteeUser');
+    const key = this.record.get<string>('inviteeUser');
     if (key !== undefined) {
       return this.graph.getVertex<User>(key);
     }

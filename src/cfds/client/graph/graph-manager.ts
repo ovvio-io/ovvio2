@@ -1,52 +1,25 @@
-import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 import { Record } from '../../base/record.ts';
 import { SchemeManager } from '../../base/scheme.ts';
 import { assert } from '../../../base/error.ts';
 import { uniqueId } from '../../../base/common.ts';
 import { Dictionary } from '../../../base/collections/dict.ts';
-import {
-  CoreObject,
-  coreValueCompare,
-} from '../../../base/core-types/index.ts';
+import { CoreObject } from '../../../base/core-types/index.ts';
 import { UndoManager } from '../undo/manager.ts';
-import {
-  MutationPack,
-  mutationPackAppend,
-  mutationPackToArr,
-} from './mutations.ts';
+import { MutationPack, mutationPackAppend } from './mutations.ts';
 import { Vertex } from './vertex.ts';
-import VertexGroup from './vertex-group.ts';
 import {
   EVENT_CRITICAL_ERROR,
   EVENT_DID_CHANGE,
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import { delay } from '../../../base/time.ts';
-import {
-  DataType,
-  NS_NOTES,
-  NS_TAGS,
-  SchemeNamespace,
-} from '../../base/scheme-types.ts';
+import { DataType, SchemeNamespace } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
-import {
-  CoroutineScheduler,
-  CoroutineTimer,
-  SchedulerPriority,
-} from '../coroutine.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
-import {
-  EVENT_LOADING_FINISHED,
-  EVENT_VERTEX_CHANGED,
-  VertexSource,
-} from './vertex-source.ts';
+import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
-
-const kMaxInitialNotesLoad = 200;
-// const kOldestNotesToLoadMs = 1000 * 60 * 60 * 24 * 14;
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -62,61 +35,6 @@ export interface CreateVertexInfo {
  * @deprecated
  */
 export const EVENT_VERTEX_DID_CHANGE = 'vert-did-change';
-/**
- * @deprecated
- */
-export const EVENT_CACHE_LOADED = 'cache-loaded';
-
-// export interface GraphLayerDef {
-//   name: string;
-//   filter: (mgr: VertexManager) => boolean;
-// }
-
-// function* graphLayersToAdjLayers(
-//   graph: GraphManager,
-//   graphDefs?: Iterable<GraphLayerDef>
-// ): Generator<LayerDef> {
-//   if (graphDefs === undefined) {
-//     return;
-//   }
-//   for (const def of graphDefs) {
-//     yield {
-//       name: def.name,
-//       filter: (src: string, dst: string, _fieldName: string) =>
-//         def.filter(graph.getVertexManager(src)) &&
-//         def.filter(graph.getVertexManager(dst)),
-//     };
-//   }
-// }
-
-// export enum GraphLayer {
-//   /**
-//    * An optimization layer for everything but notes. This graph is significantly
-//    * faster to traverse if all you need is the layout of workspaces.
-//    */
-//   NoNotes = 'NoNotes',
-//   /**
-//    * Optimization layer for everything that's not deleted.
-//    */
-//   NotDeleted = 'NotDeleted',
-// }
-
-// export const kBuiltinGraphLayers: GraphLayerDef[] = [
-//   {
-//     name: GraphLayer.NoNotes,
-//     filter: mgr => !mgr.isDeleted && mgr.namespace !== SchemeNamespace.NOTES,
-//   },
-//   {
-//     name: GraphLayer.NotDeleted,
-//     filter: mgr => !mgr.isDeleted,
-//   },
-// ];
-
-export enum CacheStatus {
-  Loading,
-  Loaded,
-  NoCache,
-}
 
 export class GraphManager extends VertexSource {
   readonly sharedQueriesManager: SharedQueriesManager;
@@ -160,6 +78,10 @@ export class GraphManager extends VertexSource {
     return this._ptrFilterFunc;
   }
 
+  get isLoading(): boolean {
+    return false;
+  }
+
   keys(): Iterable<string> {
     return this._vertManagers.keys();
   }
@@ -192,10 +114,8 @@ export class GraphManager extends VertexSource {
   ): T {
     return this._createVertIfNeeded<T>(
       key || uniqueId(),
-      undefined,
       namespace,
       initialData,
-      true,
       local
     ).getVertexProxy();
   }
@@ -205,17 +125,12 @@ export class GraphManager extends VertexSource {
     for (const vInfo of vInfos) {
       const newV = this._createVertIfNeeded<T>(
         vInfo.key || uniqueId(),
-        undefined,
         vInfo.namespace,
         vInfo.initialData,
         false
       );
 
       vManagers.push(newV);
-    }
-    for (const v of vManagers) {
-      v.onCacheLoaded(undefined);
-      v.onGraphCacheLoaded();
     }
     const vertices = vManagers.map((v) => v.getVertexProxy());
 
@@ -229,19 +144,10 @@ export class GraphManager extends VertexSource {
     return this._createVertIfNeeded<V>(key, discoveredBy || this.rootKey);
   }
 
-  /**
-   * Create a Vertex group that you can listen to changes together
-   */
-  createGroup(keys?: string[]): VertexGroup {
-    return new VertexGroup(this, keys);
-  }
-
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
-    discoveredBy?: string,
     ns?: string,
     initialData?: CoreObject,
-    runOnCacheLoaded = true,
     local = false
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
@@ -255,26 +161,23 @@ export class GraphManager extends VertexSource {
               data: initialData! as DataType,
             })
           : undefined;
-      mgr = new VertexManager(this, key, record, discoveredBy);
+      mgr = new VertexManager(this, key, record, local);
       this._vertManagers.set(key, mgr);
-      this._setupVertexManager(mgr, runOnCacheLoaded);
+      mgr.on(EVENT_DID_CHANGE, (pack: MutationPack, refsChange: RefsChange) =>
+        this._vertexDidChange(key, pack, refsChange)
+      );
+      mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
+      this._setupVertexManager(mgr);
     }
     return mgr as VertexManager<V>;
   }
 
-  private _setupVertexManager(
-    mgr: VertexManager,
-    runOnCacheLoaded: boolean
-  ): void {
+  private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
-    mgr.on(EVENT_DID_CHANGE, (pack: MutationPack, refsChange, RefsChange) =>
+    mgr.on(EVENT_DID_CHANGE, (pack: MutationPack, refsChange: RefsChange) =>
       this._vertexDidChange(key, pack, refsChange)
     );
     mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
-    if (runOnCacheLoaded) {
-      mgr.onCacheLoaded(undefined);
-      mgr.onGraphCacheLoaded();
-    }
   }
 
   private _vertexDidChange(
@@ -282,9 +185,6 @@ export class GraphManager extends VertexSource {
     pack: MutationPack,
     refsChange: RefsChange
   ): void {
-    this.getVertexManager(key).traceLog(
-      `Vertex mutated ${mutationPackToArr(pack).map((x) => x[0])}`
-    );
     const pendingMutations = this._pendingMutations;
     pack = mutationPackAppend(pendingMutations.get(key), pack);
     pendingMutations.set(key, pack);
@@ -419,14 +319,14 @@ export class GraphManager extends VertexSource {
     for (const [key, record] of decodedGraph) {
       // Sanity checks
       assert(key !== this.rootKey && !vertManagers.has(key));
-      const mgr = new VertexManager(this, key, record, this.rootKey, local);
+      const mgr = new VertexManager(this, key, record, local);
       vertManagers.set(key, mgr);
       createdManagers.push(mgr);
     }
     // Actually connect our graph. This triggers the initial values mutation
     // which causes the vertices to actually appear in query results.
     for (const mgr of createdManagers) {
-      this._setupVertexManager(mgr, true);
+      this._setupVertexManager(mgr);
     }
     return createdManagers;
   }
