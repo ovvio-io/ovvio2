@@ -1,4 +1,6 @@
 import { ReadonlyCoreObject } from '../../base/core-types/base.ts';
+import { JSONCyclicalDecoder } from '../../base/core-types/encoding/json.ts';
+import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { Record } from './record.ts';
 
 export type CommitResolver = (commitId: string) => Commit;

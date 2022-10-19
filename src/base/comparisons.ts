@@ -154,7 +154,11 @@ export function isNumber(v: any): v is number {
 }
 
 export function isObject(v: any): v is any {
-  return v && typeof v === 'object' && v.__proto__.constructor === Object;
+  return (
+    v &&
+    typeof v === 'object' &&
+    Object.getPrototypeOf(v).constructor === Object
+  );
 }
 
 export function isArray<T>(v: any): v is T[] {

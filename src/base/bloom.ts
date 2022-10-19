@@ -6,9 +6,11 @@ import { assert } from './error.ts';
 import { MurmurHash3 } from './hash.ts';
 import { CoreValue, Encodable, Encoder } from './core-types/base.ts';
 import {
+  ConstructorDecoderConfig,
   Decodable,
   DecodedValue,
   Decoder,
+  isDecoderConfig,
 } from './core-types/encoding/index.ts';
 
 /**
@@ -56,7 +58,8 @@ class BitField {
 export interface BloomFilterOptions {
   // Expected number of items
   size: number;
-  // 0-1, false-positive rate (e.g. 0.01 = 1%)
+  // 0-1, false-positive rate (e.g. 0.01 = 1%, meaning 1 of every 100 true
+  // membership test will actually be false).
   fpr?: number;
   // Number of total bits in filter. Leave undefined for optimal value
   m?: number;
@@ -73,25 +76,31 @@ export class BloomFilter implements Encodable, Decodable {
   private _filter: BitField;
   private _hashes: MurmurHash3[];
 
-  constructor(options: BloomFilterOptions) {
-    const { size, fpr, maxHashes } = options;
-    let { m, k } = options;
-    if (m === undefined) {
-      assert(fpr !== undefined);
-      m = Math.abs(size * Math.log(fpr!)) / Math.log(2) ** 2;
-    }
-    if (k === undefined) {
-      k = (m / size) * Math.log(2);
-    }
+  constructor(options: BloomFilterOptions | ConstructorDecoderConfig) {
+    if (isDecoderConfig(options)) {
+      this._filter = new BitField(1);
+      this._hashes = [];
+      this.deserialize(options.decoder);
+    } else {
+      const { size, fpr, maxHashes } = options;
+      let { m, k } = options;
+      if (m === undefined) {
+        assert(fpr !== undefined);
+        m = Math.abs(size * Math.log(fpr!)) / Math.log(2) ** 2;
+      }
+      if (k === undefined) {
+        k = (m / size) * Math.log(2);
+      }
 
-    if (maxHashes !== undefined) {
-      k = Math.max(k, maxHashes);
-    }
+      if (maxHashes !== undefined) {
+        k = Math.max(k, maxHashes);
+      }
 
-    this._filter = new BitField(m);
-    this._hashes = [];
-    for (let i = 0; i < k; ++i) {
-      this._hashes.push(new MurmurHash3());
+      this._filter = new BitField(m);
+      this._hashes = [];
+      for (let i = 0; i < k; ++i) {
+        this._hashes.push(new MurmurHash3());
+      }
     }
   }
 
@@ -167,6 +176,7 @@ export class BloomFilter implements Encodable, Decodable {
     decoder: Decoder<string, DecodedValue>,
     _options?: unknown
   ): void {
+    debugger;
     this._filter.buffer = b64Decode(decoder.get('d')!);
     this._hashes = decoder
       .get<number[]>('s')!

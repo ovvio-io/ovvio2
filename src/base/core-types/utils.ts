@@ -54,7 +54,7 @@ export function getCoreTypeOrUndef(value: any): CoreType | undefined {
   }
 
   if (typeof value === 'object') {
-    return value.__proto__.constructor === Object
+    return Object.getPrototypeOf(value).constructor === Object
       ? CoreType.Object
       : CoreType.ClassObject;
   }

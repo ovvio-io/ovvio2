@@ -1,4 +1,4 @@
-import { randomInt } from './common.ts';
+import { randomInt } from './math.ts';
 
 /**
  * JS Implementation of MurmurHash2

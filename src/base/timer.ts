@@ -1,6 +1,6 @@
-import { assert } from '../../base/error.ts';
-import { easeInOutSine } from '../../base/time.ts';
-import { SortedQueue } from '../../base/collections/queue.ts';
+import { assert } from './error.ts';
+import { easeInOutSine } from './time.ts';
+import { SortedQueue } from './collections/queue.ts';
 
 const MAX_TIMER_PROCESSING_MS = 30;
 

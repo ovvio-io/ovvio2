@@ -9,24 +9,31 @@ import { Code, ServerError, serviceUnavailable } from './errors.ts';
 import { Commit, commitInit } from './commit.ts';
 import { concatChanges, DataChanges } from './object.ts';
 import { Record } from './record.ts';
+import { assert } from '../../base/error.ts';
 
 export class Repository {
   // Key -> Commit Id -> Commit
   private readonly _commitsByRecordKey: Dictionary<string, Set<string>>;
   private readonly _commitsById: Dictionary<string, Commit>;
 
-  constructor(commits: Iterable<Commit>) {
+  constructor(commits?: Iterable<Commit>) {
     this._commitsByRecordKey = new Map();
     this._commitsById = new Map();
-    for (const c of commits) {
-      let keyMap = this._commitsByRecordKey.get(c.key);
-      if (!keyMap) {
-        keyMap = new Set();
-        this._commitsByRecordKey.set(c.key, keyMap);
+    if (commits) {
+      for (const c of commits) {
+        let keyMap = this._commitsByRecordKey.get(c.key);
+        if (!keyMap) {
+          keyMap = new Set();
+          this._commitsByRecordKey.set(c.key, keyMap);
+        }
+        keyMap.add(c.id);
+        this._commitsById.set(c.id, c);
       }
-      keyMap.add(c.id);
-      this._commitsById.set(c.id, c);
     }
+  }
+
+  get numberOfCommits(): number {
+    return this._commitsById.size;
   }
 
   getCommit(id: string): Commit {
@@ -243,9 +250,13 @@ export class Repository {
     return this.headForKey(key, '') !== undefined;
   }
 
-  persistCommit(c: Commit): void {
-    if (this._commitsById.has(c.id)) {
-      return;
+  persistCommit(c: Commit): boolean {
+    const localCommit = this._commitsById.get(c.id);
+    if (localCommit !== undefined) {
+      // Sanity check: Both copies of the same commit must be equal.
+      // TODO: Rather than crash, assume the other side may be malicious
+      assert(coreValueEquals(c, localCommit));
+      return false;
     }
     this._commitsById.set(c.id, c);
     let set = this._commitsByRecordKey.get(c.key);
@@ -255,6 +266,7 @@ export class Repository {
     }
     set.add(c.id);
     // TODO: Write to local storage
+    return true;
   }
 }
 

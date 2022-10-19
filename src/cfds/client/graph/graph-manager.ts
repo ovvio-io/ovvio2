@@ -14,12 +14,13 @@ import {
   VertexManager,
 } from './vertex-manager.ts';
 import { DataType, SchemeNamespace } from '../../base/scheme-types.ts';
-import { MicroTaskTimer } from '../timer.ts';
+import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
 import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
+import { Repository } from '../../base/repo.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -37,6 +38,7 @@ export interface CreateVertexInfo {
 export const EVENT_VERTEX_DID_CHANGE = 'vert-did-change';
 
 export class GraphManager extends VertexSource {
+  readonly repository: Repository;
   readonly sharedQueriesManager: SharedQueriesManager;
   private readonly _rootKey: string;
   private readonly _adjList: AdjacencyList;
@@ -46,8 +48,13 @@ export class GraphManager extends VertexSource {
   private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
 
-  constructor(rootKey: string, ptrFilterFunc: PointerFilterFunc) {
+  constructor(
+    repo: Repository,
+    rootKey: string,
+    ptrFilterFunc: PointerFilterFunc
+  ) {
     super();
+    this.repository = repo;
     this._rootKey = rootKey;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
