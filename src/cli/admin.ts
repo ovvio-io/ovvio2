@@ -1,5 +1,5 @@
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
-import { prettyJSON } from '../base/common.ts';
+import { prettyJSON, uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Repository } from '../cfds/base/repo.ts';
 import { Client } from '../net/client.ts';
@@ -31,6 +31,7 @@ async function main(): Promise<void> {
   await client.sync();
   console.log(`Download complete (${repo.numberOfCommits} commits).`);
 
+  const sessionId = 'admincli-' + uniqueId();
   let [cmd, cmdArgs] = readCommand();
   while (cmd !== Command.Exit) {
     switch (cmd) {
@@ -50,9 +51,7 @@ async function main(): Promise<void> {
         break;
 
       case Command.Get:
-        console.log(
-          prettyJSON(repo.valueForKey(cmdArgs[1], 'admincli').toJS())
-        );
+        console.log(prettyJSON(repo.valueForKey(cmdArgs[1], sessionId).toJS()));
         break;
 
       case Command.Put: {
@@ -64,7 +63,7 @@ async function main(): Promise<void> {
         //   console.log('Invalid JSON');
         //   break;
         // }
-        repo.setValueForKey(cmdArgs[1], 'admincli', record);
+        repo.setValueForKey(cmdArgs[1], sessionId, record);
         console.log(`Updated ${cmdArgs[1]}.`);
         break;
       }
@@ -77,7 +76,11 @@ async function main(): Promise<void> {
 const kExitKeywords = ['Q', 'Quit', 'Exit'];
 
 function readCommand(): [Command, string[]] {
-  const input = (prompt('Enter command:') || '').trim().toLocaleLowerCase();
+  let input = (prompt('Enter command:') || '').trim().toLocaleLowerCase();
+  if (input.startsWith('"')) {
+    input = input.substring(1, input.length - 1);
+  }
+  input = input.replaceAll('\\', '');
   const args = input.split(/\s+/);
   const cmd = args[0][0].toUpperCase() + args[0].substring(1);
   if (kExitKeywords.indexOf(input) > -1) {

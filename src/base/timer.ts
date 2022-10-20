@@ -7,31 +7,37 @@ const MAX_TIMER_PROCESSING_MS = 30;
 const gScheduledTimers = new SortedQueue<BaseTimer>(
   (t1: BaseTimer, t2: BaseTimer) => t1.compare(t2)
 );
-let gTimerTicker: number | undefined = setInterval(() => {
-  const startTime = performance.now();
-
-  for (
-    let now = performance.now();
-    now - startTime <= MAX_TIMER_PROCESSING_MS;
-    now = performance.now()
-  ) {
-    if (
-      gScheduledTimers.size > 0 &&
-      gScheduledTimers.peek!.nextFireTimestamp <= now
-    ) {
-      const timer = gScheduledTimers.pop();
-      assert(timer !== undefined);
-      assert(!gScheduledTimers.has(timer!));
-      timer!.fire();
-    } else {
-      break;
-    }
-  }
-}, 20);
+let gTimerTicker: number | undefined;
 let gTimerId = 0;
 
-export function stopTimerTicker() {
-  if (gTimerTicker) {
+function startTimerTickerIfNeeded(): void {
+  if (!gTimerTicker && gScheduledTimers.size > 0) {
+    gTimerTicker = setInterval(() => {
+      const startTime = performance.now();
+
+      for (
+        let now = performance.now();
+        now - startTime <= MAX_TIMER_PROCESSING_MS;
+        now = performance.now()
+      ) {
+        if (
+          gScheduledTimers.size > 0 &&
+          gScheduledTimers.peek!.nextFireTimestamp <= now
+        ) {
+          const timer = gScheduledTimers.pop();
+          assert(timer !== undefined);
+          assert(!gScheduledTimers.has(timer!));
+          timer!.fire();
+        } else {
+          break;
+        }
+      }
+    }, 20);
+  }
+}
+
+function stopTimerTickerIfNeeded() {
+  if (gTimerTicker && gScheduledTimers.size <= 0) {
     clearInterval(gTimerTicker);
     gTimerTicker = undefined;
   }
@@ -93,6 +99,7 @@ export abstract class BaseTimer implements Timer {
     gScheduledTimers.push(this);
     assert(!this._isScheduled);
     this._isScheduled = true;
+    startTimerTickerIfNeeded();
     return this;
   }
 
@@ -100,6 +107,7 @@ export abstract class BaseTimer implements Timer {
     if (gScheduledTimers.delete(this)) {
       this._isScheduled = false;
     }
+    stopTimerTickerIfNeeded();
     return this;
   }
 
@@ -108,6 +116,8 @@ export abstract class BaseTimer implements Timer {
     this._isScheduled = false;
     if (this.run()) {
       this.schedule();
+    } else {
+      stopTimerTickerIfNeeded();
     }
   }
 
@@ -170,7 +180,7 @@ export abstract class BaseDynamicTimer extends BaseTimer {
   private readonly _durationMs: number;
   private readonly _minFreqMs: number;
   private readonly _maxFreqMs: number;
-  private _continuous: boolean;
+  private _repeat: boolean;
   private _lastResetTime: number;
   private _lastFireTime: number;
 
@@ -179,7 +189,7 @@ export abstract class BaseDynamicTimer extends BaseTimer {
     maxFreqMs: number,
     durationMs: number,
     callback: TimerCallback,
-    continuous = false,
+    repeat = false,
     name?: string
   ) {
     super(callback, name);
@@ -188,7 +198,7 @@ export abstract class BaseDynamicTimer extends BaseTimer {
     this._lastFireTime = 0;
     this._minFreqMs = minFreqMs;
     this._maxFreqMs = maxFreqMs;
-    this._continuous = continuous;
+    this._repeat = repeat;
   }
 
   abstract timingFunc(f: number): number;
@@ -213,12 +223,12 @@ export abstract class BaseDynamicTimer extends BaseTimer {
     return this._lastResetTime;
   }
 
-  get continuous(): boolean {
-    return this._continuous;
+  get repeat(): boolean {
+    return this._repeat;
   }
 
-  set continuous(flag: boolean) {
-    this._continuous = flag;
+  set repeat(flag: boolean) {
+    this._repeat = flag;
   }
 
   reset(): void {
@@ -236,11 +246,11 @@ export abstract class BaseDynamicTimer extends BaseTimer {
   protected run(): boolean {
     const { durationMs, lastResetTime } = this;
     const now = performance.now();
-    if (!this.continuous && now - lastResetTime > durationMs) {
+    if (!this.repeat && now - lastResetTime > durationMs) {
       return false;
     }
     this._lastFireTime = now;
-    return super.run();
+    return super.run() || this.repeat;
   }
 
   protected calcNextFireDate(): number {

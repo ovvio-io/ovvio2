@@ -176,7 +176,6 @@ export class BloomFilter implements Encodable, Decodable {
     decoder: Decoder<string, DecodedValue>,
     _options?: unknown
   ): void {
-    debugger;
     this._filter.buffer = b64Decode(decoder.get('d')!);
     this._hashes = decoder
       .get<number[]>('s')!

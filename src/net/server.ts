@@ -33,6 +33,9 @@ export class Server {
   }
 
   run(): Promise<void> {
+    console.log(
+      `Replicas: ${this._args.replicas.map((s) => `"${s}"`).join(', ')}`
+    );
     return serve((req) => this.handleRequest(req), {
       port: this._args?.port,
     });
@@ -46,8 +49,11 @@ export class Server {
       const replicas = this._args.replicas;
       if (replicas.length > 0) {
         assert(!this._clientsForRepo.has(id)); // Sanity check
-        const clients = this._args.replicas.map((url) =>
-          new Client(repo!, url).startSyncing()
+        const clients = this._args.replicas.map((baseServerUrl) =>
+          new Client(
+            repo!,
+            new URL('/repo/' + id, baseServerUrl).toString()
+          ).startSyncing()
         );
         this._clientsForRepo.set(id, clients);
       }

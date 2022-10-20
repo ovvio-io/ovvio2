@@ -63,7 +63,6 @@ export class SyncMessage implements Encodable {
       fpr: 0.5,
     });
     const missingPeerCommits: Commit[] = [];
-    debugger;
     if (peerFilter) {
       for (const commit of localRepo.commits()) {
         localFilter.add(commit.id);

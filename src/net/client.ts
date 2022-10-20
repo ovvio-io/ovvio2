@@ -46,6 +46,10 @@ export class Client {
   private async sendSyncMessage(): Promise<void> {
     try {
       const repo = this.repo;
+      console.log(
+        `Starting sync with peer ${this._serverUrl}, ${this.repo.numberOfCommits} commits...`
+      );
+      const start = performance.now();
       const resp = await fetch(this._serverUrl, {
         method: 'POST',
         headers: {
@@ -55,7 +59,9 @@ export class Client {
           SyncMessage.build(this._previousServerFilter, repo).toJS()
         ),
       });
-      const syncResp = SyncMessage.fromJS(await resp.json());
+      const text = await resp.text();
+      const json = JSON.parse(text);
+      const syncResp = SyncMessage.fromJS(json);
       this._previousServerFilter = syncResp.filter;
       if (syncResp.commits.length > 0) {
         for (const commit of syncResp.commits) {
@@ -63,9 +69,16 @@ export class Client {
         }
         this._timer.reset();
       }
+      console.log(
+        `Sync completed after ${performance.now() - start}ms with peer ${
+          this._serverUrl
+        }. ${this.repo.numberOfCommits} commits in repo.`
+      );
     } catch (e) {
       debugger;
-      console.error(e);
+      console.error(
+        `Sync error with peer ${this._serverUrl} (${this.repo.numberOfCommits} commits): ${e}`
+      );
     }
   }
 

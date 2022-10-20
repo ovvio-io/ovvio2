@@ -1,6 +1,4 @@
 import { ReadonlyCoreObject } from '../../base/core-types/base.ts';
-import { JSONCyclicalDecoder } from '../../base/core-types/encoding/json.ts';
-import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { Record } from './record.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
@@ -19,14 +17,21 @@ export function commitInit(
   session: string,
   key: string,
   record: Record,
-  parents?: Iterable<string>
+  parents?: string | Iterable<string>
 ): Commit {
+  if (typeof parents === 'string') {
+    parents = [parents];
+  } else if (!parents) {
+    parents = [];
+  } else {
+    parents = Array.from(parents);
+  }
   return {
     id,
     session,
     key,
     record,
-    parents: parents ? Array.from(parents) : [],
+    parents: parents as string[],
     timestamp: new Date(),
   };
 }
