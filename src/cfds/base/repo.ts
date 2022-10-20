@@ -6,10 +6,17 @@ import {
 import * as SetUtils from '../../base/set.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import { Code, ServerError, serviceUnavailable } from './errors.ts';
-import { Commit, commitInit } from './commit.ts';
+import {
+  Commit,
+  commitContentsIsRecord,
+  commitInit,
+  DeltaContents,
+} from './commit.ts';
 import { concatChanges, DataChanges } from './object.ts';
 import { Record } from './record.ts';
-import { assert } from '../../base/error.ts';
+import { assert, notReached } from '../../base/error.ts';
+import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
+import { Edit } from './edit.ts';
 
 export class Repository {
   // Key -> Commit Id -> Commit
@@ -75,6 +82,10 @@ export class Repository {
       }
     }
     return result;
+  }
+
+  keys(): Iterable<string> {
+    return this._commitsByRecordKey.keys();
   }
 
   /**
@@ -168,6 +179,24 @@ export class Repository {
     return undefined;
   }
 
+  recordForCommit(c: Commit | string): Record {
+    if (typeof c === 'string') {
+      c = this.getCommit(c);
+    }
+    if (c.contents.record) {
+      return c.contents.record as Record;
+    }
+    if (c.contents.base) {
+      const contents: DeltaContents = c.contents as DeltaContents;
+      const result = this.recordForCommit(contents.base).clone();
+      assert(result.checksum === contents.edit.srcChecksum);
+      result.patch(contents.edit.changes);
+      assert(result.checksum === contents.edit.dstChecksum);
+      return result;
+    }
+    notReached();
+  }
+
   headForKey(key: string, session: string): Commit | undefined {
     const leaves = this.leavesForKey(key);
     if (leaves.length < 1) {
@@ -185,15 +214,19 @@ export class Repository {
     // rely on our patch to come up with a nice result. A better way may be to
     // do a recursive 3-way merge like git does.
     try {
-      // Find the base of our N-way merge. If no LCA is found, it means to
-      // concurrent creations of the same key. Use the null record as a base
-      // in this case.
-      const base = this.lca(commitsToMerge)?.record || Record.nullRecord();
+      // Find the base of our N-way merge. If no LCA is found then we're dealing
+      // with concurrent writers who all created of the same key concurrently.
+      // Use the null record as a base in this case.
+      const lca = this.lca(commitsToMerge);
+      const base = lca ? this.recordForCommit(lca) : Record.nullRecord();
       // TODO: Scheme upgrade
       // Compute a compound diff
       let changes: DataChanges = {};
       for (const c of commitsToMerge) {
-        changes = concatChanges(changes, base.diff(c.record, true));
+        changes = concatChanges(
+          changes,
+          base.diff(this.recordForCommit(c), true)
+        );
       }
       const mergeRecord = base.clone();
       mergeRecord.patch(changes);
@@ -232,18 +265,63 @@ export class Repository {
   }
 
   valueForKey(key: string, session: string): Record {
-    return this.headForKey(key, session)?.record || Record.nullRecord();
+    const head = this.headForKey(key, session);
+    return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
   setValueForKey(key: string, session: string, value: Record): void {
     const head = this.headForKey(key, session);
-    if (head && head.record.isEqual(value)) {
+    if (head && this.recordForCommit(head).isEqual(value)) {
       return;
     }
     if (!head && value.isNull) {
       return;
     }
-    this.persistCommit(commitInit(uniqueId(), session, key, value, head?.id));
+    const lastRecordCommit = this.lastRecordCommitForKey(key);
+    const fullCommit = commitInit(uniqueId(), session, key, value, head?.id);
+    let deltaCommit: Commit | undefined;
+    if (lastRecordCommit) {
+      const baseRecord = this.recordForCommit(lastRecordCommit);
+      const edit = new Edit({
+        changes: baseRecord.diff(value, false),
+        srcChecksum: baseRecord.checksum,
+        dstChecksum: value.checksum,
+      });
+      const commitEncoder = new JSONCyclicalEncoder();
+      commitEncoder.set('c', [fullCommit]);
+      const deltaLength = JSON.stringify(edit.toJS()).length;
+      const fullLength = JSON.stringify(commitEncoder.getOutput()).length;
+      // Only if our delta format is small enough relative to the full format,
+      // then it's worth switching to it
+      if (deltaLength <= fullLength / 2) {
+        deltaCommit = commitInit(
+          fullCommit.id,
+          session,
+          key,
+          { base: lastRecordCommit.id, edit },
+          fullCommit.parents
+        );
+        console.log(
+          `Using delta format saves ${Math.round(
+            (100 * (fullLength - deltaLength)) / fullLength
+          )}% (${fullLength - deltaLength} bytes)`
+        );
+      }
+    }
+    this.persistCommit(deltaCommit || fullCommit);
+  }
+
+  private lastRecordCommitForKey(key: string): Commit | undefined {
+    let result: Commit | undefined;
+    for (const c of this.commitsForKey(key)) {
+      if (!commitContentsIsRecord(c.contents)) {
+        continue;
+      }
+      if (!result || c.timestamp.getTime() > result.timestamp.getTime()) {
+        result = c;
+      }
+    }
+    return result;
   }
 
   hasKey(key: string): boolean {
@@ -271,17 +349,15 @@ export class Repository {
 }
 
 function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
+  const hashes = new Set<string>();
   const result: Commit[] = [];
   for (const c of commits) {
-    let foundMatch = false;
-    for (const existing of result) {
-      if (existing.record.isEqual(c.record)) {
-        foundMatch = true;
-        break;
-      }
-    }
-    if (!foundMatch) {
+    const h = commitContentsIsRecord(c.contents)
+      ? c.contents.record.checksum
+      : c.contents.edit.dstChecksum;
+    if (!hashes.has(h)) {
       result.push(c);
+      hashes.add(h);
     }
   }
   return result;

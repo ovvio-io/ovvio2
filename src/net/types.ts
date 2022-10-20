@@ -13,7 +13,8 @@ import {
 } from '../base/core-types/encoding/json.ts';
 import { ReadonlyDecodedArray } from '../base/core-types/encoding/types.ts';
 import { ReadonlyJSONObject, ReadonlyJSONValue } from '../base/interfaces.ts';
-import { Commit } from '../cfds/base/commit.ts';
+import { Commit, CommitContents } from '../cfds/base/commit.ts';
+import { Edit } from '../cfds/base/edit.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Repository } from '../cfds/base/repo.ts';
 
@@ -46,9 +47,18 @@ export class SyncMessage implements Encodable {
     const commits = decoder
       .get<ReadonlyDecodedArray>('c', [])!
       .map((obj: any) => {
+        let contents: CommitContents;
+        if (obj.contents.record !== undefined) {
+          contents = { record: new Record({ decoder: obj.contents.record }) };
+        } else {
+          contents = {
+            base: obj.contents.base,
+            edit: new Edit({ decoder: obj.contents.edit }),
+          };
+        }
         return {
           ...obj,
-          record: new Record({ decoder: obj.record }),
+          contents,
         } as Commit;
       });
     return new this(filter, commits);

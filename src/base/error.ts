@@ -5,7 +5,7 @@ export function notImplemented(): never {
   throw error;
 }
 
-export function notReached(msg: string): never {
+export function notReached(msg?: string): never {
   const error = new Error(
     'Oops, this code was supposed to be unreachable' + (msg ? ': ' + msg : '')
   );
