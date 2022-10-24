@@ -1,0 +1,20 @@
+{
+  "en": {
+    "shareHeader": "Sharing is caring ",
+    "inviteHeader": "Invite your colleagues to collaborate with you",
+    "email": "email",
+    "add": "Add",
+    "chooseWorkspace": "Choose Workspace",
+    "invite": "Invite",
+    "cancelInvite": "I prefer being alone",
+    "inviteSent": "Invitation sent!",
+    "sentText": "You can now make your colleagues do your work.",
+    "sentButton": "Done",
+    "tutorialStartTitle": "Ovvio is better together",
+    "tutorialStartText": "Workspaces are a place for you to share work with co-workers, allowing them to be on the same page as you",
+    "tutorialAddEmailTitle": "Invite a partner",
+    "tutorialAddEmailText": "Enter someone's email and click the 'add' button",
+    "tutorialAddMoreTitle": "More is more",
+    "tutorialAddMoreText": "You can add as many coworkers as you want, just enter another email and click the add button, once you're done click the invite button.\nThe more people you add the more work you can delegate to them!"
+  }
+}

@@ -1,0 +1,181 @@
+[
+    {
+        "name": "id",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "timestamp",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "userId",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "session",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+            {
+                "name": "provider",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "auth",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "issue",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "expire",
+                "type": "TIMESTAMP",
+                "mode": "NULLABLE"
+            }
+        ]
+    },
+    {
+        "name": "session_id",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "action",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "server_timestamp",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "ip_address",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "workspaceId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "cardId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "parentCardId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "tagId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "parentTagId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "selectedUserId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "category",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "electron_version",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "cfds_version",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "version",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "build_number",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "tagUnion",
+        "type": "BOOLEAN",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "unknown_fields",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+      "name": "data",
+      "type": "STRING",
+      "mode": "NULLABLE"
+    },
+    {
+        "name": "user_agent",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+            {
+                "name": "raw",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "browserName",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "browserVersion",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "osName",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "osVersion",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "deviceName",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            },
+            {
+                "name": "deviceVersion",
+                "type": "STRING",
+                "mode": "NULLABLE"
+            }
+        ]
+    }
+]

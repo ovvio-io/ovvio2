@@ -1,0 +1,361 @@
+[
+  {
+    "name": "export_email_success_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "exportType",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "exportError",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "export_email_failed_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "reason",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "exportType",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "error_log_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "logMessage",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "errorName",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "errorMessage",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "errorStack",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "errorOrigin",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "card_created_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "parent",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "card_deleted_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "parent",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "card_backspaced_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "parent",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "workspace_remove_invite_completed_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "inviteId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "card_duplicated_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "newCardId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "session_start_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "pathName",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "utm_source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "utm_medium",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "utm_campaign",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "inviteId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "gclid",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "session_alive_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "avgLatency",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "pingPongs",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "pendingEvents",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "visibilityState",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "card_moved_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "newWorkspaceId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "newCardId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "workspace_invite_sent_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "emailCount",
+        "type": "NUMERIC",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "tutorial_next_clicked_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "stepId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "tutorialId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "tutorial_dismiss_clicked_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "stepId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "tutorialId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "tutorial_done_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "tutorialId",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "drag_started_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "drag_done_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "drag_cancelled_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "source",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "reason",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "set_view_type_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "viewType",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "set_group_by_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "groupBy",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "tag",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "workspace_selected_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "toggleType",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "workspace_unselected_data",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "toggleType",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  }
+]

@@ -1,0 +1,4107 @@
+{
+  "BgxWGzMx0SiiXP17izuw": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "workspaces",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469593.767
+      },
+      "noteTags": {},
+      "taskTags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "name": "Personal Workspace",
+      "users": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "createdBy": "/"
+    },
+    "v": 0
+  },
+  "qdM2JXpDxBhvPjdZL9xO": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.297
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.297
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "color": "#1995d1",
+      "name": "Status"
+    },
+    "v": 0
+  },
+  "taHiPWG5JVjyejgNH9kC": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "color": "#1995d1",
+      "name": "To Do",
+      "parentTag": "qdM2JXpDxBhvPjdZL9xO"
+    },
+    "v": 0
+  },
+  "LbZOlUOBHOryWCM3AYub": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616018.659
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469606.058
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Go 'Back' and check the 'Open Me!' note to learn a few tricks:)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "1LPR9w0jBGgbtHrBwXbe": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652615992.782
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469522.742
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Welcome to Ovvio!"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "This is your "
+                },
+                {
+                  "text": "Personal Workspace",
+                  "bold": true
+                },
+                {
+                  "text": " where you can take notes and create draft tasks. "
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Unlike other Workspaces, you will be alone here."
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "So take this chance to get creative!"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Let’s get you started"
+                }
+              ]
+            },
+            {
+              "ref": "LbZOlUOBHOryWCM3AYub",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "z0SIQziP3fxEkJJH5XFo": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616029.086
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469356.803
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Click on the \"To Do\" tag and define your task's status."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "MQBrZzKaQznNOyrPrLEb": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616038.681
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469356.805
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Assign a task to your new team member and see how easy it is"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "EFjuaMk3OsXURhKZpoBB": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616033.603
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469356.804
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Invite a team member to join your workspace"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "ocVDJjTZG14P8Sbctlxw": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616022.327
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653469356.802
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Create a task in your new project workspace."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "MortkgoB8lI4lgc3wvSS": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322862.058
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406750.285
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "sCM5VvHUiPRvsLP9eLK9": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "color": "#1995d1",
+      "name": "Done",
+      "parentTag": "qdM2JXpDxBhvPjdZL9xO"
+    },
+    "v": 0
+  },
+  "BKTqlSAr4900eUC84jXg": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785142.114
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785142.114
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add a new task outside this note, directly in your task list"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DiPTKyCB7qfjFC0U8G5T",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "DiPTKyCB7qfjFC0U8G5T": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785049.238
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292624.672
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "What is this workspace?"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Here is a text explaining what this workspace means:"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "ul",
+                  "children": [
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can compose  and draft here, and it's always private "
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can't invite team members here"
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can add personal tasks just for you"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "ref": "MZNmgUboyx3zmdou3llK",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "2rBlHRF7zhWnmiHZUUWS",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "BKTqlSAr4900eUC84jXg",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "mlxXIY5538gpmEcOD9iA": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653467263.679
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467319.637
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "color": "#da9f43",
+      "name": "כגיכייכח"
+    },
+    "v": 0
+  },
+  "w7sdnd9ozdwnb0gofDxU": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785195.124
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785195.124
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": " Mark this task as Done"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DUyvRw781sDaSbzsVqu0",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "dz67zqEmg1isVZYuhOB8": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322866.855
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406739.287
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "PurQZy1IjnJeewELKzlE": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785732.439
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292591.169
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "What is this workspace?"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Here is a text explaining what this workspace means:"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "ul",
+                  "children": [
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can compose  and draft here, and it's always private "
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can't invite team members here"
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can add personal tasks just for you"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "jUtkiGP6UqNaVJ3F8QoO": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322868.863
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406747.292
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "DUyvRw781sDaSbzsVqu0": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785179.069
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292694.903
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Meeting minutes"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "h1",
+              "children": [
+                {
+                  "text": "Background"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Blahblah write, document and share meeting minutes with clients for a few purposes:"
+                }
+              ]
+            },
+            {
+              "tagName": "ol",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Document stuff for ISO standards   "
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Meeting minutes act as mini \"contracts\" between company to the clients"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Current Process"
+                }
+              ]
+            },
+            {
+              "tagName": "ol",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Have a meeting"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Take meeting minutes: content, decisions and tasks"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Tasks are assigned to company and the clients"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Agree about minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Send meeting minutes to client via email"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Assign tasks to both companies"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Save document "
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h1",
+              "children": [
+                {
+                  "text": "Product Planning"
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "What they need"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Template to enter and create minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Write meeting minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "share meeting minutes with clients"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Assign tasks to internal employees and external clients"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Questions"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "How do they agree on meeting minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "How to tag a team or a group of people"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Does the meeting minutes output need to look exactly the same? or can we something of ours"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Do we need to invite the people or just tag them to the workspace"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Do you need a work document / lnk or inline email"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Action Items"
+                }
+              ]
+            },
+            {
+              "ref": "qodE6hBrMpM6nOUbMDhG",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "w7sdnd9ozdwnb0gofDxU",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "9MngRUWaheVtZC3y5vuS",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "aRcMiquHdFPK0nFfIfGH": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "color": "#1995d1",
+      "name": "In Progress",
+      "parentTag": "qdM2JXpDxBhvPjdZL9xO"
+    },
+    "v": 0
+  },
+  "ldpBoLEL2pwA6cdWhOYZ": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785417.311
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467746.054
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "aRcMiquHdFPK0nFfIfGH"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "sortStamp": ">;;41053;;;2162428684859602895MHV0wcRyfGkScFc29AgN",
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "dueDate": {
+        "__t": "D",
+        "__v": 1651611600
+      },
+      "type": "task"
+    },
+    "v": 0
+  },
+  "MZNmgUboyx3zmdou3llK": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785106.506
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785106.506
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add a new task inside this note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DiPTKyCB7qfjFC0U8G5T",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "9MngRUWaheVtZC3y5vuS": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785197.386
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785197.386
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add due date to this task"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DUyvRw781sDaSbzsVqu0",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "qodE6hBrMpM6nOUbMDhG": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785192.551
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785192.551
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": " Change this task to be assigned to...."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DUyvRw781sDaSbzsVqu0",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "dUv3Q2ANIbFp8pM6ymQ8": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785112.067
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785112.067
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DiPTKyCB7qfjFC0U8G5T",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "2rBlHRF7zhWnmiHZUUWS": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785114.366
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785114.366
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "DiPTKyCB7qfjFC0U8G5T",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "oHJQoVTfFNacCrU5g7yg": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652775727.499
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652775735.136
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "qdM2JXpDxBhvPjdZL9xO": "taHiPWG5JVjyejgNH9kC"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "BgxWGzMx0SiiXP17izuw",
+      "parentNote": "1LPR9w0jBGgbtHrBwXbe",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "w2b93Xz0I2q0IOSaFhZV": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "workspaces",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467832.489
+      },
+      "noteTags": {},
+      "taskTags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "name": "Getting Started",
+      "users": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "createdBy": "/"
+    },
+    "v": 0
+  },
+  "LwS1WrWDseoAfarKPxKV": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.297
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.297
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "color": "#1995d1",
+      "name": "Status"
+    },
+    "v": 0
+  },
+  "Ds4ProUDnt5Xogttnf8Q": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "color": "#1995d1",
+      "name": "To Do",
+      "parentTag": "LwS1WrWDseoAfarKPxKV"
+    },
+    "v": 0
+  },
+  "SGpoCc1rGvfDJBTUEVtM": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785179.069
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292694.903
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Meeting minutes"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "h1",
+              "children": [
+                {
+                  "text": "Background"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Blahblah write, document and share meeting minutes with clients for a few purposes:"
+                }
+              ]
+            },
+            {
+              "tagName": "ol",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Document stuff for ISO standards   "
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Meeting minutes act as mini \"contracts\" between company to the clients"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Current Process"
+                }
+              ]
+            },
+            {
+              "tagName": "ol",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Have a meeting"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Take meeting minutes: content, decisions and tasks"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Tasks are assigned to company and the clients"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Agree about minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Send meeting minutes to client via email"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Assign tasks to both companies"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Save document "
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h1",
+              "children": [
+                {
+                  "text": "Product Planning"
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "What they need"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Template to enter and create minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Write meeting minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "share meeting minutes with clients"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Assign tasks to internal employees and external clients"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Questions"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "How do they agree on meeting minutes"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "How to tag a team or a group of people"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Does the meeting minutes output need to look exactly the same? or can we something of ours"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Do we need to invite the people or just tag them to the workspace"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Do you need a work document / lnk or inline email"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Action Items"
+                }
+              ]
+            },
+            {
+              "ref": "HBbA1pD2tgy6AAjGVJwk",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "EdKJEripvbkpWs2OSkfq",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "EP6ubta0xNXqrPZsQjvw",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "TUYa4gNlTZxiahhWjYOT": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785732.439
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292591.169
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "What is this workspace?"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Here is a text explaining what this workspace means:"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "ul",
+                  "children": [
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can compose  and draft here, and it's always private "
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can't invite team members here"
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can add personal tasks just for you"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "GR1PkT4rPLDJuaEhivzI": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785049.238
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653292624.672
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "What is this workspace?"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Here is a text explaining what this workspace means:"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "ul",
+                  "children": [
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can compose  and draft here, and it's always private "
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can't invite team members here"
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "li",
+                      "children": [
+                        {
+                          "text": "You can add personal tasks just for you"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "ref": "IzFlUSyv5mYGruc9xM43",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "Z1V46XHk4B9XaZbcp7xO",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "ZAr6jl0HL8iX8LRMDaEN",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "ZAr6jl0HL8iX8LRMDaEN": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785142.114
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785142.114
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add a new task outside this note, directly in your task list"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "GR1PkT4rPLDJuaEhivzI",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "EP6ubta0xNXqrPZsQjvw": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785197.386
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785197.386
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add due date to this task"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "SGpoCc1rGvfDJBTUEVtM",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "H1nRfXiaS4jXWYZFRRE3": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785112.067
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785112.067
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "GR1PkT4rPLDJuaEhivzI",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "kG4NVhvhgqLyM4MNub3y": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652775727.499
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652775735.136
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "Z1V46XHk4B9XaZbcp7xO": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785114.366
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785114.366
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "GR1PkT4rPLDJuaEhivzI",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "IzFlUSyv5mYGruc9xM43": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785106.506
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785106.506
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Add a new task inside this note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "GR1PkT4rPLDJuaEhivzI",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "EdKJEripvbkpWs2OSkfq": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785195.124
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785195.124
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": " Mark this task as Done"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "SGpoCc1rGvfDJBTUEVtM",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "HBbA1pD2tgy6AAjGVJwk": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785192.551
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652785192.551
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": " Change this task to be assigned to...."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "SGpoCc1rGvfDJBTUEVtM",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "sFomfgTUAqgwxwJVDVb5": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652615992.782
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653468309.229
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Open me!"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Welcome to Ovvio!"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "We'll walk you through and help you get started (:"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Let’s set up your "
+                },
+                {
+                  "text": "first project",
+                  "underline": true
+                },
+                {
+                  "text": ":"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "First, go ahead and create a new workspace."
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Which project are you currently working on?"
+                }
+              ]
+            },
+            {
+              "ref": "kjQapMBNMl7SOixo9l8F",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Time to to "
+                },
+                {
+                  "text": "add your tasks",
+                  "underline": true
+                },
+                {
+                  "text": " to your workspace."
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "What are a few tasks that is related to this project?"
+                }
+              ]
+            },
+            {
+              "ref": "mqz8rPFORHmy2FT43dG4",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "How would you define their "
+                },
+                {
+                  "text": "current status? ",
+                  "underline": true
+                }
+              ]
+            },
+            {
+              "ref": "cHRzdHvZ6YXaR1Is05kQ",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Who would you like to "
+                },
+                {
+                  "text": "collaborate",
+                  "underline": true
+                },
+                {
+                  "text": " on this project?"
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Get the most value out of Ovvio by using it as a team. This is where you can share and sync all project data with your teammates. "
+                }
+              ]
+            },
+            {
+              "ref": "OeGKI7qptAJ3tj4krZDE",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "agimZoNuaCXStoPu0XM9",
+              "type": "inter-doc"
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "kjQapMBNMl7SOixo9l8F": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616018.659
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467976.065
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Go to the bottom of the workspace bar on the left and add a new workspace."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "mqz8rPFORHmy2FT43dG4": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616022.327
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652616022.327
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Create a task in your new project workspace."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "agimZoNuaCXStoPu0XM9": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616038.681
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653388280.107
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Assign a task to your new team member and see how easy it is"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "cHRzdHvZ6YXaR1Is05kQ": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616029.086
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653388274.757
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Click on the \"To Do\" tag and define your task's status."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "OeGKI7qptAJ3tj4krZDE": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652616033.603
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653388277.473
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Invite a team member to join your workspace"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "parentNote": "sFomfgTUAqgwxwJVDVb5",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "MHV0wcRyfGkScFc29AgN": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652785417.311
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467746.054
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "lQ1g3RVNAaCgM4zVrv4l"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Compose a new note"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "sortStamp": ">;;41053;;;2162428684859602895MHV0wcRyfGkScFc29AgN",
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "dueDate": {
+        "__t": "D",
+        "__v": 1651611600
+      },
+      "type": "task"
+    },
+    "v": 0
+  },
+  "lQ1g3RVNAaCgM4zVrv4l": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "color": "#1995d1",
+      "name": "In Progress",
+      "parentTag": "LwS1WrWDseoAfarKPxKV"
+    },
+    "v": 0
+  },
+  "p3fPn15fmgfAnxv29L2t": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652610098.298
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "color": "#1995d1",
+      "name": "Done",
+      "parentTag": "LwS1WrWDseoAfarKPxKV"
+    },
+    "v": 0
+  },
+  "Zh5CCw7ULKp2LgtikM3K": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653467263.679
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653467319.637
+      },
+      "createdBy": "/",
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "color": "#da9f43",
+      "name": "כגיכייכח"
+    },
+    "v": 0
+  },
+  "JZOYFgSp2C0G4KbgV3j3": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322866.855
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406739.287
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "note"
+    },
+    "v": 0
+  },
+  "AcxWc3sYWDuCrZUuaLFY": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322862.058
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406750.285
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "task"
+    },
+    "v": 0
+  },
+  "Jrt7NQSgNVVQtZP7UKBH": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653322868.863
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653406747.292
+      },
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "LwS1WrWDseoAfarKPxKV": "Ds4ProUDnt5Xogttnf8Q"
+      },
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      },
+      "workspace": "w2b93Xz0I2q0IOSaFhZV",
+      "type": "task"
+    },
+    "v": 0
+  }
+}

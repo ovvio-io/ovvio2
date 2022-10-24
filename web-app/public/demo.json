@@ -1,0 +1,4137 @@
+{
+  "tbtnt5hYguAoeLViXo4I": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "workspaces",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653216145.095
+      },
+      "name": "Lloyds Bank",
+      "users": {
+        "__t": "S",
+        "__v": [
+          "/",
+          "4M8zMNA627Txq3FIPy6M",
+          "LksOoBKqECIk1f6BwgHT",
+          "3OPNIPmpQMOkihamHIWw"
+        ]
+      },
+      "noteTags": {},
+      "taskTags": {
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu"
+      }
+    },
+    "v": 0
+  },
+  "4M8zMNA627Txq3FIPy6M": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "users",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648630435.676
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962703.497
+      },
+      "avatarUrl": "/Paul.png",
+      "email": "ovviosandbox+pd@gmail.com",
+      "lastLoggedIn": {
+        "__t": "D",
+        "__v": 1652958236.918
+      },
+      "name": "Paul Daugherty",
+      "workspaces": {
+        "__t": "S",
+        "__v": [
+          "OSCGwFWtVglBU8KLi6Dy",
+          "ffRl0fTP5P9utuVwOtwM",
+          "J1PRz6r0VBRPI1sYi1Xu",
+          "uc5a8BfhjogTHY7VTbak",
+          "VExIk90tjLUqXSAyrc4O",
+          "tbtnt5hYguAoeLViXo4I",
+          "WlHq6qyMFl5nPnUKyQ9l",
+          "ZtZN3KDdkyiPieayPiLY"
+        ]
+      },
+      "seenTutorials": {
+        "__t": "S",
+        "__v": []
+      },
+      "workspaceColors": {
+        "ffRl0fTP5P9utuVwOtwM": 1,
+        "VExIk90tjLUqXSAyrc4O": 2,
+        "J1PRz6r0VBRPI1sYi1Xu": 3,
+        "OSCGwFWtVglBU8KLi6Dy": 0
+      },
+      "hiddenWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "pinnedWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "onboardingStep": 0
+    },
+    "v": 0
+  },
+  "LksOoBKqECIk1f6BwgHT": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "users",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648630502.683
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962706.237
+      },
+      "avatarUrl": "Laura.png",
+      "email": "ovviosandbox+lg@gmail.com",
+      "lastLoggedIn": {
+        "__t": "D",
+        "__v": 1652962594.614
+      },
+      "name": "Laura Gurski",
+      "workspaces": {
+        "__t": "S",
+        "__v": [
+          "AWXVthjXcm60dJXF89AF",
+          "ffRl0fTP5P9utuVwOtwM",
+          "J1PRz6r0VBRPI1sYi1Xu",
+          "uc5a8BfhjogTHY7VTbak",
+          "VExIk90tjLUqXSAyrc4O",
+          "tbtnt5hYguAoeLViXo4I",
+          "WlHq6qyMFl5nPnUKyQ9l",
+          "ZtZN3KDdkyiPieayPiLY"
+        ]
+      },
+      "seenTutorials": {
+        "__t": "S",
+        "__v": ["VIDEO_DEMO", "DISPLAY_BAR"]
+      },
+      "workspaceColors": {
+        "7kzMCF5ICRzqZKsfIBWD": 2,
+        "ZVPHmYkYTwnwxetE5efg": 4,
+        "WlHq6qyMFl5nPnUKyQ9l": 5,
+        "ffRl0fTP5P9utuVwOtwM": 1,
+        "AWXVthjXcm60dJXF89AF": 0
+      },
+      "hiddenWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "pinnedWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "onboardingStep": 0
+    },
+    "v": 0
+  },
+  "3OPNIPmpQMOkihamHIWw": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "users",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648630480.682
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962703.502
+      },
+      "avatarUrl": "/Richard.png",
+      "email": "ovviosandbox+rc@gmail.com",
+      "lastLoggedIn": {
+        "__t": "D",
+        "__v": 1652958255.204
+      },
+      "name": "Richard Clark",
+      "workspaces": {
+        "__t": "S",
+        "__v": [
+          "hPi67TA7AIK0vNcvqQT6",
+          "ffRl0fTP5P9utuVwOtwM",
+          "J1PRz6r0VBRPI1sYi1Xu",
+          "uc5a8BfhjogTHY7VTbak",
+          "VExIk90tjLUqXSAyrc4O",
+          "tbtnt5hYguAoeLViXo4I",
+          "WlHq6qyMFl5nPnUKyQ9l",
+          "ZtZN3KDdkyiPieayPiLY"
+        ]
+      },
+      "seenTutorials": {
+        "__t": "S",
+        "__v": []
+      },
+      "workspaceColors": {
+        "ffRl0fTP5P9utuVwOtwM": 1,
+        "VExIk90tjLUqXSAyrc4O": 2,
+        "J1PRz6r0VBRPI1sYi1Xu": 3,
+        "hPi67TA7AIK0vNcvqQT6": 0
+      },
+      "hiddenWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "pinnedWorkspaces": {
+        "__t": "S",
+        "__v": []
+      },
+      "onboardingStep": 0
+    },
+    "v": 0
+  },
+  "BVdfu0M7xY4MRLEQMGKm": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.175
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.175
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#1995d1",
+      "name": "Status"
+    },
+    "v": 0
+  },
+  "8hTRLVhLlb1sBW2j9qMu": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#1995d1",
+      "name": "To Do",
+      "parentTag": "BVdfu0M7xY4MRLEQMGKm"
+    },
+    "v": 0
+  },
+  "W6Pz93oAgvLzjDQFrIIf": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652787100.67
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652963003.862
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/", "4M8zMNA627Txq3FIPy6M"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "0GBnQvXEXAxdBZ0xTOJ4",
+      "tags": {
+        "BVdfu0M7xY4MRLEQMGKm": "Alx1EOBEiomrga2wuW2i",
+        "oCqkBK91FxPWwiQH744O": "uPF7yS7C4RbESsws529i"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Check team availability for new projects."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "b396MYLatY6godVOlZbC": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790152.221
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962971.264
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "dfNZ81q6AiqrUvVVQrAq",
+      "tags": {
+        "BVdfu0M7xY4MRLEQMGKm": "Alx1EOBEiomrga2wuW2i"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send draft to management "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "0GBnQvXEXAxdBZ0xTOJ4": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786958.18
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464155.114
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": [
+          "/",
+          "LksOoBKqECIk1f6BwgHT",
+          "4M8zMNA627Txq3FIPy6M",
+          "3OPNIPmpQMOkihamHIWw"
+        ]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "7KMDIsui8071r4JUrP8c": "J6oL2sghtkHfUQV3wMsy",
+        "oCqkBK91FxPWwiQH744O": "8XKO9hZhK2uPlzccWsdh"
+      },
+      "type": "note",
+      "title": {
+        "__r": [
+          {
+            "text": "Weekly "
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "__rId": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 6,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.114
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 6,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.114
+                }
+              }
+            ]
+          }
+        }
+      },
+      "body": {
+        "__r": [
+          {
+            "text": ": 14.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Details "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Subject",
+                    "bold": true
+                  },
+                  {
+                    "text": ": Idea development for the integration project"
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Date",
+                    "bold": true
+                  },
+                  {
+                    "__rId": 0
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Agenda "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Follow up from previous meeting",
+                    "bold": true
+                  },
+                  {
+                    "text": ":"
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Support escalations reporting"
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Implement an employee onboarding tool"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "New Order of Business:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Review business logic"
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Prioritize ideas and create timelines"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Notes "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "This week, following up on last week's agenda; we will follow up on new ideas, and prioritize agreed upon topics, as well as creating new task timelines and assignments."
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Action Items "
+                  }
+                ]
+              },
+              {
+                "ref": "W6Pz93oAgvLzjDQFrIIf",
+                "type": "inter-doc"
+              },
+              {
+                "ref": "XBg1ykAu0HqvPCyH7Nih",
+                "type": "inter-doc"
+              },
+              {
+                "ref": "Lgom2MbMyULG5znAHqvp",
+                "type": "inter-doc"
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464148.556
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464148.556
+                }
+              }
+            ]
+          }
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "8s8P8zvkLyoqq4I2Mn2d": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652789573.374
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464155.109
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": [
+          "/",
+          "4M8zMNA627Txq3FIPy6M",
+          "3OPNIPmpQMOkihamHIWw",
+          "LksOoBKqECIk1f6BwgHT"
+        ]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "7KMDIsui8071r4JUrP8c": "8DzbLYlgqOdiwld1s3c2",
+        "oCqkBK91FxPWwiQH744O": "uPF7yS7C4RbESsws529i"
+      },
+      "type": "note",
+      "title": {
+        "__r": [
+          {
+            "text": "CTO Interview Questions // 30.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "__rId": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 9,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.109
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 9,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.109
+                }
+              }
+            ]
+          }
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Talking Points"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Scoping for Q4"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Q3 review and feedbacks"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Ongoing task reviews"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Contract details for new project"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Priorities for this week"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Finalize the contract"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Create new scoping"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Finalize ongoing tasks "
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Action Items"
+                }
+              ]
+            },
+            {
+              "ref": "DTW1qKS6zxskGYynIs41",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "KzRdYY0dKIMr4FNvqmqo",
+              "type": "inter-doc"
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "Lgom2MbMyULG5znAHqvp": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788617.225
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653392190.6
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "0GBnQvXEXAxdBZ0xTOJ4",
+      "tags": {
+        "oCqkBK91FxPWwiQH744O": "OObpakhDzIVF61ZzcuYJ",
+        "BVdfu0M7xY4MRLEQMGKm": "Qxa4S5q7KHcMrZaU86UT"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send final list for management review"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "bBy7OgmOKEFl53oeetXR": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652789983.81
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464155.101
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": [
+          "/",
+          "4M8zMNA627Txq3FIPy6M",
+          "3OPNIPmpQMOkihamHIWw",
+          "LksOoBKqECIk1f6BwgHT"
+        ]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "7KMDIsui8071r4JUrP8c": "jmv07t5Ubh9iIhkBsXWt",
+        "oCqkBK91FxPWwiQH744O": "8XKO9hZhK2uPlzccWsdh"
+      },
+      "type": "note",
+      "title": {
+        "__r": [
+          {
+            "text": "Steering Committee // 13.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "__rId": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 32,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.101
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 32,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464175.101
+                }
+              }
+            ]
+          }
+        }
+      },
+      "body": {
+        "__r": [
+          {
+            "text": ": 13.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Date",
+                    "bold": true
+                  },
+                  {
+                    "__rId": 0
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Agenda "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Follow up from previous meeting:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Discuss team analysis from last week "
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "New Order of Business:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Complete the draft and send it for final review"
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Collect final data from team and create analysis report"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Notes "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "This week, following up on last week's agenda; we will deliver the analysis."
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Action Items "
+                  }
+                ]
+              },
+              {
+                "ref": "dfNZ81q6AiqrUvVVQrAq",
+                "type": "inter-doc"
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464118.955
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464118.955
+                }
+              }
+            ]
+          }
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "ecL1s3wUNTy3bFIirWUI": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790221.174
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962977.16
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "dfNZ81q6AiqrUvVVQrAq",
+      "tags": {
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Collect data and finalize document "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "OObpakhDzIVF61ZzcuYJ": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.625
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.625
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#da9f43",
+      "name": "To-be State",
+      "parentTag": "oCqkBK91FxPWwiQH744O"
+    },
+    "v": 0
+  },
+  "Qxa4S5q7KHcMrZaU86UT": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#1995d1",
+      "name": "In Progress",
+      "parentTag": "BVdfu0M7xY4MRLEQMGKm"
+    },
+    "v": 0
+  },
+  "Alx1EOBEiomrga2wuW2i": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#1995d1",
+      "name": "Done",
+      "parentTag": "BVdfu0M7xY4MRLEQMGKm"
+    },
+    "v": 0
+  },
+  "oCqkBK91FxPWwiQH744O": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.623
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.623
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#da9f43",
+      "name": "Project Phase"
+    },
+    "v": 0
+  },
+  "uPF7yS7C4RbESsws529i": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.628
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.628
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#da9f43",
+      "name": "As-is Analysis",
+      "parentTag": "oCqkBK91FxPWwiQH744O"
+    },
+    "v": 0
+  },
+  "dfNZ81q6AiqrUvVVQrAq": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790056.089
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652964935.198
+      },
+      "sortStamp": ">;;41053;;;2162428711wZµæ{ã\u001aºZt -",
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "bBy7OgmOKEFl53oeetXR",
+      "tags": {
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu",
+        "7KMDIsui8071r4JUrP8c": "jmv07t5Ubh9iIhkBsXWt",
+        "oCqkBK91FxPWwiQH744O": "8XKO9hZhK2uPlzccWsdh"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send detailed analysis (Details inside!) "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "See Attachments for the newest draft. "
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "ref": "b396MYLatY6godVOlZbC",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "ecL1s3wUNTy3bFIirWUI",
+              "type": "inter-doc"
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "7KMDIsui8071r4JUrP8c": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.609
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.609
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#dd2e9a",
+      "name": "Meeting Type"
+    },
+    "v": 0
+  },
+  "J6oL2sghtkHfUQV3wMsy": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.612
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.612
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#dd2e9a",
+      "name": "Weekly",
+      "parentTag": "7KMDIsui8071r4JUrP8c"
+    },
+    "v": 0
+  },
+  "jmv07t5Ubh9iIhkBsXWt": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.616
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.616
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#dd2e9a",
+      "name": "Steering Committee",
+      "parentTag": "7KMDIsui8071r4JUrP8c"
+    },
+    "v": 0
+  },
+  "8XKO9hZhK2uPlzccWsdh": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.631
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.631
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#da9f43",
+      "name": "Gap Analysis",
+      "parentTag": "oCqkBK91FxPWwiQH744O"
+    },
+    "v": 0
+  },
+  "XBg1ykAu0HqvPCyH7Nih": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788577.197
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653392149.09
+      },
+      "sortStamp": ">;;41053;;;2161@»ô6÷óú30\u0006VÃg",
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["LksOoBKqECIk1f6BwgHT"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "0GBnQvXEXAxdBZ0xTOJ4",
+      "tags": {
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu",
+        "oCqkBK91FxPWwiQH744O": "OObpakhDzIVF61ZzcuYJ",
+        "7KMDIsui8071r4JUrP8c": "J6oL2sghtkHfUQV3wMsy"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Create a new tasks for agreed-upon agenda."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "8DzbLYlgqOdiwld1s3c2": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.62
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.62
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "color": "#dd2e9a",
+      "name": "Interview",
+      "parentTag": "7KMDIsui8071r4JUrP8c"
+    },
+    "v": 0
+  },
+  "DTW1qKS6zxskGYynIs41": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652791879.699
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653390749.7
+      },
+      "sortStamp": ">;;41053;;;2162428711^¿lºjh¬ÇÖÃB¢\nÜC",
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "8s8P8zvkLyoqq4I2Mn2d",
+      "tags": {
+        "oCqkBK91FxPWwiQH744O": "uPF7yS7C4RbESsws529i",
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Follow up on ongoing tasks"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "KzRdYY0dKIMr4FNvqmqo": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652791949.253
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652962959.437
+      },
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["4M8zMNA627Txq3FIPy6M"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "8s8P8zvkLyoqq4I2Mn2d",
+      "tags": {
+        "oCqkBK91FxPWwiQH744O": "OObpakhDzIVF61ZzcuYJ",
+        "BVdfu0M7xY4MRLEQMGKm": "8hTRLVhLlb1sBW2j9qMu"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Set up scoping call with dev team"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "ym4WW1XLQ6uGmiYn5G8G": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652953911.166
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652961888.591
+      },
+      "createdBy": "fRjBlA8AxoUydhiOz6wHqD2uxU22",
+      "workspace": "tbtnt5hYguAoeLViXo4I",
+      "assignees": {
+        "__t": "S",
+        "__v": ["fRjBlA8AxoUydhiOz6wHqD2uxU22"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "type": "note",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "aP6u443g3LEk5rHSDyWL": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "workspaces",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.51
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648626591.51
+      },
+      "name": "Personal Workspace",
+      "users": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "noteTags": {},
+      "taskTags": {
+        "aZstJdgYGSgoOhsL3k1c": "vJt6YrJTCSDwNxY1LLDw"
+      },
+      "createdBy": "/"
+    },
+    "v": 0
+  },
+  "aZstJdgYGSgoOhsL3k1c": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.506
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648626591.506
+      },
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "color": "#1995d1",
+      "name": "Status"
+    },
+    "v": 0
+  },
+  "vJt6YrJTCSDwNxY1LLDw": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.509
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648632350.478
+      },
+      "sortStamp": ">;;41053;;;21624112414798x\u00022Ê7\u0011C\u0001äýÙ²Èu\u0001",
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "color": "#1995d1",
+      "name": "To Do",
+      "parentTag": "aZstJdgYGSgoOhsL3k1c"
+    },
+    "v": 0
+  },
+  "s4wAsYwItlOeBVFyrdEc": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648628792.108
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648628800.757
+      },
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "type": "note",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "nEeKtJLC6npONeI9Og0Y": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652959448.229
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653226469.215
+      },
+      "sortStamp": ">;;41053;;;21624294147981783866j7ccEqv3gKqAFHjPQaT",
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "aZstJdgYGSgoOhsL3k1c": "vJt6YrJTCSDwNxY1LLDw"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Buy Groceries"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": ["/"]
+      }
+    },
+    "v": 0
+  },
+  "2236nbr3R2APbBEThsA8": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653220425.654
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653220430.747
+      },
+      "sortStamp": ">;;41053;;;2162430509416835973eb066iSvwnygbCOV86xs",
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "aZstJdgYGSgoOhsL3k1c": "vJt6YrJTCSDwNxY1LLDw"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Buy Groceries (copy)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "c97c5EipW6kvfasXn8Ha": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652959440.734
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652960493.235
+      },
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "aZstJdgYGSgoOhsL3k1c": "vJt6YrJTCSDwNxY1LLDw"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Plan Yoga"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "VZZZfsfmMWbpBcW56yT6": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.507
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648626591.507
+      },
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "color": "#1995d1",
+      "name": "In Progress",
+      "parentTag": "aZstJdgYGSgoOhsL3k1c"
+    },
+    "v": 0
+  },
+  "tieUwn4lS6yfAaYcx7tI": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.509
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1649341143.042
+      },
+      "sortStamp": ">;;41053;;;2162411244593254236f90WMEwtoRxvokPxTCg7",
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "assignees": {
+        "__t": "S",
+        "__v": []
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "type": "note",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Welcome to Ovvio :)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "aJP5Oq7gzIMzBrCvHrpj": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1648626591.507
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1648632348.996
+      },
+      "sortStamp": ">;;41053;;;21624112414798QÅ¾ñ\\Mßºå9zli®",
+      "createdBy": "/",
+      "workspace": "aP6u443g3LEk5rHSDyWL",
+      "color": "#1995d1",
+      "name": "Done",
+      "parentTag": "aZstJdgYGSgoOhsL3k1c"
+    },
+    "v": 0
+  },
+  "ZtZN3KDdkyiPieayPiLY": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "workspaces",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653216310.646
+      },
+      "name": "Cadbury",
+      "users": {
+        "__t": "S",
+        "__v": [
+          "3OPNIPmpQMOkihamHIWw",
+          "4M8zMNA627Txq3FIPy6M",
+          "/",
+          "LksOoBKqECIk1f6BwgHT"
+        ]
+      },
+      "noteTags": {},
+      "taskTags": {
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh"
+      }
+    },
+    "v": 0
+  },
+  "1VYWMLNSTJQJvCNQOX8i": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.175
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.175
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#1995d1",
+      "name": "Status"
+    },
+    "v": 0
+  },
+  "slGpV6j81LkJgkHINVrh": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#1995d1",
+      "name": "To Do",
+      "parentTag": "1VYWMLNSTJQJvCNQOX8i"
+    },
+    "v": 0
+  },
+  "RGPOH3rjCDG5rdKWokw4": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790152.221
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652963151.509
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "dCm8Vx4B5PJT15xToh1B",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "VUS5EhMUnN2RdCc4SOUu"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send draft to management  "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "Qi8mKTbvaTeo1tpCsH8n": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788577.197
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652963127.938
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/", "LksOoBKqECIk1f6BwgHT"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "3cFmQtuCeisOJvDKdQ8O",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "VUS5EhMUnN2RdCc4SOUu",
+        "hgeL9lGhXaeFv62lnjJH": "IIReHTKp1H7bOXbasHcJ",
+        "EOca4Em9L3qrrxbTrl3a": "f1QORDxLxsqaw0BjNU5L"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Set up API design research team meeting, set up clear goals."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "H5bCgKWDeMKQN23CPUHR": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652789573.374
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464165.11
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw", "/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "hgeL9lGhXaeFv62lnjJH": "62aRqTZXtCpkipaxAfwS",
+        "EOca4Em9L3qrrxbTrl3a": "wxtn8vuc6jiGsmtfwMs0"
+      },
+      "type": "note",
+      "title": {
+        "__r": [
+          {
+            "text": "1-1 Interview with Richard // 03.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "__rId": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 40,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464185.109
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 40,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464185.109
+                }
+              }
+            ]
+          }
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Talking Points"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Project development"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Q3 vision for the team "
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Short-term goals and tasks"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Priorities for this week"
+                }
+              ]
+            },
+            {
+              "tagName": "ul",
+              "children": [
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "User case studies"
+                    }
+                  ]
+                },
+                {
+                  "tagName": "li",
+                  "children": [
+                    {
+                      "text": "Acquisition campaign"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "tagName": "h2",
+              "children": [
+                {
+                  "text": "Action Items"
+                }
+              ]
+            },
+            {
+              "ref": "tsw4nfpkmcxDJDetbFk5",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "zMT6srIzASjIKESM7vdu",
+              "type": "inter-doc"
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "3cFmQtuCeisOJvDKdQ8O": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786958.18
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464165.115
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": [
+          "3OPNIPmpQMOkihamHIWw",
+          "/",
+          "4M8zMNA627Txq3FIPy6M",
+          "LksOoBKqECIk1f6BwgHT"
+        ]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "hgeL9lGhXaeFv62lnjJH": "IIReHTKp1H7bOXbasHcJ",
+        "EOca4Em9L3qrrxbTrl3a": "IjGMX5jMy8eh5IGuZzA2"
+      },
+      "type": "note",
+      "title": {
+        "__r": [
+          {
+            "text": "Weekly "
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "__rId": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 6,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464185.114
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 6,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464185.114
+                }
+              }
+            ]
+          }
+        }
+      },
+      "body": {
+        "__r": [
+          {
+            "text": ": 01.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Details "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Subject",
+                    "bold": true
+                  },
+                  {
+                    "text": ": Integrate order management with CRM"
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Date",
+                    "bold": true
+                  },
+                  {
+                    "__rId": 0
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Agenda "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Follow up from previous meeting",
+                    "bold": true
+                  },
+                  {
+                    "text": ":"
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Define requirements "
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Prioritize user requirements"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "New Order of Business:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Review business logic"
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Complete API design research for CRM system"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Notes "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "This week, following up on last week's agenda; we will define requirements, and prioritize user requirements for  integration, as well as focusing on completing comprehensive design research for API by the"
+                  },
+                  {
+                    "text": " end of week.",
+                    "bold": true
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Action Items "
+                  }
+                ]
+              },
+              {
+                "ref": "FsTiC2D7F7QgMIsxKXEY",
+                "type": "inter-doc"
+              },
+              {
+                "ref": "Qi8mKTbvaTeo1tpCsH8n",
+                "type": "inter-doc"
+              },
+              {
+                "ref": "apc0Djdew490nF6HTkuu",
+                "type": "inter-doc"
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464153.657
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464153.657
+                }
+              }
+            ]
+          }
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "ZS2gkNZiu8CwJZ2GRT8x": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1653392796.122
+      },
+      "isDeleted": 1,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464090.702
+      },
+      "createdBy": "/",
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {},
+      "type": "note",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "CWIuhOIlUkb9P9GdsHo4": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652789983.81
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653464105.425
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": [
+          "3OPNIPmpQMOkihamHIWw",
+          "4M8zMNA627Txq3FIPy6M",
+          "/",
+          "LksOoBKqECIk1f6BwgHT"
+        ]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "tags": {
+        "hgeL9lGhXaeFv62lnjJH": "VwWiK1tyxWmtTBFnjPfy",
+        "EOca4Em9L3qrrxbTrl3a": "IjGMX5jMy8eh5IGuZzA2"
+      },
+      "type": "note",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Steering Committee // 17.05.2022"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "__r": [
+          {
+            "text": ": 17.05.2022"
+          }
+        ],
+        "__d": {
+          "root": {
+            "children": [
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Date",
+                    "bold": true
+                  },
+                  {
+                    "__rId": 0
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Agenda "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "Follow up from previous meeting:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Discuss team analysis from last week "
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "New Order of Business:",
+                    "bold": true
+                  },
+                  {
+                    "text": " "
+                  }
+                ]
+              },
+              {
+                "tagName": "ol",
+                "children": [
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Complete the draft and send it for final review"
+                      }
+                    ]
+                  },
+                  {
+                    "tagName": "li",
+                    "children": [
+                      {
+                        "text": "Collect final data from team and create analysis report"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Notes "
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": "This week, following up on last week's agenda; we will deliver the analysis."
+                  }
+                ]
+              },
+              {
+                "tagName": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              },
+              {
+                "tagName": "h2",
+                "children": [
+                  {
+                    "text": "Action Items "
+                  }
+                ]
+              },
+              {
+                "ref": "dCm8Vx4B5PJT15xToh1B",
+                "type": "inter-doc"
+              }
+            ]
+          },
+          "pointers": {
+            "__t": "S",
+            "__v": [
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "anchor",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464125.422
+                }
+              },
+              {
+                "key": "UE0yvGiS16NbFo0LqPhYWPYFlVu1/jqdg27IdU1VNazgXtgER",
+                "type": "focus",
+                "dir": 0,
+                "node": {
+                  "__rId": 0
+                },
+                "offset": 12,
+                "expiration": {
+                  "__t": "D",
+                  "__v": 1653464125.422
+                }
+              }
+            ]
+          }
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "bO7FzXztI2xYZJENnyAp": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790221.174
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652964739.062
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["/", "4M8zMNA627Txq3FIPy6M"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "dueDate": {
+        "__t": "D",
+        "__v": 1653944400
+      },
+      "parentNote": "dCm8Vx4B5PJT15xToh1B",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Collect data and finalize document "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "dCm8Vx4B5PJT15xToh1B": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652790056.089
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653392141.147
+      },
+      "sortStamp": ">;;41053;;;216242êË«qt½¢¹ôÕ«Bñc",
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "CWIuhOIlUkb9P9GdsHo4",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh",
+        "hgeL9lGhXaeFv62lnjJH": "VwWiK1tyxWmtTBFnjPfy",
+        "EOca4Em9L3qrrxbTrl3a": "IjGMX5jMy8eh5IGuZzA2"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send detailed analysis (Details inside!) "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "See Attachments for the newest draft. "
+                }
+              ]
+            },
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            },
+            {
+              "ref": "RGPOH3rjCDG5rdKWokw4",
+              "type": "inter-doc"
+            },
+            {
+              "ref": "bO7FzXztI2xYZJENnyAp",
+              "type": "inter-doc"
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "VUS5EhMUnN2RdCc4SOUu": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#1995d1",
+      "name": "Done",
+      "parentTag": "1VYWMLNSTJQJvCNQOX8i"
+    },
+    "v": 0
+  },
+  "hgeL9lGhXaeFv62lnjJH": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.609
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.609
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#dd2e9a",
+      "name": "Meeting Type"
+    },
+    "v": 0
+  },
+  "IIReHTKp1H7bOXbasHcJ": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.612
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.612
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#dd2e9a",
+      "name": "Weekly",
+      "parentTag": "hgeL9lGhXaeFv62lnjJH"
+    },
+    "v": 0
+  },
+  "EOca4Em9L3qrrxbTrl3a": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.623
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.623
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#da9f43",
+      "name": "Project Phase"
+    },
+    "v": 0
+  },
+  "f1QORDxLxsqaw0BjNU5L": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.625
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.625
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#da9f43",
+      "name": "To-be State",
+      "parentTag": "EOca4Em9L3qrrxbTrl3a"
+    },
+    "v": 0
+  },
+  "62aRqTZXtCpkipaxAfwS": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.62
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.62
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#dd2e9a",
+      "name": "Interview",
+      "parentTag": "hgeL9lGhXaeFv62lnjJH"
+    },
+    "v": 0
+  },
+  "wxtn8vuc6jiGsmtfwMs0": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.628
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.628
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#da9f43",
+      "name": "As-is Analysis",
+      "parentTag": "EOca4Em9L3qrrxbTrl3a"
+    },
+    "v": 0
+  },
+  "tsw4nfpkmcxDJDetbFk5": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652791879.699
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652963108.105
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "H5bCgKWDeMKQN23CPUHR",
+      "tags": {
+        "hgeL9lGhXaeFv62lnjJH": "62aRqTZXtCpkipaxAfwS",
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Follow up on professional development resources "
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "zMT6srIzASjIKESM7vdu": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652791949.253
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652963096.545
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["3OPNIPmpQMOkihamHIWw"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "H5bCgKWDeMKQN23CPUHR",
+      "tags": {
+        "hgeL9lGhXaeFv62lnjJH": "62aRqTZXtCpkipaxAfwS",
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Prepare mid and long-term goals for next week's meeting"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "IjGMX5jMy8eh5IGuZzA2": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.631
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.631
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#da9f43",
+      "name": "Gap Analysis",
+      "parentTag": "EOca4Em9L3qrrxbTrl3a"
+    },
+    "v": 0
+  },
+  "FsTiC2D7F7QgMIsxKXEY": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652787100.67
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653392146.457
+      },
+      "sortStamp": ">;;41053;;;2161Gz½·qìÙd¦YÅ\u0001/(H±Ï",
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["LksOoBKqECIk1f6BwgHT"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "3cFmQtuCeisOJvDKdQ8O",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "slGpV6j81LkJgkHINVrh",
+        "EOca4Em9L3qrrxbTrl3a": "wxtn8vuc6jiGsmtfwMs0"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Create reporting for user requirements."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "apc0Djdew490nF6HTkuu": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "notes",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788617.225
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1653392151.99
+      },
+      "sortStamp": ">;;41053;;;2161\fúÄ3±:\u0018QM\u001f®Þì\rKr",
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "assignees": {
+        "__t": "S",
+        "__v": ["LksOoBKqECIk1f6BwgHT"]
+      },
+      "attachments": {
+        "__t": "S",
+        "__v": []
+      },
+      "parentNote": "3cFmQtuCeisOJvDKdQ8O",
+      "tags": {
+        "1VYWMLNSTJQJvCNQOX8i": "8fJKkCr6fUfbcyHOnG7f"
+      },
+      "type": "task",
+      "title": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": "Send final deliverables by end of week"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "body": {
+        "root": {
+          "children": [
+            {
+              "tagName": "p",
+              "children": [
+                {
+                  "text": ""
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "pinnedBy": {
+        "__t": "S",
+        "__v": []
+      }
+    },
+    "v": 0
+  },
+  "VwWiK1tyxWmtTBFnjPfy": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652788242.616
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652788242.616
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#dd2e9a",
+      "name": "Steering Committee",
+      "parentTag": "hgeL9lGhXaeFv62lnjJH"
+    },
+    "v": 0
+  },
+  "8fJKkCr6fUfbcyHOnG7f": {
+    "s": {
+      "__t": "E",
+      "__v": {
+        "ns": "tags",
+        "version": 5
+      }
+    },
+    "d": {
+      "creationDate": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "isDeleted": 0,
+      "lastModified": {
+        "__t": "D",
+        "__v": 1652786950.176
+      },
+      "workspace": "ZtZN3KDdkyiPieayPiLY",
+      "color": "#1995d1",
+      "name": "In Progress",
+      "parentTag": "1VYWMLNSTJQJvCNQOX8i"
+    },
+    "v": 0
+  }
+}

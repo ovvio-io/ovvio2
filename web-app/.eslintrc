@@ -1,0 +1,26 @@
+{
+  "extends": "react-app",
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": [
+          "node_modules",
+          "src/"
+        ]
+      }
+    }
+  },
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "semi": [
+      "warn",
+      "always"
+    ],
+    "react-hooks/exhaustive-deps": ["warn", {
+      "additionalHooks": "(useQuery)"
+    }]  
+  }
+}

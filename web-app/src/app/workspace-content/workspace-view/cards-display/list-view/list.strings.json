@@ -1,0 +1,12 @@
+{
+  "en": {
+    "pinnedTasks": "My Pinned Tasks",
+    "pinTaskCta": "Pin your top tasks to organize your task list",
+    "pinnedNotes": "My Pinned Notes",
+    "pinNotesCta": "Pin your top notes to organize your notes",
+    "newTask": "New Task",
+    "saveDraft": "Save to",
+    "cardMoved": "Card moved to {workspace}",
+    "draftSaved": "Task saved to {workspace}"
+  }
+}
