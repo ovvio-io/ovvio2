@@ -266,13 +266,13 @@ export class Repository extends EventEmitter {
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
-  setValueForKey(key: string, session: string, value: Record): void {
+  setValueForKey(key: string, session: string, value: Record): boolean {
     const head = this.headForKey(key, session);
     if (head && this.recordForCommit(head).isEqual(value)) {
-      return;
+      return false;
     }
     if (!head && value.isNull) {
-      return;
+      return false;
     }
     const lastRecordCommit = this.lastRecordCommitForKey(key);
     const fullCommit = new Commit({
@@ -311,6 +311,7 @@ export class Repository extends EventEmitter {
       }
     }
     this.persistCommit(deltaCommit || fullCommit);
+    return true;
   }
 
   private lastRecordCommitForKey(key: string): Commit | undefined {

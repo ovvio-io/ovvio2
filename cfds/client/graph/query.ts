@@ -10,7 +10,7 @@ import { Vertex } from './vertex.ts';
 import { VertexManager } from './vertex-manager.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { unionIter } from '../../../base/common.ts';
-import { MicroTaskTimer, SimpleTimer, Timer } from '../timer.ts';
+import { SimpleTimer, Timer } from '../../../base/timer.ts';
 import {
   CoroutineQueue,
   CoroutineScheduler,

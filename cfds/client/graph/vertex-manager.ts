@@ -213,17 +213,26 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   commit(): void {
-    if (!this.hasPendingChanges) {
-      return;
-    }
     const graph = this.graph;
     const repo = graph.repository;
-    const localRecord = this.record;
-    repo.setValueForKey(this.key, graph.session, this.record);
-    this._record = repo.valueForKey(this.key, graph.session);
-    this.rebuildVertex();
-    if (!this._record.isEqual(localRecord)) {
-      this.reportInitialFields(false);
+    const prevRecord = this.record;
+    if (repo.setValueForKey(this.key, graph.session, this.record)) {
+      const newRecord = repo.valueForKey(this.key, graph.session);
+      const vert = this.getVertexProxy();
+      let pack: MutationPack;
+      for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
+        pack = mutationPackAppend(pack, [
+          fieldName,
+          (vert as any)[fieldName],
+          false,
+        ]);
+      }
+      const dynamicFields = this.captureDynamicFields();
+      this._record = newRecord;
+      this.rebuildVertex();
+      if (!mutationPackIsEmpty(pack)) {
+        this.vertexDidMutate(pack, dynamicFields);
+      }
     }
   }
 
