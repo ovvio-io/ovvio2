@@ -1,13 +1,18 @@
+import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import { serve } from 'https://deno.land/std@0.160.0/http/server.ts';
 import { Repository } from '../cfds/base/repo.ts';
 import { SyncMessage } from './types.ts';
 import { Client } from './client.ts';
 import { assert } from '../base/error.ts';
+import { SQLiteRepoStorage } from '../server/sqlite3-storage.ts';
+
+const FILE_EXT = '.repo';
 
 interface Arguments {
   port: number;
   replicas: string[];
+  path: string;
 }
 
 export class Server {
@@ -26,6 +31,7 @@ export class Server {
         })
         .number(['port'])
         .array(['replicas'])
+        .demandOption(['path'])
         .parse();
     }
     this._args = args!;
@@ -44,7 +50,9 @@ export class Server {
   getRepository(id: string): Repository {
     let repo = this._repositories.get(id);
     if (!repo) {
-      repo = new Repository();
+      repo = new Repository(
+        new SQLiteRepoStorage(joinPath(this._args.path, id + FILE_EXT))
+      );
       this._repositories.set(id, repo);
       const replicas = this._args.replicas;
       if (replicas.length > 0) {
@@ -79,14 +87,9 @@ export class Server {
     const repo = this.getRepository(repoId);
     const json = await req.json();
     const msg = SyncMessage.fromJS(json);
-    let count = 0;
-    debugger;
     for (const commit of msg.commits) {
-      if (repo.persistCommit(commit)) {
-        ++count;
-      }
+      repo.persistCommit(commit);
     }
-    console.log(`Received ${count} commits for repo ${repoId}`);
     const syncResp = SyncMessage.build(msg.filter, repo);
     return new Response(JSON.stringify(syncResp.toJS()), {
       headers: {

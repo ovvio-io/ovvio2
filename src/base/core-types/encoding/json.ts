@@ -20,6 +20,7 @@ import {
 import { DecodedValue, Decoder } from './types.ts';
 import { newInstance } from '../../common.ts';
 import { deserializeDate } from '../../date.ts';
+import { Encodable } from '../index.ts';
 
 export class JSONEncoder extends JSONBaseEncoder<ReadonlyJSONValue> {
   private _encodedObj: JSONObject;
@@ -90,7 +91,13 @@ export class JSONCyclicalEncoder extends BaseCyclicalEncoder<
   }
 
   newEncoder(): Encoder<string, CoreValue, ReadonlyJSONValue, CoreOptions> {
-    return newInstance<JSONCyclicalEncoder>(this);
+    return new JSONCyclicalEncoder();
+  }
+
+  static serialize(obj: Encodable): ReadonlyJSONValue {
+    const encoder = new JSONCyclicalEncoder();
+    obj.serialize(encoder);
+    return encoder.getOutput();
   }
 }
 

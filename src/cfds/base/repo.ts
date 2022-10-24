@@ -1,4 +1,3 @@
-import { uniqueId } from '../../base/common.ts';
 import {
   coreValueCompare,
   coreValueEquals,
@@ -6,45 +5,35 @@ import {
 import * as SetUtils from '../../base/set.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import { Code, ServerError, serviceUnavailable } from './errors.ts';
-import {
-  Commit,
-  commitContentsIsRecord,
-  commitInit,
-  DeltaContents,
-} from './commit.ts';
+import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
 import { concatChanges, DataChanges } from './object.ts';
 import { Record } from './record.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
 import { Edit } from './edit.ts';
 
-export class Repository {
-  // Key -> Commit Id -> Commit
-  private readonly _commitsByRecordKey: Dictionary<string, Set<string>>;
-  private readonly _commitsById: Dictionary<string, Commit>;
+export interface RepoStorage {
+  numberOfCommits(): number;
+  getCommit(id: string): Commit | undefined;
+  allCommits(): Iterable<Commit>;
+  commitsForKey(key: string): Iterable<Commit>;
+  allKeys(): Iterable<string>;
+  persistCommit(c: Commit): void;
+}
 
-  constructor(commits?: Iterable<Commit>) {
-    this._commitsByRecordKey = new Map();
-    this._commitsById = new Map();
-    if (commits) {
-      for (const c of commits) {
-        let keyMap = this._commitsByRecordKey.get(c.key);
-        if (!keyMap) {
-          keyMap = new Set();
-          this._commitsByRecordKey.set(c.key, keyMap);
-        }
-        keyMap.add(c.id);
-        this._commitsById.set(c.id, c);
-      }
-    }
+export class Repository {
+  readonly storage: RepoStorage;
+
+  constructor(storage: RepoStorage) {
+    this.storage = storage;
   }
 
   get numberOfCommits(): number {
-    return this._commitsById.size;
+    return this.storage.numberOfCommits();
   }
 
   getCommit(id: string): Commit {
-    const c = this._commitsById.get(id);
+    const c = this.storage.getCommit(id);
     if (!c) {
       throw serviceUnavailable();
     }
@@ -52,15 +41,11 @@ export class Repository {
   }
 
   commits(): Iterable<Commit> {
-    return this._commitsById.values();
+    return this.storage.allCommits();
   }
 
   commitsForKey(key: string): Iterable<Commit> {
-    const keyMap = this._commitsByRecordKey.get(key);
-    if (!keyMap) {
-      return [];
-    }
-    return SetUtils.mapToArray(keyMap, (id) => this.getCommit(id));
+    return this.storage.commitsForKey(key);
   }
 
   leavesForKey(key: string): Commit[] {
@@ -85,7 +70,7 @@ export class Repository {
   }
 
   keys(): Iterable<string> {
-    return this._commitsByRecordKey.keys();
+    return this.storage.allKeys();
   }
 
   /**
@@ -104,7 +89,7 @@ export class Repository {
         result = c;
         continue;
       }
-      result = this._commonAncestor(result, c);
+      result = this._findMergeBase(result, c);
       if (!result) {
         break;
       }
@@ -113,18 +98,23 @@ export class Repository {
   }
 
   /**
-   * Given two commits, this method finds the Lowest Common Ancestor between
-   * the two, or undefined if the commits aren't related.
+   * Given two commits, this method finds the base from which to perform a 3 way
+   * merge for c1 and c2. The algorithm is based on a simple Lowest Common
+   * Ancestor between the two, but rather than pick the actual LCA from the
+   * graph, we choose the first time ancestors agree on a common value.
    *
    * @param c1 First commit.
    * @param c2 Second commit.
    * @param c1Ancestors Internal c1 path for recursion.
    * @param c2Ancestors Internal c2 path for recursion.
    *
-   * @returns The common ancestor commit of undefined.
-   * @throws ServiceUnavailable if the commit graph is incomplete.
+   * @returns The base for a 3-way merge between c1 and c2, or undefined if no
+   *          such base can be found.
+   *
+   * @throws ServiceUnavailable if the commit graph is incomplete and cannot be
+   *         traversed.
    */
-  private _commonAncestor(
+  private _findMergeBase(
     c1: Commit,
     c2: Commit,
     c1Ancestors?: Set<string>,
@@ -133,7 +123,7 @@ export class Repository {
     if (!c1.parents.length || !c2.parents.length || c1.key !== c2.key) {
       return undefined;
     }
-    if (c1.id === c2.id) {
+    if (c1.contentsChecksum === c2.contentsChecksum) {
       return c1;
     }
     if (!c1Ancestors) {
@@ -142,20 +132,24 @@ export class Repository {
     if (!c2Ancestors) {
       c2Ancestors = new Set();
     }
-    for (const p of c1.parents) {
-      if (c2Ancestors.has(p)) {
-        return this.getCommit(p);
+    for (const parentId of c1.parents) {
+      const parent = this.getCommit(parentId);
+      const checksum = parent.contentsChecksum;
+      if (c2Ancestors.has(checksum)) {
+        return parent;
       }
-      c1Ancestors.add(p);
+      c1Ancestors.add(checksum);
     }
-    for (const p of c2.parents) {
-      if (c1Ancestors.has(p)) {
-        return this.getCommit(p);
+    for (const parentId of c2.parents) {
+      const parent = this.getCommit(parentId);
+      const checksum = parent.contentsChecksum;
+      if (c1Ancestors.has(checksum)) {
+        return parent;
       }
-      c2Ancestors.add(p);
+      c2Ancestors.add(checksum);
     }
     for (const p of c1.parents) {
-      const r = this._commonAncestor(
+      const r = this._findMergeBase(
         this.getCommit(p),
         c2,
         c1Ancestors,
@@ -166,7 +160,7 @@ export class Repository {
       }
     }
     for (const p of c2.parents) {
-      const r = this._commonAncestor(
+      const r = this._findMergeBase(
         c1,
         this.getCommit(p),
         c1Ancestors,
@@ -230,13 +224,12 @@ export class Repository {
       }
       const mergeRecord = base.clone();
       mergeRecord.patch(changes);
-      const mergeCommit = commitInit(
-        uniqueId(),
+      const mergeCommit = new Commit({
         session,
         key,
-        mergeRecord,
-        leaves.map((c) => c.id)
-      );
+        contents: mergeRecord,
+        parents: leaves.map((c) => c.id),
+      });
       this.persistCommit(mergeCommit);
       return mergeCommit;
     } catch (e) {
@@ -278,7 +271,12 @@ export class Repository {
       return;
     }
     const lastRecordCommit = this.lastRecordCommitForKey(key);
-    const fullCommit = commitInit(uniqueId(), session, key, value, head?.id);
+    const fullCommit = new Commit({
+      session,
+      key,
+      contents: value,
+      parents: head?.id,
+    });
     let deltaCommit: Commit | undefined;
     if (lastRecordCommit) {
       const baseRecord = this.recordForCommit(lastRecordCommit);
@@ -293,14 +291,14 @@ export class Repository {
       const fullLength = JSON.stringify(commitEncoder.getOutput()).length;
       // Only if our delta format is small enough relative to the full format,
       // then it's worth switching to it
-      if (deltaLength <= fullLength / 2) {
-        deltaCommit = commitInit(
-          fullCommit.id,
+      if (deltaLength <= fullLength * 0.85) {
+        deltaCommit = new Commit({
+          id: fullCommit.id,
           session,
           key,
-          { base: lastRecordCommit.id, edit },
-          fullCommit.parents
-        );
+          contents: { base: lastRecordCommit.id, edit },
+          parents: fullCommit.parents,
+        });
         console.log(
           `Using delta format saves ${Math.round(
             (100 * (fullLength - deltaLength)) / fullLength
@@ -328,23 +326,8 @@ export class Repository {
     return this.headForKey(key, '') !== undefined;
   }
 
-  persistCommit(c: Commit): boolean {
-    const localCommit = this._commitsById.get(c.id);
-    if (localCommit !== undefined) {
-      // Sanity check: Both copies of the same commit must be equal.
-      // TODO: Rather than crash, assume the other side may be malicious
-      assert(coreValueEquals(c, localCommit));
-      return false;
-    }
-    this._commitsById.set(c.id, c);
-    let set = this._commitsByRecordKey.get(c.key);
-    if (!set) {
-      set = new Set();
-      this._commitsByRecordKey.set(c.key, set);
-    }
-    set.add(c.id);
-    // TODO: Write to local storage
-    return true;
+  persistCommit(c: Commit): void {
+    this.storage.persistCommit(c);
   }
 }
 
@@ -370,4 +353,68 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
   }
   // Reverse order so we get descending timestamps
   return coreValueCompare(c2.timestamp, c1.timestamp);
+}
+
+export class MemRepoStorage implements RepoStorage {
+  // Key -> Commit Id -> Commit
+  private readonly _commitsByRecordKey: Dictionary<string, Set<string>>;
+  private readonly _commitsById: Dictionary<string, Commit>;
+
+  constructor(commits?: Iterable<Commit>) {
+    this._commitsByRecordKey = new Map();
+    this._commitsById = new Map();
+    if (commits) {
+      for (const c of commits) {
+        let keyMap = this._commitsByRecordKey.get(c.key);
+        if (!keyMap) {
+          keyMap = new Set();
+          this._commitsByRecordKey.set(c.key, keyMap);
+        }
+        keyMap.add(c.id);
+        this._commitsById.set(c.id, c);
+      }
+    }
+  }
+
+  numberOfCommits(): number {
+    return this._commitsById.size;
+  }
+
+  getCommit(id: string): Commit | undefined {
+    return this._commitsById.get(id);
+  }
+
+  allCommits(): Iterable<Commit> {
+    return this._commitsById.values();
+  }
+
+  commitsForKey(key: string): Iterable<Commit> {
+    const keyMap = this._commitsByRecordKey.get(key);
+    if (!keyMap) {
+      return [];
+    }
+    return SetUtils.mapToArray(keyMap, (id) => this.getCommit(id));
+  }
+
+  allKeys(): Iterable<string> {
+    return this._commitsByRecordKey.keys();
+  }
+
+  persistCommit(c: Commit): boolean {
+    const localCommit = this._commitsById.get(c.id);
+    if (localCommit !== undefined) {
+      // Sanity check: Both copies of the same commit must be equal.
+      // TODO: Rather than crash, assume the other side may be malicious
+      assert(coreValueEquals(c, localCommit));
+      return false;
+    }
+    this._commitsById.set(c.id, c);
+    let set = this._commitsByRecordKey.get(c.key);
+    if (!set) {
+      set = new Set();
+      this._commitsByRecordKey.set(c.key, set);
+    }
+    set.add(c.id);
+    return true;
+  }
 }

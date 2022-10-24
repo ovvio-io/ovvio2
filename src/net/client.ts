@@ -44,8 +44,9 @@ export class Client {
   }
 
   private async sendSyncMessage(): Promise<void> {
+    const repo = this.repo;
+    const msg = SyncMessage.build(this._previousServerFilter, repo).toJS();
     try {
-      const repo = this.repo;
       console.log(
         `Starting sync with peer ${this._serverUrl}, ${this.repo.numberOfCommits} commits...`
       );
@@ -55,9 +56,7 @@ export class Client {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(
-          SyncMessage.build(this._previousServerFilter, repo).toJS()
-        ),
+        body: JSON.stringify(msg),
       });
       const text = await resp.text();
       const json = JSON.parse(text);

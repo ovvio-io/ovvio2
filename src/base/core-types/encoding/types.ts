@@ -20,7 +20,7 @@ export interface Decoder<
   K extends DecodableKey = DecodableKey,
   V extends DecodedValue = DecodedValue
 > {
-  get<T extends V>(key: K, defaultValue?: T): T | undefined;
+  get<T extends V>(key: K, defaultValue?: T): T | typeof defaultValue;
   has(key: K): boolean;
   getDecoder(key: K, offset?: number): Decoder<K, V>;
 }

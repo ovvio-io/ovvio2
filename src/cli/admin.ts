@@ -2,7 +2,7 @@ import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import * as path from 'https://deno.land/std@0.160.0/path/mod.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
-import { Repository } from '../cfds/base/repo.ts';
+import { MemRepoStorage, Repository } from '../cfds/base/repo.ts';
 import { Client } from '../net/client.ts';
 
 interface Arguments {
@@ -32,7 +32,7 @@ async function main(): Promise<void> {
     .help()
     .parse();
   console.log(`Downloading repo from ${args.server}...`);
-  const repo = new Repository();
+  const repo = new Repository(new MemRepoStorage());
   const client = new Client(repo, args.server);
   client.startSyncing();
   await client.sync();

@@ -49,6 +49,7 @@ export abstract class BaseCyclicalEncoder<
 > implements Encoder<string, CoreValue, T, OT>
 {
   set(key: string, value: CoreValue, options?: OT): void {
+    // TODO(ofri): Properly handle Encodable instances as values
     if (isObject(value)) {
       const refSet = new RefSet();
       this.fillRefs(refSet, value, options);

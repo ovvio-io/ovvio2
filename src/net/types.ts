@@ -11,7 +11,10 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
-import { ReadonlyDecodedArray } from '../base/core-types/encoding/types.ts';
+import {
+  DecodedValue,
+  ReadonlyDecodedArray,
+} from '../base/core-types/encoding/types.ts';
 import { ReadonlyJSONObject, ReadonlyJSONValue } from '../base/interfaces.ts';
 import { Commit, CommitContents } from '../cfds/base/commit.ts';
 import { Edit } from '../cfds/base/edit.ts';
@@ -28,9 +31,7 @@ export class SyncMessage implements Encodable {
   }
 
   toJS(): ReadonlyJSONValue {
-    const encoder = new JSONCyclicalEncoder();
-    this.serialize(encoder);
-    return encoder.getOutput();
+    return JSONCyclicalEncoder.serialize(this);
   }
 
   serialize(
@@ -38,7 +39,10 @@ export class SyncMessage implements Encodable {
     _options?: unknown
   ): void {
     encoder.set('f', this.filter);
-    encoder.set('c', this.commits);
+    encoder.set(
+      'c',
+      this.commits.map((c) => JSONCyclicalEncoder.serialize(c))
+    );
   }
 
   static fromJS(obj: ReadonlyJSONValue): SyncMessage {
@@ -46,20 +50,9 @@ export class SyncMessage implements Encodable {
     const filter = new BloomFilter({ decoder: decoder.getDecoder('f') });
     const commits = decoder
       .get<ReadonlyDecodedArray>('c', [])!
-      .map((obj: any) => {
-        let contents: CommitContents;
-        if (obj.contents.record !== undefined) {
-          contents = { record: new Record({ decoder: obj.contents.record }) };
-        } else {
-          contents = {
-            base: obj.contents.base,
-            edit: new Edit({ decoder: obj.contents.edit }),
-          };
-        }
-        return {
-          ...obj,
-          contents,
-        } as Commit;
+      .map((obj: DecodedValue) => {
+        const decoder = new JSONCyclicalDecoder(obj as ReadonlyJSONObject);
+        return new Commit({ decoder });
       });
     return new this(filter, commits);
   }

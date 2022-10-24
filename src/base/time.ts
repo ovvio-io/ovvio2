@@ -119,3 +119,16 @@ export function hoursToMS(hours: number) {
 export function daysToMS(days: number) {
   return days * 24 * 60 * 60 * 1000;
 }
+
+export function toReverseTimestamp(d: number | Date): number {
+  if (d instanceof Date) {
+    d = d.getTime();
+  }
+  return MAX_TS - d;
+}
+
+export function fromReverseTimestamp(ts: number): Date {
+  const d = new Date();
+  d.setTime(MAX_TS - ts);
+  return d;
+}
