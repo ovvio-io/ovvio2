@@ -20,7 +20,8 @@ import { unionIter } from '../../../base/set.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
 import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
-import { Repository } from '../../base/repo.ts';
+import { EVENT_NEW_COMMIT, Repository } from '../../base/repo.ts';
+import { Commit } from '../../base/commit.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -47,6 +48,7 @@ export class GraphManager extends VertexSource {
   private readonly _undoManager: UndoManager;
   private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
+  private readonly _session: string;
 
   constructor(
     repo: Repository,
@@ -59,6 +61,7 @@ export class GraphManager extends VertexSource {
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
     this._pendingMutations = new Map();
+    this._session = rootKey + '/' + uniqueId();
     this._ptrFilterFunc = ptrFilterFunc;
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
       this._processPendingMutations()
@@ -67,6 +70,9 @@ export class GraphManager extends VertexSource {
 
     this._createVertIfNeeded(this._rootKey);
     this.sharedQueriesManager = new SharedQueriesManager(this);
+    repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+      this.getVertexManager(c.key).handleNewCommit(c);
+    });
   }
 
   get adjacencyList(): AdjacencyList {
@@ -87,6 +93,10 @@ export class GraphManager extends VertexSource {
 
   get isLoading(): boolean {
     return false;
+  }
+
+  get session(): string {
+    return this._session;
   }
 
   keys(): Iterable<string> {

@@ -1,3 +1,4 @@
+import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 import {
   coreValueCompare,
   coreValueEquals,
@@ -12,6 +13,8 @@ import { assert, notReached } from '../../base/error.ts';
 import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
 import { Edit } from './edit.ts';
 
+export const EVENT_NEW_COMMIT = 'NewCommit';
+
 export interface RepoStorage {
   numberOfCommits(): number;
   getCommit(id: string): Commit | undefined;
@@ -21,10 +24,11 @@ export interface RepoStorage {
   persistCommit(c: Commit): void;
 }
 
-export class Repository {
+export class Repository extends EventEmitter {
   readonly storage: RepoStorage;
 
   constructor(storage: RepoStorage) {
+    super();
     this.storage = storage;
   }
 
@@ -82,7 +86,7 @@ export class Repository {
    * @returns The LCA commit or undefined if no common ancestor exists.
    * @throws ServiceUnavailable if the commit graph is incomplete.
    */
-  lca(commits: Iterable<Commit>): Commit | undefined {
+  findMergeBase(commits: Iterable<Commit>): Commit | undefined {
     let result: Commit | undefined;
     for (const c of commits) {
       if (!result) {
@@ -211,7 +215,7 @@ export class Repository {
       // Find the base of our N-way merge. If no LCA is found then we're dealing
       // with concurrent writers who all created of the same key concurrently.
       // Use the null record as a base in this case.
-      const lca = this.lca(commitsToMerge);
+      const lca = this.findMergeBase(commitsToMerge);
       const base = lca ? this.recordForCommit(lca) : Record.nullRecord();
       // TODO: Scheme upgrade
       // Compute a compound diff
@@ -327,7 +331,10 @@ export class Repository {
   }
 
   persistCommit(c: Commit): void {
-    this.storage.persistCommit(c);
+    if (!this.commitsForKey(c.id)) {
+      this.storage.persistCommit(c);
+      this.emit(EVENT_NEW_COMMIT, c);
+    }
   }
 }
 

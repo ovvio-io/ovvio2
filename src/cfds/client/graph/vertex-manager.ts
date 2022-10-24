@@ -26,12 +26,7 @@ import {
   Equatable,
 } from '../../../base/core-types/index.ts';
 import vertexBuilder from './vertices/vertex-builder.ts';
-import {
-  BaseDynamicTimer,
-  EaseInOutSineTimer,
-  NextEventLoopCycleTimer,
-  SimpleTimer,
-} from '../timer.ts';
+import { SimpleTimer } from '../../../base/timer.ts';
 import { VertexSnapshot } from './types.ts';
 import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
 import { ValueType } from '../../base/types/index.ts';
@@ -43,6 +38,8 @@ import {
   VertexConfig,
 } from './vertex.ts';
 import * as SetUtils from '../../../base/set.ts';
+import { Commit } from '../../base/commit.ts';
+import { concatChanges } from '../../base/object.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -88,9 +85,11 @@ export class VertexManager<V extends Vertex = Vertex>
   private readonly _graph: GraphManager;
   private readonly _key: string;
   private readonly _vertexConfig: VertexConfig;
+  private readonly _commitDelayTimer: SimpleTimer;
   private _record: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
+  private _head: string | undefined;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -108,7 +107,10 @@ export class VertexManager<V extends Vertex = Vertex>
     this._vertexConfig = {
       isLocal: local === true,
     };
-    this._record = initialState || Record.nullRecord();
+    this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
+    const repo = graph.repository;
+    this._record = initialState || repo.valueForKey(this.key, graph.session);
+    this._head = repo.headForKey(key, graph.session)?.id;
     this.rebuildVertex();
     this.reportInitialFields(true);
   }
@@ -140,8 +142,9 @@ export class VertexManager<V extends Vertex = Vertex>
    * on the server.
    */
   get hasPendingChanges(): boolean {
-    // TODO
-    return false;
+    return this.record.isEqual(
+      this.graph.repository.valueForKey(this.key, this.graph.session)
+    );
   }
 
   get isRoot(): boolean {
@@ -207,6 +210,13 @@ export class VertexManager<V extends Vertex = Vertex>
     for (const edge of graph.adjacencyList.outEdges(this.key, fieldName)) {
       yield [graph.getVertexManager(edge.vertex), edge.fieldName];
     }
+  }
+
+  commit(): void {
+    const graph = this.graph;
+    const repo = graph.repository;
+    repo.setValueForKey(this.key, graph.session, this.record);
+    this._head = repo.headForKey(this.key, graph.session)?.id;
   }
 
   private rebuildVertex(): void {
@@ -342,6 +352,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
+    this._commitDelayTimer.schedule();
     // if (this.hasPendingChanges) {
     //   this.scheduleSync();
     // }
@@ -479,6 +490,36 @@ export class VertexManager<V extends Vertex = Vertex>
 
   compareTo(other: VertexManager): number {
     return coreValueCompare(this._key, other.key);
+  }
+
+  handleNewCommit(c: Commit): void {
+    const session = this.graph.session;
+    // Ignore local commits and commits to different keys
+    if (c.key !== this.key || c.session === session) {
+      return;
+    }
+    const repo = this.graph.repository;
+    let baseCommit: Commit | undefined;
+    if (this._head) {
+      baseCommit = repo.findMergeBase([repo.getCommit(this._head), c]);
+    }
+    const base = baseCommit
+      ? repo.recordForCommit(baseCommit)
+      : Record.nullRecord();
+    const remoteEdits = base.diff(repo.recordForCommit(c), false);
+    let pack: MutationPack;
+    for (const [fieldName] of Object.keys(remoteEdits)) {
+      pack = mutationPackAppend(pack, [
+        fieldName,
+        (this.getVertex() as any)[fieldName],
+        false,
+      ]);
+    }
+    const dynamicFields = this.captureDynamicFields();
+    const mergeResult = base.clone();
+    mergeResult.patch(concatChanges(remoteEdits, base.diff(this.record, true)));
+    this._record = mergeResult;
+    this.vertexDidMutate(pack, dynamicFields);
   }
 }
 
