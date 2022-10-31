@@ -71,7 +71,10 @@ export class GraphManager extends VertexSource {
     this._createVertIfNeeded(this._rootKey);
     this.sharedQueriesManager = new SharedQueriesManager(this);
     repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
-      this.getVertexManager(c.key).handleNewCommit(c);
+      // Trigger a merge with remote peers when detecting a remote edit
+      if (c.session !== this.session) {
+        this.getVertexManager(c.key).scheduleCommitIfNeeded();
+      }
     });
   }
 

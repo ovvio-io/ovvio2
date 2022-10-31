@@ -1,12 +1,6 @@
 import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 import { Record } from '../../base/record.ts';
 import { Scheme } from '../../base/scheme.ts';
-import {
-  Code,
-  ErrorType,
-  ServerError,
-  typeFromCode,
-} from '../../base/errors.ts';
 import { GraphManager } from './graph-manager.ts';
 import {
   MutationPack,
@@ -38,8 +32,6 @@ import {
   VertexConfig,
 } from './vertex.ts';
 import * as SetUtils from '../../../base/set.ts';
-import { Commit } from '../../base/commit.ts';
-import { concatChanges } from '../../base/object.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -212,6 +204,10 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
+  /**
+   * This method commits any pending local edits, and merges any pending remote
+   * edits. NOP if nothing needs to be done.
+   */
   commit(): void {
     const graph = this.graph;
     const repo = graph.repository;
@@ -234,6 +230,10 @@ export class VertexManager<V extends Vertex = Vertex>
         this.vertexDidMutate(pack, dynamicFields);
       }
     }
+  }
+
+  scheduleCommitIfNeeded(): void {
+    this._commitDelayTimer.schedule();
   }
 
   private rebuildVertex(): void {
@@ -275,9 +275,9 @@ export class VertexManager<V extends Vertex = Vertex>
           const mut = target.onUserUpdatedField([prop, true, oldValue]);
           this.vertexDidMutate(mut, dynamicFields);
           // Trigger sync on persistent prop updates
-          // if (this.scheme.hasField(prop)) {
-          //   this.scheduleSync();
-          // }
+          if (this.scheme.hasField(prop)) {
+            this.scheduleCommitIfNeeded();
+          }
         }
         return success;
       },
@@ -369,10 +369,9 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
-    this._commitDelayTimer.schedule();
-    // if (this.hasPendingChanges) {
-    //   this.scheduleSync();
-    // }
+    if (this.hasPendingChanges) {
+      this.scheduleCommitIfNeeded();
+    }
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {
@@ -507,15 +506,6 @@ export class VertexManager<V extends Vertex = Vertex>
 
   compareTo(other: VertexManager): number {
     return coreValueCompare(this._key, other.key);
-  }
-
-  handleNewCommit(c: Commit): void {
-    const session = this.graph.session;
-    // Ignore local commits and commits to different keys
-    if (c.key !== this.key || c.session === session) {
-      return;
-    }
-    this.commit();
   }
 }
 

@@ -8,8 +8,8 @@ import {
 import { Commit } from '../cfds/base/commit.ts';
 import { assert } from '../base/error.ts';
 
-const COMMITS_TABLE = 'commits';
-const COMMITS_BY_KEY_IDX = 'commitsByKey';
+const TABLE_COMMITS = 'commits';
+const INDEX_COMMITS_BY_KEY = 'commitsByKey';
 
 export class SQLiteRepoStorage implements RepoStorage {
   private readonly _db: Database;
@@ -22,26 +22,29 @@ export class SQLiteRepoStorage implements RepoStorage {
     path = resolvePath(path);
     const db = new Database(path);
     this._db = db;
-    db.exec(`CREATE TABLE IF NOT EXISTS ${COMMITS_TABLE} (
+    db.exec('PRAGMA journal_mode = WAL;');
+    db.exec('PRAGMA busy_timeout = 1000;');
+    db.exec('PRAGMA foreign_keys = ON;');
+    db.exec(`CREATE TABLE IF NOT EXISTS ${TABLE_COMMITS} (
       id TINYTEXT NOT NULL PRIMARY KEY,
       key TINYTEXT NOT NULL,
       ts TIMESTAMP NOT NULL,
       json TEXT NOT NULL
     );`);
     db.exec(
-      `CREATE INDEX IF NOT EXISTS ${COMMITS_BY_KEY_IDX} ON ${COMMITS_TABLE} (key);`
+      `CREATE INDEX IF NOT EXISTS ${INDEX_COMMITS_BY_KEY} ON ${TABLE_COMMITS} (key);`
     );
     this._countStatement = db.prepare(
-      `SELECT COUNT(id) from ${COMMITS_TABLE};`
+      `SELECT COUNT(id) from ${TABLE_COMMITS};`
     );
     this._getCommitStatement = db.prepare(
-      `SELECT json from ${COMMITS_TABLE} WHERE ID = :id;`
+      `SELECT json from ${TABLE_COMMITS} WHERE ID = :id;`
     );
     this._getKeysStatement = db.prepare(
-      `SELECT DISTINCT key from ${COMMITS_TABLE}`
+      `SELECT DISTINCT key from ${TABLE_COMMITS}`
     );
     this._putCommitStatement = db.prepare(
-      `INSERT INTO ${COMMITS_TABLE} (id, key, ts, json) VALUES (:id, :key, :ts, :json);`
+      `INSERT INTO ${TABLE_COMMITS} (id, key, ts, json) VALUES (:id, :key, :ts, :json);`
     );
   }
 
@@ -60,7 +63,7 @@ export class SQLiteRepoStorage implements RepoStorage {
 
   *allCommits(): Generator<Commit> {
     const statement = this._db
-      .prepare(`SELECT json FROM ${COMMITS_TABLE};`)
+      .prepare(`SELECT json FROM ${TABLE_COMMITS};`)
       .bind();
     for (const { json } of statement) {
       yield new Commit({
@@ -71,7 +74,7 @@ export class SQLiteRepoStorage implements RepoStorage {
 
   *commitsForKey(key: string): Generator<Commit> {
     const statement = this._db
-      .prepare(`SELECT json WHERE key = ${key} FROM ${COMMITS_TABLE};`)
+      .prepare(`SELECT json WHERE key = ${key} FROM ${TABLE_COMMITS};`)
       .bind();
     for (const { json } of statement) {
       yield new Commit({
