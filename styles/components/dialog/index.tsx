@@ -192,7 +192,7 @@ export function Dialog({
 
   useEffect(() => {
     if (timeout.current) {
-      window.clearTimeout(timeout.current);
+      clearTimeout(timeout.current);
       timeout.current = null;
     }
     if (!open) {
@@ -214,7 +214,7 @@ export function Dialog({
     return null;
   }
 
-  const root = window.document.getElementById('root');
+  const root = document.getElementById('root');
   const ignoreClick = (e) => {
     e.stopPropagation();
     e.preventDefault();

@@ -1,4 +1,4 @@
-import {
+import React, {
   useCallback,
   useEffect,
   useRef,
@@ -112,11 +112,11 @@ export const Backdrop: React.FC<BackdropProps> = ({
 
   useEffect(() => {
     if (timeout.current) {
-      window.clearTimeout(timeout.current);
+      clearTimeout(timeout.current);
       timeout.current = null;
     }
     if (!open) {
-      timeout.current = window.setTimeout(() => {
+      timeout.current = setTimeout(() => {
         if (!mounted.current) {
           return;
         }
@@ -145,7 +145,7 @@ export const Backdrop: React.FC<BackdropProps> = ({
   if (!visible) {
     return null;
   }
-  const root = rootId && window.document.getElementById(rootId);
+  const root = rootId && document.getElementById(rootId);
 
   return createUniversalPortal(
     <Layer priority={3}>

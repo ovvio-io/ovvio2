@@ -1,6 +1,6 @@
+import React from 'https://esm.sh/react@18.2.0';
 import IconBase, { IconProps } from './IconBase.tsx';
 import { brandLightTheme as theme } from '../../theme.tsx';
-import React from 'https://esm.sh/react@18.2.0';
 
 export function IconGroupBy({ fill, className }: IconProps) {
   fill = fill || theme.colors.text;
