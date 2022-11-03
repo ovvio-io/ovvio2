@@ -1,8 +1,10 @@
-import { Logger, Utils } from '@ovvio/base';
-import logger, { addSeverityListener } from '@ovvio/base/lib/logger';
-import { CFDS_VERSION } from '@ovvio/cfds/lib/base/defs';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { CFDS_VERSION } from '../../../../cfds/base/defs.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
 import WebClientBuilder, {
   WebEventsClient,
 } from '@ovvio/user-event/lib/client/webEventsClient';
@@ -235,7 +237,7 @@ export class EventLogger {
     event: CardActionFields<T>
   ) {
     const ts = Date.now();
-    return new Promise<void>(res => {
+    return new Promise<void>((res) => {
       event.timestamp = ts;
       this.cardAction(action, cardManager, event);
       res();
@@ -314,7 +316,7 @@ export function EventLoggerProvider({
 
     const newLogger = eventLogger || new EventLogger(sessionInfo);
     setLogger(newLogger);
-    const unloadHandler = e => {
+    const unloadHandler = (e) => {
       eventLogger.action('SESSION_END', {});
       eventLogger.close();
     };

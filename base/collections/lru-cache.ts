@@ -1,12 +1,16 @@
 import { Dictionary } from './dict.ts';
 import { OrderedMap } from './orderedmap.ts';
 
+export type EvictionHandler<K, V> = (key: K, value: V) => void;
+
 export class LRUCache<K, V> implements Dictionary<K, V> {
   private readonly _map: OrderedMap<K, V>;
+  private readonly _evictionHandler?: EvictionHandler<K, V>;
   private _limit: number;
 
-  constructor(limit?: number, dictInst?: Dictionary) {
+  constructor(limit?: number, evictionHandler?: EvictionHandler<K, V>) {
     this._map = new OrderedMap();
+    this._evictionHandler = evictionHandler;
     this._limit = Math.max(0, limit || 0);
   }
 
@@ -24,10 +28,12 @@ export class LRUCache<K, V> implements Dictionary<K, V> {
   }
 
   get(key: K): V | undefined {
+    this._map.moveToEnd(key);
     return this._map.get(key);
   }
 
   has(key: K): boolean {
+    this._map.moveToEnd(key);
     return this._map.has(key);
   }
 
@@ -69,7 +75,12 @@ export class LRUCache<K, V> implements Dictionary<K, V> {
   private evictValuesIfNeeded(): void {
     const map = this._map;
     const limit = this._limit;
+    const evictionHandler = this._evictionHandler;
     while (limit > 0 && map.size > limit) {
+      const key = map.startKey!;
+      if (evictionHandler) {
+        evictionHandler(key, map.get(key)!);
+      }
       map.delete(map.startKey!);
     }
   }

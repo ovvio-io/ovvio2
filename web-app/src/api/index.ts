@@ -1,5 +1,5 @@
-import config from 'core/config';
-import { CurrentUser } from 'stores/user';
+import config from '../core/config.ts';
+import { CurrentUser } from '../stores/user.ts';
 
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAY = 100;
@@ -159,7 +159,7 @@ export class RestClient {
 }
 
 function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default RestClient;

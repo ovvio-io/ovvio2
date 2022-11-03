@@ -44,7 +44,7 @@ function stopTimerTickerIfNeeded() {
 }
 
 export interface TimerCallback {
-  (timer: Timer): boolean | undefined | void;
+  (timer: Timer): boolean | undefined | void | Promise<void | undefined>;
 }
 
 export interface Timer {

@@ -1,9 +1,12 @@
+import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import * as path from 'https://deno.land/std@0.160.0/path/mod.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
 import { MemRepoStorage, Repository } from '../cfds/base/repo.ts';
-import { Client } from '../net/client.ts';
+import { Client, kSyncConfigClient } from '../net/client.ts';
+import { SQLiteRepoStorage } from '../server/sqlite3-storage.ts';
+import { buildHelpMessage, Manual } from './help.ts';
 
 interface Arguments {
   server: string;
@@ -11,7 +14,6 @@ interface Arguments {
 
 enum Command {
   Exit = 1,
-  Unknown,
   Help,
   Sync,
   Get,
@@ -20,6 +22,32 @@ enum Command {
   List,
   Stats,
 }
+
+const kCliManual: Manual<keyof typeof Command> = {
+  Exit: 'Terminate this CLI',
+  Help: 'Print this help page',
+  Sync: 'Sync with the remote server',
+  Get: {
+    params: ['key', 'The key to read'],
+    desc: 'Read the record of a given key',
+  },
+  Put: {
+    params: [
+      ['key', 'The key to update'],
+      ['record', 'Updated record'],
+    ],
+    desc: 'Create/replace the record for a given key',
+  },
+  Putf: {
+    params: [
+      ['key', 'The key to update'],
+      ['path', 'Full or relative path to a JSON encoded record file'],
+    ],
+    desc: 'Create/replace the record for a given key with a record encoded as JSON file',
+  },
+  List: 'List all keys in the repository',
+  Stats: 'Print statistics about the repository',
+};
 
 async function main(): Promise<void> {
   let updateKey: string | undefined;
@@ -32,8 +60,12 @@ async function main(): Promise<void> {
     .help()
     .parse();
   console.log(`Downloading repo from ${args.server}...`);
-  const repo = new Repository(new MemRepoStorage());
-  const client = new Client(repo, args.server);
+  // Using in memory SQLite allows us to run queries locally
+  const tempDir = Deno.makeTempDirSync();
+  const repoPath = joinPath(tempDir, uniqueId() + '.repo');
+  const repo = new Repository(new SQLiteRepoStorage(repoPath));
+  const client = new Client(repo, args.server, kSyncConfigClient);
+  console.log(`Starting download to ${repoPath}...`);
   client.startSyncing();
   await client.sync();
   console.log(`Download complete (${repo.numberOfCommits} commits).`);
@@ -56,16 +88,7 @@ async function main(): Promise<void> {
   while (cmd !== Command.Exit) {
     switch (cmd) {
       case Command.Help:
-        console.log('Available commands:');
-        console.log('  help: Print this help page');
-        console.log('  sync: Sync with the remote server');
-        console.log('  get <key>: Read the record of a given key');
-        console.log('  put <key> <record>: Update the record of a given key');
-        console.log(
-          '  putf <key> <path/to/record.json>: Update the record of a given key with the contents of a json file'
-        );
-        console.log('  list: List all keys in the repository');
-        console.log('  stats: Print statistics about the repository');
+        console.log(buildHelpMessage(kCliManual));
         break;
 
       case Command.Sync:
@@ -156,22 +179,24 @@ async function main(): Promise<void> {
 const kExitKeywords = ['Q', 'Quit', 'Exit'];
 
 function readCommand(): [Command, string[]] {
-  let input = (prompt('Enter command:') || '').trim().toLocaleLowerCase();
-  if (input.startsWith('"')) {
-    input = input.substring(1, input.length - 1);
+  while (true) {
+    let input = (prompt('Enter command:') || '').trim().toLocaleLowerCase();
+    if (input.startsWith('"')) {
+      input = input.substring(1, input.length - 1);
+    }
+    input = input.replaceAll('\\', '');
+    const args = input.split(/\s+/);
+    // Capitalize first letter
+    const cmd = args[0][0].toUpperCase() + args[0].substring(1);
+    if (kExitKeywords.indexOf(input) > -1) {
+      return [Command.Exit, args];
+    }
+    const result = (Command as any)[cmd];
+    if (result) {
+      return [result, args];
+    }
+    console.log('Unknown command.');
   }
-  input = input.replaceAll('\\', '');
-  const args = input.split(/\s+/);
-  const cmd = args[0][0].toUpperCase() + args[0].substring(1);
-  if (kExitKeywords.indexOf(input) > -1) {
-    return [Command.Exit, args];
-  }
-  // Capitalize first letter
-  const result = (Command as any)[cmd];
-  if (!result) {
-    return [Command.Unknown, args];
-  }
-  return [result, args];
 }
 
 main();

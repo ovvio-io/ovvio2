@@ -1,5 +1,5 @@
-import { isServerSide } from '@ovvio/styles/lib/utils/ssr';
-import config from 'core/config';
+import { isServerSide } from '../../../../styles/utils/ssr.ts';
+import config from '../config.ts';
 
 declare global {
   interface Window {

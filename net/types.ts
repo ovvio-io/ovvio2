@@ -19,14 +19,16 @@ import { ReadonlyJSONObject, ReadonlyJSONValue } from '../base/interfaces.ts';
 import { Commit, CommitContents } from '../cfds/base/commit.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { Record } from '../cfds/base/record.ts';
-import { Repository } from '../cfds/base/repo.ts';
+import { Repository, RepoStorage } from '../cfds/base/repo.ts';
 
 export class SyncMessage implements Encodable {
   readonly filter: BloomFilter;
+  readonly repoSize: number;
   readonly commits: Commit[];
 
-  constructor(filter: BloomFilter, commits?: Commit[]) {
+  constructor(filter: BloomFilter, repoSize: number, commits?: Commit[]) {
     this.filter = filter;
+    this.repoSize = repoSize;
     this.commits = commits || [];
   }
 
@@ -43,6 +45,7 @@ export class SyncMessage implements Encodable {
       'c',
       this.commits.map((c) => JSONCyclicalEncoder.serialize(c))
     );
+    encoder.set('s', this.repoSize);
   }
 
   static fromJS(obj: ReadonlyJSONValue): SyncMessage {
@@ -54,16 +57,37 @@ export class SyncMessage implements Encodable {
         const decoder = new JSONCyclicalDecoder(obj as ReadonlyJSONObject);
         return new Commit({ decoder });
       });
-    return new this(filter, commits);
+    return new this(filter, decoder.get<number>('s', 0)!, commits);
   }
 
-  static build(
+  /**
+   * This constant determines the approximate number of sync cycles it'll take
+   * for two parties to fully sync. The bloom filter's accuracy is scaled
+   * dynamically to match the desired number of cycles.
+   *
+   * If we sync 3 times per second, 5 cycles will finish in a bit under 2 seconds.
+   * This value must be matched with the sync frequency.
+   */
+  static build<T extends RepoStorage<T>>(
     peerFilter: BloomFilter | undefined,
-    localRepo: Repository
+    localRepo: Repository<T>,
+    peerSize: number,
+    expectedSyncCycles: number
   ): SyncMessage {
+    const size = Math.max(1, Math.max(localRepo.numberOfCommits, peerSize));
+    // The expected number of sync cycles is log base (1/fpr) over number of
+    // commits. Thus we can work out the FPR based on the desired sync cycles:
+    //
+    // LOG(fpr, numberOfCommits) = expectedSyncCycles      =>
+    // fpr = expectedSyncCycles'th root of numberOfCommits =>
+    // fpr = numberOfCommits ^ (1 / expectedSyncCycles)
+    //
+    // Finally, a bloom filter with FPR greater than 0.5 isn't very useful
+    // (more than 50% false positives), so cap the computed value at 0.5.
+    const fpr = Math.min(0.5, Math.pow(size, 1 / expectedSyncCycles));
     const localFilter = new BloomFilter({
-      size: Math.max(localRepo.numberOfCommits, 1),
-      fpr: 0.5,
+      size,
+      fpr,
     });
     const missingPeerCommits: Commit[] = [];
     if (peerFilter) {
@@ -74,7 +98,7 @@ export class SyncMessage implements Encodable {
         }
       }
     }
-    return new this(localFilter, missingPeerCommits);
+    return new this(localFilter, localRepo.numberOfCommits, missingPeerCommits);
   }
 }
 

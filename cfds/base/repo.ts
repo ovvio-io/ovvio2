@@ -15,19 +15,20 @@ import { Edit } from './edit.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
-export interface RepoStorage {
+export interface RepoStorage<T extends RepoStorage<T>> {
   numberOfCommits(): number;
   getCommit(id: string): Commit | undefined;
   allCommits(): Iterable<Commit>;
   commitsForKey(key: string): Iterable<Commit>;
   allKeys(): Iterable<string>;
-  persistCommit(c: Commit): void;
+  persistCommit(c: Commit, repo: Repository<T>): void;
+  close(): void;
 }
 
-export class Repository extends EventEmitter {
-  readonly storage: RepoStorage;
+export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
+  readonly storage: ST;
 
-  constructor(storage: RepoStorage) {
+  constructor(storage: ST) {
     super();
     this.storage = storage;
   }
@@ -52,17 +53,14 @@ export class Repository extends EventEmitter {
     return this.storage.commitsForKey(key);
   }
 
-  leavesForKey(key: string): Commit[] {
+  leavesForKey(key: string, pendingCommit?: Commit): Commit[] {
     const childrenPerCommit = new Map<string, Set<Commit>>();
     for (const c of this.commitsForKey(key)) {
-      for (const p of c.parents) {
-        let children = childrenPerCommit.get(p);
-        if (!children) {
-          children = new Set();
-          childrenPerCommit.set(p, children);
-        }
-        children.add(c);
-      }
+      this._setChildrenPerCommit(c, childrenPerCommit);
+    }
+    if (pendingCommit) {
+      assert(pendingCommit.key === key); // Sanity check
+      this._setChildrenPerCommit(pendingCommit, childrenPerCommit);
     }
     const result: Commit[] = [];
     for (const c of this.commitsForKey(key)) {
@@ -71,6 +69,20 @@ export class Repository extends EventEmitter {
       }
     }
     return result;
+  }
+
+  private _setChildrenPerCommit(
+    c: Commit,
+    childrenPerCommit: Map<string, Set<Commit>>
+  ): void {
+    for (const p of c.parents) {
+      let children = childrenPerCommit.get(p);
+      if (!children) {
+        children = new Set();
+        childrenPerCommit.set(p, children);
+      }
+      children.add(c);
+    }
   }
 
   keys(): Iterable<string> {
@@ -195,8 +207,13 @@ export class Repository extends EventEmitter {
     notReached();
   }
 
-  headForKey(key: string, session: string): Commit | undefined {
-    const leaves = this.leavesForKey(key);
+  headForKey(
+    key: string,
+    session: string,
+    pendingCommit?: Commit
+  ): Commit | undefined {
+    assert(!pendingCommit || pendingCommit.key === key);
+    const leaves = this.leavesForKey(key, pendingCommit);
     if (leaves.length < 1) {
       // No commit history found. Return the null record as a starting point
       return undefined;
@@ -261,8 +278,8 @@ export class Repository extends EventEmitter {
     }
   }
 
-  valueForKey(key: string, session: string): Record {
-    const head = this.headForKey(key, session);
+  valueForKey(key: string, session: string, pendingCommit?: Commit): Record {
+    const head = this.headForKey(key, session, pendingCommit);
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
@@ -333,7 +350,7 @@ export class Repository extends EventEmitter {
 
   persistCommit(c: Commit): void {
     if (!this.commitsForKey(c.id)) {
-      this.storage.persistCommit(c);
+      this.storage.persistCommit(c, this);
       this.emit(EVENT_NEW_COMMIT, c);
     }
   }
@@ -363,7 +380,7 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
   return coreValueCompare(c2.timestamp, c1.timestamp);
 }
 
-export class MemRepoStorage implements RepoStorage {
+export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
   // Key -> Commit Id -> Commit
   private readonly _commitsByRecordKey: Dictionary<string, Set<string>>;
   private readonly _commitsById: Dictionary<string, Commit>;
@@ -425,4 +442,6 @@ export class MemRepoStorage implements RepoStorage {
     set.add(c.id);
     return true;
   }
+
+  close(): void {}
 }
