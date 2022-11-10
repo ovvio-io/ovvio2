@@ -1,16 +1,19 @@
+import { log } from '../logging/log.ts';
+
 export function notImplemented(): never {
-  const error = new Error('Oops, looks like you forgot to override something');
-  console.error('notImplemented', error);
-  debugger;
+  const error = new Error('Not Implemented');
+  log({ severity: 'ERROR', error: 'NotImplemented', trace: error.stack });
   throw error;
 }
 
 export function notReached(msg?: string): never {
-  const error = new Error(
-    'Oops, this code was supposed to be unreachable' + (msg ? ': ' + msg : '')
-  );
-  console.error('notReached', error);
-  debugger;
+  const error = new Error(msg);
+  log({
+    severity: 'ERROR',
+    error: 'NotReached',
+    message: msg,
+    trace: error.stack,
+  });
   throw error;
 }
 
@@ -19,9 +22,13 @@ export function assert(
   msg = 'Failed assertion'
 ): condition is true {
   if (!condition) {
-    const error = new Error(msg);
-    console.error('assert failed', error);
-    debugger;
+    const error = new Error('Failed Assertion');
+    log({
+      severity: 'ERROR',
+      error: 'FailedAssertion',
+      message: msg,
+      trace: error.stack,
+    });
     throw error;
   }
   return true;

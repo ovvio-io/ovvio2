@@ -116,8 +116,11 @@ export class Server {
     const json = await req.json();
     const msg = SyncMessage.fromJS(json);
     const repo = this.getRepository(repoId);
-    for (const commit of msg.commits) {
-      repo.persistCommit(commit);
+    if (repo.persistCommits(msg.commits).length > 0) {
+      // Sync changes with replicas
+      for (const c of this._clientsForRepo.get(repoId)!.values()) {
+        c.touch();
+      }
     }
     const syncResp = SyncMessage.build(
       msg.filter,

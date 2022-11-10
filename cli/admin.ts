@@ -163,11 +163,13 @@ async function main(): Promise<void> {
         for (const ns of Array.from(keyCountByNamespace.keys()).sort()) {
           console.log(`${ns}: ${keyCountByNamespace.get(ns)}`);
         }
+        console.log(`Total: ${totalKeys}`);
         console.log(`=====================`);
         console.log(`Commit Statistics:`);
         for (const ns of Array.from(commitCountByNamespace.keys()).sort()) {
           console.log(`${ns}: ${commitCountByNamespace.get(ns)}`);
         }
+        console.log(`Total commits: ${repo.numberOfCommits}`);
         break;
       }
     }

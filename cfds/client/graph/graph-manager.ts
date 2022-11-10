@@ -365,8 +365,6 @@ export class GraphManager extends VertexSource {
     for (const record of result.values()) {
       record.rewriteRefs(keysMapping);
     }
-    console.log('Key Mapping:');
-    console.log(keysMapping);
     return result;
   }
 }

@@ -1,4 +1,5 @@
 import { JSONValue } from '../../base/interfaces.ts';
+import { log } from '../../logging/log.ts';
 
 interface SerializedError {
   msg: string;
@@ -157,7 +158,12 @@ export function toJS(error: Error): SerializedError {
     code: error instanceof ServerError ? error.code : Code.InternalServerError,
   };
   if (!(error instanceof ServerError)) {
-    console.error('Uncaught Server Error', error);
+    log({
+      severity: 'ERROR',
+      error: 'UncaughtServerError',
+      message: error.message,
+      trace: error.stack,
+    });
   } else if (error.info) {
     result.info = error.info;
   }

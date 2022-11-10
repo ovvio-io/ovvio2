@@ -1,5 +1,8 @@
 import { JSONObject, ReadonlyJSONObject } from '../../base/interfaces.ts';
-import { JSONCyclicalDecoder, JSONCyclicalEncoder } from '../encoding/json.ts';
+import {
+  JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
+} from '../../base/core-types/encoding/json.ts';
 import { dfs, isTextNode, RichText, TextNode } from './tree.ts';
 
 export function findFirstTextNode(rt: RichText): TextNode | undefined {

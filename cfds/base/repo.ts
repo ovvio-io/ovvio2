@@ -12,6 +12,7 @@ import { Record } from './record.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
 import { Edit } from './edit.ts';
+import { log } from '../../logging/log.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -21,8 +22,18 @@ export interface RepoStorage<T extends RepoStorage<T>> {
   allCommits(): Iterable<Commit>;
   commitsForKey(key: string): Iterable<Commit>;
   allKeys(): Iterable<string>;
-  persistCommit(c: Commit, repo: Repository<T>): void;
+  persistCommits(c: Iterable<Commit>, repo: Repository<T>): Iterable<Commit>;
   close(): void;
+}
+
+export interface IRepository<ST extends RepoStorage<ST>> {
+  readonly storage: ST;
+  readonly numberOfCommits: number;
+
+  keys(): Iterable<string>;
+  valueForKey(key: string, session: string, pendingCommit?: Commit): Record;
+  setValueForKey(key: string, session: string, value: Record): boolean;
+  hasKey(key: string): boolean;
 }
 
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
@@ -251,7 +262,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         contents: mergeRecord,
         parents: leaves.map((c) => c.id),
       });
-      this.persistCommit(mergeCommit);
+      this.persistCommits([mergeCommit]);
       return mergeCommit;
     } catch (e) {
       // We're dealing with partial history, so need to come up with some value
@@ -320,14 +331,16 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
           contents: { base: lastRecordCommit.id, edit },
           parents: fullCommit.parents,
         });
-        console.log(
-          `Using delta format saves ${Math.round(
-            (100 * (fullLength - deltaLength)) / fullLength
-          )}% (${fullLength - deltaLength} bytes)`
-        );
+        log({
+          severity: 'INFO',
+          name: 'DeltaFormatSavings',
+          value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
+          unit: 'Percent',
+          type: 'Gauge',
+        });
       }
     }
-    this.persistCommit(deltaCommit || fullCommit);
+    this.persistCommits([deltaCommit || fullCommit]);
     return true;
   }
 
@@ -348,11 +361,12 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return this.headForKey(key, '') !== undefined;
   }
 
-  persistCommit(c: Commit): void {
-    if (!this.commitsForKey(c.id)) {
-      this.storage.persistCommit(c, this);
+  persistCommits(commits: Iterable<Commit>): Commit[] {
+    const result = Array.from(this.storage.persistCommits(commits, this));
+    for (const c of result) {
       this.emit(EVENT_NEW_COMMIT, c);
     }
+    return result;
   }
 }
 
@@ -425,22 +439,24 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
     return this._commitsByRecordKey.keys();
   }
 
-  persistCommit(c: Commit): boolean {
-    const localCommit = this._commitsById.get(c.id);
-    if (localCommit !== undefined) {
-      // Sanity check: Both copies of the same commit must be equal.
-      // TODO: Rather than crash, assume the other side may be malicious
-      assert(coreValueEquals(c, localCommit));
-      return false;
+  *persistCommits(commits: Iterable<Commit>): Generator<Commit> {
+    for (const c of commits) {
+      const localCommit = this._commitsById.get(c.id);
+      if (localCommit !== undefined) {
+        // Sanity check: Both copies of the same commit must be equal.
+        // TODO: Rather than crash, assume the other side may be malicious
+        assert(coreValueEquals(c, localCommit));
+        continue;
+      }
+      this._commitsById.set(c.id, c);
+      let set = this._commitsByRecordKey.get(c.key);
+      if (!set) {
+        set = new Set();
+        this._commitsByRecordKey.set(c.key, set);
+      }
+      set.add(c.id);
+      yield c;
     }
-    this._commitsById.set(c.id, c);
-    let set = this._commitsByRecordKey.get(c.key);
-    if (!set) {
-      set = new Set();
-      this._commitsByRecordKey.set(c.key, set);
-    }
-    set.add(c.id);
-    return true;
   }
 
   close(): void {}

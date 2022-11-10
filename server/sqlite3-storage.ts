@@ -10,9 +10,9 @@ import {
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
 import { Commit } from '../cfds/base/commit.ts';
-import { assert } from '../base/error.ts';
 import { Record } from '../cfds/base/record.ts';
 import * as SetUtils from '../base/set.ts';
+import { slices } from '../base/array.ts';
 
 export const TABLE_COMMITS = 'commits';
 export const TABLE_HEADS = 'heads';
@@ -25,11 +25,12 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   private readonly _getCommitStatement: Statement;
   private readonly _getKeysStatement: Statement;
   private readonly _putCommitStatement: Statement;
-  private readonly _updateHeadStatement: Statement;
-  private readonly _deleteRefStatement: Statement;
-  private readonly _putRefStatement: Statement;
   private readonly _putCommitTxn: Transaction<
-    [c: Commit, repo: Repository<SQLiteRepoStorage>]
+    [
+      commits: Iterable<Commit>,
+      repo: Repository<SQLiteRepoStorage>,
+      outCommits: Commit[]
+    ]
   >;
 
   constructor(path?: string) {
@@ -48,17 +49,6 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       json TEXT NOT NULL
     );`);
     db.exec(`CREATE INDEX IF NOT EXISTS commitsByKey ON commits (key);`);
-    db.exec(`CREATE TABLE IF NOT EXISTS heads (
-      key TINYTEXT NOT NULL PRIMARY KEY,
-      commitId TINYTEXT NOT NULL,
-      ns TINYTEXT,
-      FOREIGN KEY(commitId) REFERENCES commits(id)
-    );`);
-    db.exec(`CREATE TABLE IF NOT EXISTS refs (
-      src TINYTEXT NOT NULL,
-      dst TINYTEXT NOT NULL,
-      PRIMARY KEY (src, dst)
-    );`);
     this._countStatement = db.prepare(`SELECT COUNT(id) from commits;`);
     this._getCommitStatement = db.prepare(
       `SELECT json from commits WHERE ID = :id;`
@@ -67,57 +57,29 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     this._putCommitStatement = db.prepare(
       `INSERT INTO commits (id, key, ts, json) VALUES (:id, :key, :ts, :json);`
     );
-    this._updateHeadStatement = db.prepare(
-      `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns`
-    );
-    this._putRefStatement = db.prepare(
-      `INSERT INTO refs (src, dst) VALUES (:src, :dst);`
-    );
-    this._deleteRefStatement = db.prepare(
-      `DELETE FROM refs WHERE src = :src AND dst = :dst`
-    );
-    this._putCommitTxn = db.transaction(([newCommit, repo]) => {
+    this._putCommitTxn = db.transaction(([commits, repo, outCommits]) => {
       // First, check we haven't already persisted this commit
-      if (this._getCommitStatement.run({ id: newCommit.id }) !== undefined) {
-        throw new Error('Commit already exists');
-      }
-      const { key, session } = newCommit;
-      const head = repo.headForKey(key, session);
-      const newHead = repo.headForKey(key, session, newCommit)!;
-      // Persist our commit to the commits table
-      this._putCommitStatement.run({
-        id: newCommit.id,
-        key: newCommit.key,
-        ts: newCommit.timestamp.getTime(),
-        json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
-      });
-      // Commit the transaction early if our head hasn't changed (if this is an
-      // historic commit that was missed).
-      if (head?.id === newHead?.id) {
-        return;
-      }
-      const headRecord = head
-        ? repo.recordForCommit(head)
-        : Record.nullRecord();
-      const newHeadRecord = repo.recordForCommit(newHead);
-      // Update this key's head
-      this._updateHeadStatement.run({
-        key: newHead.key,
-        commitId: newHead.id,
-        ns: headRecord.scheme.namespace,
-      });
-      const deletedRefs = SetUtils.subtract(
-        headRecord.refs,
-        newHeadRecord.refs
-      );
-      const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);
-      // Update refs table
-      const src = newCommit.key;
-      for (const ref of deletedRefs) {
-        this._deleteRefStatement.run({ src, dst: ref });
-      }
-      for (const ref of addedRefs) {
-        this._putRefStatement.run({ src, dst: ref });
+      for (const newCommit of commits) {
+        if (this._getCommitStatement.run({ id: newCommit.id }) !== undefined) {
+          continue;
+        }
+        const { key, session } = newCommit;
+        const head = repo.headForKey(key, session);
+        const newHead = repo.headForKey(key, session, newCommit)!;
+        // Persist our commit to the commits table
+        this._putCommitStatement.run({
+          id: newCommit.id,
+          key: newCommit.key,
+          ts: newCommit.timestamp.getTime(),
+          json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
+        });
+        outCommits.push(newCommit);
+        // Skip aux tables update if our head hasn't changed (if this is an
+        // historic commit that was missed).
+        if (head?.id === newHead?.id) {
+          continue;
+        }
+        this.updateHead(repo, head, newHead);
       }
     });
   }
@@ -161,22 +123,84 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     return this._getKeysStatement.values<string[]>().map((arr) => arr[0]);
   }
 
-  persistCommit(c: Commit, repo: Repository<SQLiteRepoStorage>): void {
-    // const existing = this.getCommit(c.id);
-    // if (existing) {
-    //   assert(existing.isEqual(c));
-    //   return;
-    // }
-    // this._putCommitStatement.run({
-    //   id: c.id,
-    //   key: c.key,
-    //   ts: c.timestamp.getTime(),
-    //   json: JSON.stringify(JSONCyclicalEncoder.serialize(c)),
-    // });
-    this._putCommitTxn([c, repo]);
+  persistCommits(
+    commits: Iterable<Commit>,
+    repo: Repository<SQLiteRepoStorage>
+  ): Iterable<Commit> {
+    const persistedCommits: Commit[] = [];
+    for (const s of slices(commits, 100)) {
+      this._putCommitTxn([s, repo, persistedCommits]);
+    }
+    return persistedCommits;
   }
 
   close(): void {
     this.db.close();
+  }
+
+  protected updateHead(
+    repo: Repository<SQLiteRepoStorage>,
+    oldHead: Commit | undefined,
+    newHead: Commit
+  ): void {
+    // NOP in base class
+  }
+}
+
+export class RecordSQLiteStorage extends SQLiteRepoStorage {
+  private readonly _updateHeadStatement: Statement;
+  private readonly _deleteRefStatement: Statement;
+  private readonly _putRefStatement: Statement;
+  constructor(path?: string) {
+    super(path);
+    const db = this.db;
+    db.exec(`CREATE TABLE IF NOT EXISTS heads (
+      key TINYTEXT NOT NULL PRIMARY KEY,
+      commitId TINYTEXT NOT NULL,
+      ns TINYTEXT,
+      FOREIGN KEY(commitId) REFERENCES commits(id)
+    );`);
+    db.exec(`CREATE TABLE IF NOT EXISTS refs (
+      src TINYTEXT NOT NULL,
+      dst TINYTEXT NOT NULL,
+      PRIMARY KEY (src, dst)
+    );`);
+    this._updateHeadStatement = db.prepare(
+      `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns`
+    );
+    this._putRefStatement = db.prepare(
+      `INSERT INTO refs (src, dst) VALUES (:src, :dst);`
+    );
+    this._deleteRefStatement = db.prepare(
+      `DELETE FROM refs WHERE src = :src AND dst = :dst`
+    );
+  }
+
+  protected updateHead(
+    repo: Repository<SQLiteRepoStorage>,
+    oldHead: Commit | undefined,
+    newHead: Commit
+  ): void {
+    super.updateHead(repo, oldHead, newHead);
+    const headRecord = oldHead
+      ? repo.recordForCommit(oldHead)
+      : Record.nullRecord();
+    const newHeadRecord = repo.recordForCommit(newHead);
+    // Update this key's head
+    this._updateHeadStatement.run({
+      key: newHead.key,
+      commitId: newHead.id,
+      ns: headRecord.scheme.namespace,
+    });
+    const deletedRefs = SetUtils.subtract(headRecord.refs, newHeadRecord.refs);
+    const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);
+    // Update refs table
+    const src = newHead.key;
+    for (const ref of deletedRefs) {
+      this._deleteRefStatement.run({ src, dst: ref });
+    }
+    for (const ref of addedRefs) {
+      this._putRefStatement.run({ src, dst: ref });
+    }
   }
 }

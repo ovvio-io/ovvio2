@@ -17,6 +17,7 @@ import {
 import { Change, EncodedChange } from '../change/index.ts';
 import { decodeChange } from '../change/decode.ts';
 import { CoreObject, Encoder } from '../../base/core-types/index.ts';
+import { log } from '../../logging/log.ts';
 
 export function isValidData(scheme: Scheme, data: DataType) {
   const requiredFields = scheme.getRequiredFields();
@@ -75,10 +76,14 @@ export function serialize(
         overrides[type](encoder, key, value, options);
         continue;
       } catch (e) {
-        console.error(
-          `serialize override error. key: ${key}, type: ${type}`,
-          e
-        );
+        log({
+          severity: 'INFO',
+          error: 'SerializeError',
+          trace: e.stack,
+          message: e.message,
+          key: key,
+          valueType: type,
+        });
       }
     }
 
@@ -115,10 +120,14 @@ export function deserialize(
         }
         continue;
       } catch (e) {
-        console.error(
-          `serialize override error. key: ${key}, type: ${type}`,
-          e
-        );
+        log({
+          severity: 'INFO',
+          error: 'SerializeError',
+          trace: e.stack,
+          message: e.message,
+          key,
+          valueType: type,
+        });
       }
     }
 

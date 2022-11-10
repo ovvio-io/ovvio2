@@ -73,9 +73,26 @@ export function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-export function* slices<T>(arr: T[], size: number): Generator<T[], void, void> {
-  for (let i = 0; i < arr.length; i += size) {
-    yield arr.slice(i, i + size);
+export function* slices<T>(
+  values: T[] | Iterable<T>,
+  size: number
+): Generator<T[], void, void> {
+  if (values instanceof Array) {
+    for (let i = 0; i < values.length; i += size) {
+      yield values.slice(i, i + size);
+    }
+  } else {
+    let slice: T[] = [];
+    for (const v of values) {
+      slice.push(v);
+      if (slice.length >= size) {
+        yield slice;
+        slice = [];
+      }
+    }
+    if (slice.length > 0) {
+      yield slice;
+    }
   }
 }
 

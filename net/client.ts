@@ -2,45 +2,58 @@ import { Repository, RepoStorage } from '../cfds/base/repo.ts';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage } from './types.ts';
+import { retry } from '../base/time.ts';
+import { log } from '../logging/log.ts';
+import { count } from '../base/common.ts';
 
 export interface SyncConfig {
-  minSyncFreq: number;
-  maxSyncFreq: number;
-  syncDuration: number;
+  minSyncFreqMs: number;
+  maxSyncFreqMs: number;
+  syncDurationMs: number;
 }
 
 export const kSyncConfigClient: SyncConfig = {
-  minSyncFreq: 300,
-  maxSyncFreq: 3000,
-  syncDuration: 2000,
+  minSyncFreqMs: 300,
+  maxSyncFreqMs: 3000,
+  syncDurationMs: 2000,
 };
 
 export const kSyncConfigServer: SyncConfig = {
-  minSyncFreq: 100,
-  maxSyncFreq: 1000,
-  syncDuration: 500,
+  minSyncFreqMs: 100,
+  maxSyncFreqMs: 60000,
+  syncDurationMs: 300,
 };
 
 export function syncConfigGetCycles(config: SyncConfig): number {
-  return Math.floor(config.syncDuration / config.minSyncFreq);
+  return Math.floor(config.syncDurationMs / config.minSyncFreqMs);
 }
+
+export type OnlineStatusHandler = () => void;
 
 export class Client<T extends RepoStorage<T>> {
   private readonly _timer: EaseInOutSineTimer;
   private readonly _repo: Repository<T>;
   private readonly _serverUrl: string;
   private readonly _syncConfig: SyncConfig;
+  private readonly _onlineHandler?: OnlineStatusHandler;
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
 
-  constructor(repo: Repository<T>, serverUrl: string, syncConfig: SyncConfig) {
+  private _connectionOnline = false;
+
+  constructor(
+    repo: Repository<T>,
+    serverUrl: string,
+    syncConfig: SyncConfig,
+    onlineHandler?: OnlineStatusHandler
+  ) {
     this._repo = repo;
     this._serverUrl = serverUrl;
     this._syncConfig = syncConfig;
     this._timer = new EaseInOutSineTimer(
-      syncConfig.minSyncFreq,
-      syncConfig.maxSyncFreq,
-      syncConfig.maxSyncFreq * 3,
+      syncConfig.minSyncFreqMs,
+      syncConfig.maxSyncFreqMs,
+      syncConfig.maxSyncFreqMs * 3,
       async () => {
         try {
           await this.sendSyncMessage();
@@ -51,6 +64,7 @@ export class Client<T extends RepoStorage<T>> {
       true,
       'Sync timer'
     );
+    this._onlineHandler = onlineHandler;
     this._previousServerSize = 0;
   }
 
@@ -60,6 +74,19 @@ export class Client<T extends RepoStorage<T>> {
 
   get serverUrl(): string {
     return this.serverUrl;
+  }
+
+  get isOnline(): boolean {
+    return this._connectionOnline;
+  }
+
+  private _setIsOnline(value: boolean): void {
+    if (value !== this._connectionOnline) {
+      this._connectionOnline = value;
+      if (this._onlineHandler) {
+        this._onlineHandler();
+      }
+    }
   }
 
   startSyncing(): Client<T> {
@@ -74,61 +101,94 @@ export class Client<T extends RepoStorage<T>> {
   }
 
   private async sendSyncMessage(): Promise<void> {
+    const syncConfig = this._syncConfig;
     const repo = this.repo;
     const msg = SyncMessage.build(
       this._previousServerFilter,
       repo,
       this._previousServerSize,
-      syncConfigGetCycles(this._syncConfig)
+      syncConfigGetCycles(syncConfig)
     ).toJS();
+    let respText: string | undefined;
     try {
-      console.log(
-        `Starting sync with peer ${this._serverUrl}, ${this.repo.numberOfCommits} commits...`
-      );
       const start = performance.now();
-      const resp = await fetch(this._serverUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(msg),
+      respText = await retry(async () => {
+        const resp = await fetch(this._serverUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(msg),
+        });
+        return await resp.text();
+      }, syncConfig.minSyncFreqMs);
+      log({
+        severity: 'INFO',
+        name: 'PeerResponseTime',
+        value: performance.now() - start,
+        unit: 'Milliseconds',
+        url: this._serverUrl,
       });
-      const text = await resp.text();
-      const json = JSON.parse(text);
-      const syncResp = SyncMessage.fromJS(json);
-      this._previousServerFilter = syncResp.filter;
-      this._previousServerSize = syncResp.repoSize;
-      if (syncResp.commits.length > 0) {
-        for (const commit of syncResp.commits) {
-          repo.persistCommit(commit);
-        }
-        this._timer.reset();
-      }
-      console.log(
-        `Sync completed after ${performance.now() - start}ms with peer ${
-          this._serverUrl
-        }. ${this.repo.numberOfCommits} commits in repo.`
-      );
     } catch (e) {
-      debugger;
-      console.error(
-        `Sync error with peer ${this._serverUrl} (${this.repo.numberOfCommits} commits): ${e}`
-      );
-      throw e;
+      log({
+        severity: 'INFO',
+        error: 'FetchError',
+        message: e.message,
+        trace: e.stack,
+        url: this._serverUrl,
+      });
     }
+
+    if (!respText) {
+      this._setIsOnline(false);
+      return;
+    }
+    let syncResp: SyncMessage;
+    try {
+      const json = JSON.parse(respText);
+      syncResp = SyncMessage.fromJS(json);
+    } catch (e) {
+      log({ severity: 'INFO', error: 'SerializeError', value: respText });
+      this._setIsOnline(false);
+      return;
+    }
+
+    this._previousServerFilter = syncResp.filter;
+    this._previousServerSize = syncResp.repoSize;
+    let persistedCount = 0;
+    if (syncResp.commits.length) {
+      const start = performance.now();
+      persistedCount = repo.persistCommits(syncResp.commits).length;
+      log({
+        severity: 'INFO',
+        name: 'CommitsPersistTime',
+        value: performance.now() - start,
+        unit: 'Milliseconds',
+      });
+      log({
+        severity: 'INFO',
+        name: 'CommitsPersistCount',
+        value: persistedCount,
+        unit: 'Count',
+      });
+    }
+    if (persistedCount > 0 || this.needsReplication()) {
+      this.touch();
+    }
+    this._setIsOnline(true);
   }
 
   async sync(): Promise<void> {
-    const cycleCount = syncConfigGetCycles(this._syncConfig) + 1;
+    const syncConfig = this._syncConfig;
+    const cycleCount = syncConfigGetCycles(syncConfig) + 1;
     // We need to do a minimum number of successful sync cycles in order to make
-    // sure everything is sync'ed.
-    for (let i = 0; i < cycleCount && !this.needsReplication(); ++i) {
-      try {
-        await this.sendSyncMessage();
-      } catch (_e) {
-        --i;
-      }
-    }
+    // sure everything is sync'ed. Also need to make sure we don't have any
+    // local commits that our peer doesn't have (local changes or peer recovery)
+    let i = 0;
+    do {
+      await this.sendSyncMessage();
+      ++i;
+    } while (i < cycleCount || this.needsReplication());
   }
 
   needsReplication(): boolean {
@@ -142,5 +202,12 @@ export class Client<T extends RepoStorage<T>> {
       }
     }
     return false;
+  }
+
+  touch(): void {
+    // this._timer.unschedule();
+    // this.sendSyncMessage();
+    this._timer.reset();
+    this._timer.schedule();
   }
 }

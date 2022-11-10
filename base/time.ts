@@ -64,7 +64,7 @@ export class NoRetry extends RetryBaseErr {}
 export async function retry<T>(
   func: () => T | Promise<T>,
   timeoutMs: number,
-  maxDelayMs: number = 20,
+  maxDelayMs = 20,
   timingFunc: (factor: number) => number = easeInQuad
 ): Promise<T> {
   const startTime = Date.now();
