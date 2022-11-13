@@ -336,7 +336,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
           name: 'DeltaFormatSavings',
           value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
           unit: 'Percent',
-          type: 'Gauge',
         });
       }
     }

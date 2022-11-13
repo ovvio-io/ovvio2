@@ -16,6 +16,7 @@ import {
   CoroutineScheduler,
   SchedulerPriority,
 } from '../coroutine.ts';
+import { log } from '../../../logging/log.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -265,20 +266,24 @@ export class Query<
   protected *loadKeysFromSource(): Generator<void> {
     const startTime = performance.now();
     if (!this.isOpen) {
-      console.log(
-        `${performance.now()} Query ${this.debugName} cancelled, took ${
-          performance.now() - startTime
-        }ms. Pending queries: ${kQueryQueue.size}`
-      );
+      log({
+        severity: 'INFO',
+        name: 'QueryCancelled',
+        value: performance.now() - startTime,
+        unit: 'Milliseconds',
+        queryName: this.debugName,
+      });
       return;
     }
     for (const key of this.source.keys()) {
       if (!this.isOpen) {
-        console.log(
-          `${performance.now()} Query ${this.debugName} cancelled, took ${
-            performance.now() - startTime
-          }ms. Pending queries: ${kQueryQueue.size}`
-        );
+        log({
+          severity: 'INFO',
+          name: 'QueryCancelled',
+          value: performance.now() - startTime,
+          unit: 'Milliseconds',
+          queryName: this.debugName,
+        });
         return;
       }
       this.vertexChanged(key);
@@ -286,13 +291,14 @@ export class Query<
     }
     this._buildResultsIfNeeded();
     const runningTime = performance.now() - startTime;
-    console.log(
-      `${performance.now()} Query ${
-        this.debugName
-      } completed, took ${runningTime}ms and found ${
-        this.count
-      } results. Pending queries: ${kQueryQueue.size}`
-    );
+    log({
+      severity: 'INFO',
+      name: 'QueryCancelled',
+      value: runningTime,
+      unit: 'Milliseconds',
+      queryName: this.debugName,
+      numberOfResults: this.count,
+    });
     this._isLoading = false;
     this.emit(EVENT_LOADING_FINISHED);
     this._clientsNotifyTimer.schedule();

@@ -17,7 +17,11 @@ export interface LogEntryDeveloperError extends BaseErrorLogEntry {
   error: DeveloperError;
 }
 
-export type OperationalError = 'FetchError' | 'SerializeError';
+export type OperationalError =
+  | 'FetchError'
+  | 'SerializeError'
+  | 'BadRequest'
+  | 'UnknownCommand';
 
 export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   severity: 'INFO';

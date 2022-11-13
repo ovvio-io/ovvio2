@@ -12,6 +12,7 @@ import {
 import { assert } from '../base/error.ts';
 import { SQLiteRepoStorage } from '../server/sqlite3-storage.ts';
 import { Dictionary } from '../base/collections/dict.ts';
+import { log } from '../logging/log.ts';
 
 const FILE_EXT = '.repo';
 
@@ -48,9 +49,13 @@ export class Server {
   }
 
   run(): Promise<void> {
-    console.log(
-      `Replicas: ${this._args.replicas.map((s) => `"${s}"`).join(', ')}`
-    );
+    log({
+      severity: 'INFO',
+      name: 'ServerStarted',
+      value: 1,
+      unit: 'Count',
+      urls: this._args.replicas,
+    });
     return serve((req) => this.handleRequest(req), {
       port: this._args?.port,
     });
@@ -79,7 +84,17 @@ export class Server {
     return repo;
   }
 
-  private handleRequest(req: Request): Promise<Response> {
+  private processResponse(resp: Response): Response {
+    log({
+      severity: 'INFO',
+      name: 'HttpStatusCode',
+      value: resp.status,
+      unit: 'Count',
+    });
+    return resp;
+  }
+
+  private async handleRequest(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname.split('/');
     if (
       req.method !== 'POST' ||
@@ -87,25 +102,36 @@ export class Server {
       path.length !== 4 ||
       path[1] !== 'repo'
     ) {
-      console.log('Unknown request');
-      console.log(req);
-      return Promise.resolve(new Response(null, { status: 400 }));
+      log({
+        severity: 'INFO',
+        error: 'BadRequest',
+        url: req.url,
+        value: {
+          method: req.method,
+          hasBody: Boolean(req.body),
+        },
+      });
+      return this.processResponse(new Response(null, { status: 400 }));
     }
 
     const repoId = path[2];
     const cmd = path[3];
+    let resp: Response;
     switch (cmd) {
       case 'sync':
-        return this.handleSyncRequest(req, repoId);
+        resp = await this.handleSyncRequest(req, repoId);
+        break;
 
-      case 'query':
-        return this.handleQueryRequest(req, repoId);
+      // case 'query':
+      //   resp = await this.handleQueryRequest(req, repoId);
+      //   break;
 
       default:
-        console.log('Unknown command');
-        console.log(req);
-        return Promise.resolve(new Response(null, { status: 400 }));
+        log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
+        resp = new Response(null, { status: 400 });
+        break;
     }
+    return this.processResponse(resp);
   }
 
   private async handleSyncRequest(
@@ -135,28 +161,28 @@ export class Server {
     });
   }
 
-  private async handleQueryRequest(
-    req: Request,
-    repoId: string
-  ): Promise<Response> {
-    // TODO: Auth + Permissions
-    const json = await req.json();
-    const sql = json.sql;
-    if (sql.length <= 1) {
-      console.log('Invalid query');
-      console.log(req);
-      return new Response(null, { status: 400 });
-    }
-    const repo = this.getRepository(repoId);
-    const statement = repo.storage.db.prepare(sql);
-    if (!statement.readonly) {
-      return new Response(null, { status: 400 });
-    }
-    const result = statement.all();
-    return new Response(JSON.stringify(result), {
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
-    });
-  }
+  // private async handleQueryRequest(
+  //   req: Request,
+  //   repoId: string
+  // ): Promise<Response> {
+  //   // TODO: Auth + Permissions
+  //   const json = await req.json();
+  //   const sql = json.sql;
+  //   if (sql.length <= 1) {
+  //     console.log('Invalid query');
+  //     console.log(req);
+  //     return new Response(null, { status: 400 });
+  //   }
+  //   const repo = this.getRepository(repoId);
+  //   const statement = repo.storage.db.prepare(sql);
+  //   if (!statement.readonly) {
+  //     return new Response(null, { status: 400 });
+  //   }
+  //   const result = statement.all();
+  //   return new Response(JSON.stringify(result), {
+  //     headers: {
+  //       'content-type': 'application/json; charset=utf-8',
+  //     },
+  //   });
+  // }
 }
