@@ -168,9 +168,9 @@ export function* unionIter<T>(
   }
 }
 
-export function map<O, I>(s: Set<I>, mapper: (v: I) => O): Set<O> {
+export function map<O, I>(input: Iterable<I>, mapper: (v: I) => O): Set<O> {
   const result = new Set<O>();
-  for (const v of s) {
+  for (const v of input) {
     result.add(mapper(v));
   }
   return result;

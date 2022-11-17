@@ -2,7 +2,7 @@ import {
   join as joinPath,
   resolve as resolvePath,
 } from 'https://deno.land/std@0.160.0/path/mod.ts';
-import { NormalizedLogEntry, normalizeLogEntry, Severity } from './entry.ts';
+import { NormalizedLogEntry, Severity } from './entry.ts';
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB
@@ -13,7 +13,11 @@ export interface LogStream {
 
 export class ConsoleLogStream implements LogStream {
   appendEntry(e: NormalizedLogEntry): void {
-    const textLog = JSON.stringify(normalizeLogEntry(e));
+    let textLog = `[${e.timestamp.toISOString()}] `;
+    if (typeof e.message === 'string') {
+      textLog += e.message + ': ';
+    }
+    textLog += JSON.stringify(e, null, 2);
     switch (e.severity as Severity) {
       case 'EMERGENCY':
       case 'ALERT':
@@ -43,12 +47,12 @@ export class FileLogStream implements LogStream {
   private readonly _dirPath: string;
   private _file: Deno.FsFile;
   private _pendingWritePromise: Promise<void>;
-  private _fileOpenTime: Date;
+  private _fileOpenTs: number;
 
   constructor(outDirPath: string) {
     this._dirPath = outDirPath;
     this._file = openNewLogFile(this._dirPath);
-    this._fileOpenTime = new Date();
+    this._fileOpenTs = Date.now();
     this._pendingWritePromise = Promise.resolve();
   }
 
@@ -63,16 +67,31 @@ export class FileLogStream implements LogStream {
   }
 
   private async writeLogEntry(e: NormalizedLogEntry): Promise<void> {
+    // Once in a while check if we need to close the current log file and open
+    // a new one.
+    if (
+      Date.now() - this._fileOpenTs >= kLogFileExpirationMs ||
+      randomInt(0, 100) === 0
+    ) {
+      await this.closeLogFileIfNeeded();
+    }
+
+    // Actually write the file
     const bytesToWrite = new TextEncoder().encode(JSON.stringify(e));
-    const file = this._file;
+    let file = this._file;
     let bytesWritten = 0;
     do {
+      // Since we write our log in chunks (potentially), this loop may be
+      // paused while the current file is being closed and a new one is opened.
+      // If this happens we just write everything from the start again to the
+      // new log file. Entries have unique ids so readers can ignore double
+      // entries.
+      if (this._file !== file) {
+        bytesWritten = 0;
+        file = this._file;
+      }
       bytesWritten += await file.write(bytesToWrite.subarray(bytesWritten));
     } while (bytesWritten < bytesToWrite.length);
-
-    if (randomInt(0, 100) === 0) {
-      this.scheduleWriteJob(() => this.closeLogFileIfNeeded());
-    }
   }
 
   private async closeLogFileIfNeeded(): Promise<void> {
@@ -81,14 +100,17 @@ export class FileLogStream implements LogStream {
     if (this._file !== file) {
       return;
     }
+    const creationTime = Math.min(
+      fileInfo.birthtime?.getTime() || 0,
+      this._fileOpenTs
+    );
     if (
-      Date.now() - (fileInfo.birthtime || this._fileOpenTime).getTime() >=
-        kLogFileExpirationMs ||
+      Date.now() - creationTime >= kLogFileExpirationMs ||
       fileInfo.size >= kLogFileMaxSizeBytes
     ) {
       this._file.close();
       this._file = openNewLogFile(this._dirPath);
-      this._fileOpenTime = new Date();
+      this._fileOpenTs = Date.now();
     }
   }
 

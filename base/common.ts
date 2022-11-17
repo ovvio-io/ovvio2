@@ -47,7 +47,7 @@ export function allKeysOf<T extends object>(obj: T): (keyof T)[] {
   return Object.keys(obj) as (keyof T)[];
 }
 
-export function* unionIter<T>(...args: Iterable<T>[]): Generator<T> {
+export function* unionIter<T>(...args: Iterable<T>[]): Iterable<T> {
   for (const iter of args) {
     for (const v of iter) {
       yield v;
@@ -57,4 +57,15 @@ export function* unionIter<T>(...args: Iterable<T>[]): Generator<T> {
 
 export function newInstance<T = any>(instance: any, ...args: any[]): T {
   return new (instance.constructor as any)(...args) as T;
+}
+
+export function* mapIterable<IT, OT = IT>(
+  input: Iterable<IT>,
+  mapper: (v: IT, idx: number) => OT
+): Iterable<OT> {
+  let i = 0;
+  for (const v of input) {
+    yield mapper(v, i);
+    ++i;
+  }
 }

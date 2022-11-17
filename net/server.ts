@@ -2,19 +2,26 @@ import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import { serve } from 'https://deno.land/std@0.160.0/http/server.ts';
 import { Repository } from '../cfds/base/repo.ts';
-import { SyncMessage } from './types.ts';
 import {
-  Client,
+  CommitsSyncMessage,
+  commitsSyncMessagefromJS,
+  SyncMessage,
+  syncMessageFromJs,
+} from './types.ts';
+import { RepoClient } from './repo-client.ts';
+import {
   kSyncConfigClient,
   kSyncConfigServer,
   syncConfigGetCycles,
-} from './client.ts';
+} from './base-client.ts';
 import { assert } from '../base/error.ts';
-import { SQLiteRepoStorage } from '../server/sqlite3-storage.ts';
+import { SQLiteRepoStorage } from '../server/sqlite3-repo-storage.ts';
 import { Dictionary } from '../base/collections/dict.ts';
 import { log } from '../logging/log.ts';
-
-const FILE_EXT = '.repo';
+import { mapIterable } from '../base/common.ts';
+import { SQLiteLogStorage } from '../server/sqlite3-log-storage.ts';
+import { LogClient } from './log-client.ts';
+import { NormalizedLogEntry } from '../logging/entry.ts';
 
 interface Arguments {
   port: number;
@@ -28,10 +35,14 @@ export class Server {
     string,
     Repository<SQLiteRepoStorage>
   >;
-  private readonly _clientsForRepo: Map<string, Client<SQLiteRepoStorage>[]>;
+  private readonly _clientsForRepo: Dictionary<
+    string,
+    RepoClient<SQLiteRepoStorage>[]
+  >;
+  private readonly _logs: Dictionary<string, SQLiteLogStorage>;
+  private readonly _clientsForLog: Dictionary<string, LogClient[]>;
 
   constructor(args?: Arguments) {
-    this._repositories = new Map();
     if (!args) {
       args = yargs(Deno.args)
         .alias({ p: 'port', r: 'replicas' })
@@ -45,10 +56,14 @@ export class Server {
         .parse();
     }
     this._args = args!;
+    this._repositories = new Map();
     this._clientsForRepo = new Map();
+    this._logs = new Map();
+    this._clientsForLog = new Map();
   }
 
   run(): Promise<void> {
+    // TODO: Scan path for existing contents and set up replication
     log({
       severity: 'INFO',
       name: 'ServerStarted',
@@ -65,14 +80,14 @@ export class Server {
     let repo = this._repositories.get(id);
     if (!repo) {
       repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this._args.path, id + FILE_EXT))
+        new SQLiteRepoStorage(joinPath(this._args.path, 'repos', id + '.repo'))
       );
       this._repositories.set(id, repo);
       const replicas = this._args.replicas;
       if (replicas.length > 0) {
         assert(!this._clientsForRepo.has(id)); // Sanity check
         const clients = this._args.replicas.map((baseServerUrl) =>
-          new Client(
+          new RepoClient(
             repo!,
             new URL('/repo/' + id, baseServerUrl).toString(),
             kSyncConfigServer
@@ -82,6 +97,29 @@ export class Server {
       }
     }
     return repo;
+  }
+
+  getLog(id: string): SQLiteLogStorage {
+    let storage = this._logs.get(id);
+    if (!storage) {
+      storage = new SQLiteLogStorage(
+        joinPath(this._args.path, 'logs', id + '.logs')
+      );
+      this._logs.set(id, storage);
+      const replicas = this._args.replicas;
+      if (replicas.length > 0) {
+        assert(!this._clientsForLog.has(id)); // Sanity check
+        const clients = this._args.replicas.map((baseServerUrl) =>
+          new LogClient(
+            storage!,
+            new URL('/logs/' + id, baseServerUrl).toString(),
+            kSyncConfigServer
+          ).startSyncing()
+        );
+        this._clientsForLog.set(id, clients);
+      }
+    }
+    return storage;
   }
 
   private processResponse(resp: Response): Response {
@@ -95,62 +133,106 @@ export class Server {
   }
 
   private async handleRequest(req: Request): Promise<Response> {
-    const path = new URL(req.url).pathname.split('/');
-    if (
-      req.method !== 'POST' ||
-      !req.body ||
-      path.length !== 4 ||
-      path[1] !== 'repo'
-    ) {
+    try {
+      const path = new URL(req.url).pathname.split('/');
+      if (
+        req.method !== 'POST' ||
+        !req.body ||
+        path.length !== 4 ||
+        ['repo', 'log'].includes(path[1])
+      ) {
+        log({
+          severity: 'INFO',
+          error: 'BadRequest',
+          url: req.url,
+          value: {
+            method: req.method,
+            hasBody: Boolean(req.body),
+          },
+        });
+        return this.processResponse(new Response(null, { status: 400 }));
+      }
+
+      const storageType = path[1];
+      const resourceId = path[2];
+      const cmd = path[3];
+      let resp: Response;
+      switch (cmd) {
+        case 'sync':
+          if (storageType === 'repo') {
+            resp = await this.handleRepoSyncRequest(req, resourceId);
+          } else if (storageType === 'log') {
+            resp = await this.handleLogSyncRequest(req, resourceId);
+          }
+          break;
+
+        // case 'query':
+        //   resp = await this.handleQueryRequest(req, repoId);
+        //   break;
+
+        default:
+          log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
+          resp = new Response(null, { status: 400 });
+          break;
+      }
+      return this.processResponse(resp!);
+    } catch (e) {
       log({
-        severity: 'INFO',
-        error: 'BadRequest',
-        url: req.url,
-        value: {
-          method: req.method,
-          hasBody: Boolean(req.body),
-        },
+        severity: 'ERROR',
+        error: 'UncaughtServerError',
+        message: e.message,
+        trace: e.stack,
       });
-      return this.processResponse(new Response(null, { status: 400 }));
+      return this.processResponse(new Response(null, { status: 500 }));
     }
-
-    const repoId = path[2];
-    const cmd = path[3];
-    let resp: Response;
-    switch (cmd) {
-      case 'sync':
-        resp = await this.handleSyncRequest(req, repoId);
-        break;
-
-      // case 'query':
-      //   resp = await this.handleQueryRequest(req, repoId);
-      //   break;
-
-      default:
-        log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
-        resp = new Response(null, { status: 400 });
-        break;
-    }
-    return this.processResponse(resp);
   }
 
-  private async handleSyncRequest(
+  private async handleRepoSyncRequest(
     req: Request,
     repoId: string
   ): Promise<Response> {
     // TODO: Auth + Permissions
     const json = await req.json();
-    const msg = SyncMessage.fromJS(json);
+    const msg = commitsSyncMessagefromJS(json);
     const repo = this.getRepository(repoId);
-    if (repo.persistCommits(msg.commits).length > 0) {
+    if (repo.persistCommits(msg.values).length > 0) {
       // Sync changes with replicas
       for (const c of this._clientsForRepo.get(repoId)!.values()) {
         c.touch();
       }
     }
-    const syncResp = SyncMessage.build(
+    const syncResp = CommitsSyncMessage.build(
       msg.filter,
-      repo,
+      mapIterable(repo.commits(), (c) => [c.id, c]),
+      repo.numberOfCommits,
+      msg.repoSize,
+      syncConfigGetCycles(kSyncConfigClient)
+    );
+    return new Response(JSON.stringify(syncResp.toJS()), {
+      headers: {
+        'content-type': 'application/json; charset=utf-8',
+      },
+    });
+  }
+
+  private async handleLogSyncRequest(
+    req: Request,
+    logId: string
+  ): Promise<Response> {
+    // TODO: Auth + Permissions
+    const json = await req.json();
+    const msg = syncMessageFromJs<NormalizedLogEntry>(json);
+    const logStorage = this.getLog(logId);
+    if (logStorage.persistEntries(msg.values) > 0) {
+      // Sync changes with replicas
+      for (const c of this._clientsForLog.get(logId)!.values()) {
+        c.touch();
+      }
+    }
+    const syncResp = SyncMessage.build<NormalizedLogEntry>(
+      msg.filter,
+      mapIterable(logStorage.entries(), (e) => [e.logId, e]),
+      logStorage.numberOfEntries(),
       msg.repoSize,
       syncConfigGetCycles(kSyncConfigClient)
     );

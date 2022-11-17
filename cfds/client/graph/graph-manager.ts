@@ -20,7 +20,7 @@ import { unionIter } from '../../../base/set.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
 import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
-import { EVENT_NEW_COMMIT, Repository } from '../../base/repo.ts';
+import { EVENT_NEW_COMMIT, IRepository, Repository } from '../../base/repo.ts';
 import { Commit } from '../../base/commit.ts';
 
 export interface PointerFilterFunc {
@@ -39,7 +39,6 @@ export interface CreateVertexInfo {
 export const EVENT_VERTEX_DID_CHANGE = 'vert-did-change';
 
 export class GraphManager extends VertexSource {
-  readonly repository: Repository;
   readonly sharedQueriesManager: SharedQueriesManager;
   private readonly _rootKey: string;
   private readonly _adjList: AdjacencyList;
@@ -49,14 +48,11 @@ export class GraphManager extends VertexSource {
   private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _session: string;
+  private readonly _repoById: Dictionary<string, IRepository>;
 
-  constructor(
-    repo: Repository,
-    rootKey: string,
-    ptrFilterFunc: PointerFilterFunc
-  ) {
+  constructor(rootKey: string, ptrFilterFunc: PointerFilterFunc) {
     super();
-    this.repository = repo;
+    this._repoById = new Map();
     this._rootKey = rootKey;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();

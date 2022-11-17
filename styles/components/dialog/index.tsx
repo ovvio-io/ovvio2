@@ -11,6 +11,10 @@ import { layout } from '../../layout.ts';
 import { IconClose } from '../icons/index.ts';
 import { Button, IconButton } from '../buttons.tsx';
 import Layer from '../layer.tsx';
+import {
+  MouseEvent,
+  MouseEventHandler,
+} from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 
 const show = keyframes(
   {
@@ -169,7 +173,7 @@ export function Dialog({
   // const domState = useScopedObservable(DomState);
   const timeout = useRef<number>();
   const [visible, setVisible] = useState(open);
-  const [css, setCss] = useState(null);
+  const [css, setCss] = useState<string | null>(null);
   const onOpenRef = useRef(onOpen);
   useEffect(() => {
     onOpenRef.current = onOpen;
@@ -193,7 +197,7 @@ export function Dialog({
   useEffect(() => {
     if (timeout.current) {
       clearTimeout(timeout.current);
-      timeout.current = null;
+      timeout.current = undefined;
     }
     if (!open) {
       timeout.current = window.setTimeout(() => {
@@ -214,12 +218,12 @@ export function Dialog({
     return null;
   }
 
-  const root = document.getElementById('root');
-  const ignoreClick = (e) => {
+  const root = document.getElementById('root')!;
+  const ignoreClick = (e: MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
   };
-  const backgroundClick = (e) => {
+  const backgroundClick = (e: MouseEvent) => {
     ignoreClick(e);
     onClickOutside && onClickOutside();
   };

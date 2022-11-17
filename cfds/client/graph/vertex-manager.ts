@@ -32,6 +32,7 @@ import {
   VertexConfig,
 } from './vertex.ts';
 import * as SetUtils from '../../../base/set.ts';
+import { kRecordIdField } from '../../base/scheme-types.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -127,6 +128,16 @@ export class VertexManager<V extends Vertex = Vertex>
 
   get record(): Record {
     return this._record;
+  }
+
+  get repositoryId(): string {
+    const fieldName = this.scheme.repositoryFieldName;
+    if (fieldName === kRecordIdField) {
+      return this.key;
+    }
+    const result = this.record.get<string>(fieldName);
+    assert(result?.length > 0, 'Missing value for field: ' + fieldName);
+    return result!;
   }
 
   /**

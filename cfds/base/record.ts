@@ -48,7 +48,6 @@ export interface ReadonlyRecord {
    */
   readonly serverTimestamp?: Date;
   readonly refs: Set<string>;
-  readonly serverVersion: number;
 
   get(key: string, defaultValue?: any): any;
   has(key: string): boolean;
@@ -58,13 +57,11 @@ export interface ReadonlyRecord {
 export interface RecordConfig {
   scheme: Scheme;
   data: DataType;
-  serverVersion?: number;
 }
 
 export interface EncodedRecord {
   s: Decoder;
   data: ReadonlyDecodedObject;
-  serverVersion?: number;
 }
 
 const checksumSerOptions: SerializeValueTypeOptions = {
@@ -82,7 +79,6 @@ export class Record implements ReadonlyRecord, Encodable {
   private _checksum: string | undefined;
   private _cachedRefs: Set<string> | undefined;
   private _normalized = false;
-  private _serverVersion!: number;
 
   constructor(config: RecordConfig | ConstructorDecoderConfig<EncodedRecord>) {
     if (isDecoderConfig(config)) {
@@ -91,7 +87,6 @@ export class Record implements ReadonlyRecord, Encodable {
       assert(isObject(config.data));
       this._scheme = config.scheme;
       this._data = config.data;
-      this._serverVersion = config.serverVersion || 0;
     }
     this.normalize();
     this.assertValidData();
@@ -144,14 +139,6 @@ export class Record implements ReadonlyRecord, Encodable {
 
   get keys(): string[] {
     return Object.keys(this._data);
-  }
-
-  get serverVersion(): number {
-    return this._serverVersion;
-  }
-
-  set serverVersion(v: number) {
-    this._serverVersion = v;
   }
 
   get<T extends ConcreteCoreValue = ConcreteCoreValue>(
@@ -232,7 +219,6 @@ export class Record implements ReadonlyRecord, Encodable {
     const result = new Record({
       scheme,
       data: clone(scheme.getFields(), this._data),
-      serverVersion: this.serverVersion,
     });
     result._checksum = this._checksum;
     return result;
@@ -245,7 +231,6 @@ export class Record implements ReadonlyRecord, Encodable {
   copyFrom(record: ReadonlyRecord | Record) {
     this._scheme = record.scheme;
     this._data = record.cloneData();
-    this._serverVersion = record.serverVersion;
     this._invalidateCaches();
   }
 
@@ -320,15 +305,11 @@ export class Record implements ReadonlyRecord, Encodable {
       local: options.local,
     });
     encoder.set('d', dataEncoder.getOutput());
-
-    encoder.set('v', this.serverVersion);
   }
 
   deserialize(decoder: Decoder): void {
     this._scheme = new Scheme({ decoder: decoder.getDecoder('s') });
     this._data = deserialize(decoder.getDecoder('d'), this.scheme.fields);
-    this._serverVersion = decoder.get<number>('v')!;
-
     this._invalidateCaches();
     this.normalize();
     this.assertValidData();
@@ -340,16 +321,9 @@ export class Record implements ReadonlyRecord, Encodable {
     return encoder.getOutput() as ReadonlyJSONObject;
   }
 
-  static fromJS(obj: ReadonlyJSONObject, version?: number): Record {
+  static fromJS(obj: ReadonlyJSONObject): Record {
     const decoder = new JSONCyclicalDecoder(obj);
-
-    const record = new this({ decoder });
-
-    if (version !== undefined) {
-      record.serverVersion = version;
-    }
-
-    return record;
+    return new this({ decoder });
   }
 
   assertValidData() {

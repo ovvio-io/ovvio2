@@ -1,10 +1,9 @@
-import { Repository, RepoStorage } from '../cfds/base/repo.ts';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage } from './types.ts';
+import { CoreValue } from '../base/core-types/base.ts';
 import { retry } from '../base/time.ts';
 import { log } from '../logging/log.ts';
-import { count } from '../base/common.ts';
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -30,24 +29,20 @@ export function syncConfigGetCycles(config: SyncConfig): number {
 
 export type OnlineStatusHandler = () => void;
 
-export class Client<T extends RepoStorage<T>> {
+export abstract class BaseClient<ValueType extends CoreValue> {
   private readonly _timer: EaseInOutSineTimer;
-  private readonly _repo: Repository<T>;
   private readonly _serverUrl: string;
   private readonly _syncConfig: SyncConfig;
   private readonly _onlineHandler?: OnlineStatusHandler;
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
-
   private _connectionOnline = false;
 
   constructor(
-    repo: Repository<T>,
     serverUrl: string,
     syncConfig: SyncConfig,
     onlineHandler?: OnlineStatusHandler
   ) {
-    this._repo = repo;
     this._serverUrl = serverUrl;
     this._syncConfig = syncConfig;
     this._timer = new EaseInOutSineTimer(
@@ -58,7 +53,12 @@ export class Client<T extends RepoStorage<T>> {
         try {
           await this.sendSyncMessage();
         } catch (e) {
-          // Silently ignore sync errors while polling
+          log({
+            severity: 'INFO',
+            error: 'UnknownSyncError',
+            message: e.message,
+            trace: e.stack,
+          });
         }
       },
       true,
@@ -66,10 +66,6 @@ export class Client<T extends RepoStorage<T>> {
     );
     this._onlineHandler = onlineHandler;
     this._previousServerSize = 0;
-  }
-
-  get repo(): Repository<T> {
-    return this._repo;
   }
 
   get serverUrl(): string {
@@ -80,6 +76,26 @@ export class Client<T extends RepoStorage<T>> {
     return this._connectionOnline;
   }
 
+  get previousServerFilter(): BloomFilter | undefined {
+    return this._previousServerFilter;
+  }
+
+  get previousServerSize(): number {
+    return this._previousServerSize;
+  }
+
+  get syncConfig(): SyncConfig {
+    return this._syncConfig;
+  }
+
+  get syncCycles(): number {
+    return syncConfigGetCycles(this.syncConfig);
+  }
+
+  protected abstract buildSyncMessage(): SyncMessage<ValueType>;
+  protected abstract persistPeerValues(values: ValueType[]): number;
+  abstract localIds(): Iterable<string>;
+
   private _setIsOnline(value: boolean): void {
     if (value !== this._connectionOnline) {
       this._connectionOnline = value;
@@ -89,12 +105,12 @@ export class Client<T extends RepoStorage<T>> {
     }
   }
 
-  startSyncing(): Client<T> {
+  startSyncing(): typeof this {
     this._timer.schedule();
     return this;
   }
 
-  stopSyncing(): Client<T> {
+  stopSyncing(): typeof this {
     this._timer.unschedule();
     this._timer.reset();
     return this;
@@ -102,13 +118,8 @@ export class Client<T extends RepoStorage<T>> {
 
   private async sendSyncMessage(): Promise<void> {
     const syncConfig = this._syncConfig;
-    const repo = this.repo;
-    const msg = SyncMessage.build(
-      this._previousServerFilter,
-      repo,
-      this._previousServerSize,
-      syncConfigGetCycles(syncConfig)
-    ).toJS();
+    const reqMsg = this.buildSyncMessage();
+    const msg = reqMsg.toJS();
     let respText: string | undefined;
     try {
       const start = performance.now();
@@ -143,12 +154,18 @@ export class Client<T extends RepoStorage<T>> {
       this._setIsOnline(false);
       return;
     }
-    let syncResp: SyncMessage;
+    let syncResp: typeof reqMsg;
     try {
       const json = JSON.parse(respText);
       syncResp = SyncMessage.fromJS(json);
     } catch (e) {
-      log({ severity: 'INFO', error: 'SerializeError', value: respText });
+      log({
+        severity: 'INFO',
+        error: 'SerializeError',
+        value: respText,
+        message: e.message,
+        trace: e.stack,
+      });
       this._setIsOnline(false);
       return;
     }
@@ -156,9 +173,10 @@ export class Client<T extends RepoStorage<T>> {
     this._previousServerFilter = syncResp.filter;
     this._previousServerSize = syncResp.repoSize;
     let persistedCount = 0;
-    if (syncResp.commits.length) {
+    if (syncResp.values.length) {
       const start = performance.now();
-      persistedCount = repo.persistCommits(syncResp.commits).length;
+      // persistedCount = repo.persistCommits(syncResp.commits).length;
+      persistedCount = this.persistPeerValues(syncResp.values);
       log({
         severity: 'INFO',
         name: 'CommitsPersistTime',
@@ -196,8 +214,8 @@ export class Client<T extends RepoStorage<T>> {
     if (!serverFilter) {
       return true;
     }
-    for (const c of this.repo.commits()) {
-      if (!serverFilter.has(c.id)) {
+    for (const id of this.localIds()) {
+      if (!serverFilter.has(id)) {
         return true;
       }
     }

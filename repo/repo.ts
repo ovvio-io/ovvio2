@@ -1,18 +1,17 @@
 import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
-import {
-  coreValueCompare,
-  coreValueEquals,
-} from '../../base/core-types/index.ts';
-import * as SetUtils from '../../base/set.ts';
-import { Dictionary } from '../../base/collections/dict.ts';
-import { Code, ServerError, serviceUnavailable } from './errors.ts';
+import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
+import * as SetUtils from '../base/set.ts';
+import { Dictionary } from '../base/collections/dict.ts';
+import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
 import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
-import { concatChanges, DataChanges } from './object.ts';
-import { Record } from './record.ts';
-import { assert, notReached } from '../../base/error.ts';
-import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
-import { Edit } from './edit.ts';
-import { log } from '../../logging/log.ts';
+import { concatChanges, DataChanges } from '../cfds/base/object.ts';
+import { Record } from '../cfds/base/record.ts';
+import { assert, notReached } from '../base/error.ts';
+import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
+import { Edit } from '../cfds/base/edit.ts';
+import { log } from '../logging/log.ts';
+import { kRecordIdField } from '../cfds/base/scheme-types.ts';
+import { LRUCache } from '../base/collections/lru-cache.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -20,20 +19,23 @@ export interface RepoStorage<T extends RepoStorage<T>> {
   numberOfCommits(): number;
   getCommit(id: string): Commit | undefined;
   allCommits(): Iterable<Commit>;
-  commitsForKey(key: string): Iterable<Commit>;
+  commitsForKey(key: string | null): Iterable<Commit>;
   allKeys(): Iterable<string>;
   persistCommits(c: Iterable<Commit>, repo: Repository<T>): Iterable<Commit>;
   close(): void;
 }
 
-export interface IRepository<ST extends RepoStorage<ST>> {
-  readonly storage: ST;
+export interface IRepository {
   readonly numberOfCommits: number;
 
   keys(): Iterable<string>;
-  valueForKey(key: string, session: string, pendingCommit?: Commit): Record;
-  setValueForKey(key: string, session: string, value: Record): boolean;
-  hasKey(key: string): boolean;
+  valueForKey(
+    key: string | null,
+    session: string,
+    pendingCommit?: Commit
+  ): Record;
+  setValueForKey(key: string | null, session: string, value: Record): boolean;
+  hasKey(key: string | null): boolean;
 }
 
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
@@ -60,11 +62,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return this.storage.allCommits();
   }
 
-  commitsForKey(key: string): Iterable<Commit> {
+  commitsForKey(key: string | null): Iterable<Commit> {
     return this.storage.commitsForKey(key);
   }
 
-  leavesForKey(key: string, pendingCommit?: Commit): Commit[] {
+  leavesForKey(key: string | null, pendingCommit?: Commit): Commit[] {
     const childrenPerCommit = new Map<string, Set<Commit>>();
     for (const c of this.commitsForKey(key)) {
       this._setChildrenPerCommit(c, childrenPerCommit);
@@ -219,7 +221,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   headForKey(
-    key: string,
+    key: string | null,
     session: string,
     pendingCommit?: Commit
   ): Commit | undefined {
@@ -240,13 +242,14 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     // rely on our patch to come up with a nice result. A better way may be to
     // do a recursive 3-way merge like git does.
     try {
-      // Find the base of our N-way merge. If no LCA is found then we're dealing
-      // with concurrent writers who all created of the same key concurrently.
-      // Use the null record as a base in this case.
+      // Find the base for our N-way merge
       const lca = this.findMergeBase(commitsToMerge);
+      // If no LCA is found then we're dealing with concurrent writers who all
+      // created of the same key unaware of each other.
+      // Use the null record as a base in this case.
       const base = lca ? this.recordForCommit(lca) : Record.nullRecord();
       // TODO: Scheme upgrade
-      // Compute a compound diff
+      // Compute a compound diff from our base to all unique records
       let changes: DataChanges = {};
       for (const c of commitsToMerge) {
         changes = concatChanges(
@@ -271,8 +274,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         // Since we're dealing with a partial graph, some of our leaves may not
         // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
         // If we somehow temporarily lost c2 and c4, we would consider both c3
-        // and c1 as leaves. Therefore, we first sort all our leaves by
-        // descending timestamp.
+        // and c1 as leaves. Therefore, we first sort all our leaves from
+        // newest to oldest.
         leaves.sort(compareCommitsDesc);
         // Preserve local consistency for the caller and return whichever value
         // it wrote last.
@@ -289,12 +292,16 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     }
   }
 
-  valueForKey(key: string, session: string, pendingCommit?: Commit): Record {
+  valueForKey(
+    key: string | null,
+    session: string,
+    pendingCommit?: Commit
+  ): Record {
     const head = this.headForKey(key, session, pendingCommit);
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
-  setValueForKey(key: string, session: string, value: Record): boolean {
+  setValueForKey(key: string | null, session: string, value: Record): boolean {
     const head = this.headForKey(key, session);
     if (head && this.recordForCommit(head).isEqual(value)) {
       return false;
@@ -343,7 +350,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return true;
   }
 
-  private lastRecordCommitForKey(key: string): Commit | undefined {
+  private lastRecordCommitForKey(key: string | null): Commit | undefined {
     let result: Commit | undefined;
     for (const c of this.commitsForKey(key)) {
       if (!commitContentsIsRecord(c.contents)) {
@@ -356,7 +363,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return result;
   }
 
-  hasKey(key: string): boolean {
+  hasKey(key: string | null): boolean {
     return this.headForKey(key, '') !== undefined;
   }
 
@@ -365,6 +372,19 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     for (const c of result) {
       this.emit(EVENT_NEW_COMMIT, c);
     }
+    return result;
+  }
+
+  repositoryIdForCommit(c: Commit | string): string {
+    const record = this.recordForCommit(c);
+    const repoFieldName = record.scheme.repositoryFieldName;
+    if (repoFieldName === kRecordIdField) {
+      const commit = typeof c === 'string' ? this.getCommit(c) : c;
+      assert(commit !== undefined && commit.key !== undefined);
+      return commit.key!;
+    }
+    const result = record.get<string>(repoFieldName);
+    assert(result?.length > 0);
     return result;
   }
 }
@@ -395,12 +415,14 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 
 export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
   // Key -> Commit Id -> Commit
-  private readonly _commitsByRecordKey: Dictionary<string, Set<string>>;
-  private readonly _commitsById: Dictionary<string, Commit>;
+  private readonly _commitsByRecordKey: Dictionary<string | null, Set<string>>;
+  private readonly _commitsById: LRUCache<string, Commit>;
 
-  constructor(commits?: Iterable<Commit>) {
+  constructor(commits?: Iterable<Commit>, maxCommits = 0) {
     this._commitsByRecordKey = new Map();
-    this._commitsById = new Map();
+    this._commitsById = new LRUCache(maxCommits, (id, commit) => {
+      this._commitsByRecordKey.get(commit.key)?.delete(commit.id);
+    });
     if (commits) {
       for (const c of commits) {
         let keyMap = this._commitsByRecordKey.get(c.key);
@@ -412,6 +434,14 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
         this._commitsById.set(c.id, c);
       }
     }
+  }
+
+  get maxCommits(): number {
+    return this._commitsById.limit;
+  }
+
+  set maxCommits(limit: number) {
+    this._commitsById.limit = limit;
   }
 
   numberOfCommits(): number {
@@ -434,8 +464,12 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
     return SetUtils.mapToArray(keyMap, (id) => this.getCommit(id));
   }
 
-  allKeys(): Iterable<string> {
-    return this._commitsByRecordKey.keys();
+  *allKeys(): Generator<string> {
+    for (const k of this._commitsByRecordKey.keys()) {
+      if (typeof k === 'string') {
+        yield k;
+      }
+    }
   }
 
   *persistCommits(commits: Iterable<Commit>): Generator<Commit> {

@@ -13,7 +13,6 @@ export enum SchemeNamespace {
   TAGS = 'tags',
   USERS = 'users',
   INVITES = 'invites',
-  DRAFTS = 'drafts',
   Null = '',
 }
 
@@ -31,7 +30,6 @@ export const NS_NOTES = SchemeNamespace.NOTES;
 export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
 export const NS_INVITES = SchemeNamespace.INVITES;
-export const NS_DRAFTS = SchemeNamespace.DRAFTS;
 
 export const TYPE_STR = ValueType.STRING;
 export const TYPE_NUMBER = ValueType.NUMBER;
@@ -92,19 +90,28 @@ export type SchemeObject = Record<
 
 type Override<T1, T2> = Omit<T1, keyof T2> & T2;
 
+export const kRecordIdField = '<id>';
+
 export class SchemeDef<T extends SchemeObject> {
   namespace: string;
   fieldDescriptors: T;
+  repositoryFieldName: string;
 
-  constructor(namespace: string, fieldDescriptors: T) {
+  constructor(
+    namespace: string,
+    fieldDescriptors: T,
+    repositoryFieldName?: string
+  ) {
     this.namespace = namespace;
     this.fieldDescriptors = fieldDescriptors;
+    this.repositoryFieldName = repositoryFieldName || kRecordIdField;
   }
 
   derive<B extends SchemeObject>(
     namespace: string,
     fields: B,
-    removeFields?: (keyof Omit<T, keyof B>)[]
+    removeFields?: (keyof Omit<T, keyof B>)[],
+    repositoryFieldName?: keyof B
   ): SchemeDef<Override<T, B>> {
     const newFields = Object.assign(
       Object.assign({}, this.fieldDescriptors),
@@ -115,7 +122,11 @@ export class SchemeDef<T extends SchemeObject> {
         delete newFields[f];
       }
     }
-    return new SchemeDef(namespace || this.namespace, newFields);
+    return new SchemeDef(
+      namespace || this.namespace,
+      newFields,
+      (repositoryFieldName || this.repositoryFieldName) as string
+    );
   }
 }
 

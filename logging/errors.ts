@@ -8,7 +8,6 @@ export type DeveloperError =
   | 'UncaughtServerError';
 
 export interface BaseErrorLogEntry extends BaseLogEntry {
-  message?: string;
   trace?: string;
 }
 
@@ -21,7 +20,8 @@ export type OperationalError =
   | 'FetchError'
   | 'SerializeError'
   | 'BadRequest'
-  | 'UnknownCommand';
+  | 'UnknownCommand'
+  | 'UnknownSyncError';
 
 export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   severity: 'INFO';

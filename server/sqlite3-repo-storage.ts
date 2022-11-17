@@ -44,14 +44,14 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     db.exec('PRAGMA foreign_keys = ON;');
     db.exec(`CREATE TABLE IF NOT EXISTS commits (
       id TINYTEXT NOT NULL PRIMARY KEY,
-      key TINYTEXT NOT NULL,
+      key TINYTEXT,
       ts TIMESTAMP NOT NULL,
       json TEXT NOT NULL
     );`);
     db.exec(`CREATE INDEX IF NOT EXISTS commitsByKey ON commits (key);`);
     this._countStatement = db.prepare(`SELECT COUNT(id) from commits;`);
     this._getCommitStatement = db.prepare(
-      `SELECT json from commits WHERE ID = :id;`
+      `SELECT json from commits WHERE ID = :id LIMIT 1;`
     );
     this._getKeysStatement = db.prepare(`SELECT DISTINCT key from commits`);
     this._putCommitStatement = db.prepare(
@@ -60,7 +60,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     this._putCommitTxn = db.transaction(([commits, repo, outCommits]) => {
       // First, check we haven't already persisted this commit
       for (const newCommit of commits) {
-        if (this._getCommitStatement.run({ id: newCommit.id }) !== undefined) {
+        if (this._getCommitStatement.values({ id: newCommit.id }).length > 0) {
           continue;
         }
         const { key, session } = newCommit;

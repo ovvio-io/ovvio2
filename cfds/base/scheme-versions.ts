@@ -6,7 +6,6 @@ import {
   NS_TAGS,
   NS_USERS,
   NS_WORKSPACE,
-  NS_DRAFTS,
   TYPE_DATE,
   TYPE_MAP,
   TYPE_NUMBER,
@@ -45,15 +44,20 @@ const SCHEME_BASE_1 = new SchemeDef('', {
   sortStamp: TYPE_STR,
 });
 
-const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive('', {
-  createdBy: {
-    type: TYPE_STR,
+const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive(
+  '',
+  {
+    createdBy: {
+      type: TYPE_STR,
+    },
+    workspace: {
+      type: TYPE_REF,
+      required: true,
+    },
   },
-  workspace: {
-    type: TYPE_REF,
-    required: true,
-  },
-});
+  [],
+  'workspace'
+);
 
 //ACTUAL SCHEMES
 const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
@@ -192,17 +196,6 @@ const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   parentNote: TYPE_REF,
 });
 
-const SCHEME_DRAFT_1 = SCHEME_NOTE_3.derive(
-  NS_DRAFTS,
-  {
-    owner: {
-      type: TYPE_REF,
-      required: true,
-    },
-  },
-  ['workspace', 'type', 'status', 'parentNote']
-);
-
 const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   color: TYPE_STR,
   name: TYPE_STR,
@@ -234,7 +227,6 @@ export {
   SCHEME_TAG_1 as TAG_SCHEME,
   SCHEME_INVITE_1 as INVITE_SCHEME,
   SCHEME_USER_1 as USER_SCHEME,
-  SCHEME_DRAFT_1 as DRAFT_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -247,7 +239,6 @@ export function runRegister(manager: ISchemeManagerRegister) {
       SCHEME_NOTE_1,
       SCHEME_TAG_1,
       SCHEME_INVITE_1,
-      SCHEME_DRAFT_1,
     ],
     []
   );

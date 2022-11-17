@@ -1,6 +1,6 @@
 import { LogEntryDeveloperError, OperationalErrorLogEntry } from './errors.ts';
 import { GenericLogEntry, normalizeLogEntry, SeverityCodes } from './entry.ts';
-import { ConsoleLogStream, FileLogStream } from './stream.ts';
+import { ConsoleLogStream, LogStream } from './stream.ts';
 import { MetricLogEntry } from './metrics.ts';
 
 export type LogEntry =
@@ -9,17 +9,12 @@ export type LogEntry =
   | OperationalErrorLogEntry
   | MetricLogEntry;
 
-const kDefaultConsoleLogStream = new ConsoleLogStream();
-
-let gFileLogStream: FileLogStream | undefined;
+let gLogStreams: LogStream[] = [new ConsoleLogStream()];
 
 let gLogLevel = SeverityCodes.DEFAULT;
 
-export function setLogsDirPath(path: string): void {
-  if (gFileLogStream !== undefined) {
-    gFileLogStream.close();
-  }
-  gFileLogStream = new FileLogStream(path);
+export function setLogStreams(streams: LogStream[]): void {
+  gLogStreams = streams;
 }
 
 export function getLogLevel(): number {
@@ -33,9 +28,8 @@ export function setLogLevel(level: number): void {
 export function log(entry: LogEntry): void | never {
   if (SeverityCodes[entry.severity] >= gLogLevel) {
     const e = normalizeLogEntry(entry);
-    kDefaultConsoleLogStream.appendEntry(e);
-    if (gFileLogStream) {
-      gFileLogStream.appendEntry(e);
+    for (const stream of gLogStreams) {
+      stream.appendEntry(e);
     }
   }
 }

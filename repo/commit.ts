@@ -3,20 +3,18 @@ import {
   Encoder,
   Equatable,
   ReadonlyCoreObject,
-} from '../../base/core-types/base.ts';
-import { Record } from './record.ts';
-import { Edit } from './edit.ts';
-import { ReadonlyJSONObject } from '../../base/interfaces.ts';
+} from '../base/core-types/base.ts';
+import { Record } from '../cfds/base/record.ts';
+import { Edit } from '../cfds/base/edit.ts';
 import {
   ConstructorDecoderConfig,
   Decodable,
   Decoder,
-} from '../../base/core-types/encoding/types.ts';
-import { JSONCyclicalEncoder } from '../../base/core-types/encoding/json.ts';
-import { isDecoderConfig } from '../../base/core-types/encoding/utils.ts';
-import { uniqueId } from '../../base/common.ts';
-import { coreValueEquals } from '../../base/core-types/equals.ts';
-import { assert } from '../../base/error.ts';
+} from '../base/core-types/encoding/types.ts';
+import { isDecoderConfig } from '../base/core-types/encoding/utils.ts';
+import { uniqueId } from '../base/common.ts';
+import { coreValueEquals } from '../base/core-types/equals.ts';
+import { assert } from '../base/error.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -34,7 +32,7 @@ export type CommitContents = RecordContents | DeltaContents;
 export interface CommitConfig {
   id?: string;
   session: string;
-  key: string;
+  key?: string | null;
   contents: Record | CommitContents;
   parents?: string | Iterable<string>;
   timestamp?: Date;
@@ -43,7 +41,7 @@ export interface CommitConfig {
 export class Commit implements Encodable, Decodable, Equatable {
   private _id!: string;
   private _session!: string;
-  private _key!: string;
+  private _key: string | undefined;
   private _parents: string[] | undefined;
   private _timestamp!: Date;
   private _contents!: CommitContents;
@@ -68,7 +66,7 @@ export class Commit implements Encodable, Decodable, Equatable {
 
       this._id = config.id || uniqueId();
       this._session = config.session;
-      this._key = config.key;
+      this._key = config.key || undefined;
       this._parents = parents as string[];
       this._timestamp = config.timestamp || new Date();
       this._contents = contents;
@@ -79,8 +77,8 @@ export class Commit implements Encodable, Decodable, Equatable {
     return this._id;
   }
 
-  get key(): string {
-    return this._key;
+  get key(): string | null {
+    return this._key || null;
   }
 
   get session(): string {
@@ -108,7 +106,9 @@ export class Commit implements Encodable, Decodable, Equatable {
 
   serialize(encoder: Encoder): void {
     encoder.set('id', this.id);
-    encoder.set('k', this.key);
+    if (this.key) {
+      encoder.set('k', this.key);
+    }
     encoder.set('s', this.session);
     encoder.set('ts', this.timestamp);
     const parents = this.parents;
@@ -122,7 +122,7 @@ export class Commit implements Encodable, Decodable, Equatable {
 
   deserialize(decoder: Decoder): void {
     this._id = decoder.get<string>('id', uniqueId())!;
-    this._key = decoder.get<string>('k', uniqueId())!;
+    this._key = decoder.get<string | null>('k', null)!;
     this._session = decoder.get<string>('s', 'unknown-' + uniqueId())!;
     this._timestamp = decoder.get<Date>('ts', new Date())!;
     this._parents = decoder.get<string[]>('p');
