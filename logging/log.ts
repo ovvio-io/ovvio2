@@ -1,4 +1,8 @@
-import { LogEntryDeveloperError, OperationalErrorLogEntry } from './errors.ts';
+import {
+  LogEntryDeveloperError,
+  OperationalErrorLogEntry,
+  SystemErrorLogEntry,
+} from './errors.ts';
 import { GenericLogEntry, normalizeLogEntry, SeverityCodes } from './entry.ts';
 import { ConsoleLogStream, LogStream } from './stream.ts';
 import { MetricLogEntry } from './metrics.ts';
@@ -7,6 +11,7 @@ export type LogEntry =
   | GenericLogEntry
   | LogEntryDeveloperError
   | OperationalErrorLogEntry
+  | SystemErrorLogEntry
   | MetricLogEntry;
 
 let gLogStreams: LogStream[] = [new ConsoleLogStream()];

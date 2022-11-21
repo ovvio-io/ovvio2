@@ -31,3 +31,12 @@ export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   valueType?: string;
   value?: JSONValue;
 }
+
+export type SystemError = 'BackupWriteFailed';
+
+export interface SystemErrorLogEntry extends BaseErrorLogEntry {
+  severity: 'ERROR';
+  error: SystemError;
+  commit?: string;
+  repo?: string;
+}

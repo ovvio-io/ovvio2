@@ -94,10 +94,10 @@ export class JSONCyclicalEncoder extends BaseCyclicalEncoder<
     return new JSONCyclicalEncoder();
   }
 
-  static serialize(obj: Encodable): ReadonlyJSONValue {
+  static serialize(obj: Encodable): ReadonlyJSONObject {
     const encoder = new JSONCyclicalEncoder();
     obj.serialize(encoder);
-    return encoder.getOutput();
+    return encoder.getOutput() as ReadonlyJSONObject;
   }
 }
 

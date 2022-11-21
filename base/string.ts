@@ -1,3 +1,5 @@
+import { assert } from './error.ts';
+
 export function splice(
   str: string,
   start: number,
@@ -51,4 +53,80 @@ function letterBoost(expected: string, input: string): number {
     }
   }
   return 1.0 + (correctCount - wrongCount) / origChars.size;
+}
+
+/**
+ * Given a string and an index, this function returns the char code at the
+ * given index, plus one index before/after it in the case of a unicode
+ * surrogate pairs.
+ *
+ * Shamelessly taken from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt
+ *
+ * @param str The string to extract from.
+ * @param idx The index of the requested code.
+ * @returns A fixed char code.
+ */
+export function fixedCharCodeAt(str: string, idx: number): number {
+  if (idx < 0 || idx >= str.length) {
+    return 0;
+  }
+  const code = str.charCodeAt(idx);
+  // High surrogate (could change last hex to 0xDB7F to treat high private
+  // surrogates as single characters)
+  if (0xd800 <= code && code <= 0xdbff) {
+    const hi = code;
+    const low = str.charCodeAt(idx + 1);
+    assert(
+      !isNaN(low),
+      'High surrogate not followed by low surrogate in fixedCharCodeAt()'
+    );
+    return (hi - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000;
+  }
+  if (0xdc00 <= code && code <= 0xdfff) {
+    // Low surrogate
+    // We return false to allow loops to skip this iteration since should have
+    // already handled high surrogate above in the previous iteration
+    const hi = str.charCodeAt(idx - 1);
+    const low = code;
+    return (hi - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000;
+  }
+  return code;
+}
+
+/**
+ * Given a string, this function returns a new string, that's lexicographically
+ * greater by 1. That means, it'll compare greater than the given string, and
+ * no other string can be inserted between the input and the result.
+ *
+ * @param str The input string.
+ * @returns A string that compares greater by 1.
+ */
+export function increment(str: string): string {
+  const code = fixedCharCodeAt(str, str.length - 1);
+  // 0x10FFFF is the highest code point encodable to UTF-16. If the last char
+  // is lesser than it, we can simply increment it
+  if (code < 0x10ffff) {
+    return str.substring(0, str.length - 1) + String.fromCodePoint(code + 1);
+  }
+  // Can't increment last character, so must add a character
+  return str + String.fromCharCode(1);
+}
+
+/**
+ * Given a string, this function returns a new string, that's lexicographically
+ * lesser by 1. That means, it'll compare less than the given string, and
+ * no other string can be inserted between the input and the result.
+ *
+ * @param str The input string.
+ * @returns A string that compares smaller by 1.
+ */
+export function decrement(str: string): string {
+  const code = fixedCharCodeAt(str, str.length - 1);
+  // If our last character is already the lowest value, we must shorten the
+  // string.
+  if (code < 1) {
+    return str.length > 1 ? str.substring(0, str.length - 1) : '';
+  }
+  // Decrement the last character if we can
+  return str + String.fromCharCode(code - 1);
 }

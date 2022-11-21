@@ -69,3 +69,14 @@ export function* mapIterable<IT, OT = IT>(
     ++i;
   }
 }
+
+export function* filterIterable<IT>(
+  input: Iterable<IT>,
+  filter: (v: IT) => boolean
+): Iterable<IT> {
+  for (const v of input) {
+    if (filter(v)) {
+      yield v;
+    }
+  }
+}
