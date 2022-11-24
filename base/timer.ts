@@ -1,6 +1,7 @@
 import { assert } from './error.ts';
 import { easeInOutSine } from './time.ts';
 import { SortedQueue } from './collections/queue.ts';
+import { Scheduler, SchedulerPriority } from './coroutine.ts';
 
 const MAX_TIMER_PROCESSING_MS = 30;
 
@@ -341,7 +342,10 @@ function processPendingNextEventLoopTimers(): void {
 /**
  * A timer like implementation of a micro task. This timer fires at the end of
  * the current event loop. The exact fire timing between two micro task timers
- * is undefined.
+ * is fuzzy.
+ *
+ * Prefer to use a CoroutineTimer timer instead of this class as it allows the
+ * scheduler to better balance the app's work.
  */
 export class NextEventLoopCycleTimer implements Timer {
   private readonly _callback: TimerCallback;
@@ -380,6 +384,51 @@ export class NextEventLoopCycleTimer implements Timer {
   _fire(): void {
     if (this._callback(this) === true) {
       this.schedule();
+    }
+  }
+}
+
+/**
+ * An coroutine based implementation of a NextEventLoopCycleTimer. This timer
+ * is managed by a CoroutineScheduler, increasing processing responsiveness.
+ *
+ * Prefer to use this timer over NextEventLoopCycleTimer whenever possible.
+ */
+export class CoroutineTimer implements Timer {
+  private readonly _callback: TimerCallback;
+  private _scheduled: boolean;
+
+  constructor(
+    readonly scheduler: Scheduler,
+    callback: TimerCallback,
+    readonly priority: SchedulerPriority = SchedulerPriority.Normal,
+    readonly name?: string
+  ) {
+    this._callback = callback;
+    this._scheduled = false;
+  }
+
+  schedule(): Timer {
+    if (!this._scheduled) {
+      this._scheduled = true;
+      this.scheduler.schedule(this._run(), this.priority, this.name);
+    }
+    return this;
+  }
+
+  unschedule(): Timer {
+    this._scheduled = false;
+    return this;
+  }
+
+  private *_run(): Generator<void> {
+    const callback = this._callback;
+    while (true) {
+      if (!this._scheduled || callback(this) !== true) {
+        this._scheduled = false;
+        return;
+      }
+      yield;
     }
   }
 }

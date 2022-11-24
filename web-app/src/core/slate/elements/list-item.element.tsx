@@ -8,15 +8,25 @@ import { ListUtils } from '../utils/list-utils';
 import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
 
 import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useContext } from 'react';
+import React from 'react';
 
-const useStyles = makeStyles(
-  theme => ({
-    rtl: {
-      textAlign: 'right',
-    },
-  }),
-  'list-item_element_ce3599'
-);
+export const listContext = React.createContext(0);
+
+const useStyles = makeStyles(theme => {
+  let levelStyles = {};
+  for (let level = 1; level < 6; level++) {
+    levelStyles[`level_${level}_ltr`] = {
+      marginLeft: level * 20,
+      textAlign: 'start',
+    };
+    levelStyles[`level_${level}_rtl`] = {
+      marginRight: level * 20,
+      textAlign: 'start',
+    };
+  }
+  return levelStyles;
+}, 'list-item_element_ce3599');
 
 export const LIST_ITEM_TYPE = 'li';
 
@@ -39,9 +49,12 @@ export function ListItemElementNode(props: ListItemProps) {
   const styles = useStyles();
   const { dir } = props.attributes;
   const isRtl = dir === 'rtl';
-
+  const level = useContext(listContext);
   return (
-    <li {...props.attributes} className={cn(isRtl && styles.rtl)}>
+    <li
+      {...props.attributes}
+      className={cn(styles[`level_${level}_${isRtl ? 'rtl' : 'ltr'}`])}
+    >
       <TextElement>{props.children}</TextElement>
     </li>
   );

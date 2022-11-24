@@ -33,6 +33,7 @@ import {
 } from './vertex.ts';
 import * as SetUtils from '../../../base/set.ts';
 import { kRecordIdField } from '../../base/scheme-types.ts';
+import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -101,7 +102,7 @@ export class VertexManager<V extends Vertex = Vertex>
       isLocal: local === true,
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
-    const repo = graph.repository;
+    const repo = this.repository;
     this._record = initialState || repo.valueForKey(this.key, graph.session);
     this._head = repo.headForKey(key, graph.session)?.id;
     this.rebuildVertex();
@@ -131,13 +132,17 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   get repositoryId(): string {
-    const fieldName = this.scheme.repositoryFieldName;
-    if (fieldName === kRecordIdField) {
-      return this.key;
-    }
-    const result = this.record.get<string>(fieldName);
-    assert(result?.length > 0, 'Missing value for field: ' + fieldName);
-    return result!;
+    const id = this.record.repositoryId;
+    const res = id === kRecordIdField ? this.key : id;
+    assert(
+      undefined !== res,
+      `Failed inferring repository id for ${this._key}`
+    );
+    return res!;
+  }
+
+  get repository(): Repository<MemRepoStorage> {
+    return this.graph.repository(this.repositoryId);
   }
 
   /**
@@ -146,7 +151,7 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   get hasPendingChanges(): boolean {
     return this.record.isEqual(
-      this.graph.repository.valueForKey(this.key, this.graph.session)
+      this.repository.valueForKey(this.key, this.graph.session)
     );
   }
 
@@ -221,7 +226,7 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   commit(): void {
     const graph = this.graph;
-    const repo = graph.repository;
+    const repo = this.repository;
     const prevRecord = this.record;
     if (repo.setValueForKey(this.key, graph.session, this.record)) {
       const newRecord = repo.valueForKey(this.key, graph.session);

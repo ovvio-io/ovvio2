@@ -27,7 +27,7 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../../base/core-types/encoding/json.ts';
-import { DataType } from './scheme-types.ts';
+import { DataType, kRecordIdField } from './scheme-types.ts';
 import { MD5Checksum } from '../../base/core-types/encoding/checksum.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import {
@@ -139,6 +139,14 @@ export class Record implements ReadonlyRecord, Encodable {
 
   get keys(): string[] {
     return Object.keys(this._data);
+  }
+
+  get repositoryId(): '<id>' | string | undefined {
+    const fieldName = this.scheme.repositoryFieldName;
+    if (fieldName === kRecordIdField) {
+      return kRecordIdField;
+    }
+    return this.get<string>(fieldName);
   }
 
   get<T extends ConcreteCoreValue = ConcreteCoreValue>(

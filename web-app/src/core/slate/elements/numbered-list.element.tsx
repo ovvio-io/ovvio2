@@ -5,13 +5,13 @@ import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
 import { mergePlugins } from '../plugins';
 import { createAutoReplaceHandler } from '../utils/auto-replace';
 import { ListUtils } from '../utils/list-utils';
-import { ListItemElement } from './list-item.element';
+import { listContext, ListItemElement } from './list-item.element';
+import { useContext } from 'react';
 
 const useStyles = makeStyles(() => ({
   numberedList: {
-    margin: 0,
     padding: 0,
-    marginLeft: 20,
+    paddingInlineStart: 0,
   },
 }));
 
@@ -34,9 +34,12 @@ interface NumberedListProps extends RenderElementProps {
 
 export function NumberedListElementNode(props: NumberedListProps) {
   const styles = useStyles();
+  const level = useContext(listContext);
   return (
     <ol {...props.attributes} className={cn(styles.numberedList)}>
-      {props.children}
+      <listContext.Provider value={level + 1}>
+        {props.children}
+      </listContext.Provider>
     </ol>
   );
 }

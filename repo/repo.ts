@@ -25,19 +25,6 @@ export interface RepoStorage<T extends RepoStorage<T>> {
   close(): void;
 }
 
-export interface IRepository {
-  readonly numberOfCommits: number;
-
-  keys(): Iterable<string>;
-  valueForKey(
-    key: string | null,
-    session: string,
-    pendingCommit?: Commit
-  ): Record;
-  setValueForKey(key: string | null, session: string, value: Record): boolean;
-  hasKey(key: string | null): boolean;
-}
-
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly storage: ST;
 

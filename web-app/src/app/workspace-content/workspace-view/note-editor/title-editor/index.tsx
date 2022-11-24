@@ -4,7 +4,7 @@ import { styleguide, layout } from '@ovvio/styles/lib';
 import { CreateTagContext, useCreateTag } from 'shared/tags/create-tag-context';
 import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
 import { useTitleEditor } from 'core/slate';
-import { Editable, Slate } from 'slate-react';
+import { Editable, RenderElementProps, Slate } from 'slate-react';
 import { EditableCardContext } from 'core/slate/elements/card.element';
 import { H1 } from '@ovvio/styles/lib/components/texts';
 import { CARD_SOURCE } from 'shared/card';
@@ -118,6 +118,10 @@ const useStyles = makeStyles(theme => ({
 //   );
 // }
 
+const Title = ({ children, attributes, element }: RenderElementProps) => {
+  return <H1 {...attributes}>{children}</H1>;
+};
+
 interface TitleEditorProps {
   cardManager: VertexManager<Note>;
   className?: string;
@@ -147,7 +151,7 @@ export default function TitleEditorView({
 
   const { editor, plugins, handlers } = useTitleEditor(
     cardManager,
-    H1,
+    Title,
     CARD_SOURCE.TITLE,
     {
       onFocusNext: focusNext,

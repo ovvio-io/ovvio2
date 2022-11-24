@@ -1,4 +1,4 @@
-import { NextEventLoopCycleTimer, Timer, TimerCallback } from './timer.ts';
+import { NextEventLoopCycleTimer, Timer } from './timer.ts';
 
 const kSingleFrameTime = 1000 / 60; // 60 fps
 // 1/3 of a frame every event loop cycle
@@ -224,45 +224,6 @@ export class CoroutineQueue implements Scheduler {
         coroutine.run();
         yield;
       }
-    }
-  }
-}
-
-export class CoroutineTimer implements Timer {
-  private readonly _callback: TimerCallback;
-  private _scheduled: boolean;
-
-  constructor(
-    readonly scheduler: Scheduler,
-    callback: TimerCallback,
-    readonly priority: SchedulerPriority = SchedulerPriority.Normal,
-    readonly name?: string
-  ) {
-    this._callback = callback;
-    this._scheduled = false;
-  }
-
-  schedule(): Timer {
-    if (!this._scheduled) {
-      this._scheduled = true;
-      this.scheduler.schedule(this._run(), this.priority, this.name);
-    }
-    return this;
-  }
-
-  unschedule(): Timer {
-    this._scheduled = false;
-    return this;
-  }
-
-  private *_run(): Generator<void> {
-    const callback = this._callback;
-    while (true) {
-      if (!this._scheduled || callback(this) !== true) {
-        this._scheduled = false;
-        return;
-      }
-      yield;
     }
   }
 }

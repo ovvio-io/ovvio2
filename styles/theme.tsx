@@ -355,7 +355,7 @@ export function useTheme() {
 
 interface ThemeProviderProps {
   theme: Theme;
-  children: ({ style: any }) => React.ReactNode;
+  children: ({ style }) => React.ReactNode;
   isRoot?: boolean;
 }
 export function ThemeProvider({

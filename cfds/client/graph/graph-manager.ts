@@ -13,15 +13,32 @@ import {
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import { DataType, SchemeNamespace } from '../../base/scheme-types.ts';
+import {
+  DataType,
+  NS_NOTES,
+  SchemeNamespace,
+} from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
 import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
-import { EVENT_NEW_COMMIT, IRepository, Repository } from '../../base/repo.ts';
-import { Commit } from '../../base/commit.ts';
+import {
+  EVENT_NEW_COMMIT,
+  MemRepoStorage,
+  Repository,
+} from '../../../repo/repo.ts';
+import { Commit } from '../../../repo/commit.ts';
+import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
+import { RepoClient } from '../../../net/repo-client.ts';
+import { kSyncConfigClient } from '../../../net/base-client.ts';
+import { appendPathComponent } from '../../../base/string.ts';
+import { NoteSearchEngine } from './note-search.ts';
+
+// We consider only commits from the last 30 days to be "hot", and load them
+// automatically
+const K_HOT_COMMITS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -48,9 +65,17 @@ export class GraphManager extends VertexSource {
   private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _session: string;
-  private readonly _repoById: Dictionary<string, IRepository>;
+  private readonly _repoById: Dictionary<string, Repository<MemRepoStorage>>;
+  private readonly _backup: IDBRepositoryBackup;
+  private readonly _repoClients: Dictionary<string, RepoClient<MemRepoStorage>>;
+  private readonly _baseServerUrl: string | undefined;
+  private readonly _notesSearch: NoteSearchEngine;
 
-  constructor(rootKey: string, ptrFilterFunc: PointerFilterFunc) {
+  constructor(
+    rootKey: string,
+    ptrFilterFunc: PointerFilterFunc,
+    baseServerUrl?: string
+  ) {
     super();
     this._repoById = new Map();
     this._rootKey = rootKey;
@@ -66,12 +91,11 @@ export class GraphManager extends VertexSource {
 
     this._createVertIfNeeded(this._rootKey);
     this.sharedQueriesManager = new SharedQueriesManager(this);
-    repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
-      // Trigger a merge with remote peers when detecting a remote edit
-      if (c.session !== this.session) {
-        this.getVertexManager(c.key).scheduleCommitIfNeeded();
-      }
-    });
+    this._repoById = new Map();
+    this._backup = new IDBRepositoryBackup(rootKey);
+    this._repoClients = new Map();
+    this._baseServerUrl = baseServerUrl;
+    this._notesSearch = new NoteSearchEngine(this);
   }
 
   get adjacencyList(): AdjacencyList {
@@ -96,6 +120,58 @@ export class GraphManager extends VertexSource {
 
   get session(): string {
     return this._session;
+  }
+
+  async loadLocalContents(): Promise<void> {
+    for (const [repoId, commits] of Object.entries(
+      await this._backup.loadCommits()
+    )) {
+      this.repository(repoId).persistCommits(commits);
+    }
+  }
+
+  repository(id: string): Repository<MemRepoStorage> {
+    let repo = this._repoById.get(id);
+    if (!repo) {
+      repo = new Repository(new MemRepoStorage());
+      repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+        if (!c.key) {
+          return;
+        }
+        const record = repo!.recordForCommit(c);
+        const ns = record.scheme.namespace;
+        if (
+          ns === NS_NOTES &&
+          c.timestamp.getTime() < Date.now() - K_HOT_COMMITS_WINDOW_MS
+        ) {
+          return;
+        }
+        // The following line does two major things:
+        //
+        // 1. It creates the vertex manager if it doesn't already exist.
+        //    Since this event gets triggered when loading from cache, this
+        //    implicitly boots our graph.
+        //
+        // 2. A commit will be performed if we need to merge some newly
+        //    discovered commits.
+        this.getVertexManager(c.key).scheduleCommitIfNeeded();
+
+        // Any kind of activity needs to reset the sync timer
+        this._repoClients.get(id)?.touch();
+      });
+      this._repoById.set(id, repo);
+
+      if (this._baseServerUrl) {
+        const client = new RepoClient(
+          repo,
+          appendPathComponent(this._baseServerUrl, id),
+          kSyncConfigClient
+        );
+        this._repoClients.set(id, client);
+        client.startSyncing();
+      }
+    }
+    return repo;
   }
 
   keys(): Iterable<string> {
@@ -136,22 +212,22 @@ export class GraphManager extends VertexSource {
     ).getVertexProxy();
   }
 
-  createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
-    const vManagers: VertexManager<T>[] = [];
-    for (const vInfo of vInfos) {
-      const newV = this._createVertIfNeeded<T>(
-        vInfo.key || uniqueId(),
-        vInfo.namespace,
-        vInfo.initialData,
-        false
-      );
+  // createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
+  //   const vManagers: VertexManager<T>[] = [];
+  //   for (const vInfo of vInfos) {
+  //     const newV = this._createVertIfNeeded<T>(
+  //       vInfo.key || uniqueId(),
+  //       vInfo.namespace,
+  //       vInfo.initialData,
+  //       false
+  //     );
 
-      vManagers.push(newV);
-    }
-    const vertices = vManagers.map((v) => v.getVertexProxy());
+  //     vManagers.push(newV);
+  //   }
+  //   const vertices = vManagers.map((v) => v.getVertexProxy());
 
-    return vertices;
-  }
+  //   return vertices;
+  // }
 
   getVertexManager<V extends Vertex = Vertex>(
     key: string,
@@ -291,7 +367,6 @@ export class GraphManager extends VertexSource {
         continue;
       }
       const record = vert.record.clone();
-      record.serverVersion = 0;
       record.rewriteRefs(rewriteKeys, deletedKeys);
       editRecord(record);
       result[key] = record.toJS(false);

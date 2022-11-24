@@ -5,14 +5,14 @@ import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
 import { mergePlugins } from '../plugins';
 import { createAutoReplaceHandler } from '../utils/auto-replace';
 import { ListUtils } from '../utils/list-utils';
-import { ListItemElement } from './list-item.element';
+import { listContext, ListItemElement } from './list-item.element';
 import { NumberedListElement } from './numbered-list.element';
+import { useContext } from 'react';
 
 const useStyles = makeStyles(() => ({
   bulletList: {
-    margin: 0,
     padding: 0,
-    marginLeft: 20,
+    paddingInlineStart: 0,
   },
 }));
 
@@ -35,9 +35,13 @@ interface BulletListProps extends RenderElementProps {
 
 export function BulletListElementNode(props: BulletListProps) {
   const styles = useStyles();
+  const level = useContext(listContext);
+
   return (
     <ul {...props.attributes} className={cn(styles.bulletList)}>
-      {props.children}
+      <listContext.Provider value={level + 1}>
+        {props.children}
+      </listContext.Provider>
     </ul>
   );
 }

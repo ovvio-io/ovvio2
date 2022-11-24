@@ -12,6 +12,7 @@ import {
   Decoder,
   isDecoderConfig,
 } from './core-types/encoding/index.ts';
+import { ReadonlyJSONObject } from './interfaces.ts';
 
 /**
  * A buffer that provides access to single bits by index.
@@ -69,6 +70,11 @@ export interface BloomFilterOptions {
   maxHashes?: number;
 }
 
+export interface EncodedBloomFilter extends ReadonlyJSONObject {
+  d: string; // BitField instance encoded as Base64
+  s: number[]; // An array of hash seeds
+}
+
 /**
  * A simple Bloom Filter implementation using MurmurHash3.
  */
@@ -76,7 +82,9 @@ export class BloomFilter implements Encodable, Decodable {
   private _filter: BitField;
   private _hashes: MurmurHash3[];
 
-  constructor(options: BloomFilterOptions | ConstructorDecoderConfig) {
+  constructor(
+    options: BloomFilterOptions | ConstructorDecoderConfig<EncodedBloomFilter>
+  ) {
     if (isDecoderConfig(options)) {
       this._filter = new BitField(1);
       this._hashes = [];

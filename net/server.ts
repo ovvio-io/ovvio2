@@ -2,14 +2,10 @@ import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import { serve } from 'https://deno.land/std@0.160.0/http/server.ts';
 import { Repository } from '../repo/repo.ts';
-import {
-  CommitsSyncMessage,
-  commitsSyncMessagefromJS,
-  SyncMessage,
-  syncMessageFromJs,
-} from './types.ts';
+import { SyncMessage, SyncValueType } from './types.ts';
 import { RepoClient } from './repo-client.ts';
 import {
+  BaseClient,
   kSyncConfigClient,
   kSyncConfigServer,
   syncConfigGetCycles,
@@ -22,6 +18,10 @@ import { mapIterable } from '../base/common.ts';
 import { SQLiteLogStorage } from '../server/sqlite3-log-storage.ts';
 import { LogClient } from './log-client.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
+import {
+  JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
+} from '../base/core-types/encoding/json.ts';
 
 interface Arguments {
   port: number;
@@ -160,9 +160,23 @@ export class Server {
       switch (cmd) {
         case 'sync':
           if (storageType === 'repo') {
-            resp = await this.handleRepoSyncRequest(req, resourceId);
+            const repo = this.getRepository(resourceId);
+            resp = await this.handleSyncRequest(
+              req,
+              (values) => repo.persistCommits(values).length,
+              () => mapIterable(repo.commits(), (c) => [c.id, c]),
+              () => repo.numberOfCommits,
+              this._clientsForRepo.get(resourceId)!
+            );
           } else if (storageType === 'log') {
-            resp = await this.handleLogSyncRequest(req, resourceId);
+            const logStorage = this.getLog(resourceId);
+            resp = await this.handleSyncRequest<NormalizedLogEntry>(
+              req,
+              (entries) => logStorage.persistEntries(entries),
+              () => mapIterable(logStorage.entries(), (e) => [e.logId, e]),
+              () => logStorage.numberOfEntries(),
+              this._clientsForLog.get(resourceId)!
+            );
           }
           break;
 
@@ -187,60 +201,39 @@ export class Server {
     }
   }
 
-  private async handleRepoSyncRequest(
+  private async handleSyncRequest<T extends SyncValueType>(
     req: Request,
-    repoId: string
+    persistValues: (values: T[]) => number,
+    fetchAll: () => Iterable<[string, T]>,
+    getLocalCount: () => number,
+    replicas: Iterable<BaseClient<T>>
   ): Promise<Response> {
     // TODO: Auth + Permissions
     const json = await req.json();
-    const msg = commitsSyncMessagefromJS(json);
-    const repo = this.getRepository(repoId);
-    if (repo.persistCommits(msg.values).length > 0) {
+    const msg = new SyncMessage<T>({
+      decoder: new JSONCyclicalDecoder(json),
+    });
+    if (persistValues(msg.values) > 0) {
       // Sync changes with replicas
-      for (const c of this._clientsForRepo.get(repoId)!.values()) {
+      for (const c of replicas) {
         c.touch();
       }
     }
-    const syncResp = CommitsSyncMessage.build(
+    const syncResp = SyncMessage.build(
       msg.filter,
-      mapIterable(repo.commits(), (c) => [c.id, c]),
-      repo.numberOfCommits,
+      fetchAll(),
+      getLocalCount(),
       msg.repoSize,
       syncConfigGetCycles(kSyncConfigClient)
     );
-    return new Response(JSON.stringify(syncResp.toJS()), {
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
-    });
-  }
-
-  private async handleLogSyncRequest(
-    req: Request,
-    logId: string
-  ): Promise<Response> {
-    // TODO: Auth + Permissions
-    const json = await req.json();
-    const msg = syncMessageFromJs<NormalizedLogEntry>(json);
-    const logStorage = this.getLog(logId);
-    if (logStorage.persistEntries(msg.values) > 0) {
-      // Sync changes with replicas
-      for (const c of this._clientsForLog.get(logId)!.values()) {
-        c.touch();
+    return new Response(
+      JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
+      {
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+        },
       }
-    }
-    const syncResp = SyncMessage.build<NormalizedLogEntry>(
-      msg.filter,
-      mapIterable(logStorage.entries(), (e) => [e.logId, e]),
-      logStorage.numberOfEntries(),
-      msg.repoSize,
-      syncConfigGetCycles(kSyncConfigClient)
     );
-    return new Response(JSON.stringify(syncResp.toJS()), {
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
-    });
   }
 
   // private async handleQueryRequest(

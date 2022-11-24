@@ -11,7 +11,11 @@ export const kServerMetricNames = [
 
 export type ServerMetricName = typeof kServerMetricNames[number];
 
-export const kClientMetricNames = ['QueryCancelled', 'QueryCompleted'] as const;
+export const kClientMetricNames = [
+  'QueryCancelled',
+  'QueryCompleted',
+  'FullTextIndexingTime',
+] as const;
 
 export type ClientMetricName = typeof kClientMetricNames[number];
 
@@ -30,7 +34,7 @@ export interface MetricLogEntry extends BaseLogEntry {
   url?: string;
   urls?: string[];
   queryName?: string;
-  numberOfResults?: number;
+  itemCount?: number;
 }
 
 export function isClientMetric(m: MetricLogEntry): boolean {

@@ -13,7 +13,7 @@ import {
 
 const useStyles = makeStyles(() => ({
   bold: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   underline: {
     textDecoration: 'underline',

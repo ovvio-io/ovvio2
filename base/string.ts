@@ -130,3 +130,10 @@ export function decrement(str: string): string {
   // Decrement the last character if we can
   return str + String.fromCharCode(code - 1);
 }
+
+export function appendPathComponent(path: string, comp: string): string {
+  if (path.endsWith('/') || comp.startsWith('/')) {
+    return path + comp;
+  }
+  return `${path}/${comp}`;
+}

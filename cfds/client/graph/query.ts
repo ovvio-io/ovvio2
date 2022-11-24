@@ -15,7 +15,7 @@ import {
   CoroutineQueue,
   CoroutineScheduler,
   SchedulerPriority,
-} from '../coroutine.ts';
+} from '../../../base/coroutine.ts';
 import { log } from '../../../logging/log.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
@@ -297,7 +297,7 @@ export class Query<
       value: runningTime,
       unit: 'Milliseconds',
       queryName: this.debugName,
-      numberOfResults: this.count,
+      itemCount: this.count,
     });
     this._isLoading = false;
     this.emit(EVENT_LOADING_FINISHED);

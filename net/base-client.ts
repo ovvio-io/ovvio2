@@ -1,9 +1,14 @@
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
-import { SyncMessage } from './types.ts';
-import { CoreValue } from '../base/core-types/base.ts';
+import { ProtocolVersion, SyncMessage, SyncValueType } from './types.ts';
 import { retry } from '../base/time.ts';
 import { log } from '../logging/log.ts';
+import {
+  JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
+} from '../base/core-types/encoding/json.ts';
+
+export const K_MIN_PROTOCOL_VERSION = ProtocolVersion.V3_0;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -29,7 +34,7 @@ export function syncConfigGetCycles(config: SyncConfig): number {
 
 export type OnlineStatusHandler = () => void;
 
-export abstract class BaseClient<ValueType extends CoreValue> {
+export abstract class BaseClient<ValueType extends SyncValueType> {
   private readonly _timer: EaseInOutSineTimer;
   private readonly _serverUrl: string;
   private readonly _syncConfig: SyncConfig;
@@ -37,6 +42,7 @@ export abstract class BaseClient<ValueType extends CoreValue> {
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
   private _connectionOnline = false;
+  private _incompatibleVersion = false;
 
   constructor(
     serverUrl: string,
@@ -92,6 +98,10 @@ export abstract class BaseClient<ValueType extends CoreValue> {
     return syncConfigGetCycles(this.syncConfig);
   }
 
+  get versionConflict(): boolean {
+    return this._incompatibleVersion;
+  }
+
   protected abstract buildSyncMessage(): SyncMessage<ValueType>;
   protected abstract persistPeerValues(values: ValueType[]): number;
   abstract localIds(): Iterable<string>;
@@ -119,7 +129,7 @@ export abstract class BaseClient<ValueType extends CoreValue> {
   private async sendSyncMessage(): Promise<void> {
     const syncConfig = this._syncConfig;
     const reqMsg = this.buildSyncMessage();
-    const msg = reqMsg.toJS();
+    const msg = JSONCyclicalEncoder.serialize(reqMsg);
     let respText: string | undefined;
     try {
       const start = performance.now();
@@ -157,7 +167,20 @@ export abstract class BaseClient<ValueType extends CoreValue> {
     let syncResp: typeof reqMsg;
     try {
       const json = JSON.parse(respText);
-      syncResp = SyncMessage.fromJS(json);
+      if (json.pv > K_MIN_PROTOCOL_VERSION && !this._incompatibleVersion) {
+        this._incompatibleVersion = true;
+        log({
+          severity: 'ERROR',
+          error: 'IncompatibleVersion',
+          url: this.serverUrl,
+          localVersion: SyncMessage.buildProtocolVersion,
+          peerVersion: json.pv,
+        });
+        return;
+      } else {
+        this._incompatibleVersion = false;
+      }
+      syncResp = new SyncMessage({ decoder: new JSONCyclicalDecoder(json) });
     } catch (e) {
       log({
         severity: 'INFO',

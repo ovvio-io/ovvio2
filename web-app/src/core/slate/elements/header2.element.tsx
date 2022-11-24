@@ -11,8 +11,6 @@ import { H3 } from '@ovvio/styles/lib/components/texts';
 import { createEnterHandler } from './header.element';
 const useStyles = makeStyles(theme => ({
   header2: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginBottom: styleguide.gridbase,
   },
 }));

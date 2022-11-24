@@ -9,12 +9,13 @@ import {
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
 import { serializeDate } from '../base/date.ts';
-import { assert } from '../base/error.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { log } from '../logging/log.ts';
 import { Commit } from './commit.ts';
 import * as StringUtils from '../base/string.ts';
 import { filterIterable, mapIterable } from '../base/common.ts';
+import { assert } from '../base/error.ts';
+import { sep } from 'https://deno.land/std@0.160.0/path/win32.ts';
 
 const K_DB_VERSION = 1;
 
@@ -101,30 +102,39 @@ export class IDBRepositoryBackup {
     await txn.done;
   }
 
-  async loadCommits(
-    repoId?: string,
-    minTs?: number
-  ): Promise<Iterable<Commit>> {
+  async loadCommits(repoId?: string): Promise<{ [repoId: string]: Commit[] }> {
     const db = await this.getDB();
-    let rows;
+    const txn = db.transaction('commits', 'readonly');
+    const result: { [repoId: string]: Commit[] } = {};
+    let cursor;
     if (repoId) {
       const prefix = repoId + '/';
-      rows = await db.getAll(
-        'commits',
+      cursor = await txn.store.openCursor(
         IDBKeyRange.bound(prefix, StringUtils.increment(prefix), false, true)
       );
     } else {
-      rows = await db.getAll('commits');
+      cursor = await txn.store.openCursor();
     }
-    if (minTs) {
-      rows = filterIterable(rows, (r) => r.ts > minTs);
-    }
-    return mapIterable(
-      rows,
-      (r) =>
+    while (cursor) {
+      const repoId = repoIdFromKey(cursor.key);
+      let arr = result[repoId];
+      if (!arr) {
+        arr = [];
+        result[repoId] = arr;
+      }
+      arr.push(
         new Commit({
-          decoder: new JSONCyclicalDecoder(r.json),
+          decoder: new JSONCyclicalDecoder(cursor.value.json),
         })
-    );
+      );
+      await cursor.continue();
+    }
+    return result;
   }
+}
+
+function repoIdFromKey(key: string): string {
+  const sepIdx = key.indexOf('/');
+  assert(sepIdx > 0);
+  return key.substring(0, sepIdx);
 }

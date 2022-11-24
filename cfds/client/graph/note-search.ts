@@ -1,21 +1,16 @@
+import BulkSearch from 'https://esm.sh/bulksearch@0.1.3';
 import {
   CoroutineScheduler,
   SchedulerPriority,
-} from '@ovvio/cfds/lib/client/coroutine';
-import {
-  EVENT_CACHE_LOADED,
-  EVENT_VERTEX_DID_CHANGE,
-  GraphManager,
-} from '@ovvio/cfds/lib/client/graph/graph-manager';
-import {
-  MutationPack,
-  mutationPackIter,
-} from '@ovvio/cfds/lib/client/graph/mutations';
-import { Predicate } from '@ovvio/cfds/lib/client/graph/query';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { treeToPlaintext } from '@ovvio/cfds/lib/richtext/tree';
-const BulkSearch = require('bulksearch');
+} from '../../../base/coroutine.ts';
+import { MutationPack, mutationPackIter } from './mutations.ts';
+import { Predicate } from './query.ts';
+import { VertexManager } from './vertex-manager.ts';
+import { Note } from './vertices/note.ts';
+import { treeToPlaintext } from '../../richtext/tree.ts';
+import { GraphManager } from './graph-manager.ts';
+import { EVENT_VERTEX_CHANGED } from './vertex-source.ts';
+import { log } from '../../../logging/log.ts';
 
 export class NoteSearchEngine {
   private readonly _graph: GraphManager;
@@ -45,17 +40,11 @@ export class NoteSearchEngine {
     };
     this._loading = true;
 
-    if (graph.cacheLoaded) {
-      graph.on(EVENT_VERTEX_DID_CHANGE, this._graphListener);
-      this._loadInitialNotes();
-    } else {
-      graph.once(EVENT_CACHE_LOADED, () => {
-        graph.on(EVENT_VERTEX_DID_CHANGE, this._graphListener);
-        // new SimpleTimer(2000, false, () => {
-        this._loadInitialNotes();
-        // }).schedule();
-      });
-    }
+    graph.on(EVENT_VERTEX_CHANGED, this._graphListener);
+  }
+
+  get loading(): boolean {
+    return this._loading;
   }
 
   search(text: string, filter?: Predicate<Note>): VertexManager<Note>[] {
@@ -91,12 +80,11 @@ export class NoteSearchEngine {
     this._bulkSearchHandle.add(vert.key, extractTextFromNote(vert));
   }
 
-  private async _loadInitialNotes(): Promise<void> {
-    console.log('Search Engine started loading');
+  async loadAllNotes(): Promise<void> {
     const start = performance.now();
     await CoroutineScheduler.sharedScheduler().map(
       this._graph.vertexManagers(),
-      mgr => {
+      (mgr) => {
         if (!mgr.isDeleted) {
           this._vertexDidChange(mgr.key, mgr.getCurrentStateMutations(true));
         }
@@ -104,12 +92,14 @@ export class NoteSearchEngine {
       SchedulerPriority.Background
     );
     this._loading = false;
+    log({
+      severity: 'INFO',
+      name: 'FullTextIndexingTime',
+      value: performance.now() - start,
+      unit: 'Milliseconds',
+      itemCount: this._bulkSearchHandle.info().length,
+    });
     // this._bulkSearchHandle.optimize();
-    console.log(
-      `Search Engine finished indexing ${
-        this._bulkSearchHandle.info().length
-      } notes in ${(performance.now() - start) / 1000}sec`
-    );
   }
 }
 
@@ -884,7 +874,7 @@ function regex(str: string) {
   return new RegExp(str, 'g');
 }
 
-var regex_whitespace = regex('\\s\\s+'),
+const regex_whitespace = regex('\\s\\s+'),
   regex_split = regex('[-/]'),
   regex_a = regex('[àáâãäå]'),
   regex_e = regex('[èéêë]'),
@@ -898,7 +888,7 @@ var regex_whitespace = regex('\\s\\s+'),
   regex_and = regex(' & ');
 
 /** @const {Array} */
-var regex_pairs = [
+const regex_pairs = [
   regex_a,
   'a',
   regex_e,
@@ -925,15 +915,20 @@ var regex_pairs = [
   ' ',
 ];
 
-function replace(str, regex, replacement?) {
+function replace(
+  str: string,
+  regex: typeof regex_pairs | RegExp,
+  replacement?: string
+) {
   if (typeof replacement === 'undefined') {
-    for (var i = 0; i < /** @type {Array} */ regex.length; i += 2) {
-      str = str.replace(regex[i], regex[i + 1]);
+    regex = regex as typeof regex_pairs;
+    for (let i = 0; i < regex.length; i += 2) {
+      str = str.replace(regex[i], regex[i + 1] as string);
     }
 
     return str;
   } else {
-    return str.replace(/** @type {!RegExp} */ regex, replacement);
+    return str.replace(regex as RegExp, replacement);
   }
 }
 

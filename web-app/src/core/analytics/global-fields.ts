@@ -1,4 +1,4 @@
-import { EventCategory } from './categories.ts';
+import { EventCategory } from './categories';
 
 /**
  * Every Global field corresponds to a field in the user-events table.
