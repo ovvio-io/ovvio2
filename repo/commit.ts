@@ -15,6 +15,7 @@ import { isDecoderConfig } from '../base/core-types/encoding/utils.ts';
 import { uniqueId } from '../base/common.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
+import { VersionNumber } from '../defs.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -36,9 +37,11 @@ export interface CommitConfig {
   contents: Record | CommitContents;
   parents?: string | Iterable<string>;
   timestamp?: Date;
+  buildVersion?: VersionNumber;
 }
 
 export class Commit implements Encodable, Decodable, Equatable {
+  private _buildVersion: VersionNumber = VersionNumber.Current;
   private _id!: string;
   private _session!: string;
   private _key: string | undefined;
@@ -70,6 +73,7 @@ export class Commit implements Encodable, Decodable, Equatable {
       this._parents = parents as string[];
       this._timestamp = config.timestamp || new Date();
       this._contents = contents;
+      this._buildVersion = config.buildVersion || VersionNumber.Current;
     }
   }
 
@@ -104,7 +108,12 @@ export class Commit implements Encodable, Decodable, Equatable {
       : contents.edit.dstChecksum;
   }
 
+  get buildVersion(): VersionNumber {
+    return this._buildVersion;
+  }
+
   serialize(encoder: Encoder): void {
+    encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
     if (this.key) {
       encoder.set('k', this.key);
@@ -121,6 +130,7 @@ export class Commit implements Encodable, Decodable, Equatable {
   }
 
   deserialize(decoder: Decoder): void {
+    this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
     this._key = decoder.get<string | null>('k', null)!;
     this._session = decoder.get<string>('s', 'unknown-' + uniqueId())!;
@@ -130,8 +140,7 @@ export class Commit implements Encodable, Decodable, Equatable {
   }
 
   isEqual(other: Commit): boolean {
-    const idEq = this.id === other.id;
-    if (!idEq) {
+    if (this.id !== other.id) {
       return false;
     }
     assert(compareCommitsByValue(this, other));
@@ -175,6 +184,7 @@ export function commitContentsDeserialize(decoder: Decoder): CommitContents {
 function compareCommitsByValue(c1: Commit, c2: Commit): boolean {
   return (
     c1.id === c2.id &&
+    c1.buildVersion === c2.buildVersion &&
     c1.key === c2.key &&
     c1.session === c2.session &&
     coreValueEquals(c1.timestamp, c2.timestamp) &&

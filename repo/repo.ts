@@ -236,6 +236,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       // Use the null record as a base in this case.
       const base = lca ? this.recordForCommit(lca) : Record.nullRecord();
       // TODO: Scheme upgrade
+      // TODO: Commit version upgrade
       // Compute a compound diff from our base to all unique records
       let changes: DataChanges = {};
       for (const c of commitsToMerge) {

@@ -18,28 +18,29 @@ import {
   NS_INVITES,
   InviteStatus,
   AttachmentData,
-  DataType,
   TYPE_RICHTEXT_V3,
   SchemeNamespace,
   TYPE_REF_MAP,
+  NS_USER_SETTINGS,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
+import { Record } from './record.ts';
 
 //BASE SCHEMES
 const SCHEME_BASE_1 = new SchemeDef('', {
   creationDate: {
     type: TYPE_DATE,
     required: true,
-    init: () => new Date(),
+    default: () => new Date(),
   },
   isDeleted: {
     type: TYPE_NUMBER,
-    init: () => 0,
+    default: () => 0,
   },
   lastModified: {
     type: TYPE_DATE,
-    init: (d: DataType) => d['creationDate'],
+    default: (rec: Record) => rec.get('creationDate'),
   },
   sortStamp: TYPE_STR,
 });
@@ -73,11 +74,11 @@ const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   icon: TYPE_STR,
   noteTags: {
     type: TYPE_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
   taskTags: {
     type: TYPE_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
   exportImage: TYPE_STR,
   footerHtml: TYPE_STR,
@@ -96,11 +97,11 @@ const SCHEME_WORKSPACE_2 = SCHEME_WORKSPACE_1.derive(
 const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
   noteTags: {
     type: TYPE_REF_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
   taskTags: {
     type: TYPE_REF_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
 });
 
@@ -114,40 +115,45 @@ const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   email: TYPE_STR,
   lastLoggedIn: TYPE_DATE,
   name: TYPE_STR,
+});
+
+const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
+  passwordHash: TYPE_STR, // Hash + salt
+  lastLoggedIn: TYPE_DATE,
   workspaces: {
     type: TYPE_REF_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   seenTutorials: {
     type: TYPE_STR_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   workspaceColors: {
     type: TYPE_MAP,
-    init: () => new Map<string, number>(),
+    default: () => new Map<string, number>(),
   },
   hiddenWorkspaces: {
     type: TYPE_STR_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   pinnedWorkspaces: {
     type: TYPE_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   onboardingStep: {
     type: TYPE_NUMBER,
-    init: () => OnboardingStep.Start,
+    default: () => OnboardingStep.Start,
   },
 });
 
 const SCHEME_NOTE_1 = SCHEME_CONTENT_BASE_1.derive(NS_NOTES, {
   assignees: {
     type: TYPE_STR_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   attachments: {
     type: TYPE_SET,
-    init: () => new Set<AttachmentData>(),
+    default: () => new Set<AttachmentData>(),
   },
   // body: TYPE_RICHTEXT,
   dueDate: TYPE_DATE,
@@ -156,7 +162,7 @@ const SCHEME_NOTE_1 = SCHEME_CONTENT_BASE_1.derive(NS_NOTES, {
   status: TYPE_NUMBER,
   tags: {
     type: TYPE_SET,
-    init: () => new Set(),
+    default: () => new Set(),
   },
   type: TYPE_STR,
 });
@@ -165,33 +171,33 @@ const SCHEME_NOTE_2 = SCHEME_NOTE_1.derive(NS_NOTES, {
   parentNote: TYPE_REF,
   tags: {
     type: TYPE_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
 });
 
 const SCHEME_NOTE_3 = SCHEME_NOTE_2.derive(NS_NOTES, {
   title: {
     type: TYPE_RICHTEXT_V3,
-    init: () => initRichText(),
+    default: () => initRichText(),
   },
   body: {
     type: TYPE_RICHTEXT_V3,
-    init: () => initRichText(),
+    default: () => initRichText(),
   },
 });
 
 const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   assignees: {
     type: TYPE_REF_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   tags: {
     type: TYPE_REF_MAP,
-    init: () => new Map(),
+    default: () => new Map(),
   },
   pinnedBy: {
     type: TYPE_SET,
-    init: () => new Set<string>(),
+    default: () => new Set<string>(),
   },
   parentNote: TYPE_REF,
 });
@@ -205,7 +211,7 @@ const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
 const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
   status: {
     type: TYPE_STR, //InviteStatus values
-    init: () => InviteStatus.PENDING,
+    default: () => InviteStatus.PENDING,
   },
   email: {
     type: TYPE_STR,
@@ -213,7 +219,7 @@ const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
   },
   emailSent: {
     type: TYPE_NUMBER, //0 - not sent, 1 - sent
-    init: () => 0,
+    default: () => 0,
   },
   invitee: TYPE_STR, //The invited name
   inviteeUser: TYPE_REF, //The invites user id
@@ -320,6 +326,20 @@ export function runRegister(manager: ISchemeManagerRegister) {
     5,
     [SCHEME_WORKSPACE_3, SCHEME_NOTE_4],
     [SchemeNamespace.INVITES, SchemeNamespace.TAGS, SchemeNamespace.USERS],
+    (namespace, data) => {}
+  );
+
+  //V6
+  manager.register(
+    6,
+    [SCHEME_USER_SETTINGS_1],
+    [
+      SchemeNamespace.WORKSPACE,
+      SchemeNamespace.NOTES,
+      SchemeNamespace.TAGS,
+      SchemeNamespace.USERS,
+      SchemeNamespace.INVITES,
+    ],
     (namespace, data) => {}
   );
 

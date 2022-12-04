@@ -84,7 +84,7 @@ export function CfdsClientProvider({
   const graphManager = useMemo(() => {
     const manager = new GraphManager(
       user.id,
-      key => key !== sessionPtrKey,
+      (key: string) => key !== sessionPtrKey,
       createNetworkAdapter(user, sessionId, 2, 1500),
       createIDBCache(user.id)
     );
@@ -141,7 +141,7 @@ export function CfdsClientProvider({
 
     const networkAdapter = graphManager.socket.networkAdapter;
     if (networkAdapter) {
-      networkAdapter.addErrorHandler(code => {
+      networkAdapter.addErrorHandler((code) => {
         if (code === INCOMPATIBLE_CFDS_VERSION_CODE) {
           graphManager.disconnect();
 
@@ -153,11 +153,11 @@ export function CfdsClientProvider({
       });
     }
 
-    const onBeforeUnload = e => {
+    const onBeforeUnload = (e) => {
       if (
         Query.blockingCount(
           graphManager,
-          v =>
+          (v) =>
             !v.isLocal &&
             !v.isDemoData &&
             (v.hasPendingChanges || v.inCriticalError),

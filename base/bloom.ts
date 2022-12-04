@@ -94,7 +94,9 @@ export class BloomFilter implements Encodable, Decodable {
       let { m, k } = options;
       if (m === undefined) {
         assert(fpr !== undefined);
-        m = Math.abs(size * Math.log(fpr!)) / Math.log(2) ** 2;
+        m = Math.ceil(
+          (size * Math.log(fpr!)) / Math.log(1 / Math.pow(2, Math.log(2)))
+        );
       }
       if (k === undefined) {
         k = (m / size) * Math.log(2);

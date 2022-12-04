@@ -7,6 +7,7 @@ export const kServerMetricNames = [
   'DeltaFormatSavings',
   'ServerStarted',
   'HttpStatusCode',
+  'IncompatibleProtocolVersion',
 ] as const;
 
 export type ServerMetricName = typeof kServerMetricNames[number];
@@ -35,6 +36,8 @@ export interface MetricLogEntry extends BaseLogEntry {
   urls?: string[];
   queryName?: string;
   itemCount?: number;
+  peerVersion?: number;
+  localVersion?: number;
 }
 
 export function isClientMetric(m: MetricLogEntry): boolean {

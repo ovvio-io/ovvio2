@@ -22,6 +22,8 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
+import { VersionNumber } from '../defs.ts';
+import { VersionInfoCurrent } from './version-info.ts';
 
 interface Arguments {
   port: number;
@@ -132,15 +134,93 @@ export class Server {
     return resp;
   }
 
-  private async handleRequest(req: Request): Promise<Response> {
-    try {
-      const path = new URL(req.url).pathname.split('/');
-      if (
-        req.method !== 'POST' ||
-        !req.body ||
-        path.length !== 4 ||
-        ['repo', 'log'].includes(path[1])
-      ) {
+  private async handlePOSTRequest(req: Request): Promise<Response> {
+    const path = new URL(req.url).pathname.split('/');
+    if (
+      req.method !== 'POST' ||
+      !req.body ||
+      path.length !== 4 ||
+      ['repo', 'log'].includes(path[1])
+    ) {
+      log({
+        severity: 'INFO',
+        error: 'BadRequest',
+        url: req.url,
+        value: {
+          method: req.method,
+          hasBody: Boolean(req.body),
+        },
+      });
+      return this.processResponse(new Response(null, { status: 400 }));
+    }
+
+    const storageType = path[1];
+    const resourceId = path[2];
+    const cmd = path[3];
+    let resp: Response;
+    switch (cmd) {
+      case 'sync':
+        if (storageType === 'repo') {
+          resp = await this.handleSyncRequest(
+            req,
+            (values) =>
+              this.getRepository(resourceId).persistCommits(values).length,
+            () =>
+              mapIterable(this.getRepository(resourceId).commits(), (c) => [
+                c.id,
+                c,
+              ]),
+            () => this.getRepository(resourceId).numberOfCommits,
+            this._clientsForRepo.get(resourceId)!
+          );
+        } else if (storageType === 'log') {
+          resp = await this.handleSyncRequest<NormalizedLogEntry>(
+            req,
+            (entries) => this.getLog(resourceId).persistEntries(entries),
+            () =>
+              mapIterable(this.getLog(resourceId).entries(), (e) => [
+                e.logId,
+                e,
+              ]),
+            () => this.getLog(resourceId).numberOfEntries(),
+            this._clientsForLog.get(resourceId)!
+          );
+        }
+        break;
+
+      default:
+        log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
+        resp = new Response(null, { status: 400 });
+        break;
+    }
+    return this.processResponse(resp!);
+  }
+
+  private handleGETRequest(req: Request): Promise<Response> {
+    const path = new URL(req.url).pathname;
+    switch (path.toLocaleLowerCase()) {
+      // Version check
+      case 'version': {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              VersionInfoCurrent,
+            }),
+            {
+              headers: {
+                'content-type': 'application/json; charset=utf-8',
+              },
+            }
+          )
+        );
+      }
+
+      // Health check
+      case 'healthy': {
+        return Promise.resolve(new Response('OK', { status: 200 }));
+      }
+
+      default: {
         log({
           severity: 'INFO',
           error: 'BadRequest',
@@ -150,46 +230,33 @@ export class Server {
             hasBody: Boolean(req.body),
           },
         });
-        return this.processResponse(new Response(null, { status: 400 }));
+        return Promise.resolve(
+          this.processResponse(new Response(null, { status: 400 }))
+        );
       }
+    }
+  }
 
-      const storageType = path[1];
-      const resourceId = path[2];
-      const cmd = path[3];
-      let resp: Response;
-      switch (cmd) {
-        case 'sync':
-          if (storageType === 'repo') {
-            const repo = this.getRepository(resourceId);
-            resp = await this.handleSyncRequest(
-              req,
-              (values) => repo.persistCommits(values).length,
-              () => mapIterable(repo.commits(), (c) => [c.id, c]),
-              () => repo.numberOfCommits,
-              this._clientsForRepo.get(resourceId)!
-            );
-          } else if (storageType === 'log') {
-            const logStorage = this.getLog(resourceId);
-            resp = await this.handleSyncRequest<NormalizedLogEntry>(
-              req,
-              (entries) => logStorage.persistEntries(entries),
-              () => mapIterable(logStorage.entries(), (e) => [e.logId, e]),
-              () => logStorage.numberOfEntries(),
-              this._clientsForLog.get(resourceId)!
-            );
-          }
-          break;
-
-        // case 'query':
-        //   resp = await this.handleQueryRequest(req, repoId);
-        //   break;
-
-        default:
-          log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
-          resp = new Response(null, { status: 400 });
-          break;
+  private handleRequest(req: Request): Promise<Response> {
+    try {
+      if (req.method === 'POST') {
+        return this.handlePOSTRequest(req);
       }
-      return this.processResponse(resp!);
+      if (req.method === 'GET') {
+        return this.handleGETRequest(req);
+      }
+      log({
+        severity: 'INFO',
+        error: 'BadRequest',
+        url: req.url,
+        value: {
+          method: req.method,
+          hasBody: Boolean(req.body),
+        },
+      });
+      return Promise.resolve(
+        this.processResponse(new Response(null, { status: 400 }))
+      );
     } catch (e) {
       log({
         severity: 'ERROR',
@@ -197,7 +264,9 @@ export class Server {
         message: e.message,
         trace: e.stack,
       });
-      return this.processResponse(new Response(null, { status: 500 }));
+      return Promise.resolve(
+        this.processResponse(new Response(null, { status: 500 }))
+      );
     }
   }
 
@@ -210,6 +279,7 @@ export class Server {
   ): Promise<Response> {
     // TODO: Auth + Permissions
     const json = await req.json();
+    const clientVersion = json.pv || 0;
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(json),
     });
@@ -219,13 +289,17 @@ export class Server {
         c.touch();
       }
     }
+
     const syncResp = SyncMessage.build(
       msg.filter,
       fetchAll(),
       getLocalCount(),
-      msg.repoSize,
-      syncConfigGetCycles(kSyncConfigClient)
+      msg.size,
+      syncConfigGetCycles(kSyncConfigClient),
+      // Don't return new commits to old clients
+      clientVersion >= VersionNumber.Current
     );
+
     return new Response(
       JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
       {
@@ -235,29 +309,4 @@ export class Server {
       }
     );
   }
-
-  // private async handleQueryRequest(
-  //   req: Request,
-  //   repoId: string
-  // ): Promise<Response> {
-  //   // TODO: Auth + Permissions
-  //   const json = await req.json();
-  //   const sql = json.sql;
-  //   if (sql.length <= 1) {
-  //     console.log('Invalid query');
-  //     console.log(req);
-  //     return new Response(null, { status: 400 });
-  //   }
-  //   const repo = this.getRepository(repoId);
-  //   const statement = repo.storage.db.prepare(sql);
-  //   if (!statement.readonly) {
-  //     return new Response(null, { status: 400 });
-  //   }
-  //   const result = statement.all();
-  //   return new Response(JSON.stringify(result), {
-  //     headers: {
-  //       'content-type': 'application/json; charset=utf-8',
-  //     },
-  //   });
-  // }
 }

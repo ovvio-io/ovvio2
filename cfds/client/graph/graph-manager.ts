@@ -122,6 +122,10 @@ export class GraphManager extends VertexSource {
     return this._session;
   }
 
+  get noteSearchEngine(): NoteSearchEngine {
+    return this._notesSearch;
+  }
+
   async loadLocalContents(): Promise<void> {
     for (const [repoId, commits] of Object.entries(
       await this._backup.loadCommits()
