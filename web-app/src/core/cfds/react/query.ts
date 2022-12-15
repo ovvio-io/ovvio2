@@ -1,28 +1,31 @@
-import { NS_NOTES, NS_TAGS, NS_WORKSPACE } from '@ovvio/cfds';
 import {
-  CacheStatus,
-  EVENT_CACHE_LOADED,
-  GraphManager,
-} from '@ovvio/cfds/lib/client/graph/graph-manager';
+  DependencyList,
+  useCallback,
+  useEffect,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import {
+  NS_NOTES,
+  NS_TAGS,
+  NS_WORKSPACE,
+} from '../../../../../cfds/base/scheme-types.ts';
+import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import {
   EVENT_QUERY_RESULTS_CHANGED,
   Predicate,
   Query,
   SortDescriptor,
   UnionQuery,
-} from '@ovvio/cfds/lib/client/graph/query';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+} from '../../../../../cfds/client/graph/query.ts';
+import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {
-  DependencyList,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { BaseQueryProvider } from '../query-provider';
-import { useGraphManager } from './graph';
+  Note,
+  Tag,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { useGraphManager } from './graph.tsx';
+import { useLogger } from './logger.tsx';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -31,49 +34,17 @@ export interface IAsyncQuery {
 export type BaseResult<T> = {
   result: T;
 };
-export function useBaseQueryProvider<TParams, TResult>(
-  TConstructor: { new (): BaseQueryProvider<TParams, TResult> },
-  params: TParams,
-  initialValue: TResult,
-  listen = true
-): BaseResult<TResult> & IAsyncQuery {
-  const graph = useGraphManager();
-  const [result, setResult] = useState<BaseResult<TResult> & IAsyncQuery>({
-    result: initialValue,
-    called: false,
-  });
 
-  const queryProvider = useMemo<BaseQueryProvider<TParams, TResult>>(() => {
-    return new TConstructor();
-  }, [TConstructor]);
-
-  useEffect(() => {
-    let closeListen: (() => void) | undefined;
-    if (listen) {
-      closeListen = queryProvider.listen(res =>
-        setResult({ result: res, called: true })
-      );
-    }
-
-    return () => {
-      if (closeListen) closeListen();
-      queryProvider.close();
-    };
-  }, [queryProvider, listen]);
-
-  useEffect(() => {
-    queryProvider.run(graph.indexQueryManager, params);
-  }, [queryProvider, graph, params]);
-
-  return result;
-}
-
-export interface QueryOptions<IT extends Vertex = Vertex, OT extends IT = IT> {
+export interface QueryOptions<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  RT = OT[]
+> {
   sort?: SortDescriptor<OT>;
   listenOn?: (keyof IT)[];
   name?: string;
-  mapResult?: (results: VertexManager<OT>[]) => OT;
-  source?: Query<any, IT> | UnionQuery<any, IT> | GraphManager;
+  mapResult?: (results: VertexManager<IT>[]) => RT;
+  source?: Query<Vertex, IT> | UnionQuery<Vertex, IT> | GraphManager;
 }
 
 export function isWorkspace(v: Vertex): v is Workspace {
@@ -88,25 +59,26 @@ export function isTag(v: Vertex): v is Tag {
   return v.namespace === NS_TAGS;
 }
 
-export interface UseQueryResult<T extends Vertex = Vertex> {
+export interface UseQueryResult<T> {
   loading: boolean;
-  results: VertexManager<T>[];
+  results: T;
 }
 
-function defaultMap(x) {
-  return x;
-}
-
-export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
+export function useQuery<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  RT = OT[]
+>(
   predicate: Predicate,
   deps: DependencyList,
   opts?: QueryOptions<IT, OT>
-): UseQueryResult<OT> {
-  const { sort, listenOn, mapResult = defaultMap } = opts || {};
+): UseQueryResult<RT> {
+  const { sort, listenOn, mapResult } = opts || {};
   const graph = useGraphManager();
+  const logger = useLogger();
   const [result, setResult] = useState({
     loading: true,
-    results: mapResult([]),
+    results: [] as RT,
   });
 
   const listenOnDep = listenOn && JSON.stringify(listenOn);
@@ -129,10 +101,17 @@ export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
     query.on(
       EVENT_QUERY_RESULTS_CHANGED,
       () => {
-        console.log(`${opts?.name || 'Unknown query'} fired`);
+        logger.log({
+          severity: 'INFO',
+          name: 'QueryFired',
+          queryName: opts?.name || 'Unknown',
+          value: 1,
+          unit: 'Count',
+        });
+        const results = mapResult ? mapResult(query.results) : query.results;
         setResult({
           loading: query.isLoading,
-          results: mapResult(query.results),
+          results: results as RT,
         });
       },
       true
@@ -148,27 +127,38 @@ export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
 
 export function useExistingQuery<
   IT extends Vertex = Vertex,
-  OT extends IT = IT
->(query: Query<IT, OT>): UseQueryResult<OT> {
-  const [result, setResult] = useState<UseQueryResult<OT>>({
+  OT extends IT = IT,
+  RT = OT[]
+>(query: Query<IT, OT>, opts?: QueryOptions<IT, OT>): UseQueryResult<RT> {
+  const logger = useLogger();
+  const [result, setResult] = useState<UseQueryResult<RT>>({
     loading: true,
-    results: [],
+    results: [] as RT,
   });
+  const mapResult = opts?.mapResult;
 
   useEffect(() => {
     const listener = () => {
-      console.log(`${query.name || 'Unknown query'} fired`);
+      logger.log({
+        severity: 'INFO',
+        name: 'QueryFired',
+        value: 1,
+        unit: 'Count',
+        queryName: opts?.name || query.name || 'Unknown',
+      });
+      const results = mapResult ? mapResult(query.results) : query.results;
       setResult({
         loading: query.isLoading,
-        results: query.results,
+        results: results as RT,
       });
     };
     query.on(EVENT_QUERY_RESULTS_CHANGED, listener);
 
     if (!query.isLoading) {
+      const results = mapResult ? mapResult(query.results) : query.results;
       setResult({
         loading: query.isLoading,
-        results: query.results,
+        results: results as RT,
       });
     }
 
@@ -178,47 +168,4 @@ export function useExistingQuery<
   }, [query]);
 
   return result;
-}
-
-export function useIsGraphLoading() {
-  const graph = useGraphManager();
-
-  const [isLoading, setIsLoading] = useState(
-    graph.cacheStatus !== CacheStatus.Loaded
-  );
-
-  useEffect(() => {
-    const loadingQuery = new Query(graph, x => x.isLoading, undefined);
-    if (graph.cacheStatus === CacheStatus.Loaded) {
-      setIsLoading(false);
-      return;
-    }
-
-    const handler = () => {
-      if (graph.cacheStatus === CacheStatus.Loaded) {
-        setIsLoading(false);
-      } else {
-        loadingQuery.on(EVENT_QUERY_RESULTS_CHANGED, () => {
-          const isLoading =
-            loadingQuery.isLoading || loadingQuery.results.length > 0;
-          if (!isLoading) {
-            setIsLoading(false);
-            loadingQuery.removeAllListeners();
-          }
-        });
-      }
-    };
-    if (graph.cacheStatus === CacheStatus.NoCache) {
-      handler();
-    } else {
-      graph.once(EVENT_CACHE_LOADED, handler);
-    }
-
-    return () => {
-      loadingQuery.removeAllListeners();
-      graph.removeListener(EVENT_CACHE_LOADED, handler);
-    };
-  }, [graph]);
-
-  return isLoading;
 }

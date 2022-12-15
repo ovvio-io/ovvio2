@@ -1,12 +1,13 @@
-import config from 'core/config';
-import React from 'react';
-import { Features, getFeatureConfig } from './features';
+import React from 'https://esm.sh/react@18.2.0';
+import config from '../config.ts';
+import { Features, getFeatureConfig } from './features.tsx';
 
 export { Features };
 
 export interface FeatureProps {
   id: Features;
   nonActiveComponent?: React.ComponentType<{}>;
+  children: React.ReactNode;
 }
 
 function NoopComponent() {

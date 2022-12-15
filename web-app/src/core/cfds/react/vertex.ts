@@ -1,13 +1,15 @@
-import { useEffect, useState, useMemo } from 'react';
-import { EVENT_DID_CHANGE } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { useGraphManager } from './graph';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { useEffect, useState, useMemo } from 'https://esm.sh/react@18.2.0';
+import { useGraphManager } from './graph.tsx';
+import {
+  VertexManager,
+  EVENT_DID_CHANGE,
+} from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   MutationPack,
   mutationPackIter,
-} from '@ovvio/cfds/lib/client/graph/mutations';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { User } from '@ovvio/cfds//lib/client/graph/vertices';
+} from '../../../../../cfds/client/graph/mutations.ts';
+import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
+import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 
 interface OnChangeOpts {
   errorCallback?: () => void;
@@ -97,7 +99,7 @@ export function usePartialVertex<V extends Vertex, K extends keyof V>(
   useEffect(() => {
     return register(
       vertexMng,
-      () => setReload(x => x + 1),
+      () => setReload((x) => x + 1),
       keys as string[],
       opts
     );
@@ -116,7 +118,7 @@ export function useVertex<V extends Vertex>(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setReload] = useState(0);
   useEffect(() => {
-    return register(vertexMng, () => setReload(x => x + 1), [], opts);
+    return register(vertexMng, () => setReload((x) => x + 1), [], opts);
   }, [vertexMng, opts]);
 
   return vertexMng?.getVertexProxy();
@@ -132,7 +134,7 @@ export function useVertices<V extends Vertex>(
   vertexManagers: VertexManager<V>[],
   opts: OnChangeOpts = EMPTY_OPTS
 ): V[] {
-  return usePartialVertices(vertexManagers, [], opts);
+  return usePartialVertices(vertexManagers, [], opts) as V[];
   // // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // const [_, setReload] = useState(0);
   // useEffect(() => {
@@ -163,15 +165,20 @@ export function usePartialVertices<V extends Vertex, K extends keyof V>(
       return;
     }
     const unSubs = vertexManagers
-      .map(m => {
-        return register(m, () => setReload(x => x + 1), keys as string[], opts);
+      .map((m) => {
+        return register(
+          m,
+          () => setReload((x) => x + 1),
+          keys as string[],
+          opts
+        );
       })
       .filter(filterFunc);
-    return () => unSubs.forEach(fn => fn());
+    return () => unSubs.forEach((fn) => fn());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vertexManagers, opts, keysStr]);
   const result = useMemo(
-    () => vertexManagers.map(x => x.getVertexProxy()),
+    () => vertexManagers.map((x) => x.getVertexProxy()),
     [vertexManagers, reload] // eslint-disable-line
   );
 

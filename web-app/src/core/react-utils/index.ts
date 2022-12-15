@@ -4,7 +4,7 @@ import React, {
   useContext,
   useState,
   useLayoutEffect,
-} from 'react';
+} from 'https://esm.sh/react@18.2.0';
 import { useHistory } from 'react-router-dom';
 import { History } from 'history';
 import { notImplemented } from '@ovvio/base/lib/utils/error';

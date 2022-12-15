@@ -13,6 +13,7 @@ export const kServerMetricNames = [
 export type ServerMetricName = typeof kServerMetricNames[number];
 
 export const kClientMetricNames = [
+  'QueryFired',
   'QueryCancelled',
   'QueryCompleted',
   'FullTextIndexingTime',

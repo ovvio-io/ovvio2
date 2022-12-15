@@ -73,15 +73,21 @@ export class SQLiteLogStorage implements LogClientStorage {
     return this._getIdsStatement.values<string[]>().map((arr) => arr[0]);
   }
 
-  persistEntries(entries: NormalizedLogEntry[]): number {
+  persistEntries(entries: NormalizedLogEntry[]): Promise<number> {
     const persistedEntries: NormalizedLogEntry[] = [];
     for (const s of slices(entries, 100)) {
       this._putEntryTxn([s, persistedEntries]);
     }
-    return persistedEntries.length;
+    return Promise.resolve(persistedEntries.length);
   }
 
-  *entries(): Generator<NormalizedLogEntry> {
+  async *entries(): AsyncGenerator<NormalizedLogEntry> {
+    for (const { json } of this._getAllEntriesStatement) {
+      yield json;
+    }
+  }
+
+  *entriesSync(): Generator<NormalizedLogEntry> {
     for (const { json } of this._getAllEntriesStatement) {
       yield json;
     }

@@ -164,7 +164,9 @@ export class Server {
           resp = await this.handleSyncRequest(
             req,
             (values) =>
-              this.getRepository(resourceId).persistCommits(values).length,
+              Promise.resolve(
+                this.getRepository(resourceId).persistCommits(values).length
+              ),
             () =>
               mapIterable(this.getRepository(resourceId).commits(), (c) => [
                 c.id,
@@ -178,7 +180,7 @@ export class Server {
             req,
             (entries) => this.getLog(resourceId).persistEntries(entries),
             () =>
-              mapIterable(this.getLog(resourceId).entries(), (e) => [
+              mapIterable(this.getLog(resourceId).entriesSync(), (e) => [
                 e.logId,
                 e,
               ]),
@@ -272,7 +274,7 @@ export class Server {
 
   private async handleSyncRequest<T extends SyncValueType>(
     req: Request,
-    persistValues: (values: T[]) => number,
+    persistValues: (values: T[]) => Promise<number>,
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
     replicas: Iterable<BaseClient<T>>
@@ -283,7 +285,7 @@ export class Server {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(json),
     });
-    if (persistValues(msg.values) > 0) {
+    if ((await persistValues(msg.values)) > 0) {
       // Sync changes with replicas
       for (const c of replicas) {
         c.touch();

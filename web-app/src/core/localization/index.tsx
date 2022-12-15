@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext } from 'https://esm.sh/react@18.2.0';
 
 type LanguageStrings<T> = {
   [K in keyof T]: T[K];
@@ -41,9 +41,9 @@ export function createUseStrings<T>(strings: Localizations<T>): UseStrings<T> {
   };
 }
 
-export const LocalizationProvider: React.FC<{ lang: SupportedLanguage }> = ({
-  lang,
-  children,
-}) => {
+export const LocalizationProvider: React.FC<{
+  lang: SupportedLanguage;
+  children: React.ReactNode;
+}> = ({ lang, children }) => {
   return <ctx.Provider value={lang}>{children}</ctx.Provider>;
 };

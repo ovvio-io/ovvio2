@@ -67,6 +67,7 @@ export class LogClient
   }
 
   appendEntry(e: NormalizedLogEntry): void {
+    // TODO: Special handling for metrics
     this.storage.persistEntries([e]);
     this.entries.set(e.logId, e);
   }
