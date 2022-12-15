@@ -32,7 +32,10 @@ export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   value?: JSONValue;
 }
 
-export type SystemError = 'BackupWriteFailed' | 'IncompatibleVersion';
+export type SystemError =
+  | 'BackupWriteFailed'
+  | 'IncompatibleVersion'
+  | 'LoggerWriteFailed';
 
 export interface SystemErrorLogEntry extends BaseErrorLogEntry {
   severity: 'ERROR';

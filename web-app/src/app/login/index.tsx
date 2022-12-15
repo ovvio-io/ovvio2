@@ -3,7 +3,10 @@ import { layout, styleguide } from '@ovvio/styles/lib';
 import { RaisedButton } from '@ovvio/styles/lib/components/buttons';
 import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
 import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { EventLogger, EventLoggerProvider } from 'core/analytics';
+import {
+  EventLogger,
+  EventLoggerProvider,
+} from '../../core/analytics/index.tsx';
 import { CfdsClientProvider } from 'core/cfds/react/graph';
 import { MarketingParams, useHistory } from 'core/react-utils/history';
 import { electronSSOSignInOnLoad } from 'electronUtils';
@@ -14,11 +17,11 @@ import {
   SessionOrigin,
   UserProvider,
   UserStore,
-} from 'stores/user';
+} from '../../stores/user.ts';
 import { LoginIllustration } from './illustrations';
 import AuthForm from './AuthForm';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     alignItems: 'stretch',
     basedOn: [layout.row, layout.flex],
@@ -107,7 +110,7 @@ export default function LoginView({ children }: LoginViewProps) {
   });
 
   useEffect(() => {
-    return auth.onAuthStateChanged(async user => {
+    return auth.onAuthStateChanged(async (user) => {
       if (isLoading.current) {
         isLoading.current = false;
         if (user) {
@@ -144,7 +147,7 @@ export default function LoginView({ children }: LoginViewProps) {
     [sessionInfo]
   );
 
-  const onLogin: OnLoginInfoFunc = async info => {
+  const onLogin: OnLoginInfoFunc = async (info) => {
     setProcessing(true);
 
     try {

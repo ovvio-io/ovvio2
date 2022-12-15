@@ -168,7 +168,8 @@ export class GraphManager extends VertexSource {
       if (this._baseServerUrl) {
         const client = new RepoClient(
           repo,
-          appendPathComponent(this._baseServerUrl, id),
+          // serveAddr/repoId/sync
+          appendPathComponent(this._baseServerUrl, id, 'sync'),
           kSyncConfigClient
         );
         this._repoClients.set(id, client);

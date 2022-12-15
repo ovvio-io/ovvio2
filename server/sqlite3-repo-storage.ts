@@ -4,19 +4,17 @@ import {
   Transaction,
 } from 'https://deno.land/x/sqlite3@0.6.1/mod.ts';
 import { resolve as resolvePath } from 'https://deno.land/std@0.160.0/path/mod.ts';
-import { Repository, RepoStorage } from '../cfds/base/repo.ts';
+import { Repository, RepoStorage } from '../repo/repo.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
-import { Commit } from '../cfds/base/commit.ts';
+import { Commit } from '../repo/commit.ts';
 import { Record } from '../cfds/base/record.ts';
 import * as SetUtils from '../base/set.ts';
 import { slices } from '../base/array.ts';
 
 export const TABLE_COMMITS = 'commits';
-export const TABLE_HEADS = 'heads';
-export const TABLE_REFS = 'refs';
 export const INDEX_COMMITS_BY_KEY = 'commitsByKey';
 
 export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
@@ -139,14 +137,33 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   }
 
   protected updateHead(
-    repo: Repository<SQLiteRepoStorage>,
-    oldHead: Commit | undefined,
-    newHead: Commit
+    _repo: Repository<SQLiteRepoStorage>,
+    _oldHead: Commit | undefined,
+    _newHead: Commit
   ): void {
     // NOP in base class
   }
 }
 
+/**
+ * An SQLite storage that maintains additional tables designed for sane queries
+ * over the record graph.
+ *
+ * Heads Table
+ * -----------
+ * Name: "heads"
+ * Columns: commitId: Id of head commit
+ *                ns: Namespace of this record
+ *                ts: Timestamp of head commit (last modified)
+ *              json: The full json of the record (no deltas).
+ *
+ *
+ * Refs Table
+ * ----------
+ * Name: "refs"
+ * Columns: src: Source key of this ref.
+ *          dst: The destination key of this ref.
+ */
 export class RecordSQLiteStorage extends SQLiteRepoStorage {
   private readonly _updateHeadStatement: Statement;
   private readonly _deleteRefStatement: Statement;
@@ -158,7 +175,8 @@ export class RecordSQLiteStorage extends SQLiteRepoStorage {
       key TINYTEXT NOT NULL PRIMARY KEY,
       commitId TINYTEXT NOT NULL,
       ns TINYTEXT,
-      FOREIGN KEY(commitId) REFERENCES commits(id)
+      ts TIMESTAMP NOT NULL,
+      json TEXT NOT NULL
     );`);
     db.exec(`CREATE TABLE IF NOT EXISTS refs (
       src TINYTEXT NOT NULL,
@@ -166,10 +184,10 @@ export class RecordSQLiteStorage extends SQLiteRepoStorage {
       PRIMARY KEY (src, dst)
     );`);
     this._updateHeadStatement = db.prepare(
-      `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns`
+      `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns, ts = :ts, json = :json`
     );
     this._putRefStatement = db.prepare(
-      `INSERT INTO refs (src, dst) VALUES (:src, :dst);`
+      `INSERT INTO refs (src, dst, field) VALUES (:src, :dst);`
     );
     this._deleteRefStatement = db.prepare(
       `DELETE FROM refs WHERE src = :src AND dst = :dst`
@@ -191,6 +209,8 @@ export class RecordSQLiteStorage extends SQLiteRepoStorage {
       key: newHead.key,
       commitId: newHead.id,
       ns: headRecord.scheme.namespace,
+      ts: newHead.timestamp.getTime(),
+      json: JSON.stringify(JSONCyclicalEncoder.serialize(headRecord)),
     });
     const deletedRefs = SetUtils.subtract(headRecord.refs, newHeadRecord.refs);
     const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);

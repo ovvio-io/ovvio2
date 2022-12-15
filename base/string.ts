@@ -131,9 +131,13 @@ export function decrement(str: string): string {
   return str + String.fromCharCode(code - 1);
 }
 
-export function appendPathComponent(path: string, comp: string): string {
-  if (path.endsWith('/') || comp.startsWith('/')) {
-    return path + comp;
+export function appendPathComponent(path: string, ...comps: string[]): string {
+  for (const c of comps) {
+    if (path.endsWith('/') || c.startsWith('/')) {
+      path += c;
+    } else {
+      path = `${path}/${c}`;
+    }
   }
-  return `${path}/${comp}`;
+  return path;
 }

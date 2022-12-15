@@ -1,20 +1,16 @@
 import { Repository, RepoStorage } from '../repo/repo.ts';
-import { SyncMessage, CommitsSyncMessage } from './types.ts';
-import { BaseClient, OnlineStatusHandler, SyncConfig } from './base-client.ts';
+import { SyncMessage } from './types.ts';
+import { BaseClient, SyncConfig } from './base-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { mapIterable } from '../base/common.ts';
 
 export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   private readonly _repo: Repository<T>;
 
-  constructor(
-    repo: Repository<T>,
-    serverUrl: string,
-    syncConfig: SyncConfig,
-    onlineHandler?: OnlineStatusHandler
-  ) {
-    super(serverUrl, syncConfig, onlineHandler);
+  constructor(repo: Repository<T>, serverUrl: string, syncConfig: SyncConfig) {
+    super(serverUrl, syncConfig);
     this._repo = repo;
+    this.ready = true;
   }
 
   get repo(): Repository<T> {
@@ -23,7 +19,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
 
   protected buildSyncMessage(): SyncMessage<Commit> {
     const repo = this.repo;
-    return CommitsSyncMessage.build(
+    return SyncMessage.build(
       this.previousServerFilter,
       mapIterable(repo.commits(), (c) => [c.id, c]),
       repo.numberOfCommits,
@@ -38,7 +34,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     }
   }
 
-  protected persistPeerValues(values: Commit[]): number {
-    return this.repo.persistCommits(values).length;
+  protected persistPeerValues(values: Commit[]): Promise<number> {
+    return Promise.resolve(this.repo.persistCommits(values).length);
   }
 }

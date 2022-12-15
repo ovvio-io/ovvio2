@@ -41,6 +41,10 @@ export function syncConfigGetCycles(
 export const EVENT_ONLINE_STATUS_CHANGED = 'online_changed';
 export const EVENT_PROTOCOL_VERSION_CHANGED = 'protocol_version_changed';
 
+export interface BaseClientStorage {
+  close(): void;
+}
+
 /**
  * A base class for sync channel clients. This class takes care of everything
  * but interacting with the values themselves. It takes care of adaptive timing,
@@ -59,6 +63,9 @@ export abstract class BaseClient<
   private _previousServerSize: number;
   private _connectionOnline = false;
   private _serverVersionNumber: VersionNumber = VersionNumber.Unknown;
+  private _ready: boolean;
+  private _scheduled: boolean;
+  private _closed = false;
 
   constructor(serverUrl: string, syncConfig: SyncConfig) {
     super();
@@ -87,6 +94,8 @@ export abstract class BaseClient<
       syncConfigGetCycles(this.syncConfig) * 2
     );
     this._previousServerSize = 0;
+    this._ready = false;
+    this._scheduled = false;
   }
 
   get serverUrl(): string {
@@ -124,8 +133,29 @@ export abstract class BaseClient<
     }
   }
 
+  get ready(): boolean {
+    return this._ready && !this.closed;
+  }
+
+  protected set ready(f: boolean) {
+    if (f !== this._ready) {
+      this._ready = f;
+      if (this._scheduled) {
+        if (f) {
+          this._timer.schedule();
+        } else {
+          this.stopSyncing();
+        }
+      }
+    }
+  }
+
+  get closed(): boolean {
+    return this._closed;
+  }
+
   protected abstract buildSyncMessage(): SyncMessage<ValueType>;
-  protected abstract persistPeerValues(values: ValueType[]): number;
+  protected abstract persistPeerValues(values: ValueType[]): Promise<number>;
   abstract localIds(): Iterable<string>;
 
   private _setIsOnline(value: boolean): void {
@@ -136,17 +166,26 @@ export abstract class BaseClient<
   }
 
   startSyncing(): typeof this {
-    this._timer.schedule();
+    if (!this._scheduled) {
+      this._scheduled = true;
+      if (this.ready) {
+        this._timer.schedule();
+      }
+    }
     return this;
   }
 
   stopSyncing(): typeof this {
     this._timer.unschedule();
     this._timer.reset();
+    this._scheduled = false;
     return this;
   }
 
   private async sendSyncMessage(): Promise<void> {
+    if (this.closed) {
+      return;
+    }
     const syncConfig = this._syncConfig;
     const reqMsg = this.buildSyncMessage();
     const msg = JSONCyclicalEncoder.serialize(reqMsg);
@@ -163,6 +202,10 @@ export abstract class BaseClient<
         });
         return await resp.text();
       }, syncConfig.minSyncFreqMs);
+
+      if (this.closed) {
+        return;
+      }
 
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
@@ -213,7 +256,7 @@ export abstract class BaseClient<
     ) {
       const start = performance.now();
       // persistedCount = repo.persistCommits(syncResp.commits).length;
-      persistedCount = this.persistPeerValues(syncResp.values);
+      persistedCount = await this.persistPeerValues(syncResp.values);
       log({
         severity: 'INFO',
         name: 'CommitsPersistTime',
@@ -226,6 +269,9 @@ export abstract class BaseClient<
         value: persistedCount,
         unit: 'Count',
       });
+    }
+    if (this.closed) {
+      return;
     }
     if (persistedCount > 0 || this.needsReplication()) {
       this.touch();
@@ -250,7 +296,7 @@ export abstract class BaseClient<
     do {
       await this.sendSyncMessage();
       ++i;
-    } while (i < cycleCount || this.needsReplication());
+    } while (!this.closed && (i < cycleCount || this.needsReplication()));
   }
 
   needsReplication(): boolean {
@@ -271,5 +317,11 @@ export abstract class BaseClient<
     // this.sendSyncMessage();
     this._timer.reset();
     this._timer.schedule();
+  }
+
+  close() {
+    this.startSyncing();
+    this._closed = true;
+    this._setIsOnline(false);
   }
 }

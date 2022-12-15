@@ -13,9 +13,7 @@ import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { log } from '../logging/log.ts';
 import { Commit } from './commit.ts';
 import * as StringUtils from '../base/string.ts';
-import { filterIterable, mapIterable } from '../base/common.ts';
 import { assert } from '../base/error.ts';
-import { sep } from 'https://deno.land/std@0.160.0/path/win32.ts';
 
 const K_DB_VERSION = 1;
 

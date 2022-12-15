@@ -2,7 +2,7 @@ import {
   join as joinPath,
   resolve as resolvePath,
 } from 'https://deno.land/std@0.160.0/path/mod.ts';
-import { NormalizedLogEntry, Severity } from './entry.ts';
+import { NormalizedLogEntry, Severity, SeverityCodes } from './entry.ts';
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB
@@ -12,6 +12,11 @@ export interface LogStream {
 }
 
 export class ConsoleLogStream implements LogStream {
+  severity: Severity;
+  constructor(severity: Severity = 'DEFAULT') {
+    this.severity = severity;
+  }
+
   appendEntry(e: NormalizedLogEntry): void {
     let textLog = `[${e.timestamp.toISOString()}] `;
     if (typeof e.message === 'string') {
