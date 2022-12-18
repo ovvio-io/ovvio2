@@ -1,5 +1,6 @@
-import { KeyboardEvent } from 'react';
-import { isMacOS } from '../../../utils';
+import { KeyboardEvent } from 'https://esm.sh/react@18.2.0';
+import { JSONObject } from '../../../../../base/interfaces.ts';
+import { isMacOS } from '../../../utils.ts';
 
 export enum Platform {
   Mac,
@@ -38,7 +39,7 @@ export function getPlatformHotkey(shortcut: Shortcut): Hotkey {
   if (CURRENT_PLATFORM !== Platform.Mac) {
     return {
       ...hotkey,
-      metaKeys: hotkey.metaKeys.map(x =>
+      metaKeys: hotkey.metaKeys.map((x) =>
         x === MetaKeys.Meta ? MetaKeys.Ctrl : x
       ),
     };
@@ -49,7 +50,7 @@ export function getPlatformHotkey(shortcut: Shortcut): Hotkey {
 const codeA = 'a'.charCodeAt(0);
 const codeZ = 'z'.charCodeAt(0);
 
-const KEY_MAP = {};
+const KEY_MAP: JSONObject = {};
 for (let key = codeA; key <= codeZ; key++) {
   const char = String.fromCharCode(key);
   KEY_MAP[char] = `Key${char.toUpperCase()}`;
@@ -64,7 +65,7 @@ export function isKeyPressed(event: KeyboardEvent, key: string): boolean {
 export function isHotkeyActive(event: KeyboardEvent, hotkey: Hotkey): boolean {
   return (
     isKeyPressed(event, hotkey.key) &&
-    hotkey.metaKeys.every(k => event[META_KEY_MAP[k]])
+    hotkey.metaKeys.every((k) => event[META_KEY_MAP[k]])
   );
 }
 

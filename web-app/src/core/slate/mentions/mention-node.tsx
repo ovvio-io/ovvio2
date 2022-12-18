@@ -1,4 +1,3 @@
-import { Scroller, useScrollParent } from 'core/react-utils/scrolling';
 import React, {
   JSXElementConstructor,
   KeyboardEventHandler,
@@ -8,18 +7,23 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
-} from 'react';
-import { Node, Transforms } from 'slate';
-import { RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
-import { layout, styleguide } from '@ovvio/styles/lib';
+} from 'https://esm.sh/react@18.2.0';
+import { Node, Transforms } from 'https://esm.sh/slate@0.87.0';
+import {
+  RenderElementProps,
+  useSelected,
+  useSlateStatic,
+} from 'https://esm.sh/slate-react@0.87.1';
+import { Scroller, useScrollParent } from '../../react-utils/scrolling.tsx';
+import { layout, styleguide } from '../../../../../styles/index.ts';
 
-import PopperView from '@ovvio/styles/lib/components/popper';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { MentionElement } from '.';
-import { CfdsEditor } from '../cfds/with-cfds';
-import { isKeyPressed } from '../utils/hotkeys';
+import PopperView from '../../../../../styles/components/popper.tsx';
+import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
+import { MentionElement } from './index.tsx';
+import { CfdsEditor } from '../cfds/with-cfds.tsx';
+import { isKeyPressed } from '../utils/hotkeys.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   scroller: {
     maxHeight: styleguide.gridbase * 40,
     overflowY: 'auto',
@@ -142,17 +146,17 @@ function InnerSuggestionComponent<T>({
     selectedItem.current = items[selectedIndex];
   }, [items, selectedIndex]);
   useEffect(() => {
-    return registerKeyDown(e => {
+    return registerKeyDown((e) => {
       switch (e.key) {
         case 'ArrowUp':
         case 'Up': {
-          setSelectedIndex(x => (x - 1) % length);
+          setSelectedIndex((x) => (x - 1) % length);
           e.preventDefault();
           break;
         }
         case 'ArrowDown':
         case 'Down': {
-          setSelectedIndex(x => (x + 1) % length);
+          setSelectedIndex((x) => (x + 1) % length);
           e.preventDefault();
           break;
         }
@@ -229,7 +233,7 @@ export function MentionElementNode<T>({
   }, [content, closeMention]);
 
   useEffect(() => {
-    return registerKeyDown(e => {
+    return registerKeyDown((e) => {
       if (isKeyPressed(e, 'Backspace') && contentRef.current === trigger) {
         e.preventDefault();
         closeMentionRef.current();
@@ -262,7 +266,7 @@ export function MentionElementNode<T>({
           className={cn(styles.popperShadow)}
         >
           <Scroller>
-            {ref => (
+            {(ref) => (
               <div ref={ref} className={cn(styles.scroller)}>
                 <MentionComponent
                   filter={filter}

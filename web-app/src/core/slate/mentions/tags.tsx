@@ -1,27 +1,35 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { styleguide } from '@ovvio/styles/lib';
-import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { isTag, useQuery } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import React, { useCallback, useMemo } from 'react';
-import { useCreateTag } from 'shared/tags/create-tag-context';
-import { createMentionsPlugin, filterSortMentions, MentionOptions } from '.';
-import { useCurrentCard } from '../elements/card.element';
-import { Plugin } from '../plugins';
+import React, { useCallback, useMemo } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { styleguide } from '../../../../../styles/index.ts';
+import { IconCreateNew } from '../../../../../styles/components/icons/index.ts';
+import { Text } from '../../../../../styles/components/texts.tsx';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { isTag, useQuery } from '../../cfds/react/query.ts';
+import { usePartialVertex } from '../../cfds/react/vertex.ts';
+import { useCreateTag } from '../../../shared/tags/create-tag-context.tsx';
+import {
+  createMentionsPlugin,
+  filterSortMentions,
+  MentionOptions,
+} from './index.tsx';
+import { useCurrentCard } from '../elements/card.element/index.tsx';
+import { Plugin } from '../plugins/index.ts';
 import {
   RenderMentionPopupProps,
   SuggestionItem,
   SuggestionItemIcon,
-} from './mention-node';
+} from './mention-node.tsx';
 
 const CREATE_NEW_TAG = 'CREATE_NEW_TAG';
 
 type TagItem = VertexManager<Tag> | typeof CREATE_NEW_TAG;
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tagIndicator: {
     width: styleguide.gridbase,
     height: styleguide.gridbase,
@@ -99,20 +107,24 @@ function TagsSuggestionComponent({
 
   const wsMng = partial.workspace.manager as VertexManager<Workspace>;
   const { results: childTags } = useQuery<Tag>(
-    x => isTag(x) && x.parentTag && x.workspaceKey === partial?.workspaceKey,
+    (x) => isTag(x) && x.parentTag && x.workspaceKey === partial?.workspaceKey,
     [partial?.workspaceKey]
   );
 
   const { requestCreateTag } = useCreateTag();
 
-  const items = childTags.filter(child => {
+  const items = childTags.filter((child) => {
     const tag = child.getVertexProxy();
     const cardTagChild = partial.tags[tag.parentTagKey];
     return !cardTagChild || child.key !== cardTagChild;
   });
 
   const filteredTags = (
-    filterSortMentions(items, filter, t => t.getVertexProxy().name) as TagItem[]
+    filterSortMentions(
+      items,
+      filter,
+      (t) => t.getVertexProxy().name
+    ) as TagItem[]
   ).concat(CREATE_NEW_TAG);
   const keyForItem = useCallback(
     (item: TagItem) => (item === CREATE_NEW_TAG ? CREATE_NEW_TAG : item.key),

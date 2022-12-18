@@ -1,8 +1,12 @@
-import { PropType } from '@ovvio/base/lib/types';
-import { coreValueEquals } from '@ovvio/cfds/lib/core-types';
-import { KeyboardEventHandler } from 'react';
-import { NodeEntry, Range } from 'slate';
-import { RenderElementProps, RenderLeafProps } from 'slate-react';
+import { KeyboardEventHandler } from 'https://esm.sh/react@18.2.0';
+import { NodeEntry, Range } from 'https://esm.sh/slate@0.87.0';
+import {
+  RenderElementProps,
+  RenderLeafProps,
+} from 'https://esm.sh/slate-react@0.87.1';
+import { coreValueEquals } from '../../../../../base/core-types/equals.ts';
+
+type PropType<T, K extends keyof T> = T[K];
 
 function createTypeguard<T extends Partial<Plugin>>(
   key: keyof T
@@ -99,6 +103,7 @@ export function mergePlugins(plugins: Partial<Plugin>[]): Plugin {
           return el;
         }
       }
+      return null;
     },
     decorate(entry) {
       return decorators.reduce((ranges, decorator) => {

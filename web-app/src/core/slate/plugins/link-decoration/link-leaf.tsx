@@ -1,13 +1,18 @@
-import { isMention } from 'core/slate/mentions';
-import { FormattedText } from 'core/slate/types';
-import { MouseEvent, useCallback, useRef, useState } from 'react';
-import { RenderLeafProps } from 'slate-react';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { IconLink } from '@ovvio/styles/lib/components/icons';
-import Popper from '@ovvio/styles/lib/components/popper';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { isMention } from '../../mentions/index.tsx';
+import { FormattedText } from '../../types.ts';
+import React, {
+  MouseEvent,
+  useCallback,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { RenderLeafProps } from 'https://esm.sh/slate-react@0.87.1';
+import { styleguide, layout } from '../../../../../../styles/index.ts';
+import { IconLink } from '../../../../../../styles/components/icons/index.ts';
+import Popper from '../../../../../../styles/components/popper.tsx';
+import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   anchor: {
     color: '-webkit-link',
     textDecoration: 'underline',
@@ -45,7 +50,7 @@ export function isLinkLeafProps(
 
 export function LinkLeaf({ leaf, children, attributes }: LinkLeafProps) {
   const styles = useStyles();
-  const ref = useRef();
+  const ref = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const onMouseEnter = useCallback(() => setIsOpen(true), []);
   const onMouseLeave = useCallback(() => setIsOpen(false), []);
@@ -64,7 +69,7 @@ export function LinkLeaf({ leaf, children, attributes }: LinkLeafProps) {
       {children}
       <Popper
         open={isOpen}
-        anchor={ref.current}
+        anchor={ref.current!}
         contentEditable={false}
         position="right"
         direction="out"
