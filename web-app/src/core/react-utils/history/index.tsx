@@ -1,15 +1,23 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { Router } from 'react-router-dom';
-import { createBrowserHistory, History as RouterHistory } from 'history';
+import React, {
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'https://esm.sh/react@18.2.0';
+import { Router } from 'https://esm.sh/react-router-dom@5.1.0';
+import {
+  createBrowserHistory,
+  History as RouterHistory,
+} from 'https://esm.sh/history@5.3.0';
 import {
   isElectron,
   loadElectronState,
   saveElectronState,
-} from 'electronUtils';
+} from '../../../electronUtils.tsx';
 import {
   createQueryManager,
   IQueryStringManager,
-} from './query-string-manager';
+} from './query-string-manager.ts';
 
 export const MarketingValues = {
   utmSource: 'utm_source',
@@ -21,15 +29,15 @@ export const MarketingValues = {
 
 export type MarketingParams = { [K in keyof typeof MarketingValues]?: string };
 
-function getUrlSegments(url) {
+function getUrlSegments(url: string) {
   if (url.startsWith('/')) {
     url = url.substring(1);
   }
   return url.split('/');
 }
 
-function getLocationSegments(location) {
-  let { pathname } = location;
+function getLocationSegments(location: Location) {
+  const { pathname } = location;
 
   // if (window.location.protocol === 'file:') {
   //   console.log(pathname, hash);
@@ -39,7 +47,7 @@ function getLocationSegments(location) {
 }
 
 class Route {
-  private _urlBuilder: any[];
+  private _urlBuilder!: string[];
   constructor(public name: string, private route: string, private _id: string) {
     this._extractRouteInfo();
   }
@@ -69,7 +77,7 @@ class Route {
       if (segment.startsWith(':')) {
         segmentBuilder[i] = {
           name: segment.substring(1),
-          build: params => getParam(params, segment),
+          build: (params) => getParam(params, segment),
         };
       } else {
         segmentBuilder[i] = segment;
@@ -81,7 +89,7 @@ class Route {
 
   buildRoute(params) {
     const url = this._urlBuilder
-      .map(x => {
+      .map((x) => {
         if (typeof x.build === 'function') {
           return x.build(params);
         }
@@ -97,7 +105,7 @@ class Route {
     };
   }
 
-  extractLocation(location) {
+  extractLocation(location: Location) {
     if (this.route === '/*') {
       return {
         id: this._id,
@@ -137,7 +145,7 @@ class RouterWrapper {
     if (this.routes[id]) {
       throw new Error(`Route with id ${id} already exists`);
     }
-    if (Object.values(this.routes).some(x => x.routeDefinition === url)) {
+    if (Object.values(this.routes).some((x) => x.routeDefinition === url)) {
       throw new Error(`Url ${url} already exists`);
     }
     const r = new Route(name, url, id);
@@ -269,7 +277,7 @@ export class History {
         throw new Error('Unknown action received');
     }
 
-    this.listeners.forEach(fn => fn(this, location));
+    this.listeners.forEach((fn) => fn(this, location));
   }
 
   push(route, params?: any) {
@@ -336,7 +344,7 @@ export function useHistory(onChange = null) {
   const [, setRerender] = useState(1);
   useEffect(() => {
     return history.listen((h, l) => {
-      setRerender(x => x + 1);
+      setRerender((x) => x + 1);
       if (onChange) {
         onChange(h, l);
       }
@@ -357,7 +365,7 @@ export default function OvvioRouter(props) {
     if (!IS_ELECTRON) {
       return;
     }
-    const unsub = history.listen(loc => {
+    const unsub = history.listen((loc) => {
       saveElectronState(loc.search);
     });
 

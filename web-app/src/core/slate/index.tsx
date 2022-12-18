@@ -1,32 +1,32 @@
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useCfdsContext } from 'core/cfds/react/graph';
-import { useEffect, useMemo, useRef } from 'react';
-import { createEditor, Editor } from 'slate';
-import { withReact } from 'slate-react';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor';
-import withCfds from './cfds/with-cfds';
-import { createBulletListPlugin } from './elements/bullet-list.element';
-import { createCardPlugin } from './elements/card.element';
-import { withCards } from './elements/card.element/with-cards';
-import { createHeaderPlugin } from './elements/header.element';
-import { createHeader2Plugin } from './elements/header2.element';
-import { createListItemPlugin } from './elements/list-item.element';
-import { createNumberedListPlugin } from './elements/numbered-list.element';
-import { withMentions } from './mentions';
-import { createTagsPlugin } from './mentions/tags';
-import { createPluginStack, PluginStack } from './plugins';
+import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { useCfdsContext } from '../cfds/react/graph.tsx';
+import { useEffect, useMemo, useRef } from 'https://esm.sh/react@18.2.0';
+import { createEditor, Editor } from 'https://esm.sh/slate@0.87.0';
+import { withReact } from 'https://esm.sh/slate-react@0.87.1';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor.ts';
+import withCfds from './cfds/with-cfds.tsx';
+import { createBulletListPlugin } from './elements/bullet-list.element.tsx';
+import { createCardPlugin } from './elements/card.element/index.tsx';
+import { withCards } from './elements/card.element/with-cards.ts';
+import { createHeaderPlugin } from './elements/header.element.tsx';
+import { createHeader2Plugin } from './elements/header2.element.tsx';
+import { createListItemPlugin } from './elements/list-item.element.tsx';
+import { createNumberedListPlugin } from './elements/numbered-list.element.tsx';
+import { withMentions } from './mentions/index.tsx';
+import { createTagsPlugin } from './mentions/tags.tsx';
+import { createPluginStack, PluginStack } from './plugins/index.ts';
 import {
   createBaseBodyPlugin,
   createBaseRender,
   createBaseTitlePlugin,
-} from './plugins/base';
-import { createAssigneesPlugin } from './mentions/assignees';
-import { useCurrentUser } from 'core/cfds/react/vertex';
-import { CARD_SOURCE } from '../../shared/card';
-import { isDefined } from '@ovvio/base/lib/utils';
-import { useEventLogger } from '../analytics';
-import { createLinkDecoration } from './plugins/link-decoration';
+} from './plugins/base.tsx';
+import { createAssigneesPlugin } from './mentions/assignees.tsx';
+import { useCurrentUser } from '../cfds/react/vertex.ts';
+import { CARD_SOURCE } from '../../shared/card/index.tsx';
+import { isDefined } from '../../../../base/comparisons.ts';
+import { createLinkDecoration } from './plugins/link-decoration/index.tsx';
+import { useLogger } from '../cfds/react/logger.tsx';
 
 export function createOvvioEditor(getNote?: () => VertexManager<Note>): Editor {
   return withCfds(withCards(withReact(withMentions(createEditor())), getNote));
@@ -45,7 +45,7 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
     () => createOvvioEditor(() => noteManagerRef.current),
     []
   );
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
   useEffect(() => {
     noteManagerRef.current = noteManager;
@@ -67,18 +67,18 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
           editor,
           () => noteManagerRef.current,
           () => userRef.current,
-          eventLogger
+          logger
         ),
         createLinkDecoration(),
         createBaseBodyPlugin(editor),
       ]),
-    [editor, eventLogger]
+    [editor, logger]
   );
   const handlers = useCfdsEditor(
     noteManager,
     'body',
     editor,
-    `${user.id}/${sessionId}`,
+    `${user?.id || 'anonymous'}/${sessionId}`,
     { undoAddBodyRefs: true }
   );
 
@@ -101,7 +101,7 @@ const DEFAULT_OPTS: UseTitleEditorOptions = {
 
 export function useTitleEditor(
   note: VertexManager<Note>,
-  DefaultComponent: any,
+  DefaultComponent: React.ReactNode,
   source?: CARD_SOURCE,
   opts: Partial<UseTitleEditorOptions> = {}
 ): {
@@ -146,7 +146,7 @@ export function useTitleEditor(
     note,
     'title',
     editor,
-    `${user.id}/${sessionId}`
+    `${user?.id || 'anonymous'}/${sessionId}`
   );
 
   return {

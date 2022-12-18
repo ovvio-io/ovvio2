@@ -169,8 +169,12 @@ export function isBoolean(v: any): v is boolean {
   return v === true || v === false;
 }
 
-export function isUndefined(v: any): v is undefined {
+export function isUndefined<T>(v: T | undefined): v is undefined {
   return typeof v === 'undefined';
+}
+
+export function isDefined<T>(v: T): boolean {
+  return !isUndefined(v);
 }
 
 export function isNoValue(v: any): v is null | undefined {

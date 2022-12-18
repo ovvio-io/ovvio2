@@ -1,20 +1,28 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { useMountedIndicator } from 'core/react-utils/base-utils';
-import { useCallback } from 'react';
-import AvatarView from 'shared/avatar';
-import { useInvitations } from 'shared/invitation';
-import { createMentionsPlugin, filterSortMentions, MentionOptions } from '.';
-import { useCurrentCard } from '../elements/card.element';
-import { Plugin } from '../plugins';
+import React, { useCallback } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  User,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { IconCreateNew } from '../../../../../styles/components/icons/index.ts';
+import { Text } from '../../../../../styles/components/texts.tsx';
+import { usePartialVertex } from '../../cfds/react/vertex.ts';
+import { useMountedIndicator } from '../../react-utils/base-utils.ts';
+import AvatarView from '../../../shared/avatar/index.tsx';
+import { useInvitations } from '../../../shared/invitation/index.tsx';
+import {
+  createMentionsPlugin,
+  filterSortMentions,
+  MentionOptions,
+} from './index.tsx';
+import { useCurrentCard } from '../elements/card.element/index.tsx';
+import { Plugin } from '../plugins/index.ts';
 import {
   RenderMentionPopupProps,
   SuggestionItem,
   SuggestionItemIcon,
-} from './mention-node';
+} from './mention-node.tsx';
 
 const INVITE_USER = 'INVITE_USER';
 
@@ -86,14 +94,14 @@ function AssigneesSuggestionComponent({
   const { openInvite } = useInvitations();
   const availableAssignees = Array.from(partial.workspace.users);
   const items = availableAssignees
-    .filter(u => !partial.assignees.has(u))
-    .map(x => x.manager as VertexManager<User>);
+    .filter((u) => !partial.assignees.has(u))
+    .map((x) => x.manager as VertexManager<User>);
 
   const filteredTags = (
     filterSortMentions(
       items,
       filter,
-      t => t.getVertexProxy().name
+      (t) => t.getVertexProxy().name
     ) as UserItem[]
   ).concat(INVITE_USER);
   const keyForItem = useCallback(
@@ -111,7 +119,7 @@ function AssigneesSuggestionComponent({
         if (isMounted.current && r.userInvited) {
           const currentCard = card.getVertexProxy();
           const { assignees } = currentCard;
-          r.users.forEach(u => assignees.add(u.getVertexProxy()));
+          r.users.forEach((u) => assignees.add(u.getVertexProxy()));
           currentCard.assignees = assignees;
         }
       })();

@@ -1,10 +1,10 @@
-import { duplicateCard } from '@ovvio/cfds/lib/client/duplicate';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { initRichText } from '@ovvio/cfds/lib/richtext/tree';
-import { createNewCard } from 'shared/card/create';
-import { Editor, Node, Path, Transforms } from 'slate';
-import { CardElement } from '.';
+import { Editor, Node, Path, Transforms } from 'https://esm.sh/slate@0.87.0';
+import { duplicateCard } from '../../../../../../cfds/client/duplicate.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { initRichText } from '../../../../../../cfds/richtext/tree.ts';
+import { createNewCard } from '../../../../shared/card/create.ts';
+import { CardElement } from './index.tsx';
 
 export function withCards(
   editor: Editor,
@@ -13,7 +13,7 @@ export function withCards(
   const { insertFragment, normalizeNode } = editor;
 
   editor.insertFragment = (fragment: Node[]) => {
-    const sanitized = fragment.map(node => {
+    const sanitized = fragment.map((node) => {
       if (CardElement.isCard(node)) {
         // If pasting from a different account / stage then the graph won't
         // have the target vertex. In this case we strip the task to its
@@ -56,7 +56,7 @@ export function withCards(
     insertFragment(sanitized);
   };
 
-  editor.normalizeNode = entry => {
+  editor.normalizeNode = (entry) => {
     const [node, path] = entry;
 
     if (

@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useHistoryStatic } from '.';
-import { QueryValue } from './query-string-manager';
+import { useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+import { useLocation } from 'https://esm.sh/react-router-dom@5.1.0';
+import { useHistoryStatic } from './index.tsx';
+import { QueryValue } from './query-string-manager.ts';
 
 interface UseSyncUrlParamOptions {
   isReady?: boolean;
@@ -52,7 +52,7 @@ export function useSyncUrlParam<IsArray extends boolean>(
       return;
     }
 
-    valueStringRef.current = urlValue;
+    valueStringRef.current = urlValue || '';
     mapRef.current(
       (isArray ? urlValue?.split(',') || [] : urlValue) as QueryValue<IsArray>
     );

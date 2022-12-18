@@ -1,62 +1,77 @@
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import {
-  Note,
-  Tag,
-  User,
-  Workspace,
-} from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { getColorForUserId } from '@ovvio/styles/lib/colors';
-import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
-import { CheckBox } from '@ovvio/styles/lib/components/inputs';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, keyframes, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { useGraphManager } from 'core/cfds/react/graph';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { useAnimateHeight, useAnimateWidth } from 'core/react-utils/animate';
-import { ElementUtils } from 'core/slate/utils/element-utils';
-import { SelectionUtils } from 'core/slate/utils/selection-utils';
 import React, {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { CARD_SOURCE } from 'shared/card';
-import AssigneesView, {
-  Assignee,
-  RenderAssignee,
-} from 'shared/card/assignees-view';
-import { useCardPlaceholderText } from 'shared/card/placeholder';
-import { toggleDone } from 'shared/card/status';
-import { Pill, PillAction, PillContent, PillStyle } from 'shared/pill';
-import TagButton from 'shared/tags/tag-button';
-import { isCardActionable, isCardDone } from 'shared/tags/tag-utils';
-import {
-  default as TagPillView,
-  default as TagView,
-} from 'shared/tags/tag-view';
-import { useStatusTags } from 'shared/tags/use-status-tags';
-import { Node } from 'slate';
+} from 'https://esm.sh/react@18.2.0';
+import { Node } from 'https://esm.sh/slate@0.87.0';
 import {
   ReactEditor,
   RenderElementProps,
   useFocused,
   useSelected,
   useSlateStatic,
-} from 'slate-react';
+} from 'https://esm.sh/slate-react@0.87.1';
+import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  User,
+  Workspace,
+} from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { getColorForUserId } from '../../../../../../../styles/colors.ts';
+import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
+import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  cn,
+  keyframes,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../../../../styles/theme.tsx';
+import { useGraphManager } from '../../../../cfds/react/graph.tsx';
+import { usePartialVertex } from '../../../../cfds/react/vertex.ts';
+import {
+  useAnimateHeight,
+  useAnimateWidth,
+} from '../../../../react-utils/animate.ts';
+import { ElementUtils } from '../../../utils/element-utils.ts';
+import { SelectionUtils } from '../../../utils/selection-utils.ts';
+import { CARD_SOURCE } from '../../../../../shared/card/index.tsx';
+import AssigneesView, {
+  Assignee,
+  RenderAssignee,
+} from '../../../../../shared/card/assignees-view.tsx';
+import { useCardPlaceholderText } from '../../../../../shared/card/placeholder.ts';
+import { toggleDone } from '../../../../../shared/card/status.ts';
+import {
+  Pill,
+  PillAction,
+  PillContent,
+  PillStyle,
+} from '../../../../../shared/pill/index.tsx';
+import TagButton from '../../../../../shared/tags/tag-button.tsx';
+import {
+  isCardActionable,
+  isCardDone,
+} from '../../../../../shared/tags/tag-utils.ts';
+import {
+  default as TagPillView,
+  default as TagView,
+} from '../../../../../shared/tags/tag-view.tsx';
+import { useStatusTags } from '../../../../../shared/tags/use-status-tags.ts';
 import {
   CardElement,
   EditableCardContext,
   LoadingCardElement,
   useCurrentCard,
-} from '../';
-import { AssigneesIcon } from '../assignees-icon';
-import { TagIcon } from '../tag-icon';
-import { CardActions } from './card-actions';
+} from '../index.tsx';
+import { AssigneesIcon } from '../assignees-icon.tsx';
+import { TagIcon } from '../tag-icon.tsx';
+import { CardActions } from './card-actions.tsx';
 
 const animName = keyframes({
   from: {
@@ -290,7 +305,7 @@ export const CardNode = function ({
     const thisNode = ElementUtils.getClosestNode(
       editor,
       path,
-      (node => CardElement.isCard(node) && node.ref === cardId) as (
+      ((node) => CardElement.isCard(node) && node.ref === cardId) as (
         node: Node
       ) => node is CardElement
     );
@@ -423,13 +438,13 @@ function InlineAssignee({
   const styles = useStyles();
   const { users } = usePartialVertex(workspaceManager, ['users']);
   const userManagers = useMemo(
-    () => Array.from(users).map(u => u.manager as VertexManager<User>),
+    () => Array.from(users).map((u) => u.manager as VertexManager<User>),
     [users]
   );
 
   const { assignees } = usePartialVertex(cardManager, ['assignees']);
   const assigneesManagers = useMemo(
-    () => Array.from(assignees).map(u => u.manager as VertexManager<User>),
+    () => Array.from(assignees).map((u) => u.manager as VertexManager<User>),
     [assignees]
   );
 
@@ -540,7 +555,7 @@ const ShortCardMetadata = React.memo(function ({
 
   return (
     <div className={cn(styles.inlineMetadata)} contentEditable={false}>
-      {Array.from(assignees).map(user => (
+      {Array.from(assignees).map((user) => (
         <InlineAssignee
           key={user.key}
           user={user.manager as VertexManager<User>}

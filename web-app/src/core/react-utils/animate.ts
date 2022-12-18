@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
 
 export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
   ref: React.MutableRefObject<T>,
@@ -33,7 +38,7 @@ export function useAnimateSize<T extends HTMLElement>(
 ): number | null {
   const lastValue = useRef(animateProp);
 
-  const [size, setSize] = useState<number>(null);
+  const [size, setSize] = useState<number | null>(null);
 
   // useEffect(() => {
   //   setSize(null);

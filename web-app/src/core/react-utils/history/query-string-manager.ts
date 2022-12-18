@@ -1,4 +1,4 @@
-import { History } from '.';
+import { History } from './index.tsx';
 
 function formatValue(value: string | string[]) {
   if (!value || !value.length) {
@@ -23,7 +23,7 @@ export interface IQueryParamManager<IsArray extends boolean> {
 class QueryParamManager<IsArray extends boolean>
   implements IQueryParamManager<IsArray>
 {
-  private currentVal: string;
+  private currentVal: string | undefined;
 
   private listeners: ((value: QueryValue<IsArray>) => void)[] = [];
 
@@ -48,7 +48,7 @@ class QueryParamManager<IsArray extends boolean>
     }
     this.listeners.push(listener);
     this.manager.requestListen(this.key);
-    listener(this.parseValue(this.currentVal));
+    listener(this.parseValue(this.currentVal || ''));
     return () => {
       this.manager.requestUnlisten(this.key);
       this.listeners.splice(this.listeners.indexOf(listener), 1);
@@ -75,7 +75,7 @@ class QueryParamManager<IsArray extends boolean>
     }
     this.currentVal = value;
     const parsed = this.parseValue(value);
-    this.listeners.forEach(x => x(parsed as any));
+    this.listeners.forEach((x) => x(parsed as any));
   }
 }
 

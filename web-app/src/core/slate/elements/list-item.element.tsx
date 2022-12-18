@@ -1,19 +1,18 @@
-import { Editor, Element } from 'slate';
-import { RenderElementProps } from 'slate-react';
-import { Plugin } from '../plugins';
-import { TextType } from '../types';
-import { ElementUtils } from '../utils/element-utils';
-import { Text as TextElement } from '@ovvio/styles/lib/components/texts';
-import { ListUtils } from '../utils/list-utils';
-import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
+import React, { useContext } from 'https://esm.sh/react@18.2.0';
+import { Editor, Element } from 'https://esm.sh/slate@0.87.0';
+import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { Plugin } from '../plugins/index.ts';
+import { TextType } from '../types.ts';
+import { ElementUtils } from '../utils/element-utils.ts';
+import { Text as TextElement } from '../../../../../styles/components/texts.tsx';
+import { ListUtils } from '../utils/list-utils.ts';
+import { ElementNode } from '../../../../../cfds/richtext/tree.ts';
 
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useContext } from 'react';
-import React from 'react';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 
 export const listContext = React.createContext(0);
 
-const useStyles = makeStyles(theme => {
+const useStyles = makeStyles((theme) => {
   let levelStyles = {};
   for (let level = 1; level < 6; level++) {
     levelStyles[`level_${level}_ltr`] = {
