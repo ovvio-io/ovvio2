@@ -1,12 +1,12 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import Tooltip from '@ovvio/styles/lib/components/tooltip';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import React from 'react';
+import React from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { User } from '../../../../cfds/client/graph/vertices/user.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import Tooltip from '../../../../styles/components/tooltip/index.tsx';
+import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 const useStyles = makeStyles(() => ({
   container: {
     overflow: 'hidden',
@@ -58,8 +58,8 @@ interface AvatarProps {
 function getInitials(name: string): string {
   return name
     .split(' ')
-    .map(x => x[0])
-    .filter(x => x)
+    .map((x) => x[0])
+    .filter((x) => x)
     .join('');
 }
 

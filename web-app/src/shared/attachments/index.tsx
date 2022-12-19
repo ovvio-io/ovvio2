@@ -1,16 +1,14 @@
-import Utils from '@ovvio/base/lib/utils';
-import { AttachmentData } from '@ovvio/cfds/lib/base/scheme-types';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useFileUploader } from 'shared/components/file-uploader';
-import { useScopedObservable } from 'core/state';
-import User from 'stores/user';
-import { useEventLogger } from 'core/analytics';
-import { Logger } from '@ovvio/base';
-import { CARD_SOURCE } from 'shared/card';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { useContext } from 'react';
-import { toastContext } from '@ovvio/styles/lib/components/toast';
+import { useContext } from 'https://esm.sh/react@18.2.0';
+import { AttachmentData } from '../../../../cfds/base/scheme-types.ts';
+import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { useFileUploader } from '../components/file-uploader/index.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { toastContext } from '../../../../styles/components/toast/index.tsx';
+import { useCurrentUser } from '../../core/cfds/react/vertex.ts';
+import * as SetUtils from '../../../../base/set.ts';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { UI_SOURCE } from '../../../../logging/client-events.ts';
 
 interface UseAttachmentsInfo {
   attachments: AttachmentData[];
@@ -19,11 +17,11 @@ interface UseAttachmentsInfo {
 }
 export function useAttachments(
   cardManager: VertexManager<Note>,
-  source?: CARD_SOURCE
+  source?: UI_SOURCE
 ): UseAttachmentsInfo {
   const fileUploader = useFileUploader();
-  const currentUser = useScopedObservable(User);
-  const eventLogger = useEventLogger();
+  const currentUser = useCurrentUser();
+  const logger = useLogger();
   const toastProvider = useContext(toastContext);
 
   const pCard = usePartialVertex(cardManager, ['workspace', 'attachments']);
@@ -41,11 +39,11 @@ export function useAttachments(
 
   return {
     attachments,
-    removeAttachment: async attachment => {
+    removeAttachment: async (attachment) => {
       try {
         const tempCard = cardManager.getVertexProxy();
 
-        tempCard.attachments = Utils.Set.deleteByValue(
+        tempCard.attachments = SetUtils.deleteByValue(
           tempCard.attachments,
           attachment
         );
@@ -56,14 +54,23 @@ export function useAttachments(
           attachment
         );
 
-        eventLogger.cardAction('CARD_ATTACHMENT_REMOVED', cardManager, {
-          source,
+        logger.log({
+          severity: 'INFO',
+          event: 'AttachmentRemoved',
+          vertex: cardManager.key,
+          uiSource: source,
         });
       } catch (e) {
-        Logger.error('Card Attachment Removal Failed', e);
+        logger.log({
+          severity: 'INFO',
+          error: 'AttachmentRemovalFailed',
+          message: e.message,
+          trace: e.stack,
+          vertex: cardManager.key,
+        });
       }
     },
-    openAttachment: file => {
+    openAttachment: (file) => {
       const tempCard = cardManager.getVertexProxy();
       const close = toastProvider.displayToast({
         text: `Downloading ${file.filename}...`,
@@ -72,23 +79,26 @@ export function useAttachments(
         .download(tempCard.workspaceKey, currentUser, file)
         .then(() => {
           close();
-          eventLogger.cardAction(
-            'CARD_ATTACHMENT_DOWNLOAD_SUCCESS',
-            cardManager,
-            {
-              source,
-            }
-          );
+          logger.log({
+            severity: 'INFO',
+            event: 'AttachmentDownloadSuccess',
+            uiSource: source,
+            vertex: cardManager.key,
+          });
         })
-        .catch(err => {
+        .catch((err: Error) => {
           close();
           toastProvider.displayToast({
             text: 'Failed to download attachment',
             duration: 3000,
           });
-          eventLogger.cardError(err, cardManager, {
-            origin: 'CARD_ATTACHMENT_DOWNLOAD',
-            source,
+          logger.log({
+            severity: 'INFO',
+            error: 'AttachmentRemovalFailed',
+            uiSource: source,
+            vertex: cardManager.key,
+            message: err.message,
+            trace: err.stack,
           });
         });
     },

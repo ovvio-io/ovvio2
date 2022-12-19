@@ -53,7 +53,6 @@ export function CfdsClientProvider({
   children,
 }: CfdsClientProviderProps) {
   const logger = useLogger();
-  const [versionMismatchFound, setVersionMismatchFound] = useState(false);
   const sessionPtrKey = `${user.id}/${sessionId}`;
 
   const graphManager = useMemo(() => {
@@ -73,7 +72,7 @@ export function CfdsClientProvider({
     const sessionIntervalId = setInterval(() => {
       logger.log({
         severity: 'INFO',
-        event: 'SESSION_ALIVE',
+        event: 'SessionAlive',
         foreground: document.visibilityState === 'visible',
       });
     }, 10 * 1000);
@@ -92,10 +91,6 @@ export function CfdsClientProvider({
     }),
     [graphManager, sessionId, user]
   );
-
-  if (versionMismatchFound) {
-    return <VersionMismatchView />;
-  }
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;
 }

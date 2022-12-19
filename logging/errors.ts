@@ -21,7 +21,9 @@ export type OperationalError =
   | 'SerializeError'
   | 'BadRequest'
   | 'UnknownCommand'
-  | 'UnknownSyncError';
+  | 'UnknownSyncError'
+  | 'AttachmentRemovalFailed'
+  | 'AttachmentDownloadFailed';
 
 export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   severity: 'INFO';
@@ -30,6 +32,7 @@ export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   key?: string;
   valueType?: string;
   value?: JSONValue;
+  vertex?: string;
 }
 
 export type SystemError =
