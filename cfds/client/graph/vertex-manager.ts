@@ -34,6 +34,8 @@ import {
 import * as SetUtils from '../../../base/set.ts';
 import { kRecordIdField } from '../../base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
+import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
+import { targetRange } from 'https://esm.sh/v99/slate-react@0.87.1/dist/utils/diff-text.d.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -320,6 +322,25 @@ export class VertexManager<V extends Vertex = Vertex>
         // }
         return true;
       },
+
+      // deno-lint-ignore no-explicit-any
+      get: (target: T, prop: string | symbol): any => {
+        const value = target[prop as keyof T];
+        if (value instanceof Set) {
+          const setProxy = new SetProxy(value, (oldValue) => {
+            target[prop as keyof T] = setProxy._target as T[keyof T];
+            this.vertexDidMutate([prop as string, true, oldValue]);
+          });
+          return setProxy;
+        } else if (isDictionary(value)) {
+          const dictProxy = new DictionaryProxy(value, (oldValue) => {
+            target[prop as keyof T] = dictProxy._target as T[keyof T];
+            this.vertexDidMutate([prop as string, true, oldValue as CoreValue]);
+          });
+          return dictProxy;
+        }
+        return value;
+      },
     };
 
     if (this._revocableProxy !== undefined) {
@@ -546,6 +567,137 @@ function projectRichTextPointers(
       if (srcRt !== undefined && dstRt !== undefined) {
         dstRec.set(fieldName, projectPointers(srcRt, dstRt, filter, false));
       }
+    }
+  }
+}
+
+type DidMutateCallback<T> = (oldValue: T) => void;
+
+class SetProxy<T> {
+  _target: Set<T>;
+  private readonly _didMutateCallback: DidMutateCallback<Set<T>>;
+
+  constructor(target: Set<T>, didMutateCallback: DidMutateCallback<Set<T>>) {
+    this._target = target;
+    this._didMutateCallback = didMutateCallback;
+  }
+
+  get size() {
+    return this._target.size;
+  }
+
+  [Symbol.iterator]() {
+    return this._target[Symbol.iterator];
+  }
+
+  add(v: T): Set<T> {
+    if (!this._target.has(v)) {
+      const oldValue = new Set(this._target);
+      this._target.add(v);
+      this._didMutateCallback(oldValue);
+    }
+    return this as unknown as Set<T>;
+  }
+
+  clear(): void {
+    if (this._target.size > 0) {
+      const oldValue = this._target;
+      this._target = new Set();
+      this._didMutateCallback(oldValue);
+    }
+  }
+
+  delete(v: T): boolean {
+    if (this._target.has(v)) {
+      const oldValue = new Set(this._target);
+      this._target.delete(v);
+      this._didMutateCallback(oldValue);
+      return true;
+    }
+    return false;
+  }
+
+  entries() {
+    return this._target.entries();
+  }
+
+  forEach() {
+    return this._target.forEach.apply(this._target, arguments as any);
+  }
+
+  has(v: T) {
+    return this._target.has(v);
+  }
+
+  keys() {
+    return this._target.keys();
+  }
+
+  values() {
+    return this._target.values();
+  }
+}
+
+class DictionaryProxy<K, V> {
+  readonly _target: Dictionary<K, V>;
+  private readonly _didMutateCallback: DidMutateCallback<Dictionary<K, V>>;
+
+  constructor(
+    target: Dictionary<K, V>,
+    callback: DidMutateCallback<Dictionary<K, V>>
+  ) {
+    this._target = target;
+    this._didMutateCallback = callback;
+  }
+
+  get size() {
+    return this._target.size;
+  }
+
+  get(key: K) {
+    return this._target.get(key);
+  }
+
+  has(key: K) {
+    return this._target.has(key);
+  }
+
+  entries() {
+    return this._target.entries();
+  }
+
+  keys() {
+    return this._target.keys();
+  }
+
+  values() {
+    return this._target.values();
+  }
+
+  set(key: K, value: V): void {
+    const target = this._target;
+    if (!coreValueEquals(target.get(key) as CoreValue, value as CoreValue)) {
+      const oldValue = new Map(target);
+      target.set(key, value);
+      this._didMutateCallback(oldValue);
+    }
+  }
+
+  delete(key: K): boolean {
+    if (this._target.has(key)) {
+      const oldValue = new Map(this._target);
+      this._target.delete(key);
+      this._didMutateCallback(oldValue);
+      return true;
+    }
+    return false;
+  }
+
+  clear(): void {
+    if (this._target.size > 0) {
+      const oldValue = new Map(this._target);
+      this._target.clear();
+      this._didMutateCallback(oldValue);
     }
   }
 }
