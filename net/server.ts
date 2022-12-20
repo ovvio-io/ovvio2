@@ -173,7 +173,8 @@ export class Server {
                 c,
               ]),
             () => this.getRepository(resourceId).numberOfCommits,
-            this._clientsForRepo.get(resourceId)!
+            this._clientsForRepo.get(resourceId)!,
+            true
           );
         } else if (storageType === 'log') {
           resp = await this.handleSyncRequest<NormalizedLogEntry>(
@@ -185,7 +186,11 @@ export class Server {
                 e,
               ]),
             () => this.getLog(resourceId).numberOfEntries(),
-            this._clientsForLog.get(resourceId)!
+            this._clientsForLog.get(resourceId)!,
+            // TODO: Only include results when talking to other, trusted,
+            // servers. Clients should never receive log entries from the
+            // server.
+            true
           );
         }
         break;
@@ -277,7 +282,8 @@ export class Server {
     persistValues: (values: T[]) => Promise<number>,
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
-    replicas: Iterable<BaseClient<T>>
+    replicas: Iterable<BaseClient<T>>,
+    includeMissing: boolean
   ): Promise<Response> {
     // TODO: Auth + Permissions
     const json = await req.json();
@@ -299,7 +305,7 @@ export class Server {
       msg.size,
       syncConfigGetCycles(kSyncConfigClient),
       // Don't return new commits to old clients
-      clientVersion >= VersionNumber.Current
+      includeMissing && clientVersion >= VersionNumber.Current
     );
 
     return new Response(
