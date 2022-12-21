@@ -3,15 +3,22 @@ import { BaseLogEntry } from './entry.ts';
 export type ClientEvent =
   | 'SessionAlive'
   | 'SessionEnd'
-  | 'AttachmentRemoved'
-  | 'AttachmentDownloadSuccess';
+  | 'AttachmentDownloadSuccess'
+  | 'MetadataChanged'
+  | 'VertexMoved';
 
-export type UI_SOURCE = 'list' | 'title' | 'board' | 'child-item';
+export type UISource = 'list' | 'title' | 'board' | 'child-item';
+
+export type MetadataType = 'attachment' | 'assignee' | 'tag';
 
 export interface ClientEventEntry extends BaseLogEntry {
   severity: 'INFO';
   event: ClientEvent;
   foreground?: boolean;
-  uiSource?: UI_SOURCE;
+  uiSource?: UISource;
   vertex?: string;
+  metadataType?: MetadataType;
+  added?: string;
+  removed?: string;
+  origin?: string;
 }

@@ -1,20 +1,28 @@
-import { useCallback, useMemo, useState } from 'react';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import Avatar from 'shared/avatar';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { MentionItem } from 'shared/multi-select/drawer/actions/mention';
-import { assignNote } from 'shared/utils/assignees';
-import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { CARD_SOURCE } from '.';
-import SelectionButton, { SORT_VALUES } from 'shared/selection-button';
-import { IconClose } from '@ovvio/styles/lib/components/icons';
-import InvitationDialog from 'shared/invitation-dialog';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { IconPlus } from '@ovvio/styles/lib/components/new-icons/icon-plus';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../styles/index.ts';
+import Avatar from '../avatar/index.tsx';
+import { useTheme } from '../../../../styles/theme.tsx';
+import { MentionItem } from '../multi-select/drawer/actions/mention.js';
+import { assignNote } from '../utils/assignees.ts';
+import {
+  Note,
+  User,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import SelectionButton, { SORT_VALUES } from '../selection-button/index.tsx';
+import { IconClose } from '../../../../styles/components/icons/index.ts';
+import InvitationDialog from '../invitation-dialog/index.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { IconPlus } from '../../../../styles/components/new-icons/icon-plus.tsx';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
 
 const useStyles = makeStyles(() => ({
   list: {
@@ -205,7 +213,7 @@ interface AssigneeProps {
   users: VertexManager<User>[];
   assignees: VertexManager<User>[];
   className?: string;
-  source: CARD_SOURCE;
+  source: UISource;
   renderSelected?: RenderAssignee;
   onInviteUserSelected: () => void;
   size?: 'big' | 'small';
@@ -240,16 +248,16 @@ export function Assignee({
   style = {},
 }: AssigneeProps) {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const getItems = useCallback(() => {
     return users
       .filter(
-        u =>
+        (u) =>
           u.key !== user.key &&
-          assignees.find(a => a.key === u.key) === undefined
+          assignees.find((a) => a.key === u.key) === undefined
       )
       .map(
-        u =>
+        (u) =>
           ({
             value: u,
             sortValue: u.getVertexProxy().name,
@@ -277,15 +285,13 @@ export function Assignee({
     const current = user.getVertexProxy();
 
     if (value === REMOVE_ASSIGNEE) {
-      const assignees = card.assignees;
-      assignees.delete(current);
-
-      card.assignees = assignees;
-
-      eventLogger.cardAction('CARD_ASSIGNEE_REMOVED', card, {
-        category: EventCategory.CARD,
-        source,
-        selectedUserId: current.key,
+      card.assignees.delete(current);
+      logger.log({
+        severity: 'INFO',
+        event: 'AssigneeRemoved',
+        uiSource: source,
+        user: current.key,
+        vertex: card.key,
       });
       return;
     }
@@ -295,19 +301,7 @@ export function Assignee({
       return;
     }
 
-    assignNote(card, value.getVertexProxy(), current);
-
-    eventLogger.cardAction('CARD_ASSIGNEE_SWITCH_REMOVED', card, {
-      category: EventCategory.CARD,
-      source,
-      selectedUserId: user.key,
-    });
-
-    eventLogger.cardAction('CARD_ASSIGNEE_SWITCH_ADDED', card, {
-      category: EventCategory.CARD,
-      source,
-      selectedUserId: value.key,
-    });
+    assignNote(logger, source, card, value.getVertexProxy(), current);
   };
   return (
     <SelectionButton
@@ -317,7 +311,9 @@ export function Assignee({
       onSelected={onSelected}
       style={style}
     >
-      {({ isOpen }) => renderSelected({ isOpen, user, size })}
+      {({ isOpen }: { isOpen: boolean }) =>
+        renderSelected({ isOpen, user, size })
+      }
     </SelectionButton>
   );
 }
@@ -327,7 +323,7 @@ interface AssignButtonProps {
   users: VertexManager<User>[];
   assignees: VertexManager<User>[];
   className?: string;
-  source: CARD_SOURCE;
+  source: UISource;
   onInviteUserSelected: () => void;
   style?: {};
 }
@@ -341,17 +337,17 @@ export function AssignButton({
   style = {},
 }: AssignButtonProps) {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
   const getItems = useCallback(() => {
     return users
-      .filter(u => assignees.find(a => a.key === u.key) === undefined)
+      .filter((u) => assignees.find((a) => a.key === u.key) === undefined)
       .map(
-        u =>
+        (u) =>
           ({
             value: u,
             sortValue: u.getVertexProxy().name,
-          } as { value: any; sortValue: any })
+          } as { value: VertexManager<User> | string; sortValue: string })
       )
       .concat([
         {
@@ -373,12 +369,7 @@ export function AssignButton({
     const card = cardManager.getVertexProxy();
     const user = selected.getVertexProxy();
 
-    assignNote(card, user);
-    eventLogger.cardAction('CARD_ASSIGNEE_ADDED', card, {
-      category: EventCategory.CARD,
-      source,
-      selectedUserId: user.key,
-    });
+    assignNote(logger, source, card, user);
   };
   return (
     <SelectionButton
@@ -399,7 +390,7 @@ interface AssigneesProps {
   assignClassName?: string;
   cardType: 'small' | 'regular';
   reverse?: boolean;
-  source: CARD_SOURCE;
+  source: UISource;
   renderAssignee?: RenderAssignee;
   isExpanded?: boolean;
 }
@@ -425,7 +416,7 @@ export default function AssigneesView({
   isExpanded = true,
 }: AssigneesProps) {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const partialCard = usePartialVertex(cardManager, ['workspace', 'assignees']);
@@ -434,10 +425,10 @@ export default function AssigneesView({
     .manager as VertexManager<Workspace>;
   const workspaces = useMemo(() => [workspaceManager], [workspaceManager]);
   const users = Array.from(cardManager.getVertexProxy().workspace.users).map(
-    u => u.manager as VertexManager<User>
+    (u) => u.manager as VertexManager<User>
   );
   const assignees = Array.from(partialCard.assignees).map(
-    u => u.manager as VertexManager<User>
+    (u) => u.manager as VertexManager<User>
   );
   // .map(x => users.vertexManagers.find(u => u.key === x.key))
   // .filter(x => x && !x.getVertexProxy().isDeleted);
@@ -448,13 +439,12 @@ export default function AssigneesView({
 
   const onUsersInvited = (users: VertexManager<User>[]) => {
     for (const user of users) {
-      assignNote(cardManager.getVertexProxy(), user.getVertexProxy());
-
-      eventLogger.cardAction('CARD_ASSIGNEE_ADDED', cardManager, {
-        category: EventCategory.CARD,
+      assignNote(
+        logger,
         source,
-        selectedUserId: user.key,
-      });
+        cardManager.getVertexProxy(),
+        user.getVertexProxy()
+      );
     }
   };
   // const size = cardType === 'regular' ? 'big' : 'small';

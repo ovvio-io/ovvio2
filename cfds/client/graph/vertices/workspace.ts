@@ -51,8 +51,8 @@ export class Workspace extends BaseVertex {
     this.record.set('name', name);
   }
 
-  /** @deprecated */
-  selected: boolean = false;
+  selected = false;
+
   clearSelected() {
     this.selected = false;
   }

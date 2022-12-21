@@ -44,12 +44,6 @@ export interface PointerFilterFunc {
   (key: string): boolean;
 }
 
-export interface CreateVertexInfo {
-  namespace: string;
-  initialData?: CoreObject;
-  key?: string;
-}
-
 /**
  * @deprecated
  */
@@ -216,23 +210,6 @@ export class GraphManager extends VertexSource {
       local
     ).getVertexProxy();
   }
-
-  // createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
-  //   const vManagers: VertexManager<T>[] = [];
-  //   for (const vInfo of vInfos) {
-  //     const newV = this._createVertIfNeeded<T>(
-  //       vInfo.key || uniqueId(),
-  //       vInfo.namespace,
-  //       vInfo.initialData,
-  //       false
-  //     );
-
-  //     vManagers.push(newV);
-  //   }
-  //   const vertices = vManagers.map((v) => v.getVertexProxy());
-
-  //   return vertices;
-  // }
 
   getVertexManager<V extends Vertex = Vertex>(
     key: string,

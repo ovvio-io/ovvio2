@@ -6,7 +6,7 @@ import {
 } from 'https://esm.sh/react@18.2.0';
 
 export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
-  ref: React.MutableRefObject<T>,
+  ref: React.RefObject<T>,
   animateProp: any
 ): Partial<{ width: number }> {
   const size = useAnimateSize(ref.current, animateProp, 'width');
@@ -32,7 +32,7 @@ export function useAnimateHeight<T extends HTMLElement = HTMLElement>(
 }
 
 export function useAnimateSize<T extends HTMLElement>(
-  el: T,
+  el: T | null,
   animateProp: any,
   animateSizeKey: 'height' | 'width'
 ): number | null {

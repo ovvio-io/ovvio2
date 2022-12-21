@@ -1,11 +1,15 @@
-import { assert } from '@ovvio/base/lib/utils';
-import { duplicateCard } from '@ovvio/cfds/lib/client/duplicate';
-import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { crossWorkspaceTagKey } from 'app/workspace-content/workspace-view/cards-display/display-bar/filters/state';
-import { EventLogger } from 'core/analytics';
-import { CARD_SOURCE } from 'shared/card';
+import { assert } from '../../../../base/error.ts';
+import { duplicateCard } from '../../../../cfds/client/duplicate.ts';
+import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import { crossWorkspaceTagKey } from '../../app/workspace-content/workspace-view/cards-display/display-bar/filters/state.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
+import { Logger } from '../../../../logging/log.ts';
 
 /**
  * This function recursively for this card down, looks for tags that are not
@@ -81,9 +85,9 @@ export function moveCard(
   cardManager: VertexManager<Note>,
   destinationMng: VertexManager<Workspace>,
   graph: GraphManager,
-  eventLogger: EventLogger,
-  cardSource: CARD_SOURCE
-): Note {
+  logger: Logger,
+  source: UISource
+): Note | undefined {
   const result = duplicateCard(graph, cardManager.key, {
     suffix: '',
   });
@@ -93,19 +97,19 @@ export function moveCard(
     fixupCardTagsToWorkspace(result);
     stripAssigneesNotInWorkspace(result);
     cardManager.getVertexProxy().isDeleted = 1;
-    eventLogger.cardAction('CARD_MOVED', cardManager, {
-      source: cardSource,
-      data: {
-        newWorkspaceId: destinationMng.key,
-        newCardId: result.key,
-      },
+    logger.log({
+      severity: 'INFO',
+      event: 'VertexMoved',
+      vertex: result.key,
+      origin: cardManager.key,
+      uiSource: source,
     });
   } else {
-    eventLogger.cardAction('CARD_MOVE_FAILED', cardManager, {
-      source: cardSource,
-      data: {
-        cardId: cardManager.key,
-      },
+    logger.log({
+      severity: 'INFO',
+      error: 'DuplicateFailed',
+      vertex: cardManager.key,
+      uiSource: source,
     });
   }
   return result;

@@ -14,6 +14,7 @@ export enum SchemeNamespace {
   USERS = 'users',
   USER_SETTINGS = 'user-settings',
   INVITES = 'invites',
+  ORGANIZATION = 'organization',
   Null = '',
 }
 
@@ -32,6 +33,7 @@ export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
 export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
 export const NS_INVITES = SchemeNamespace.INVITES;
+export const NS_ORGANIZATION = SchemeNamespace.ORGANIZATION;
 
 export const TYPE_STR = ValueType.STRING;
 export const TYPE_NUMBER = ValueType.NUMBER;
@@ -171,3 +173,11 @@ export interface AttachmentData extends CoreObject {
 }
 
 export type SchemeFields = { [key: string]: ValueType };
+
+export enum NoteStatus {
+  ToDo = 0,
+  Done = 1,
+  InProgress = 2,
+  Suspended = 3,
+  kMNaxValue,
+}

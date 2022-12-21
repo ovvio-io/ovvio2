@@ -1,6 +1,9 @@
-import { styleguide } from '@ovvio/styles';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import React from 'react';
+import React from 'https://esm.sh/react@18.2.0';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../../styles/css-objects/index.ts';
 export enum GridColumns {
   DragAnchor = 'dragAnchor',
   Type = 'icon',
@@ -50,6 +53,7 @@ export const useGridStyles = makeStyles(
 
 export interface ItemsTableProps {
   className?: string;
+  children?: React.ReactNode;
 }
 
 export const _ItemsTable: React.FC<ItemsTableProps> = ({

@@ -101,7 +101,7 @@ const DEFAULT_OPTS: UseTitleEditorOptions = {
 
 export function useTitleEditor(
   note: VertexManager<Note>,
-  DefaultComponent: React.ReactNode,
+  DefaultComponent: React.ReactNode | React.ComponentType,
   source?: CARD_SOURCE,
   opts: Partial<UseTitleEditorOptions> = {}
 ): {

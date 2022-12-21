@@ -25,3 +25,25 @@ export function deserializeDate(d: number | string | Date): Date {
   }
   throw new Error('Unsupported date value');
 }
+
+export function formatTimeDiff(date: Date) {
+  const now = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  if (year === now.getFullYear()) {
+    if (month === now.getMonth()) {
+      const daysDiff = now.getDate() - day;
+      if (daysDiff === 0) {
+        return 'Today';
+      }
+      if (daysDiff === 1) {
+        return 'Yesterday';
+      }
+    }
+  }
+
+  return date.toLocaleDateString(undefined, {
+    dateStyle: 'medium',
+  });
+}

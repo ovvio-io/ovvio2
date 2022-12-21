@@ -2,6 +2,7 @@ import { User } from './user.ts';
 import { ContentVertex } from './base.ts';
 import {
   AttachmentData,
+  NoteStatus,
   NS_NOTES,
   SchemeNamespace,
 } from '../../../base/scheme-types.ts';
@@ -364,16 +365,24 @@ export class Note extends ContentVertex {
     this.record.set('parentNote', parent?.key);
   }
 
-  get status(): number {
-    return this.record.get('status', 0);
+  get status(): NoteStatus {
+    let status = this.record.get('status', NoteStatus.ToDo);
+    if (status < NoteStatus.ToDo || status >= NoteStatus.kMNaxValue) {
+      status = NoteStatus.ToDo;
+    }
+    return status;
   }
 
-  set status(status: number) {
+  set status(status: NoteStatus) {
+    status = Math.max(
+      NoteStatus.ToDo,
+      Math.min(NoteStatus.kMNaxValue - 1, status)
+    );
     this.record.set('status', status);
   }
 
   clearStatus(): void {
-    this.status = 0;
+    this.status = NoteStatus.ToDo;
   }
 
   get tags(): Dictionary<Tag, Tag> {

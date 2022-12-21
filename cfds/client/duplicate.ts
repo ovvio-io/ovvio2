@@ -10,7 +10,7 @@ import {
   RichText,
   TextNode,
 } from '../richtext/tree.ts';
-import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
+import { GraphManager } from './graph/graph-manager.ts';
 import { Note } from './graph/vertices/note.ts';
 import { ISortable, sortStampCompare } from './sorting.ts';
 
@@ -48,19 +48,10 @@ export function duplicateCard(
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
-    return {
-      namespace: NS_NOTES,
-      initialData: x[1],
-      key: x[0],
-    };
-  });
-
-  const vertices = graph.createVertices<Note>(vInfos);
-
-  const vertex = vertices.find((v) => v.key === newRootKey)!;
-
-  return vertex;
+  for (const [key, data] of Object.entries(outRecords)) {
+    graph.createVertex(NS_NOTES, data, key);
+  }
+  return graph.getVertex<Note>(newRootKey);
 }
 
 /**

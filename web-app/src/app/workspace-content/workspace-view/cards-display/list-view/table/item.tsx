@@ -1,39 +1,3 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import {
-  Note,
-  Tag,
-  User,
-  Workspace,
-} from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { CheckBox } from '@ovvio/styles/lib/components/inputs';
-import { IconArrowDown } from '@ovvio/styles/lib/components/new-icons/icon-arrow-down';
-import { IconContent } from '@ovvio/styles/lib/components/new-icons/icon-content';
-import { IconDelete } from '@ovvio/styles/lib/components/new-icons/icon-delete';
-import {
-  DueDateState,
-  IconDueDate,
-} from '@ovvio/styles/lib/components/new-icons/icon-due-date';
-import { IconNewTask } from '@ovvio/styles/lib/components/new-icons/icon-new-task';
-import { IconNote } from '@ovvio/styles/lib/components/new-icons/icon-note';
-import { IconPinOff } from '@ovvio/styles/lib/components/new-icons/icon-pin-off';
-import { IconPinOn } from '@ovvio/styles/lib/components/new-icons/icon-pin-on';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import {
-  Text,
-  TextSm,
-  useTypographyStyles,
-} from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { createUniversalPortal } from '@ovvio/styles/lib/utils/ssr';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { formatTimeDiff } from 'core/dateutils';
-import { createUseStrings, format } from 'core/localization';
-import { useTitleEditor } from 'core/slate';
-import { isHotkeyActive } from 'core/slate/utils/hotkeys';
 import React, {
   KeyboardEvent,
   MouseEvent,
@@ -41,28 +5,74 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
-} from 'react';
-import { CARD_SOURCE } from 'shared/card';
-import { AssignButton, Assignee } from 'shared/card/assignees-view';
-import { RenderDraggableProps } from 'shared/dragndrop/draggable';
-import InvitationDialog from 'shared/invitation-dialog';
-import CardMenuView from 'shared/item-menu';
-import TagButton from 'shared/tags/tag-button';
-import { isCardActionable } from 'shared/tags/tag-utils';
-import TagView from 'shared/tags/tag-view';
-import { useCardStatus } from 'shared/tags/use-status-tags';
-import { assignNote } from 'shared/utils/assignees';
-import { moveCard } from 'shared/utils/move';
-import { useWorkspaceColor } from 'shared/workspace-icon';
-import { Editable, ReactEditor, Slate } from 'slate-react';
+} from 'https://esm.sh/react@18.2.0';
+import {
+  Editable,
+  ReactEditor,
+  Slate,
+} from 'https://esm.sh/slate-react@0.87.1';
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  User,
+  Workspace,
+} from '../../../../../../../../cfds/client/graph/vertices/index.ts';
+import { layout, styleguide } from '../../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import { CheckBox } from '../../../../../../../../styles/components/inputs/index.ts';
+import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
+import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
+import { IconDelete } from '../../../../../../../../styles/components/new-icons/icon-delete.tsx';
+import {
+  DueDateState,
+  IconDueDate,
+} from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
+import { IconNote } from '../../../../../../../../styles/components/new-icons/icon-note.tsx';
+import { IconPinOff } from '../../../../../../../../styles/components/new-icons/icon-pin-off.tsx';
+import { IconPinOn } from '../../../../../../../../styles/components/new-icons/icon-pin-on.tsx';
+import { useToastController } from '../../../../../../../../styles/components/toast/index.tsx';
+import {
+  Text,
+  TextSm,
+  useTypographyStyles,
+} from '../../../../../../../../styles/components/typography.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
+import {
+  createUseStrings,
+  format,
+} from '../../../../../../core/localization/index.tsx';
+import { useTitleEditor } from '../../../../../../core/slate/index.tsx';
+import { isHotkeyActive } from '../../../../../../core/slate/utils/hotkeys.ts';
+import {
+  AssignButton,
+  Assignee,
+} from '../../../../../../shared/card/assignees-view.tsx';
+import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
+import InvitationDialog from '../../../../../../shared/invitation-dialog/index.tsx';
+import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
+import TagButton from '../../../../../../shared/tags/tag-button.tsx';
+import { isCardActionable } from '../../../../../../shared/tags/tag-utils.ts';
+import TagView from '../../../../../../shared/tags/tag-view.tsx';
+import { useCardStatus } from '../../../../../../shared/tags/use-status-tags.ts';
+import { assignNote } from '../../../../../../shared/utils/assignees.ts';
+import { moveCard } from '../../../../../../shared/utils/move.ts';
+import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import {
   WorkspaceIndicator,
   WorkspaceIndicatorButtonProps,
-} from '../../card-item/workspace-indicator';
-import localization from '../list.strings.json';
-import { GridColumns, useGridStyles } from './grid';
+} from '../../card-item/workspace-indicator.tsx';
+import localization from '../list.strings.json' assert { type: 'json' };
+import { GridColumns, useGridStyles } from './grid.tsx';
+import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
+import { formatTimeDiff } from '../../../../../../../../base/date.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 
@@ -213,6 +223,7 @@ const useStyles = makeStyles(
       // gridColumn: GridColumns.Pin,
       width: styleguide.gridbase * 3,
     },
+    [GridColumns.Extra]: {},
     pinOff: {
       opacity: 0,
       ...styleguide.transition.short,
@@ -275,10 +286,10 @@ export { useStyles as useRowStyles };
 
 const useStrings = createUseStrings(localization);
 
-export const Row: React.FC<{ className?: string }> = ({
-  children,
-  className,
-}) => {
+export const Row: React.FC<{
+  className?: string;
+  children: React.ReactNode;
+}> = ({ children, className }) => {
   const styles = useStyles();
 
   return (
@@ -301,6 +312,7 @@ interface CellProps {
   innerClassName?: string;
   colSpan?: number;
   onClick?: MouseEventHandler;
+  children?: React.ReactNode;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -379,7 +391,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           <DoneIndicator note={note} />
         </tr>
         {isExpanded &&
-          childCards.map(x => (
+          childCards.map((x) => (
             <ItemRow
               note={x.manager as VertexManager<Note>}
               key={x.key}
@@ -468,7 +480,7 @@ const ExpanderCell = ({
   return (
     <Cell
       className={cn(styles[GridColumns.Expander])}
-      onClick={() => setIsExpanded(x => !x)}
+      onClick={() => setIsExpanded((x) => !x)}
     >
       {!!childCards?.length && (
         <IconArrowDown
@@ -507,7 +519,7 @@ const AssigneesCell = ({
   showMenu: boolean;
 }) => {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const { assignees, workspace } = usePartialVertex(note, [
     'assignees',
@@ -523,23 +535,17 @@ const AssigneesCell = ({
   );
 
   const userManagers = useMemo(
-    () => Array.from(users || []).map(x => x.manager as VertexManager<User>),
+    () => Array.from(users || []).map((x) => x.manager as VertexManager<User>),
     [users]
   );
   const managers = useMemo(
     () =>
-      Array.from(assignees || []).map(x => x.manager as VertexManager<User>),
+      Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
     [assignees]
   );
   const onUsersInvited = (users: VertexManager<User>[]) => {
     for (const user of users) {
-      assignNote(note.getVertexProxy(), user.getVertexProxy());
-
-      eventLogger.cardAction('CARD_ASSIGNEE_ADDED', note, {
-        category: EventCategory.CARD,
-        source: CARD_SOURCE.LIST,
-        selectedUserId: user.key,
-      });
+      assignNote(logger, 'list', note.getVertexProxy(), user.getVertexProxy());
     }
   };
 
@@ -549,7 +555,7 @@ const AssigneesCell = ({
 
   return (
     <Cell className={cn(styles.assignees)}>
-      {managers.map(x => (
+      {managers.map((x) => (
         <Assignee
           key={x.key}
           user={x}
@@ -559,11 +565,11 @@ const AssigneesCell = ({
           className={cn(styles.assignee)}
           size="small"
           onInviteUserSelected={onInviteUserSelected}
-          source={CARD_SOURCE.LIST}
+          source="list"
         />
       ))}
       <AssignButton
-        source={CARD_SOURCE.LIST}
+        source="list"
         cardManager={note}
         users={userManagers}
         assignees={managers}
@@ -588,7 +594,7 @@ const TagsCell = ({
   showMenu: boolean;
 }) => {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const { tags, workspace } = usePartialVertex(note, ['tags', 'workspace']);
   const managers = useMemo(
     () => Array.from(tags).map(([, x]) => x.manager as VertexManager<Tag>),
@@ -607,11 +613,13 @@ const TagsCell = ({
     const tagToDelete = tag.parentTag || tag;
     newTags.delete(tagToDelete);
     proxy.tags = newTags;
-
-    eventLogger.cardAction('CARD_TAG_REMOVED', note, {
-      source: CARD_SOURCE.LIST,
-      tagId: tag.key,
-      parentTagId: tag.parentTagKey,
+    logger.log({
+      severity: 'INFO',
+      event: 'MetadataChanged',
+      metadataType: 'tag',
+      uiSource: 'list',
+      vertex: note.key,
+      removed: tag.key,
     });
   };
   const onTag = (tag: Tag) => {
@@ -620,23 +628,21 @@ const TagsCell = ({
 
     const tagKey = tag.parentTag || tag;
 
-    const exists = newTags.has(tagKey);
+    const removedTag = newTags.get(tagKey);
+    // const exists = newTags.has(tagKey);
     newTags.set(tagKey, tag);
-    proxy.tags = newTags;
-
-    eventLogger.cardAction(
-      exists ? 'CARD_TAG_REPLACED' : 'CARD_TAG_ADDED',
-      note,
-      {
-        source: CARD_SOURCE.LIST,
-        tagId: tag.key,
-        parentTagId: tag.parentTagKey,
-      }
-    );
+    // proxy.tags = newTags;
+    logger.log({
+      severity: 'INFO',
+      event: 'MetadataChanged',
+      metadataType: 'tag',
+      removed: removedTag?.key,
+      added: tag.key,
+    });
   };
   return (
     <Cell className={cn(styles[GridColumns.Tags])}>
-      {managers.map(x => (
+      {managers.map((x) => (
         <TagView
           className={cn(styles.tag)}
           showMenu="hover"
@@ -739,7 +745,7 @@ function TitleCell({
     }
 
     let cancelled = false;
-    window.setTimeout(() => {
+    setTimeout(() => {
       if (cancelled) {
         return;
       }
@@ -805,9 +811,9 @@ const WorkspaceCell = ({
   onWorkspaceMoved?: (note: VertexManager<Note>) => void;
 }) => {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const { workspace } = usePartialVertex(note, ['workspace']);
-  const wsManager = workspace?.manager as VertexManager<Workspace>;
+  const wsManager = workspace.manager as VertexManager<Workspace>;
   const toastController = useToastController();
   const strings = useStrings();
 
@@ -816,7 +822,7 @@ const WorkspaceCell = ({
       const proxy = note.getVertexProxy();
       proxy.workspace = workspace.getVertexProxy();
     } else {
-      moveCard(note, workspace, note.graph, eventLogger, CARD_SOURCE.LIST);
+      moveCard(note, workspace, note.graph, logger, 'list');
     }
     if (onWorkspaceMoved) {
       onWorkspaceMoved(note);
@@ -836,7 +842,7 @@ const WorkspaceCell = ({
     >
       <WorkspaceIndicator
         menuClassName={cn(styles.wsIndicatorButton)}
-        workspace={isDraft ? null : wsManager}
+        workspace={wsManager}
         isExpanded={false}
         setWorkspace={setWorkspace}
         validateMove={!isDraft}
@@ -854,7 +860,7 @@ const DateCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(note, ['dueDate']);
   let content = null;
-  const isLate = dueDate < new Date();
+  const isLate = dueDate ? dueDate < new Date() : false;
 
   if (dueDate) {
     content = (
@@ -915,7 +921,7 @@ const MenuCell = ({ note }: { note: VertexManager<Note> }) => {
         styles[GridColumns.Menu]
       )}
     >
-      <CardMenuView cardManager={note} source={CARD_SOURCE.LIST} />
+      <CardMenuView cardManager={note} source="list" />
     </Cell>
   );
 };

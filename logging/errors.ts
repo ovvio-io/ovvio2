@@ -23,7 +23,8 @@ export type OperationalError =
   | 'UnknownCommand'
   | 'UnknownSyncError'
   | 'AttachmentRemovalFailed'
-  | 'AttachmentDownloadFailed';
+  | 'AttachmentDownloadFailed'
+  | 'DuplicateFailed';
 
 export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   severity: 'INFO';

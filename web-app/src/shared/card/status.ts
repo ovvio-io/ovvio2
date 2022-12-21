@@ -1,5 +1,5 @@
-import { Note, Tag } from '@ovvio/cfds/lib/client/graph/vertices';
-import { StatusTags } from 'shared/tags/use-status-tags';
+import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
+import { StatusTags } from '../tags/use-status-tags.ts';
 
 export interface ToggleResult {
   newChildTag: Tag;
@@ -16,7 +16,7 @@ export function toggleDone(
   if (!tags) {
     return;
   }
-  const [pTag, cTag] = tags.map(x => x.getVertexProxy());
+  const [pTag, cTag] = tags.map((x) => x.getVertexProxy());
 
   const newTags = card.tags;
   newTags.set(pTag, cTag);

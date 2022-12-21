@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from 'https://esm.sh/react@18.2.0';
 
 const PLACEHOLDERS = [
   'Buy beer for the office 🍺 @Someone #party',

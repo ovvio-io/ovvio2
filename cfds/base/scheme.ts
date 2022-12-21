@@ -26,8 +26,8 @@ import {
   SchemeObject,
   SchemeFields,
   DataType,
-  NS_LOG_ENTRY,
   kRecordIdField,
+  NS_ORGANIZATION,
 } from './scheme-types.ts';
 import { runRegister } from './scheme-versions.ts';
 import { isRefValueType, ValueType } from './types/index.ts';
@@ -332,9 +332,9 @@ export class Scheme implements Encodable {
     return scheme;
   }
 
-  static logEntry(): Scheme {
-    const scheme = SchemeManager.instance.getScheme(NS_LOG_ENTRY);
-    if (!scheme) throw new Error('Draft scheme not found');
+  static organization(): Scheme {
+    const scheme = SchemeManager.instance.getScheme(NS_ORGANIZATION);
+    if (!scheme) throw new Error('Organization scheme not found');
     return scheme;
   }
 
@@ -372,8 +372,8 @@ export class Scheme implements Encodable {
       case NS_INVITES:
         return this.invite();
 
-      case NS_LOG_ENTRY:
-        return this.logEntry();
+      case NS_ORGANIZATION:
+        return this.organization();
 
       default:
         break;

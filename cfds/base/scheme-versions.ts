@@ -22,6 +22,7 @@ import {
   SchemeNamespace,
   TYPE_REF_MAP,
   NS_USER_SETTINGS,
+  NS_ORGANIZATION,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
@@ -61,6 +62,16 @@ const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive(
 );
 
 //ACTUAL SCHEMES
+const SCHEME_ORGANIZATION_1 = SCHEME_BASE_1.derive(NS_ORGANIZATION, {
+  name: {
+    type: TYPE_STR,
+    required: true,
+  },
+  users: TYPE_REF_SET,
+  workspaces: TYPE_REF_SET,
+  tags: TYPE_REF_SET,
+});
+
 const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   owner: {
     type: TYPE_REF,
