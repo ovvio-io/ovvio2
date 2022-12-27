@@ -28,6 +28,7 @@ export enum ValueType {
   REF_SET = 'refset',
   MAP = 'map',
   REF_MAP = 'refmap',
+  REF_VALUE_MAP = 'refvalmap', // ref => value mapping
   RICHTEXT_V3 = 'richtext-3',
 }
 

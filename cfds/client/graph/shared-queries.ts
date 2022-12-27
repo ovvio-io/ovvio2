@@ -1,5 +1,10 @@
 import { notReached } from '../../../base/error.ts';
-import { NS_NOTES, NS_TAGS, NS_WORKSPACE } from '../../base/scheme-types.ts';
+import {
+  NS_NOTES,
+  NS_TAGS,
+  NS_USERS,
+  NS_WORKSPACE,
+} from '../../base/scheme-types.ts';
 import { GraphManager } from './graph-manager.ts';
 import {
   EVENT_QUERY_DID_CLOSE,
@@ -9,7 +14,7 @@ import {
   UnionQuery,
 } from './query.ts';
 import { Vertex } from './vertex.ts';
-import { Tag, Workspace } from './vertices/index.ts';
+import { Tag, User, Workspace } from './vertices/index.ts';
 
 export class SharedQueriesManager {
   private _vertexQueries: Map<string, Map<string, Query>>;
@@ -18,6 +23,10 @@ export class SharedQueriesManager {
   readonly noNotesQuery: Query<Vertex>;
   readonly workspacesQuery: Query<Vertex, Workspace>;
   readonly tagsQuery: Query<Vertex, Tag>;
+  readonly usersQuery: Query<Vertex, User>;
+  readonly selectedWorkspacesQuery: Query<Workspace, Workspace>;
+  readonly selectedTagsQuery: Query<Tag, Tag>;
+  readonly selectedUsersQuery: Query<User, User>;
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
@@ -34,16 +43,40 @@ export class SharedQueriesManager {
       'SharedNoNotes'
     ).lock();
     this.workspacesQuery = new Query<Vertex, Workspace>(
-      this.notDeletedQuery,
+      this.noNotesQuery,
       (vert) => vert.namespace === NS_WORKSPACE,
       undefined,
       'SharedWorkspaces'
     ).lock();
     this.tagsQuery = new Query<Vertex, Tag>(
-      this.notDeletedQuery,
+      this.noNotesQuery,
       (vert) => vert.namespace === NS_TAGS,
       undefined,
       'SharedTags'
+    ).lock();
+    this.usersQuery = new Query<Vertex, User>(
+      this.noNotesQuery,
+      (vert) => vert.namespace === NS_USERS,
+      undefined,
+      'SharedUsers'
+    ).lock();
+    this.selectedWorkspacesQuery = new Query(
+      this.workspacesQuery,
+      (vert) => vert.selected,
+      undefined,
+      'SharedSelectedWorkspaces'
+    ).lock();
+    this.selectedTagsQuery = new Query(
+      this.tagsQuery,
+      (vert) => vert.selected,
+      undefined,
+      'SharedSelectedTags'
+    ).lock();
+    this.selectedUsersQuery = new Query(
+      this.usersQuery,
+      (vert) => vert.selected,
+      undefined,
+      'SharedSelectedUsers'
     ).lock();
   }
 

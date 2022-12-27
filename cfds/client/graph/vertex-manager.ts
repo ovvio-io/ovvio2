@@ -351,10 +351,12 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   /**
-   * Called by our vertex's proxy on setter & delete operations (local edits)
-   * and from the diff-sync loop (remote edits).
+   * Called whenever our vertex has been mutated for whatever reason. This
+   * method is the entry point which propagates mutations information.
    *
-   * @param mutations The applied mutations.
+   * @param mutations The changes that have been applied to the vertex.
+   * @param dynamicFields If available, a snapshot of the dynamic fields before
+   *                      the mutations where applied.
    */
   vertexDidMutate(
     mutations: MutationPack,

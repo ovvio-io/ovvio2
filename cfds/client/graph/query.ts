@@ -41,7 +41,7 @@ export const EVENT_QUERY_DID_CLOSE = 'QueryDidClose';
 //   }
 // });
 
-const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
+// const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
 export class Query<
@@ -212,7 +212,10 @@ export class Query<
     return this._resultKeys.size;
   }
 
-  hasVertex(key: string): boolean {
+  hasVertex(key: string | Vertex | VertexManager): boolean {
+    if (typeof key !== 'string') {
+      key = key.key;
+    }
     return this._resultKeys.has(key);
   }
 

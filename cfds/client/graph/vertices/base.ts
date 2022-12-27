@@ -1,5 +1,5 @@
 import { assert } from '../../../../base/error.ts';
-import { FieldTriggers, Vertex } from '../vertex.ts';
+import { FieldTriggers, Vertex, VertexConfig } from '../vertex.ts';
 import * as OrderStamp from '../../../base/orderstamp.ts';
 import {
   MutationPack,
@@ -8,8 +8,22 @@ import {
 } from '../mutations.ts';
 import { Workspace } from './workspace.ts';
 import { triggerChildren } from '../propagation-triggers.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { Record } from '../../../base/record.ts';
 
 export class BaseVertex extends Vertex {
+  constructor(
+    mgr: VertexManager,
+    record: Record,
+    prevVertex: Vertex | undefined,
+    config: VertexConfig | undefined
+  ) {
+    super(mgr, record, prevVertex, config);
+    if (prevVertex && prevVertex instanceof Workspace) {
+      this.selected = prevVertex.selected;
+    }
+  }
+
   // ============================= //
   // =========== Dates =========== //
   // ============================= //
@@ -66,6 +80,12 @@ export class BaseVertex extends Vertex {
 
   clearSortStamp() {
     this.record.delete('sortStamp');
+  }
+
+  selected = false;
+
+  clearSelected() {
+    this.selected = false;
   }
 
   // Override by subclasses

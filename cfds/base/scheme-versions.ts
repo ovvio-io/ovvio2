@@ -23,6 +23,8 @@ import {
   TYPE_REF_MAP,
   NS_USER_SETTINGS,
   NS_ORGANIZATION,
+  TagValue,
+  TYPE_REF_VALUE_MAP,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
@@ -116,6 +118,11 @@ const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
   },
 });
 
+const SCHEME_WORKSPACE_4 = SCHEME_WORKSPACE_3.derive(NS_WORKSPACE, {}, [
+  'noteTags',
+  'taskTags',
+]);
+
 export enum OnboardingStep {
   Start = 0,
   Finish = 1,
@@ -124,9 +131,43 @@ export enum OnboardingStep {
 const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   avatarUrl: TYPE_STR,
   email: TYPE_STR,
-  lastLoggedIn: TYPE_DATE,
   name: TYPE_STR,
+  lastLoggedIn: TYPE_DATE,
+  workspaces: {
+    type: TYPE_REF_SET,
+    init: () => new Set<string>(),
+  },
+  seenTutorials: {
+    type: TYPE_STR_SET,
+    init: () => new Set<string>(),
+  },
+  workspaceColors: {
+    type: TYPE_MAP,
+    init: () => new Map<string, number>(),
+  },
+  hiddenWorkspaces: {
+    type: TYPE_STR_SET,
+    init: () => new Set<string>(),
+  },
+  pinnedWorkspaces: {
+    type: TYPE_SET,
+    init: () => new Set<string>(),
+  },
+  onboardingStep: {
+    type: TYPE_NUMBER,
+    init: () => OnboardingStep.Start,
+  },
 });
+
+const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
+  'lastLoggedIn',
+  'workspaces',
+  'workspaceColors',
+  'hiddenWorkspaces',
+  'pinnedWorkspaces',
+  'onboardingStep',
+  'seenTutorials',
+]);
 
 const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
   passwordHash: TYPE_STR, // Hash + salt
@@ -167,15 +208,15 @@ const SCHEME_NOTE_1 = SCHEME_CONTENT_BASE_1.derive(NS_NOTES, {
     default: () => new Set<AttachmentData>(),
   },
   // body: TYPE_RICHTEXT,
-  dueDate: TYPE_DATE,
+  dueDate: TYPE_DATE, // Task only, zero on convert
   // title: TYPE_RICHTEXT,
-  parentNote: TYPE_STR,
-  status: TYPE_NUMBER,
+  parentNote: TYPE_STR, // Let's debate
+  status: TYPE_NUMBER, // Task only, zero on convert
   tags: {
     type: TYPE_SET,
     default: () => new Set(),
   },
-  type: TYPE_STR,
+  type: TYPE_STR, // Undo for convert
 });
 
 const SCHEME_NOTE_2 = SCHEME_NOTE_1.derive(NS_NOTES, {
@@ -213,9 +254,24 @@ const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   parentNote: TYPE_REF,
 });
 
+const SCHEME_NOTE_5 = SCHEME_NOTE_4.derive(NS_NOTES, {
+  tags: {
+    type: TYPE_REF_VALUE_MAP,
+    init: () => new Map(),
+  },
+});
+
 const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   color: TYPE_STR,
   name: TYPE_STR,
+  parentTag: TYPE_REF,
+});
+
+const SCHEME_TAG_2 = SCHEME_BASE_1.derive(NS_TAGS, {
+  name: {
+    type: TYPE_STR,
+    required: true,
+  },
   parentTag: TYPE_REF,
 });
 
@@ -239,11 +295,12 @@ const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
-  SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
-  SCHEME_NOTE_4 as NOTE_SCHEME,
-  SCHEME_TAG_1 as TAG_SCHEME,
+  SCHEME_WORKSPACE_4 as WORKSPACE_SCHEME,
+  SCHEME_NOTE_5 as NOTE_SCHEME,
+  SCHEME_TAG_2 as TAG_SCHEME,
   SCHEME_INVITE_1 as INVITE_SCHEME,
-  SCHEME_USER_1 as USER_SCHEME,
+  SCHEME_USER_2 as USER_SCHEME,
+  SCHEME_USER_SETTINGS_1 as USER_SETTINGS,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -343,15 +400,33 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [SCHEME_USER_SETTINGS_1],
     [
-      SchemeNamespace.WORKSPACE,
-      SchemeNamespace.NOTES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.INVITES,
+      SCHEME_WORKSPACE_4,
+      SCHEME_USER_2,
+      SCHEME_USER_SETTINGS_1,
+      SCHEME_TAG_2,
+      SCHEME_NOTE_5,
     ],
-    (namespace, data) => {}
+    [SchemeNamespace.INVITES],
+    (namespace, data) => {
+      if (namespace === NS_TAGS) {
+        delete data.color;
+        delete data.workspace;
+        delete data.createdBy;
+      } else if (namespace === NS_USERS) {
+        delete data.lastLoggedIn;
+        delete data.workspaces;
+        delete data.workspaceColors;
+        delete data.hiddenWorkspaces;
+        delete data.pinnedWorkspaces;
+        delete data.onboardingStep;
+        delete data.seenTutorials;
+      } else if (namespace === NS_WORKSPACE) {
+        delete data.noteTags;
+        delete data.taskTags;
+        delete data.createdBy;
+      }
+    }
   );
 
   //Next Version Here

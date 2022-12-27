@@ -1,42 +1,57 @@
-import { SortDescriptor, UnionQuery } from '@ovvio/cfds/lib/client/graph/query';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import {
+  Query,
+  SortDescriptor,
+  UnionQuery,
+} from '../../../../../../../cfds/client/graph/query.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import {
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import {
   sortMngStampCompare,
   sortStampCompare,
-} from '@ovvio/cfds/lib/client/sorting';
-import { styleguide } from '@ovvio/styles/lib';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { LabelSm } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { isNote, useQuery } from 'core/cfds/react/query';
-import { usePartialVertices } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import { useDocumentRouter } from 'core/react-utils';
-import { Scroller } from 'core/react-utils/scrolling';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+} from '../../../../../../../cfds/client/sorting.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import {
+  useExistingQuery,
+  useQuery,
+} from '../../../../../core/cfds/react/query.ts';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
+import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
 import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   Draggable,
   DragSource,
-} from 'shared/dragndrop';
-import {
-  FiltersStateController,
-  isCardInFilter,
-} from '../display-bar/filters/state';
-import { EmptyListState } from './empty-state';
-import { InfiniteScroll } from './infinite-scroll';
-import { InlineTaskButton } from './inline-task-button';
-import localization from './list.strings.json';
-import { SortBy } from './sort-by';
-import { ItemRow, ItemsTable, Row } from './table';
+} from '../../../../../shared/dragndrop/index.ts';
+import { EmptyListState } from './empty-state.tsx';
+import { InfiniteScroll } from './infinite-scroll.tsx';
+import { InlineTaskButton } from './inline-task-button.tsx';
+import localization from './list.strings.json' assert { type: 'json' };
+import { SortBy } from './sort-by.ts';
+import { ItemRow, ItemsTable, Row } from './table/index.tsx';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
 
 export { SortBy };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   item: {
     position: 'relative',
     marginBottom: styleguide.gridbase * 2,
@@ -52,9 +67,7 @@ const useStrings = createUseStrings(localization);
 export interface ListViewProps {
   sortBy: SortBy;
   noteType: NoteType;
-  selectedWorkspaces: VertexManager<Workspace>[];
   className?: string;
-  filters: FiltersStateController;
 }
 
 const PAGE_SIZE = 20;
@@ -85,37 +98,44 @@ interface CardsData {
   unpinned: VertexManager<Note>[];
 }
 
-function splitCards(notes: Pick<Note, 'isPinned' | 'manager'>[]): CardsData {
-  const result = {
-    pinned: [],
-    unpinned: [],
-  };
-
-  for (const note of notes) {
-    const proxy = note;
-    if (proxy.isPinned) {
-      result.pinned.push(note.manager as VertexManager<Note>);
-    } else {
-      result.unpinned.push(note.manager as VertexManager<Note>);
-    }
+function noteInFilter(note: Note): boolean {
+  if (!note.workspace.selected) {
+    return false;
   }
-
-  return result;
+  let hasSelectedTag;
 }
 
-export function ListView({
-  noteType,
-  sortBy,
-  selectedWorkspaces,
-  className,
-  filters,
-}: ListViewProps) {
-  const q = usePartialVertices(selectedWorkspaces, [
+function noteInFilter(
+  note: Note,
+  selectedWorkspacesQuery: Query,
+  selectedTagsQuery: Query,
+  selectedUsersQuery: Query
+): boolean {
+  if (
+    selectedWorkspacesQuery.count === 0 ||
+    !selectedWorkspacesQuery.hasVertex(note.workspace)
+  ) {
+    return false;
+  }
+}
+
+export function ListView({ noteType, sortBy, className }: ListViewProps) {
+  const graph = useGraphManager();
+  const selectedWorkspacesQuery = useExistingQuery(
+    graph.sharedQueriesManager.selectedWorkspacesQuery
+  );
+  const selectedTagsQuery = useExistingQuery(
+    graph.sharedQueriesManager.selectedTagsQuery
+  );
+  const selectedUsersQuery = useExistingQuery(
+    graph.sharedQueriesManager.selectedUsersQuery
+  );
+  const q = usePartialVertices(selectedWorkspacesQuery.results, [
     'notesQuery',
     'pinnedNotesQuery',
   ]);
   const unpinnedSource = useMemo(
-    () => new UnionQuery(q.map(x => x.notesQuery, 'notesUnion')),
+    () => new UnionQuery(q.map((x) => x.notesQuery, 'notesUnion')),
     [q]
   );
   const unpinnedCardsQuery = useQuery(
@@ -123,8 +143,12 @@ export function ListView({
       x.type === noteType &&
       x.parentType !== NoteType.Task &&
       !x.isPinned &&
-      isCardInFilter(filters, x),
-    [noteType, filters],
+      noteInFilter(
+        x,
+        selectedWorkspacesQuery.query,
+        selectedTagsQuery.query,
+        selectedUsersQuery.query
+      )[(noteType, selectedWorkspacesQuery, selectedTagsQuery)],
     {
       sort: SORT_BY[sortBy],
       name: 'listViewUnpinned',
@@ -133,7 +157,7 @@ export function ListView({
   );
 
   const pinnedSource = useMemo(
-    () => new UnionQuery(q.map(x => x.pinnedNotesQuery, 'pinnedNotesUnion')),
+    () => new UnionQuery(q.map((x) => x.pinnedNotesQuery, 'pinnedNotesUnion')),
     [q]
   );
   const pinnedCardsQuery = useQuery(
@@ -245,7 +269,9 @@ export function InnerListView({
   if (sortBy === SortBy.Priority) {
     visibleCards = visibleCards.sort(sortMngStampCompare);
   }
-  visibleCards = visibleCards.slice(0, limit).filter(x => x.key !== draft?.key);
+  visibleCards = visibleCards
+    .slice(0, limit)
+    .filter((x) => x.key !== draft?.key);
   useEffect(() => {
     setLimit(PAGE_SIZE);
   }, [sortBy]);
@@ -303,7 +329,7 @@ export function InnerListView({
       onDragCancelled={onDragCancelled}
     >
       <Scroller>
-        {ref => (
+        {(ref) => (
           <div ref={ref} className={cn(styles.listRoot, className)}>
             <ItemsTable>
               {!!headerText && (
@@ -337,7 +363,7 @@ export function InnerListView({
               {noteType === NoteType.Task && (
                 <InlineTaskButton draft={draft} setDraft={setDraft} />
               )}
-              {visibleCards.map(c => (
+              {visibleCards.map((c) => (
                 <ItemRow note={c} key={c.key} onClick={onNoteSelected} />
               ))}
             </ItemsTable>

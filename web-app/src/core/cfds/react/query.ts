@@ -59,32 +59,34 @@ export function isTag(v: Vertex): v is Tag {
   return v.namespace === NS_TAGS;
 }
 
-export interface UseQueryResult<T> {
+export interface UseQueryResult<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  RT = VertexManager<OT>[]
+> {
   loading: boolean;
-  results: T;
+  results: RT;
+  query: Query<IT, OT>;
 }
 
 export function useQuery<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  RT = OT[]
+  RT = VertexManager<OT>[]
 >(
-  predicate: Predicate,
+  predicate: Predicate<IT, OT>,
   deps: DependencyList,
-  opts?: QueryOptions<IT, OT>
-): UseQueryResult<RT> {
+  opts?: QueryOptions<IT, OT, RT>
+): UseQueryResult<IT, OT, RT> {
   const { sort, listenOn, mapResult } = opts || {};
   const graph = useGraphManager();
   const logger = useLogger();
-  const [result, setResult] = useState({
-    loading: true,
-    results: [] as RT,
-  });
+  const [result, setResult] = useState<null | UseQueryResult<IT, OT, RT>>(null);
 
   const listenOnDep = listenOn && JSON.stringify(listenOn);
 
   const filter = useCallback(
-    (v: Vertex) => {
+    (v: IT) => {
       return !v.isDeleted && predicate(v);
     },
     deps // eslint-disable-line
@@ -108,10 +110,13 @@ export function useQuery<
           value: 1,
           unit: 'Count',
         });
-        const results = mapResult ? mapResult(query.results) : query.results;
+        const results = mapResult
+          ? mapResult(query.results)
+          : (query.results as RT);
         setResult({
           loading: query.isLoading,
-          results: results as RT,
+          results: results,
+          query,
         });
       },
       true
@@ -122,19 +127,19 @@ export function useQuery<
     };
   }, [graph, filter, sort, listenOnDep]); // eslint-disable-line
 
-  return result;
+  return result!;
 }
 
 export function useExistingQuery<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  RT = OT[]
->(query: Query<IT, OT>, opts?: QueryOptions<IT, OT>): UseQueryResult<RT> {
+  RT = VertexManager<OT>[]
+>(
+  query: Query<IT, OT>,
+  opts?: QueryOptions<IT, OT, RT>
+): UseQueryResult<IT, OT, RT> {
   const logger = useLogger();
-  const [result, setResult] = useState<UseQueryResult<RT>>({
-    loading: true,
-    results: [] as RT,
-  });
+  const [result, setResult] = useState<null | UseQueryResult<IT, OT, RT>>(null);
   const mapResult = opts?.mapResult;
 
   useEffect(() => {
@@ -146,19 +151,25 @@ export function useExistingQuery<
         unit: 'Count',
         queryName: opts?.name || query.name || 'Unknown',
       });
-      const results = mapResult ? mapResult(query.results) : query.results;
+      const results = mapResult
+        ? mapResult(query.results)
+        : (query.results as RT);
       setResult({
         loading: query.isLoading,
-        results: results as RT,
+        results,
+        query,
       });
     };
     query.on(EVENT_QUERY_RESULTS_CHANGED, listener);
 
     if (!query.isLoading) {
-      const results = mapResult ? mapResult(query.results) : query.results;
+      const results = mapResult
+        ? mapResult(query.results)
+        : (query.results as RT);
       setResult({
         loading: query.isLoading,
-        results: results as RT,
+        results,
+        query,
       });
     }
 
@@ -167,5 +178,5 @@ export function useExistingQuery<
     };
   }, [query]);
 
-  return result;
+  return result!;
 }

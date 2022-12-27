@@ -46,6 +46,7 @@ export const TYPE_REF = ValueType.REF;
 export const TYPE_REF_SET = ValueType.REF_SET;
 export const TYPE_MAP = ValueType.MAP;
 export const TYPE_REF_MAP = ValueType.REF_MAP;
+export const TYPE_REF_VALUE_MAP = ValueType.REF_VALUE_MAP;
 
 export interface DataType extends CoreObject {
   [key: string]: ConcreteCoreValue;
@@ -180,4 +181,9 @@ export enum NoteStatus {
   InProgress = 2,
   Suspended = 3,
   kMNaxValue,
+}
+
+export interface TagValue extends CoreObject {
+  value: string;
+  sortStamp: string;
 }

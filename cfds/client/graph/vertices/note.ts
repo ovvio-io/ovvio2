@@ -5,6 +5,7 @@ import {
   NoteStatus,
   NS_NOTES,
   SchemeNamespace,
+  TagValue,
 } from '../../../base/scheme-types.ts';
 import { initRichText, RichText } from '../../../richtext/tree.ts';
 import {
@@ -44,6 +45,7 @@ import { VertexManager } from '../vertex-manager.ts';
 import { Record } from '../../../base/record.ts';
 import { notReached, assert } from '../../../../base/error.ts';
 import * as SetUtils from '../../../../base/set.ts';
+import { mapIterable } from '../../../../base/common.ts';
 
 export enum NoteType {
   Task = 'task',
@@ -385,13 +387,18 @@ export class Note extends ContentVertex {
     this.status = NoteStatus.ToDo;
   }
 
-  get tags(): Dictionary<Tag, Tag> {
-    const map = this.record.get<Map<string, string>>('tags');
-    return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
+  get tags(): Dictionary<Tag, TagValue> {
+    const map = this.record.get<Map<string, TagValue>>('tags', new Map());
+    return new Map(
+      mapIterable(map.entries(), ([k, v]) => [this.graph.getVertex<Tag>(k), v])
+    );
   }
 
-  set tags(map: Dictionary<Tag, Tag>) {
-    this.record.set('tags', vertDictToKeyDict(map));
+  set tags(map: Dictionary<Tag, TagValue>) {
+    this.record.set(
+      'tags',
+      new Map(mapIterable(map.entries(), ([t, v]) => [t.key, v]))
+    );
   }
 
   clearTags(): void {

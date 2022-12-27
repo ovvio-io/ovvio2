@@ -1,38 +1,13 @@
 import * as SetUtils from '../../../../base/set.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
-import {
-  keyDictToVertDict,
-  vertDictToKeyDict,
-  Vertex,
-  VertexConfig,
-} from '../vertex.ts';
-import { VertexManager } from '../vertex-manager.ts';
+import { keyDictToVertDict, vertDictToKeyDict, Vertex } from '../vertex.ts';
 import { BaseVertex } from './base.ts';
 import { Tag } from './tag.ts';
 import { User } from './user.ts';
-import { Record } from '../../../base/record.ts';
-import { NS_TAGS } from '../../../base/scheme-types.ts';
 import { Query } from '../query.ts';
 import { Note } from './note.ts';
 
 export class Workspace extends BaseVertex {
-  private _parentTagsQuery: Query<Tag> | undefined;
-  private _tagsQuery: Query<Tag> | undefined;
-
-  constructor(
-    mgr: VertexManager,
-    record: Record,
-    prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
-  ) {
-    super(mgr, record, prevVertex, config);
-    if (prevVertex && prevVertex instanceof Workspace) {
-      this.selected = prevVertex.selected;
-      this._parentTagsQuery = prevVertex._parentTagsQuery;
-      this._tagsQuery = prevVertex._tagsQuery;
-    }
-  }
-
   get parent(): Vertex | undefined {
     const rootKey = this.manager.graph.rootKey;
     for (const u of this.users) {
@@ -49,12 +24,6 @@ export class Workspace extends BaseVertex {
 
   set name(name: string) {
     this.record.set('name', name);
-  }
-
-  selected = false;
-
-  clearSelected() {
-    this.selected = false;
   }
 
   get users(): Set<User> {
@@ -124,40 +93,6 @@ export class Workspace extends BaseVertex {
 
   set footerHtml(html: string | undefined) {
     this.record.set('footerHtml', html);
-  }
-
-  get parentTags(): Tag[] {
-    return Query.blocking(
-      this.graph.sharedQueriesManager.tagsQuery,
-      (tag) => tag.workspace === this && !tag.parentTag
-    ).map((mgr) => mgr.getVertexProxy());
-  }
-
-  get tagsQuery(): Query<Vertex, Tag> {
-    return this.graph.sharedQueriesManager.getVertexQuery(
-      this.key,
-      'tagsQuery',
-      this.graph.sharedQueriesManager.noNotesQuery,
-      (vert) => vert.namespace === NS_TAGS
-    );
-  }
-
-  get parentTagsQuery(): Query<Tag> {
-    return this.graph.sharedQueriesManager.getVertexQuery(
-      this.key,
-      'parentTagsQuery',
-      this.tagsQuery,
-      (tag) => tag.parentTag === undefined
-    );
-  }
-
-  get statusTagQuery(): Query<Tag> {
-    return this.graph.sharedQueriesManager.getVertexQuery(
-      this.key,
-      'statusTagQuery',
-      this.parentTagsQuery,
-      (vert) => vert.name.toLowerCase() === 'status'
-    );
   }
 
   get notesQuery(): Query<Vertex, Note> {
