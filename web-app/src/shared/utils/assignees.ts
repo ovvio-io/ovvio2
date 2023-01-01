@@ -13,22 +13,15 @@ export function assignNote(
   assignees.add(user);
   if (insteadOf && insteadOf !== user) {
     assignees.delete(insteadOf);
-    logger.log({
-      severity: 'INFO',
-      event: 'AssigneeReplaced',
-      vertex: card.key,
-      user: user.key,
-      prevUser: insteadOf.key,
-      uiSource: source,
-    });
-  } else {
-    logger.log({
-      severity: 'INFO',
-      event: 'AssigneeAdded',
-      vertex: card.key,
-      user: user.key,
-      uiSource: source,
-    });
   }
+  logger.log({
+    severity: 'INFO',
+    event: 'MetadataChanged',
+    vertex: card.key,
+    uiSource: source,
+    metadataType: 'assignee',
+    removed: insteadOf?.key,
+    added: user.key,
+  });
   // card.assignees = assignees;
 }

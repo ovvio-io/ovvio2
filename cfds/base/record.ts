@@ -141,12 +141,13 @@ export class Record implements ReadonlyRecord, Encodable {
     return Object.keys(this._data);
   }
 
-  get repositoryId(): '<id>' | string | undefined {
+  get repositoryId(): '<id>' | string {
     const fieldName = this.scheme.repositoryFieldName;
     if (fieldName === kRecordIdField) {
       return kRecordIdField;
     }
-    return this.get<string>(fieldName);
+    const repoId = this.get<string>(fieldName);
+    return repoId ? '/data/' + repoId : '/sys/dir';
   }
 
   get<T extends ConcreteCoreValue = ConcreteCoreValue>(

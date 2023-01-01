@@ -44,6 +44,21 @@ export const EVENT_QUERY_DID_CLOSE = 'QueryDidClose';
 // const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
+/**
+ * Queries are implemented as linear search over an abstract list of vertices
+ * called a source. Queries implemented as Coroutines to allow both multiplexing
+ * their execution and to pause the search when it's taking too much time.
+ *
+ * Queries themselves act as sources for other queries, enabling efficient
+ * chaining. Thus, we're treating queries both as end queries from the UI, and
+ * as intermediate "indexes" that are opened once the app boots, and are kept
+ * open during the entire execution.
+ *
+ * Whenever a vertex changes, all root queries get notified. If the vertex falls
+ * in the result set of a query, it'll pass the update down to all chained
+ * queries. If not, the rest of the chian won't be notified. This allows us to
+ * control the way updates propagate throughout the app.
+ */
 export class Query<
   IT extends Vertex = Vertex,
   OT extends IT = IT
@@ -340,7 +355,7 @@ export class Query<
     // strategies. Currently executing all queries concurrently results in a
     // more responsive UI with less re-rendering than executing queries
     // serially. That being said, when there are a high number of query
-    // cancellations, a serial execution will result in a smoother user
+    // cancellations, serial execution will result in a smoother user
     // experience. This was the case in one of the first iterations on the new
     // filters bar on April, 2022.
     //

@@ -22,9 +22,6 @@ import {
   SchemeNamespace,
   TYPE_REF_MAP,
   NS_USER_SETTINGS,
-  NS_ORGANIZATION,
-  TagValue,
-  TYPE_REF_VALUE_MAP,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
@@ -56,23 +53,11 @@ const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive(
     },
     workspace: {
       type: TYPE_REF,
-      required: true,
     },
   },
   [],
   'workspace'
 );
-
-//ACTUAL SCHEMES
-const SCHEME_ORGANIZATION_1 = SCHEME_BASE_1.derive(NS_ORGANIZATION, {
-  name: {
-    type: TYPE_STR,
-    required: true,
-  },
-  users: TYPE_REF_SET,
-  workspaces: TYPE_REF_SET,
-  tags: TYPE_REF_SET,
-});
 
 const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   owner: {
@@ -254,26 +239,13 @@ const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   parentNote: TYPE_REF,
 });
 
-const SCHEME_NOTE_5 = SCHEME_NOTE_4.derive(NS_NOTES, {
-  tags: {
-    type: TYPE_REF_VALUE_MAP,
-    init: () => new Map(),
-  },
-});
-
 const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   color: TYPE_STR,
   name: TYPE_STR,
   parentTag: TYPE_REF,
 });
 
-const SCHEME_TAG_2 = SCHEME_BASE_1.derive(NS_TAGS, {
-  name: {
-    type: TYPE_STR,
-    required: true,
-  },
-  parentTag: TYPE_REF,
-});
+const SCHEME_TAG_2 = SCHEME_TAG_1.derive(NS_TAGS, {}, ['color']);
 
 const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
   status: {
@@ -296,7 +268,7 @@ export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
   SCHEME_WORKSPACE_4 as WORKSPACE_SCHEME,
-  SCHEME_NOTE_5 as NOTE_SCHEME,
+  SCHEME_NOTE_4 as NOTE_SCHEME,
   SCHEME_TAG_2 as TAG_SCHEME,
   SCHEME_INVITE_1 as INVITE_SCHEME,
   SCHEME_USER_2 as USER_SCHEME,
@@ -400,14 +372,8 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [
-      SCHEME_WORKSPACE_4,
-      SCHEME_USER_2,
-      SCHEME_USER_SETTINGS_1,
-      SCHEME_TAG_2,
-      SCHEME_NOTE_5,
-    ],
-    [SchemeNamespace.INVITES],
+    [SCHEME_WORKSPACE_4, SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_TAG_2],
+    [SchemeNamespace.INVITES, SchemeNamespace.NOTES],
     (namespace, data) => {
       if (namespace === NS_TAGS) {
         delete data.color;

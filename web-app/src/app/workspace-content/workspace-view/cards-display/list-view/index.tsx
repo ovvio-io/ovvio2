@@ -48,6 +48,7 @@ import { SortBy } from './sort-by.ts';
 import { ItemRow, ItemsTable, Row } from './table/index.tsx';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
 export { SortBy };
 
@@ -98,26 +99,81 @@ interface CardsData {
   unpinned: VertexManager<Note>[];
 }
 
-function noteInFilter(note: Note): boolean {
-  if (!note.workspace.selected) {
-    return false;
-  }
-  let hasSelectedTag;
+interface NoteFilterOptions {
+  filterWorkspace: boolean;
+  filterTags: boolean;
+  filterAssignees: boolean;
 }
 
-function noteInFilter(
-  note: Note,
-  selectedWorkspacesQuery: Query,
-  selectedTagsQuery: Query,
-  selectedUsersQuery: Query
-): boolean {
-  if (
-    selectedWorkspacesQuery.count === 0 ||
-    !selectedWorkspacesQuery.hasVertex(note.workspace)
-  ) {
+function noteInFilter(note: Note, opts: NoteFilterOptions): boolean {
+  if (opts.filterWorkspace && !note.workspace.selected) {
     return false;
   }
+  if (opts.filterTags) {
+    let hasSelectedTag = false;
+    for (const [tag, subtag] of note.tags) {
+      if (tag.selected || subtag.selected) {
+        hasSelectedTag = true;
+        break;
+      }
+    }
+    if (!hasSelectedTag) {
+      return false;
+    }
+  }
+  if (opts.filterAssignees) {
+    let hasSelectedAssignee = false;
+    for (const user of note.assignees) {
+      if (user.selected) {
+        hasSelectedAssignee = true;
+        break;
+      }
+    }
+    if (!hasSelectedAssignee) {
+      return false;
+    }
+  }
+  return true;
 }
+
+// function noteInFilter(
+//   note: Note,
+//   selectedWorkspacesQuery: Query,
+//   selectedTagsQuery: Query,
+//   selectedUsersQuery: Query
+// ): boolean {
+//   if (
+//     selectedWorkspacesQuery.count === 0 ||
+//     !selectedWorkspacesQuery.hasVertex(note.workspace)
+//   ) {
+//     return false;
+//   }
+//   if (selectedTagsQuery.count > 0) {
+//     let found = false;
+//     for (const tag of note.tags.values()) {
+//       if (selectedTagsQuery.hasVertex(tag)) {
+//         found = true;
+//         break;
+//       }
+//     }
+//     if (!found) {
+//       return false;
+//     }
+//   }
+//   if (selectedUsersQuery.count > 0) {
+//     let found = false;
+//     for (const user of note.assignees) {
+//       if (selectedUsersQuery.hasVertex(user)) {
+//         found = true;
+//         break;
+//       }
+//     }
+//     if (!found) {
+//       return false;
+//     }
+//   }
+//   return true;
+// }
 
 export function ListView({ noteType, sortBy, className }: ListViewProps) {
   const graph = useGraphManager();
@@ -143,12 +199,12 @@ export function ListView({ noteType, sortBy, className }: ListViewProps) {
       x.type === noteType &&
       x.parentType !== NoteType.Task &&
       !x.isPinned &&
-      noteInFilter(
-        x,
-        selectedWorkspacesQuery.query,
-        selectedTagsQuery.query,
-        selectedUsersQuery.query
-      )[(noteType, selectedWorkspacesQuery, selectedTagsQuery)],
+      noteInFilter(x, {
+        filterWorkspace: true,
+        filterTags: selectedTagsQuery.query.count > 0,
+        filterAssignees: selectedUsersQuery.query.count > 0,
+      }),
+    [noteType, selectedWorkspacesQuery, selectedTagsQuery, selectedUsersQuery],
     {
       sort: SORT_BY[sortBy],
       name: 'listViewUnpinned',
@@ -165,8 +221,12 @@ export function ListView({ noteType, sortBy, className }: ListViewProps) {
       x.type === noteType &&
       x.parentType !== NoteType.Task &&
       x.isPinned &&
-      isCardInFilter(filters, x),
-    [noteType, filters],
+      noteInFilter(x, {
+        filterWorkspace: true,
+        filterTags: selectedTagsQuery.query.count > 0,
+        filterAssignees: selectedUsersQuery.query.count > 0,
+      }),
+    [noteType, selectedWorkspacesQuery, selectedTagsQuery, selectedUsersQuery],
     {
       sort: SORT_BY[sortBy],
       name: 'listViewPinned',
@@ -174,9 +234,9 @@ export function ListView({ noteType, sortBy, className }: ListViewProps) {
     }
   );
 
-  if (unpinnedCardsQuery.loading || pinnedCardsQuery.loading) {
-    return null;
-  }
+  // if (unpinnedCardsQuery.loading || pinnedCardsQuery.loading) {
+  //   return null;
+  // }
 
   // const cardsQuery = useQuery(
   //   x =>
@@ -241,7 +301,7 @@ export function InnerListView({
   const strings = useStrings();
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const toastController = useToastController();
   // const containerRef = useRef();
   const docRouter = useDocumentRouter();
@@ -263,7 +323,7 @@ export function InnerListView({
     sortBy === SortBy.Priority ? cards.unpinned : EMPTY_ARRAY,
     ['sortStamp']
   );
-  const [draft, setDraft] = useState<VertexManager<Note>>(null);
+  const [draft, setDraft] = useState<null | VertexManager<Note>>(null);
 
   let visibleCards = cards.unpinned;
   if (sortBy === SortBy.Priority) {
@@ -285,26 +345,30 @@ export function InnerListView({
   //   setDragSort(visibleCards, item, relativeTo, dragPosition);
   // };
   const onDragStarted = () => {
-    eventLogger.action('DRAG_STARTED', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
+    logger.log({
+      severity: 'INFO',
+      event: 'ItemDrag',
+      uiSource: 'list',
+      uiStatus: 'started',
     });
   };
 
   const onReportDrop = () => {
-    eventLogger.action('DRAG_DONE', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
+    logger.log({
+      severity: 'INFO',
+      event: 'ItemDrag',
+      uiSource: 'list',
+      uiStatus: 'ended',
     });
   };
 
-  const onDragCancelled = ({ reason }) => {
-    eventLogger.action('DRAG_CANCELLED', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
-      data: {
-        reason,
-      },
+  const onDragCancelled = ({ reason }: { reason: string }) => {
+    logger.log({
+      severity: 'INFO',
+      event: 'ItemDrag',
+      uiSource: 'list',
+      uiStatus: 'cancelled',
+      reason,
     });
     if (reason === CANCELLATION_REASONS.DISABLED) {
       toastController.displayToast({
@@ -344,7 +408,7 @@ export function InnerListView({
               {cards.pinned.map((c, index) => (
                 <Draggable key={c.key} index={index} data={c}>
                   {(
-                    draggableProps,
+                    draggableProps: JSX.IntrinsicAttributes,
                     ref: React.MutableRefObject<HTMLTableRowElement>
                   ) => (
                     <ItemRow

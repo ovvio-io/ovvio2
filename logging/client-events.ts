@@ -5,11 +5,14 @@ export type ClientEvent =
   | 'SessionEnd'
   | 'AttachmentDownloadSuccess'
   | 'MetadataChanged'
-  | 'VertexMoved';
+  | 'VertexMoved'
+  | 'ItemDrag';
 
 export type UISource = 'list' | 'title' | 'board' | 'child-item';
 
 export type MetadataType = 'attachment' | 'assignee' | 'tag';
+
+export type UIStatus = 'started' | 'ended' | 'cancelled';
 
 export interface ClientEventEntry extends BaseLogEntry {
   severity: 'INFO';
@@ -21,4 +24,6 @@ export interface ClientEventEntry extends BaseLogEntry {
   added?: string;
   removed?: string;
   origin?: string;
+  uiStatus?: UIStatus;
+  reason?: string;
 }

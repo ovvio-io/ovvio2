@@ -1,24 +1,27 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { suggestResults } from '@ovvio/cfds/lib/client/suggestions';
-import { Dictionary } from '@ovvio/cfds/lib/collections/dict';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
-import Menu from '@ovvio/styles/lib/components/menu';
-import { IconPlus } from '@ovvio/styles/lib/components/new-icons/icon-plus';
-import { IconSize } from '@ovvio/styles/lib/components/new-icons/types';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { isTag, useQuery } from 'core/cfds/react/query';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Tag,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import { suggestResults } from '../../../../cfds/client/suggestions.ts';
+import { Dictionary } from '../../../../base/collections/dict.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { IconCreateNew } from '../../../../styles/components/icons/index.ts';
+import Menu from '../../../../styles/components/menu.tsx';
+import { IconPlus } from '../../../../styles/components/new-icons/icon-plus.tsx';
+import { IconSize } from '../../../../styles/components/new-icons/types.ts';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../styles/theme.tsx';
+import { isTag, useQuery } from '../../core/cfds/react/query.ts';
 import {
   MentionItem,
   MentionPopup,
-} from 'shared/multi-select/drawer/actions/mention';
-import { CreateTagContext, useCreateTag } from './create-tag-context';
-import { getFullTagName } from './tag-utils';
+  RenderItem,
+} from '../../shared/multi-select/drawer/actions/mention.tsx';
+import { CreateTagContext, useCreateTag } from './create-tag-context.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   list: {
     basedOn: [layout.row],
     height: styleguide.gridbase * 3,
@@ -125,16 +128,11 @@ function AssignActionPopup({
   }, [createTag]);
 
   const { results: childTags } = useQuery<Tag>(
-    x =>
-      isTag(x) &&
-      !!x.name &&
-      x.workspaceKey === workspaceManager?.key &&
-      !!x.parentTag &&
-      !!x.parentTag.name,
+    (x) => isTag(x) && !!x.name && !!x.parentTag && !!x.parentTag.name,
     [workspaceManager?.key],
     {
       name: 'AssignActionPopup',
-      source: workspaceManager.getVertexProxy<Workspace>().tagsQuery,
+      source: workspaceManager.graph.sharedQueriesManager.tagsQuery,
     }
   );
 
@@ -142,26 +140,30 @@ function AssignActionPopup({
     if (!childTags) {
       return [];
     }
-    const candidates: {
-      tag: Tag;
-      key: string;
-      title: string;
-    }[] = [];
+    // const candidates: {
+    //   tag: Tag;
+    //   key: string;
+    //   title: string;
+    // }[] = [];
 
-    childTags
-      .map(x => x.getVertexProxy())
-      .forEach(child => {
-        if (cardTagsMng.has(child.parentTag.manager as VertexManager<Tag>)) {
-          return;
-        }
-        candidates.push({
-          tag: child,
-          key: child.key,
-          title: getFullTagName(child),
-        });
-      });
+    // childTags
+    //   .map((x) => x.getVertexProxy())
+    //   .forEach((child) => {
+    //     if (cardTagsMng.has(child.parentTag?.manager as VertexManager<Tag>)) {
+    //       return;
+    //     }
+    //     candidates.push({
+    //       tag: child,
+    //       key: child.key,
+    //       title: child.fullName,
+    //     });
+    //   });
 
-    const filteredRes = suggestResults(filter, candidates, c => c.title);
+    const filteredRes: (VertexManager<Tag> | string)[] = suggestResults(
+      filter,
+      childTags,
+      (tag) => tag.getVertexProxy().fullName
+    );
 
     // const filteredRes = res
     //   .filter(t => !filter || t.dist > filter.length * 0.1)
@@ -173,16 +175,12 @@ function AssignActionPopup({
     //     return b.dist - a.dist;
     //   });
 
-    filteredRes.push({
-      key: TAG_NOT_FOUND,
-      title: null,
-      tag: null,
-    });
+    filteredRes.push(TAG_NOT_FOUND);
 
     return filteredRes;
   };
-  const onSelected = (item: any, filter: string) => {
-    if (item.key === TAG_NOT_FOUND) {
+  const onSelected = (item: VertexManager<Tag> | string, filter: string) => {
+    if (item === TAG_NOT_FOUND) {
       if (filter) {
         if (filter.startsWith('#')) {
           filter = filter.slice(1);
@@ -193,18 +191,18 @@ function AssignActionPopup({
         workspaceManager,
         initialName: filter,
         logSource: 'card-header',
-        onTagCreated: tag => {
+        onTagCreated: (tag) => {
           onTagged(tag);
         },
       });
     } else {
-      onTagged(item.tag);
+      onTagged((item as VertexManager<Tag>).getVertexProxy());
     }
   };
-  const renderItem = (item, props) => {
-    if (item.key === TAG_NOT_FOUND) {
+  const renderItem: RenderItem<VertexManager<Tag> | string> = (item, props) => {
+    if (item === TAG_NOT_FOUND) {
       return (
-        <MentionItem {...props} key={item.key}>
+        <MentionItem {...props} key={item}>
           <span className={cn(styles.tagColor)}>
             <IconCreateNew fill={theme.primary[500]} />
           </span>
@@ -214,16 +212,18 @@ function AssignActionPopup({
     }
 
     return (
-      <MentionItem {...props} key={item.key}>
+      <MentionItem {...props} key={(item as VertexManager).key}>
         <div className={cn(styles.circleContainer)}>
           <div
             className={cn(styles.circle)}
-            style={{
-              backgroundColor: item.color,
-            }}
+            // style={{
+            //   backgroundColor: item.color,
+            // }}
           />
         </div>
-        <span className={cn(styles.tagName)}>{getFullTagName(item.tag)}</span>
+        <span className={cn(styles.tagName)}>
+          {(item as VertexManager<Tag>).getVertexProxy().fullName}
+        </span>
       </MentionItem>
     );
   };

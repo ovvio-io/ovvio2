@@ -61,7 +61,6 @@ import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
 import TagButton from '../../../../../../shared/tags/tag-button.tsx';
 import { isCardActionable } from '../../../../../../shared/tags/tag-utils.ts';
 import TagView from '../../../../../../shared/tags/tag-view.tsx';
-import { useCardStatus } from '../../../../../../shared/tags/use-status-tags.ts';
 import { assignNote } from '../../../../../../shared/utils/assignees.ts';
 import { moveCard } from '../../../../../../shared/utils/move.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
@@ -73,6 +72,7 @@ import localization from '../list.strings.json' assert { type: 'json' };
 import { GridColumns, useGridStyles } from './grid.tsx';
 import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
 import { formatTimeDiff } from '../../../../../../../../base/date.ts';
+import { NoteStatus } from '../../../../../../../../cfds/base/scheme-types.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 
@@ -457,10 +457,13 @@ export function DraftItemRow({
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
-  const { isDone } = useCardStatus(note);
+  const partial = usePartialVertex(note, ['status']);
   return (
     <div
-      className={cn(styles.doneIndicator, isDone && styles.doneIndicatorActive)}
+      className={cn(
+        styles.doneIndicator,
+        partial.status === NoteStatus.Done && styles.doneIndicatorActive
+      )}
     />
   );
 };
@@ -688,12 +691,14 @@ const TypeCell = ({
 };
 
 const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
-  const { isDone, toggleStatus } = useCardStatus(note);
+  const partial = usePartialVertex(note, ['status']);
   return (
     <CheckBox
       name={note.key}
-      checked={isDone}
-      onChange={() => toggleStatus()}
+      checked={partial.status === NoteStatus.Done}
+      onChange={() =>
+        partial.status === NoteStatus.Done ? NoteStatus.ToDo : NoteStatus.Done
+      }
     />
   );
 };

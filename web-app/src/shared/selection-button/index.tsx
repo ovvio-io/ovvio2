@@ -1,11 +1,11 @@
-import { wordDist } from '@ovvio/cfds/lib/primitives-old/plaintext';
-import React from 'react';
-import { MentionPopup } from 'shared/multi-select/drawer/actions/mention';
-import { styleguide } from '@ovvio/styles/lib';
-import Menu from '@ovvio/styles/lib/components/menu';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import React from 'https://esm.sh/react@18.2.0';
+import { wordDist } from '../../../../cfds/client/suggestions.ts';
+import { MentionPopup } from '../../shared/multi-select/drawer/actions/mention.js';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import Menu from '../../../../styles/components/menu.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: theme.background[0],
     width: styleguide.gridbase * 32,
@@ -50,7 +50,7 @@ function SelectionPopup<T>({
 }: SelectionPopupProps<T>) {
   const getItemsImpl = (filter: string) =>
     getItems(filter)
-      .map(item => ({
+      .map((item) => ({
         value: item.value,
         key:
           (item.value as any).key || (item.value as any).id || item.sortValue,
@@ -59,16 +59,18 @@ function SelectionPopup<T>({
           item.sortValue === SORT_VALUES.BOTTOM ||
           item.sortValue === SORT_VALUES.TOP,
       }))
-      .filter(x => !filter || x.dist > filter.length * 0.1 || x.isFixed)
+      .filter((x) => !filter || x.dist > filter.length * 0.1 || x.isFixed)
       .sort((a, b) => b.dist - a.dist);
 
-  const onSelectedImpl = item => {
+  const onSelectedImpl = (item: SelectionItem<T>) => {
     const { value } = item;
 
     onSelected(value);
   };
-  const renderItemImpl = (item, props) =>
-    renderItem({ ...props, item: item.value, key: item.key });
+  const renderItemImpl = (
+    item: SelectionItem<T>,
+    props: SelectionPopupProps<T>
+  ) => renderItem({ ...props, item: item.value, key: item.key });
 
   return (
     <MentionPopup
@@ -83,6 +85,7 @@ function SelectionPopup<T>({
 export interface SelectionItem<T> {
   value: T;
   sortValue: string | SORT_VALUES;
+  key?: string;
 }
 
 interface SelectionButtonProps<T> {

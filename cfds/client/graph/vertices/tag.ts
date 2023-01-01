@@ -1,7 +1,9 @@
 import { BaseVertex } from './base.ts';
-import { TagValue } from '../../../base/scheme-types.ts';
-import { coreValueClone } from '../../../../base/core-types/index.ts';
-import { Dictionary } from '../../../../base/collections/dict.ts';
+import { FieldTriggers, Vertex } from '../vertex.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { Query } from '../query.ts';
+import { MutationPack } from '../mutations.ts';
+import { triggerChildren } from '../propagation-triggers.ts';
 
 export class Tag extends BaseVertex {
   get name(): string {
@@ -12,29 +14,56 @@ export class Tag extends BaseVertex {
     this.record.set('name', n);
   }
 
-  get values(): Dictionary<string, TagValue> {
-    const ret = this.record.get<Dictionary<string, TagValue>>('values');
-    return ret ? coreValueClone(ret) : new Map();
+  get fullName(): string {
+    return this.fullNameForParent(this.parentTag);
   }
 
-  set values(values: Dictionary<string, TagValue>) {
-    this.record.set('values', coreValueClone(values));
+  get parentTag(): Tag | undefined {
+    const key = this.record.get<string>('parentTag');
+    return key ? this.graph.getVertex<Tag>(key) : undefined;
   }
 
-  getValue(key: string): TagValue | undefined {
-    return coreValueClone(
-      this.record.get<Dictionary<string, TagValue>>('values')?.get(key)
+  set parentTag(tag: Tag | undefined) {
+    if (tag) {
+      this.record.set('parentTag', tag.key);
+    } else {
+      this.record.delete('parentTag');
+    }
+  }
+
+  private fullNameForParent(parentTag: Tag | undefined): string {
+    return parentTag ? `${parentTag.name}/${this.name}` : this.name;
+  }
+
+  parentTagDidMutate(local: boolean, oldValue: Tag | undefined): MutationPack {
+    return [
+      ['parent', local, oldValue],
+      ['fullName', local, this.fullNameForParent(oldValue)],
+    ];
+  }
+
+  parentNameDidMutate(local: boolean, oldValue: string): MutationPack {
+    return ['fullName', local, `${oldValue}/${this.name}`];
+  }
+
+  get parent(): Vertex | undefined {
+    return this.parentTag;
+  }
+
+  get childTagsQuery(): Query<Tag, Tag> {
+    const queryManager = this.graph.sharedQueriesManager;
+    return queryManager.getVertexQuery(
+      this.key,
+      'childTagsQuery',
+      queryManager.tagsQuery,
+      (tag) => tag.parent?.key === this.key,
+      (t1, t2) => coreValueCompare(t1.sortStamp, t2.sortStamp)
     );
-  }
-
-  setValue(key: string, value: TagValue): void {
-    const map = this.record.get('values', new Map());
-    map.set(key, coreValueClone(value));
-    this.record.set('values', map);
   }
 }
 
-// const kFieldTriggersTag: FieldTriggers<Tag> = {
-// };
-//
-// Vertex.registerFieldTriggers(Tag, kFieldTriggersTag);
+const kFieldTriggersTag: FieldTriggers<Tag> = {
+  name: triggerChildren('parentNameDidMutate'),
+};
+
+Vertex.registerFieldTriggers(Tag, kFieldTriggersTag);

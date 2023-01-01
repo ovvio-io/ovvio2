@@ -387,18 +387,13 @@ export class Note extends ContentVertex {
     this.status = NoteStatus.ToDo;
   }
 
-  get tags(): Dictionary<Tag, TagValue> {
-    const map = this.record.get<Map<string, TagValue>>('tags', new Map());
-    return new Map(
-      mapIterable(map.entries(), ([k, v]) => [this.graph.getVertex<Tag>(k), v])
-    );
+  get tags(): Dictionary<Tag, Tag> {
+    const map = this.record.get<Map<string, string>>('tags', new Map());
+    return keyDictToVertDict(this.graph, map);
   }
 
-  set tags(map: Dictionary<Tag, TagValue>) {
-    this.record.set(
-      'tags',
-      new Map(mapIterable(map.entries(), ([t, v]) => [t.key, v]))
-    );
+  set tags(map: Dictionary<Tag, Tag>) {
+    this.record.set('tags', vertDictToKeyDict(map));
   }
 
   clearTags(): void {

@@ -1,10 +1,10 @@
-import React from 'react';
-import CANCELLATION_REASONS from './cancellation-reasons';
-import { useDndContext } from './context';
+import React from 'https://esm.sh/react@18.2.0';
+import CANCELLATION_REASONS from './cancellation-reasons.tsx';
+import { useDndContext } from './context.tsx';
 
 const DROP_ZONE = 'DROP_ZONE';
 
-export const dropZoneContext = React.createContext<any>(undefined);
+export const dropZoneContext = React.createContext<string>('');
 
 // function getDragId(el) {
 //   let dragId = el.dataset.dragId;
@@ -49,7 +49,7 @@ export interface DroppableProps<T> {
 }
 export function Droppable<T>({
   children,
-  allowsDrop = item => !!item,
+  allowsDrop = (item) => !!item,
   items,
   onDrop,
 }: DroppableProps<T>) {
@@ -71,7 +71,7 @@ export function Droppable<T>({
         reason: CANCELLATION_REASONS.NO_DATA,
       });
     }
-    const item = ctx.state.dragData.data;
+    const item = ctx.state.dragData?.data;
     if (!item) {
       return ctx.onDragCancelled({
         reason: CANCELLATION_REASONS.NO_DATA,
@@ -104,7 +104,7 @@ export function Droppable<T>({
   };
 
   const onDragOver = (e: DragEvent) => {
-    if (e.dataTransfer.types.includes('text/ovvio')) {
+    if (e.dataTransfer?.types.includes('text/ovvio')) {
       if (!ctx.state.dragData) {
         return;
       }
@@ -118,7 +118,7 @@ export function Droppable<T>({
 
   const isInDrag = !!ctx.state.dragData;
   const isDragOver =
-    ctx.state.dragOverData && ctx.state.dragOverData.dropZone === id;
+    ctx.state.dragOverData !== null && ctx.state.dragOverData.dropZone === id;
 
   const attributes = {
     onDragOver,

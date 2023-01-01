@@ -288,10 +288,11 @@ export function Assignee({
       card.assignees.delete(current);
       logger.log({
         severity: 'INFO',
-        event: 'AssigneeRemoved',
+        event: 'MetadataChanged',
         uiSource: source,
         user: current.key,
         vertex: card.key,
+        metadataType: 'assignee',
       });
       return;
     }

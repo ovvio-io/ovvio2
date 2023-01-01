@@ -182,12 +182,9 @@ export default function TagView({
   renderSelected,
 }: PillViewProps) {
   const styles = useStyles();
-  const partialTag = usePartialVertex(tag, ['workspace', 'parentTag']);
-  const partialParent = usePartialVertex(
-    partialTag?.parentTag?.manager as VertexManager<Tag>,
-    ['childTags']
-  );
-  const siblings = partialParent?.childTags || [];
+  const partialTag = usePartialVertex(tag, ['parentTag']);
+  const siblingsQuery = partialTag.parentTag?.childTagsQuery;
+  const siblings = siblingsQuery?.results || [];
 
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
@@ -217,12 +214,14 @@ export default function TagView({
           <div className={cn(styles.circleContainer)}>
             <div
               className={cn(styles.circle)}
-              style={{
-                backgroundColor: t.color,
-              }}
+              // style={{
+              //   backgroundColor: t.color,
+              // }}
             />
           </div>
-          <span className={cn(styles.tagDropDownName)}>{t.name}</span>
+          <span className={cn(styles.tagDropDownName)}>
+            {t.getVertexProxy().name}
+          </span>
         </DropDownItem>
       ))}
       <DropDownItem value={DELETE_TAG}>
