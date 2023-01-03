@@ -9,14 +9,15 @@ import {
 import { Vertex } from './vertex.ts';
 import { VertexManager } from './vertex-manager.ts';
 import { assert, notReached } from '../../../base/error.ts';
-import { unionIter } from '../../../base/common.ts';
+import { mapIterable, unionIter } from '../../../base/common.ts';
 import { SimpleTimer, Timer } from '../../../base/timer.ts';
 import {
+  CancellablePromise,
   CoroutineQueue,
   CoroutineScheduler,
   SchedulerPriority,
 } from '../../../base/coroutine.ts';
-import { log } from '../../../logging/log.ts';
+import { GlobalLogger } from '../../../logging/log.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -44,6 +45,22 @@ export const EVENT_QUERY_DID_CLOSE = 'QueryDidClose';
 // const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
+export type GroupByFunction<T extends Vertex = Vertex> = (
+  v: T
+) => string | undefined;
+
+export interface QueryOptions<OT extends Vertex> {
+  name?: string;
+  deps?: Query[];
+  groupBy?: GroupByFunction<OT>;
+}
+
+export type SourceType<IT> =
+  | Query<any, IT>
+  | UnionQuery<any, IT>
+  | GraphManager;
+export type SourceProducer<IT> = () => SourceType<IT>;
+
 /**
  * Queries are implemented as linear search over an abstract list of vertices
  * called a source. Queries implemented as Coroutines to allow both multiplexing
@@ -63,16 +80,29 @@ export class Query<
   IT extends Vertex = Vertex,
   OT extends IT = IT
 > extends VertexSource {
+  logger = GlobalLogger;
   private readonly _id: number;
   private readonly _vertexChangedListener: (key: string) => void;
   private readonly _vertexDeletedListener: (key: string) => void;
   private readonly _closeListener: () => void;
   private readonly _resultKeys: Set<string>;
+  private readonly _groupedResultKeys?: Map<string | undefined, Set<string>>;
   private readonly _clientsNotifyTimer: Timer;
+  private readonly _name?: string;
+  private readonly _deps?: Query[];
+  private readonly _depsListener?: () => void;
+  private readonly _sourceProducer?: SourceProducer<IT>;
+  private readonly _groupByFunc?: GroupByFunction<OT>;
+  private _source: SourceType<IT>;
   private _isOpen: boolean;
   private _isLoading: boolean;
   private _locked: boolean;
   private _cachedSortedResults: QueryResults<OT> | undefined;
+  private _cachedSortedGroups:
+    | Map<string | undefined, QueryResults<OT>>
+    | undefined;
+  private _scanSourcePromise: CancellablePromise<void> | undefined;
+  private _scanResultsPromise: CancellablePromise<void> | undefined;
 
   /**
    * A single use async query for the times you only need a one-off and don't
@@ -167,10 +197,10 @@ export class Query<
   }
 
   constructor(
-    readonly source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
+    sourceOrProducer: SourceType<IT> | SourceProducer<IT>,
     readonly predicate: Predicate<IT, OT>,
     readonly sortDescriptor?: SortDescriptor<OT>,
-    readonly name?: string
+    nameOrOpts?: string | QueryOptions<OT>
   ) {
     super();
     this._id = ++gQueryId;
@@ -185,18 +215,43 @@ export class Query<
     this._isLoading = true;
     this._locked = false;
 
-    if (source instanceof Query || source instanceof UnionQuery) {
-      assert(source.isOpen);
-      source.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+    if (typeof nameOrOpts === 'string') {
+      this._name = nameOrOpts;
+    } else if (typeof nameOrOpts !== 'undefined') {
+      if (nameOrOpts.name) {
+        this._name = nameOrOpts.name;
+      }
+      if (nameOrOpts.deps) {
+        this._deps = nameOrOpts.deps;
+        if (this._deps) {
+          this._depsListener = () => this.onDependencyChanged();
+          for (const d of this._deps) {
+            d.on(EVENT_QUERY_RESULTS_CHANGED, this._depsListener);
+            d.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+          }
+        }
+      }
+      if (nameOrOpts.groupBy) {
+        this._groupByFunc = nameOrOpts.groupBy;
+        this._groupedResultKeys = new Map();
+      }
     }
 
-    if (source.isLoading) {
-      source.once(EVENT_LOADING_FINISHED, () =>
-        this.attachToSourceAfterLoading()
-      );
+    if (typeof sourceOrProducer === 'function') {
+      this._sourceProducer = sourceOrProducer;
+      this._source = this._sourceProducer();
     } else {
-      this.attachToSourceAfterLoading();
+      this._source = sourceOrProducer;
     }
+    this.attachToSource();
+  }
+
+  get source(): SourceType<IT> {
+    return this._source;
+  }
+
+  get name(): string | undefined {
+    return this._name;
   }
 
   get isOpen(): boolean {
@@ -227,6 +282,26 @@ export class Query<
     return this._resultKeys.size;
   }
 
+  get scheduler(): CoroutineScheduler {
+    // At the time of this writing, we're still testing different execution
+    // strategies. Currently executing all queries concurrently results in a
+    // more responsive UI with less re-rendering than executing queries
+    // serially. That being said, when there are a high number of query
+    // cancellations, serial execution will result in a smoother user
+    // experience. This was the case in one of the first iterations on the new
+    // filters bar on April, 2022.
+    //
+    // Using kQueryQueue as the scheduler will enforce a serial execution.
+    return CoroutineScheduler.sharedScheduler(); // kQueryQueue;
+  }
+
+  onResultsChanged(handler: () => void): () => void {
+    this.on(EVENT_QUERY_RESULTS_CHANGED, handler);
+    return () => {
+      this.off(EVENT_QUERY_RESULTS_CHANGED, handler);
+    };
+  }
+
   hasVertex(key: string | Vertex | VertexManager): boolean {
     if (typeof key !== 'string') {
       key = key.key;
@@ -238,13 +313,53 @@ export class Query<
     return this._resultKeys.values();
   }
 
+  groupCount(): number {
+    return this._groupedResultKeys?.size || 0;
+  }
+
+  groups(): Iterable<string | undefined> {
+    this._buildResultsIfNeeded();
+    return this._cachedSortedGroups!.keys();
+  }
+
+  group(name: string | undefined): QueryResults<OT> {
+    this._buildResultsIfNeeded();
+    return this._cachedSortedGroups?.get(name) || [];
+  }
+
+  private detachFromSource(): void {
+    this.source.off(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
+    this.source.off(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
+    this.source.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+  }
+
+  private attachToSource(): void {
+    const source = this._source;
+    if (source instanceof Query || source instanceof UnionQuery) {
+      assert(source.isOpen);
+      source.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+    }
+
+    if (source.isLoading) {
+      source.once(EVENT_LOADING_FINISHED, () =>
+        this.attachToSourceAfterLoading()
+      );
+    } else {
+      this.attachToSourceAfterLoading();
+    }
+  }
+
   close(): void {
     // TODO
     if (this._isOpen) {
       assert(!this._locked);
-      this.source.off(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
-      this.source.off(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
-      this.source.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+      this.detachFromSource();
+      if (this._depsListener && this._deps) {
+        for (const d of this._deps) {
+          d.off(EVENT_QUERY_RESULTS_CHANGED, this._depsListener);
+          d.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+        }
+      }
       this._isOpen = false;
       this.emit(EVENT_QUERY_DID_CLOSE);
     }
@@ -259,13 +374,51 @@ export class Query<
   /******** Private API Starts Here ********/
   /*****************************************/
 
+  private groupValueForKey(key: string): string | undefined {
+    const groupedResultKeys = this._groupedResultKeys;
+    if (!groupedResultKeys) {
+      return undefined;
+    }
+    for (const [group, keySet] of groupedResultKeys) {
+      if (keySet.has(key)) {
+        return group;
+      }
+    }
+    return undefined;
+  }
+
   private vertexChanged(key: string): void {
     const wasInSourceKeys = this.hasVertex(key);
-    if (this.predicate(this.graph.getVertex(key))) {
+    const prevGroupValue = wasInSourceKeys
+      ? this.groupValueForKey(key)
+      : undefined;
+    const vertex = this.graph.getVertex<OT>(key);
+    const newGroupValue = this._groupByFunc
+      ? this._groupByFunc(vertex)
+      : undefined;
+    if (prevGroupValue !== newGroupValue) {
+      const prevSet = this._groupedResultKeys!.get(prevGroupValue);
+      if (prevSet?.size === 1) {
+        assert(prevSet.has(key));
+        this._groupedResultKeys!.delete(prevGroupValue);
+      } else {
+        prevSet?.delete(key);
+      }
+    }
+    if (this.predicate(vertex)) {
       this._resultKeys.add(key);
+      if (this._groupByFunc) {
+        let set = this._groupedResultKeys!.get(newGroupValue);
+        if (!set) {
+          set = new Set();
+          this._groupedResultKeys!.set(newGroupValue, set);
+        }
+        set.add(key);
+      }
       this.emit(EVENT_VERTEX_CHANGED, key);
     } else if (wasInSourceKeys) {
       this._resultKeys.delete(key);
+      this._groupedResultKeys?.delete(prevGroupValue);
       this.emit(EVENT_VERTEX_DELETED, key);
     }
     if (!this.isLoading && wasInSourceKeys !== this.hasVertex(key)) {
@@ -284,7 +437,7 @@ export class Query<
   protected *loadKeysFromSource(): Generator<void> {
     const startTime = performance.now();
     if (!this.isOpen) {
-      log({
+      this.logger.log({
         severity: 'INFO',
         name: 'QueryCancelled',
         value: performance.now() - startTime,
@@ -295,7 +448,7 @@ export class Query<
     }
     for (const key of this.source.keys()) {
       if (!this.isOpen) {
-        log({
+        this.logger.log({
           severity: 'INFO',
           name: 'QueryCancelled',
           value: performance.now() - startTime,
@@ -309,17 +462,27 @@ export class Query<
     }
     this._buildResultsIfNeeded();
     const runningTime = performance.now() - startTime;
-    log({
+    this.logger.log({
       severity: 'INFO',
-      name: 'QueryCancelled',
+      name: 'QueryCompleted',
       value: runningTime,
       unit: 'Milliseconds',
       queryName: this.debugName,
       itemCount: this.count,
     });
-    this._isLoading = false;
-    this.emit(EVENT_LOADING_FINISHED);
-    this._clientsNotifyTimer.schedule();
+    // When any of our dependencies change, we're forced to do a full scan all
+    // over again. In this case, however, we don't emit the loading event.
+    if (this._isLoading) {
+      this._isLoading = false;
+      this.emit(EVENT_LOADING_FINISHED);
+      this._clientsNotifyTimer.schedule();
+    }
+  }
+
+  private compareManagers(a: VertexManager<OT>, b: VertexManager<OT>): number {
+    const sortDesc = this.sortDescriptor;
+    const ret = sortDesc ? sortDesc(a.getVertexProxy(), b.getVertexProxy()) : 0;
+    return ret === 0 ? coreValueCompare(a.key, b.key) : ret;
   }
 
   private _buildResultsIfNeeded(): void {
@@ -329,14 +492,22 @@ export class Query<
       for (const key of this.keys()) {
         results.push(graph.getVertexManager(key));
       }
-      const sortDesc = this.sortDescriptor;
-      results.sort((a, b) => {
-        const ret = sortDesc
-          ? sortDesc(a.getVertexProxy(), b.getVertexProxy())
-          : 0;
-        return ret === 0 ? coreValueCompare(a.key, b.key) : ret;
-      });
+      const sortDesc = this.compareManagers.bind(this);
+      results.sort(sortDesc);
       this._cachedSortedResults = results;
+      this._cachedSortedGroups = undefined;
+      if (this._groupedResultKeys) {
+        const sortedGroups = new Map<string | undefined, QueryResults<OT>>();
+        for (const [groupKey, keys] of this._groupedResultKeys) {
+          sortedGroups.set(
+            groupKey,
+            Array.from(
+              mapIterable(keys, (k) => graph.getVertexManager<OT>(k))
+            ).sort(sortDesc)
+          );
+        }
+        this._cachedSortedGroups = sortedGroups;
+      }
     }
   }
 
@@ -351,23 +522,26 @@ export class Query<
   private attachToSourceAfterLoading(): void {
     const source = this.source;
     assert(!source.isLoading);
-    // At the time of this writing, we're still testing different execution
-    // strategies. Currently executing all queries concurrently results in a
-    // more responsive UI with less re-rendering than executing queries
-    // serially. That being said, when there are a high number of query
-    // cancellations, serial execution will result in a smoother user
-    // experience. This was the case in one of the first iterations on the new
-    // filters bar on April, 2022.
-    //
-    // Using kQueryQueue as the scheduler will enforce a serial execution.
-    const scheduler = CoroutineScheduler.sharedScheduler(); // kQueryQueue;
     source.on(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
     source.on(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
-    scheduler.schedule(
+    this.scheduleSourceScan();
+  }
+
+  private scheduleSourceScan(): void {
+    if (this._scanSourcePromise) {
+      this._scanSourcePromise.cancel();
+    }
+    const promise = this.scheduler.schedule(
       this.loadKeysFromSource(),
       SchedulerPriority.Normal,
-      `Query/${this.name}`
+      `Query.SourceScan/${this.name}`
     );
+    promise.finally(() => {
+      if (this._scanResultsPromise === promise) {
+        this._scanResultsPromise = undefined;
+      }
+    });
+    this._scanResultsPromise = promise;
   }
 
   _notifyQueryChanged(): void {
@@ -376,6 +550,54 @@ export class Query<
     }
     this._cachedSortedResults = undefined;
     this.emit(EVENT_QUERY_RESULTS_CHANGED);
+    this.logger.log({
+      severity: 'INFO',
+      name: 'QueryFired',
+      queryName: this.name,
+      value: 1,
+      unit: 'Count',
+    });
+  }
+
+  private onDependencyChanged(): void {
+    // Cancel any previous re-scan
+    if (this._scanResultsPromise) {
+      this._scanResultsPromise.cancel();
+    }
+    if (this._sourceProducer) {
+      // Refresh our source if needed
+      if (this._scanSourcePromise) {
+        this._scanSourcePromise.cancel();
+      }
+      this.detachFromSource();
+      this._source = this._sourceProducer();
+      this.attachToSource();
+    } else {
+      // No source refresh needed, but we still need to re-scan it all over
+      // again as dependencies may affect our predicate
+      this.scheduleSourceScan();
+    }
+    // Also re-scan all existing results and see if they still match. While
+    // this is slower than throwing everything away and starting over, this
+    // enables the UI to see incremental updates which increases responsiveness
+    const promise = this.scheduler.schedule(
+      this.scanCurrentResults(),
+      SchedulerPriority.Normal,
+      `Query.ResultsScan/${this.name}`
+    );
+    promise.finally(() => {
+      if (this._scanResultsPromise === promise) {
+        this._scanResultsPromise = undefined;
+      }
+    });
+    this._scanResultsPromise = promise;
+  }
+
+  private *scanCurrentResults(): Generator<void> {
+    for (const k of this._resultKeys) {
+      this.vertexChanged(k);
+      yield;
+    }
   }
 }
 

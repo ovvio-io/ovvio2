@@ -59,7 +59,6 @@ import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggab
 import InvitationDialog from '../../../../../../shared/invitation-dialog/index.tsx';
 import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
 import TagButton from '../../../../../../shared/tags/tag-button.tsx';
-import { isCardActionable } from '../../../../../../shared/tags/tag-utils.ts';
 import TagView from '../../../../../../shared/tags/tag-view.tsx';
 import { assignNote } from '../../../../../../shared/utils/assignees.ts';
 import { moveCard } from '../../../../../../shared/utils/move.ts';
@@ -73,6 +72,7 @@ import { GridColumns, useGridStyles } from './grid.tsx';
 import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
 import { formatTimeDiff } from '../../../../../../../../base/date.ts';
 import { NoteStatus } from '../../../../../../../../cfds/base/scheme-types.ts';
+import { NoteType } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 
@@ -674,8 +674,8 @@ const TypeCell = ({
   isDraft?: boolean;
 }) => {
   const styles = useStyles();
-  const typeCard = usePartialVertex(note, ['type']);
-  const isActionable = isCardActionable(typeCard);
+  const partialCard = usePartialVertex(note, ['type']);
+  const isActionable = partialCard.type === NoteType.Task;
 
   return (
     <Cell className={cn(styles.iconCell, styles[GridColumns.Type])}>

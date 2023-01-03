@@ -1,23 +1,23 @@
-import { UnionQuery } from '@ovvio/cfds/lib/client/graph/query';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { Note, NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { isNote, useQuery } from 'core/cfds/react/query';
-import { usePartialVertices } from 'core/cfds/react/vertex';
-import { Scroller } from 'core/react-utils/scrolling';
-import { useMemo } from 'react';
-import { GroupBy } from '../display-bar';
+import { useMemo } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import {
-  FiltersStateController,
-  isCardInFilter,
-} from '../display-bar/filters/state';
-import { AssigneesBoardView } from './assignees-board-view';
-import { TagBoardView } from './tag-board-view';
-import { WorkspaceBoardView } from './workspace-board-view';
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
+import { GroupBy } from '../display-bar/index.tsx';
+import { AssigneesBoardView } from './assignees-board-view.tsx';
+import { TagBoardView } from './tag-board-view.tsx';
+import { WorkspaceBoardView } from './workspace-board-view.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   boardRoot: {
     overflowY: 'auto',
     height: '100%',
@@ -48,7 +48,7 @@ export function BoardView({
 }: BoardViewProps) {
   const styles = useStyles();
   const q = usePartialVertices(selectedWorkspaces, ['notesQuery']);
-  const source = useMemo(() => new UnionQuery(q.map(x => x.notesQuery)), [q]);
+  const source = useMemo(() => new UnionQuery(q.map((x) => x.notesQuery)), [q]);
   const cards = useQuery<Note>(
     (x: Note) =>
       x.type === noteType &&
@@ -125,7 +125,7 @@ export function BoardView({
 
   return (
     <Scroller>
-      {ref => (
+      {(ref) => (
         <div ref={ref} className={cn(styles.boardRoot, className)}>
           {content}
         </div>

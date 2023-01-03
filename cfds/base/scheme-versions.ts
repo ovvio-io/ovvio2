@@ -22,6 +22,7 @@ import {
   SchemeNamespace,
   TYPE_REF_MAP,
   NS_USER_SETTINGS,
+  NS_FILTER,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
@@ -239,6 +240,10 @@ const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   parentNote: TYPE_REF,
 });
 
+const SCHEME_NOTE_5 = SCHEME_NOTE_4.derive(NS_NOTES, {
+  status: TYPE_STR,
+});
+
 const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   color: TYPE_STR,
   name: TYPE_STR,
@@ -264,15 +269,38 @@ const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
   inviteeUser: TYPE_REF, //The invites user id
 });
 
+const SCHEME_FILTER_1 = SCHEME_BASE_1.derive(
+  NS_FILTER,
+  {
+    owner: {
+      type: TYPE_REF,
+      required: true,
+    },
+    tags: TYPE_REF_SET,
+    assignees: TYPE_REF_SET,
+    workspaces: TYPE_REF_SET,
+    noteType: TYPE_STR,
+    statuses: TYPE_STR_SET,
+    sortBy: TYPE_STR,
+    pinned: TYPE_NUMBER,
+    groupBy: TYPE_STR,
+    groupByPivot: TYPE_REF,
+  },
+  [],
+  // Filters are currently personal and live under the user's private repo
+  'owner'
+);
+
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
   SCHEME_WORKSPACE_4 as WORKSPACE_SCHEME,
-  SCHEME_NOTE_4 as NOTE_SCHEME,
+  SCHEME_NOTE_5 as NOTE_SCHEME,
   SCHEME_TAG_2 as TAG_SCHEME,
   SCHEME_INVITE_1 as INVITE_SCHEME,
   SCHEME_USER_2 as USER_SCHEME,
   SCHEME_USER_SETTINGS_1 as USER_SETTINGS,
+  SCHEME_FILTER_1 as SCHEME_FILTER,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -372,8 +400,15 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [SCHEME_WORKSPACE_4, SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_TAG_2],
-    [SchemeNamespace.INVITES, SchemeNamespace.NOTES],
+    [
+      SCHEME_WORKSPACE_4,
+      SCHEME_USER_2,
+      SCHEME_USER_SETTINGS_1,
+      SCHEME_TAG_2,
+      SCHEME_FILTER_1,
+      SCHEME_NOTE_5,
+    ],
+    [SchemeNamespace.INVITES],
     (namespace, data) => {
       if (namespace === NS_TAGS) {
         delete data.color;
@@ -391,6 +426,8 @@ export function runRegister(manager: ISchemeManagerRegister) {
         delete data.noteTags;
         delete data.taskTags;
         delete data.createdBy;
+      } else if (namespace === NS_NOTES) {
+        delete data.status;
       }
     }
   );

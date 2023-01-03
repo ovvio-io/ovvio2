@@ -1,24 +1,13 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from 'https://esm.sh/react@18.2.0';
-import {
-  Query,
-  SortDescriptor,
-  UnionQuery,
-} from '../../../../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import {
   Note,
   NoteType,
 } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import {
-  sortMngStampCompare,
-  sortStampCompare,
-} from '../../../../../../../cfds/client/sorting.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
 import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
@@ -26,11 +15,7 @@ import {
   cn,
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
-import {
-  useExistingQuery,
-  useQuery,
-} from '../../../../../core/cfds/react/query.ts';
-import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { useVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
@@ -44,13 +29,9 @@ import { EmptyListState } from './empty-state.tsx';
 import { InfiniteScroll } from './infinite-scroll.tsx';
 import { InlineTaskButton } from './inline-task-button.tsx';
 import localization from './list.strings.json' assert { type: 'json' };
-import { SortBy } from './sort-by.ts';
 import { ItemRow, ItemsTable, Row } from './table/index.tsx';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-
-export { SortBy };
+import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -66,216 +47,52 @@ const useStyles = makeStyles((theme) => ({
 const useStrings = createUseStrings(localization);
 
 export interface ListViewProps {
-  sortBy: SortBy;
-  noteType: NoteType;
+  filter: VertexManager<Filter>;
   className?: string;
 }
 
 const PAGE_SIZE = 20;
-
-const SORT_BY: Record<SortBy, SortDescriptor<Note>> = {
-  [SortBy.Created]: (a, b) =>
-    b.creationDate.getTime() - a.creationDate.getTime(),
-  [SortBy.DueDate]: (a, b) => {
-    if (!a.dueDate && !b.dueDate) {
-      return 0;
-    }
-    if (!a.dueDate) {
-      return 1;
-    }
-    if (!b.dueDate) {
-      return -1;
-    }
-
-    return a.dueDate.getTime() - b.dueDate.getTime();
-  },
-  [SortBy.LastModified]: (a, b) =>
-    b.lastModified.getTime() - a.lastModified.getTime(),
-  [SortBy.Priority]: sortStampCompare,
-};
 
 interface CardsData {
   pinned: VertexManager<Note>[];
   unpinned: VertexManager<Note>[];
 }
 
-interface NoteFilterOptions {
-  filterWorkspace: boolean;
-  filterTags: boolean;
-  filterAssignees: boolean;
-}
+export function ListView({ filter: filterMgr, className }: ListViewProps) {
+  const filter = useVertex(filterMgr);
+  const pinnedNotesQuery = filter.buildQuery('listViewPinned', true);
+  const unpinnedNotesQuery = filter.buildQuery('listViewUnpinned', false);
 
-function noteInFilter(note: Note, opts: NoteFilterOptions): boolean {
-  if (opts.filterWorkspace && !note.workspace.selected) {
-    return false;
-  }
-  if (opts.filterTags) {
-    let hasSelectedTag = false;
-    for (const [tag, subtag] of note.tags) {
-      if (tag.selected || subtag.selected) {
-        hasSelectedTag = true;
-        break;
-      }
-    }
-    if (!hasSelectedTag) {
-      return false;
-    }
-  }
-  if (opts.filterAssignees) {
-    let hasSelectedAssignee = false;
-    for (const user of note.assignees) {
-      if (user.selected) {
-        hasSelectedAssignee = true;
-        break;
-      }
-    }
-    if (!hasSelectedAssignee) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// function noteInFilter(
-//   note: Note,
-//   selectedWorkspacesQuery: Query,
-//   selectedTagsQuery: Query,
-//   selectedUsersQuery: Query
-// ): boolean {
-//   if (
-//     selectedWorkspacesQuery.count === 0 ||
-//     !selectedWorkspacesQuery.hasVertex(note.workspace)
-//   ) {
-//     return false;
-//   }
-//   if (selectedTagsQuery.count > 0) {
-//     let found = false;
-//     for (const tag of note.tags.values()) {
-//       if (selectedTagsQuery.hasVertex(tag)) {
-//         found = true;
-//         break;
-//       }
-//     }
-//     if (!found) {
-//       return false;
-//     }
-//   }
-//   if (selectedUsersQuery.count > 0) {
-//     let found = false;
-//     for (const user of note.assignees) {
-//       if (selectedUsersQuery.hasVertex(user)) {
-//         found = true;
-//         break;
-//       }
-//     }
-//     if (!found) {
-//       return false;
-//     }
-//   }
-//   return true;
-// }
-
-export function ListView({ noteType, sortBy, className }: ListViewProps) {
-  const graph = useGraphManager();
-  const selectedWorkspacesQuery = useExistingQuery(
-    graph.sharedQueriesManager.selectedWorkspacesQuery
+  const [pinnedNotes, setPinnedNotes] = useState(pinnedNotesQuery.results);
+  const [unpinnedNotes, setUnpinnedNotes] = useState(
+    unpinnedNotesQuery.results
   );
-  const selectedTagsQuery = useExistingQuery(
-    graph.sharedQueriesManager.selectedTagsQuery
+  useEffect(
+    () =>
+      pinnedNotesQuery.onResultsChanged(() =>
+        setPinnedNotes(pinnedNotesQuery.results)
+      ),
+    [pinnedNotesQuery]
   );
-  const selectedUsersQuery = useExistingQuery(
-    graph.sharedQueriesManager.selectedUsersQuery
+  useEffect(
+    () =>
+      unpinnedNotesQuery.onResultsChanged(() =>
+        setUnpinnedNotes(unpinnedNotesQuery.results)
+      ),
+    [unpinnedNotesQuery]
   );
-  const q = usePartialVertices(selectedWorkspacesQuery.results, [
-    'notesQuery',
-    'pinnedNotesQuery',
-  ]);
-  const unpinnedSource = useMemo(
-    () => new UnionQuery(q.map((x) => x.notesQuery, 'notesUnion')),
-    [q]
-  );
-  const unpinnedCardsQuery = useQuery(
-    (x: Note) =>
-      x.type === noteType &&
-      x.parentType !== NoteType.Task &&
-      !x.isPinned &&
-      noteInFilter(x, {
-        filterWorkspace: true,
-        filterTags: selectedTagsQuery.query.count > 0,
-        filterAssignees: selectedUsersQuery.query.count > 0,
-      }),
-    [noteType, selectedWorkspacesQuery, selectedTagsQuery, selectedUsersQuery],
-    {
-      sort: SORT_BY[sortBy],
-      name: 'listViewUnpinned',
-      source: unpinnedSource,
-    }
-  );
-
-  const pinnedSource = useMemo(
-    () => new UnionQuery(q.map((x) => x.pinnedNotesQuery, 'pinnedNotesUnion')),
-    [q]
-  );
-  const pinnedCardsQuery = useQuery(
-    (x: Note) =>
-      x.type === noteType &&
-      x.parentType !== NoteType.Task &&
-      x.isPinned &&
-      noteInFilter(x, {
-        filterWorkspace: true,
-        filterTags: selectedTagsQuery.query.count > 0,
-        filterAssignees: selectedUsersQuery.query.count > 0,
-      }),
-    [noteType, selectedWorkspacesQuery, selectedTagsQuery, selectedUsersQuery],
-    {
-      sort: SORT_BY[sortBy],
-      name: 'listViewPinned',
-      source: pinnedSource,
-    }
-  );
-
-  // if (unpinnedCardsQuery.loading || pinnedCardsQuery.loading) {
-  //   return null;
-  // }
-
-  // const cardsQuery = useQuery(
-  //   x =>
-  //     isNote(x) &&
-  //     x.type === noteType &&
-  //     (x.parentNote === undefined || x.parentNote.type === NoteType.Note) &&
-  //     selectedWorkspaces.some(ws => ws.key === x.workspaceKey) &&
-  //     isCardInFilter(filters, x),
-  //   [noteType, selectedWorkspaces, filters],
-  //   {
-  //     sort: SORT_BY[sortBy],
-  //     name: 'listView',
-  //     graphLayer: GraphLayer.NotDeleted,
-  //   }
-  // );
-  // const partials = usePartialVertices(cardsQuery.results, ['isPinned']);
-  // const mapped = useMemo(() => splitCards(partials), [partials]);
   const mapped = {
-    pinned: pinnedCardsQuery.results,
-    unpinned: unpinnedCardsQuery.results,
+    pinned: pinnedNotes,
+    unpinned: unpinnedNotes,
   };
-  // const cards = useQueryProvider(ListCardsQueryProvider, {
-  //   selectedWorkspaces: selectedWorkspaces.map(x => x.key),
-  //   noteType,
-  //   textSearch: '',
-  //   sortBy,
-  // });
-  // if (cardsQuery.loading) {
-  //   return null;
-  // }
 
   if (!(mapped.pinned.length + mapped.unpinned.length)) {
     return <EmptyListState />;
   }
   return (
     <InnerListView
-      noteType={noteType}
+      noteType={filter.noteType}
       className={className}
-      sortBy={sortBy}
       cards={mapped}
     />
   );
@@ -289,12 +106,10 @@ const EMPTY_ARRAY: VertexManager<Note>[] = [];
 
 export function InnerListView({
   cards,
-  sortBy,
   className,
   noteType,
 }: {
   cards: CardsData;
-  sortBy: SortBy;
   className?: string;
   noteType?: NoteType;
 }) {
@@ -316,25 +131,25 @@ export function InnerListView({
     [docRouter]
   );
 
-  usePartialVertices(sortBy === SortBy.Priority ? cards.pinned : EMPTY_ARRAY, [
-    'sortStamp',
-  ]);
-  usePartialVertices(
-    sortBy === SortBy.Priority ? cards.unpinned : EMPTY_ARRAY,
-    ['sortStamp']
-  );
+  // usePartialVertices(sortBy === SortBy.Priority ? cards.pinned : EMPTY_ARRAY, [
+  //   'sortStamp',
+  // ]);
+  // usePartialVertices(
+  //   sortBy === SortBy.Priority ? cards.unpinned : EMPTY_ARRAY,
+  //   ['sortStamp']
+  // );
   const [draft, setDraft] = useState<null | VertexManager<Note>>(null);
 
   let visibleCards = cards.unpinned;
-  if (sortBy === SortBy.Priority) {
-    visibleCards = visibleCards.sort(sortMngStampCompare);
-  }
+  // if (sortBy === SortBy.Priority) {
+  //   visibleCards = visibleCards.sort(sortMngStampCompare);
+  // }
   visibleCards = visibleCards
     .slice(0, limit)
     .filter((x) => x.key !== draft?.key);
-  useEffect(() => {
-    setLimit(PAGE_SIZE);
-  }, [sortBy]);
+  // useEffect(() => {
+  //   setLimit(PAGE_SIZE);
+  // }, [sortBy]);
   // const onDrop = (
   //   item: VertexManager<Note>,
   //   relativeTo: VertexManager<Note>,
@@ -425,7 +240,7 @@ export function InnerListView({
 
               <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
               {noteType === NoteType.Task && (
-                <InlineTaskButton draft={draft} setDraft={setDraft} />
+                <InlineTaskButton draft={draft!} setDraft={setDraft} />
               )}
               {visibleCards.map((c) => (
                 <ItemRow note={c} key={c.key} onClick={onNoteSelected} />

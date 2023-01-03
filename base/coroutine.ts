@@ -4,6 +4,10 @@ const kSingleFrameTime = 1000 / 60; // 60 fps
 // 1/3 of a frame every event loop cycle
 const kSchedulerCycleTimeMs = kSingleFrameTime / 3;
 
+export interface CancellablePromise<T> extends Promise<T> {
+  cancel(): void;
+}
+
 class Coroutine {
   private readonly _generator: Generator;
   private _doneHandler: () => void;
@@ -16,12 +20,14 @@ class Coroutine {
     id: number,
     g: Generator,
     name?: string
-  ): [Coroutine, Promise<void>] {
+  ): [Coroutine, CancellablePromise<void>] {
     let resolve: () => void;
     const promise = new Promise<void>((res) => {
       resolve = res;
     });
-    return [new Coroutine(id, g, resolve!, name), promise];
+    const coroutine = new Coroutine(id, g, resolve!, name);
+    (promise as CancellablePromise<void>).cancel = () => coroutine.cancel();
+    return [coroutine, promise as CancellablePromise<void>];
   }
 
   constructor(
@@ -66,6 +72,14 @@ class Coroutine {
   appendExecutionTime(dt: number): void {
     this._timeSpentMs += dt;
   }
+
+  cancel(): void {
+    if (this._done) {
+      return;
+    }
+    this._done = true;
+    this._doneHandler();
+  }
 }
 
 function compareCoroutines(c1: Coroutine, c2: Coroutine): number {
@@ -83,7 +97,7 @@ export interface Scheduler {
     g: Generator,
     priority?: SchedulerPriority,
     name?: string
-  ): Promise<void>;
+  ): CancellablePromise<void>;
 }
 
 export class CoroutineScheduler implements Scheduler {
@@ -151,7 +165,7 @@ export class CoroutineScheduler implements Scheduler {
     g: Generator,
     priority?: SchedulerPriority,
     name?: string
-  ): Promise<void> {
+  ): CancellablePromise<void> {
     const [coroutine, promise] = Coroutine.pack(++this._coroutineId, g, name);
     if (priority === undefined) {
       priority = SchedulerPriority.Normal;
@@ -205,7 +219,7 @@ export class CoroutineQueue implements Scheduler {
     g: Generator,
     _priority?: SchedulerPriority,
     name?: string
-  ): Promise<void> {
+  ): CancellablePromise<void> {
     const [coroutine, promise] = Coroutine.pack(++this._id, g, name);
     this._queue.push(coroutine);
     if (this._queue.length === 1) {

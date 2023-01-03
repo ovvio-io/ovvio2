@@ -368,23 +368,15 @@ export class Note extends ContentVertex {
   }
 
   get status(): NoteStatus {
-    let status = this.record.get('status', NoteStatus.ToDo);
-    if (status < NoteStatus.ToDo || status >= NoteStatus.kMNaxValue) {
-      status = NoteStatus.ToDo;
-    }
-    return status;
+    return this.record.get('status', 'ToDo');
   }
 
   set status(status: NoteStatus) {
-    status = Math.max(
-      NoteStatus.ToDo,
-      Math.min(NoteStatus.kMNaxValue - 1, status)
-    );
     this.record.set('status', status);
   }
 
   clearStatus(): void {
-    this.status = NoteStatus.ToDo;
+    this.record.delete('status');
   }
 
   get tags(): Dictionary<Tag, Tag> {

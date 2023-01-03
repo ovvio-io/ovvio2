@@ -1,8 +1,6 @@
 import * as SetUtils from '../../../../base/set.ts';
-import { Dictionary } from '../../../../base/collections/dict.ts';
-import { keyDictToVertDict, vertDictToKeyDict, Vertex } from '../vertex.ts';
+import { Vertex } from '../vertex.ts';
 import { BaseVertex } from './base.ts';
-import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Query } from '../query.ts';
 import { Note } from './note.ts';
@@ -52,32 +50,6 @@ export class Workspace extends BaseVertex {
     } else {
       this.record.delete('icon');
     }
-  }
-
-  get noteTags(): Dictionary<Tag, Tag> {
-    const map = this.record.get<Map<string, string>>('noteTags');
-    return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
-  }
-
-  set noteTags(map: Dictionary<Tag, Tag>) {
-    this.record.set('noteTags', vertDictToKeyDict(map));
-  }
-
-  clearNoteTags(): void {
-    this.noteTags = new Map();
-  }
-
-  get taskTags(): Dictionary<Tag, Tag> {
-    const map = this.record.get<Map<string, string>>('taskTags');
-    return map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
-  }
-
-  set taskTags(map: Dictionary<Tag, Tag>) {
-    this.record.set('taskTags', vertDictToKeyDict(map));
-  }
-
-  clearTaskTags(): void {
-    this.taskTags = new Map();
   }
 
   get exportImage(): string | undefined {

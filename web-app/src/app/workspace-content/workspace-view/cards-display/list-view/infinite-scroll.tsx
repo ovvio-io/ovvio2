@@ -1,10 +1,17 @@
-import { useScrollParent } from 'core/react-utils/scrolling';
-import React, { useEffect, useRef, useState } from 'react';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import SpinnerView from '@ovvio/styles/lib/components/spinner-view';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import SpinnerView from '../../../../../../../styles/components/spinner-view.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   loaderContainer: {
     basedOn: [layout.row, layout.centerCenter],
   },
@@ -46,7 +53,7 @@ export function InfiniteScroll({
         const diff =
           parentEl.scrollHeight - (parentEl.scrollTop + parentEl.clientHeight);
         if (diff < THRESHOLD) {
-          setLimit(x => x + pageSize);
+          setLimit((x) => x + pageSize);
         }
       };
       parentEl.addEventListener('scroll', handler);

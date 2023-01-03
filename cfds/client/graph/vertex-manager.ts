@@ -152,8 +152,11 @@ export class VertexManager<V extends Vertex = Vertex>
    * on the server.
    */
   get hasPendingChanges(): boolean {
-    return this.record.isEqual(
-      this.repository.valueForKey(this.key, this.graph.session)
+    return (
+      !this.isLocal &&
+      this.record.isEqual(
+        this.repository.valueForKey(this.key, this.graph.session)
+      )
     );
   }
 
@@ -227,6 +230,9 @@ export class VertexManager<V extends Vertex = Vertex>
    * edits. NOP if nothing needs to be done.
    */
   commit(): void {
+    if (this.isLocal) {
+      return;
+    }
     const graph = this.graph;
     const repo = this.repository;
     const prevRecord = this.record;

@@ -11,6 +11,7 @@ import React, {
 import { CurrentUser } from '../../../stores/user.ts';
 import { NoteSearchEngine } from '../../../../../cfds/client/graph/note-search.ts';
 import { useLogger } from './logger.tsx';
+import { NS_FILTER } from '../../../../../cfds/base/scheme-types.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -47,6 +48,9 @@ interface CfdsClientProviderProps {
 //   response => response.json()
 // );
 
+export const KeyNotesFilter = '_NotesFilter';
+export const KeyTasksFilter = '_TasksFilter';
+
 export function CfdsClientProvider({
   user,
   sessionId,
@@ -62,6 +66,10 @@ export function CfdsClientProvider({
       'http://localhost'
     );
 
+    // Create our local filter holders
+    manager.createVertex(NS_FILTER, { owner: user.id }, KeyNotesFilter, true);
+    manager.createVertex(NS_FILTER, { owner: user.id }, KeyTasksFilter, true);
+    // Load cached contents
     manager.loadLocalContents();
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 

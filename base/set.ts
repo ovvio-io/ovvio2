@@ -16,6 +16,21 @@ export function intersection<T>(s1: Set<T>, s2: Set<T>): Set<T> {
   return result;
 }
 
+export function intersects<T>(s1: Set<T>, s2: Set<T>): boolean {
+  // Make sure s1 is the smaller of the two sets
+  if (s1.size > s2.size) {
+    const tmp = s1;
+    s1 = s2;
+    s2 = tmp;
+  }
+  for (const v of s1) {
+    if (s2.has(v)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function difference<T>(s1: Set<T>, s2: Set<T>): Set<T> {
   if (!(s1 instanceof Set)) {
     s1 = new Set(s1);
@@ -184,6 +199,12 @@ export function mapToArray<T>(s: Set<T>, mapper: (v: T) => any): any[] {
   return result;
 }
 
+/**
+ * Adds all items from the passed iterable to `s`, and returns `s`.
+ * @param s The set to update.
+ * @param iterable Items to add to the set.
+ * @returns The updated set.
+ */
 export function update<T>(s: Set<T>, iterable: Iterable<T>): Set<T> {
   for (const v of iterable) {
     s.add(v);

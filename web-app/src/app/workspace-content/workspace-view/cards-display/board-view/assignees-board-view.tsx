@@ -1,27 +1,30 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { sortMngStampCompare } from '@ovvio/cfds/lib/client/sorting';
-import { useEventLogger } from 'core/analytics';
-import { usePartialVertices } from 'core/cfds/react/vertex';
-import { createUseStrings, format } from 'core/localization';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  User,
+  Workspace,
+} from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { sortMngStampCompare } from '../../../../../../../cfds/client/sorting.ts';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  createUseStrings,
+  format,
+} from '../../../../../core/localization/index.tsx';
 import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   DragSource,
-} from 'shared/dragndrop';
-import { DragPosition } from 'shared/dragndrop/droppable';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { setDragSort } from '../card-item/draggable-card';
-import { BoardCard } from './board-card';
-import { BoardColumn } from './board-column';
-import localization from './board.strings.json';
-import { FiltersStateController } from '../display-bar/filters/state';
+} from '../../../../../shared/dragndrop/index.ts';
+import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { setDragSort } from '../card-item/draggable-card.tsx';
+import { BoardCard } from './board-card.tsx';
+import { BoardColumn } from './board-column.tsx';
+import localization from './board.strings.json' assert { type: 'json' };
 
 export interface AssigneesBoardViewProps {
-  filters: FiltersStateController;
   cardManagers: VertexManager<Note>[];
-  selectedWorkspaces: VertexManager<Workspace>[];
 }
 
 const useStrings = createUseStrings(localization);
@@ -39,11 +42,7 @@ type UserColumn =
       cards: VertexManager<Note>[];
     };
 
-export function AssigneesBoardView({
-  filters,
-  cardManagers,
-  selectedWorkspaces,
-}: AssigneesBoardViewProps) {
+export function AssigneesBoardView({ cardManagers }: AssigneesBoardViewProps) {
   const cards = usePartialVertices(cardManagers, ['assignees', 'sortStamp']);
   const workspaces = usePartialVertices(selectedWorkspaces, ['users']);
   const eventLogger = useEventLogger();
@@ -86,25 +85,25 @@ export function AssigneesBoardView({
     const users = new Set(
       workspaces.reduce((current, x) => {
         return current.concat(
-          ...Array.from(x.users).map(x => x.manager as VertexManager<User>)
+          ...Array.from(x.users).map((x) => x.manager as VertexManager<User>)
         );
       }, [] as VertexManager<User>[])
     );
     const cols = Array.from(users)
-      .map(x => ({
+      .map((x) => ({
         user: x.getVertexProxy(),
         key: x.key,
         userManager: x,
         cards: cards
-          .filter(card => card.assignees.has(x.getVertexProxy()))
-          .map(card => card.manager as VertexManager<Note>)
+          .filter((card) => card.assignees.has(x.getVertexProxy()))
+          .map((card) => card.manager as VertexManager<Note>)
           .sort(sortMngStampCompare),
       }))
       .sort((a, b) => a.user.name.localeCompare(b.user.name));
     const selected = cols.filter(
-      x =>
+      (x) =>
         !filters.activeAssignees?.length ||
-        filters.activeAssignees.some(u => u.key === x.key)
+        filters.activeAssignees.some((u) => u.key === x.key)
     );
     const res = selected.length ? selected : cols;
     return [
@@ -112,8 +111,8 @@ export function AssigneesBoardView({
         key: 'unassigned',
         userManager: 'unassigned',
         cards: cards
-          .filter(card => card.assignees.size === 0)
-          .map(card => card.manager as VertexManager<Note>)
+          .filter((card) => card.assignees.size === 0)
+          .map((card) => card.manager as VertexManager<Note>)
           .sort(sortMngStampCompare),
       },
       ...res,
@@ -161,7 +160,7 @@ export function AssigneesBoardView({
 
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {columns.map(column => (
+      {columns.map((column) => (
         <BoardColumn
           title={
             column.userManager === 'unassigned'
@@ -170,7 +169,7 @@ export function AssigneesBoardView({
           }
           key={column.key}
           items={column.cards}
-          allowsDrop={item => allowsDrop(column.userManager, item)}
+          allowsDrop={(item) => allowsDrop(column.userManager, item)}
           onDrop={(item, relativeTo, dragPosition) =>
             onDrop(
               column.userManager,
