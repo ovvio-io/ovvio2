@@ -1,10 +1,4 @@
-import { useMemo } from 'https://esm.sh/react@18.2.0';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import {
-  Note,
-  NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import React, { ReactFragment, useMemo } from 'https://esm.sh/react@18.2.0';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import {
   cn,
@@ -16,6 +10,9 @@ import { GroupBy } from '../display-bar/index.tsx';
 import { AssigneesBoardView } from './assignees-board-view.tsx';
 import { TagBoardView } from './tag-board-view.tsx';
 import { WorkspaceBoardView } from './workspace-board-view.tsx';
+import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
+import { useQueryResults } from '../../../../../core/cfds/react/query.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
@@ -29,46 +26,18 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export interface BoardViewProps {
-  groupBy: GroupBy;
-  noteType: NoteType;
-  selectedWorkspaces: VertexManager<Workspace>[];
   className?: string;
-  filters: FiltersStateController;
+  filter: VertexManager<Filter>;
 }
 
 // type PartialTaskData = Partial<TypeOfScheme<typeof NOTE_SCHEME>>;
 // type TaskData = PartialTaskData & Required<Pick<PartialTaskData, 'workspace'>>;
 
-export function BoardView({
-  groupBy,
-  selectedWorkspaces,
-  noteType,
-  className,
-  filters,
-}: BoardViewProps) {
+export function BoardView({ className, filter }: BoardViewProps) {
   const styles = useStyles();
-  const q = usePartialVertices(selectedWorkspaces, ['notesQuery']);
-  const source = useMemo(() => new UnionQuery(q.map((x) => x.notesQuery)), [q]);
-  const cards = useQuery<Note>(
-    (x: Note) =>
-      x.type === noteType &&
-      x.parentType !== NoteType.Task &&
-      isCardInFilter(filters, x),
-    [noteType, filters],
-    {
-      name: 'BoardView',
-      source,
-    }
-  );
-  // const cards = useQueryProvider(ListCardsQueryProvider, {
-  //   selectedWorkspaces: selectedWorkspaces.map(x => x.key),
-  //   noteType,
-  // });
-  // const docRouter = useDocumentRouter();
-  if (cards.loading) {
-    return null;
-  }
-  let content = null;
+  const cards = useQueryResults(filter.buildQuery('BoardView'));
+
+  let content: React.ReactNode = null;
   // const onCreateCard = (data: TaskData) => {
   //   const workspace = selectedWorkspaces.find(x => x.key === data.workspace);
   //   if (!workspace) {
@@ -98,11 +67,11 @@ export function BoardView({
   //   docRouter.goTo(card);
   // };
 
-  if (groupBy.type === 'workspace') {
+  if (filter.groupBy === 'workspace') {
     content = (
       <WorkspaceBoardView
-        cardManagers={cards.results}
-        selectedWorkspaces={selectedWorkspaces}
+        cardManagers={cards}
+        selectedWorkspaces={filter.getEffectiveWorkspaces()}
       />
     );
   } else if (groupBy.type === 'tag') {

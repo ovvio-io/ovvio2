@@ -18,6 +18,8 @@ import {
   SchedulerPriority,
 } from '../../../base/coroutine.ts';
 import { GlobalLogger } from '../../../logging/log.ts';
+import { MutationPack } from './mutations.ts';
+import { Dictionary } from '../../../base/collections/dict.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -45,9 +47,15 @@ export const EVENT_QUERY_DID_CLOSE = 'QueryDidClose';
 // const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
+export type GroupId = string | undefined;
+
+/**
+ * A function responsible for mapping a query result (vertex) to one or more
+ * groups.
+ */
 export type GroupByFunction<T extends Vertex = Vertex> = (
   v: T
-) => string | undefined;
+) => GroupId | GroupId[];
 
 export interface QueryOptions<OT extends Vertex> {
   name?: string;
@@ -55,11 +63,11 @@ export interface QueryOptions<OT extends Vertex> {
   groupBy?: GroupByFunction<OT>;
 }
 
-export type SourceType<IT> =
-  | Query<any, IT>
-  | UnionQuery<any, IT>
+export type SourceType<IT extends Vertex> =
+  | Query<Vertex, IT>
+  | UnionQuery<Vertex, IT>
   | GraphManager;
-export type SourceProducer<IT> = () => SourceType<IT>;
+export type SourceProducer<IT extends Vertex> = () => SourceType<IT>;
 
 /**
  * Queries are implemented as linear search over an abstract list of vertices
@@ -75,6 +83,10 @@ export type SourceProducer<IT> = () => SourceType<IT>;
  * in the result set of a query, it'll pass the update down to all chained
  * queries. If not, the rest of the chian won't be notified. This allows us to
  * control the way updates propagate throughout the app.
+ *
+ * Queries may have other queries as dependencies. Whenever a dependency's
+ * result set changes, the query will re-scan its source (refreshing it if
+ * needed), and update the results accordingly.
  */
 export class Query<
   IT extends Vertex = Vertex,
@@ -82,11 +94,17 @@ export class Query<
 > extends VertexSource {
   logger = GlobalLogger;
   private readonly _id: number;
-  private readonly _vertexChangedListener: (key: string) => void;
-  private readonly _vertexDeletedListener: (key: string) => void;
+  private readonly _vertexChangedListener: (
+    key: string,
+    pack: MutationPack
+  ) => void;
+  private readonly _vertexDeletedListener: (
+    key: string,
+    pack: MutationPack
+  ) => void;
   private readonly _closeListener: () => void;
   private readonly _resultKeys: Set<string>;
-  private readonly _groupedResultKeys?: Map<string | undefined, Set<string>>;
+  private readonly _groupedResultKeys?: Map<GroupId, Set<string>>;
   private readonly _clientsNotifyTimer: Timer;
   private readonly _name?: string;
   private readonly _deps?: Query[];
@@ -98,9 +116,7 @@ export class Query<
   private _isLoading: boolean;
   private _locked: boolean;
   private _cachedSortedResults: QueryResults<OT> | undefined;
-  private _cachedSortedGroups:
-    | Map<string | undefined, QueryResults<OT>>
-    | undefined;
+  private _cachedSortedGroups: Map<GroupId, QueryResults<OT>> | undefined;
   private _scanSourcePromise: CancellablePromise<void> | undefined;
   private _scanResultsPromise: CancellablePromise<void> | undefined;
 
@@ -271,11 +287,13 @@ export class Query<
   }
 
   get results(): QueryResults<OT> {
-    if (this.isLoading) {
-      return [];
-    }
     this._buildResultsIfNeeded();
     return this._cachedSortedResults!;
+  }
+
+  get groups(): Dictionary<GroupId, QueryResults<OT>> {
+    this._buildResultsIfNeeded();
+    return this._cachedSortedGroups || new Map([[undefined, this.results]]);
   }
 
   get count(): number {
@@ -317,12 +335,7 @@ export class Query<
     return this._groupedResultKeys?.size || 0;
   }
 
-  groups(): Iterable<string | undefined> {
-    this._buildResultsIfNeeded();
-    return this._cachedSortedGroups!.keys();
-  }
-
-  group(name: string | undefined): QueryResults<OT> {
+  group(name: GroupId): QueryResults<OT> {
     this._buildResultsIfNeeded();
     return this._cachedSortedGroups?.get(name) || [];
   }
@@ -374,62 +387,61 @@ export class Query<
   /******** Private API Starts Here ********/
   /*****************************************/
 
-  private groupValueForKey(key: string): string | undefined {
+  private existingGroupIdsForKey(key: string): GroupId[] {
     const groupedResultKeys = this._groupedResultKeys;
     if (!groupedResultKeys) {
-      return undefined;
+      return [undefined];
     }
-    for (const [group, keySet] of groupedResultKeys) {
+    const result = [];
+    for (const [groupId, keySet] of groupedResultKeys) {
       if (keySet.has(key)) {
-        return group;
+        result.push(groupId);
       }
     }
-    return undefined;
+    return result;
   }
 
-  private vertexChanged(key: string): void {
+  private vertexChanged(key: string, pack: MutationPack): void {
     const wasInSourceKeys = this.hasVertex(key);
-    const prevGroupValue = wasInSourceKeys
-      ? this.groupValueForKey(key)
-      : undefined;
+    const prevGroupIds = this.existingGroupIdsForKey(key);
     const vertex = this.graph.getVertex<OT>(key);
-    const newGroupValue = this._groupByFunc
-      ? this._groupByFunc(vertex)
-      : undefined;
-    if (prevGroupValue !== newGroupValue) {
-      const prevSet = this._groupedResultKeys!.get(prevGroupValue);
+    const newGroupIds = this.groupIdsForVertex(key);
+    for (const groupId of prevGroupIds) {
+      const prevSet = this._groupedResultKeys!.get(groupId);
+      if (!prevSet) {
+        continue;
+      }
       if (prevSet?.size === 1) {
         assert(prevSet.has(key));
-        this._groupedResultKeys!.delete(prevGroupValue);
+        this._groupedResultKeys!.delete(groupId);
       } else {
         prevSet?.delete(key);
       }
     }
     if (this.predicate(vertex)) {
       this._resultKeys.add(key);
-      if (this._groupByFunc) {
-        let set = this._groupedResultKeys!.get(newGroupValue);
+      for (const groupId of newGroupIds) {
+        let set = this._groupedResultKeys!.get(groupId);
         if (!set) {
           set = new Set();
-          this._groupedResultKeys!.set(newGroupValue, set);
+          this._groupedResultKeys!.set(groupId, set);
         }
         set.add(key);
       }
-      this.emit(EVENT_VERTEX_CHANGED, key);
+      this.emit(EVENT_VERTEX_CHANGED, key, pack);
     } else if (wasInSourceKeys) {
       this._resultKeys.delete(key);
-      this._groupedResultKeys?.delete(prevGroupValue);
-      this.emit(EVENT_VERTEX_DELETED, key);
+      this.emit(EVENT_VERTEX_DELETED, key, pack);
     }
     if (!this.isLoading && wasInSourceKeys !== this.hasVertex(key)) {
       this._clientsNotifyTimer.schedule();
     }
   }
 
-  private vertexDeleted(key: string): void {
+  private vertexDeleted(key: string, pack: MutationPack): void {
     if (this.hasVertex(key)) {
       this._resultKeys.delete(key);
-      this.emit(EVENT_VERTEX_DELETED, key);
+      this.emit(EVENT_VERTEX_DELETED, key, pack);
       this._clientsNotifyTimer.schedule();
     }
   }
@@ -492,19 +504,24 @@ export class Query<
       for (const key of this.keys()) {
         results.push(graph.getVertexManager(key));
       }
-      const sortDesc = this.compareManagers.bind(this);
-      results.sort(sortDesc);
+      const sortDesc = this.sortDescriptor
+        ? this.compareManagers.bind(this)
+        : undefined;
+      if (sortDesc) {
+        results.sort(sortDesc);
+      }
       this._cachedSortedResults = results;
       this._cachedSortedGroups = undefined;
       if (this._groupedResultKeys) {
-        const sortedGroups = new Map<string | undefined, QueryResults<OT>>();
+        const sortedGroups = new Map<GroupId, QueryResults<OT>>();
         for (const [groupKey, keys] of this._groupedResultKeys) {
-          sortedGroups.set(
-            groupKey,
-            Array.from(
-              mapIterable(keys, (k) => graph.getVertexManager<OT>(k))
-            ).sort(sortDesc)
+          const arr = Array.from(
+            mapIterable(keys, (k) => graph.getVertexManager<OT>(k))
           );
+          if (sortDesc) {
+            arr.sort(sortDesc);
+          }
+          sortedGroups.set(groupKey, arr);
         }
         this._cachedSortedGroups = sortedGroups;
       }
@@ -549,6 +566,7 @@ export class Query<
       return;
     }
     this._cachedSortedResults = undefined;
+    this._cachedSortedGroups = undefined;
     this.emit(EVENT_QUERY_RESULTS_CHANGED);
     this.logger.log({
       severity: 'INFO',
@@ -598,6 +616,20 @@ export class Query<
       this.vertexChanged(k);
       yield;
     }
+  }
+
+  private groupIdsForVertex(v: string | OT | VertexManager<OT>): GroupId[] {
+    const groupByFunc = this._groupByFunc;
+    if (!groupByFunc) {
+      return [undefined];
+    }
+    if (typeof v === 'string') {
+      v = this.graph.getVertex<OT>(v);
+    } else if (v instanceof VertexManager<OT>) {
+      v = v.getVertexProxy() as OT;
+    }
+    const res = groupByFunc(v);
+    return res instanceof Array ? res : [res];
   }
 }
 

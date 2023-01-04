@@ -10,6 +10,8 @@ import { Workspace } from './workspace.ts';
 import { triggerChildren } from '../propagation-triggers.ts';
 import { VertexManager } from '../vertex-manager.ts';
 import { Record } from '../../../base/record.ts';
+import { IVertex } from '../types.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 
 export class BaseVertex extends Vertex {
   constructor(
@@ -136,6 +138,13 @@ export class BaseVertex extends Vertex {
       return this.parent;
     }
     return super.valueForRefCalc(fieldName);
+  }
+
+  compareTo(other: IVertex): number {
+    if (other instanceof BaseVertex) {
+      return coreValueCompare(this.sortStamp, other.sortStamp);
+    }
+    return super.compareTo(other);
   }
 }
 

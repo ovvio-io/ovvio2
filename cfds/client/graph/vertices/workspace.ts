@@ -83,7 +83,8 @@ export class Workspace extends BaseVertex {
       this.key,
       'pinnedNotesQuery',
       this.notesQuery,
-      (note) => note.isPinned
+      (note) => note.isPinned,
+      (n1, n2) => coreValueCompare(n1.sortStamp, n2.sortStamp)
     );
   }
 }

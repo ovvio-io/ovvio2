@@ -2,7 +2,11 @@ import { CoreValue } from '../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import * as SetUtils from '../../../../base/set.ts';
 import { toJS } from '../../../base/errors.ts';
-import { FilterSortBy, NoteStatus } from '../../../base/scheme-types.ts';
+import {
+  FilterGroupBy,
+  FilterSortBy,
+  NoteStatus,
+} from '../../../base/scheme-types.ts';
 import { Query, SourceProducer, SourceType, UnionQuery } from '../query.ts';
 import { Vertex } from '../vertex.ts';
 import { BaseVertex, Note, Tag, User, Workspace } from './index.ts';
@@ -106,7 +110,24 @@ export class Filter extends BaseVertex {
     }
   }
 
-  private calcSelectedWorkspaces(): Workspace[] {
+  get groupBy(): FilterGroupBy | undefined {
+    return this.record.get<FilterGroupBy>('groupBy');
+  }
+
+  set groupBy(groupBy: FilterGroupBy | undefined) {
+    if (!groupBy) {
+      this.record.delete('groupBy');
+    } else {
+      this.record.set('groupBy', groupBy);
+    }
+  }
+
+  get groupByPivot(): Vertex | undefined {
+    const key = this.record.get<string>('groupByPivot');
+    return key ? this.graph.getVertex(key) : undefined;
+  }
+
+  getEffectiveWorkspaces(): Workspace[] {
     if (this.workspaces) {
       return Array.from(this.workspaces);
     }
@@ -128,7 +149,7 @@ export class Filter extends BaseVertex {
     }
     return () =>
       new UnionQuery(
-        this.calcSelectedWorkspaces().map((ws) =>
+        this.getEffectiveWorkspaces().map((ws) =>
           pinned ? ws.pinnedNotesQuery : ws.notesQuery
         )
       );
@@ -237,3 +258,9 @@ export class Filter extends BaseVertex {
     return true;
   }
 }
+
+function groupByWorkspace(note: Note): string {
+  return note.workspace.key;
+}
+
+function groupByAssignee(note: Note): string {}

@@ -32,6 +32,7 @@ import localization from './list.strings.json' assert { type: 'json' };
 import { ItemRow, ItemsTable, Row } from './table/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
+import { useQueryResults } from '../../../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -60,40 +61,23 @@ interface CardsData {
 
 export function ListView({ filter: filterMgr, className }: ListViewProps) {
   const filter = useVertex(filterMgr);
-  const pinnedNotesQuery = filter.buildQuery('listViewPinned', true);
-  const unpinnedNotesQuery = filter.buildQuery('listViewUnpinned', false);
-
-  const [pinnedNotes, setPinnedNotes] = useState(pinnedNotesQuery.results);
-  const [unpinnedNotes, setUnpinnedNotes] = useState(
-    unpinnedNotesQuery.results
+  const pinnedNotes = useQueryResults(
+    filter.buildQuery('listViewPinned', true)
   );
-  useEffect(
-    () =>
-      pinnedNotesQuery.onResultsChanged(() =>
-        setPinnedNotes(pinnedNotesQuery.results)
-      ),
-    [pinnedNotesQuery]
+  const unpinnedNotes = useQueryResults(
+    filter.buildQuery('listViewUnpinned', false)
   );
-  useEffect(
-    () =>
-      unpinnedNotesQuery.onResultsChanged(() =>
-        setUnpinnedNotes(unpinnedNotesQuery.results)
-      ),
-    [unpinnedNotesQuery]
-  );
-  const mapped = {
-    pinned: pinnedNotes,
-    unpinned: unpinnedNotes,
-  };
-
-  if (!(mapped.pinned.length + mapped.unpinned.length)) {
+  if (!(pinnedNotes.length + unpinnedNotes.length)) {
     return <EmptyListState />;
   }
   return (
     <InnerListView
       noteType={filter.noteType}
       className={className}
-      cards={mapped}
+      cards={{
+        pinned: pinnedNotes,
+        unpinned: unpinnedNotes,
+      }}
     />
   );
 }

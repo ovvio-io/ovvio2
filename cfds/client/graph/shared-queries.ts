@@ -1,3 +1,4 @@
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { notReached } from '../../../base/error.ts';
 import {
   NS_NOTES,
@@ -14,7 +15,14 @@ import {
   UnionQuery,
 } from './query.ts';
 import { Vertex } from './vertex.ts';
-import { Tag, User, Workspace } from './vertices/index.ts';
+import { BaseVertex, Tag, User, Workspace } from './vertices/index.ts';
+
+export function defaultVertCompare(v1: Vertex, v2: Vertex): number {
+  if (v1 instanceof BaseVertex && v2 instanceof BaseVertex) {
+    return coreValueCompare(v1.sortStamp, v2.sortStamp);
+  }
+  return coreValueCompare(v1.key, v2.key);
+}
 
 export class SharedQueriesManager {
   private _vertexQueries: Map<string, Map<string, Query>>;
@@ -39,43 +47,43 @@ export class SharedQueriesManager {
     this.noNotesQuery = new Query(
       this.notDeletedQuery,
       (vert) => vert.namespace !== NS_NOTES,
-      undefined,
+      defaultVertCompare,
       'SharedNoNotes'
     ).lock();
     this.workspacesQuery = new Query<Vertex, Workspace>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_WORKSPACE,
-      undefined,
+      defaultVertCompare,
       'SharedWorkspaces'
     ).lock();
     this.tagsQuery = new Query<Vertex, Tag>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_TAGS,
-      undefined,
+      defaultVertCompare,
       'SharedTags'
     ).lock();
     this.usersQuery = new Query<Vertex, User>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_USERS,
-      undefined,
+      defaultVertCompare,
       'SharedUsers'
     ).lock();
     this.selectedWorkspacesQuery = new Query(
       this.workspacesQuery,
       (vert) => vert.selected,
-      undefined,
+      defaultVertCompare,
       'SharedSelectedWorkspaces'
     ).lock();
     this.selectedTagsQuery = new Query(
       this.tagsQuery,
       (vert) => vert.selected,
-      undefined,
+      defaultVertCompare,
       'SharedSelectedTags'
     ).lock();
     this.selectedUsersQuery = new Query(
       this.usersQuery,
       (vert) => vert.selected,
-      undefined,
+      defaultVertCompare,
       'SharedSelectedUsers'
     ).lock();
   }

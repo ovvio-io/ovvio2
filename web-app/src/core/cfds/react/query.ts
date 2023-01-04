@@ -14,6 +14,7 @@ import {
   EVENT_QUERY_RESULTS_CHANGED,
   Predicate,
   Query,
+  QueryResults,
   SortDescriptor,
   UnionQuery,
 } from '../../../../../cfds/client/graph/query.ts';
@@ -128,6 +129,28 @@ export function useQuery<
   }, [graph, filter, sort, listenOnDep]); // eslint-disable-line
 
   return result!;
+}
+
+export function useQueryResults<IT extends Vertex = Vertex, OT extends IT = IT>(
+  query: Query<IT, OT>
+): QueryResults<OT> {
+  const [results, setResults] = useState<QueryResults<OT>>(query.results);
+  useEffect(() => {
+    const startTime = Date.now();
+    const cleanup = query.onResultsChanged(() => {
+      // Wait a bit while queries are loading before showing intermediate
+      // results. This prevents redundant UI refreshes and keeps everything
+      // smooth.
+      if (!query.isLoading || Date.now() - startTime > 500) {
+        setResults(query.results);
+      }
+    });
+    return () => {
+      cleanup();
+      query.close();
+    };
+  }, [query]);
+  return results;
 }
 
 export function useExistingQuery<
