@@ -549,7 +549,7 @@ export class VertexManager<V extends Vertex = Vertex>
     return this._key === other.key;
   }
 
-  compareTo(other: VertexManager): number {
+  compare(other: VertexManager): number {
     return coreValueCompare(this._key, other.key);
   }
 }

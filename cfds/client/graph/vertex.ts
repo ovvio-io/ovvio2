@@ -18,6 +18,7 @@ import {
 } from './mutations.ts';
 import { IVertex } from './types.ts';
 import {
+  Comparable,
   CoreObject,
   CoreValue,
   CoreValueCloneOpts,
@@ -76,7 +77,7 @@ export interface VertexConfig {
  * need a different, unsupported, primitive then please extend `CoreValue`
  * to support it.
  */
-export class Vertex implements IVertex {
+export class Vertex implements IVertex, Comparable {
   private static readonly _fieldTriggersByClass = new Map<
     VertCls,
     FieldTriggers<Vertex>
@@ -296,7 +297,7 @@ export class Vertex implements IVertex {
     return this._record.isEqual(v.record, local);
   }
 
-  compareTo(other: IVertex): number {
+  compare(other: IVertex): number {
     return coreValueCompare(this.key, other.key);
   }
 

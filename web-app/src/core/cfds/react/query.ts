@@ -12,6 +12,7 @@ import {
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import {
   EVENT_QUERY_RESULTS_CHANGED,
+  GroupId,
   Predicate,
   Query,
   QueryResults,
@@ -27,6 +28,7 @@ import {
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { useGraphManager } from './graph.tsx';
 import { useLogger } from './logger.tsx';
+import { Dictionary } from '../../../../../base/collections/dict.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -131,10 +133,43 @@ export function useQuery<
   return result!;
 }
 
+export function useQueryCount<IT extends Vertex = Vertex, OT extends IT = IT>(
+  query: Query<IT, OT>
+): number {
+  return useQueryField(query, 'count');
+}
+
 export function useQueryResults<IT extends Vertex = Vertex, OT extends IT = IT>(
   query: Query<IT, OT>
 ): QueryResults<OT> {
-  const [results, setResults] = useState<QueryResults<OT>>(query.results);
+  return useQueryField(query, 'results');
+}
+
+export function useQueryGroups<IT extends Vertex = Vertex, OT extends IT = IT>(
+  query: Query<IT, OT>
+): Dictionary<GroupId, QueryResults<OT>> {
+  return useQueryField(query, 'groups');
+}
+
+type QueryResultsField = 'count' | 'results' | 'groups';
+
+type QueryResultsType<
+  T extends QueryResultsField,
+  OT extends Vertex
+> = T extends 'count'
+  ? number
+  : T extends 'results'
+  ? QueryResults<OT>
+  : Dictionary<GroupId, QueryResults<OT>>;
+
+export function useQueryField<
+  RT extends QueryResultsField,
+  IT extends Vertex = Vertex,
+  OT extends IT = IT
+>(query: Query<IT, OT>, field: RT): QueryResultsType<RT, OT> {
+  const [results, setResults] = useState<QueryResultsType<RT, OT>>(
+    query[field] as QueryResultsType<RT, OT>
+  );
   useEffect(() => {
     const startTime = Date.now();
     const cleanup = query.onResultsChanged(() => {
@@ -142,7 +177,7 @@ export function useQueryResults<IT extends Vertex = Vertex, OT extends IT = IT>(
       // results. This prevents redundant UI refreshes and keeps everything
       // smooth.
       if (!query.isLoading || Date.now() - startTime > 500) {
-        setResults(query.results);
+        setResults(query[field] as QueryResultsType<RT, OT>);
       }
     });
     return () => {

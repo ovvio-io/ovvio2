@@ -15,14 +15,7 @@ import {
   UnionQuery,
 } from './query.ts';
 import { Vertex } from './vertex.ts';
-import { BaseVertex, Tag, User, Workspace } from './vertices/index.ts';
-
-export function defaultVertCompare(v1: Vertex, v2: Vertex): number {
-  if (v1 instanceof BaseVertex && v2 instanceof BaseVertex) {
-    return coreValueCompare(v1.sortStamp, v2.sortStamp);
-  }
-  return coreValueCompare(v1.key, v2.key);
-}
+import { Tag, User, Workspace } from './vertices/index.ts';
 
 export class SharedQueriesManager {
   private _vertexQueries: Map<string, Map<string, Query>>;
@@ -47,43 +40,43 @@ export class SharedQueriesManager {
     this.noNotesQuery = new Query(
       this.notDeletedQuery,
       (vert) => vert.namespace !== NS_NOTES,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedNoNotes'
     ).lock();
     this.workspacesQuery = new Query<Vertex, Workspace>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_WORKSPACE,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedWorkspaces'
     ).lock();
     this.tagsQuery = new Query<Vertex, Tag>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_TAGS,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedTags'
     ).lock();
     this.usersQuery = new Query<Vertex, User>(
       this.noNotesQuery,
       (vert) => vert.namespace === NS_USERS,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedUsers'
     ).lock();
     this.selectedWorkspacesQuery = new Query(
       this.workspacesQuery,
       (vert) => vert.selected,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedSelectedWorkspaces'
     ).lock();
     this.selectedTagsQuery = new Query(
       this.tagsQuery,
       (vert) => vert.selected,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedSelectedTags'
     ).lock();
     this.selectedUsersQuery = new Query(
       this.usersQuery,
       (vert) => vert.selected,
-      defaultVertCompare,
+      coreValueCompare,
       'SharedSelectedUsers'
     ).lock();
   }
@@ -91,7 +84,7 @@ export class SharedQueriesManager {
   getVertexQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
     key: string,
     name: string,
-    source: Query<IT> | UnionQuery<IT> | GraphManager,
+    source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT, OT>,
     sortDesc?: SortDescriptor<OT>
   ): Query<IT, OT> {

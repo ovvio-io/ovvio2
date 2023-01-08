@@ -21,7 +21,7 @@ import { GroupId } from '../../../../../../../cfds/client/graph/query.ts';
 import { Dictionary } from '../../../../../../../base/collections/dict.ts';
 import { mapIterable } from '../../../../../../../base/common.ts';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import { defaultVertCompare } from '../../../../../../../cfds/client/graph/shared-queries.ts';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 
 const useStrings = createUseStrings(localization);
 
@@ -42,8 +42,7 @@ export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
   const logger = useLogger();
   const toast = useToastController();
   const strings = useStrings();
-
-  const columns = workspaces.sort(defaultVertCompare).map((ws) => ws.name);
+  const columns = workspaces.sort(coreValueCompare);
 
   const onDragCancelled = useCallback(() => {
     logger.log({
@@ -77,21 +76,25 @@ export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
     <DragAndDropContext onDragCancelled={onDragCancelled}>
       {columns.map((column) => (
         <BoardColumn
-          title={column.workspace.name}
-          key={column.workspace.key}
-          items={column.cards}
+          title={column.name}
+          key={column.key}
+          items={cardManagers.get(column.key)}
           allowsDrop={() => false}
-          onDrop={(item, relativeTo, dragPosition) =>
+          onDrop={(
+            item: VertexManager<Note>,
+            relativeTo: VertexManager<Note>,
+            dragPosition: DragPosition
+          ) =>
             onDrop(
-              column.workspace.manager as VertexManager<Workspace>,
-              column.cards,
+              column.manager as VertexManager<Workspace>,
+              cardManagers.get(column.key)!,
               item,
               relativeTo,
               dragPosition
             )
           }
         >
-          {column.cards.map((card, index) => (
+          {cardManagers.get(column.key)!.map((card, index) => (
             <BoardCard card={card} index={index} key={card.key} />
           ))}
         </BoardColumn>

@@ -87,6 +87,22 @@ export type SourceProducer<IT extends Vertex> = () => SourceType<IT>;
  * Queries may have other queries as dependencies. Whenever a dependency's
  * result set changes, the query will re-scan its source (refreshing it if
  * needed), and update the results accordingly.
+ *
+ * A query exposes its results in several ways:
+ * - A `results` property containing sorted vertex managers.
+ * - A `groups` property dictionary mapping group ids to sorted vertex managers.
+ * - A `count` property containing the total result size.
+ *
+ * Notes:
+ * ------
+ * - At the time of this writing, there's no performance difference between the
+ *   different result types.
+ *
+ * - If no `groupBy` is provided, all results are placed under the `undefined`
+ *   group id.
+ *
+ * - If no sort descriptor is provided, results will be sorted by calling
+ *   Vertex.compare() (through coreValueCompare()) on the results.
  */
 export class Query<
   IT extends Vertex = Vertex,
@@ -293,7 +309,7 @@ export class Query<
 
   get groups(): Dictionary<GroupId, QueryResults<OT>> {
     this._buildResultsIfNeeded();
-    return this._cachedSortedGroups || new Map([[undefined, this.results]]);
+    return this._cachedSortedGroups!;
   }
 
   get count(): number {
@@ -493,8 +509,10 @@ export class Query<
 
   private compareManagers(a: VertexManager<OT>, b: VertexManager<OT>): number {
     const sortDesc = this.sortDescriptor;
-    const ret = sortDesc ? sortDesc(a.getVertexProxy(), b.getVertexProxy()) : 0;
-    return ret === 0 ? coreValueCompare(a.key, b.key) : ret;
+    const v1 = a.getVertexProxy();
+    const v2 = b.getVertexProxy();
+    const ret = sortDesc ? sortDesc(v1, v2) : 0;
+    return ret === 0 ? coreValueCompare(v1, v2) : ret;
   }
 
   private _buildResultsIfNeeded(): void {
@@ -504,12 +522,9 @@ export class Query<
       for (const key of this.keys()) {
         results.push(graph.getVertexManager(key));
       }
-      const sortDesc = this.sortDescriptor
-        ? this.compareManagers.bind(this)
-        : undefined;
-      if (sortDesc) {
-        results.sort(sortDesc);
-      }
+      const sortDesc = (a: VertexManager<OT>, b: VertexManager<OT>) =>
+        this.compareManagers(a, b);
+      results.sort(sortDesc);
       this._cachedSortedResults = results;
       this._cachedSortedGroups = undefined;
       if (this._groupedResultKeys) {
@@ -518,12 +533,14 @@ export class Query<
           const arr = Array.from(
             mapIterable(keys, (k) => graph.getVertexManager<OT>(k))
           );
-          if (sortDesc) {
-            arr.sort(sortDesc);
-          }
+          arr.sort(sortDesc);
           sortedGroups.set(groupKey, arr);
         }
         this._cachedSortedGroups = sortedGroups;
+      } else {
+        this._cachedSortedGroups = new Map([
+          [undefined, this._cachedSortedResults],
+        ]);
       }
     }
   }

@@ -4,14 +4,20 @@ import {
   cn,
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertices,
+  useVertex,
+} from '../../../../../core/cfds/react/vertex.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
 import { GroupBy } from '../display-bar/index.tsx';
 import { AssigneesBoardView } from './assignees-board-view.tsx';
 import { TagBoardView } from './tag-board-view.tsx';
 import { WorkspaceBoardView } from './workspace-board-view.tsx';
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
-import { useQueryResults } from '../../../../../core/cfds/react/query.ts';
+import {
+  useQueryGroups,
+  useQueryResults,
+} from '../../../../../core/cfds/react/query.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles((theme) => ({
@@ -33,9 +39,10 @@ export interface BoardViewProps {
 // type PartialTaskData = Partial<TypeOfScheme<typeof NOTE_SCHEME>>;
 // type TaskData = PartialTaskData & Required<Pick<PartialTaskData, 'workspace'>>;
 
-export function BoardView({ className, filter }: BoardViewProps) {
+export function BoardView({ className, filter: filterMgr }: BoardViewProps) {
   const styles = useStyles();
-  const cards = useQueryResults(filter.buildQuery('BoardView'));
+  const filter = useVertex(filterMgr);
+  const groups = useQueryGroups(filter.buildQuery('BoardView'));
 
   let content: React.ReactNode = null;
   // const onCreateCard = (data: TaskData) => {
@@ -67,17 +74,14 @@ export function BoardView({ className, filter }: BoardViewProps) {
   //   docRouter.goTo(card);
   // };
 
-  if (filter.groupBy === 'workspace') {
-    content = (
-      <WorkspaceBoardView
-        cardManagers={cards}
-        selectedWorkspaces={filter.getEffectiveWorkspaces()}
-      />
-    );
-  } else if (groupBy.type === 'tag') {
+  const groupBy = filter.groupBy;
+
+  if (groupBy === 'workspace') {
+    content = <WorkspaceBoardView cardManagers={groups} />;
+  } else if (groupBy === 'tag') {
     content = (
       <TagBoardView
-        cardManagers={cards.results}
+        cardManagers={groups}
         selectedWorkspaces={selectedWorkspaces}
         parentTag={groupBy.tag}
       />

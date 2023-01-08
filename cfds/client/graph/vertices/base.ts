@@ -140,11 +140,11 @@ export class BaseVertex extends Vertex {
     return super.valueForRefCalc(fieldName);
   }
 
-  compareTo(other: IVertex): number {
+  compare(other: IVertex): number {
     if (other instanceof BaseVertex) {
       return coreValueCompare(this.sortStamp, other.sortStamp);
     }
-    return super.compareTo(other);
+    return super.compare(other);
   }
 }
 

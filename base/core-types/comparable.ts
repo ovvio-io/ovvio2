@@ -97,7 +97,7 @@ export function coreValueCompare(
       break;
     case CoreType.ClassObject: {
       if (isComparable(v1) && v1.constructor === v2?.constructor) {
-        return v1.compareTo(v2);
+        return v1.compare(v2);
       }
 
       if (isEquatable(v1) && v1.constructor === v2?.constructor) {

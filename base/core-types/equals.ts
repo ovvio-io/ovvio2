@@ -240,7 +240,7 @@ export function coreValueEquals(
       }
 
       if (isComparable(e1) && e1.constructor === e2?.constructor) {
-        return e1.compareTo(e2) === 0;
+        return e1.compare(e2) === 0;
       }
 
       throw new Error(

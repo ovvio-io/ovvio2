@@ -70,7 +70,7 @@ export interface CoreOptions {
 }
 
 export interface Comparable<T = unknown> {
-  compareTo(other: T): number;
+  compare(other: T): number;
 }
 
 export interface Equatable<T = unknown> {

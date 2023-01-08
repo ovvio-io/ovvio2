@@ -12,6 +12,8 @@ import {
   DragSource,
 } from 'shared/dragndrop';
 import { DragPosition } from 'shared/dragndrop/droppable';
+import { Dictionary } from '../../../../../../../base/collections/dict.ts';
+import { GroupId } from '../../../../../../../cfds/client/graph/query.ts';
 import { setDragSort } from '../card-item/draggable-card';
 import { SharedChildTag, SharedParentTag } from '../display-bar/filters/state';
 import { BoardCard } from './board-card';
@@ -21,18 +23,10 @@ import localization from './board.strings.json';
 const useStrings = createUseStrings(localization);
 
 export interface TagBoardViewProps {
-  cardManagers: VertexManager<Note>[];
+  cardManagers: Dictionary<GroupId, Note>[];
   selectedWorkspaces: VertexManager<Workspace>[];
   parentTag: SharedParentTag;
 }
-
-type TagType = SharedChildTag | 'unassigned';
-
-type TagColumn = {
-  key: string;
-  tag: TagType;
-  cards: VertexManager<Note>[];
-};
 
 export function TagBoardView({
   cardManagers,
@@ -53,27 +47,27 @@ export function TagBoardView({
 
   const strings = useStrings();
 
-  let activeTags = childTags.filter(x => x.selected);
+  let activeTags = childTags.filter((x) => x.selected);
   activeTags = activeTags.length ? activeTags : childTags;
   const unassigned = cards
     .filter(
-      x =>
+      (x) =>
         parentTag.managers[x.workspaceKey] &&
         !x.tags.has(parentTag.managers[x.workspaceKey].getVertexProxy())
     )
-    .map(x => x.manager as VertexManager<Note>);
-  const columns: TagColumn[] = activeTags.sort(sortStampCompare).map(tag => ({
+    .map((x) => x.manager as VertexManager<Note>);
+  const columns: TagColumn[] = activeTags.sort(sortStampCompare).map((tag) => ({
     key: tag.key,
     tag,
     cards: cards
       .filter(
-        x =>
+        (x) =>
           tag.managers[x.workspaceKey] &&
           parentTag.managers[x.workspaceKey] &&
           x.tags.get(parentTag.managers[x.workspaceKey].getVertexProxy()) ===
             tag.managers[x.workspaceKey].getVertexProxy()
       )
-      .map(x => x.manager as VertexManager<Note>),
+      .map((x) => x.manager as VertexManager<Note>),
   }));
 
   if (unassigned.length) {
@@ -158,7 +152,7 @@ export function TagBoardView({
 
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {columns.map(col => (
+      {columns.map((col) => (
         <BoardColumn
           key={col.key}
           items={col.cards}
@@ -166,7 +160,7 @@ export function TagBoardView({
             col.tag === 'unassigned' ? strings.unassigned : col.tag.displayName
           }
           onDrop={(...args) => onDrop(col.tag, col.cards, ...args)}
-          allowsDrop={item => allowsDrop(col.tag, item)}
+          allowsDrop={(item) => allowsDrop(col.tag, item)}
         >
           {col.cards.map((card, index) => (
             <BoardCard key={card.key} card={card} index={index} />
