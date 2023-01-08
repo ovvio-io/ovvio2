@@ -1,3 +1,4 @@
+import { mapIterable } from '../../../../base/common.ts';
 import { CoreValue } from '../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import * as SetUtils from '../../../../base/set.ts';
@@ -7,7 +8,13 @@ import {
   FilterSortBy,
   NoteStatus,
 } from '../../../base/scheme-types.ts';
-import { Query, SourceProducer, SourceType, UnionQuery } from '../query.ts';
+import {
+  GroupByFuncResult,
+  Query,
+  SourceProducer,
+  SourceType,
+  UnionQuery,
+} from '../query.ts';
 import { Vertex } from '../vertex.ts';
 import { BaseVertex, Note, Tag, User, Workspace } from './index.ts';
 import { NoteType } from './note.ts';
@@ -259,8 +266,8 @@ export class Filter extends BaseVertex {
   }
 }
 
-function groupByWorkspace(note: Note): string {
-  return note.workspace.key;
+function groupByField<T extends Vertex, FT extends keyof T>(
+  field: FT
+): (v: T) => GroupByFuncResult {
+  return (v: T) => v[field] as GroupByFuncResult;
 }
-
-function groupByAssignee(note: Note): string {}

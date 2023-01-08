@@ -53,9 +53,17 @@ export type GroupId = string | undefined;
  * A function responsible for mapping a query result (vertex) to one or more
  * groups.
  */
+
+export type GroupByFuncResultPrimitive = GroupId | Vertex | VertexManager;
+
+export type GroupByFuncResult =
+  | GroupByFuncResultPrimitive
+  | GroupByFuncResultPrimitive[]
+  | Iterable<GroupByFuncResultPrimitive>;
+
 export type GroupByFunction<T extends Vertex = Vertex> = (
   v: T
-) => GroupId | GroupId[];
+) => GroupByFuncResult;
 
 export interface QueryOptions<OT extends Vertex> {
   name?: string;
@@ -645,9 +653,32 @@ export class Query<
     } else if (v instanceof VertexManager<OT>) {
       v = v.getVertexProxy() as OT;
     }
-    const res = groupByFunc(v);
-    return res instanceof Array ? res : [res];
+    let res:
+      | GroupByFuncResultPrimitive
+      | GroupByFuncResultPrimitive[]
+      | Iterable<GroupByFuncResultPrimitive> = groupByFunc(v);
+    if (typeof res === 'string' || typeof res === 'undefined') {
+      res = [res];
+    } else if (!(res instanceof Array)) {
+      res = Array.from(res as Iterable<GroupByFuncResultPrimitive>);
+    }
+    const resArr = (res as GroupByFuncResultPrimitive[]).map(
+      groupByFunctionResultToGroupId
+    );
+    if (!resArr.length) {
+      resArr.push(undefined);
+    }
+    return resArr;
   }
+}
+
+function groupByFunctionResultToGroupId(
+  res: GroupByFuncResultPrimitive
+): GroupId {
+  if (res instanceof Vertex || res instanceof VertexManager) {
+    return res.key;
+  }
+  return res;
 }
 
 export class UnionQuery<
