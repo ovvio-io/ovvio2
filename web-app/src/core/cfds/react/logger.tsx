@@ -53,7 +53,7 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       removeEventListener('unload', unloadHandler);
       clientLogger.log({
         severity: 'INFO',
-        event: 'SESSION_END',
+        event: 'SessionEnd',
       });
       client.close();
       storage.close();

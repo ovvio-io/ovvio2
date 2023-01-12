@@ -1,39 +1,38 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { sortStampCompare } from '@ovvio/cfds/lib/client/sorting';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { useEventLogger } from 'core/analytics';
-import { usePartialVertices } from 'core/cfds/react/vertex';
-import { createUseStrings, format } from 'core/localization';
-import React, { useMemo } from 'react';
+import React, { useMemo } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Workspace,
+} from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { sortStampCompare } from '../../../../../../../cfds/client/sorting.ts';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  createUseStrings,
+  format,
+} from '../../../../../core/localization/index.tsx';
 import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   DragSource,
-} from 'shared/dragndrop';
-import { DragPosition } from 'shared/dragndrop/droppable';
+} from '../../../../../shared/dragndrop/index.ts';
+import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
 import { Dictionary } from '../../../../../../../base/collections/dict.ts';
 import { GroupId } from '../../../../../../../cfds/client/graph/query.ts';
-import { setDragSort } from '../card-item/draggable-card';
-import { SharedChildTag, SharedParentTag } from '../display-bar/filters/state';
-import { BoardCard } from './board-card';
-import { BoardColumn } from './board-column';
-import localization from './board.strings.json';
+import { setDragSort } from '../card-item/draggable-card.tsx';
+import { BoardCard } from './board-card.tsx';
+import { BoardColumn } from './board-column.tsx';
+import localization from './board.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
 const useStrings = createUseStrings(localization);
 
 export interface TagBoardViewProps {
-  cardManagers: Dictionary<GroupId, Note>[];
-  selectedWorkspaces: VertexManager<Workspace>[];
-  parentTag: SharedParentTag;
+  cardManagers: Dictionary<GroupId, VertexManager<Note>>[];
 }
 
-export function TagBoardView({
-  cardManagers,
-  selectedWorkspaces,
-  parentTag,
-}: TagBoardViewProps) {
-  const eventLogger = useEventLogger();
+export function TagBoardView({ cardManagers }: TagBoardViewProps) {
+  const logger = useLogger();
   const toast = useToastController();
   const cards = usePartialVertices(cardManagers, [
     'tags',

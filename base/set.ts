@@ -387,3 +387,13 @@ export function equalsByValue<T>(s1: Set<T>, s2: Set<T>): boolean {
   }
   return true;
 }
+
+export function toggleMembership<T>(s1: Set<T>, v: T): boolean {
+  if (s1.has(v)) {
+    s1.delete(v);
+    return false;
+  } else {
+    s1.add(v);
+    return true;
+  }
+}

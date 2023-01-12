@@ -1,6 +1,7 @@
 import { mapIterable } from '../../../../base/common.ts';
 import { CoreValue } from '../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { notReached } from '../../../../base/error.ts';
 import * as SetUtils from '../../../../base/set.ts';
 import { toJS } from '../../../base/errors.ts';
 import {
@@ -11,6 +12,7 @@ import {
 import {
   GroupByFuncResult,
   Query,
+  QueryOptions,
   SourceProducer,
   SourceType,
   UnionQuery,
@@ -138,7 +140,7 @@ export class Filter extends BaseVertex {
     if (this.workspaces) {
       return Array.from(this.workspaces);
     }
-    return this.graph.sharedQueriesManager.selectedWorkspacesQuery.results.map(
+    return this.graph.sharedQueriesManager.selectedWorkspaces.results.map(
       (mgr) => mgr.getVertexProxy()
     );
   }
@@ -177,9 +179,7 @@ export class Filter extends BaseVertex {
     const sharedQueriesManager = graph.sharedQueriesManager;
     const deps: Query[] = [];
     if (!workspaces) {
-      deps.push(
-        sharedQueriesManager.selectedWorkspacesQuery as unknown as Query
-      );
+      deps.push(sharedQueriesManager.selectedWorkspaces as unknown as Query);
     }
     const type = this.noteType;
     const assignees = this.assignees;
@@ -202,6 +202,31 @@ export class Filter extends BaseVertex {
         sortByField = 'sortStamp';
         break;
     }
+    const opts: QueryOptions<Note> = {
+      name,
+      deps,
+    };
+    switch (this.groupBy) {
+      case 'assignee':
+        opts.groupBy = groupByField('assignees');
+        break;
+
+      case 'workspace':
+        opts.groupBy = groupByField('workspace');
+        break;
+
+      case 'tag': {
+        const pivotTag = this.groupByPivot;
+        if (!(pivotTag instanceof Tag)) {
+          break;
+        }
+        const childTagsQuery = pivotTag.childTagsQuery;
+        deps.push(childTagsQuery as unknown as Query);
+        opts.groupBy = (note) => note.tags.get(pivotTag);
+        break;
+      }
+    }
+
     return new Query(
       this.buildQuerySource(pinned === true, workspaces),
       (note) =>
@@ -216,10 +241,7 @@ export class Filter extends BaseVertex {
           n1[sortByField] as CoreValue,
           n2[sortByField] as CoreValue
         ),
-      {
-        name,
-        deps,
-      }
+      opts
     );
   }
 
@@ -239,7 +261,7 @@ export class Filter extends BaseVertex {
         SetUtils.update(
           childrenSet,
           Query.blocking(
-            this.graph.sharedQueriesManager.tagsQuery,
+            this.graph.sharedQueriesManager.tags,
             (x) => x.parentTag === t
           ).map((mgr) => mgr.getVertexProxy())
         );

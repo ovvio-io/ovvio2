@@ -18,6 +18,8 @@ import {
   createQueryManager,
   IQueryStringManager,
 } from './query-string-manager.ts';
+import { CoreObject } from '../../../../../base/core-types/base.ts';
+import { assert } from 'https://deno.land/std@0.160.0/_util/assert.ts';
 
 export const MarketingValues = {
   utmSource: 'utm_source',
@@ -46,8 +48,24 @@ function getLocationSegments(location: Location) {
   return getUrlSegments(pathname);
 }
 
+export interface RouteParams extends CoreObject {
+  [key: string]: string;
+}
+
+export interface RouteData {
+  name: string;
+  url: string;
+  id: string;
+  params?: RouteParams;
+}
+
+interface DynamicSegmentBuilder {
+  name: string;
+  build: (params: RouteParams) => string;
+}
+
 class Route {
-  private _urlBuilder!: string[];
+  private _urlBuilder!: (string | DynamicSegmentBuilder)[];
   constructor(public name: string, private route: string, private _id: string) {
     this._extractRouteInfo();
   }
@@ -61,23 +79,21 @@ class Route {
   _extractRouteInfo() {
     const segments = getUrlSegments(this.route);
     const segmentBuilder = [];
-    function getParam(params, key) {
+    const getParam = (params: RouteParams, key: string): string => {
       const val = params[key.substring(1)];
-      if (typeof val === 'undefined') {
-        throw new Error(
-          `Missing required parameter ${key} for route ${this.name}`
-        );
-      }
-
+      assert(
+        typeof val !== 'undefined',
+        `Missing required parameter ${key} for route ${this.name}`
+      );
       return val;
-    }
+    };
 
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       if (segment.startsWith(':')) {
         segmentBuilder[i] = {
           name: segment.substring(1),
-          build: (params) => getParam(params, segment),
+          build: (params: RouteParams) => getParam(params, segment),
         };
       } else {
         segmentBuilder[i] = segment;
@@ -87,10 +103,10 @@ class Route {
     this._urlBuilder = segmentBuilder;
   }
 
-  buildRoute(params) {
+  buildRoute(params: RouteParams) {
     const url = this._urlBuilder
       .map((x) => {
-        if (typeof x.build === 'function') {
+        if (typeof x !== 'string') {
           return x.build(params);
         }
         return x;
@@ -116,11 +132,11 @@ class Route {
     if (segments.length !== this._urlBuilder.length) {
       return false;
     }
-    const params = {};
+    const params: RouteParams = {};
     for (let i = 0; i < segments.length; i++) {
       const segmentBuilder = this._urlBuilder[i];
       const segment = segments[i];
-      if (segmentBuilder && segmentBuilder.build) {
+      if (segmentBuilder && typeof segmentBuilder !== 'string') {
         params[segmentBuilder.name] = segment;
       } else if (segment !== segmentBuilder) {
         return false;
@@ -141,7 +157,7 @@ class RouterWrapper {
     this.routes = {};
   }
 
-  register(name, url, id) {
+  register(name: string, url: string, id: string) {
     if (this.routes[id]) {
       throw new Error(`Route with id ${id} already exists`);
     }
@@ -153,7 +169,7 @@ class RouterWrapper {
     return r;
   }
 
-  get(id) {
+  get(id: string) {
     const route = this.routes[id];
     if (!route) {
       throw new Error(`Unknown route id ${id}`);
@@ -162,9 +178,9 @@ class RouterWrapper {
     return route;
   }
 
-  getRouteForLocation(location) {
-    for (let route of Object.values(this.routes)) {
-      let extracted = route.extractLocation(location);
+  getRouteForLocation(location: Location) {
+    for (const route of Object.values(this.routes)) {
+      const extracted = route.extractLocation(location);
       if (extracted) {
         (extracted as any).key = location.key;
         return extracted;
@@ -233,7 +249,7 @@ export class History {
     return this.getRouteInformation(0);
   }
 
-  getRouteInformation(index) {
+  getRouteInformation(index: number) {
     if (index >= this.length) {
       return null;
     }

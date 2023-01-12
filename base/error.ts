@@ -20,7 +20,7 @@ export function notReached(msg?: string): never {
 export function assert(
   condition: boolean,
   msg = 'Failed assertion'
-): condition is true {
+): asserts condition {
   if (!condition) {
     const error = new Error('Failed Assertion');
     log({
@@ -31,5 +31,4 @@ export function assert(
     });
     throw error;
   }
-  return true;
 }

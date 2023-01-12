@@ -92,7 +92,7 @@ export function usePartialVertex<V extends Vertex, K extends keyof V>(
   vertexMng: VertexManager<V>,
   keys: K[],
   opts: OnChangeOpts = EMPTY_OPTS
-): Pick<V, K> & Vertex {
+): Pick<V, K> & V {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setReload] = useState(0);
   const keysStr = keys.join('-');
@@ -107,8 +107,8 @@ export function usePartialVertex<V extends Vertex, K extends keyof V>(
   }, [vertexMng, opts, keysStr]);
 
   return vertexMng
-    ? (vertexMng.getVertexProxy() as unknown as Pick<V, K> & Vertex)
-    : ({} as unknown as Pick<V, K> & Vertex);
+    ? (vertexMng.getVertexProxy() as unknown as Pick<V, K> & V)
+    : ({} as unknown as Pick<V, K> & V);
 }
 
 export function useVertex<V extends Vertex>(

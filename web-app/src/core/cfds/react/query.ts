@@ -12,10 +12,8 @@ import {
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import {
   EVENT_QUERY_RESULTS_CHANGED,
-  GroupId,
   Predicate,
   Query,
-  QueryResults,
   SortDescriptor,
   UnionQuery,
 } from '../../../../../cfds/client/graph/query.ts';
@@ -28,7 +26,11 @@ import {
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { useGraphManager } from './graph.tsx';
 import { useLogger } from './logger.tsx';
-import { Dictionary } from '../../../../../base/collections/dict.ts';
+import {
+  SharedQueryName,
+  SharedQueryType,
+} from '../../../../../cfds/client/graph/shared-queries.ts';
+import { assert } from '../../../../../base/error.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -133,43 +135,9 @@ export function useQuery<
   return result!;
 }
 
-export function useQueryCount<IT extends Vertex = Vertex, OT extends IT = IT>(
-  query: Query<IT, OT>
-): number {
-  return useQueryField(query, 'count');
-}
-
-export function useQueryResults<IT extends Vertex = Vertex, OT extends IT = IT>(
-  query: Query<IT, OT>
-): QueryResults<OT> {
-  return useQueryField(query, 'results');
-}
-
-export function useQueryGroups<IT extends Vertex = Vertex, OT extends IT = IT>(
-  query: Query<IT, OT>
-): Dictionary<GroupId, QueryResults<OT>> {
-  return useQueryField(query, 'groups');
-}
-
-type QueryResultsField = 'count' | 'results' | 'groups';
-
-type QueryResultsType<
-  T extends QueryResultsField,
-  OT extends Vertex
-> = T extends 'count'
-  ? number
-  : T extends 'results'
-  ? QueryResults<OT>
-  : Dictionary<GroupId, QueryResults<OT>>;
-
-export function useQueryField<
-  RT extends QueryResultsField,
-  IT extends Vertex = Vertex,
-  OT extends IT = IT
->(query: Query<IT, OT>, field: RT): QueryResultsType<RT, OT> {
-  const [results, setResults] = useState<QueryResultsType<RT, OT>>(
-    query[field] as QueryResultsType<RT, OT>
-  );
+export function useQuery2<T>(query: T, closeOnCleanup = true): T {
+  const [counter, setCounter] = useState(0);
+  assert(query instanceof Query);
   useEffect(() => {
     const startTime = Date.now();
     const cleanup = query.onResultsChanged(() => {
@@ -177,15 +145,17 @@ export function useQueryField<
       // results. This prevents redundant UI refreshes and keeps everything
       // smooth.
       if (!query.isLoading || Date.now() - startTime > 500) {
-        setResults(query[field] as QueryResultsType<RT, OT>);
+        setCounter(counter + 1);
       }
     });
     return () => {
       cleanup();
-      query.close();
+      if (closeOnCleanup) {
+        query.close();
+      }
     };
   }, [query]);
-  return results;
+  return query;
 }
 
 export function useExistingQuery<
@@ -237,4 +207,12 @@ export function useExistingQuery<
   }, [query]);
 
   return result!;
+}
+
+export function useSharedQuery<T extends SharedQueryName>(
+  name: T
+): SharedQueryType<T> {
+  const graph = useGraphManager();
+  const q = graph.sharedQueriesManager[name];
+  return useQuery2<SharedQueryType<T>>(q as SharedQueryType<T>);
 }

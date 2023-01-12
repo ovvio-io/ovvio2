@@ -72,7 +72,7 @@ export class Workspace extends BaseVertex {
     return this.graph.sharedQueriesManager.getVertexQuery(
       this.key,
       'notesQuery',
-      this.graph.sharedQueriesManager.notDeletedQuery,
+      this.graph.sharedQueriesManager.notDeleted,
       (vert) => vert instanceof Note && vert.workspace === this,
       (n1, n2) => coreValueCompare(n1.sortStamp, n2.sortStamp)
     );

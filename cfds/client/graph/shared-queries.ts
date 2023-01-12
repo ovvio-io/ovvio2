@@ -7,74 +7,101 @@ import {
   NS_WORKSPACE,
 } from '../../base/scheme-types.ts';
 import { GraphManager } from './graph-manager.ts';
-import {
-  EVENT_QUERY_DID_CLOSE,
-  Predicate,
-  Query,
-  SortDescriptor,
-  UnionQuery,
-} from './query.ts';
+import { Predicate, Query, SortDescriptor, UnionQuery } from './query.ts';
+import { EVENT_VERTEX_SOURCE_CLOSED } from './vertex-source.ts';
 import { Vertex } from './vertex.ts';
 import { Tag, User, Workspace } from './vertices/index.ts';
 
-export class SharedQueriesManager {
+export type SharedQueryName =
+  | 'notDeleted'
+  | 'noNotes'
+  | 'workspaces'
+  | 'tags'
+  | 'users'
+  | 'selectedWorkspaces'
+  | 'selectedTags'
+  | 'selectedUsers';
+
+export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
+  ? Query<Vertex>
+  : N extends 'noNotes'
+  ? Query<Vertex>
+  : N extends 'workspaces'
+  ? Query<Vertex, Workspace>
+  : N extends 'tags'
+  ? Query<Vertex, Tag>
+  : N extends 'users'
+  ? Query<Vertex, User>
+  : N extends 'selectedWorkspaces'
+  ? Query<Workspace>
+  : N extends 'selectedTags'
+  ? Query<Tag>
+  : N extends 'selectedUsers'
+  ? Query<User>
+  : Query;
+
+export type GlobalSharedQueriesManager = {
+  [name in SharedQueryName]: SharedQueryType<name>;
+};
+
+export class SharedQueriesManager implements GlobalSharedQueriesManager {
   private _vertexQueries: Map<string, Map<string, Query>>;
 
-  readonly notDeletedQuery: Query<Vertex>;
-  readonly noNotesQuery: Query<Vertex>;
-  readonly workspacesQuery: Query<Vertex, Workspace>;
-  readonly tagsQuery: Query<Vertex, Tag>;
-  readonly usersQuery: Query<Vertex, User>;
-  readonly selectedWorkspacesQuery: Query<Workspace, Workspace>;
-  readonly selectedTagsQuery: Query<Tag, Tag>;
-  readonly selectedUsersQuery: Query<User, User>;
+  readonly notDeleted: Query<Vertex>;
+  readonly noNotes: Query<Vertex>;
+  readonly workspaces: Query<Vertex, Workspace>;
+  readonly tags: Query<Vertex, Tag>;
+  readonly users: Query<Vertex, User>;
+  readonly selectedWorkspaces: Query<Workspace, Workspace>;
+  readonly selectedTags: Query<Tag, Tag>;
+  readonly selectedUsers: Query<User, User>;
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
-    this.notDeletedQuery = new Query(
+    this.notDeleted = new Query(
       graph,
       (vert) => vert.isDeleted === 0,
       undefined,
       'SharedNotDeleted'
     ).lock();
-    this.noNotesQuery = new Query(
-      this.notDeletedQuery,
+    this.noNotes = new Query(
+      this.notDeleted,
       (vert) => vert.namespace !== NS_NOTES,
       coreValueCompare,
       'SharedNoNotes'
     ).lock();
-    this.workspacesQuery = new Query<Vertex, Workspace>(
-      this.noNotesQuery,
+    this.workspaces = new Query<Vertex, Workspace>(
+      this.noNotes,
       (vert) => vert.namespace === NS_WORKSPACE,
       coreValueCompare,
       'SharedWorkspaces'
     ).lock();
-    this.tagsQuery = new Query<Vertex, Tag>(
-      this.noNotesQuery,
+    this.tags = new Query<Vertex, Tag>(
+      this.noNotes,
       (vert) => vert.namespace === NS_TAGS,
       coreValueCompare,
       'SharedTags'
     ).lock();
-    this.usersQuery = new Query<Vertex, User>(
-      this.noNotesQuery,
+    this.users = new Query<Vertex, User>(
+      this.noNotes,
       (vert) => vert.namespace === NS_USERS,
       coreValueCompare,
       'SharedUsers'
     ).lock();
-    this.selectedWorkspacesQuery = new Query(
-      this.workspacesQuery,
+    this.selectedWorkspaces = new Query(
+      this.workspaces,
       (vert) => vert.selected,
       coreValueCompare,
       'SharedSelectedWorkspaces'
     ).lock();
-    this.selectedTagsQuery = new Query(
-      this.tagsQuery,
+    this.selectedTags = new Query(
+      this.tags,
       (vert) => vert.selected,
       coreValueCompare,
       'SharedSelectedTags'
     ).lock();
-    this.selectedUsersQuery = new Query(
-      this.usersQuery,
+    this.selectedUsers = new Query(
+      this.users,
       (vert) => vert.selected,
       coreValueCompare,
       'SharedSelectedUsers'
@@ -102,7 +129,7 @@ export class SharedQueriesManager {
         name
       ).lock() as unknown as Query<Vertex, Vertex>;
       queries.set(name, result);
-      result.once(EVENT_QUERY_DID_CLOSE, () =>
+      result.once(EVENT_VERTEX_SOURCE_CLOSED, () =>
         notReached('Named queries should not be closed')
       );
     }

@@ -1,3 +1,4 @@
+import { ToggleAction } from '../web-app/src/app/workspaces-bar/ws-selection-utils.ts';
 import { BaseLogEntry } from './entry.ts';
 
 export type ClientEvent =
@@ -6,13 +7,22 @@ export type ClientEvent =
   | 'AttachmentDownloadSuccess'
   | 'MetadataChanged'
   | 'VertexMoved'
-  | 'ItemDrag';
+  | 'ItemDrag'
+  | 'Click'
+  | 'FilterChange';
 
-export type UISource = 'list' | 'title' | 'board' | 'child-item';
+export type UISource =
+  | 'list'
+  | 'title'
+  | 'board'
+  | 'child-item'
+  | 'workspace-bar';
 
-export type MetadataType = 'attachment' | 'assignee' | 'tag';
+export type MetadataType = 'attachment' | 'assignee' | 'tag' | 'pin' | 'hide';
 
 export type UIStatus = 'started' | 'ended' | 'cancelled';
+
+export type FilterType = 'workspace' | 'tag' | 'assignee';
 
 export interface ClientEventEntry extends BaseLogEntry {
   severity: 'INFO';
@@ -20,10 +30,13 @@ export interface ClientEventEntry extends BaseLogEntry {
   foreground?: boolean;
   uiSource?: UISource;
   vertex?: string;
-  metadataType?: MetadataType;
-  added?: string;
-  removed?: string;
+  type?: MetadataType | FilterType;
+  added?: string | string[] | 'ALL';
+  removed?: string | string[] | 'ALL';
   origin?: string;
   uiStatus?: UIStatus;
   reason?: string;
+  routeInfo?: string;
+  action?: ToggleAction;
+  flag?: boolean;
 }

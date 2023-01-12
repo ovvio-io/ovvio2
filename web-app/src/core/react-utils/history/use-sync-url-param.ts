@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-import { useLocation } from 'https://esm.sh/react-router-dom@5.1.0';
+import { useLocation } from 'https://esm.sh/react-router-dom@5.1.2';
 import { useHistoryStatic } from './index.tsx';
 import { QueryValue } from './query-string-manager.ts';
 

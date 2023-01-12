@@ -43,6 +43,10 @@ export class NoteSearchEngine {
     graph.on(EVENT_VERTEX_CHANGED, this._graphListener);
   }
 
+  close(): void {
+    this._graph.off(EVENT_VERTEX_CHANGED, this._graphListener);
+  }
+
   get loading(): boolean {
     return this._loading;
   }

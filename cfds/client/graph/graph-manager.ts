@@ -22,7 +22,11 @@ import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
 import { SharedQueriesManager } from './shared-queries.ts';
-import { EVENT_VERTEX_CHANGED, VertexSource } from './vertex-source.ts';
+import {
+  EVENT_VERTEX_CHANGED,
+  EVENT_VERTEX_SOURCE_CLOSED,
+  VertexSource,
+} from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
 import {
   EVENT_NEW_COMMIT,
@@ -64,6 +68,7 @@ export class GraphManager extends VertexSource {
   private readonly _repoClients: Dictionary<string, RepoClient<MemRepoStorage>>;
   private readonly _baseServerUrl: string | undefined;
   private readonly _notesSearch: NoteSearchEngine;
+  private _loadContentsPromise: Promise<void> | undefined;
 
   constructor(
     rootKey: string,
@@ -90,6 +95,13 @@ export class GraphManager extends VertexSource {
     this._repoClients = new Map();
     this._baseServerUrl = baseServerUrl;
     this._notesSearch = new NoteSearchEngine(this);
+  }
+
+  close(): void {
+    this.emit(EVENT_VERTEX_SOURCE_CLOSED);
+    this._processPendingMutationsTimer.unschedule();
+    this._notesSearch.close();
+    this._backup.close();
   }
 
   get adjacencyList(): AdjacencyList {
@@ -120,12 +132,17 @@ export class GraphManager extends VertexSource {
     return this._notesSearch;
   }
 
-  async loadLocalContents(): Promise<void> {
-    for (const [repoId, commits] of Object.entries(
-      await this._backup.loadCommits()
-    )) {
-      this.repository(repoId).persistCommits(commits);
+  loadLocalContents(): Promise<void> {
+    if (!this._loadContentsPromise) {
+      this._loadContentsPromise = (async () => {
+        for (const [repoId, commits] of Object.entries(
+          await this._backup.loadCommits()
+        )) {
+          this.repository(repoId).persistCommits(commits);
+        }
+      })();
     }
+    return this._loadContentsPromise;
   }
 
   repository(id: string): Repository<MemRepoStorage> {

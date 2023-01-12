@@ -1,34 +1,36 @@
-import { ReadonlyJSONObject } from '@ovvio/base/lib/utils/interfaces';
-import { NS_WORKSPACE } from '@ovvio/cfds';
-import { OnboardingStep } from '@ovvio/cfds/lib/base/scheme-versions';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout } from '@ovvio/styles/lib';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { Devices, useCurrentDevice } from '@ovvio/styles/lib/responsive';
-import { darkTheme, lightTheme, ThemeProvider } from '@ovvio/styles/lib/theme';
-import { useGraphManager, useRootUser } from 'core/cfds/react/graph';
-import { useIsGraphLoading } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import config from 'core/config';
-import { Features, useIsFeatureActive } from 'core/feature-toggle';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Route, Switch, useLocation } from 'react-router';
-import { FileUploaderProvider } from 'shared/components/file-uploader';
-import { DemoProvider } from 'shared/demo';
-import { InvitationsProvider } from 'shared/invitation';
-import { Userpilot } from 'userpilot';
-import { CriticalErrorDialog } from './critical-error-view';
-import LoadingView from './loading-view';
-import { CreateWorkspaceView } from './new-workspace';
-import WorkspaceContentView from './workspace-content';
-import { WorkspacesBar } from './workspaces-bar/index';
+import React, {
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { Route, Switch, useLocation } from 'https://esm.sh/react-router@5.1.2';
+import { layout } from '../../../styles/index.ts';
+import { cn, makeStyles } from '../../../styles/css-objects/index.ts';
+import { Devices, useCurrentDevice } from '../../../styles/responsive.ts';
+import {
+  darkTheme,
+  lightTheme,
+  ThemeProvider,
+} from '../../../styles/theme.tsx';
+import { useGraphManager, useRootUser } from '../core/cfds/react/graph.tsx';
+import { usePartialVertex } from '../core/cfds/react/vertex.ts';
+import { Features, useIsFeatureActive } from '../core/feature-toggle/index.tsx';
+import { useSyncUrlParam } from '../core/react-utils/history/use-sync-url-param.ts';
+import { FileUploaderProvider } from '../shared/components/file-uploader/index.tsx';
+import { InvitationsProvider } from '../shared/invitation/index.tsx';
+import { VertexManager } from '../../../cfds/client/graph/vertex-manager.ts';
+import { Filter } from '../../../cfds/client/graph/vertices/filter.ts';
+import { Workspace } from '../../../cfds/client/graph/vertices/workspace.ts';
+import { CriticalErrorDialog } from './critical-error-view.tsx';
+import LoadingView from './loading-view.tsx';
+import { CreateWorkspaceView } from './new-workspace/index.tsx';
+import WorkspaceContentView from './workspace-content/index.tsx';
+import { WorkspacesBar } from './workspaces-bar/index.tsx';
+import { useSharedQuery } from '../core/cfds/react/query.ts';
 
-if (!config.isProduction) {
-  document.title = `Ovvio - ${config.name}`;
-}
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme: any) => ({
   blurred: {
     filter: 'blur(2px)',
   },
@@ -45,103 +47,60 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+export interface NotesContext {
+  filter: VertexManager<Filter>;
+  setFilter: (filter: VertexManager<Filter>) => void;
+}
+
+const notesContext = React.createContext<NotesContext | undefined>(undefined);
+
+export interface NotesContextProviderProps {
+  filterKey?: string;
+  children: React.ReactNode;
+}
+
+export function NotesContextProvider({
+  filterKey,
+  children,
+}: NotesContextProviderProps) {
+  const graph = useGraphManager();
+  const [filter, setFilter] = useState<VertexManager<Filter>>(
+    graph.getVertexManager(filterKey || 'MyTasks')
+  );
+  return (
+    <notesContext.Provider value={{ filter, setFilter }}>
+      {children}
+    </notesContext.Provider>
+  );
+}
+
+export function useNotesContext(): NotesContext {
+  return useContext(notesContext)!;
+}
+
 interface AppProps {}
 
 // const isDarkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 const isDarkTheme = false;
 
-function useUserPilot() {
-  const rootUser = useRootUser();
-  const { creationDate, onboardingStep, isLoading } = usePartialVertex(
-    rootUser,
-    ['creationDate', 'onboardingStep', 'isLoading']
-  );
-
-  const isActive = useIsFeatureActive(Features.Userpilot);
-  const location = useLocation();
-  // const prevPathname = useRef<string>();
-  useEffect(() => {
-    if (isLoading) {
-      return;
-    }
-    Userpilot.identify(rootUser.key, {
-      created_at: creationDate.toISOString(),
-      onboardingStep: onboardingStep,
-    });
-  }, [isLoading, rootUser.key, onboardingStep, creationDate]);
-
-  useEffect(() => {
-    if (isActive && !rootUser.isLoading) {
-      Userpilot.reload();
-    }
-    // if (prevPathname.current && location.pathname === prevPathname.current) {
-    //   return;
-    // }
-    // prevPathname.current = location.pathname;
-    // if (isActive) {
-    //   Userpilot.reload({
-    //     url: `${window.location.hostname}${location.pathname}`,
-    //   });
-    // }
-  }, [location, isActive, rootUser.isLoading]);
-}
-
-const kDemoDataPromise: Promise<ReadonlyJSONObject> = fetch('/demo.json').then(
-  response => response.json()
-);
-
-// May 24, 2022
-const CUTOFF_DATE = new Date(1653393858426);
-
 function Root({ style }: AppProps & { style?: any }) {
   const styles = useStyles();
 
-  useUserPilot();
+  // const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([]);
 
-  const [selectedWorkspaces, setSelectedWorkspaces] = useState([]);
-
-  const isLoading = useIsGraphLoading();
+  const [loading, setLoading] = useState(true);
   const graph = useGraphManager();
-  const [demoWorkspaces, setDemoWorkspaces] = useState<string[]>([]);
-  const { onboardingStep, creationDate } = usePartialVertex(useRootUser(), [
-    'onboardingStep',
-    'creationDate',
-  ]);
-
-  const isInDemo =
-    onboardingStep === OnboardingStep.Start && creationDate > CUTOFF_DATE;
+  const { creationDate } = usePartialVertex(useRootUser(), ['creationDate']);
 
   useEffect(() => {
-    if (isInDemo && !demoWorkspaces.length) {
-      kDemoDataPromise.then(data => {
-        const vertices = graph.importSubGraph(data, true);
-        vertices.forEach(mgr => {
-          const vert = mgr.getVertexProxy();
-          vert.isDemoData = true;
-          if (vert instanceof Note) {
-            vert.rewritePinsToRootUser();
-          }
-        });
-        setDemoWorkspaces(
-          vertices
-            .filter(mgr => mgr.namespace === NS_WORKSPACE)
-            .map(mgr => mgr.key)
-        );
-      });
-    }
-  }, [isInDemo, graph, demoWorkspaces]);
-
-  useEffect(() => {
-    if (!isLoading && demoWorkspaces.length > 0) {
-      // Setup demo data
-      setSelectedWorkspaces(demoWorkspaces);
-      // triggerTutorial(UserpilotTutorial.OnboardDemo);
-    }
-  }, [isLoading, demoWorkspaces]);
+    graph.loadLocalContents().then(() => setLoading(false));
+  }, [graph]);
 
   const device = useCurrentDevice();
 
   const [expanded, setExpanded] = useState(device > Devices.Tablet);
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+  const workspacesQuery = useSharedQuery('workspaces');
 
   // const currentUser = user?.currentUser;
   // const history = useHistoryStatic();
@@ -154,32 +113,28 @@ function Root({ style }: AppProps & { style?: any }) {
   useSyncUrlParam(
     'selectedWorkspaces',
     true,
-    selectedWorkspaces,
-    setSelectedWorkspaces,
+    Array.from(selectedWorkspacesQuery.keys()),
+    (keys) =>
+      workspacesQuery.forEach((ws) => (ws.selected = keys.includes(ws.key))),
     {
       route: '/',
     }
   );
 
-  const onWorkspaceCreated = useCallback((wsKey: string) => {
-    setSelectedWorkspaces(current => [...current, wsKey]);
-  }, []);
+  // const onWorkspaceCreated = useCallback((wsKey: string) => {
+  //   setSelectedWorkspaces((current) => [...current, wsKey]);
+  // }, []);
 
   return (
     <div className={cn(styles.root)} style={style}>
-      <CriticalErrorDialog />
-      {!isLoading ? (
-        <FileUploaderProvider>
-          <DemoProvider
-            isInDemo={isInDemo}
-            demoWorkspaces={demoWorkspaces}
-            setSelectedWorkspaces={setSelectedWorkspaces}
-          >
+      <NotesContextProvider>
+        {!loading ? (
+          <FileUploaderProvider>
             <WorkspacesBar
               expanded={expanded}
               setExpanded={setExpanded}
-              selectedWorkspaces={selectedWorkspaces}
-              setSelectedWorkspaces={setSelectedWorkspaces}
+              // selectedWorkspaces={selectedWorkspaces}
+              // setSelectedWorkspaces={setSelectedWorkspaces}
             />
             <div className={cn(styles.content)}>
               <InvitationsProvider>
@@ -187,10 +142,18 @@ function Root({ style }: AppProps & { style?: any }) {
                   <Route
                     path="/new"
                     exact
-                    render={props => (
+                    render={(props) => (
                       <CreateWorkspaceView
                         location={props.location}
-                        onWorkspaceCreated={onWorkspaceCreated}
+                        onWorkspaceCreated={(wsKey) => {
+                          workspacesQuery.forEach(
+                            (ws) => (ws.selected = ws.key === wsKey)
+                          );
+                          // Depending on exact timings, our query may miss
+                          // the newly created workspace. Ensure it's always
+                          // selected.
+                          graph.getVertex<Workspace>(wsKey).selected = true;
+                        }}
                       />
                     )}
                   />
@@ -198,18 +161,20 @@ function Root({ style }: AppProps & { style?: any }) {
                     path="/"
                     render={() => (
                       <WorkspaceContentView
-                        selectedWorkspaces={selectedWorkspaces}
+                        selectedWorkspaces={Array.from(
+                          selectedWorkspacesQuery.keys()
+                        )}
                       />
                     )}
                   />
                 </Switch>
               </InvitationsProvider>
             </div>
-          </DemoProvider>
-        </FileUploaderProvider>
-      ) : (
-        <LoadingView />
-      )}
+          </FileUploaderProvider>
+        ) : (
+          <LoadingView />
+        )}
+      </NotesContextProvider>
     </div>
   );
 }

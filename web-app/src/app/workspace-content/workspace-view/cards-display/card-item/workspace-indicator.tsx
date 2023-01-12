@@ -32,7 +32,10 @@ import {
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
 import { useTheme } from '../../../../../../../styles/theme.tsx';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  useRootUser,
+} from '../../../../../core/cfds/react/graph.tsx';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
 import {
@@ -44,6 +47,7 @@ import { moveCard } from '../../../../../shared/utils/move.ts';
 import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 
 const showAnim = keyframes({
   '0%': {
@@ -296,7 +300,7 @@ export function sortWorkspaces(
     return -1;
   }
 
-  return sortStampCompare(ws1, ws2);
+  return coreValueCompare(ws1, ws2);
 }
 
 export interface SelectWorkspaceMenuProps {
@@ -309,7 +313,7 @@ export function SelectWorkspaceMenu({
 }: SelectWorkspaceMenuProps) {
   const styles = useStyles();
   const graph = useGraphManager();
-  const user = graph.getRootVertex<User>();
+  const user = useRootUser();
   const { hiddenWorkspaces, pinnedWorkspaces, workspaces } = usePartialVertex(
     user.manager as VertexManager<User>,
     ['hiddenWorkspaces', 'pinnedWorkspaces', 'workspaces']

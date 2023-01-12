@@ -1,18 +1,18 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { H2 } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { createUseStrings } from 'core/localization';
-import { useReffedValue } from 'core/react-utils';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import { useEffect, useState } from 'react';
-import { useDemoInfo } from 'shared/demo';
-import { ToolbarCenterItem } from '../toolbar';
-import { BoardView } from './board-view';
-import localization from './cards-display.strings.json';
+import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { NoteType } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { layout, styleguide } from '../../../../../../styles/index.ts';
+import { H2 } from '../../../../../../styles/components/typography.tsx';
+import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../../../styles/responsive.ts';
+import { createUseStrings } from '../../../../core/localization/index.tsx';
+import { useReffedValue } from '../../../../core/react-utils/index.ts';
+import { useSyncUrlParam } from '../../../../core/react-utils/history/use-sync-url-param.ts';
+import { useDemoInfo } from '../../../../shared/demo/index.tsx';
+import { ToolbarCenterItem } from '../toolbar/index.tsx';
+import { BoardView } from './board-view/index.tsx';
+import localization from './cards-display.strings.json' assert { type: 'json' };
 import {
   DisplayBar,
   GroupBy,
@@ -20,16 +20,19 @@ import {
   SIDES_PADDING,
   TABLET_PADDING,
   ViewType,
-} from './display-bar';
-import { FiltersView } from './display-bar/filters';
-import { ActiveFiltersView } from './display-bar/filters/active-filters';
-import { useFiltersController } from './display-bar/filters/state';
-import { SearchField } from './display-bar/search-field';
-import { ListView, SortBy } from './list-view';
-import { SearchResults } from './search-results';
-import { VideoTutorial } from './video-demo';
+} from './display-bar/index.tsx';
+import { FiltersView } from './display-bar/filters/index.tsx';
+import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
+import { SearchField } from './display-bar/search-field.tsx';
+import { ListView } from './list-view/index.tsx';
+import { SearchResults } from './search-results/index.tsx';
+import { Filter } from '../../../../../../cfds/client/graph/vertices/filter.ts';
+import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import { useContext } from 'https://esm.sh/v99/@types/react@18.0.25/index.d.ts';
+import { NS_FILTER } from '../../../../../../cfds/base/scheme-types.ts';
+import { useVertex } from '../../../../core/cfds/react/vertex.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   displayRoot: {
     flexShrink: 0,
     flexGrow: 0,
@@ -93,10 +96,6 @@ const useStrings = createUseStrings(localization);
 
 export interface CardsDisplayProps {
   selectedWorkspaces: VertexManager<Workspace>[];
-}
-
-function isQueryValid(query: string): boolean {
-  return query && query.length >= 2;
 }
 
 let firstLoad = true;

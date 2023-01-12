@@ -55,7 +55,7 @@ export class Tag extends BaseVertex {
     return queryManager.getVertexQuery(
       this.key,
       'childTagsQuery',
-      queryManager.tagsQuery,
+      queryManager.tags,
       (tag) => tag.parent?.key === this.key,
       (t1, t2) => coreValueCompare(t1.sortStamp, t2.sortStamp)
     );

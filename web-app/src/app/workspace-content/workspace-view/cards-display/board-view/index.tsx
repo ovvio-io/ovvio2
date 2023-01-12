@@ -14,10 +14,7 @@ import { AssigneesBoardView } from './assignees-board-view.tsx';
 import { TagBoardView } from './tag-board-view.tsx';
 import { WorkspaceBoardView } from './workspace-board-view.tsx';
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
-import {
-  useQueryGroups,
-  useQueryResults,
-} from '../../../../../core/cfds/react/query.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles((theme) => ({
@@ -42,7 +39,7 @@ export interface BoardViewProps {
 export function BoardView({ className, filter: filterMgr }: BoardViewProps) {
   const styles = useStyles();
   const filter = useVertex(filterMgr);
-  const groups = useQueryGroups(filter.buildQuery('BoardView'));
+  const query = useQuery2(filter.buildQuery('BoardView'));
 
   let content: React.ReactNode = null;
   // const onCreateCard = (data: TaskData) => {
@@ -77,7 +74,7 @@ export function BoardView({ className, filter: filterMgr }: BoardViewProps) {
   const groupBy = filter.groupBy;
 
   if (groupBy === 'workspace') {
-    content = <WorkspaceBoardView cardManagers={groups} />;
+    content = <WorkspaceBoardView cardManagers={query.groups} />;
   } else if (groupBy === 'tag') {
     content = (
       <TagBoardView

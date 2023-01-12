@@ -4,6 +4,7 @@ import {
   EVENT_LOADING_FINISHED,
   EVENT_VERTEX_CHANGED,
   EVENT_VERTEX_DELETED,
+  EVENT_VERTEX_SOURCE_CLOSED,
   VertexSource,
 } from './vertex-source.ts';
 import { Vertex } from './vertex.ts';
@@ -33,7 +34,6 @@ export interface SortDescriptor<T extends Vertex = Vertex> {
 export type QueryResults<T extends Vertex = Vertex> = VertexManager<T>[];
 
 export const EVENT_QUERY_RESULTS_CHANGED = 'QueryResultsChanged';
-export const EVENT_QUERY_DID_CLOSE = 'QueryDidClose';
 
 // const gDirtyQueries = new Set<Query<any>>();
 // const gQueryMicrotask = new SimpleTimer(50, false, () => {
@@ -72,8 +72,10 @@ export interface QueryOptions<OT extends Vertex> {
 }
 
 export type SourceType<IT extends Vertex> =
-  | Query<Vertex, IT>
-  | UnionQuery<Vertex, IT>
+  // deno-lint-ignore no-explicit-any
+  | Query<any, IT>
+  // deno-lint-ignore no-explicit-any
+  | UnionQuery<any, IT>
   | GraphManager;
 export type SourceProducer<IT extends Vertex> = () => SourceType<IT>;
 
@@ -156,6 +158,7 @@ export class Query<
    * @returns An array of VertexManager instances.
    */
   static async<IT extends Vertex = Vertex, OT extends IT = IT>(
+    // deno-lint-ignore no-explicit-any
     source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT, OT>,
     sortDescriptor?: SortDescriptor<OT>,
@@ -187,6 +190,7 @@ export class Query<
    * @returns An array of VertexManager instances.
    */
   static blocking<IT extends Vertex = Vertex, OT extends IT = IT>(
+    // deno-lint-ignore no-explicit-any
     source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT, OT>,
     sortDescriptor?: SortDescriptor<OT>
@@ -219,6 +223,7 @@ export class Query<
    * @returns The number of results found.
    */
   static blockingCount<IT extends Vertex = Vertex>(
+    // deno-lint-ignore no-explicit-any
     source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT>,
     limit?: number
@@ -246,7 +251,10 @@ export class Query<
     this._id = ++gQueryId;
     this._vertexChangedListener = (key) => this.vertexChanged(key);
     this._vertexDeletedListener = (key) => this.vertexDeleted(key);
-    this._closeListener = () => this.close();
+    this._closeListener = () => {
+      this.unlock();
+      this.close();
+    };
     this._resultKeys = new Set();
     this._clientsNotifyTimer = new SimpleTimer(50, false, () =>
       this._notifyQueryChanged()
@@ -267,7 +275,7 @@ export class Query<
           this._depsListener = () => this.onDependencyChanged();
           for (const d of this._deps) {
             d.on(EVENT_QUERY_RESULTS_CHANGED, this._depsListener);
-            d.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+            d.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
           }
         }
       }
@@ -364,17 +372,24 @@ export class Query<
     return this._cachedSortedGroups?.get(name) || [];
   }
 
+  forEach(f: (vert: OT) => void): void {
+    const graph = this.graph;
+    for (const key of this._resultKeys) {
+      f(graph.getVertex<OT>(key));
+    }
+  }
+
   private detachFromSource(): void {
     this.source.off(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
     this.source.off(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
-    this.source.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+    this.source.off(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
   }
 
   private attachToSource(): void {
     const source = this._source;
     if (source instanceof Query || source instanceof UnionQuery) {
       assert(source.isOpen);
-      source.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+      source.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
     }
 
     if (source.isLoading) {
@@ -394,16 +409,21 @@ export class Query<
       if (this._depsListener && this._deps) {
         for (const d of this._deps) {
           d.off(EVENT_QUERY_RESULTS_CHANGED, this._depsListener);
-          d.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+          d.off(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
         }
       }
       this._isOpen = false;
-      this.emit(EVENT_QUERY_DID_CLOSE);
+      this.emit(EVENT_VERTEX_SOURCE_CLOSED);
     }
   }
 
   lock(): Query<IT, OT> {
     this._locked = true;
+    return this;
+  }
+
+  unlock(): Query<IT, OT> {
+    this._locked = false;
     return this;
   }
 
@@ -709,7 +729,7 @@ export class UnionQuery<
           assert(!src.isLoading);
           src.on(EVENT_VERTEX_CHANGED, this.changeListenerForQuery(src));
           src.on(EVENT_VERTEX_DELETED, this.changeListenerForQuery(src));
-          src.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+          src.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
           assert(loadingCount > 0);
           if (--loadingCount === 0) {
             this._isLoading = false;
@@ -719,7 +739,7 @@ export class UnionQuery<
       } else {
         src.on(EVENT_VERTEX_CHANGED, this.changeListenerForQuery(src));
         src.on(EVENT_VERTEX_DELETED, this.changeListenerForQuery(src));
-        src.once(EVENT_QUERY_DID_CLOSE, this._closeListener);
+        src.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
       }
     }
     this._isLoading = loadingCount > 0;
@@ -774,9 +794,9 @@ export class UnionQuery<
       for (const q of this.queries()) {
         q.off(EVENT_VERTEX_CHANGED, this.changeListenerForQuery(q));
         q.off(EVENT_VERTEX_DELETED, this.changeListenerForQuery(q));
-        q.off(EVENT_QUERY_DID_CLOSE, this._closeListener);
+        q.off(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
       }
-      this.emit(EVENT_QUERY_DID_CLOSE);
+      this.emit(EVENT_VERTEX_SOURCE_CLOSED);
     }
   }
 
