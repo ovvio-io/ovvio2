@@ -1,26 +1,27 @@
-import { RaisedButton } from '@ovvio/styles/lib/components/buttons';
+import React, { useState } from 'https://esm.sh/react@18.2.0';
+import { RaisedButton } from '../../../styles/components/buttons.tsx';
 import Dialog, {
   DialogActions,
   DialogContent,
-} from '@ovvio/styles/lib/components/dialog';
-import { H3, Text } from '@ovvio/styles/lib/components/texts';
-import { useState } from 'react';
-import { useEventLogger } from '../core/analytics';
-import { useOnCriticalError } from '../core/cfds/react/graph-use';
+} from '../../../styles/components/dialog/index.tsx';
+import { H3, Text } from '../../../styles/components/texts.tsx';
+import { useOnCriticalError } from '../core/cfds/react/graph-use.ts';
+// import { useLogger } from '../core/cfds/react/logger.tsx';
 
 export function CriticalErrorDialog() {
   const [open, setOpen] = useState(false);
-  const eventLogger = useEventLogger();
+  // const logger = useLogger();
 
   useOnCriticalError(() => {
     setOpen(true);
-    eventLogger.action('CRITICAL_ERROR_POPUP_RAISED', {});
+    // eventLogger.action('CRITICAL_ERROR_POPUP_RAISED', {});
   });
 
   const onRefreshClick = () => {
-    eventLogger.action('CRITICAL_ERROR_REFRESH_CLICKED', {});
+    // eventLogger.action('CRITICAL_ERROR_REFRESH_CLICKED', {});
 
     // eslint-disable-next-line no-self-assign
+    // deno-lint-ignore no-self-assign
     window.location.href = window.location.href;
   };
 

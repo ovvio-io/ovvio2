@@ -1,9 +1,10 @@
-import { styleguide } from '@ovvio/styles/lib';
-import { IconProps } from '@ovvio/styles/lib/components/icons/IconBase';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
+import React from 'https://esm.sh/react@18.2.0';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import { IconProps } from '../../../../styles/components/icons/IconBase.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../styles/theme.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   path: {
     ...styleguide.transition.short,
     transitionProperty: 'd',

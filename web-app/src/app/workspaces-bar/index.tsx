@@ -520,6 +520,7 @@ function WorkspaceListItem({
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
         hide={() => setIsSettingsOpen(false)}
+        source="bar:workspace"
       />
     </div>
   );
@@ -618,29 +619,57 @@ function WorkspacesList({ expanded }: WorkspacesBarProps) {
     });
   };
 
+  const setIsHidden = useCallback(
+    (ws: Workspace, hidden: boolean | undefined) => {
+      hidden = Boolean(hidden);
+      hidden
+        ? settings.hiddenWorkspaces.add(ws.key)
+        : settings.hiddenWorkspaces.delete(ws.key);
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'hide',
+        flag: hidden,
+        vertex: ws.key,
+        uiSource: 'workspace-bar',
+      });
+    },
+    [settings, logger]
+  );
+
+  const setIsPinned = useCallback(
+    (ws: Workspace, pinned: boolean | undefined) => {
+      pinned = Boolean(pinned);
+      pinned
+        ? settings.pinnedWorkspaces.add(ws.key)
+        : settings.pinnedWorkspaces.delete(ws.key);
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'pin',
+        flag: pinned,
+        vertex: ws.key,
+        uiSource: 'workspace-bar',
+      });
+    },
+    [settings, logger]
+  );
+
   return (
     <Scroller>
       {(ref) => (
         <div ref={ref} className={cn(styles.list)}>
-          {visible.map((x) => (
+          {visible.map((ws) => (
             <WorkspaceListItem
-              setIsHidden={(hidden) =>
-                hidden
-                  ? settings.hiddenWorkspaces.add(x.key)
-                  : settings.hiddenWorkspaces.delete(x.key)
-              }
-              setIsPinned={(pinned) =>
-                pinned
-                  ? settings.pinnedWorkspaces.add(x.key)
-                  : settings.pinnedWorkspaces.delete(x.key)
-              }
+              setIsHidden={(hidden) => setIsHidden(ws, hidden)}
+              setIsPinned={(pinned) => setIsPinned(ws, pinned)}
               isHidden={false}
-              isPinned={pinnedWorkspaces.has(x.key)}
-              key={x.key}
-              workspace={x.manager as VertexManager<Workspace>}
+              isPinned={pinnedWorkspaces.has(ws.key)}
+              key={ws.key}
+              workspace={ws.manager as VertexManager<Workspace>}
               expanded={expanded}
-              onClick={() => (x.selected = !x.selected)}
-              isSelected={x.selected}
+              onClick={() => (ws.selected = !ws.selected)}
+              isSelected={ws.selected}
             />
           ))}
           <Button
@@ -661,25 +690,17 @@ function WorkspacesList({ expanded }: WorkspacesBarProps) {
             />
           </Button>
           {showHidden &&
-            hidden.map((x) => (
+            hidden.map((ws) => (
               <WorkspaceListItem
-                setIsHidden={(hidden) =>
-                  hidden
-                    ? settings.hiddenWorkspaces.add(x.key)
-                    : settings.hiddenWorkspaces.delete(x.key)
-                }
-                setIsPinned={(pinned) =>
-                  pinned
-                    ? settings.pinnedWorkspaces.add(x.key)
-                    : settings.pinnedWorkspaces.delete(x.key)
-                }
+                setIsHidden={(hidden) => setIsHidden(ws, hidden)}
+                setIsPinned={(pinned) => setIsPinned(ws, pinned)}
                 isHidden={true}
                 isPinned={false}
-                key={x.key}
-                workspace={x.manager as VertexManager<Workspace>}
+                key={ws.key}
+                workspace={ws.manager as VertexManager<Workspace>}
                 expanded={expanded}
-                onClick={(e) => (x.selected = !x.selected)}
-                isSelected={x.selected}
+                onClick={(e) => (ws.selected = !ws.selected)}
+                isSelected={ws.selected}
               />
             ))}
         </div>
@@ -700,6 +721,7 @@ function WorkspaceBarInternal({
   ]);
 
   const workspacesQuery = useSharedQuery('workspaces');
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
   const logger = useLogger();
   const selectAll = useCallback(() => {
     workspacesQuery.forEach(
@@ -765,30 +787,22 @@ function WorkspaceBarInternal({
                 className={cn(styles.openBarButton)}
                 onClick={() => setExpanded((x) => !x)}
               >
-                <CollapseIcon className={!expanded && styles.rotated} />
+                <CollapseIcon
+                  className={expanded ? styles.rotated : undefined}
+                />
               </Button>
             </div>
             <WorkspaceToggleView
               expanded={expanded}
               selectedRatio={
-                workspaces.length &&
-                selectedWorkspaces.length / workspaces.length
+                workspacesQuery.count &&
+                selectedWorkspacesQuery.count / workspacesQuery.count
               }
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
             />
           </div>
-          <WorkspacesList
-            expanded={expanded}
-            setExpanded={setExpanded}
-            workspaces={workspaces}
-            hiddenWorkspaces={hiddenWorkspaces}
-            pinnedWorkspaces={pinnedWorkspaces}
-            togglePinWorkspace={pinWorkspace}
-            toggleHideWorkspace={hideWorkspace}
-            selectedWorkspaces={selectedWorkspaces}
-            setSelectedWorkspaces={setSelectedWorkspaces}
-          />
+          <WorkspacesList expanded={expanded} setExpanded={setExpanded} />
           <WorkspaceBarActions expanded={expanded} />
         </div>
       )}

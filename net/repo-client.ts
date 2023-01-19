@@ -1,5 +1,5 @@
 import { Repository, RepoStorage } from '../repo/repo.ts';
-import { SyncMessage } from './types.ts';
+import { SyncMessage } from './message.ts';
 import { BaseClient, SyncConfig } from './base-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { mapIterable } from '../base/common.ts';

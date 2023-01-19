@@ -1,14 +1,20 @@
 const SIZE = 160;
 
-export default function cropProfileImage(file) {
+export interface EncodedCroppedImage {
+  dataUrl: string;
+}
+
+export default function cropProfileImage(
+  file: Blob | MediaSource
+): Promise<EncodedCroppedImage> {
   return new Promise((resolve, reject) => {
     const img = document.createElement('img');
     const url = URL.createObjectURL(file);
-    img.onload = e => {
+    img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = SIZE;
       canvas.height = SIZE;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d')!;
       const width = img.width;
       const height = img.height;
       let x = 0,
@@ -26,7 +32,7 @@ export default function cropProfileImage(file) {
       URL.revokeObjectURL(url);
       resolve({ dataUrl: url });
     };
-    img.onError = () => reject();
+    img.onerror = () => reject();
     img.src = url;
   });
 }

@@ -1,35 +1,38 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import RestClient from 'api';
-import { useEventLogger } from 'core/analytics';
-import { useGraphManager } from 'core/cfds/react/graph';
-import { createUseStrings } from 'core/localization';
-import { useFocusOnMount } from 'core/react-utils';
-import { isKeyPressed } from 'core/slate/utils/hotkeys';
-import { useScopedObservable } from 'core/state';
-import React, { KeyboardEvent, MouseEvent, useRef, useState } from 'react';
-import { UserOnboard, useTutorialStep } from 'shared/tutorial';
-import { validateEmail } from 'shared/utils/email';
-import UserStore from 'stores/user';
-import { layout, styleguide } from '@ovvio/styles/lib';
+import React, {
+  KeyboardEvent,
+  MouseEvent,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  User,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import { useGraphManager } from '../../core/cfds/react/graph.tsx';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import { useFocusOnMount } from '../../core/react-utils/index.ts';
+import { isKeyPressed } from '../../core/slate/utils/hotkeys.ts';
+import { validateEmail } from '../utils/email.ts';
+import UserStore from '../../stores/user.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
 import {
   LinkButton,
   RaisedButton,
   SecondaryButton,
-} from '@ovvio/styles/lib/components/buttons';
-import { IconClose } from '@ovvio/styles/lib/components/icons';
-import { TextField } from '@ovvio/styles/lib/components/inputs';
-import SentIllustration from 'shared/invitation-dialog/sent-illustration';
+} from '../../../../styles/components/buttons.tsx';
+import { IconClose } from '../../../../styles/components/icons/index.ts';
+import { TextField } from '../../../../styles/components/inputs/index.ts';
+import SentIllustration from '../invitation-dialog/sent-illustration.tsx';
+import { H2, H3, Text } from '../../../../styles/components/texts.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../styles/theme.tsx';
+import ColleaguesIllustration from './colleagues-illustration.tsx';
+import localizations from './invite.strings.json' assert { type: 'json' };
+import { WorkspacesDropdown } from './workspaces-dropdown.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
 
-import { H2, H3, Text } from '@ovvio/styles/lib/components/texts';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import ColleaguesIllustration from './colleagues-illustration';
-import { InvitationSteps, useInviteTutorialSteps } from './invite-tutorial';
-import localizations from './invite.strings.json';
-import { WorkspacesDropdown } from './workspaces-dropdown';
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   form: {
     padding: styleguide.gridbase,
     basedOn: [layout.column],
@@ -136,23 +139,23 @@ function AddEmailInput({
   const styles = useStyles();
   const strings = useStrings();
   const ref = useRef();
-  const inputRef = useRef();
+  const inputRef = useRef(null);
   useFocusOnMount(inputRef);
   const [email, setEmail] = useState('');
   const isEmailValid = validateEmail(email);
 
-  const { className: addEmailClassName, next: nextStep } = useTutorialStep(
-    InvitationSteps.AddEmail,
-    ref.current,
-    { context: isEmailValid }
-  );
+  // const { className: addEmailClassName, next: nextStep } = useTutorialStep(
+  //   InvitationSteps.AddEmail,
+  //   ref.current,
+  //   { context: isEmailValid }
+  // );
   const onAddEmail = () => {
     if (!isEmailValid || disabled) {
       return;
     }
-    if (nextStep) {
-      nextStep();
-    }
+    // if (nextStep) {
+    //   nextStep();
+    // }
     addEmail(email);
     setEmail('');
   };
@@ -165,10 +168,10 @@ function AddEmailInput({
     }
   };
   return (
-    <div className={cn(styles.addEmail, addEmailClassName)} ref={ref}>
+    <div className={cn(styles.addEmail /*, addEmailClassName*/)} ref={ref}>
       <TextField
         value={email}
-        onChange={e => setEmail(e.currentTarget.value)}
+        onChange={(e) => setEmail(e.currentTarget.value)}
         type="email"
         ref={inputRef}
         onKeyDown={onKeyDown}
@@ -217,9 +220,8 @@ interface InviteResult {
 }
 
 export interface InviteFormProps {
-  workspaces: VertexManager<Workspace>[];
   close: () => void;
-  source?: string;
+  source?: UISource;
   onUsersInvited?: (users: VertexManager<User>[]) => void;
   className?: string;
   showOnboard?: boolean;
@@ -272,7 +274,7 @@ function InviteStepForm({
     const users = Array.from(ws.users);
     const newEmails = [];
     for (const email of emails) {
-      const u = users.find(x => x.email === email);
+      const u = users.find((x) => x.email === email);
       if (u) {
         invitedUsers.current.push(u.manager as VertexManager<User>);
       } else {
@@ -311,8 +313,8 @@ function InviteStepForm({
         () => {
           onInvited(
             results
-              .filter(x => x.userId)
-              .map(x => graph.getVertexManager<User>(x.userId))
+              .filter((x) => x.userId)
+              .map((x) => graph.getVertexManager<User>(x.userId))
           );
         },
         () => {
@@ -335,7 +337,7 @@ function InviteStepForm({
       workspaceId: selectedWorkspace?.key,
       source,
     });
-    setEmails(current => {
+    setEmails((current) => {
       if (current.includes(email)) {
         return current;
       }
@@ -369,11 +371,13 @@ function InviteStepForm({
       ) : null}
       <AddEmailInput addEmail={addEmail} disabled={isProcessing} />
       <div className={cn(styles.emails)}>
-        {emails.map(x => (
+        {emails.map((x) => (
           <EmailPill
             key={x}
             email={x}
-            onRemove={email => setEmails(curr => curr.filter(e => e !== email))}
+            onRemove={(email) =>
+              setEmails((curr) => curr.filter((e) => e !== email))
+            }
           />
         ))}
       </div>

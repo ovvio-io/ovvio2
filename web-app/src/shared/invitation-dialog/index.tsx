@@ -1,12 +1,14 @@
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Dialog } from '@ovvio/styles/lib/components/dialog';
-import { useEventLogger } from 'core/analytics';
-import { User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { InviteForm } from 'shared/invite-form';
+import React, { useCallback } from 'https://esm.sh/react@18.2.0';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { Dialog } from '../../../../styles/components/dialog/index.tsx';
+import { User } from '../../../../cfds/client/graph/vertices/user.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { InviteForm } from '../invite-form/index.tsx';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   text: {
     fontWeight: 'normal',
     lineHeight: '1.42',
@@ -60,51 +62,58 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface InvitationDialogViewProps {
-  workspaces: VertexManager<Workspace>[];
   open: any;
   hide: () => void;
-  source?: string;
+  source?: UISource;
   onUsersInvited?: (users: VertexManager<User>[]) => void;
 }
-export default function InvitationDialog({
-  workspaces,
-  open,
-  hide,
-  source,
-  onUsersInvited,
-}: InvitationDialogViewProps) {
-  const styles = useStyles();
-  const eventLogger = useEventLogger();
+// export default function InvitationDialog({
+//   open,
+//   hide,
+//   source,
+//   onUsersInvited,
+// }: InvitationDialogViewProps) {
+//   const styles = useStyles();
+//   const logger = useLogger();
 
-  const onClose = (closeSource: string) => {
-    eventLogger.action('WORKSPACE_INVITE_SCREEN_CLOSED', {
-      source: closeSource,
-    });
-    // if (onUserInvited && inviteUser !== undefined) {
-    //   onUserInvited(inviteUser);
-    // }
-    hide();
-  };
+//   const onClose = useCallback(
+//     (closeSource: UISource) => {
+//       logger.log({
+//         severity: 'INFO',
+//         event: 'End',
+//         flow: 'invite',
+//         source: source,
+//         type: 'workspace',
+//       }); // if (onUserInvited && inviteUser !== undefined) {
+//       //   onUserInvited(inviteUser);
+//       // }
+//       hide();
+//     },
+//     [logger]
+//   );
 
-  return (
-    <Dialog
-      open={open}
-      onClickOutside={() => onClose('click-outside')}
-      className={cn(styles.dialog)}
-      onOpen={() => {
-        eventLogger.action('WORKSPACE_INVITE_SCREEN_ENTERED', {
-          source,
-        });
-      }}
-      onClose={() => onClose('click-close')}
-    >
-      <InviteForm
-        close={hide}
-        source={source}
-        workspaces={workspaces}
-        onUsersInvited={onUsersInvited}
-      />
-    </Dialog>
-  );
-}
+//   return (
+//     <Dialog
+//       open={open}
+//       onClickOutside={() => onClose('click-outside')}
+//       className={cn(styles.dialog)}
+//       onOpen={() => {
+//         logger.log({
+//           severity: 'INFO',
+//           event: 'Start',
+//           flow: 'invite',
+//           source: source,
+//           type: 'workspace',
+//         });
+//       }}
+//       onClose={() => onClose('close-button')}
+//     >
+//       <InviteForm
+//         close={hide}
+//         source={source}
+//         onUsersInvited={onUsersInvited}
+//       />
+//     </Dialog>
+//   );
+// }
 // export default InvitationDialogView;

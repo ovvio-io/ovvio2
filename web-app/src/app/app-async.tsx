@@ -1,12 +1,11 @@
-import { StyleProvider } from '@ovvio/styles/lib/css-objects/context';
-import config from 'core/config';
-import { Fragment, lazy, Suspense } from 'react';
+import React, { Fragment, lazy, Suspense } from 'https://esm.sh/react@18.2.0';
+import { StyleProvider } from '../../../styles/css-objects/context.tsx';
 
-const LazyLogin = lazy(() => import('./login-async'));
+const LazyLogin = lazy(() => import('./login-async.tsx'));
 
 export default function AppAsync() {
   return (
-    <StyleProvider dev={config.isDev}>
+    <StyleProvider dev={false}>
       <Fragment>
         <Suspense fallback={<Fragment />}>
           <LazyLogin />

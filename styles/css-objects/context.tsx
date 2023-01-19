@@ -60,6 +60,7 @@ const StyleContext = React.createContext(__CssRegistry);
 
 export interface StyleProviderProps {
   dev?: boolean;
+  children: React.ReactNode;
 }
 
 function StyleTag({ dev }: StyleProviderProps) {
@@ -92,9 +93,9 @@ function StyleTag({ dev }: StyleProviderProps) {
 
     const tryAppendRule = (rule: string, index?: number) => {
       const sheet = style.sheet;
-      index = typeof index === 'undefined' ? sheet.cssRules.length : index;
+      index = typeof index === 'undefined' ? sheet!.cssRules.length : index;
       try {
-        sheet.insertRule(rule, index);
+        sheet!.insertRule(rule, index);
       } catch (error) {
         if (error instanceof SyntaxError && !reffedDev.current) {
           console.warn(`Received non-parsable rule: '${rule}'`);
@@ -144,7 +145,7 @@ export const StyleProvider: React.FC<StyleProviderProps> = ({
 
   return (
     <React.Fragment>
-      <StyleTag dev={dev} />
+      <StyleTag dev={dev} children={undefined} />
       {children}
     </React.Fragment>
   );

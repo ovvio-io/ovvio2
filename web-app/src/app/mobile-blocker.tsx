@@ -1,12 +1,11 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Bold, H3 } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { Breakpoints } from '@ovvio/styles/lib/responsive';
-import config from 'core/config';
-import { Features, useIsFeatureActive } from 'core/feature-toggle';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
+import { layout, styleguide } from '../../../styles/index.ts';
+import { Bold, H3 } from '../../../styles/components/texts.tsx';
+import { cn, makeStyles } from '../../../styles/css-objects/index.ts';
+import { Breakpoints } from '../../../styles/responsive.ts';
+import { Features, useIsFeatureActive } from '../core/feature-toggle/index.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   blockRoot: {
     backgroundColor: '#e8ecfc',
     padding: [styleguide.gridbase],
@@ -16,9 +15,9 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function isOnMobile() {
-  if (config.isDev) {
-    return false;
-  }
+  // if (config.isDev) {
+  //   return false;
+  // }
   if (window.innerWidth <= Breakpoints.Medium || window.innerHeight <= 400) {
     return true;
   }
@@ -50,7 +49,7 @@ function MobileBlockView() {
 }
 
 interface MobileBlockerProps {
-  children: any;
+  children: React.ReactNode;
 }
 function MobileBlockerImpl({ children }: MobileBlockerProps) {
   const [isBlocking, setIsBlocking] = useState(() => isOnMobile());
@@ -59,9 +58,9 @@ function MobileBlockerImpl({ children }: MobileBlockerProps) {
     const handler = () => {
       setIsBlocking(isOnMobile());
     };
-    window.addEventListener('resize', handler);
+    addEventListener('resize', handler);
 
-    return () => window.removeEventListener('resize', handler);
+    return () => removeEventListener('resize', handler);
   }, [isBlocking]);
 
   if (isBlocking) {
@@ -71,7 +70,11 @@ function MobileBlockerImpl({ children }: MobileBlockerProps) {
   return <React.Fragment>{children}</React.Fragment>;
 }
 
-export const MobileBlocker: React.FC = ({ children }) => {
+export const MobileBlocker: React.FC = ({
+  children,
+}: {
+  children?: React.ReactNode;
+}) => {
   const isMobileSupported = useIsFeatureActive(Features.Mobile);
 
   if (!isMobileSupported) {

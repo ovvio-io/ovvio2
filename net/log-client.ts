@@ -1,9 +1,8 @@
 import { Dictionary } from '../base/collections/dict.ts';
-import { mapIterable } from '../base/common.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
 import { LogStream } from '../logging/stream.ts';
 import { BaseClient, BaseClientStorage, SyncConfig } from './base-client.ts';
-import { SyncMessage } from './types.ts';
+import { SyncMessage } from './message.ts';
 
 export interface LogClientStorage extends BaseClientStorage {
   persistEntries(entries: NormalizedLogEntry[]): Promise<void | number>;

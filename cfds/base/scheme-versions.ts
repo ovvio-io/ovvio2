@@ -15,8 +15,6 @@ import {
   TYPE_SET,
   TYPE_STR,
   TYPE_STR_SET,
-  NS_INVITES,
-  InviteStatus,
   AttachmentData,
   TYPE_RICHTEXT_V3,
   SchemeNamespace,
@@ -158,10 +156,6 @@ const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
 const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
   passwordHash: TYPE_STR, // Hash + salt
   lastLoggedIn: TYPE_DATE,
-  workspaces: {
-    type: TYPE_REF_SET,
-    default: () => new Set<string>(),
-  },
   seenTutorials: {
     type: TYPE_STR_SET,
     default: () => new Set<string>(),
@@ -252,23 +246,6 @@ const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
 
 const SCHEME_TAG_2 = SCHEME_TAG_1.derive(NS_TAGS, {}, ['color']);
 
-const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
-  status: {
-    type: TYPE_STR, //InviteStatus values
-    default: () => InviteStatus.PENDING,
-  },
-  email: {
-    type: TYPE_STR,
-    required: true,
-  },
-  emailSent: {
-    type: TYPE_NUMBER, //0 - not sent, 1 - sent
-    default: () => 0,
-  },
-  invitee: TYPE_STR, //The invited name
-  inviteeUser: TYPE_REF, //The invites user id
-});
-
 const SCHEME_FILTER_1 = SCHEME_BASE_1.derive(
   NS_FILTER,
   {
@@ -297,7 +274,6 @@ export {
   SCHEME_WORKSPACE_4 as WORKSPACE_SCHEME,
   SCHEME_NOTE_5 as NOTE_SCHEME,
   SCHEME_TAG_2 as TAG_SCHEME,
-  SCHEME_INVITE_1 as INVITE_SCHEME,
   SCHEME_USER_2 as USER_SCHEME,
   SCHEME_USER_SETTINGS_1 as USER_SETTINGS,
   SCHEME_FILTER_1 as SCHEME_FILTER,
@@ -307,13 +283,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V1
   manager.register(
     1,
-    [
-      SCHEME_WORKSPACE_1,
-      SCHEME_USER_1,
-      SCHEME_NOTE_1,
-      SCHEME_TAG_1,
-      SCHEME_INVITE_1,
-    ],
+    [SCHEME_WORKSPACE_1, SCHEME_USER_1, SCHEME_NOTE_1, SCHEME_TAG_1],
     []
   );
 
@@ -321,12 +291,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     2,
     [SCHEME_NOTE_2],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.WORKSPACE,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
     (namespace, data) => {
       if (namespace === NS_NOTES) {
         if (data.attachments) {
@@ -351,12 +316,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     3,
     [SCHEME_NOTE_3],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.WORKSPACE,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
     (namespace, data) => {
       if (namespace === NS_NOTES) {
         if (data.title) {
@@ -375,12 +335,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     4,
     [SCHEME_WORKSPACE_2],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.NOTES,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.NOTES],
     (namespace, data) => {
       if (namespace === NS_WORKSPACE) {
         data.createdBy = data.owner;
@@ -393,7 +348,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     5,
     [SCHEME_WORKSPACE_3, SCHEME_NOTE_4],
-    [SchemeNamespace.INVITES, SchemeNamespace.TAGS, SchemeNamespace.USERS],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS],
     (namespace, data) => {}
   );
 
@@ -408,7 +363,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
       SCHEME_FILTER_1,
       SCHEME_NOTE_5,
     ],
-    [SchemeNamespace.INVITES],
+    [],
     (namespace, data) => {
       if (namespace === NS_TAGS) {
         delete data.color;

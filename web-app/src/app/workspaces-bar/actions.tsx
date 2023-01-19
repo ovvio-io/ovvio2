@@ -1,19 +1,16 @@
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import Tooltip from '@ovvio/styles/lib/components/tooltip';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { useEventLogger } from 'core/analytics';
-import { useGraphManager } from 'core/cfds/react/graph';
-import { isWorkspace, useExistingQuery, useQuery } from 'core/cfds/react/query';
-import { createUseStrings } from 'core/localization';
-import { CREATE_WORKSPACE, useHistoryStatic } from 'core/react-utils/history';
-import { useCallback, useState } from 'react';
-import { useDemoInfo } from 'shared/demo';
-import InvitationDialog from 'shared/invitation-dialog';
-import localization from './workspace-bar.strings.json';
+import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import {
+  CREATE_WORKSPACE,
+  useHistoryStatic,
+} from '../../core/react-utils/history/index.tsx';
+// import InvitationDialog from '../../shared/invitation-dialog/index.tsx';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import localization from './workspace-bar.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(
   () => ({
@@ -68,66 +65,46 @@ export function WorkspaceBarActions({
   expanded,
   className,
 }: WorkspaceBarActionsProps) {
-  const { isInDemo } = useDemoInfo();
   const styles = useStyles();
   const strings = useStrings();
   const history = useHistoryStatic();
-  const eventLogger = useEventLogger();
-  const graph = useGraphManager();
-  const { results: workspaces } = useExistingQuery(
-    graph.sharedQueriesManager.workspacesQuery
-  );
+  const logger = useLogger();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const createNew = useCallback(() => {
-    if (isInDemo) {
-      return;
-    }
-    eventLogger.action('ADD_WORKSPACE_CLICKED', {});
+    logger.log({
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'create',
+      type: 'workspace',
+      source: 'bar:workspace',
+    });
     history.push(CREATE_WORKSPACE);
-  }, [history, eventLogger, isInDemo]);
-
-  const openInvite = useCallback(() => {
-    if (isInDemo) {
-      return;
-    }
-    setIsShareOpen(true);
-  }, [isInDemo]);
+  }, [history, logger]);
 
   return (
     <div className={cn(styles.root, className)}>
-      <Tooltip text={strings.inDemo} disabled={!isInDemo}>
-        <div
-          className={cn(styles.action, isInDemo && styles.disabled)}
-          onClick={createNew}
-        >
-          <div className={cn(styles.actionIcon)}>
-            <IconPlus />
-          </div>
-          <div className={cn(styles.actionText)}>
-            {expanded ? strings.add : strings.addShort}
-          </div>
+      <div className={cn(styles.action)} onClick={createNew}>
+        <div className={cn(styles.actionIcon)}>
+          <IconPlus />
         </div>
-      </Tooltip>
-      <Tooltip text={strings.inDemo} disabled={!isInDemo}>
-        <div
-          className={cn(styles.action, isInDemo && styles.disabled)}
-          onClick={openInvite}
-        >
-          <div className={cn(styles.actionIcon)}>
-            <IconInvite />
-          </div>
-          <div className={cn(styles.actionText)}>
-            {expanded ? strings.invite : strings.inviteShort}
-          </div>
+        <div className={cn(styles.actionText)}>
+          {expanded ? strings.add : strings.addShort}
         </div>
-      </Tooltip>
-      <InvitationDialog
-        workspaces={workspaces}
+      </div>
+      <div className={cn(styles.action)} onClick={() => setIsShareOpen(true)}>
+        <div className={cn(styles.actionIcon)}>
+          <IconInvite />
+        </div>
+        <div className={cn(styles.actionText)}>
+          {expanded ? strings.invite : strings.inviteShort}
+        </div>
+      </div>
+      {/* <InvitationDialog
         open={isShareOpen}
         hide={() => setIsShareOpen(false)}
         source="workspace-bar"
-      />
+      /> */}
     </div>
   );
 }

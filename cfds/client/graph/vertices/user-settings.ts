@@ -32,21 +32,6 @@ export class UserSettings extends Vertex {
     }
   }
 
-  get workspaces(): Set<Workspace> {
-    return this.vertSetForField('workspaces');
-  }
-
-  set workspaces(s: Set<Workspace>) {
-    this.record.set(
-      'workspaces',
-      SetUtils.map(s, (ws: Workspace) => ws.key)
-    );
-  }
-
-  clearWorkspaces(): void {
-    this.record.set('workspaces', new Set());
-  }
-
   get seenTutorials(): Set<string> {
     const seenTutorials = this.record.get('seenTutorials') as Set<string>;
     if (seenTutorials === undefined || seenTutorials.size === 0) {

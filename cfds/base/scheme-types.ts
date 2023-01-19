@@ -13,7 +13,6 @@ export enum SchemeNamespace {
   TAGS = 'tags',
   USERS = 'users',
   USER_SETTINGS = 'user-settings',
-  INVITES = 'invites',
   ORGANIZATION = 'organization',
   FILTER = 'filter',
   Null = '',
@@ -33,7 +32,6 @@ export const NS_NOTES = SchemeNamespace.NOTES;
 export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
 export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
-export const NS_INVITES = SchemeNamespace.INVITES;
 export const NS_ORGANIZATION = SchemeNamespace.ORGANIZATION;
 export const NS_FILTER = SchemeNamespace.FILTER;
 
@@ -159,12 +157,6 @@ export interface ISchemeManagerRegister {
     extraNamespaces: SchemeNamespace[],
     upFunc?: (namespace: string, data: any) => void
   ): void;
-}
-
-export enum InviteStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  REJECTED = 'rejected',
 }
 
 export interface AttachmentData extends CoreObject {

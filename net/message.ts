@@ -45,10 +45,9 @@ export interface SyncMessageConfig<T extends SyncValueType> {
    */
   values?: T[];
   /**
-   * A Time To Live in milliseconds. If provided, both parties will
-   * automatically drop values older than this TTL.
+   * A list of identifiers for which the sender was denied access.
    */
-  ttl?: number;
+  accessDenied?: Iterable<string>;
   /**
    * The protocol used by the sender. If not provided, will use whatever the
    * current build is.
@@ -121,7 +120,7 @@ export class SyncMessage<T extends SyncValueType>
   private _filter!: BloomFilter;
   private _size!: number;
   private _values!: T[];
-  private _ttl?: number;
+  private _accessDenied?: string[];
 
   constructor(config: ConstructorDecoderConfig | SyncMessageConfig<T>) {
     if (isDecoderConfig(config)) {
@@ -130,8 +129,8 @@ export class SyncMessage<T extends SyncValueType>
       this._filter = config.filter;
       this._size = config.size;
       this._values = config.values || [];
-      if (config.ttl) {
-        this._ttl = config.ttl;
+      if (config.accessDenied) {
+        this._accessDenied = Array.from(config.accessDenied);
       }
       this._buildVersion = config.buildVersion || VersionNumber.Current;
     }
@@ -157,8 +156,8 @@ export class SyncMessage<T extends SyncValueType>
     this._values = v;
   }
 
-  get ttl(): number | undefined {
-    return this._ttl;
+  get accessDenied(): string[] {
+    return this._accessDenied || [];
   }
 
   get valueFlag(): SyncValueFlag {
@@ -188,8 +187,8 @@ export class SyncMessage<T extends SyncValueType>
         encoder.set('v', this.values);
         break;
     }
-    if (this.ttl) {
-      encoder.set('t', this.ttl);
+    if (this.accessDenied) {
+      encoder.set('ad', this.accessDenied);
     }
   }
 
@@ -200,7 +199,7 @@ export class SyncMessage<T extends SyncValueType>
     this._buildVersion = decoder.get<VersionNumber>('ver')!;
     this._filter.deserialize(decoder.getDecoder('f'));
     this._size = decoder.get<number>('s')!;
-    this._ttl = decoder.get('t');
+    this._accessDenied = decoder.get('ad', []);
     if (decoder.has('c')) {
       this._values = decoder
         .get<ReadonlyDecodedArray>('c', [])!

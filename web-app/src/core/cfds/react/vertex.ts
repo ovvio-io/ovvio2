@@ -77,11 +77,13 @@ function register(
   };
 }
 
-export function useVertexByKey<V extends Vertex>(key: string): V {
+export function useVertexByKey<V extends Vertex>(key: string): V | undefined {
   const graph = useGraphManager();
 
-  const vertexMng = useMemo<VertexManager<V>>(
-    () => graph && graph.getVertexManager<V>(key),
+  const vertexMng = useMemo<VertexManager<V> | undefined>(
+    () =>
+      (graph && graph.hasVertex(key) && graph.getVertexManager<V>(key)) ||
+      undefined,
     [graph, key]
   );
 
@@ -91,10 +93,27 @@ export function useVertexByKey<V extends Vertex>(key: string): V {
 export function usePartialVertex<V extends Vertex, K extends keyof V>(
   vertexMng: VertexManager<V>,
   keys: K[],
+  opts?: OnChangeOpts
+): Pick<V, K> & V;
+
+export function usePartialVertex<V extends Vertex, K extends keyof V>(
+  vertexMng: undefined | VertexManager<V>,
+  keys: K[],
+  opts?: OnChangeOpts
+): undefined | (Pick<V, K> & V);
+
+export function usePartialVertex<V extends Vertex, K extends keyof V>(
+  vertexMng: VertexManager<V> | undefined,
+  keys: K[],
   opts: OnChangeOpts = EMPTY_OPTS
-): Pick<V, K> & V {
+): (Pick<V, K> & V) | undefined {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setReload] = useState(0);
+
+  if (!vertexMng) {
+    return undefined;
+  }
+
   const keysStr = keys.join('-');
   useEffect(() => {
     return register(
@@ -112,7 +131,7 @@ export function usePartialVertex<V extends Vertex, K extends keyof V>(
 }
 
 export function useVertex<V extends Vertex>(
-  vertexMng: VertexManager<V>,
+  vertexMng: VertexManager<V> | undefined,
   opts: OnChangeOpts = EMPTY_OPTS
 ) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

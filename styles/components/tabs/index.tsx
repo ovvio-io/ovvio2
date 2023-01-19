@@ -190,13 +190,13 @@ export function Tabs({ children, selectedTab, className }: TabsProps) {
   );
 }
 
-export interface TabProps {
+export interface TabProps<TV> {
   children: any;
   style?: any;
   className?: string;
-  value: any;
+  value: TV;
 }
-export function Tab({ children, style, className }: TabProps) {
+export function Tab<TV>({ children, style, className }: TabProps<TV>) {
   return (
     <div style={style} className={className}>
       {children}

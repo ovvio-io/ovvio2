@@ -1,7 +1,7 @@
 import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
-import { SyncMessage, SyncValueType } from './types.ts';
+import { SyncMessage, SyncValueType } from './message.ts';
 import { retry } from '../base/time.ts';
 import { log } from '../logging/log.ts';
 import {

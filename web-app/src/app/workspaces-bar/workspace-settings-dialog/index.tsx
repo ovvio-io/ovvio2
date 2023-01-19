@@ -1,64 +1,60 @@
-import { prettyJSON } from '@ovvio/base/lib/utils';
-import { NS_USERS } from '@ovvio/cfds';
-import { InviteStatus } from '@ovvio/cfds/lib/base/scheme-types';
-import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Invite, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { getColorForWorkspaceId } from '@ovvio/styles/lib/colors';
-import { Button, RaisedButton } from '@ovvio/styles/lib/components/buttons';
+import React, {
+  ChangeEvent,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { encode as b32encode } from 'https://deno.land/std@0.170.0/encoding/base32.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  User,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { layout, styleguide } from '../../../../../styles/index.ts';
+import { getColorForWorkspaceId } from '../../../../../styles/colors.ts';
+import {
+  Button,
+  RaisedButton,
+} from '../../../../../styles/components/buttons.tsx';
 import {
   Dialog,
   DialogActions,
   DialogContent,
-} from '@ovvio/styles/lib/components/dialog';
+} from '../../../../../styles/components/dialog/index.tsx';
 import {
   IconCamera,
   IconContactUs,
   IconDelete,
   IconOverflow,
-} from '@ovvio/styles/lib/components/icons';
-import { TextField } from '@ovvio/styles/lib/components/inputs';
-import Menu, { MenuAction } from '@ovvio/styles/lib/components/menu';
+} from '../../../../../styles/components/icons/index.ts';
+import { TextField } from '../../../../../styles/components/inputs/index.ts';
+import Menu, { MenuAction } from '../../../../../styles/components/menu.tsx';
 import {
   Tab,
   TabButton,
   Tabs,
   TabsHeader,
-} from '@ovvio/styles/lib/components/tabs';
-import { H3, Text } from '@ovvio/styles/lib/components/texts';
-import { toastContext } from '@ovvio/styles/lib/components/toast';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import RestClient from 'api';
-import base32 from 'base32';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { useCfdsContext } from 'core/cfds/react/graph';
-import { useQuery } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import config from 'core/config';
-import { Feature, Features } from 'core/feature-toggle';
+} from '../../../../../styles/components/tabs/index.tsx';
+import { H3, Text } from '../../../../../styles/components/texts.tsx';
+import { toastContext } from '../../../../../styles/components/toast/index.tsx';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
+import Avatar from '../../../shared/avatar/index.tsx';
+import cropProfileImage from './crop-profile-image.ts';
+import IconSettingsCog from './icon-settings-cog.tsx';
+import TagsSettings from './tags-settings/index.tsx';
+import { useLogger } from '../../../core/cfds/react/logger.tsx';
 import {
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import Avatar from 'shared/avatar';
-import InvitationDialog from 'shared/invitation-dialog';
-import {
-  ChangeStoreProvider,
-  useChangeRecord,
-  useRecordStore,
-} from './change-store';
-import cropProfileImage from './crop-profile-image';
-import IconSettingsCog from './icon-settings-cog';
-import TagsSettings from './tags-settings';
+  SettingsType,
+  UISource,
+} from '../../../../../logging/client-events.ts';
+import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 
 export { IconSettingsCog };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tab: {
     height: styleguide.gridbase * 49,
     overflowY: 'auto',
@@ -315,7 +311,11 @@ function WorkspacePlaceholder({ workspaceManager }: WorkspacePlaceholderProps) {
   );
 }
 
-function WorkspaceIconView({ icon }) {
+interface WorkspaceIconViewProps {
+  icon: string;
+}
+
+function WorkspaceIconView({ icon }: WorkspaceIconViewProps) {
   const styles = useStyles();
   return (
     <div
@@ -325,16 +325,24 @@ function WorkspaceIconView({ icon }) {
   );
 }
 
-function UploadPhotoButton({ onImageSelected }) {
+interface UploadPhotoButtonProps {
+  onImageSelected: (dataUrl: string) => void;
+}
+
+function UploadPhotoButton({ onImageSelected }: UploadPhotoButtonProps) {
   const styles = useStyles();
-  const fileInput = useRef();
-  const onFileSelected = async e => {
-    const file = e.target.files[0];
-    if (!file) {
+  const fileInput = useRef(null);
+  const onFileSelected = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) {
+      return;
+    }
+    const f = files[0];
+    if (!f) {
       return;
     }
 
-    const { dataUrl } = await cropProfileImage(file);
+    const { dataUrl } = await cropProfileImage(f);
     onImageSelected(dataUrl);
   };
   return (
@@ -368,25 +376,18 @@ function WorkspaceImageView({
 }: WorkspaceImageViewProps) {
   const styles = useStyles();
   const partial = usePartialVertex(workspaceManager, ['icon']);
-  const eventLogger = useEventLogger();
+  // const logger = useLogger();
 
-  const record = useChangeRecord(`${workspaceManager.key}-icon`, r => {
-    const newIcon = r.get('icon');
-    if (newIcon) {
-      partial.icon = newIcon;
-      eventLogger.wsAction('WORKSPACE_ICON_CHANGED', workspaceManager, {
-        category: EventCategory.WS_SETTINGS,
-      });
-    }
-  });
-  const icon = record.get('icon') || partial.icon;
-  const onImageSelected = img => {
-    record.set('icon', img);
-  };
+  const onImageSelected = useCallback(
+    (img: string) => {
+      partial.icon = img;
+    },
+    [partial]
+  );
   return (
     <div className={cn(styles.image, styles.bigImage, className)}>
-      {icon ? (
-        <WorkspaceIconView icon={icon} />
+      {partial.icon ? (
+        <WorkspaceIconView icon={partial.icon} />
       ) : (
         <WorkspacePlaceholder workspaceManager={workspaceManager} />
       )}
@@ -401,20 +402,21 @@ interface NameFieldProps {
 function NameField({ workspaceManager }: NameFieldProps) {
   const styles = useStyles();
   const partial = usePartialVertex(workspaceManager, ['name']);
-  const eventLogger = useEventLogger();
-  const record = useChangeRecord(`${workspaceManager.key}-name`, rec => {
-    const name = rec.get('name');
-    if (name) {
-      partial.name = name;
-      eventLogger.wsAction('WORKSPACE_NAME_CHANGED', workspaceManager, {
-        category: EventCategory.WS_SETTINGS,
+  const logger = useLogger();
+  const name = partial.name;
+  const onNameChanged = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      partial.name = e.target.value || '';
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'name',
+        vertex: partial.key,
+        source: 'settings:workspace',
       });
-    }
-  });
-  const name = record.get('name') || partial.name;
-  const onNameChanged = e => {
-    record.set('name', e.target.value);
-  };
+    },
+    [partial, logger]
+  );
   return (
     <TextField
       value={name}
@@ -458,118 +460,100 @@ function UserItem({ userMng, removeUser }: UserItemProps) {
   );
 }
 
-interface InvitationItemProps {
-  invitationMng: VertexManager<Invite>;
-  removeInvitation: (rec: VertexManager<Invite>) => void;
-}
-function InvitationItem({
-  invitationMng,
-  removeInvitation,
-}: InvitationItemProps) {
-  const styles = useStyles();
-  const partialInv = usePartialVertex(invitationMng, ['invitee', 'email']);
-  const invText =
-    (partialInv.invitee && partialInv.invitee !== ''
-      ? `${partialInv.invitee} - `
-      : '') + 'Pending';
+// interface InvitationItemProps {
+//   invitationMng: VertexManager<Invite>;
+//   removeInvitation: (rec: VertexManager<Invite>) => void;
+// }
+// function InvitationItem({
+//   invitationMng,
+//   removeInvitation,
+// }: InvitationItemProps) {
+//   const styles = useStyles();
+//   const partialInv = usePartialVertex(invitationMng, ['invitee', 'email']);
+//   const invText =
+//     (partialInv.invitee && partialInv.invitee !== ''
+//       ? `${partialInv.invitee} - `
+//       : '') + 'Pending';
 
-  return (
-    <div className={cn(styles.user)}>
-      <div className={cn(styles.avatar, styles.invitationAvatar)}>
-        <IconContactUs fill="white" />
-      </div>
-      <div className={cn(styles.userInfo)}>
-        <Text className={cn(styles.uname)}>{invText}</Text>
-        <Text className={cn(styles.email)}>{partialInv.email}</Text>
-      </div>
+//   return (
+//     <div className={cn(styles.user)}>
+//       <div className={cn(styles.avatar, styles.invitationAvatar)}>
+//         <IconContactUs fill="white" />
+//       </div>
+//       <div className={cn(styles.userInfo)}>
+//         <Text className={cn(styles.uname)}>{invText}</Text>
+//         <Text className={cn(styles.email)}>{partialInv.email}</Text>
+//       </div>
 
-      <Menu
-        className={cn(styles.overflowIcon)}
-        renderButton={() => <IconOverflow />}
-        position="right"
-        align="start"
-        direction="in"
-      >
-        <MenuAction
-          IconComponent={IconDelete}
-          text="Delete Invitation"
-          onClick={() => removeInvitation(invitationMng)}
-        />
-      </Menu>
-    </div>
-  );
-}
+//       <Menu
+//         className={cn(styles.overflowIcon)}
+//         renderButton={() => <IconOverflow />}
+//         position="right"
+//         align="start"
+//         direction="in"
+//       >
+//         <MenuAction
+//           IconComponent={IconDelete}
+//           text="Delete Invitation"
+//           onClick={() => removeInvitation(invitationMng)}
+//         />
+//       </Menu>
+//     </div>
+//   );
+// }
 
 interface UsersListProps {
   workspaceManager: VertexManager<Workspace>;
-  removeUser: (user: VertexManager<User>) => Promise<void>;
-  removeInvitation: (invite: VertexManager<Invite>) => void;
 }
-function UsersList({
-  workspaceManager,
-  removeUser,
-  removeInvitation,
-}: UsersListProps) {
-  const [vToRemove, setVToRemove] = useState<
-    VertexManager<User | Invite> | undefined
-  >(undefined);
+function UsersList({ workspaceManager }: UsersListProps) {
+  const [toRemove, setToRemove] = useState<VertexManager<User> | undefined>(
+    undefined
+  );
   const [removeDisabled, setRemoveDisabled] = useState(false);
   const styles = useStyles();
   const { users } = usePartialVertex(workspaceManager, ['users']);
-  const { results: invitations } = useQuery<Invite>(
-    x =>
-      x instanceof Invite &&
-      x.status === InviteStatus.PENDING &&
-      x.workspaceKey === workspaceManager.key,
-    [workspaceManager?.key]
-  );
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
-  const onRemoveStarting = (v: VertexManager<User | Invite>) => {
-    eventLogger.wsAction(
-      'WORKSPACE_REMOVE_USER_DIALOG_OPENED',
-      workspaceManager,
-      {
-        category: EventCategory.WS_SETTINGS,
-      }
-    );
-    setVToRemove(v);
+  const onRemoveStarting = (v: VertexManager<User>) => {
+    logger.log({
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'permissions',
+      type: 'workspace',
+      removed: v.key,
+      source: 'settings:workspace',
+      vertex: workspaceManager.key,
+    });
+    setToRemove(v);
   };
 
-  const onRemoveClicked = async () => {
-    if (vToRemove) {
-      setRemoveDisabled(true);
-      try {
-        if (vToRemove.namespace === NS_USERS) {
-          await removeUser(vToRemove as VertexManager<User>);
-        } else {
-          removeInvitation(vToRemove as VertexManager<Invite>);
-        }
-      } finally {
-        setRemoveDisabled(false);
-        setVToRemove(undefined);
-      }
+  const onRemoveClicked = () => {
+    if (toRemove) {
+      workspaceManager.getVertexProxy().users.delete(toRemove.getVertexProxy());
+      logger.log({
+        severity: 'INFO',
+        event: 'End',
+        flow: 'permissions',
+        removed: toRemove.key,
+        vertex: workspaceManager.key,
+      });
+      setToRemove(undefined);
     }
   };
 
-  let identifier: string | undefined;
-  if (vToRemove) {
-    if (vToRemove.namespace === NS_USERS) {
-      identifier = (vToRemove.getVertexProxy() as User).name;
-    } else {
-      identifier = (vToRemove.getVertexProxy() as Invite).email;
-    }
-  }
+  const userToRemove = usePartialVertex(toRemove, ['name', 'email']);
 
   return (
     <div className={cn(styles.usersList)}>
       <Dialog
-        open={vToRemove !== undefined}
-        onClickOutside={() => setVToRemove(undefined)}
+        open={toRemove !== undefined}
+        onClickOutside={() => setToRemove(undefined)}
       >
         <DialogContent>
           <H3>Remove from Workspace</H3>
-          <Text>{`Are you sure you want to remove: ${identifier}?`}</Text>
+          <Text>{`Are you sure you want to remove: ${
+            userToRemove!.name
+          }?`}</Text>
         </DialogContent>
         <DialogActions>
           <RaisedButton disabled={removeDisabled} onClick={onRemoveClicked}>
@@ -577,18 +561,11 @@ function UsersList({
           </RaisedButton>
         </DialogActions>
       </Dialog>
-      {Array.from(users).map(u => (
+      {Array.from(users).map((u) => (
         <UserItem
           userMng={u.manager as VertexManager<User>}
           key={u.key}
           removeUser={onRemoveStarting}
-        />
-      ))}
-      {invitations.map(i => (
-        <InvitationItem
-          invitationMng={i as VertexManager<Invite>}
-          key={i.key}
-          removeInvitation={onRemoveStarting}
         />
       ))}
     </div>
@@ -605,7 +582,7 @@ function DeleteWorkspaceButton({
 }: DeleteWorkspaceButtonProps) {
   const styles = useStyles();
   const partialWS = usePartialVertex(workspaceManager, ['name', 'isDeleted']);
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const [name, setName] = useState('');
   const inputRef = useRef();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -614,16 +591,26 @@ function DeleteWorkspaceButton({
 
   const onClick = () => {
     if (!isDeleting) {
-      eventLogger.wsAction('WORKSPACE_DELETE_STARTED', workspaceManager, {
-        category: EventCategory.WS_SETTINGS,
+      logger.log({
+        severity: 'INFO',
+        event: 'Start',
+        flow: 'delete',
+        type: 'workspace',
+        source: 'settings:workspace',
+        vertex: workspaceManager.key,
       });
       return setIsDeleting(true);
     }
 
     if (canDelete) {
       partialWS.isDeleted = 1;
-      eventLogger.wsAction('WORKSPACE_DELETE_COMPLETED', workspaceManager, {
-        category: EventCategory.WS_SETTINGS,
+      logger.log({
+        severity: 'INFO',
+        event: 'End',
+        flow: 'delete',
+        type: 'workspace',
+        source: 'settings:workspace',
+        vertex: workspaceManager.key,
       });
       onDeleted();
     }
@@ -640,7 +627,7 @@ function DeleteWorkspaceButton({
       {isDeleting && (
         <TextField
           value={name}
-          onChange={e => setName(e.currentTarget.value)}
+          onChange={(e) => setName(e.currentTarget.value)}
           className={cn(styles.deleteConfirmation)}
           placeholder="Type workspace name to confirm"
           ref={inputRef}
@@ -665,42 +652,44 @@ function EmailIntegrationView({ workspaceManager }: EmailIntegrationViewProps) {
   const toastProvider = useContext(toastContext);
   const input = useRef<any>();
 
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
+
+  const encodedKey = b32encode(new TextEncoder().encode(workspaceManager.key));
 
   const info = {
     enabled: true,
-    address: `ws-${base32.encode(workspaceManager.key)}@${config.emailDomain}`,
+    // address: `ws-${encodedKey}@${config.emailDomain}`,
   };
 
   if (!info || !info.enabled) {
     return null;
   }
-  const copyToClipboard = () => {
-    input.current.select();
-    input.current.setSelectionRange(0, info.address.length);
-    document.execCommand('copy');
-    input.current.blur();
-    toastProvider.displayToast({
-      duration: 2000,
-      text: 'Address copied!',
-    });
+  // const copyToClipboard = () => {
+  //   input.current.select();
+  //   input.current.setSelectionRange(0, info.address.length);
+  //   document.execCommand('copy');
+  //   input.current.blur();
+  //   toastProvider.displayToast({
+  //     duration: 2000,
+  //     text: 'Address copied!',
+  //   });
 
-    eventLogger.wsAction('WORKSPACE_EMAIL_COPIED', workspaceManager, {
-      category: EventCategory.WS_SETTINGS,
-    });
-  };
+  //   eventLogger.wsAction('WORKSPACE_EMAIL_COPIED', workspaceManager, {
+  //     category: EventCategory.WS_SETTINGS,
+  //   });
+  // };
   return (
     <div className={cn(styles.emailIntegration)}>
       <Text className={cn(styles.label)}>Email Integration Address:</Text>
       {/*<Text onClick={copyToClipboard} ref={input}>
-        {info.address}
+        {d.address}
       </Text>*/}
-      <TextField
+      {/* <TextField
         onClick={copyToClipboard}
         value={info.address}
         readOnly={true}
         ref={input}
-      />
+      /> */}
     </div>
   );
 }
@@ -714,60 +703,7 @@ export function WorkspaceSettingsView({
   closeDialog,
 }: WorkspaceSettingsViewProps) {
   const styles = useStyles();
-  const cfdsContext = useCfdsContext();
-  const workspaces = useMemo(() => [workspaceManager], [workspaceManager]);
-  const eventLogger = useEventLogger();
-
   const [inviteOpen, setInviteOpen] = useState(false);
-
-  const removeUser = async (userMng: VertexManager<User>) => {
-    if (cfdsContext.user) {
-      eventLogger.wsAction('WORKSPACE_REMOVE_USER_STARTED', workspaceManager, {
-        category: EventCategory.WS_SETTINGS,
-        selectedUserId: userMng.key,
-      });
-
-      const rest = new RestClient(cfdsContext.user);
-      try {
-        await rest.delete(
-          `/workspaces/${workspaceManager.key}/users/${userMng.key}`
-        );
-
-        eventLogger.wsAction(
-          'WORKSPACE_REMOVE_USER_COMPLETED',
-          workspaceManager,
-          {
-            category: EventCategory.WS_SETTINGS,
-            selectedUserId: userMng.key,
-          }
-        );
-
-        await workspaceManager.scheduleSync();
-        await userMng.scheduleSync();
-      } catch (err) {
-        eventLogger.wsError(err, workspaceManager, {
-          origin: 'WORKSPACE_REMOVE_USER',
-          category: EventCategory.WS_SETTINGS,
-        });
-      }
-    }
-  };
-
-  const removeInvitation = (inviteMng: VertexManager<Invite>) => {
-    const invite = inviteMng.getVertexProxy();
-    invite.isDeleted = 1;
-    eventLogger.wsAction(
-      'WORKSPACE_REMOVE_INVITE_COMPLETED',
-      workspaceManager,
-      {
-        category: EventCategory.WS_SETTINGS,
-        data: {
-          inviteId: inviteMng.key,
-        },
-      }
-    );
-  };
-
   const [showList, setShowList] = useState(false);
   useLayoutEffect(() => {
     setShowList(true);
@@ -778,7 +714,7 @@ export function WorkspaceSettingsView({
   };
 
   return (
-    <div className={cn(styles.settings)} onClick={e => e.stopPropagation()}>
+    <div className={cn(styles.settings)} onClick={(e) => e.stopPropagation()}>
       <div className={cn(styles.column, styles.fields)}>
         <Text className={cn(styles.label)}>Workspace Icon:</Text>
         <WorkspaceImageView workspaceManager={workspaceManager} />
@@ -797,116 +733,101 @@ export function WorkspaceSettingsView({
             Invite
           </RaisedButton>
         </div>
-        {showList && (
-          <UsersList
-            workspaceManager={workspaceManager}
-            removeUser={removeUser}
-            removeInvitation={removeInvitation}
-          />
-        )}
+        {showList && <UsersList workspaceManager={workspaceManager} />}
       </div>
-      <InvitationDialog
-        workspaces={workspaces}
+      {/* <InvitationDialog
         open={inviteOpen}
         hide={() => setInviteOpen(false)}
-        source="ws-settings"
-      />
+        source="settings"
+      /> */}
     </div>
   );
 }
 
-function CancelButton({ close }) {
-  const styles = useStyles();
-  const recordStore = useRecordStore();
-  const onCancel = () => {
-    recordStore.clear();
-    close();
-  };
-
-  return (
-    <Button
-      className={cn(styles.button, styles.cancelButton)}
-      onClick={onCancel}
-    >
-      Cancel
-    </Button>
-  );
+interface ButtonProps {
+  close: () => void;
 }
 
-function SaveButton({ close }) {
-  const styles = useStyles();
-  const recordStore = useRecordStore();
-  const [isDirty, setIsDirty] = useState(
-    () => recordStore && recordStore.hasChanges()
-  );
-  useEffect(() => {
-    if (recordStore) {
-      return recordStore.listen(store => {
-        setIsDirty(store.hasChanges());
-      });
-    }
-  }, [recordStore]);
-  const onSave = () => {
-    recordStore.commitChanges();
-    close();
-  };
-  return (
-    <Button
-      className={cn(styles.button, styles.saveButton)}
-      disabled={!isDirty}
-      onClick={onSave}
-    >
-      Save
-    </Button>
-  );
-}
+// function CancelButton({ close }: ButtonProps) {
+//   const styles = useStyles();
+//   const recordStore = useRecordStore();
+//   const onCancel = () => {
+//     recordStore.clear();
+//     close();
+//   };
 
-const TABS = {
-  WS_SETTINGS: 'WS_SETTINGS',
-  TAGS_SETTINGS: 'TAGS_SETTINGS',
-};
+//   return (
+//     <Button
+//       className={cn(styles.button, styles.cancelButton)}
+//       onClick={onCancel}
+//     >
+//       Cancel
+//     </Button>
+//   );
+// }
+
+// function SaveButton({ close }: ButtonProps) {
+//   const styles = useStyles();
+//   const recordStore = useRecordStore();
+//   const [isDirty, setIsDirty] = useState(
+//     () => recordStore && recordStore.hasChanges()
+//   );
+//   useEffect(() => {
+//     if (recordStore) {
+//       return recordStore.listen((store) => {
+//         setIsDirty(store.hasChanges());
+//       });
+//     }
+//   }, [recordStore]);
+//   const onSave = () => {
+//     recordStore.commitChanges();
+//     close();
+//   };
+//   return (
+//     <Button
+//       className={cn(styles.button, styles.saveButton)}
+//       disabled={!isDirty}
+//       onClick={onSave}
+//     >
+//       Save
+//     </Button>
+//   );
+// }
 
 export interface WorkspaceSettingsDialogProps {
   className?: string;
   workspaceManager: VertexManager<Workspace>;
   isOpen: boolean;
   hide: () => void;
+  source?: UISource;
 }
 export default function WorkspaceSettingsDialog({
   className = '',
   workspaceManager,
   isOpen,
   hide,
+  source,
 }: WorkspaceSettingsDialogProps) {
   const styles = useStyles();
   const partial = usePartialVertex(workspaceManager, ['name']);
   //const workspace = useVertex(workspaceManager);
 
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
-  const [tab, setTab] = useState(TABS.WS_SETTINGS);
+  const [tab, setTab] = useState<SettingsType>('settings:workspace');
   useEffect(() => {
-    setTab(TABS.WS_SETTINGS);
+    setTab('settings:workspace');
   }, [isOpen]);
 
-  const onTabSelected = (tabValue: string) => {
-    if (tabValue === TABS.TAGS_SETTINGS) {
-      eventLogger.wsAction(
-        'WORKSPACE_SETTINGS_TAGS_TAB_CLICKED',
-        workspaceManager,
-        {
-          category: EventCategory.WS_SETTINGS,
-        }
-      );
-    } else if (tabValue === TABS.WS_SETTINGS) {
-      eventLogger.wsAction(
-        'WORKSPACE_SETTINGS_WS_TAB_CLICKED',
-        workspaceManager,
-        {
-          category: EventCategory.WS_SETTINGS,
-        }
-      );
-    }
+  const onTabSelected = (tabValue: SettingsType) => {
+    logger.log({
+      severity: 'INFO',
+      event: 'Navigation',
+      type: 'tab',
+      source: tab,
+      destination: tabValue,
+      vertex: workspaceManager.key,
+    });
   };
 
   return (
@@ -914,51 +835,72 @@ export default function WorkspaceSettingsDialog({
       className={cn(styles.dialog, className)}
       open={isOpen}
       onClose={() => {
-        eventLogger.wsAction('WORKSPACE_SETTINGS_CLOSED', workspaceManager, {
-          category: EventCategory.WS_SETTINGS,
+        logger.log({
+          severity: 'INFO',
+          event: 'Navigation',
+          type: 'close',
+          source: tab,
+          vertex: workspaceManager.key,
         });
         hide();
       }}
       onOpen={() => {
-        eventLogger.wsAction('WORKSPACE_SETTINGS_ENTERED', workspaceManager, {
-          category: EventCategory.WS_SETTINGS,
+        logger.log({
+          severity: 'INFO',
+          event: 'Navigation',
+          type: 'open',
+          destination: tab,
+          source,
+          vertex: workspaceManager.key,
         });
       }}
     >
-      <ChangeStoreProvider>
-        <DialogContent>
-          <div className={cn(styles.dialogHeader)}>
-            <WorkspaceImageView
+      {/* <ChangeStoreProvider> */}
+      <DialogContent>
+        <div className={cn(styles.dialogHeader)}>
+          <WorkspaceImageView
+            workspaceManager={workspaceManager}
+            className={cn(styles.headerImage)}
+            isEditable={false}
+          />
+          <Text className={cn(styles.headerText)}>
+            {partial && partial.name}
+          </Text>
+        </div>
+        <TabsHeader selected={tab} setSelected={setTab}>
+          <TabButton
+            value={'settings:workspace' as SettingsType}
+            onSelected={onTabSelected}
+          >
+            General Settings
+          </TabButton>
+          <TabButton
+            value={'settings:tags' as SettingsType}
+            onSelected={onTabSelected}
+          >
+            Tags Settings
+          </TabButton>
+        </TabsHeader>
+        <Tabs selectedTab={tab}>
+          <Tab
+            value={'settings:workspace' as SettingsType}
+            className={cn(styles.tab)}
+          >
+            <WorkspaceSettingsView
               workspaceManager={workspaceManager}
-              className={cn(styles.headerImage)}
-              isEditable={false}
+              closeDialog={hide}
             />
-            <Text className={cn(styles.headerText)}>
-              {partial && partial.name}
-            </Text>
-          </div>
-          <TabsHeader selected={tab} setSelected={setTab}>
-            <TabButton value={TABS.WS_SETTINGS} onSelected={onTabSelected}>
-              General Settings
-            </TabButton>
-            <TabButton value={TABS.TAGS_SETTINGS} onSelected={onTabSelected}>
-              Tags Settings
-            </TabButton>
-          </TabsHeader>
-          <Tabs selectedTab={tab}>
-            <Tab value={TABS.WS_SETTINGS} className={cn(styles.tab)}>
-              <WorkspaceSettingsView
-                workspaceManager={workspaceManager}
-                closeDialog={hide}
-              />
-            </Tab>
-            <Tab value={TABS.TAGS_SETTINGS} className={cn(styles.tab)}>
-              <TagsSettings workspaceManager={workspaceManager} />
-            </Tab>
-          </Tabs>
-        </DialogContent>
-        <DialogActions className={cn(styles.actions)}>
-          <Feature id={Features.ExportDemoData}>
+          </Tab>
+          <Tab
+            value={'settings:tags' as SettingsType}
+            className={cn(styles.tab)}
+          >
+            <TagsSettings workspaceManager={workspaceManager} />
+          </Tab>
+        </Tabs>
+      </DialogContent>
+      {/* <DialogActions className={cn(styles.actions)}> */}
+      {/* <Feature id={Features.ExportDemoData}>
             <Button
               className={cn(styles.button, styles.cancelButton)}
               onClick={() => {
@@ -967,8 +909,8 @@ export default function WorkspaceSettingsDialog({
             >
               Export Demo Data
             </Button>
-          </Feature>
-          <CancelButton
+          </Feature> */}
+      {/* <CancelButton
             close={() => {
               eventLogger.wsAction(
                 'WORKSPACE_SETTINGS_CANCELED',
@@ -991,25 +933,25 @@ export default function WorkspaceSettingsDialog({
               );
               hide();
             }}
-          />
-        </DialogActions>
-      </ChangeStoreProvider>
+          /> */}
+      {/* </DialogActions> */}
+      {/* </ChangeStoreProvider> */}
     </Dialog>
   );
 }
 
-function exportWorkspace(graph: GraphManager, wsId: string): void {
-  const jsonString = prettyJSON(graph.exportSubGraph(wsId, 1));
-  const url = window.URL.createObjectURL(
-    new Blob([jsonString], { type: 'text/json' })
-  );
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  a.href = url;
-  // the filename you want
-  a.download = wsId + '.json';
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  a.remove();
-}
+// function exportWorkspace(graph: GraphManager, wsId: string): void {
+//   const jsonString = prettyJSON(graph.exportSubGraph(wsId, 1));
+//   const url = window.URL.createObjectURL(
+//     new Blob([jsonString], { type: 'text/json' })
+//   );
+//   const a = document.createElement('a');
+//   a.style.display = 'none';
+//   a.href = url;
+//   // the filename you want
+//   a.download = wsId + '.json';
+//   document.body.appendChild(a);
+//   a.click();
+//   window.URL.revokeObjectURL(url);
+//   a.remove();
+// }
