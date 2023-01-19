@@ -1,7 +1,7 @@
-import React from 'react';
-import TagsSettingsView from './tags-settings-view';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import React from 'https://esm.sh/react@18.2.0';
+import TagsSettingsView from './tags-settings-view.tsx';
+import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 
 // const styles = cssObjects(theme => ({
 //   root: {},

@@ -1,36 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { ChangeRecord, useChangeRecord } from '../change-store';
-import { Scroller } from 'core/react-utils/scrolling';
-import Layer from '@ovvio/styles/lib/components/layer';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+} from 'https://esm.sh/react@18.2.0';
+import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../../../styles/index.ts';
+import { Text } from '../../../../../../styles/components/texts.tsx';
+import { Scroller } from '../../../../core/react-utils/scrolling.tsx';
+import Layer from '../../../../../../styles/components/layer.tsx';
 import {
   makeTransparent,
   COLORS,
   ColorButton,
-} from '@ovvio/styles/lib/components/color-picker';
-import { Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useBaseQueryProvider } from 'core/cfds/react/query';
+} from '../../../../../../styles/components/color-picker.tsx';
 import {
-  TagGroup,
-  TagsTreeQueryProvider,
-  TagTree,
-} from 'shared/tags/tags.query';
-import { EventCategory, EventLogger, useEventLogger } from 'core/analytics';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { Utils } from '@ovvio/base';
-import { useScopedObservable } from 'core/state';
-import UserStore from 'stores/user';
-import { IconAdd } from '@ovvio/styles/lib/components/icons';
-import { useGraphManager } from 'core/cfds/react/graph';
-import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
-import { SchemeNamespace } from '@ovvio/cfds/lib/base/scheme-types';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { WSActionNames } from '../../../../core/analytics/types';
-import { tagSortValueBase } from 'shared/tags/tag-utils';
+  Tag,
+  Workspace,
+} from '../../../../../../cfds/client/graph/vertices/index.ts';
+import { Button } from '../../../../../../styles/components/buttons.tsx';
+import { IconAdd } from '../../../../../../styles/components/icons/index.ts';
+import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import { GraphManager } from '../../../../../../cfds/client/graph/graph-manager.ts';
+import { SchemeNamespace } from '../../../../../../cfds/base/scheme-types.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { usePartialVertex } from '../../../../core/cfds/react/vertex.ts';
+import { useLogger } from '../../../../core/cfds/react/logger.tsx';
+import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     position: 'relative',
     width: '100%',
@@ -196,7 +193,7 @@ const TagInput = React.forwardRef(function (
   useEffect(() => {
     setValue(name);
   }, [name]);
-  const onChange = e => {
+  const onChange = (e) => {
     setValue(e.target.value);
   };
   const commit = () => {
@@ -207,11 +204,11 @@ const TagInput = React.forwardRef(function (
     setValue(name);
     onBlur();
   };
-  const blur = e => {
+  const blur = (e) => {
     commit();
   };
 
-  const onKeyDown = e => {
+  const onKeyDown = (e) => {
     if (e.key === 'Escape') {
       e.stopPropagation();
       e.preventDefault();
@@ -237,10 +234,8 @@ const TagInput = React.forwardRef(function (
 });
 
 interface ITagPillInfo {
-  readonly key: string;
-  readonly name: string;
   readonly isNew: boolean;
-  onCommit: (cRec: ChangeRecord) => void;
+  // onCommit: (cRec: ChangeRecord) => void;
 }
 
 interface IParentTagPillInfo extends ITagPillInfo {
@@ -250,54 +245,59 @@ interface IParentTagPillInfo extends ITagPillInfo {
   readonly workspace: Workspace;
   readonly isDeleted: boolean;
 
-  onParentCommit: (cRec: ChangeRecord) => void;
+  // onParentCommit: (cRec: ChangeRecord) => void;
 }
 
 interface TagPillProps {
-  tag: ITagPillInfo;
-  isChild: boolean;
-  color: string;
-  onDelete?: (tag: ITagPillInfo) => void;
+  manager: VertexManager<Tag>;
+  // isChild: boolean;
+  // color: string;
+  onDelete?: (mgr: VertexManager<Tag>) => void;
   setRowEditing: any;
-  logAction: (action: WSActionNames) => void;
+  // logAction: (action: WSActionNames) => void;
 }
 function TagPill({
-  tag,
-  isChild,
-  color,
+  manager,
+  // isChild,
+  // color,
   onDelete,
   setRowEditing,
-  logAction,
-}: TagPillProps) {
+}: // logAction,
+TagPillProps) {
   const styles = useStyles();
   const [isEditing, setIsEditing] = useState(false);
-
-  const record = useChangeRecord(tag.key, r => {
-    tag.onCommit(r);
-  });
-
   const inputRef = useRef<any>();
-  const currentName = record.get('name') || tag.name;
+  const tag = usePartialVertex(manager, ['name', 'isDeleted']);
+  const logger = useLogger();
 
-  const onClick = () => {
-    logAction('TAG_SETTINGS_TAG_FOCUSED');
+  const onClick = useCallback(() => {
+    // logAction('TAG_SETTINGS_TAG_FOCUSED');
+    logger.log({
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'edit',
+      source: 'settings:tags',
+      type: 'name',
+      vertex: tag.key,
+    });
     setIsEditing(true);
     setRowEditing(true);
     inputRef.current.focus();
 
     if (inputRef.current.setSelectionRange) {
-      inputRef.current.setSelectionRange(0, currentName.length);
+      inputRef.current.setSelectionRange(0, tag.name.length);
     }
-    window.requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
       inputRef.current.focus();
     });
-  };
-  const removeTag = e => {
+  }, [logger, tag]);
+
+  const removeTag = (e: Event) => {
     e.stopPropagation();
     if (onDelete) {
-      onDelete(tag);
+      onDelete(manager);
     }
-    record.set('isDeleted', 1);
+    tag.isDeleted = 1;
 
     if (!isChild) {
       logAction('TAG_SETTINGS_PARENT_TAG_REMOVED');
@@ -334,7 +334,7 @@ function TagPill({
       </div>
       <TagInput
         name={currentName}
-        setName={x => record.set('name', x)}
+        setName={(x) => record.set('name', x)}
         className={cn(styles.pillInput, !isEditing && styles.invisible)}
         onBlur={onBlur}
         ref={inputRef}
@@ -376,13 +376,13 @@ function ColorDrawer({ color, setColor, className }: ColorDrawerProps) {
       {({ zIndex }) => (
         <div style={{ zIndex }} className={cn(styles.drawer, className)}>
           <Text>Color</Text>
-          {COLORS.map(c => (
+          {COLORS.map((c) => (
             <ColorButton
               key={c}
               color={c}
               size="xsmall"
               isSelected={color === c}
-              onMouseDown={e => onColorClick(e, c)}
+              onMouseDown={(e) => onColorClick(e, c)}
               className={cn(styles.colorButton)}
             />
           ))}
@@ -406,7 +406,7 @@ function ParentTagRow({ tag, logAction }: ParentTagRowProps) {
   const [children, setChildren] = useState<ITagPillInfo[]>(tag.children);
   const ref = useRef<any>();
 
-  const changeRecord = useChangeRecord(`${tag.key}-row`, r => {
+  const changeRecord = useChangeRecord(`${tag.key}-row`, (r) => {
     tag.onParentCommit(r);
   });
 
@@ -418,7 +418,7 @@ function ParentTagRow({ tag, logAction }: ParentTagRowProps) {
     }
   }, [color]);
 
-  const onColorChanged = c => {
+  const onColorChanged = (c) => {
     changeRecord.set('color', c);
     logAction('TAG_SETTINGS_COLOR_CHANGED');
   };
@@ -445,7 +445,7 @@ function ParentTagRow({ tag, logAction }: ParentTagRowProps) {
         setRowEditing={setRowEditing}
         logAction={logAction}
       />
-      {children.map(x => (
+      {children.map((x) => (
         <TagPill
           key={x.key}
           tag={x}
@@ -502,7 +502,7 @@ export default function TagsSettings({
   useEffect(() => {
     setTags(
       tagTree.parents.map(
-        x => new ExistParentTagPillInfo(graphMng, x, eventLogger)
+        (x) => new ExistParentTagPillInfo(graphMng, x, eventLogger)
       )
     );
   }, [graphMng, tagTree, eventLogger]);
@@ -532,9 +532,9 @@ export default function TagsSettings({
   return (
     <div style={style} className={cn(styles.root, className)}>
       <Scroller>
-        {ref => (
+        {(ref) => (
           <div className={cn(styles.settings)} ref={ref}>
-            {tags.sort(TagPillSort).map(tag => (
+            {tags.sort(TagPillSort).map((tag) => (
               <ParentTagRow key={tag.key} tag={tag} logAction={logAction} />
             ))}
             <Button
@@ -614,7 +614,7 @@ class ExistParentTagPillInfo
     this._graphMng = graphMng;
     this._group = tagGroup;
     this._children = tagGroup.children.map(
-      x => new ExistTagPillInfo(x, eventLogger)
+      (x) => new ExistTagPillInfo(x, eventLogger)
     );
   }
 
@@ -671,7 +671,7 @@ class ExistParentTagPillInfo
     if (cRec.get('isDeleted')) {
       this._group.parentTag.isDeleted = 1;
 
-      this._group.children.forEach(c => {
+      this._group.children.forEach((c) => {
         c.isDeleted = 1;
 
         this._eventLogger.wsAction('TAG_DELETED', c.workspace, {

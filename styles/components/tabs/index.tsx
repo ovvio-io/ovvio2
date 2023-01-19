@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent } from 'https://esm.sh/react@18.2.0';
 import { makeStyles, cn } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';
@@ -71,7 +71,7 @@ export function TabButton({
   onSelected,
 }: TabButtonProps) {
   const styles = useStyles();
-  const onClick = (e) => {
+  const onClick = (e: MouseEvent) => {
     e.stopPropagation();
     setSelected(value);
     if (onSelected) {
@@ -190,7 +190,7 @@ export function Tabs({ children, selectedTab, className }: TabsProps) {
   );
 }
 
-export interface TabProps<TV> {
+export interface TabProps<TV = any> {
   children: any;
   style?: any;
   className?: string;
