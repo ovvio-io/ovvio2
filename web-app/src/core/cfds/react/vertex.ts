@@ -131,9 +131,19 @@ export function usePartialVertex<V extends Vertex, K extends keyof V>(
 }
 
 export function useVertex<V extends Vertex>(
+  vertexMng: VertexManager<V>,
+  opts?: OnChangeOpts
+): V;
+
+export function useVertex<V extends Vertex>(
+  vertexMng: VertexManager<V> | undefined,
+  opts?: OnChangeOpts
+): V | undefined;
+
+export function useVertex<V extends Vertex>(
   vertexMng: VertexManager<V> | undefined,
   opts: OnChangeOpts = EMPTY_OPTS
-) {
+): V | undefined {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setReload] = useState(0);
   useEffect(() => {

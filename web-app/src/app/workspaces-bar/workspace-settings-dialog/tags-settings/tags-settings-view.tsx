@@ -2,6 +2,10 @@ import React, {
   useState,
   useEffect,
   useRef,
+  MouseEvent,
+  ChangeEvent,
+  KeyboardEvent,
+  FocusEvent,
 } from 'https://esm.sh/react@18.2.0';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../../../styles/index.ts';
@@ -19,13 +23,26 @@ import {
 } from '../../../../../../cfds/client/graph/vertices/index.ts';
 import { Button } from '../../../../../../styles/components/buttons.tsx';
 import { IconAdd } from '../../../../../../styles/components/icons/index.ts';
-import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  useRootUser,
+} from '../../../../core/cfds/react/graph.tsx';
 import { GraphManager } from '../../../../../../cfds/client/graph/graph-manager.ts';
-import { SchemeNamespace } from '../../../../../../cfds/base/scheme-types.ts';
+import {
+  NS_TAGS,
+  SchemeNamespace,
+} from '../../../../../../cfds/base/scheme-types.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
-import { usePartialVertex } from '../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  useVertex,
+} from '../../../../core/cfds/react/vertex.ts';
 import { useLogger } from '../../../../core/cfds/react/logger.tsx';
 import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
+import {
+  useQuery2,
+  useSharedQuery,
+} from '../../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -180,7 +197,7 @@ const DeleteIcon = function ({ fill, className, onClick }: DeleteIconProps) {
 
 interface TagInputProps {
   name: string;
-  setName: React.Dispatch<React.SetStateAction<string>>;
+  setName: (name: string) => void;
   onBlur: () => void;
   className?: string;
 }
@@ -193,7 +210,7 @@ const TagInput = React.forwardRef(function (
   useEffect(() => {
     setValue(name);
   }, [name]);
-  const onChange = (e) => {
+  const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
   };
   const commit = () => {
@@ -204,11 +221,11 @@ const TagInput = React.forwardRef(function (
     setValue(name);
     onBlur();
   };
-  const blur = (e) => {
+  const blur = (_e: FocusEvent) => {
     commit();
   };
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.stopPropagation();
       e.preventDefault();
@@ -252,15 +269,13 @@ interface TagPillProps {
   manager: VertexManager<Tag>;
   // isChild: boolean;
   // color: string;
-  onDelete?: (mgr: VertexManager<Tag>) => void;
-  setRowEditing: any;
+  setRowEditing: (flag: boolean) => void;
   // logAction: (action: WSActionNames) => void;
 }
 function TagPill({
   manager,
   // isChild,
   // color,
-  onDelete,
   setRowEditing,
 }: // logAction,
 TagPillProps) {
@@ -272,14 +287,16 @@ TagPillProps) {
 
   const onClick = useCallback(() => {
     // logAction('TAG_SETTINGS_TAG_FOCUSED');
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'edit',
-      source: 'settings:tags',
-      type: 'name',
-      vertex: tag.key,
-    });
+    if (!isEditing) {
+      logger.log({
+        severity: 'INFO',
+        event: 'Start',
+        flow: 'edit',
+        source: 'settings:tags',
+        type: 'name',
+        vertex: tag.key,
+      });
+    }
     setIsEditing(true);
     setRowEditing(true);
     inputRef.current.focus();
@@ -292,27 +309,34 @@ TagPillProps) {
     });
   }, [logger, tag]);
 
-  const removeTag = (e: Event) => {
+  const removeTag = (e: MouseEvent) => {
     e.stopPropagation();
-    if (onDelete) {
-      onDelete(manager);
-    }
     tag.isDeleted = 1;
-
-    if (!isChild) {
-      logAction('TAG_SETTINGS_PARENT_TAG_REMOVED');
-    } else {
-      logAction('TAG_SETTINGS_CHILD_TAG_REMOVED');
-    }
+    logger.log({
+      severity: 'INFO',
+      event: 'End',
+      flow: 'delete',
+      type: tag.parentTag ? 'tag' : 'tag-category',
+      vertex: tag.key,
+      source: 'settings:tags',
+    });
+    tag.isDeleted = 1;
   };
   const onBlur = () => {
-    if (isEditing === true) {
-      logAction('TAG_SETTINGS_TAG_UNFOCUSED');
+    if (isEditing) {
+      logger.log({
+        severity: 'INFO',
+        event: 'Start',
+        flow: 'edit',
+        source: 'settings:tags',
+        type: 'name',
+        vertex: tag.key,
+      });
     }
     setIsEditing(false);
     setRowEditing(false);
   };
-  if (record.get('isDeleted')) {
+  if (tag.isDeleted) {
     return null;
   }
 
@@ -322,19 +346,18 @@ TagPillProps) {
         className={cn(
           styles.pillSize,
           styles.tagPill,
-          isChild && styles.tagChildPill,
+          tag.parentTag && styles.tagChildPill,
           isEditing && styles.invisible
         )}
         onClick={onClick}
       >
-        <Text>{currentName}</Text>
         <div className={cn(styles.deleteIcon)} onClick={removeTag}>
-          <DeleteIcon fill={color} />
+          <DeleteIcon />
         </div>
       </div>
       <TagInput
-        name={currentName}
-        setName={(x) => record.set('name', x)}
+        name={tag.name}
+        setName={(x) => (tag.name = x)}
         className={cn(styles.pillInput, !isEditing && styles.invisible)}
         onBlur={onBlur}
         ref={inputRef}
@@ -345,131 +368,113 @@ TagPillProps) {
 
 interface AddSubTagButtonProps {
   onClicked: () => void;
-  color: string;
 }
-function AddSubTagButton({ onClicked, color }: AddSubTagButtonProps) {
+function AddSubTagButton({ onClicked }: AddSubTagButtonProps) {
   return (
     <Button onClick={onClicked}>
-      <IconAdd size={12} fill={color} />
+      <IconAdd size={12} fill="#000" />
     </Button>
   );
 }
 
-interface ColorDrawerProps {
-  color: string;
-  setColor: React.Dispatch<React.SetStateAction<string>>;
-  className?: string;
-}
-function ColorDrawer({ color, setColor, className }: ColorDrawerProps) {
-  const styles = useStyles();
-  const onColorClick = (e, c) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (c !== color) {
-      setColor(c);
-    }
-  };
+// interface ColorDrawerProps {
+//   color: string;
+//   setColor: React.Dispatch<React.SetStateAction<string>>;
+//   className?: string;
+// }
+// function ColorDrawer({ color, setColor, className }: ColorDrawerProps) {
+//   const styles = useStyles();
+//   const onColorClick = (e, c) => {
+//     e.preventDefault();
+//     e.stopPropagation();
+//     if (c !== color) {
+//       setColor(c);
+//     }
+//   };
 
-  //TODO: Amit: Key missing Error
-  return (
-    <Layer>
-      {({ zIndex }) => (
-        <div style={{ zIndex }} className={cn(styles.drawer, className)}>
-          <Text>Color</Text>
-          {COLORS.map((c) => (
-            <ColorButton
-              key={c}
-              color={c}
-              size="xsmall"
-              isSelected={color === c}
-              onMouseDown={(e) => onColorClick(e, c)}
-              className={cn(styles.colorButton)}
-            />
-          ))}
-        </div>
-      )}
-    </Layer>
-  );
-}
+//   //TODO: Amit: Key missing Error
+//   return (
+//     <Layer>
+//       {({ zIndex }) => (
+//         <div style={{ zIndex }} className={cn(styles.drawer, className)}>
+//           <Text>Color</Text>
+//           {COLORS.map((c) => (
+//             <ColorButton
+//               key={c}
+//               color={c}
+//               size="xsmall"
+//               isSelected={color === c}
+//               onMouseDown={(e) => onColorClick(e, c)}
+//               className={cn(styles.colorButton)}
+//             />
+//           ))}
+//         </div>
+//       )}
+//     </Layer>
+//   );
+// }
 
 interface ParentTagRowProps {
-  tag: IParentTagPillInfo;
-  logAction: (action: string) => void;
+  manager: VertexManager<Tag>;
+  // logAction: (action: string) => void;
 }
 
-function ParentTagRow({ tag, logAction }: ParentTagRowProps) {
+function ParentTagRow({ manager }: ParentTagRowProps) {
+  const tag = useVertex(manager);
   const styles = useStyles();
   const [rowEditing, setRowEditing] = useState(false);
-  const eventLogger = useEventLogger();
-  const currentUser = useScopedObservable(UserStore);
+  const logger = useLogger();
+  const childTagQueries = useQuery2(tag.childTagsQuery);
 
-  const [children, setChildren] = useState<ITagPillInfo[]>(tag.children);
+  // const [children, setChildren] = useState<ITagPillInfo[]>(tag.children);
   const ref = useRef<any>();
 
-  const changeRecord = useChangeRecord(`${tag.key}-row`, (r) => {
-    tag.onParentCommit(r);
-  });
+  // const changeRecord = useChangeRecord(`${tag.key}-row`, (r) => {
+  //   tag.onParentCommit(r);
+  // });
 
-  const color = changeRecord.get('color') || tag.color;
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.style.setProperty('--tag-color', color);
-      ref.current.style.setProperty('--tag-bg-color', makeTransparent(color));
-    }
-  }, [color]);
+  // const color = changeRecord.get('color') || tag.color;
+  // useEffect(() => {
+  //   if (ref.current) {
+  //     ref.current.style.setProperty('--tag-color', color);
+  //     ref.current.style.setProperty('--tag-bg-color', makeTransparent(color));
+  //   }
+  // }, [color]);
 
-  const onColorChanged = (c) => {
-    changeRecord.set('color', c);
-    logAction('TAG_SETTINGS_COLOR_CHANGED');
-  };
+  // const onColorChanged = (c) => {
+  //   changeRecord.set('color', c);
+  //   logAction('TAG_SETTINGS_COLOR_CHANGED');
+  // };
 
-  if (changeRecord.get('isDeleted')) {
+  if (tag.isDeleted) {
     return null;
   }
 
   const onAddSubTag = () => {
-    const newChildren = [...children];
-    newChildren.push(new NewSubTagPillInfo(tag, currentUser.id, eventLogger));
-    setChildren(newChildren);
-    logAction('TAG_SETTINGS_CREATE_CHILD_TAG');
+    const newChild = tag.graph.createVertex(NS_TAGS, {
+      parentTag: tag.key,
+    });
+    logger.log({
+      severity: 'INFO',
+      event: 'Create',
+      type: 'tag',
+      vertex: newChild.key,
+      source: 'settings:tags',
+    });
   };
 
   return (
     <div className={cn(styles.row)} ref={ref}>
-      <TagPill
-        key={tag.key}
-        tag={tag}
-        color={color}
-        isChild={false}
-        onDelete={() => changeRecord.set('isDeleted', true)}
-        setRowEditing={setRowEditing}
-        logAction={logAction}
-      />
-      {children.map((x) => (
+      <TagPill key={tag.key} manager={manager} setRowEditing={setRowEditing} />
+      {childTagQueries.map((x) => (
         <TagPill
           key={x.key}
-          tag={x}
-          color={color}
-          isChild={true}
+          manager={x.manager}
           setRowEditing={setRowEditing}
-          logAction={logAction}
         />
       ))}
-      <AddSubTagButton onClicked={onAddSubTag} color={color} />
-
-      <ColorDrawer
-        className={cn(!rowEditing && styles.drawerHidden)}
-        color={color}
-        setColor={onColorChanged}
-      />
+      <AddSubTagButton onClicked={onAddSubTag} />
     </div>
-  );
-}
-
-function TagPillSort(a: IParentTagPillInfo, b: IParentTagPillInfo) {
-  return (
-    tagSortValueBase(a.name, false, a.children.length > 0) -
-    tagSortValueBase(b.name, false, b.children.length > 0)
   );
 }
 
@@ -485,57 +490,62 @@ export default function TagsSettings({
   style,
 }: TagsSettingsProps) {
   const styles = useStyles();
-  const tagTree = useBaseQueryProvider(
-    TagsTreeQueryProvider,
-    {
-      workspaceKey: workspaceManager.key,
-    },
-    TagTree.empty()
-  ).result;
+  const parentTagsQuery = useSharedQuery('parentTags');
+  const logger = useLogger();
+  const graph = useGraphManager();
+  // const [tags, setTags] = useState<IParentTagPillInfo[]>([]);
 
-  const eventLogger = useEventLogger();
-  const graphMng = useGraphManager();
-  const currentUser = useScopedObservable(UserStore);
+  // useEffect(() => {
+  //   setTags(
+  //     tagTree.parents.map(
+  //       (x) => new ExistParentTagPillInfo(graphMng, x, eventLogger)
+  //     )
+  //   );
+  // }, [graphMng, tagTree, eventLogger]);
 
-  const [tags, setTags] = useState<IParentTagPillInfo[]>([]);
+  // const logAction = (action: WSActionNames) => {
+  //   eventLogger.wsAction(action, workspaceManager, {
+  //     category: EventCategory.WS_SETTINGS,
+  //   });
+  // };
 
-  useEffect(() => {
-    setTags(
-      tagTree.parents.map(
-        (x) => new ExistParentTagPillInfo(graphMng, x, eventLogger)
-      )
-    );
-  }, [graphMng, tagTree, eventLogger]);
-
-  const logAction = (action: WSActionNames) => {
-    eventLogger.wsAction(action, workspaceManager, {
-      category: EventCategory.WS_SETTINGS,
+  const onCreateParentTag = useCallback(() => {
+    // const newTags = [
+    //   new NewParentTagPillInfo(
+    //     graphMng,
+    //     workspaceManager,
+    //     currentUser.id,
+    //     eventLogger
+    //   ),
+    //   ...tags,
+    // ];
+    // setTags(newTags);
+    // eventLogger.wsAction('TAG_SETTINGS_CREATE_PARENT_TAG', workspaceManager, {
+    //   category: EventCategory.WS_SETTINGS,
+    // });
+    const parent = graph.createVertex<Tag>(NS_TAGS, {
+      name: 'Untitled Category',
     });
-  };
-
-  const onCreateParentTag = () => {
-    const newTags = [
-      new NewParentTagPillInfo(
-        graphMng,
-        workspaceManager,
-        currentUser.id,
-        eventLogger
-      ),
-      ...tags,
-    ];
-    setTags(newTags);
-    eventLogger.wsAction('TAG_SETTINGS_CREATE_PARENT_TAG', workspaceManager, {
-      category: EventCategory.WS_SETTINGS,
+    graph.createVertex<Tag>(NS_TAGS, {
+      parentTag: parent.key,
+      name: 'Untitled',
     });
-  };
+    logger.log({
+      severity: 'INFO',
+      event: 'Create',
+      vertex: parent.key,
+      type: 'tag-category',
+      source: 'settings:tags',
+    });
+  }, [logger, graph]);
 
   return (
     <div style={style} className={cn(styles.root, className)}>
       <Scroller>
         {(ref) => (
           <div className={cn(styles.settings)} ref={ref}>
-            {tags.sort(TagPillSort).map((tag) => (
-              <ParentTagRow key={tag.key} tag={tag} logAction={logAction} />
+            {parentTagsQuery.map((tag) => (
+              <ParentTagRow manager={tag.manager} />
             ))}
             <Button
               className={cn(styles.addParentButton)}
@@ -550,275 +560,275 @@ export default function TagsSettings({
   );
 }
 
-class ExistTagPillInfo implements ITagPillInfo {
-  private _tag: Tag;
-  protected _eventLogger: EventLogger;
+// class ExistTagPillInfo implements ITagPillInfo {
+//   private _tag: Tag;
+//   protected _eventLogger: EventLogger;
 
-  constructor(tag: Tag, eventLogger: EventLogger) {
-    this._tag = tag;
-    this._eventLogger = eventLogger;
-  }
+//   constructor(tag: Tag, eventLogger: EventLogger) {
+//     this._tag = tag;
+//     this._eventLogger = eventLogger;
+//   }
 
-  get key() {
-    return this._tag.key;
-  }
+//   get key() {
+//     return this._tag.key;
+//   }
 
-  get name() {
-    return this._tag.name;
-  }
+//   get name() {
+//     return this._tag.name;
+//   }
 
-  get isNew() {
-    return false;
-  }
+//   get isNew() {
+//     return false;
+//   }
 
-  onCommit(r: ChangeRecord) {
-    const changedName = r.get('name');
+//   onCommit(r: ChangeRecord) {
+//     const changedName = r.get('name');
 
-    if (changedName) {
-      this._tag.name = changedName;
+//     if (changedName) {
+//       this._tag.name = changedName;
 
-      this._eventLogger.wsAction('TAG_UPDATED', this._tag.workspace, {
-        category: EventCategory.WS_SETTINGS,
-        tagId: this._tag.key,
-        parentTagId: this._tag.parentTag?.key,
-      });
-    }
-    if (r.get('isDeleted')) {
-      this._tag.isDeleted = 1;
+//       this._eventLogger.wsAction('TAG_UPDATED', this._tag.workspace, {
+//         category: EventCategory.WS_SETTINGS,
+//         tagId: this._tag.key,
+//         parentTagId: this._tag.parentTag?.key,
+//       });
+//     }
+//     if (r.get('isDeleted')) {
+//       this._tag.isDeleted = 1;
 
-      this._eventLogger.wsAction('TAG_DELETED', this._tag.workspace, {
-        category: EventCategory.WS_SETTINGS,
-        tagId: this._tag.key,
-        parentTagId: this._tag.parentTag?.key,
-      });
-    }
-  }
+//       this._eventLogger.wsAction('TAG_DELETED', this._tag.workspace, {
+//         category: EventCategory.WS_SETTINGS,
+//         tagId: this._tag.key,
+//         parentTagId: this._tag.parentTag?.key,
+//       });
+//     }
+//   }
 
-  onDelete() {}
-}
+//   onDelete() {}
+// }
 
-class ExistParentTagPillInfo
-  extends ExistTagPillInfo
-  implements IParentTagPillInfo
-{
-  private _graphMng: GraphManager;
-  private _group: TagGroup;
-  private _children: ITagPillInfo[];
+// class ExistParentTagPillInfo
+//   extends ExistTagPillInfo
+//   implements IParentTagPillInfo
+// {
+//   private _graphMng: GraphManager;
+//   private _group: TagGroup;
+//   private _children: ITagPillInfo[];
 
-  constructor(
-    graphMng: GraphManager,
-    tagGroup: TagGroup,
-    eventLogger: EventLogger
-  ) {
-    super(tagGroup.parentTag, eventLogger);
-    this._graphMng = graphMng;
-    this._group = tagGroup;
-    this._children = tagGroup.children.map(
-      (x) => new ExistTagPillInfo(x, eventLogger)
-    );
-  }
+//   constructor(
+//     graphMng: GraphManager,
+//     tagGroup: TagGroup,
+//     eventLogger: EventLogger
+//   ) {
+//     super(tagGroup.parentTag, eventLogger);
+//     this._graphMng = graphMng;
+//     this._group = tagGroup;
+//     this._children = tagGroup.children.map(
+//       (x) => new ExistTagPillInfo(x, eventLogger)
+//     );
+//   }
 
-  get isDeleted() {
-    return this._group.parentTag.isDeleted !== 0;
-  }
+//   get isDeleted() {
+//     return this._group.parentTag.isDeleted !== 0;
+//   }
 
-  get workspace() {
-    return this._group.parentTag.workspace;
-  }
+//   get workspace() {
+//     return this._group.parentTag.workspace;
+//   }
 
-  get graphMng() {
-    return this._graphMng;
-  }
+//   get graphMng() {
+//     return this._graphMng;
+//   }
 
-  get key() {
-    return this._group.parentTag.key;
-  }
+//   get key() {
+//     return this._group.parentTag.key;
+//   }
 
-  get name() {
-    return this._group.parentTag.name;
-  }
+//   get name() {
+//     return this._group.parentTag.name;
+//   }
 
-  get parentTag() {
-    return this._group.parentTag;
-  }
+//   get parentTag() {
+//     return this._group.parentTag;
+//   }
 
-  get isNew() {
-    return false;
-  }
+//   get isNew() {
+//     return false;
+//   }
 
-  get color() {
-    return this._group.parentTag.color;
-  }
+//   get color() {
+//     return this._group.parentTag.color;
+//   }
 
-  get children() {
-    return this._children;
-  }
+//   get children() {
+//     return this._children;
+//   }
 
-  onParentCommit(cRec: ChangeRecord) {
-    const color = cRec.get('color');
-    if (color) {
-      this._group.parentTag.color = color;
+//   onParentCommit(cRec: ChangeRecord) {
+//     const color = cRec.get('color');
+//     if (color) {
+//       this._group.parentTag.color = color;
 
-      this._eventLogger.wsAction(
-        'TAG_UPDATED',
-        this._group.parentTag.workspace,
-        {
-          category: EventCategory.WS_SETTINGS,
-          tagId: this._group.parentTag.key,
-        }
-      );
-    }
-    if (cRec.get('isDeleted')) {
-      this._group.parentTag.isDeleted = 1;
+//       this._eventLogger.wsAction(
+//         'TAG_UPDATED',
+//         this._group.parentTag.workspace,
+//         {
+//           category: EventCategory.WS_SETTINGS,
+//           tagId: this._group.parentTag.key,
+//         }
+//       );
+//     }
+//     if (cRec.get('isDeleted')) {
+//       this._group.parentTag.isDeleted = 1;
 
-      this._group.children.forEach((c) => {
-        c.isDeleted = 1;
+//       this._group.children.forEach((c) => {
+//         c.isDeleted = 1;
 
-        this._eventLogger.wsAction('TAG_DELETED', c.workspace, {
-          category: EventCategory.WS_SETTINGS,
-          tagId: c.key,
-          parentTagId: this._group.parentTag.key,
-        });
-      });
-    }
-  }
-}
+//         this._eventLogger.wsAction('TAG_DELETED', c.workspace, {
+//           category: EventCategory.WS_SETTINGS,
+//           tagId: c.key,
+//           parentTagId: this._group.parentTag.key,
+//         });
+//       });
+//     }
+//   }
+// }
 
-class NewParentTagPillInfo implements IParentTagPillInfo {
-  private _key: string;
-  private _eventLogger: EventLogger;
-  private _children: NewSubTagPillInfo[];
-  private _graphMng: GraphManager;
-  private _workspaceManager: VertexManager<Workspace>;
-  private _createdBy: string;
-  private _color: string;
-  private _isDeleted: boolean;
+// class NewParentTagPillInfo implements IParentTagPillInfo {
+//   private _key: string;
+//   private _eventLogger: EventLogger;
+//   private _children: NewSubTagPillInfo[];
+//   private _graphMng: GraphManager;
+//   private _workspaceManager: VertexManager<Workspace>;
+//   private _createdBy: string;
+//   private _color: string;
+//   private _isDeleted: boolean;
 
-  constructor(
-    graphMng: GraphManager,
-    workspaceManager: VertexManager<Workspace>,
-    createdBy: string,
-    eventLogger: EventLogger
-  ) {
-    this._key = 'parent-key' + Utils.uniqueId();
-    this._graphMng = graphMng;
-    this._workspaceManager = workspaceManager;
-    this._createdBy = createdBy;
-    this._eventLogger = eventLogger;
-    this._children = [];
-    this._color = COLORS[0];
-    this._isDeleted = false;
-  }
+//   constructor(
+//     graphMng: GraphManager,
+//     workspaceManager: VertexManager<Workspace>,
+//     createdBy: string,
+//     eventLogger: EventLogger
+//   ) {
+//     this._key = 'parent-key' + Utils.uniqueId();
+//     this._graphMng = graphMng;
+//     this._workspaceManager = workspaceManager;
+//     this._createdBy = createdBy;
+//     this._eventLogger = eventLogger;
+//     this._children = [];
+//     this._color = COLORS[0];
+//     this._isDeleted = false;
+//   }
 
-  get isDeleted() {
-    return this._isDeleted;
-  }
+//   get isDeleted() {
+//     return this._isDeleted;
+//   }
 
-  get workspace() {
-    return this._workspaceManager.getVertexProxy();
-  }
+//   get workspace() {
+//     return this._workspaceManager.getVertexProxy();
+//   }
 
-  get graphMng() {
-    return this._graphMng;
-  }
+//   get graphMng() {
+//     return this._graphMng;
+//   }
 
-  get key() {
-    return this._key;
-  }
+//   get key() {
+//     return this._key;
+//   }
 
-  get name() {
-    return '';
-  }
+//   get name() {
+//     return '';
+//   }
 
-  get isNew() {
-    return true;
-  }
+//   get isNew() {
+//     return true;
+//   }
 
-  get color() {
-    return this._color;
-  }
+//   get color() {
+//     return this._color;
+//   }
 
-  get children() {
-    return this._children;
-  }
+//   get children() {
+//     return this._children;
+//   }
 
-  onParentCommit(cRec: ChangeRecord) {
-    this._color = cRec.get('color');
-  }
+//   onParentCommit(cRec: ChangeRecord) {
+//     this._color = cRec.get('color');
+//   }
 
-  onCommit(cRec: ChangeRecord) {
-    const isDeleted = cRec.get('isDeleted');
-    if (isDeleted !== undefined && (isDeleted === true || isDeleted === 1)) {
-      this._isDeleted = true;
-      return;
-    }
+//   onCommit(cRec: ChangeRecord) {
+//     const isDeleted = cRec.get('isDeleted');
+//     if (isDeleted !== undefined && (isDeleted === true || isDeleted === 1)) {
+//       this._isDeleted = true;
+//       return;
+//     }
 
-    const newTag = this._graphMng.createVertex<Tag>(SchemeNamespace.TAGS, {
-      workspace: this._workspaceManager.key,
-      color: this._color,
-      name: cRec.get('name'),
-      createdBy: this._createdBy,
-    });
+//     const newTag = this._graphMng.createVertex<Tag>(SchemeNamespace.TAGS, {
+//       workspace: this._workspaceManager.key,
+//       color: this._color,
+//       name: cRec.get('name'),
+//       createdBy: this._createdBy,
+//     });
 
-    this._key = newTag.key;
+//     this._key = newTag.key;
 
-    this._eventLogger.wsAction('TAG_CREATED', this._workspaceManager, {
-      tagId: newTag.key,
-      parentTagId: newTag.parentTag?.key,
-    });
-  }
-}
+//     this._eventLogger.wsAction('TAG_CREATED', this._workspaceManager, {
+//       tagId: newTag.key,
+//       parentTagId: newTag.parentTag?.key,
+//     });
+//   }
+// }
 
-class NewSubTagPillInfo implements ITagPillInfo {
-  private _key: string;
-  private _parent: IParentTagPillInfo;
-  private _graphMng: GraphManager;
-  private _createdBy: string;
-  private _eventLogger: EventLogger;
+// class NewSubTagPillInfo implements ITagPillInfo {
+//   private _key: string;
+//   private _parent: IParentTagPillInfo;
+//   private _graphMng: GraphManager;
+//   private _createdBy: string;
+//   private _eventLogger: EventLogger;
 
-  constructor(
-    parent: IParentTagPillInfo,
-    createdBy: string,
-    eventLogger: EventLogger
-  ) {
-    this._key = 'new-' + Utils.uniqueId();
-    this._parent = parent;
-    this._graphMng = parent.graphMng;
-    this._createdBy = createdBy;
-    this._eventLogger = eventLogger;
-  }
+//   constructor(
+//     parent: IParentTagPillInfo,
+//     createdBy: string,
+//     eventLogger: EventLogger
+//   ) {
+//     this._key = 'new-' + Utils.uniqueId();
+//     this._parent = parent;
+//     this._graphMng = parent.graphMng;
+//     this._createdBy = createdBy;
+//     this._eventLogger = eventLogger;
+//   }
 
-  get key() {
-    return this._key;
-  }
+//   get key() {
+//     return this._key;
+//   }
 
-  get name() {
-    return '';
-  }
+//   get name() {
+//     return '';
+//   }
 
-  get isNew() {
-    return true;
-  }
+//   get isNew() {
+//     return true;
+//   }
 
-  onCommit(changeRec: ChangeRecord) {
-    if (this._parent.isDeleted) return;
+//   onCommit(changeRec: ChangeRecord) {
+//     if (this._parent.isDeleted) return;
 
-    const isDeleted = changeRec.get('isDeleted');
-    if (isDeleted !== undefined && (isDeleted === true || isDeleted === 1)) {
-      return;
-    }
+//     const isDeleted = changeRec.get('isDeleted');
+//     if (isDeleted !== undefined && (isDeleted === true || isDeleted === 1)) {
+//       return;
+//     }
 
-    const newTag = this._graphMng.createVertex<Tag>(SchemeNamespace.TAGS, {
-      workspace: this._parent.workspace.key,
-      color: this._parent.color,
-      name: changeRec.get('name'),
-      createdBy: this._createdBy,
-      parentTag: this._parent.key,
-    });
+//     const newTag = this._graphMng.createVertex<Tag>(SchemeNamespace.TAGS, {
+//       workspace: this._parent.workspace.key,
+//       color: this._parent.color,
+//       name: changeRec.get('name'),
+//       createdBy: this._createdBy,
+//       parentTag: this._parent.key,
+//     });
 
-    this._eventLogger.wsAction('TAG_CREATED', newTag.workspace, {
-      tagId: newTag.key,
-      parentTagId: newTag.parentTag?.key,
-    });
-  }
-}
+//     this._eventLogger.wsAction('TAG_CREATED', newTag.workspace, {
+//       tagId: newTag.key,
+//       parentTagId: newTag.parentTag?.key,
+//     });
+//   }
+// }

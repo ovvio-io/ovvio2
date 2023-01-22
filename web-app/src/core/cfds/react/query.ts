@@ -150,7 +150,7 @@ export function useQuery2<T>(query: T, closeOnCleanup = true): T {
     });
     return () => {
       cleanup();
-      if (closeOnCleanup) {
+      if (closeOnCleanup && !query.isLocked) {
         query.close();
       }
     };

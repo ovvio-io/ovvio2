@@ -58,13 +58,13 @@ export type FieldTriggers<T extends Vertex, DT extends Vertex = T> = {
   readonly [key in keyof T]?: FieldChangeTrigger<DT>;
 };
 
-type VertCls = {
+type VertCls<V extends Vertex = Vertex> = {
   new (
-    mgr: VertexManager,
+    mgr: VertexManager<V>,
     record: Record,
     prevVertex: Vertex | undefined,
     config: VertexConfig
-  ): Vertex;
+  ): V;
 };
 
 export interface VertexConfig {
@@ -87,7 +87,7 @@ export class Vertex implements IVertex, Comparable {
 
   private _cachedDepth: number;
 
-  private readonly _manager: VertexManager;
+  private readonly _manager: VertexManager<this>;
   private readonly _record: Record;
   private _isLocal: boolean;
   public isDemoData: boolean;
@@ -181,7 +181,7 @@ export class Vertex implements IVertex, Comparable {
     prevVertex: Vertex | undefined,
     config: VertexConfig | undefined
   ) {
-    this._manager = mgr;
+    this._manager = mgr as VertexManager<this>;
     this._record = record;
     this._cachedDepth = -1;
     this._isLocal =
@@ -189,7 +189,7 @@ export class Vertex implements IVertex, Comparable {
     this.isDemoData = prevVertex !== undefined ? prevVertex.isDemoData : false;
   }
 
-  get manager() {
+  get manager(): VertexManager<this> {
     return this._manager;
   }
 

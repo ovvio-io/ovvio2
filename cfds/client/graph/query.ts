@@ -379,6 +379,15 @@ export class Query<
     }
   }
 
+  map<T>(f: (vert: OT) => T): T[] {
+    const graph = this.graph;
+    const result: T[] = [];
+    for (const key of this._resultKeys) {
+      result.push(f(graph.getVertex<OT>(key)));
+    }
+    return result;
+  }
+
   private detachFromSource(): void {
     this.source.off(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
     this.source.off(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
@@ -425,6 +434,10 @@ export class Query<
   unlock(): Query<IT, OT> {
     this._locked = false;
     return this;
+  }
+
+  get isLocked(): boolean {
+    return this._locked;
   }
 
   /*****************************************/

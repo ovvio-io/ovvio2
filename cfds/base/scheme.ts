@@ -22,7 +22,6 @@ import {
   NS_TAGS,
   NS_USERS,
   NS_WORKSPACE,
-  NS_INVITES,
   SchemeObject,
   SchemeFields,
   DataType,
@@ -326,12 +325,6 @@ export class Scheme implements Encodable {
     return scheme;
   }
 
-  static invite(): Scheme {
-    const scheme = SchemeManager.instance.getScheme(NS_INVITES);
-    if (!scheme) throw new Error('Invite scheme not found');
-    return scheme;
-  }
-
   static organization(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_ORGANIZATION);
     if (!scheme) throw new Error('Organization scheme not found');
@@ -368,9 +361,6 @@ export class Scheme implements Encodable {
 
       case NS_USERS:
         return this.user();
-
-      case NS_INVITES:
-        return this.invite();
 
       case NS_ORGANIZATION:
         return this.organization();

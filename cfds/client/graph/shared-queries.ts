@@ -20,7 +20,8 @@ export type SharedQueryName =
   | 'users'
   | 'selectedWorkspaces'
   | 'selectedTags'
-  | 'selectedUsers';
+  | 'selectedUsers'
+  | 'parentTags';
 
 export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Vertex>
@@ -38,6 +39,8 @@ export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Tag>
   : N extends 'selectedUsers'
   ? Query<User>
+  : N extends 'parentTags'
+  ? Query<Tag>
   : Query;
 
 export type GlobalSharedQueriesManager = {
@@ -55,6 +58,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly selectedWorkspaces: Query<Workspace, Workspace>;
   readonly selectedTags: Query<Tag, Tag>;
   readonly selectedUsers: Query<User, User>;
+  readonly parentTags: Query<Tag, Tag>;
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
@@ -105,6 +109,12 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       (vert) => vert.selected,
       coreValueCompare,
       'SharedSelectedUsers'
+    ).lock();
+    this.parentTags = new Query(
+      this.tags,
+      (tag) => !tag.parentTag,
+      coreValueCompare,
+      'SharedParentTags'
     ).lock();
   }
 

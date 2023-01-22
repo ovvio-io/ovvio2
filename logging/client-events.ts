@@ -13,7 +13,8 @@ export type ClientEvent =
   | 'Start'
   | 'End'
   | 'Cancel'
-  | 'Navigation';
+  | 'Navigation'
+  | 'Create';
 
 export type SettingsType = 'settings:workspace' | 'settings:tags';
 
@@ -36,7 +37,7 @@ export type MetadataType =
   | 'hide'
   | 'name';
 
-export type DataType = 'workspace' | 'note' | 'task' | 'tag';
+export type DataType = 'workspace' | 'note' | 'task' | 'tag' | 'tag-category';
 
 export type UIStatus = 'started' | 'ended' | 'cancelled';
 
