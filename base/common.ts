@@ -18,7 +18,7 @@ export function count<T = unknown>(iter: Iterable<T>): number {
   return count;
 }
 
-export function uniqueId(length: number = 20): string {
+export function uniqueId(length = 20): string {
   // Alphanumeric characters
   const chars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -31,7 +31,7 @@ export function uniqueId(length: number = 20): string {
 
 export function prettyJSON(o: ReadonlyJSONObject): string {
   if (o.toJSON instanceof Function) {
-    o = (o.toJSON as unknown as () => string)();
+    o = (o.toJSON as unknown as () => ReadonlyJSONObject)();
   }
   return JSON.stringify(o, null, 2);
 }
