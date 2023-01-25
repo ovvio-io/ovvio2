@@ -1,9 +1,6 @@
-import { mapIterable } from '../../../../base/common.ts';
 import { CoreValue } from '../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
-import { notReached } from '../../../../base/error.ts';
 import * as SetUtils from '../../../../base/set.ts';
-import { toJS } from '../../../base/errors.ts';
 import {
   FilterGroupBy,
   FilterSortBy,
@@ -105,7 +102,7 @@ export class Filter extends BaseVertex {
 
   get pinned(): boolean | undefined {
     const v = this.record.get<number>('pinned');
-    if (typeof v === undefined) {
+    if (typeof v === 'undefined') {
       return undefined;
     }
     return v !== 0;
@@ -205,6 +202,11 @@ export class Filter extends BaseVertex {
     const opts: QueryOptions<Note> = {
       name,
       deps,
+      sortBy: (n1, n2) =>
+        coreValueCompare(
+          n2[sortByField] as CoreValue,
+          n1[sortByField] as CoreValue
+        ),
     };
     switch (this.groupBy) {
       case 'assignee':
@@ -236,11 +238,6 @@ export class Filter extends BaseVertex {
         (assignees.size === 0 ||
           (SetUtils.intersects(note.assignees, assignees) &&
             this.checkNoteMatchesTags(note, tagsByParent))),
-      (n1, n2) =>
-        coreValueCompare(
-          n1[sortByField] as CoreValue,
-          n2[sortByField] as CoreValue
-        ),
       opts
     );
   }

@@ -160,7 +160,7 @@ function filterFunc(
 }
 
 export function useVertices<V extends Vertex>(
-  vertexManagers: VertexManager<V>[],
+  vertexManagers: readonly VertexManager<V>[],
   opts: OnChangeOpts = EMPTY_OPTS
 ): V[] {
   return usePartialVertices(vertexManagers, [], opts) as V[];

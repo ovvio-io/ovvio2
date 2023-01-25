@@ -4,9 +4,9 @@ export type ReadonlyCoreObject = {
   readonly [key: string]: CoreValue;
 };
 
-export type CoreObject = {
-  [key: string]: CoreValue;
-};
+export interface CoreObject<T extends CoreValue = CoreValue> {
+  [key: string]: T;
+}
 
 export type ReadonlyCoreArray = readonly CoreValue[];
 

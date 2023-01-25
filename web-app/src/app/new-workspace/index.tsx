@@ -1,23 +1,20 @@
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import Toolbar from 'app/workspace-content/workspace-view/toolbar';
-import { useMemo, useState } from 'react';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { WorkspaceCreated, WorkspaceForm } from './workspace-form';
-import { LOGIN, useHistory } from 'core/react-utils/history';
-import { InviteForm } from 'shared/invite-form';
-import { useWorkspaceTutorialSteps } from './workspace-tutorial';
-import { UserOnboard } from 'shared/tutorial';
+import React, { useMemo, useState } from 'https://esm.sh/react@18.2.0';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
+import { WorkspaceCreated, WorkspaceForm } from './workspace-form.tsx';
+import { InviteForm } from '../../shared/invite-form/index.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     alignItems: 'stretch',
     flexShrink: 1,
     basedOn: [layout.column, layout.flex],
   },
   content: {
-    backgroundColor: theme.background[150],
+    backgroundColor: theme.background[100],
     alignItems: 'center',
     basedOn: [layout.column, layout.flex],
   },
@@ -49,18 +46,14 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface CreateWorkspaceViewProps {
-  location: any;
   onWorkspaceCreated?: (wsKey: string) => void;
 }
 export const CreateWorkspaceView = ({
-  location,
   onWorkspaceCreated,
 }: CreateWorkspaceViewProps) => {
   const styles = useStyles();
   const [ws, setWs] = useState<VertexManager<Workspace>>();
-  const history = useHistory();
   const workspaces = useMemo(() => [ws], [ws]);
-  const tutorialSteps = useWorkspaceTutorialSteps();
 
   const onCreated = (result: WorkspaceCreated) => {
     let wsKey: string;

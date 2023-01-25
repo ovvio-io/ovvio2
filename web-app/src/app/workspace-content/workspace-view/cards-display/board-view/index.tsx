@@ -16,6 +16,7 @@ import { WorkspaceBoardView } from './workspace-board-view.tsx';
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useFilter } from '../../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
@@ -30,15 +31,14 @@ const useStyles = makeStyles((theme) => ({
 
 export interface BoardViewProps {
   className?: string;
-  filter: VertexManager<Filter>;
 }
 
 // type PartialTaskData = Partial<TypeOfScheme<typeof NOTE_SCHEME>>;
 // type TaskData = PartialTaskData & Required<Pick<PartialTaskData, 'workspace'>>;
 
-export function BoardView({ className, filter: filterMgr }: BoardViewProps) {
+export function BoardView({ className }: BoardViewProps) {
   const styles = useStyles();
-  const filter = useVertex(filterMgr);
+  const filter = useFilter();
   const query = useQuery2(filter.buildQuery('BoardView'));
 
   let content: React.ReactNode = null;
@@ -74,23 +74,11 @@ export function BoardView({ className, filter: filterMgr }: BoardViewProps) {
   const groupBy = filter.groupBy;
 
   if (groupBy === 'workspace') {
-    content = <WorkspaceBoardView cardManagers={query.groups} />;
+    content = <WorkspaceBoardView query={query} />;
   } else if (groupBy === 'tag') {
-    content = (
-      <TagBoardView
-        cardManagers={groups}
-        selectedWorkspaces={selectedWorkspaces}
-        parentTag={groupBy.tag}
-      />
-    );
+    content = <TagBoardView query={query} />;
   } else {
-    content = (
-      <AssigneesBoardView
-        filters={filters}
-        cardManagers={cards.results}
-        selectedWorkspaces={selectedWorkspaces}
-      />
-    );
+    content = <AssigneesBoardView query={query} />;
   }
 
   return (

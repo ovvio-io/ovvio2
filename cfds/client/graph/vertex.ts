@@ -144,6 +144,7 @@ export class Vertex implements IVertex, Comparable {
       for (const [fieldName, func] of Object.entries(triggers)) {
         // If a trigger was already installed installed by a superclass, we
         // run it before running the subclass's trigger
+        // deno-lint-ignore no-prototype-builtins
         if (result.hasOwnProperty(fieldName)) {
           result[fieldName] = triggerCompose(result[fieldName]!, func);
         } else {

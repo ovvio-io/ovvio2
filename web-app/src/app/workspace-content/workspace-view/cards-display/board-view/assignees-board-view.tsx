@@ -3,7 +3,6 @@ import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-man
 import {
   Note,
   User,
-  Workspace,
 } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { sortMngStampCompare } from '../../../../../../../cfds/client/sorting.ts';
 import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
@@ -22,32 +21,20 @@ import { setDragSort } from '../card-item/draggable-card.tsx';
 import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
 export interface AssigneesBoardViewProps {
-  cardManagers: VertexManager<Note>[];
+  query: Query<Note>;
 }
 
 const useStrings = createUseStrings(localization);
 
-type UserColumn =
-  | {
-      key: string;
-      user: User;
-      userManager: VertexManager<User>;
-      cards: VertexManager<Note>[];
-    }
-  | {
-      key: string;
-      userManager: 'unassigned';
-      cards: VertexManager<Note>[];
-    };
-
-export function AssigneesBoardView({ cardManagers }: AssigneesBoardViewProps) {
-  const cards = usePartialVertices(cardManagers, ['assignees', 'sortStamp']);
-  const workspaces = usePartialVertices(selectedWorkspaces, ['users']);
-  const eventLogger = useEventLogger();
+export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
+  useQuery2(query);
+  const logger = useLogger();
   const strings = useStrings();
-
   const toast = useToastController();
 
   const onDragCancelled = useCallback(
@@ -121,7 +108,7 @@ export function AssigneesBoardView({ cardManagers }: AssigneesBoardViewProps) {
 
   const onDrop = (
     user: VertexManager<User> | 'unassigned',
-    items: VertexManager<Note>[],
+    items: readonly VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition

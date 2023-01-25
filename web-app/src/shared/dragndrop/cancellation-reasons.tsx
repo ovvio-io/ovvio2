@@ -3,6 +3,6 @@ export enum CANCELLATION_REASONS {
   DISABLED = 'DISABLED',
   NO_DATA = 'NO_DATA',
   NOT_ALLOWED = 'NOT_ALLOWED',
-};
+}
 
 export default CANCELLATION_REASONS;

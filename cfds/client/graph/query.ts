@@ -31,18 +31,10 @@ export interface SortDescriptor<T extends Vertex = Vertex> {
 }
 
 // TODO: Change this to a readonly array (requires updates in a few places)
-export type QueryResults<T extends Vertex = Vertex> = VertexManager<T>[];
+export type QueryResults<T extends Vertex = Vertex> =
+  readonly VertexManager<T>[];
 
 export const EVENT_QUERY_RESULTS_CHANGED = 'QueryResultsChanged';
-
-// const gDirtyQueries = new Set<Query<any>>();
-// const gQueryMicrotask = new SimpleTimer(50, false, () => {
-//   const copy = new Set(gDirtyQueries);
-//   gDirtyQueries.clear();
-//   for (const query of copy) {
-//     query._notifyQueryChanged();
-//   }
-// });
 
 // const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
@@ -56,6 +48,9 @@ export type GroupId = string | undefined;
 
 export type GroupByFuncResultPrimitive = GroupId | Vertex | VertexManager;
 
+/**
+ * The result of a groupBy function is one or more groups the result is in.
+ */
 export type GroupByFuncResult =
   | GroupByFuncResultPrimitive
   | GroupByFuncResultPrimitive[]
@@ -69,6 +64,7 @@ export interface QueryOptions<OT extends Vertex> {
   name?: string;
   deps?: Query[];
   groupBy?: GroupByFunction<OT>;
+  sortBy?: SortDescriptor<OT>;
 }
 
 export type SourceType<IT extends Vertex> =
@@ -136,6 +132,7 @@ export class Query<
   private readonly _deps?: Query[];
   private readonly _depsListener?: () => void;
   private readonly _sourceProducer?: SourceProducer<IT>;
+  private readonly _sortDescriptor?: SortDescriptor<OT>;
   private readonly _groupByFunc?: GroupByFunction<OT>;
   private _source: SourceType<IT>;
   private _isOpen: boolean;
@@ -244,7 +241,7 @@ export class Query<
   constructor(
     sourceOrProducer: SourceType<IT> | SourceProducer<IT>,
     readonly predicate: Predicate<IT, OT>,
-    readonly sortDescriptor?: SortDescriptor<OT>,
+    sortDescriptorOrOpts?: SortDescriptor<OT> | QueryOptions<OT>,
     nameOrOpts?: string | QueryOptions<OT>
   ) {
     super();
@@ -263,14 +260,23 @@ export class Query<
     this._isLoading = true;
     this._locked = false;
 
+    let opts: QueryOptions<OT> | undefined;
+    if (typeof sortDescriptorOrOpts === 'function') {
+      this._sortDescriptor = sortDescriptorOrOpts;
+    } else if (typeof sortDescriptorOrOpts !== 'undefined') {
+      opts = sortDescriptorOrOpts;
+    }
     if (typeof nameOrOpts === 'string') {
       this._name = nameOrOpts;
     } else if (typeof nameOrOpts !== 'undefined') {
-      if (nameOrOpts.name) {
-        this._name = nameOrOpts.name;
+      opts = nameOrOpts;
+    }
+    if (opts) {
+      if (opts.name) {
+        this._name = opts.name;
       }
-      if (nameOrOpts.deps) {
-        this._deps = nameOrOpts.deps;
+      if (opts.deps) {
+        this._deps = opts.deps;
         if (this._deps) {
           this._depsListener = () => this.onDependencyChanged();
           for (const d of this._deps) {
@@ -279,8 +285,8 @@ export class Query<
           }
         }
       }
-      if (nameOrOpts.groupBy) {
-        this._groupByFunc = nameOrOpts.groupBy;
+      if (opts.groupBy) {
+        this._groupByFunc = opts.groupBy;
         this._groupedResultKeys = new Map();
       }
     }
@@ -316,6 +322,10 @@ export class Query<
       return src;
     }
     return src.graph;
+  }
+
+  get sortDescriptor(): SortDescriptor<OT> | undefined {
+    return this._sortDescriptor;
   }
 
   get results(): QueryResults<OT> {

@@ -70,15 +70,11 @@ function MobileBlockerImpl({ children }: MobileBlockerProps) {
   return <React.Fragment>{children}</React.Fragment>;
 }
 
-export const MobileBlocker: React.FC = ({
-  children,
-}: {
-  children?: React.ReactNode;
-}) => {
+export function MobileBlocker({ children }: MobileBlockerProps) {
   const isMobileSupported = useIsFeatureActive(Features.Mobile);
 
   if (!isMobileSupported) {
     return <MobileBlockerImpl>{children}</MobileBlockerImpl>;
   }
   return <React.Fragment>{children}</React.Fragment>;
-};
+}

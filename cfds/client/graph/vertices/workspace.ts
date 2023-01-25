@@ -73,8 +73,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'notesQuery',
       this.graph.sharedQueriesManager.notDeleted,
-      (vert) => vert instanceof Note && vert.workspace === this,
-      (n1, n2) => coreValueCompare(n1.sortStamp, n2.sortStamp)
+      (vert) => vert instanceof Note && vert.workspace === this
     );
   }
 
@@ -83,8 +82,7 @@ export class Workspace extends BaseVertex {
       this.key,
       'pinnedNotesQuery',
       this.notesQuery,
-      (note) => note.isPinned,
-      (n1, n2) => coreValueCompare(n1.sortStamp, n2.sortStamp)
+      (note) => note.isPinned
     );
   }
 }

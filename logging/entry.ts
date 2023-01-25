@@ -69,6 +69,11 @@ export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
   res.t_osBuild = Deno.build;
   res.t_mainUrl = Deno.mainModule;
   res.t_execPath = Deno.execPath();
+  for (const field of Object.keys(res)) {
+    if (typeof res[field] === 'undefined') {
+      delete res[field];
+    }
+  }
   return res as NormalizedLogEntry;
 }
 

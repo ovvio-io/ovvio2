@@ -1,3 +1,4 @@
+import { CoreObject } from '../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { notReached } from '../../../base/error.ts';
 import {
@@ -65,7 +66,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     this.notDeleted = new Query(
       graph,
       (vert) => vert.isDeleted === 0,
-      undefined,
+      coreValueCompare,
       'SharedNotDeleted'
     ).lock();
     this.noNotes = new Query(

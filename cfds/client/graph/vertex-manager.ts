@@ -197,6 +197,10 @@ export class VertexManager<V extends Vertex = Vertex>
     );
   }
 
+  get vertex(): V {
+    return this.getVertexProxy();
+  }
+
   getVertexProxy<T extends Vertex = V>(): T {
     if (this._vertex === undefined) {
       this.rebuildVertex();
@@ -552,7 +556,7 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   compare(other: VertexManager): number {
-    return coreValueCompare(this._key, other.key);
+    return this.vertex.compare(other.vertex);
   }
 }
 

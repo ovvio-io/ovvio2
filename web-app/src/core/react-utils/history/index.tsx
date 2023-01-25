@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useMemo,
 } from 'https://esm.sh/react@18.2.0';
-import { Router } from 'https://esm.sh/react-router-dom@5.1.0';
+import { Router } from 'https://esm.sh/react-router-dom@6.7.0';
 import {
   createBrowserHistory,
   History as RouterHistory,

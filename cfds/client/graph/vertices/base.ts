@@ -142,7 +142,10 @@ export class BaseVertex extends Vertex {
 
   compare(other: IVertex): number {
     if (other instanceof BaseVertex) {
-      return coreValueCompare(this.sortStamp, other.sortStamp);
+      // Default order is descending which places newer items first. This
+      // enables us to show intermediate results of queries and still make
+      // sense
+      return coreValueCompare(other.sortStamp, this.sortStamp);
     }
     return super.compare(other);
   }

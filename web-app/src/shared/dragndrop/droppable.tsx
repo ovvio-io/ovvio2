@@ -28,7 +28,7 @@ export interface RenderDroppableProps {
 
 export type RenderDroppableHandler = (
   props: RenderDroppableProps
-) => JSX.Element;
+) => React.ReactNode;
 
 export type AllowsDropResult = {
   isAllowed: boolean;
@@ -42,9 +42,9 @@ function isAllowsDropResult(
 }
 
 export interface DroppableProps<T> {
-  children: RenderDroppableHandler;
-  allowsDrop?: (item: any) => boolean | AllowsDropResult;
-  items: T[];
+  children: RenderDroppableHandler | React.ReactNode;
+  allowsDrop?: (item: any) => boolean | AllowsDropResult | boolean;
+  items: readonly T[];
   onDrop: (item: T, relativeTo: T, dragPosition: DragPosition) => void;
 }
 export function Droppable<T>({
@@ -57,23 +57,23 @@ export function Droppable<T>({
   const onDropImpl = (e: DragEvent) => {
     const { dragOverData, disabled, dragData } = ctx.state;
     if (!dragData) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.USER_CANCELLED,
       });
     }
     if (disabled) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.DISABLED,
       });
     }
     if (!dragOverData || dragOverData.dropZone !== id) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NO_DATA,
       });
     }
     const item = ctx.state.dragData?.data;
     if (!item) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NO_DATA,
       });
     }
@@ -87,20 +87,20 @@ export function Droppable<T>({
     // }
     let relativeTo = items[dragOverData.index];
     const { dragPosition } = dragOverData;
-    const res = allowsDrop(item);
+    const res = typeof allowsDrop === 'boolean' ? allowsDrop : allowsDrop(item);
     if ((isAllowsDropResult(res) && !res.isAllowed) || !res) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NOT_ALLOWED,
         context: isAllowsDropResult(res) && res.context,
       });
     }
     if (item === relativeTo) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.USER_CANCELLED,
       });
     }
     onDrop(item, relativeTo, dragPosition);
-    ctx.onDrop(item, relativeTo, dragPosition);
+    ctx.onDrop!(item, relativeTo, dragPosition);
   };
 
   const onDragOver = (e: DragEvent) => {
@@ -110,7 +110,7 @@ export function Droppable<T>({
       }
       e.preventDefault();
       if (!items.length) {
-        ctx.setDragOverIndex(0, { x: 'left', y: 'top' }, id);
+        ctx.setDragOverIndex!(0, { x: 'left', y: 'top' }, id);
       }
     }
   };
@@ -129,7 +129,9 @@ export function Droppable<T>({
 
   return (
     <dropZoneContext.Provider value={id}>
-      {children({ attributes, isInDrag, isDragOver })}
+      {typeof children === 'function'
+        ? children({ attributes, isInDrag, isDragOver })
+        : children}
     </dropZoneContext.Provider>
   );
 }

@@ -4,7 +4,7 @@ import React, {
   useState,
   useLayoutEffect,
 } from 'https://esm.sh/react@18.2.0';
-import { useHistory } from 'https://esm.sh/react-router-dom@5.1.0';
+import { useHistory } from 'https://esm.sh/react-router-dom@6.7.0';
 import { History } from 'https://esm.sh/history@5.3.0';
 import { notImplemented } from '../../../../base/error.ts';
 import { Note } from '../../../../cfds/client/graph/vertices/note.ts';

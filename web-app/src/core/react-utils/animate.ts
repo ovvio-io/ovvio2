@@ -19,10 +19,10 @@ export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
 }
 
 export function useAnimateHeight<T extends HTMLElement = HTMLElement>(
-  ref: React.MutableRefObject<T>,
+  ref: React.MutableRefObject<T | undefined | null>,
   animateProp: any
 ): Partial<{ height: number }> {
-  const size = useAnimateSize(ref.current, animateProp, 'height');
+  const size = useAnimateSize(ref.current || null, animateProp, 'height');
   return useMemo(() => {
     if (size === null) {
       return {};

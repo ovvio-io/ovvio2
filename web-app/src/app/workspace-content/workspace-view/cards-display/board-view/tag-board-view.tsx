@@ -2,6 +2,7 @@ import React, { useMemo } from 'https://esm.sh/react@18.2.0';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
+  Tag,
   Workspace,
 } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { sortStampCompare } from '../../../../../../../cfds/client/sorting.ts';
@@ -18,150 +19,102 @@ import {
 } from '../../../../../shared/dragndrop/index.ts';
 import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
 import { Dictionary } from '../../../../../../../base/collections/dict.ts';
-import { GroupId } from '../../../../../../../cfds/client/graph/query.ts';
+import {
+  GroupId,
+  Query,
+} from '../../../../../../../cfds/client/graph/query.ts';
 import { setDragSort } from '../card-item/draggable-card.tsx';
 import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { useFilter, usePartialFilter } from '../../../../index.tsx';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+import {
+  filterIterable,
+  mapIterable,
+} from '../../../../../../../base/common.ts';
 
 const useStrings = createUseStrings(localization);
 
 export interface TagBoardViewProps {
-  cardManagers: Dictionary<GroupId, VertexManager<Note>>[];
+  query: Query<Note, Note>;
 }
 
-export function TagBoardView({ cardManagers }: TagBoardViewProps) {
+export function TagBoardView({ query }: TagBoardViewProps) {
+  useQuery2(query, false);
   const logger = useLogger();
-  const toast = useToastController();
-  const cards = usePartialVertices(cardManagers, [
-    'tags',
-    'workspaceKey',
-    'sortStamp',
-  ]);
-  const childTags = useMemo(
-    () => Object.values(parentTag.childTags),
-    [parentTag.childTags]
+  const groups = query.groups;
+  const groupBy = usePartialFilter(['groupByPivot']).groupByPivot as Tag;
+  const graph = useGraphManager();
+  const childTagManagers = Array.from(
+    mapIterable(
+      filterIterable(groups.keys(), (k) => typeof k === 'string'),
+      (k) => graph.getVertexManager<Tag>(k!)
+    )
   );
-
+  const sortedChildTags = usePartialVertices(childTagManagers, ['name']).sort();
+  const unassigned = groups.get(undefined);
   const strings = useStrings();
 
-  let activeTags = childTags.filter((x) => x.selected);
-  activeTags = activeTags.length ? activeTags : childTags;
-  const unassigned = cards
-    .filter(
-      (x) =>
-        parentTag.managers[x.workspaceKey] &&
-        !x.tags.has(parentTag.managers[x.workspaceKey].getVertexProxy())
-    )
-    .map((x) => x.manager as VertexManager<Note>);
-  const columns: TagColumn[] = activeTags.sort(sortStampCompare).map((tag) => ({
-    key: tag.key,
-    tag,
-    cards: cards
-      .filter(
-        (x) =>
-          tag.managers[x.workspaceKey] &&
-          parentTag.managers[x.workspaceKey] &&
-          x.tags.get(parentTag.managers[x.workspaceKey].getVertexProxy()) ===
-            tag.managers[x.workspaceKey].getVertexProxy()
-      )
-      .map((x) => x.manager as VertexManager<Note>),
-  }));
-
-  if (unassigned.length) {
-    columns.unshift({
-      key: 'unassigned',
-      tag: 'unassigned',
-      cards: unassigned,
-    });
-  }
-
   const onDrop = (
-    tag: TagType,
-    items: VertexManager<Note>[],
+    tag: VertexManager<Tag> | undefined,
+    items: readonly VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
   ) => {
-    const proxy = item.getVertexProxy();
-    eventLogger.action('DRAG_DONE', {
-      cardId: item.key,
-      source: DragSource.TagBoard,
+    const note = item.getVertexProxy();
+    logger.log({
+      severity: 'INFO',
+      event: 'End',
+      flow: 'dnd',
+      vertex: item.key,
+      type: 'tag',
+      source: 'board',
+      added: tag?.key,
+      removed: tag === undefined ? note.tags.get(groupBy)?.key : undefined,
     });
 
-    const wsParent = parentTag.managers[proxy.workspaceKey]?.getVertexProxy();
-    if (!wsParent) {
-      return;
-    }
-    if (tag === 'unassigned') {
-      const tags = proxy.tags;
-      tags.delete(wsParent);
-      proxy.tags = tags;
+    if (typeof tag === 'undefined') {
+      note.tags.delete(groupBy);
     } else {
-      const wsTag = tag.managers[proxy.workspaceKey];
-      const tags = proxy.tags;
-      tags.set(wsParent, wsTag.getVertexProxy());
-      proxy.tags = tags;
+      note.tags.set(groupBy, tag.vertex);
     }
     setDragSort(items, item, relativeTo, dragPosition);
   };
-  const allowsDrop = (tag: TagType, card: VertexManager<Note>) => {
-    if (tag === 'unassigned') {
-      return true;
-    }
-    const proxy = card.getVertexProxy();
-    if (tag.managers[proxy.workspaceKey]) {
-      return true;
-    }
-
-    return {
-      isAllowed: false,
-      context: {
-        tag,
-        card,
-      },
-    };
-  };
-
-  const onDragCancelled = ({
-    reason,
-    context,
-  }: {
-    reason: CANCELLATION_REASONS;
-    context: { tag: SharedChildTag; card: VertexManager<Note> };
-  }) => {
-    if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
-      eventLogger.action('DRAG_CANCELLED', {
-        cardId: context.card.key,
-        source: DragSource.TagBoard,
-        data: {
-          reason: 'TAG_NOT_IN_WORKSPACE',
-        },
-      });
-      toast.displayToast({
-        text: format(strings.tagNotInWorkspace, {
-          tag: context.tag.displayName,
-          workspace: context.card.getVertexProxy().workspace.name,
-        }),
-        duration: 5000,
-      });
-    }
-  };
 
   return (
-    <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {columns.map((col) => (
+    <DragAndDropContext>
+      {unassigned?.length || 0 > 0 ? (
         <BoardColumn
-          key={col.key}
-          items={col.cards}
-          title={
-            col.tag === 'unassigned' ? strings.unassigned : col.tag.displayName
+          key={undefined}
+          items={groups.get(undefined)!}
+          title={strings.unassigned}
+          onDrop={(...args) =>
+            onDrop(undefined, groups.get(undefined)!, ...args)
           }
-          onDrop={(...args) => onDrop(col.tag, col.cards, ...args)}
-          allowsDrop={(item) => allowsDrop(col.tag, item)}
         >
-          {col.cards.map((card, index) => (
+          {groups.get(undefined)!.map((note, index) => (
+            <BoardCard key={note.key} card={note} index={index} />
+          ))}
+        </BoardColumn>
+      ) : null}
+      {sortedChildTags.map((tag) => (
+        <BoardColumn
+          key={tag.key}
+          items={groups.get(tag.key)!}
+          title={tag.name}
+          onDrop={(...args) =>
+            onDrop(
+              tag.manager as VertexManager<Tag>,
+              groups.get(tag.key)!,
+              ...args
+            )
+          }
+        >
+          {groups.get(tag.key)!.map((card, index) => (
             <BoardCard key={card.key} card={card} index={index} />
           ))}
         </BoardColumn>

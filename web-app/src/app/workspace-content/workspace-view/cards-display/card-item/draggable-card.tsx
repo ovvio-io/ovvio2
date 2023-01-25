@@ -1,15 +1,22 @@
-import { between, past, present } from '@ovvio/cfds/lib/base/orderstamp';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useAnimateHeight } from 'core/react-utils/animate';
-import React, { useMemo, useRef } from 'react';
-import { RenderDraggableProps } from 'shared/dragndrop/draggable';
-import { DragPosition } from 'shared/dragndrop/droppable';
-import { styleguide } from '@ovvio/styles/lib';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { CardItem, CardItemProps } from '.';
+import React, { useMemo, useRef } from 'https://esm.sh/react@18.2.0';
+import {
+  between,
+  past,
+  present,
+} from '../../../../../../../cfds/base/orderstamp.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
+import { RenderDraggableProps } from '../../../../../shared/dragndrop/draggable.tsx';
+import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
+import { styleguide } from '../../../../../../../styles/index.ts';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { CardItem, CardItemProps } from './index.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   noMargin: {
     margin: 0,
   },
@@ -39,7 +46,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export function setDragSort(
-  items: VertexManager<Note>[],
+  items: readonly VertexManager<Note>[],
   item: VertexManager<Note>,
   relativeTo: VertexManager<Note>,
   dragPosition: DragPosition
@@ -50,7 +57,7 @@ export function setDragSort(
   const index = items.indexOf(relativeTo);
   const nextIndex = dragPosition.y === 'top' ? index - 1 : index + 1;
   let nextStamp: string;
-  if (nextIndex < 0) {
+  if (nextIndex <= 0) {
     nextStamp = present();
   } else if (nextIndex >= items.length) {
     nextStamp = past();
@@ -58,9 +65,7 @@ export function setDragSort(
     const x = items[nextIndex].getVertexProxy();
     nextStamp = x.sortStamp;
   }
-  const relativeStamp = relativeTo.getVertexProxy().sortStamp;
-  const newSortStamp = between(relativeStamp, nextStamp);
-  item.getVertexProxy().sortStamp = newSortStamp;
+  item.vertex.sortStamp = between(relativeTo.vertex.sortStamp, nextStamp);
 }
 
 export const DraggableCard = React.forwardRef(function (
@@ -78,7 +83,7 @@ export const DraggableCard = React.forwardRef(function (
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
-  const dragRef = useRef();
+  const dragRef = useRef(null);
   const { height } = useAnimateHeight(dragRef, isInDrag);
   const style = useMemo(
     () => (isDragActive ? { height: isInDrag ? 0 : height } : {}),

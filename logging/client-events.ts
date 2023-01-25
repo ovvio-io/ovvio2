@@ -7,7 +7,6 @@ export type ClientEvent =
   | 'AttachmentDownloadSuccess'
   | 'MetadataChanged'
   | 'VertexMoved'
-  | 'ItemDrag'
   | 'Click'
   | 'FilterChange'
   | 'Start'
@@ -43,9 +42,11 @@ export type UIStatus = 'started' | 'ended' | 'cancelled';
 
 export type FilterType = 'workspace' | 'tag' | 'assignee';
 
-export type UIFlow = 'create' | 'delete' | 'permissions' | 'edit';
+export type UIFlow = 'create' | 'delete' | 'permissions' | 'edit' | 'dnd';
 
 export type NavigationType = 'tab' | 'close' | 'open';
+
+export type Reason = 'not-supported' | 'denied';
 
 export interface ClientEventEntry extends BaseLogEntry {
   severity: 'INFO';
@@ -59,7 +60,7 @@ export interface ClientEventEntry extends BaseLogEntry {
   removed?: string | string[] | 'ALL';
   origin?: string;
   status?: UIStatus;
-  reason?: string;
+  reason?: Reason;
   routeInfo?: string;
   action?: ToggleAction;
   flag?: boolean;

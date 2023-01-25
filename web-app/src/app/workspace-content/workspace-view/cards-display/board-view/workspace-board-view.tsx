@@ -17,19 +17,25 @@ import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { GroupId } from '../../../../../../../cfds/client/graph/query.ts';
+import {
+  GroupId,
+  Query,
+} from '../../../../../../../cfds/client/graph/query.ts';
 import { Dictionary } from '../../../../../../../base/collections/dict.ts';
 import { mapIterable } from '../../../../../../../base/common.ts';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 
 const useStrings = createUseStrings(localization);
 
 export interface WorkspaceBoardViewProps {
-  cardManagers: Dictionary<GroupId, VertexManager<Note>[]>;
+  query: Query<Note, Note>;
 }
 
-export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
+export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
+  useQuery2(query, false);
+  const cardManagers = query.groups;
   const graph = useGraphManager();
   const workspaces = usePartialVertices(
     Array.from(
@@ -47,10 +53,12 @@ export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
   const onDragCancelled = useCallback(() => {
     logger.log({
       severity: 'INFO',
-      event: 'ItemDrag',
-      uiSource: 'board',
-      uiStatus: 'cancelled',
-      reason: 'NOT_SUPPORTED',
+      event: 'Cancel',
+      flow: 'dnd',
+      source: 'board',
+      type: 'workspace',
+      status: 'cancelled',
+      reason: 'not-supported',
     });
     toast.displayToast({
       duration: 5000,
@@ -60,7 +68,7 @@ export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
 
   const onDrop = (
     workspace: VertexManager<Workspace>,
-    items: VertexManager<Note>[],
+    items: readonly VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
@@ -78,7 +86,7 @@ export function WorkspaceBoardView({ cardManagers }: WorkspaceBoardViewProps) {
         <BoardColumn
           title={column.name}
           key={column.key}
-          items={cardManagers.get(column.key)}
+          items={cardManagers.get(column.key)!}
           allowsDrop={() => false}
           onDrop={(
             item: VertexManager<Note>,

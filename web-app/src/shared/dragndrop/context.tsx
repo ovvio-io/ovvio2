@@ -12,27 +12,33 @@ function generateId() {
   return ++_id;
 }
 
-interface DNDContext {
-  id: string;
-  state: DragAndDropState;
-  onDragStarted: (
-    data: any,
+interface DNDCallbacks {
+  onDragStarted?: <T>(
+    data: T,
     index: number,
     dropZone: string,
     placeholderStyle: {}
   ) => void;
-  setDragOverIndex: (
+  setDragOverIndex?: (
     index: number,
     dragPosition: DragPosition,
     dropZone: string
   ) => void;
-  onDragCancelled: (e: { reason: CANCELLATION_REASONS; context?: any }) => void;
-  onDrop: <T>(
+  onDragCancelled?: <T>(e: {
+    reason: CANCELLATION_REASONS;
+    context?: T;
+  }) => void;
+  onDrop?: <T>(
     item: T,
     relativeTo: T,
     dragPosition: DragPosition,
     index?: number
   ) => void;
+}
+
+interface DNDContext extends DNDCallbacks {
+  id: string;
+  state: DragAndDropState;
 }
 
 const dragCtx = React.createContext<DNDContext | null>(null);
@@ -171,14 +177,8 @@ function dndReducer(
   }
 }
 
-interface DragAndDropProps {
+interface DragAndDropProps extends DNDCallbacks {
   children: React.ReactNode;
-  onDragStarted?: any;
-  onDragCancelled?: (e: {
-    reason: CANCELLATION_REASONS;
-    context?: any;
-  }) => void;
-  onDrop?: any;
   disabled?: boolean;
 }
 
@@ -196,15 +196,10 @@ export function DragAndDropContext({
     onDrop,
   });
   const id = useMemo(() => `ctx_${generateId()}`, []);
-  const ctx = useMemo(
+  const ctx = useMemo<DNDContext>(
     () => ({
       id,
-      onDragStarted(
-        data: any,
-        index: any,
-        dropZone: any,
-        placeholderStyle: any
-      ) {
+      onDragStarted(data, index, dropZone, placeholderStyle) {
         dispatch({
           type: START_DRAG,
           payload: {
@@ -214,18 +209,18 @@ export function DragAndDropContext({
             placeholderStyle,
           },
         });
-        listeners.current.onDragStarted();
+        listeners.current.onDragStarted(
+          data,
+          index,
+          dropZone,
+          placeholderStyle
+        );
       },
-      onDragCancelled(e: any) {
+      onDragCancelled(e) {
         dispatch({ type: CANCEL_DRAG });
         listeners.current.onDragCancelled(e);
       },
-      onDrop<T>(
-        item: T,
-        relativeTo: T,
-        dragPosition: DragPosition,
-        index: number
-      ) {
+      onDrop(item, relativeTo, dragPosition, index) {
         dispatch({ type: END_DRAG });
         listeners.current.onDrop(item, relativeTo, dragPosition, index);
       },
