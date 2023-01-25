@@ -1,3 +1,5 @@
+import { ReadonlyJSONObject } from './interfaces.ts';
+
 export function cartesianProduct<T>(...allEntries: T[][]): T[][] {
   return allEntries.reduce<T[][]>(
     (results, entries) =>
@@ -8,7 +10,7 @@ export function cartesianProduct<T>(...allEntries: T[][]): T[][] {
   );
 }
 
-export function count(iter: Iterable<any>): number {
+export function count<T = unknown>(iter: Iterable<T>): number {
   let count = 0;
   for (const _ of iter) {
     ++count;
@@ -27,23 +29,25 @@ export function uniqueId(length: number = 20): string {
   return autoId;
 }
 
-export function prettyJSON(o: any): string {
-  if (o.toJSON) {
-    o = o.toJSON();
+export function prettyJSON(o: ReadonlyJSONObject): string {
+  if (o.toJSON instanceof Function) {
+    o = (o.toJSON as unknown as () => string)();
   }
   return JSON.stringify(o, null, 2);
 }
 
-export function* keysOf(obj: any): Generator<string> {
+export function* keysOf<T extends Record<string, unknown>>(
+  obj: T
+): Generator<string> {
   for (const k in obj) {
+    // deno-lint-ignore no-prototype-builtins
     if (obj.hasOwnProperty(k)) {
       yield k;
     }
   }
 }
 
-// deno-lint-ignore ban-types
-export function allKeysOf<T extends object>(obj: T): (keyof T)[] {
+export function allKeysOf<T extends Record<never, never>>(obj: T): (keyof T)[] {
   return Object.keys(obj) as (keyof T)[];
 }
 

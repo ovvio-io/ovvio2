@@ -35,16 +35,11 @@ export interface WorkspaceBoardViewProps {
 
 export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
   useQuery2(query, false);
-  const cardManagers = query.groups;
-  const graph = useGraphManager();
-  const workspaces = usePartialVertices(
-    Array.from(
-      mapIterable(cardManagers.keys(), (k) =>
-        graph.getVertexManager<Workspace>(k!)
-      )
-    ),
-    ['name', 'sortStamp']
-  );
+  const groups = query.groups;
+  const workspaces = usePartialVertices<Workspace>(groups.keys(), [
+    'name',
+    'sortStamp',
+  ]) as Workspace[];
   const logger = useLogger();
   const toast = useToastController();
   const strings = useStrings();
@@ -86,7 +81,7 @@ export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
         <BoardColumn
           title={column.name}
           key={column.key}
-          items={cardManagers.get(column.key)!}
+          items={groups.get(column.key)!}
           allowsDrop={() => false}
           onDrop={(
             item: VertexManager<Note>,
@@ -95,14 +90,14 @@ export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
           ) =>
             onDrop(
               column.manager as VertexManager<Workspace>,
-              cardManagers.get(column.key)!,
+              groups.get(column.key)!,
               item,
               relativeTo,
               dragPosition
             )
           }
         >
-          {cardManagers.get(column.key)!.map((card, index) => (
+          {groups.get(column.key)!.map((card, index) => (
             <BoardCard card={card} index={index} key={card.key} />
           ))}
         </BoardColumn>

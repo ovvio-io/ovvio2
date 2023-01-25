@@ -5,7 +5,10 @@ import {
   User,
 } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { sortMngStampCompare } from '../../../../../../../cfds/client/sorting.ts';
-import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertices,
+  useVertices,
+} from '../../../../../core/cfds/react/vertex.ts';
 import {
   createUseStrings,
   format,
@@ -21,9 +24,16 @@ import { setDragSort } from '../card-item/draggable-card.tsx';
 import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import {
+  GroupId,
+  Query,
+} from '../../../../../../../cfds/client/graph/query.ts';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import {
+  mapIterable,
+  filterIterable,
+} from '../../../../../../../base/common.ts';
 
 export interface AssigneesBoardViewProps {
   query: Query<Note>;
@@ -36,23 +46,36 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
   const logger = useLogger();
   const strings = useStrings();
   const toast = useToastController();
-
+  const graph = query.graph;
+  const sortedUsers = useVertices(
+    filterIterable(
+      query.groups.keys(),
+      (id: GroupId | undefined) => typeof id !== 'undefined'
+    )
+  );
   const onDragCancelled = useCallback(
     ({
       reason,
       context,
     }: {
       reason: CANCELLATION_REASONS;
-      context?: { user: VertexManager<User>; card: VertexManager<Note> };
+      context?: {
+        user: VertexManager<User> | undefined;
+        card: VertexManager<Note>;
+      };
     }) => {
       if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
-        eventLogger.action('DRAG_CANCELLED', {
-          source: DragSource.AssigneeBoard,
-          data: {
-            reason: 'USER_NOT_IN_WORKSPACE',
-          },
+        logger.log({
+          severity: 'INFO',
+          event: 'Cancel',
+          flow: 'dnd',
+          type: 'assignee',
+          reason: 'denied',
+          source: 'board',
+          added: context?.user?.key,
+          vertex: context?.card.key,
         });
-        const wsName = context.card.getVertexProxy().workspace.name;
+        const wsName = context?.card.vertex.workspace.name;
         toast.displayToast({
           duration: 5000,
           text: format(strings.userNotInWorkspace, { workspace: wsName }),
@@ -65,63 +88,35 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
         });
       }
     },
-    [toast, strings, eventLogger]
+    [toast, strings, logger]
   );
 
-  const columns = useMemo<UserColumn[]>(() => {
-    const users = new Set(
-      workspaces.reduce((current, x) => {
-        return current.concat(
-          ...Array.from(x.users).map((x) => x.manager as VertexManager<User>)
-        );
-      }, [] as VertexManager<User>[])
-    );
-    const cols = Array.from(users)
-      .map((x) => ({
-        user: x.getVertexProxy(),
-        key: x.key,
-        userManager: x,
-        cards: cards
-          .filter((card) => card.assignees.has(x.getVertexProxy()))
-          .map((card) => card.manager as VertexManager<Note>)
-          .sort(sortMngStampCompare),
-      }))
-      .sort((a, b) => a.user.name.localeCompare(b.user.name));
-    const selected = cols.filter(
-      (x) =>
-        !filters.activeAssignees?.length ||
-        filters.activeAssignees.some((u) => u.key === x.key)
-    );
-    const res = selected.length ? selected : cols;
-    return [
-      {
-        key: 'unassigned',
-        userManager: 'unassigned',
-        cards: cards
-          .filter((card) => card.assignees.size === 0)
-          .map((card) => card.manager as VertexManager<Note>)
-          .sort(sortMngStampCompare),
-      },
-      ...res,
-    ];
-  }, [cards, workspaces, filters.activeAssignees]);
-
   const onDrop = (
-    user: VertexManager<User> | 'unassigned',
+    sourceUser: VertexManager<User> | undefined,
+    destinationUser: VertexManager<User> | undefined,
     items: readonly VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
   ) => {
-    eventLogger.action('DRAG_DONE', {
-      source: DragSource.AssigneeBoard,
-      cardId: item.key,
+    logger.log({
+      severity: 'INFO',
+      event: 'End',
+      flow: 'dnd',
+      type: 'assignee',
+      vertex: item.key,
+      source: 'board',
+      added: destinationUser?.key,
+      removed: sourceUser?.key,
     });
     const card = item.getVertexProxy();
-    if (user === 'unassigned') {
-      card.assignees = new Set();
+    if (typeof destinationUser === 'undefined') {
+      card.clearAssignees();
     } else {
-      card.assignees = new Set([user.getVertexProxy()]);
+      if (sourceUser) {
+        card.assignees.delete(sourceUser.vertex);
+      }
+      card.assignees.add(destinationUser.vertex);
     }
     setDragSort(items, item, relativeTo, dragPosition);
   };
