@@ -52,6 +52,13 @@ export function coreValueCompare(
     return 1;
   }
 
+  if (v1 === null && v2 !== null) {
+    return -1;
+  }
+  if (v1 !== null && v2 === null) {
+    return 1;
+  }
+
   if (options?.extendFunc) {
     const extRes = options.extendFunc(v1, v2);
     if (extRes !== undefined) return extRes;

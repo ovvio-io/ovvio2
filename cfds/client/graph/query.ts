@@ -14,6 +14,7 @@ import { mapIterable, unionIter } from '../../../base/common.ts';
 import { SimpleTimer, Timer } from '../../../base/timer.ts';
 import {
   CancellablePromise,
+  Coroutine,
   CoroutineQueue,
   CoroutineScheduler,
   SchedulerPriority,
@@ -495,9 +496,13 @@ export class Query<
         }
         set.add(key);
       }
+      // TODO: Wrap in a micro task timer to avoid timing issues around
+      // corountine cancellation
       this.emit(EVENT_VERTEX_CHANGED, key, pack);
     } else if (wasInSourceKeys) {
       this._resultKeys.delete(key);
+      // TODO: Wrap in a micro task timer to avoid timing issues around
+      // corountine cancellation
       this.emit(EVENT_VERTEX_DELETED, key, pack);
     }
     if (!this.isLoading && wasInSourceKeys !== this.hasVertex(key)) {
@@ -515,7 +520,7 @@ export class Query<
 
   protected *loadKeysFromSource(): Generator<void> {
     const startTime = performance.now();
-    if (!this.isOpen) {
+    if (!this.isOpen || Coroutine.current()?.shouldRun !== true) {
       this.logger.log({
         severity: 'INFO',
         name: 'QueryCancelled',
@@ -614,7 +619,7 @@ export class Query<
 
   private scheduleSourceScan(): void {
     if (this._scanSourcePromise) {
-      this._scanSourcePromise.cancel();
+      this._scanSourcePromise.cancelImmediately();
     }
     const promise = this.scheduler.schedule(
       this.loadKeysFromSource(),
@@ -622,11 +627,11 @@ export class Query<
       `Query.SourceScan/${this.name}`
     );
     promise.finally(() => {
-      if (this._scanResultsPromise === promise) {
-        this._scanResultsPromise = undefined;
+      if (this._scanSourcePromise === promise) {
+        this._scanSourcePromise = undefined;
       }
     });
-    this._scanResultsPromise = promise;
+    this._scanSourcePromise = promise;
   }
 
   _notifyQueryChanged(): void {
@@ -648,12 +653,12 @@ export class Query<
   private onDependencyChanged(): void {
     // Cancel any previous re-scan
     if (this._scanResultsPromise) {
-      this._scanResultsPromise.cancel();
+      this._scanResultsPromise.cancelImmediately();
     }
     if (this._sourceProducer) {
       // Refresh our source if needed
       if (this._scanSourcePromise) {
-        this._scanSourcePromise.cancel();
+        this._scanSourcePromise.cancelImmediately();
       }
       this.detachFromSource();
       this._source = this._sourceProducer();

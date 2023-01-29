@@ -34,6 +34,7 @@ import {
   mapIterable,
   filterIterable,
 } from '../../../../../../../base/common.ts';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 
 export interface AssigneesBoardViewProps {
   query: Query<Note>;
@@ -46,13 +47,13 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
   const logger = useLogger();
   const strings = useStrings();
   const toast = useToastController();
-  const graph = query.graph;
-  const sortedUsers = useVertices(
+  const sortedUsers = usePartialVertices<User>(
     filterIterable(
       query.groups.keys(),
       (id: GroupId | undefined) => typeof id !== 'undefined'
-    )
-  );
+    ),
+    ['name']
+  ).sort(coreValueCompare);
   const onDragCancelled = useCallback(
     ({
       reason,
@@ -121,20 +122,16 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
     setDragSort(items, item, relativeTo, dragPosition);
   };
 
-  const allowsDrop = (
-    user: VertexManager<User> | 'unassigned',
-    card: VertexManager<Note>
-  ) => {
-    if (user === 'unassigned') {
+  const allowsDrop = (user: User | undefined, note: Note) => {
+    if (typeof user === 'undefined') {
       return true;
     }
-    const proxy = card.getVertexProxy();
     return (
-      proxy.workspace.users.has(user.getVertexProxy()) || {
+      note.workspace.users.has(user) || {
         isAllowed: false,
         context: {
-          user,
-          card,
+          user: user?.manager,
+          card: note.manager,
         },
       }
     );
@@ -142,27 +139,23 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
 
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {columns.map((column) => (
+      {sortedUsers.map((user) => (
         <BoardColumn
-          title={
-            column.userManager === 'unassigned'
-              ? strings.unassigned
-              : column.userManager.getVertexProxy().name
-          }
-          key={column.key}
-          items={column.cards}
-          allowsDrop={(item) => allowsDrop(column.userManager, item)}
+          title={user ? user.name : strings.unassigned}
+          key={user?.key}
+          items={query.groups.get(user?.key)!}
+          allowsDrop={(item) => allowsDrop(user as User, item)}
           onDrop={(item, relativeTo, dragPosition) =>
             onDrop(
-              column.userManager,
-              column.cards,
+              user?.manager,
+              query.groups.get(user?.key)!,
               item,
               relativeTo,
               dragPosition
             )
           }
         >
-          {column.cards.map((card, index) => (
+          {query.groups.get(user?.key)!.map((card, index) => (
             <BoardCard card={card} index={index} key={card.key} />
           ))}
         </BoardColumn>

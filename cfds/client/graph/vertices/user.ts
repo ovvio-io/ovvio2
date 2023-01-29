@@ -2,6 +2,7 @@ import { assert } from '../../../../base/error.ts';
 import { BaseVertex } from './base.ts';
 import { UserSettings } from './user-settings.ts';
 import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 
 export class User extends BaseVertex {
   get avatarUrl(): string | undefined {
@@ -46,5 +47,9 @@ export class User extends BaseVertex {
       this.key + '_settings',
       false
     );
+  }
+
+  compare(other: User): number {
+    return coreValueCompare(this.name, other.name) || super.compare(other);
   }
 }
