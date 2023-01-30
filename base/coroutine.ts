@@ -37,14 +37,14 @@ export interface CancellablePromise<T> extends Promise<T> {
 
 let gActiveCoroutine: Coroutine | undefined;
 
-export class Coroutine {
-  private readonly _generator: Generator<unknown, unknown>;
-  private _doneHandler: () => void;
+export class Coroutine<T = unknown> {
+  readonly name: string | undefined;
+  private readonly _generator: Generator<T, T>;
+  private _doneHandler: (v: T | undefined) => void;
   private _timeSpentMs: number;
   private _completed: boolean;
   private _cancelled = false;
-
-  readonly name: string | undefined;
+  private _value: T | undefined;
 
   /**
    * Pack a generator as a Coroutine instance. This method is designed be used
@@ -60,20 +60,20 @@ export class Coroutine {
    * @returns A new Coroutine instance and an accompanying promise that wraps
    *          it.
    */
-  static pack(
+  static pack<T = unknown>(
     id: number,
-    g: Generator<unknown, unknown>,
+    g: Generator<T, T>,
     name?: string
-  ): [Coroutine, CancellablePromise<void>] {
-    let resolve: () => void;
-    const promise = new Promise<void>((res) => {
-      resolve = res;
+  ): [Coroutine<T>, CancellablePromise<T>] {
+    let resolve: (v: T | undefined) => void;
+    const promise = new Promise<T>((res) => {
+      resolve = res as (v: T | undefined) => void;
     });
-    const coroutine = new Coroutine(id, g, resolve!, name);
-    (promise as CancellablePromise<void>).cancel = () => coroutine.cancel();
-    (promise as CancellablePromise<void>).cancelImmediately = () =>
+    const coroutine = new Coroutine<T>(id, g, resolve!, name);
+    (promise as CancellablePromise<T>).cancel = () => coroutine.cancel();
+    (promise as CancellablePromise<T>).cancelImmediately = () =>
       coroutine.cancelImmediately();
-    return [coroutine, promise as CancellablePromise<void>];
+    return [coroutine, promise as CancellablePromise<T>];
   }
 
   /**
@@ -81,8 +81,8 @@ export class Coroutine {
    *
    * @returns The current coroutine or undefined if called outside a coroutine.
    */
-  static current(): Coroutine | undefined {
-    return gActiveCoroutine;
+  static current<X>(): Coroutine<X> | undefined {
+    return gActiveCoroutine as Coroutine<X>;
   }
 
   /**
@@ -101,8 +101,8 @@ export class Coroutine {
    */
   constructor(
     readonly id: number,
-    generator: Generator,
-    doneHandler: () => void,
+    generator: Generator<T, T>,
+    doneHandler: (v: T | undefined) => void,
     name?: string
   ) {
     this._generator = generator;
@@ -147,6 +147,14 @@ export class Coroutine {
   }
 
   /**
+   * Returns the last yielded value from the underlying generator, or its return
+   * value on completion.
+   */
+  get value(): T | undefined {
+    return this._value;
+  }
+
+  /**
    * Registers a cancellation request with the running code, which may respect
    * it or not. This is the preferred method for cancelling coroutines, since
    * it gives the executing code a chance to run cleanups before exiting.
@@ -170,7 +178,7 @@ export class Coroutine {
     }
     this._completed = true;
     this._cancelled = true;
-    this._doneHandler();
+    this._doneHandler(this.value);
   }
 
   /**
@@ -184,12 +192,13 @@ export class Coroutine {
     if (this._completed) {
       return;
     }
-    gActiveCoroutine = this;
+    gActiveCoroutine = this as Coroutine<unknown>;
     const res = this._generator.next();
     gActiveCoroutine = undefined;
+    this._value = res.value;
     if (res.done === true) {
       this._completed = true;
-      this._doneHandler();
+      this._doneHandler(this.value);
     }
   }
 
@@ -261,11 +270,11 @@ export enum SchedulerPriority {
  * An abstract definition of a Coroutine scheduler.
  */
 export interface Scheduler {
-  schedule(
-    g: Generator<unknown, unknown>,
+  schedule<T>(
+    g: Generator<T, T>,
     priority?: SchedulerPriority,
     name?: string
-  ): CancellablePromise<void>;
+  ): CancellablePromise<T>;
 }
 
 /**
@@ -280,7 +289,7 @@ export interface Scheduler {
 export class CoroutineScheduler implements Scheduler {
   private readonly _timer: Timer;
   private readonly _cycleTimeMs: number;
-  private _scheduledCoroutines: Coroutine[][]; // priority -> Coroutine[]
+  private _scheduledCoroutines: Coroutine<unknown>[][]; // priority -> Coroutine[]
   private _coroutineId: number;
 
   /**
@@ -382,63 +391,122 @@ export class CoroutineScheduler implements Scheduler {
    *
    * @returns A cancellable promise for the coroutine.
    */
-  schedule(
-    g: Generator<unknown, unknown>,
+  schedule<T = unknown>(
+    g: Generator<T, T>,
     priority: SchedulerPriority = SchedulerPriority.Normal,
     name?: string
-  ): CancellablePromise<void> {
-    const [coroutine, promise] = Coroutine.pack(++this._coroutineId, g, name);
+  ): CancellablePromise<T> {
+    const [coroutine, promise] = Coroutine.pack<T>(
+      ++this._coroutineId,
+      g,
+      name
+    );
     const queue = this._scheduledCoroutines[priority];
-    queue.push(coroutine);
+    queue.push(coroutine as Coroutine<unknown>);
     this._timer.schedule();
     return promise;
   }
 
-  map<T>(
+  /**
+   * Maps the given iterator to an array using the mapper function.
+   * The resulting coroutine may be cancelled safely at any time, and its result
+   * will contain a partial array up to the cancellation point.
+   *
+   * @param iter The iterable to map.
+   * @param mapper The mapping function.
+   * @param priority The priority for the newly created coroutine.
+   * @param name An optional name for the newly created coroutine.
+   *
+   * @returns A cancelable promise for the newly scheduled coroutine.
+   */
+  map<T, O = T>(
     iter: Iterable<T>,
-    mapper: (v: T) => void,
+    mapper: (v: T) => O,
     priority = SchedulerPriority.Normal,
     name?: string
-  ): CancellablePromise<void> {
+  ): CancellablePromise<O[]> {
     return this.schedule(mapGenerator(iter, mapper), priority, name);
   }
 }
 
 const kSharedScheduler = new CoroutineScheduler();
 
-function* mapGenerator<T>(
+function* mapGenerator<T, O = T>(
   iter: Iterable<T>,
-  mapper: (v: T) => void
-): Generator<void> {
+  mapper: (v: T) => O
+): Generator<O[], O[]> {
+  const result: O[] = [];
   for (const v of iter) {
-    mapper(v);
-    yield;
+    result.push(mapper(v));
+    yield result;
   }
+  return result;
 }
 
+/**
+ * While CoroutineScheduler executes coroutines concurrently, sometimes you need
+ * serial execution of a specific list of coroutines. CoroutineQueue enables
+ * just that - a serial execution queue of coroutines.
+ *
+ * Coroutines scheduled with a CoroutineQueue are executed one at a time, in
+ * the order in which they were scheduled. A new coroutine will start execution
+ * only after the previously scheduled coroutine had completed execution.
+ *
+ * This class relies on an underlying scheduler for the actual execution. The
+ * queue appears as a single, potentially long running, coroutine for the
+ * underlying scheduler and thus uses a single, fixed, priority for the queue.
+ */
 export class CoroutineQueue implements Scheduler {
+  readonly scheduler: Scheduler;
+  readonly priority: SchedulerPriority;
   private readonly _queue: Coroutine[];
   private _id: number;
 
+  /**
+   * Initialize a new serial execution queue.
+   *
+   * @param scheduler The scheduler in which this entire queue will be
+   *                  scheduled. If not provided, the shared CoroutineScheduler
+   *                  instance will be used.
+   *
+   * @param priority  The execution priority for this entire queue.
+   */
   constructor(
-    readonly scheduler: CoroutineScheduler,
-    readonly priority: SchedulerPriority = SchedulerPriority.Normal
+    scheduler?: Scheduler,
+    priority: SchedulerPriority = SchedulerPriority.Normal
   ) {
+    this.scheduler = scheduler || CoroutineScheduler.sharedScheduler();
+    this.priority = priority;
     this._queue = [];
     this._id = 0;
   }
 
+  /**
+   * Returns the number of coroutines currently scheduled in this queue.
+   */
   get size(): number {
     return this._queue.length;
   }
 
-  schedule(
-    g: Generator,
+  /**
+   * Schedules (appends) a new coroutine to this queue.
+   *
+   * @param g The generator to wrap as Coroutine.
+   *
+   * @param _priority Ignored. The scheduled coroutine uses the queue's priority
+   *                  regardless of the provided value.
+   *
+   * @param name An optional name used for debugging and logging.
+   *
+   * @returns A cancellable promise for the coroutine.
+   */
+  schedule<T = unknown>(
+    g: Generator<T, T>,
     _priority?: SchedulerPriority,
     name?: string
-  ): CancellablePromise<void> {
-    const [coroutine, promise] = Coroutine.pack(++this._id, g, name);
-    this._queue.push(coroutine);
+  ): CancellablePromise<T> {
+    const [coroutine, promise] = Coroutine.pack<T>(++this._id, g, name);
+    this._queue.push(coroutine as Coroutine<unknown>);
     if (this._queue.length === 1) {
       this.scheduler.schedule(this._workCoroutine(), this.priority);
     }
