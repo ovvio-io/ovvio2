@@ -24,9 +24,9 @@ interface DNDCallbacks {
     dragPosition: DragPosition,
     dropZone: string
   ) => void;
-  onDragCancelled?: <T>(e: {
+  onDragCancelled?: (e: {
     reason: CANCELLATION_REASONS;
-    context?: T;
+    context?: any;
   }) => void;
   onDrop?: <T>(
     item: T,

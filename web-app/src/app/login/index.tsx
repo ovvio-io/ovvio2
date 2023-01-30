@@ -1,25 +1,25 @@
-import { uniqueId } from '@ovvio/base/lib/utils';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { RaisedButton } from '@ovvio/styles/lib/components/buttons';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'https://esm.sh/react@18.2.0';
+import { uniqueId } from '../../../../base/common.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { RaisedButton } from '../../../../styles/components/buttons.tsx';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../styles/responsive.ts';
+import { CfdsClientProvider } from '../../core/cfds/react/graph.tsx';
 import {
-  EventLogger,
-  EventLoggerProvider,
-} from '../../core/analytics/index.tsx';
-import { CfdsClientProvider } from 'core/cfds/react/graph';
-import { MarketingParams, useHistory } from 'core/react-utils/history';
-import { electronSSOSignInOnLoad } from 'electronUtils';
-import { getAuth, User } from 'firebase/auth';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  CurrentUser,
-  SessionOrigin,
-  UserProvider,
-  UserStore,
-} from '../../stores/user.ts';
-import { LoginIllustration } from './illustrations';
-import AuthForm from './AuthForm';
+  MarketingParams,
+  useHistory,
+} from '../../core/react-utils/history/index.tsx';
+import { LoginIllustration } from './illustrations.tsx';
+import AuthForm from './AuthForm.tsx';
+import { GlobalLogger, newLogger } from '../../../../logging/log.ts';
+import { LoggerProvider } from '../../core/cfds/react/logger.tsx';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { User } from '../../../../cfds/client/graph/vertices/user.ts';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row, layout.flex],
   },
   ladyContainer: {
-    backgroundColor: theme.background[150],
+    backgroundColor: theme.background[100],
     flexBasis: '50%',
     basedOn: [layout.column, layout.centerCenter, layout.flexSpacer],
     [MediaQueries.Mobile]: {
@@ -56,7 +56,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 interface OnLoginInfo {
-  user: User;
+  userId: string;
   isNew?: boolean;
 }
 
@@ -80,24 +80,26 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 };
 
 export interface SessionInfo {
-  user: UserStore;
+  userId: string;
   sessionId: string;
-  searchParams: MarketingParams;
-  anonymous: boolean;
+  searchParams?: MarketingParams;
 }
 
 interface LoginViewProps {
-  children: any;
+  children: React.ReactNode;
 }
 export default function LoginView({ children }: LoginViewProps) {
-  const isLoading = useRef(true);
+  // const isLoading = useRef(true);
   const history = useHistory();
 
-  const [sessionInfo, setSessionInfo] = useState<SessionInfo>();
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo>({
+    userId: 'ofri',
+    sessionId: uniqueId(),
+  });
 
-  const [processing, setProcessing] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
-  const auth = getAuth();
+  // const auth = getAuth();
 
   const dataRef = useRef({
     history,
@@ -109,70 +111,65 @@ export default function LoginView({ children }: LoginViewProps) {
     };
   });
 
-  useEffect(() => {
-    return auth.onAuthStateChanged(async (user) => {
-      if (isLoading.current) {
-        isLoading.current = false;
-        if (user) {
-          const sessionId = uniqueId();
-          const u = new UserStore(
-            new CurrentUser(user, SessionOrigin.ALREADY_SIGNED_IN, sessionId)
-          );
-          setProcessing(true);
-          const marketingParams =
-            dataRef.current.history.extractMarketingParams(true);
-          try {
-            await u.save();
-          } catch {
-            await auth.signOut();
-            setProcessing(false);
-            return;
-          }
+  // useEffect(() => {
+  //   return auth.onAuthStateChanged(async (user) => {
+  //     if (isLoading.current) {
+  //       isLoading.current = false;
+  //       if (user) {
+  //         const sessionId = uniqueId();
+  //         const u = new UserStore(
+  //           new CurrentUser(user, SessionOrigin.ALREADY_SIGNED_IN, sessionId)
+  //         );
+  //         setProcessing(true);
+  //         const marketingParams =
+  //           dataRef.current.history.extractMarketingParams(true);
+  //         try {
+  //           await u.save();
+  //         } catch {
+  //           await auth.signOut();
+  //           setProcessing(false);
+  //           return;
+  //         }
 
-          setSessionInfo({
-            user: u,
-            sessionId,
-            searchParams: marketingParams,
-            anonymous: user.isAnonymous,
-          });
-        }
-        setProcessing(false);
-      } else if (!user) {
-        setSessionInfo(undefined);
-      }
-    });
-  }, [auth]);
-  const eventLogger = useMemo(
-    () => new EventLogger(sessionInfo),
-    [sessionInfo]
-  );
-
+  //         setSessionInfo({
+  //           user: u,
+  //           sessionId,
+  //           searchParams: marketingParams,
+  //           anonymous: user.isAnonymous,
+  //         });
+  //       }
+  //       setProcessing(false);
+  //     } else if (!user) {
+  //       setSessionInfo(undefined);
+  //     }
+  //   });
+  // }, [auth]);
   const onLogin: OnLoginInfoFunc = async (info) => {
     setProcessing(true);
 
-    try {
-      const sessionId = uniqueId();
-      const origin =
-        info.isNew !== undefined && info.isNew
-          ? SessionOrigin.SIGN_UP
-          : SessionOrigin.SIGN_IN;
-      const u = new UserStore(new CurrentUser(info.user, origin, sessionId));
-      await u.save();
-      const marketingParams = history.extractMarketingParams(true);
-      setSessionInfo({
-        user: u,
-        sessionId,
-        searchParams: marketingParams,
-        anonymous: info.user.isAnonymous,
-      });
-    } catch {
-      auth.signOut();
-    } finally {
-      setProcessing(false);
-    }
+    // try {
+    //   const sessionId = uniqueId();
+    //   const origin =
+    //     info.isNew !== undefined && info.isNew
+    //       ? SessionOrigin.SIGN_UP
+    //       : SessionOrigin.SIGN_IN;
+    //   const u = new UserStore(new CurrentUser(info.user, origin, sessionId));
+    //   await u.save();
+    //   const marketingParams = history.extractMarketingParams(true);
+    //   setSessionInfo({
+    //     user: u,
+    //     sessionId,
+    //     searchParams: marketingParams,
+    //     anonymous: info.user.isAnonymous,
+    //   });
+    // } catch {
+    //   auth.signOut();
+    // } finally {
+    //   setProcessing(false);
+    // }
   };
 
-  electronSSOSignInOnLoad(onLogin).then(() => {});
+  // electronSSOSignInOnLoad(onLogin).then(() => {});
 
   if (processing) {
     return null;
@@ -180,16 +177,14 @@ export default function LoginView({ children }: LoginViewProps) {
 
   if (sessionInfo) {
     return (
-      <UserProvider value={sessionInfo.user}>
-        <EventLoggerProvider eventLogger={eventLogger}>
-          <CfdsClientProvider
-            user={sessionInfo.user}
-            sessionId={sessionInfo.sessionId}
-          >
-            {children}
-          </CfdsClientProvider>
-        </EventLoggerProvider>
-      </UserProvider>
+      <LoggerProvider sessionInfo={sessionInfo}>
+        <CfdsClientProvider
+          userId={sessionInfo.userId}
+          sessionId={sessionInfo.sessionId}
+        >
+          {children}
+        </CfdsClientProvider>
+      </LoggerProvider>
     );
   }
 
@@ -197,5 +192,5 @@ export default function LoginView({ children }: LoginViewProps) {
 }
 
 export const LogoutButton = () => (
-  <RaisedButton onClick={() => getAuth().signOut()}>Logout</RaisedButton>
+  <RaisedButton onClick={() => {} /*getAuth().signOut()*/}>Logout</RaisedButton>
 );

@@ -1,14 +1,12 @@
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
-import VersionMismatchView from '../../../app/version-mismatch/index.tsx';
 import React, {
   useContext,
   useEffect,
   useMemo,
   useState,
 } from 'https://esm.sh/react@18.2.0';
-import { CurrentUser } from '../../../stores/user.ts';
 import { NoteSearchEngine } from '../../../../../cfds/client/graph/note-search.ts';
 import { useLogger } from './logger.tsx';
 import { NS_FILTER } from '../../../../../cfds/base/scheme-types.ts';
@@ -18,7 +16,6 @@ import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-set
 type ContextProps = {
   graphManager?: GraphManager;
   sessionId?: string;
-  user?: CurrentUser;
 };
 
 export const CFDSContext = React.createContext<ContextProps>({});
@@ -68,7 +65,7 @@ export function useCfdsContext(): ContextProps {
 }
 
 interface CfdsClientProviderProps {
-  user: any;
+  userId: string;
   sessionId: string;
   children: React.ReactNode;
 }
@@ -81,29 +78,29 @@ export const KeyNotesFilter = '_NotesFilter';
 export const KeyTasksFilter = '_TasksFilter';
 
 export function CfdsClientProvider({
-  user,
+  userId,
   sessionId,
   children,
 }: CfdsClientProviderProps) {
   const logger = useLogger();
-  const sessionPtrKey = `${user.id}/${sessionId}`;
+  const sessionPtrKey = `${userId}/${sessionId}`;
 
   const graphManager = useMemo(() => {
     const manager = new GraphManager(
-      user.id,
+      userId,
       (key: string) => key !== sessionPtrKey,
       'http://localhost'
     );
 
     // Create our local filter holders
-    manager.createVertex(NS_FILTER, { owner: user.id }, KeyNotesFilter, true);
-    manager.createVertex(NS_FILTER, { owner: user.id }, KeyTasksFilter, true);
+    manager.createVertex(NS_FILTER, { owner: userId }, KeyNotesFilter, true);
+    manager.createVertex(NS_FILTER, { owner: userId }, KeyTasksFilter, true);
     // Load cached contents
     manager.loadLocalContents();
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
     return manager;
-  }, [user, sessionId, sessionPtrKey]);
+  }, [userId, sessionId, sessionPtrKey]);
 
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
@@ -123,10 +120,9 @@ export function CfdsClientProvider({
     () => ({
       graphManager: graphManager,
       sessionId,
-      user,
       searchEngine: new NoteSearchEngine(graphManager),
     }),
-    [graphManager, sessionId, user]
+    [graphManager, sessionId]
   );
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;

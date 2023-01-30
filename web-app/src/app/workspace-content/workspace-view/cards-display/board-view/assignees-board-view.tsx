@@ -40,6 +40,11 @@ export interface AssigneesBoardViewProps {
   query: Query<Note>;
 }
 
+interface AssigneesDnDContext {
+  user: VertexManager<User> | undefined;
+  card: VertexManager<Note>;
+}
+
 const useStrings = createUseStrings(localization);
 
 export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
@@ -60,10 +65,7 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
       context,
     }: {
       reason: CANCELLATION_REASONS;
-      context?: {
-        user: VertexManager<User> | undefined;
-        card: VertexManager<Note>;
-      };
+      context?: AssigneesDnDContext;
     }) => {
       if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
         logger.log({
@@ -93,13 +95,14 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
   );
 
   const onDrop = (
-    sourceUser: VertexManager<User> | undefined,
-    destinationUser: VertexManager<User> | undefined,
+    // sourceUser: VertexManager<User> | undefined,
+    destinationUser: VertexManager<User>, // | undefined,
     items: readonly VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
   ) => {
+    const card = item.getVertexProxy();
     logger.log({
       severity: 'INFO',
       event: 'End',
@@ -108,17 +111,16 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
       vertex: item.key,
       source: 'board',
       added: destinationUser?.key,
-      removed: sourceUser?.key,
+      removed: Array.from(card.assignees).map((u) => u.key),
     });
-    const card = item.getVertexProxy();
-    if (typeof destinationUser === 'undefined') {
-      card.clearAssignees();
-    } else {
-      if (sourceUser) {
-        card.assignees.delete(sourceUser.vertex);
-      }
-      card.assignees.add(destinationUser.vertex);
-    }
+    // if (typeof destinationUser === 'undefined') {
+    card.clearAssignees();
+    // } else {
+    // if (sourceUser) {
+    // card.assignees.delete(sourceUser.vertex);
+    // }
+    card.assignees.add(destinationUser.vertex);
+    // }
     setDragSort(items, item, relativeTo, dragPosition);
   };
 
@@ -132,7 +134,7 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
         context: {
           user: user?.manager,
           card: note.manager,
-        },
+        } as AssigneesDnDContext,
       }
     );
   };
@@ -147,7 +149,7 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
           allowsDrop={(item) => allowsDrop(user as User, item)}
           onDrop={(item, relativeTo, dragPosition) =>
             onDrop(
-              user?.manager,
+              user!.manager,
               query.groups.get(user?.key)!,
               item,
               relativeTo,

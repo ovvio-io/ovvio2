@@ -35,7 +35,7 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       return;
     }
 
-    const storage = new LogClientIDBStorage(sessionInfo.user.id);
+    const storage = new LogClientIDBStorage(sessionInfo.userId);
     const client = new LogClient(
       storage,
       'http://localhost',
