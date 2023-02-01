@@ -65,4 +65,5 @@ export interface ClientEventEntry extends BaseLogEntry {
   action?: ToggleAction;
   flag?: boolean;
   flow?: UIFlow;
+  id?: string;
 }

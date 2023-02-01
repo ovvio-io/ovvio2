@@ -4,7 +4,6 @@ import { BaseVertex } from './base.ts';
 import { User } from './user.ts';
 import { Query } from '../query.ts';
 import { Note } from './note.ts';
-import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 
 export class Workspace extends BaseVertex {
   get parent(): Vertex | undefined {

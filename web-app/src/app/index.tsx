@@ -146,6 +146,7 @@ function Root({ style }: AppProps & { style?: any }) {
                 <BrowserRouter>
                   <Route path="/new">
                     <CreateWorkspaceView
+                      source="bar:workspace"
                       onWorkspaceCreated={(wsKey) => {
                         workspacesQuery.forEach(
                           (ws) => (ws.selected = ws.key === wsKey)

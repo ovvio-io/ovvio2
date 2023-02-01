@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'https://esm.sh/react@18.2.0';
+import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { WorkspaceCreated, WorkspaceForm } from './workspace-form.tsx';
+import { WorkspaceForm } from './workspace-form.tsx';
 import { InviteForm } from '../../shared/invite-form/index.tsx';
+import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
+import { UISource } from '../../../../logging/client-events.ts';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -46,60 +49,43 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 interface CreateWorkspaceViewProps {
+  source: UISource;
   onWorkspaceCreated?: (wsKey: string) => void;
 }
 export const CreateWorkspaceView = ({
+  source,
   onWorkspaceCreated,
 }: CreateWorkspaceViewProps) => {
   const styles = useStyles();
   const [ws, setWs] = useState<VertexManager<Workspace>>();
-  const workspaces = useMemo(() => [ws], [ws]);
+  const navigate = useNavigate();
 
-  const onCreated = (result: WorkspaceCreated) => {
-    let wsKey: string;
-    if (result.loaded) {
-      setWs(result.workspace);
-      wsKey = result.workspace.key;
-    } else {
-      wsKey = (result as any).workspaceId;
-      history.push(LOGIN);
-    }
+  const onCreated = useCallback(
+    (result: VertexManager<Workspace>) => {
+      setWs(result);
+      if (onWorkspaceCreated) {
+        onWorkspaceCreated(result.key);
+      }
+    },
+    [setWs]
+  );
 
-    if (onWorkspaceCreated) {
-      onWorkspaceCreated(wsKey);
-    }
-  };
-
-  const close = () => {
-    history.push(LOGIN);
-  };
+  const closeView = useCallback(() => {
+    navigate('/login');
+  }, [navigate]);
 
   return (
-    <UserOnboard
-      disabled={true}
-      steps={tutorialSteps}
-      tutorialId="CREATE_WORKSPACE"
-    >
-      <div className={cn(styles.root)}>
-        <Toolbar />
-        <div className={cn(styles.content)}>
-          <div className={cn(styles.card)}>
-            {ws ? (
-              <InviteForm
-                workspaces={workspaces}
-                showOnboard={true}
-                close={close}
-                source="new-workspace"
-              />
-            ) : (
-              <WorkspaceForm
-                location={location}
-                onWorkspaceCreated={onCreated}
-              />
-            )}
-          </div>
+    <div className={cn(styles.root)}>
+      <Toolbar />
+      <div className={cn(styles.content)}>
+        <div className={cn(styles.card)}>
+          {ws ? (
+            <InviteForm showOnboard={true} close={closeView} source={source} />
+          ) : (
+            <WorkspaceForm source={source} onWorkspaceCreated={onCreated} />
+          )}
         </div>
       </div>
-    </UserOnboard>
+    </div>
   );
 };

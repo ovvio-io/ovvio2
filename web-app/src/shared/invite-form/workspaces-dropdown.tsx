@@ -1,19 +1,20 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import WorkspaceIcon from 'shared/workspace-icon';
+import React from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import WorkspaceIcon from '../workspace-icon/index.tsx';
 
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { IconDropDownArrow } from '../../../../styles/components/icons/index.ts';
 import DropDown, {
   DropDownItem,
-} from '@ovvio/styles/lib/components/inputs/drop-down';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import localization from './invite.strings.json';
+} from '../../../../styles/components/inputs/drop-down.tsx';
+import { Text } from '../../../../styles/components/texts.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import localization from './invite.strings.json' assert { type: 'json' };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   workspaces: {
     minWidth: styleguide.gridbase * 24,
     border: `1px solid ${theme.background.placeholderText}`,
@@ -72,9 +73,9 @@ export function WorkspaceItem({
 }
 
 interface WorkspacesDropdownProps {
-  workspaces: VertexManager<Workspace>[];
-  selectedWorkspace: VertexManager<Workspace>;
-  setSelectedWorkspace: (ws: VertexManager<Workspace>) => void;
+  workspaces: readonly VertexManager<Workspace>[];
+  selectedWorkspace: VertexManager<Workspace> | undefined;
+  setSelectedWorkspace: (ws: VertexManager<Workspace> | undefined) => void;
   className?: string;
   placeholder?: string;
 }
@@ -122,7 +123,7 @@ export function WorkspacesDropdown({
       onChange={(ws: VertexManager<Workspace>) => setSelectedWorkspace(ws)}
       renderSelected={renderSelected}
     >
-      {workspaces.map(ws => (
+      {workspaces.map((ws) => (
         <DropDownItem key={ws.key} value={ws} className={cn(styles.listItem)}>
           <WorkspaceItem workspace={ws} />
         </DropDownItem>

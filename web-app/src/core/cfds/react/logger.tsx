@@ -21,17 +21,23 @@ import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
 import { kSyncConfigClient } from '../../../../../net/base-client.ts';
 import { ConsoleLogStream } from '../../../../../logging/stream.ts';
 
-const loggerContext = React.createContext<Logger>(GlobalLogger);
+interface LoggerContext {
+  logger: Logger;
+}
+
+const loggerContext = React.createContext<LoggerContext>({
+  logger: GlobalLogger,
+});
 
 interface LoggerProviderProps {
   sessionInfo?: SessionInfo;
   children: React.ReactNode;
 }
 export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
-  const [logger, setLogger] = useState(GlobalLogger);
+  const [ctx, setCtx] = useState<LoggerContext>({ logger: GlobalLogger });
   useEffect(() => {
     if (!sessionInfo) {
-      setLogger(GlobalLogger);
+      setCtx({ logger: GlobalLogger, flowId: ctx.flowId });
       return;
     }
 
@@ -42,7 +48,7 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       kSyncConfigClient
     );
     const clientLogger = newLogger([client, new ConsoleLogStream('DEBUG')]);
-    setLogger(clientLogger);
+    setCtx({ logger: clientLogger, flowId: ctx.flowId });
     const unloadHandler = () => {
       client.close();
       storage.close();
@@ -60,12 +66,12 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
     };
   }, [sessionInfo]);
   return (
-    <loggerContext.Provider value={logger}>{children}</loggerContext.Provider>
+    <loggerContext.Provider value={ctx}>{children}</loggerContext.Provider>
   );
 }
 
-export function useLogger() {
-  return useContext(loggerContext);
+export function useLogger(): Logger {
+  return useContext(loggerContext).logger;
 }
 
 const K_DB_VERSION = 1;

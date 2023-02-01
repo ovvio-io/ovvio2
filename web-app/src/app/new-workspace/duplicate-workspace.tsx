@@ -1,13 +1,13 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { createUseStrings } from 'core/localization';
-import React, { useEffect, useState } from 'react';
-import { WorkspacesDropdown } from 'shared/invite-form/workspaces-dropdown';
-import localization from './new-workspace.strings.json';
+import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import { WorkspacesDropdown } from '../../shared/invite-form/workspaces-dropdown.tsx';
+import localization from './new-workspace.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(
   () => ({
@@ -70,7 +70,7 @@ function DuplicateToggle({
   const styles = useStyles();
   const strings = useStrings();
 
-  const onClick = () => setShouldDuplicate(x => !x);
+  const onClick = () => setShouldDuplicate((x) => !x);
 
   return (
     <div className={cn(styles.toggle)} onClick={onClick}>
@@ -91,9 +91,9 @@ function DuplicateToggle({
 }
 
 export interface DuplicateWorkspaceViewProps {
-  workspaces: VertexManager<Workspace>[];
-  setWorkspace: (ws: VertexManager<Workspace>) => void;
-  selectedWorkspace: VertexManager<Workspace>;
+  workspaces: readonly VertexManager<Workspace>[];
+  setWorkspace: (ws: VertexManager<Workspace> | undefined) => void;
+  selectedWorkspace: VertexManager<Workspace> | undefined;
   className?: string;
 }
 
@@ -109,7 +109,7 @@ export function DuplicateWorkspaceView({
   const [shouldDuplicate, setShouldDuplicate] = useState(!!selectedWorkspace);
   useEffect(() => {
     if (!shouldDuplicate) {
-      setWorkspace(null);
+      setWorkspace(undefined);
     }
   }, [shouldDuplicate, setWorkspace]);
   return (

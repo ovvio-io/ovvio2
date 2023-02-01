@@ -13,11 +13,7 @@ import {
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import {
-  DataType,
-  NS_NOTES,
-  SchemeNamespace,
-} from '../../base/scheme-types.ts';
+import { DataType, NS_NOTES } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
@@ -95,6 +91,9 @@ export class GraphManager extends VertexSource {
     this._repoClients = new Map();
     this._baseServerUrl = baseServerUrl;
     this._notesSearch = new NoteSearchEngine(this);
+
+    // Automatically init the directory as everything depends on its presence.
+    this.repository('/sys/dir');
   }
 
   close(): void {
@@ -171,7 +170,9 @@ export class GraphManager extends VertexSource {
         //    discovered commits.
         this.getVertexManager(c.key).scheduleCommitIfNeeded();
 
-        // Any kind of activity needs to reset the sync timer
+        // Any kind of activity needs to reset the sync timer. This causes
+        // the initial sync to run at full speed, which is a desired side
+        // effect.
         this._repoClients.get(id)?.touch();
       });
       this._repoById.set(id, repo);
@@ -199,7 +200,17 @@ export class GraphManager extends VertexSource {
   }
 
   hasVertex(key: string): boolean {
-    return this._vertManagers.has(key);
+    if (this._vertManagers.has(key)) {
+      return true;
+    }
+    // We may have not loaded this vertex yet, but do have it in one of our
+    // underlying repositories. This still qualifies as a hit.
+    for (const repo of this._repoById.values()) {
+      if (repo.hasKey(key)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   getRootVertex<T extends Vertex>(): T {
@@ -329,8 +340,9 @@ export class GraphManager extends VertexSource {
   exportSubGraph(
     srcKey: string,
     distance: number,
-    excludeNs: string[] = [SchemeNamespace.INVITES],
-    editRecord: (r: Record) => void = () => {}
+    excludeNs: string[] = [],
+    editRecord: (r: Record) => void = () => {},
+    skipMissingRefs = true
   ): ReadonlyJSONObject {
     const rootKey = this.rootKey;
     const result: JSONObject = {};
@@ -362,9 +374,19 @@ export class GraphManager extends VertexSource {
         continue;
       }
       // Skip already visited vertices
-      if (result.hasOwnProperty(key)) {
+      if (typeof result[key] !== 'undefined') {
         continue;
       }
+
+      // Delete any missing refs if needed
+      if (skipMissingRefs) {
+        for (const k of vert.outRefs) {
+          if (!this.hasVertex(k)) {
+            deletedKeys.add(k);
+          }
+        }
+      }
+
       const record = vert.record.clone();
       record.rewriteRefs(rewriteKeys, deletedKeys);
       editRecord(record);
