@@ -94,13 +94,9 @@ const useStyles = makeStyles((theme) => ({
 
 const useStrings = createUseStrings(localization);
 
-export interface CardsDisplayProps {
-  selectedWorkspaces: VertexManager<Workspace>[];
-}
-
 let firstLoad = true;
 
-export function CardsDisplay({ selectedWorkspaces }: CardsDisplayProps) {
+export function CardsDisplay() {
   const styles = useStyles();
   const { isInDemo } = useDemoInfo();
   const [viewType, setViewType] = useState(

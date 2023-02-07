@@ -4,9 +4,10 @@ import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import Toolbar, { useStyles as toolbarStyles } from './toolbar/index.tsx';
 import { layout } from '../../../../../styles/index.ts';
 import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx';
-import NotesView from './note-editor/index.tsx';
+import NoteView from './note-editor/index.tsx';
 import { CardsDisplay } from './cards-display/index.tsx';
 import { EmptyState } from './empty-state/index.tsx';
+import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -42,30 +43,23 @@ interface ContentProps {
 
 export default function WorkspaceContentView({ className }: ContentProps) {
   const styles = useStyles();
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+
   return (
     <div className={cn(styles.main, className)}>
       <Toolbar />
       <DueDateEditor>
         <div className={cn(styles.content)}>
           <div className={cn(styles.router)}>
-            <Switch>
-              <Route
-                path={`/:workspaceId/notes/:noteId`}
-                render={(props: any) => <NotesView {...props} />}
-              />
-              <Route
-                path="/"
-                exact
-                render={() =>
-                  selectedWorkspaces.length ? (
-                    <CardsDisplay selectedWorkspaces={selectedWorkspaces} />
-                  ) : (
-                    <EmptyState />
-                  )
-                }
-              />
-              <Route path="/" render={() => <Redirect to="/" />} />
-            </Switch>
+            <Route path={`/:workspaceId/notes/:noteId`}>
+              <NoteView />
+            </Route>
+            <Route path="/">
+              selectedWorkspacesQuery.length ? (
+              <CardsDisplay />
+              ) : (
+              <EmptyState />)
+            </Route>
           </div>
         </div>
       </DueDateEditor>
