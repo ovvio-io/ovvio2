@@ -14,6 +14,8 @@ import {
   log,
   Logger,
   newLogger,
+  resetGlobalLoggerStreams,
+  setGlobalLoggerStreams,
 } from '../../../../../logging/log.ts';
 import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
 import { SessionInfo } from '../../../app/login/index.tsx';
@@ -37,7 +39,7 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
   const [ctx, setCtx] = useState<LoggerContext>({ logger: GlobalLogger });
   useEffect(() => {
     if (!sessionInfo) {
-      setCtx({ logger: GlobalLogger, flowId: ctx.flowId });
+      setCtx({ logger: GlobalLogger });
       return;
     }
 
@@ -47,9 +49,15 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       'http://localhost',
       kSyncConfigClient
     );
-    const clientLogger = newLogger([client, new ConsoleLogStream('DEBUG')]);
-    setCtx({ logger: clientLogger, flowId: ctx.flowId });
+    // Rather than using a different logger, we change the GlobalLogger's
+    // streams to match the current user. This diverts logs from the entire
+    // client stack rather than just UI stuff rendered with react.
+    const streams = [client, new ConsoleLogStream('DEBUG')];
+    setGlobalLoggerStreams(streams);
+    // const clientLogger = newLogger([client, new ConsoleLogStream('DEBUG')]);
+    // setCtx({ logger: clientLogger });
     const unloadHandler = () => {
+      resetGlobalLoggerStreams();
       client.close();
       storage.close();
     };
@@ -57,12 +65,17 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
     addEventListener('unload', unloadHandler);
     return () => {
       removeEventListener('unload', unloadHandler);
-      clientLogger.log({
+      // Log this session's end
+      GlobalLogger.log({
         severity: 'INFO',
         event: 'SessionEnd',
       });
-      client.close();
-      storage.close();
+      // Reset our global logger to default mode
+      resetGlobalLoggerStreams();
+      client.sync().finally(() => {
+        client.close();
+        storage.close();
+      });
     };
   }, [sessionInfo]);
   return (

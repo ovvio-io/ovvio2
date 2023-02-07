@@ -24,6 +24,41 @@ export const SeverityCodes: { [key in Severity]: number } = {
   DEFAULT: 0,
 };
 
+export function SeverityCodeFromSeverity(s: Severity): number {
+  return SeverityCodes[s];
+}
+
+export function SeverityFromCode(code: number): Severity {
+  switch (code) {
+    case SeverityCodes.EMERGENCY:
+      return 'EMERGENCY';
+
+    case SeverityCodes.ALERT:
+      return 'ALERT';
+
+    case SeverityCodes.CRITICAL:
+      return 'CRITICAL';
+
+    case SeverityCodes.ERROR:
+      return 'ERROR';
+
+    case SeverityCodes.WARNING:
+      return 'WARNING';
+
+    case SeverityCodes.NOTICE:
+      return 'NOTICE';
+
+    case SeverityCodes.INFO:
+      return 'INFO';
+
+    case SeverityCodes.DEBUG:
+      return 'DEBUG';
+
+    case SeverityCodes.DEFAULT:
+    default:
+      return 'DEFAULT';
+  }
+}
 export interface BaseLogEntry extends CoreObject {
   severity: Severity;
   message?: string;

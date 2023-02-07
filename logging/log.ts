@@ -16,20 +16,19 @@ export type LogEntry =
   | MetricLogEntry
   | ClientEventEntry;
 
-let gLogStreams: LogStream[] = [new ConsoleLogStream()];
+// TODO: Capture anonymous logs on client and sync them with the server
+const kDefaultLoggerStreams = [new ConsoleLogStream()];
+
+let gLogStreams: LogStream[] = kDefaultLoggerStreams;
 
 let gLogLevel = SeverityCodes.DEFAULT;
 
-export function setLogStreams(streams: LogStream[]): void {
+export function setGlobalLoggerStreams(streams: LogStream[]): void {
   gLogStreams = streams;
 }
 
-export function getLogLevel(): number {
-  return gLogLevel;
-}
-
-export function setLogLevel(level: number): void {
-  gLogLevel = level;
+export function resetGlobalLoggerStreams(): void {
+  gLogStreams = kDefaultLoggerStreams;
 }
 
 export function log(entry: LogEntry, outputStreams = gLogStreams): void {
@@ -53,4 +52,8 @@ export function newLogger(outputStreams: LogStream[]): Logger {
   };
 }
 
-export const GlobalLogger = newLogger(gLogStreams);
+export const GlobalLogger = {
+  log(entry: LogEntry): void {
+    log(entry, gLogStreams);
+  },
+};

@@ -320,7 +320,7 @@ export abstract class BaseClient<
   }
 
   close() {
-    this.startSyncing();
+    this.stopSyncing();
     this._closed = true;
     this._setIsOnline(false);
   }
