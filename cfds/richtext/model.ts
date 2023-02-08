@@ -20,7 +20,8 @@ export type MarkupNode =
   | SpanNode
   | ObjectNode
   | HyperlinkNode
-  | ImageNode;
+  | ImageNode
+  | MentionElement;
 
 export interface ParagraphNode extends ElementNode {
   readonly tagName: 'p';
@@ -138,4 +139,10 @@ export interface InlineTaskNode extends ElementNode {
   tags?: Set<string>;
   dueDate?: Date;
   status?: number;
+}
+
+export interface MentionElement extends ElementNode {
+  tagName: 'mention';
+  pluginId: string;
+  isLocal: true;
 }

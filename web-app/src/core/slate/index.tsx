@@ -23,10 +23,10 @@ import {
 } from './plugins/base.tsx';
 import { createAssigneesPlugin } from './mentions/assignees.tsx';
 import { useCurrentUser } from '../cfds/react/vertex.ts';
-import { CARD_SOURCE } from '../../shared/card/index.tsx';
 import { isDefined } from '../../../../base/comparisons.ts';
 import { createLinkDecoration } from './plugins/link-decoration/index.tsx';
 import { useLogger } from '../cfds/react/logger.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
 
 export function createOvvioEditor(getNote?: () => VertexManager<Note>): Editor {
   return withCfds(withCards(withReact(withMentions(createEditor())), getNote));
@@ -37,10 +37,9 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
   plugins: PluginStack;
   handlers: EditorHandler;
 } {
-  const { sessionId, user } = useCfdsContext();
+  const { sessionId } = useCfdsContext();
   const noteManagerRef = useRef(noteManager);
   const currentUser = useCurrentUser();
-  const userRef = useRef(currentUser);
   const editor = useMemo(
     () => createOvvioEditor(() => noteManagerRef.current),
     []
@@ -51,9 +50,6 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
     noteManagerRef.current = noteManager;
   }, [noteManager]);
 
-  useEffect(() => {
-    userRef.current = currentUser;
-  }, [currentUser]);
   const plugins = useMemo(
     () =>
       createPluginStack([
@@ -65,20 +61,20 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
         createNumberedListPlugin(editor),
         createCardPlugin(
           editor,
-          () => noteManagerRef.current,
-          () => userRef.current,
+          () => noteManager,
+          () => currentUser,
           logger
         ),
         createLinkDecoration(),
         createBaseBodyPlugin(editor),
       ]),
-    [editor, logger]
+    [editor, logger, currentUser, noteManager]
   );
   const handlers = useCfdsEditor(
     noteManager,
     'body',
     editor,
-    `${user?.id || 'anonymous'}/${sessionId}`,
+    `${currentUser.key}/${sessionId}`,
     { undoAddBodyRefs: true }
   );
 
@@ -102,19 +98,20 @@ const DEFAULT_OPTS: UseTitleEditorOptions = {
 export function useTitleEditor(
   note: VertexManager<Note>,
   DefaultComponent: React.ReactNode | React.ComponentType,
-  source?: CARD_SOURCE,
+  source?: UISource,
   opts: Partial<UseTitleEditorOptions> = {}
 ): {
   editor: Editor;
   plugins: PluginStack;
   handlers: EditorHandler;
-  source?: CARD_SOURCE;
+  source?: UISource;
 } {
   const { onFocusNext } = {
     ...DEFAULT_OPTS,
     ...opts,
   };
-  const { sessionId, user } = useCfdsContext();
+  const { sessionId } = useCfdsContext();
+  const user = useCurrentUser();
   const noteRef = useRef(note);
   useEffect(() => {
     noteRef.current = note;
@@ -125,13 +122,13 @@ export function useTitleEditor(
     () =>
       createPluginStack(
         [
-          !source || source !== CARD_SOURCE.LIST
+          !source || source !== 'list'
             ? createTagsPlugin({
                 canOpen: () => true,
                 editor,
               })
             : undefined,
-          !source || source !== CARD_SOURCE.LIST
+          !source || source !== 'list'
             ? createAssigneesPlugin({
                 canOpen: () => true,
                 editor,
@@ -146,7 +143,7 @@ export function useTitleEditor(
     note,
     'title',
     editor,
-    `${user?.id || 'anonymous'}/${sessionId}`
+    `${user.key}/${sessionId}`
   );
 
   return {

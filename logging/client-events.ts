@@ -13,9 +13,12 @@ export type ClientEvent =
   | 'End'
   | 'Cancel'
   | 'Navigation'
-  | 'Create';
+  | 'Create'
+  | 'Delete';
 
 export type SettingsType = 'settings:workspace' | 'settings:tags';
+
+export type EditorUISource = 'editor:task-cta' | 'editor:key-down';
 
 export type UISource =
   | 'list'
@@ -26,7 +29,8 @@ export type UISource =
   | 'invite'
   | 'click-outside'
   | 'close-button'
-  | SettingsType;
+  | SettingsType
+  | EditorUISource;
 
 export type MetadataType =
   | 'attachment'

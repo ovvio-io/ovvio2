@@ -10,7 +10,8 @@ import {
   BaseRange,
   Transforms,
   Descendant,
-} from 'slate';
+} from 'https://esm.sh/slate@0.87.0';
+import { notReached } from '../../../../../base/error.ts';
 
 type ElementMatch<T extends Element> =
   | ((node: Element, path: Path) => node is T)
@@ -21,9 +22,7 @@ export enum NodeToggleStatus {
   Partial,
   On,
 }
-type Fn<A, B, C> = (a: A, b: B, c: C) => any;
-type ExtractThirdParam<T> = T extends Fn<unknown, unknown, infer C> ? C : never;
-type SetNodesOptions = ExtractThirdParam<typeof Transforms.setNodes>;
+type SetNodesOptions = Parameters<typeof Transforms.setNodes>[2];
 
 export const ElementUtils = {
   getSingleElement<T extends Element>(
@@ -69,6 +68,7 @@ export const ElementUtils = {
       }
       [node, path] = Editor.node(editor, Path.parent(path));
     }
+    notReached();
   },
   isEmptyElement(value: any): boolean {
     if (!Element.isElement(value)) {

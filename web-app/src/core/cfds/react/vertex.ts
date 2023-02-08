@@ -319,5 +319,5 @@ export function usePartialVertices<
 
 export function useCurrentUser() {
   const graph = useGraphManager();
-  return useVertexByKey<User>(graph.rootKey);
+  return useVertexByKey<User>(graph.rootKey)!;
 }

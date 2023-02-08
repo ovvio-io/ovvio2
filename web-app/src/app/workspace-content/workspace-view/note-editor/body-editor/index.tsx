@@ -1,23 +1,26 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { useBodyEditor } from 'core/slate';
-import { EditableCardContext } from 'core/slate/elements/card.element';
-import { SelectionUtils } from 'core/slate/utils/selection-utils';
-import { useObservable } from 'core/state';
-import React, { MouseEvent, useImperativeHandle } from 'react';
-import { Node } from 'slate';
-import { Editable, Slate } from 'slate-react';
-import { CurrentUser } from 'stores/user';
-import { styleguide } from '@ovvio/styles/lib';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { EventCategory, useEventLogger } from '../../../../../core/analytics';
-import { FocusReporter } from '../focus-reporter';
-import { EditorTutorial } from './editor-tutorial';
-import { FloatingMenu } from './floating-menu';
-import TaskCtaView from './task-cta-view';
+import React, {
+  MouseEvent,
+  useImperativeHandle,
+} from 'https://esm.sh/react@18.2.0';
+import { Node } from 'https://esm.sh/slate@0.87.0';
+import { Editable, Slate } from 'https://esm.sh/slate-react@0.87.1';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import { useBodyEditor } from '../../../../../core/slate/index.tsx';
+import { EditableCardContext } from '../../../../../core/slate/elements/card.element/index.tsx';
+import { SelectionUtils } from '../../../../../core/slate/utils/selection-utils.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { FocusReporter } from '../focus-reporter.tsx';
+import { FloatingMenu } from './floating-menu.tsx';
+import TaskCtaView from './task-cta-view.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   editor: {
     margin: '0 auto',
     boxSizing: 'border-box',
@@ -74,24 +77,21 @@ function usePlaceholder(cardManager: VertexManager<Note>): string {
 
 interface BodyProps {
   cardManager: VertexManager<Note>;
-  currentUser: CurrentUser;
   className?: string;
   isRtl?: boolean;
-  dispatch: (any) => void;
 }
 export interface EditorHandle {
   focus: () => void;
 }
 
 export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
-  { cardManager, currentUser, className, isRtl, dispatch },
+  { cardManager, className, isRtl },
   ref
 ) {
   const styles = useStyles();
-  useObservable(currentUser);
   const placeholder = usePlaceholder(cardManager);
   const { editor, plugins, handlers } = useBodyEditor(cardManager);
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   useImperativeHandle(
     ref,
     () => ({
@@ -102,8 +102,11 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
     [editor]
   );
   const onCtaClick = () => {
-    eventLogger.cardAction('TASK_CTA_CLICKED', cardManager, {
-      category: EventCategory.EDITOR,
+    logger.log({
+      severity: 'INFO',
+      event: 'Click',
+      source: 'editor:task-cta',
+      vertex: cardManager.key,
     });
     SelectionUtils.focusAtEnd(editor);
   };
@@ -134,9 +137,8 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
               //     e.preventDefault();
               //   }
               // }}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
-            <EditorTutorial />
             <FloatingMenu rootManager={cardManager} />
             <TaskCtaView onClick={onCtaClick} />
           </Slate>

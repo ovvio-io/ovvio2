@@ -1,9 +1,5 @@
 import React from 'https://esm.sh/react@18.2.0';
-import {
-  Navigate,
-  useNavigate,
-  useParams,
-} from 'https://esm.sh/react-router-dom@6.7.0';
+import { Navigate, useParams } from 'https://esm.sh/react-router-dom@6.7.0';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import SpinnerView from '../../../../../../styles/components/spinner-view.tsx';

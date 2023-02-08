@@ -15,7 +15,7 @@ import {
   MentionElementNode,
   RenderMentionPopupProps,
 } from './mention-node.tsx';
-import { ElementNode } from '../../../../../cfds/richtext/tree.ts';
+import { ElementNode, TreeNode } from '../../../../../cfds/richtext/tree.ts';
 import { uniqueId } from '../../../../../base/common.ts';
 import { isKeyPressed } from '../utils/hotkeys.ts';
 import { SelectionUtils } from '../utils/selection-utils.ts';
@@ -23,10 +23,8 @@ import { ElementUtils } from '../utils/element-utils.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 //import { wordDist } from '@ovvio/cfds/lib/primitives-old/plaintext';
 
-export const MENTION_NODE_TYPE = 'mention';
-
 export interface MentionElement extends ElementNode {
-  tagName: typeof MENTION_NODE_TYPE;
+  tagName: 'mention';
   pluginId: string;
   children: FormattedText[];
   isLocal: true;
@@ -37,8 +35,8 @@ export interface MentionEditor extends BaseEditor {
   discardMention: () => void;
 }
 
-export function isMention(node: any): node is MentionElement {
-  return Element.isElement(node) && node.tagName === MENTION_NODE_TYPE;
+export function isMention(node: TreeNode): node is MentionElement {
+  return Element.isElement(node) && node.tagName === 'mention';
 }
 
 export function filterSortMentions<T>(
@@ -112,16 +110,16 @@ export function createMentionsPlugin<T>({
       }
       if (!editor.activeMention && isKeyPressed(e, trigger) && canOpen()) {
         e.preventDefault();
-        const path = [...editor.selection.focus.path];
+        const path = [...editor.selection!.focus.path];
         const index = path.pop();
         Editor.insertNode(editor, {
-          tagName: MENTION_NODE_TYPE,
+          tagName: 'mention',
           pluginId,
           isLocal: true,
           children: [{ text: `${trigger} ` }],
         });
         const point = {
-          path: [...path, index + 1, 0],
+          path: [...path, index! + 1, 0],
           offset: trigger.length,
         };
         Transforms.setSelection(editor, {
@@ -132,7 +130,8 @@ export function createMentionsPlugin<T>({
         editor.discardMention = () => {
           const [mention, path] = ElementUtils.findNode(
             editor,
-            (node) => isMention(node) && node.pluginId === pluginId
+            (node: MentionElement) =>
+              isMention(node) && node.pluginId === pluginId
           );
           if (!mention) {
             console.warn('Discard mention called but no mention found');
