@@ -2,7 +2,10 @@ import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
 import { useCfdsContext } from '../cfds/react/graph.tsx';
 import { useEffect, useMemo, useRef } from 'https://esm.sh/react@18.2.0';
 import { createEditor, Editor } from 'https://esm.sh/slate@0.87.0';
-import { withReact } from 'https://esm.sh/slate-react@0.87.1';
+import {
+  RenderElementProps,
+  withReact,
+} from 'https://esm.sh/slate-react@0.87.1';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor.ts';
 import withCfds from './cfds/with-cfds.tsx';
@@ -97,7 +100,7 @@ const DEFAULT_OPTS: UseTitleEditorOptions = {
 
 export function useTitleEditor(
   note: VertexManager<Note>,
-  DefaultComponent: React.ReactNode | React.ComponentType,
+  DefaultComponent: React.ReactNode | React.ComponentType<RenderElementProps>,
   source?: UISource,
   opts: Partial<UseTitleEditorOptions> = {}
 ): {

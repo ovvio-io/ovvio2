@@ -18,7 +18,13 @@ export type ClientEvent =
 
 export type SettingsType = 'settings:workspace' | 'settings:tags';
 
-export type EditorUISource = 'editor:task-cta' | 'editor:key-down';
+export type EditorUISource =
+  | 'editor:task-cta'
+  | 'editor:key-down'
+  | 'editor:title'
+  | 'editor:body'
+  | 'editor:legend'
+  | 'editor:tooltip';
 
 export type UISource =
   | 'list'

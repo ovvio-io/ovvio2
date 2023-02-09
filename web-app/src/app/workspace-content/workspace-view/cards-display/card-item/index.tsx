@@ -23,6 +23,7 @@ import { BodyPreview } from './body-preview';
 import { CardFooter } from './card-footer';
 import { CardTags } from './card-tag-view';
 import { CardWorkspaceIndicator } from './workspace-indicator';
+import { UISource } from '../../../../../../../logging/client-events.ts';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -46,7 +47,7 @@ function getStrikethroughSVG(fill: string) {
   );
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   cardContainer: {
     position: 'relative',
   },
@@ -190,7 +191,7 @@ function Title({
 
 export interface CardHeaderPartProps extends CardItemProps {
   isExpanded: boolean;
-  source: CARD_SOURCE;
+  source: UISource;
   hideMenu?: boolean;
 }
 
@@ -379,7 +380,7 @@ export const CardItem = React.forwardRef(function CardItemView(
       {showChildCards && !!childCards.length && (
         <div
           className={cn(styles.expander)}
-          onClick={() => setExpanded(x => !x)}
+          onClick={() => setExpanded((x) => !x)}
         >
           <IconExpander
             className={cn(

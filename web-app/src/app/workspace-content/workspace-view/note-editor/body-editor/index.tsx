@@ -127,7 +127,7 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
       <React.StrictMode>
         <EditableCardContext cardManager={cardManager}>
           <Slate editor={editor} {...handlers}>
-            <FocusReporter cardManager={cardManager} source="body" />
+            <FocusReporter cardManager={cardManager} source="editor:body" />
             <Editable
               {...plugins}
               tabIndex={1}
