@@ -1,3 +1,26 @@
+/**
+ * Order (Sort) stamps are our solution to efficiently ordering semi-related
+ * items in a collaborative environment. Typically there are two ways to
+ * implement ordered lists over a backing database:
+ *
+ * 1. Store the entire list as a single row. Each write overwrites the entire
+ *    list, thus ensuring correct order of list items when multiple writers
+ *    exist.
+ *
+ * 2. Store each list item as its own row, with an integer order column
+ *    representing the index of this item in the list. Writers need to update
+ *    all following indexes to account for insertions and deletions, resulting
+ *    in O(N) update costs.
+ *
+ * Aside from performance issues, both of these approaches are fundamentally
+ * incompatible with the way Ovvio works. In Ovvio, the user may look at a
+ * filtered list (sub-list) containing only a sub set of the items. Then,
+ * reorder them, and return back to the full, original, list. Handling the order
+ * of filter'ed out items is really hard to get right.
+ *
+ * Instead, we take a different approach borrowing ideas from CRDTs
+ * (Conflict-Free Replicated Datastructures).
+ */
 import * as ELEN from 'https://esm.sh/elen@1.0.10';
 import { commonPrefixLen } from '../../base/string.ts';
 import { assert } from '../../base/error.ts';
