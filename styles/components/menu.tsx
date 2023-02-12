@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
     transition: 'background-color 0.15s linear',
     cursor: 'pointer',
     ':hover': {
-      backgroundColor: theme.background[150],
+      backgroundColor: theme.background[100],
     },
     alignItems: 'center',
     basedOn: [layout.row],
@@ -111,7 +111,7 @@ const MenuContext = React.createContext({
 
 type DivProps = React.ComponentPropsWithoutRef<'div'>;
 
-export interface SecondaryMenuItemProps {
+export interface SecondaryMenuItemProps extends React.PropsWithChildren {
   text: string;
   className?: string;
 }
@@ -166,7 +166,7 @@ export const MenuItem = React.forwardRef<
   const styles = useStyles();
   const ctx = useContext(MenuContext);
 
-  const invoke = (e) => {
+  const invoke = (e: MouseEvent) => {
     e.stopPropagation();
     Promise.resolve(onClick()).then((r) => {
       if (typeof r === 'undefined' || r) {
@@ -242,7 +242,7 @@ export const Backdrop = React.forwardRef<
         </div>
       )}
     </Layer>,
-    window.document.getElementById('root')
+    document.getElementById('root')!
   );
 });
 

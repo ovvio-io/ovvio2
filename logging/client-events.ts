@@ -1,3 +1,4 @@
+import { NoteStatus } from '../cfds/base/scheme-types.ts';
 import { ToggleAction } from '../web-app/src/app/workspaces-bar/ws-selection-utils.ts';
 import { BaseLogEntry } from './entry.ts';
 
@@ -19,6 +20,7 @@ export type ClientEvent =
 export type SettingsType = 'settings:workspace' | 'settings:tags';
 
 export type EditorUISource =
+  | 'editor'
   | 'editor:task-cta'
   | 'editor:key-down'
   | 'editor:title'
@@ -44,7 +46,8 @@ export type MetadataType =
   | 'tag'
   | 'pin'
   | 'hide'
-  | 'name';
+  | 'name'
+  | 'status';
 
 export type DataType = 'workspace' | 'note' | 'task' | 'tag' | 'tag-category';
 
@@ -69,7 +72,7 @@ export interface ClientEventEntry extends BaseLogEntry {
   added?: string | string[] | 'ALL';
   removed?: string | string[] | 'ALL';
   origin?: string;
-  status?: UIStatus;
+  status?: UIStatus | NoteStatus;
   reason?: Reason;
   routeInfo?: string;
   action?: ToggleAction;
