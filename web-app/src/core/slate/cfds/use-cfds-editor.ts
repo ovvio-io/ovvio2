@@ -1,21 +1,30 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'https://esm.sh/react@18.2.0';
+import {
+  Descendant,
+  Editor,
+  Range as SlateRange,
+} from 'https://esm.sh/slate@0.87.0';
+import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
+import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
 import {
   Document,
+  DocumentRanges,
   Range,
   UnkeyedDocument,
-} from '@ovvio/cfds/lib/richtext/doc-state';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { Descendant, Editor, Range as SlateRange } from 'slate';
-import { CfdsEditor, isCfdsInternal } from './with-cfds';
-import { TreeNode } from '@ovvio/cfds/lib/richtext/tree';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { mutationPackHasField } from '@ovvio/cfds/lib/client/graph/mutations';
-import { useGraphManager } from '../../cfds/react/graph';
-import { UndoContextOptions } from '@ovvio/cfds/lib/client/undo/context';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { ReactEditor } from 'slate-react';
-import { useOnCriticalError } from '../../cfds/react/graph-use';
+} from '../../../../../cfds/richtext/doc-state.ts';
+import { TreeNode } from '../../../../../cfds/richtext/tree.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { mutationPackHasField } from '../../../../../cfds/client/graph/mutations.ts';
+import { UndoContextOptions } from '../../../../../cfds/client/undo/context.ts';
+import { usePartialVertex } from '../../cfds/react/vertex.ts';
+import { CfdsEditor, isCfdsInternal } from './with-cfds.tsx';
+import { useGraphManager } from '../../cfds/react/graph.tsx';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { useOnCriticalError } from '../../cfds/react/graph-use.ts';
 
 export type RichtextKeys<T> = {
   [K in keyof T]: T[K] extends UnkeyedDocument ? K : never;
@@ -65,7 +74,7 @@ function useUndoContext(
     if (addBodyRefs) {
       const childKeys = vMng.getVertexProxy().getBodyRefs();
 
-      options.vertices.push({
+      options.vertices?.push({
         keys: childKeys,
         filter: (_, mut) => {
           return mutationPackHasField(mut, 'title');
@@ -123,7 +132,7 @@ function handleSelection(editor: Editor, selection: Range | undefined) {
   if (
     (!editor.selection && slateSelection) ||
     (editor.selection && !slateSelection) ||
-    !SlateRange.equals(slateSelection, editor.selection)
+    !SlateRange.equals(slateSelection!, editor.selection!)
   ) {
     CfdsEditor.setExternalSelection(editor, slateSelection);
   }
@@ -153,7 +162,7 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   const richtext = vertex[field] as unknown as Document;
   const onChange = useCallback(
     (newValue: Descendant[]) => {
-      const ranges = {};
+      const ranges: DocumentRanges = {};
       if (editor.selection) {
         ranges[selectionId] = {
           ...CfdsEditor.slateRangeToCfdsRange(editor, editor.selection),
@@ -183,7 +192,7 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   }, [value, selection, editor]);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
+    const intervalId = setInterval(() => {
       const proxy = vertexMng.getVertexProxy();
       const rt = proxy[field] as unknown as Document;
       let selection = (rt.ranges || {})[selectionId];
@@ -206,7 +215,7 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
     }, expirationInMs);
 
     return () => {
-      window.clearInterval(intervalId);
+      clearInterval(intervalId);
     };
   }, [vertexMng, field, expirationInMs, selectionId, editor]);
 
