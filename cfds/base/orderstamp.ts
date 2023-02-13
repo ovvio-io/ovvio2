@@ -24,13 +24,17 @@
  * second approach above. However, instead of integer positions, we're using
  * arbitrary numbers (real, not integers).
  *
- * List Insertion at index K:
- * 1. Look at the item above and below K (K-1 & K+1).
+ * List Insertion at index I:
+ * 1. Look at the item above and below I (I-1 and I+1).
  *
- * 2. Compute their average position, then shift the result randomly to one
- *    side without crossing the neighboring values.
+ * 2. Compute their average position (position, not index), then shift the
+ *    result randomly to one side without crossing the neighboring values (to
+ *    avoid conflicts in concurrent inserts).
  *
  * 3. Set the result as the position of the new item.
+ *
+ * 4. Ensure all readers sort their visible items to account for the new
+ *    insertion.
  *
  * Example:
  * List = [("A", 0), ("B", 1)]
