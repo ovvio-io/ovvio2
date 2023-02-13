@@ -31,6 +31,8 @@ import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
 import { useContext } from 'https://esm.sh/v99/@types/react@18.0.25/index.d.ts';
 import { NS_FILTER } from '../../../../../../cfds/base/scheme-types.ts';
 import { useVertex } from '../../../../core/cfds/react/vertex.ts';
+import { useFilter } from '../../../index.tsx';
+import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -94,63 +96,45 @@ const useStyles = makeStyles((theme) => ({
 
 const useStrings = createUseStrings(localization);
 
-let firstLoad = true;
-
 export function CardsDisplay() {
   const styles = useStyles();
-  const { isInDemo } = useDemoInfo();
-  const [viewType, setViewType] = useState(
-    isInDemo ? ViewType.Board : ViewType.List
-  );
-  const [noteType, setNoteType] = useState(NoteType.Task);
-  const [sortBy, setSortBy] = useState(SortBy.Priority);
-  const [groupBy, setGroupBy] = useState<GroupBy>(
-    selectedWorkspaces.length < 1 ? { type: 'workspace' } : { type: 'assignee' }
-  );
-  const [query, setQuery] = useState('');
+  const [viewType, setViewType] = useState(ViewType.List);
+  // const [noteType, setNoteType] = useState(NoteType.Task);
+  // const [sortBy, setSortBy] = useState(SortBy.Priority);
+  // const [groupBy, setGroupBy] = useState<GroupBy>(
+  //   selectedWorkspaces.length < 1 ? { type: 'workspace' } : { type: 'assignee' }
+  // );
+  // const [query, setQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const strings = useStrings();
-  const length = useReffedValue(selectedWorkspaces.length);
-  const tasksFilter = useFiltersController(selectedWorkspaces);
-  const notesFilter = useFiltersController(selectedWorkspaces);
-  const filtersController =
-    noteType === NoteType.Task ? tasksFilter : notesFilter;
+  const filter = useFilter();
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+  // const length = useReffedValue(selectedWorkspaces.length);
+  // const tasksFilter = useFiltersController(selectedWorkspaces);
+  // const notesFilter = useFiltersController(selectedWorkspaces);
+  // const filtersController =
+  //   noteType === NoteType.Task ? tasksFilter : notesFilter;
   useEffect(() => {
     if (viewType === ViewType.Board) {
-      setGroupBy(
-        length.current > 1 ? { type: 'workspace' } : { type: 'assignee' }
-      );
+      filter.groupBy =
+        selectedWorkspacesQuery.count > 1 ? 'workspace' : 'assignee';
     }
-  }, [viewType, length]);
-
-  useEffect(() => {
-    if (isInDemo && firstLoad) {
-      firstLoad = false;
-      setViewType(ViewType.Board);
-    }
-  }, [isInDemo]);
-
-  useSyncUrlParam(
-    'filter',
-    true,
-    filtersController.activeFilters,
-    filtersController.setActiveFilters,
-    {
-      isReady: !filtersController.isLoading,
-      route: '/',
-    }
-  );
+  }, [viewType, filter, selectedWorkspacesQuery]);
+  // useSyncUrlParam(
+  //   'filter',
+  //   true,
+  //   filtersController.activeFilters,
+  //   filtersController.setActiveFilters,
+  //   {
+  //     isReady: !filtersController.isLoading,
+  //     route: '/',
+  //   }
+  // );
 
   let content = null;
-  const isInSearch = isQueryValid(query);
+  const isInSearch = (filter.textQuery?.length || 0) > 0;
   if (isInSearch) {
-    content = (
-      <SearchResults
-        className={cn(styles.contentView)}
-        query={query}
-        selectedWorkspaces={selectedWorkspaces}
-      />
-    );
+    content = <SearchResults className={cn(styles.contentView)} />;
   } else {
     if (viewType === ViewType.List) {
       const sort = isInSearch ? SortBy.LastModified : sortBy;

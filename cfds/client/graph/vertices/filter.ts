@@ -133,6 +133,18 @@ export class Filter extends BaseVertex {
     return key ? this.graph.getVertex(key) : undefined;
   }
 
+  get textQuery(): string {
+    return this.record.get<string>('textQuery', '');
+  }
+
+  set textQuery(q: string | undefined) {
+    if (q && q.length > 0) {
+      this.record.set('textQuery', q);
+    } else {
+      this.record.delete('textQuery');
+    }
+  }
+
   getEffectiveWorkspaces(): Workspace[] {
     if (this.workspaces) {
       return Array.from(this.workspaces);

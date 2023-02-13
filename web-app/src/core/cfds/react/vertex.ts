@@ -249,6 +249,15 @@ export function usePartialVertices<
   V extends Vertex,
   K extends keyof V = keyof V
 >(
+  vertexIds: Iterable<VertexId<V>>,
+  keys: K[],
+  opts?: OnChangeOpts
+): (Pick<V, K> & Vertex)[];
+
+export function usePartialVertices<
+  V extends Vertex,
+  K extends keyof V = keyof V
+>(
   vertexIds: Iterable<VertexId<V> | undefined | null>,
   keys: K[],
   opts?: OnChangeOpts
@@ -271,15 +280,6 @@ export function usePartialVertices<
   keys: K[],
   opts?: OnChangeOpts
 ): ((Pick<V, K> & Vertex) | null)[];
-
-export function usePartialVertices<
-  V extends Vertex,
-  K extends keyof V = keyof V
->(
-  vertexIds: Iterable<VertexId<V>>,
-  keys: K[],
-  opts?: OnChangeOpts
-): (Pick<V, K> & Vertex)[];
 
 export function usePartialVertices<
   V extends Vertex,

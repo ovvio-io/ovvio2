@@ -55,7 +55,13 @@ export type UIStatus = 'started' | 'ended' | 'cancelled';
 
 export type FilterType = 'workspace' | 'tag' | 'assignee';
 
-export type UIFlow = 'create' | 'delete' | 'permissions' | 'edit' | 'dnd';
+export type UIFlow =
+  | 'create'
+  | 'delete'
+  | 'permissions'
+  | 'edit'
+  | 'dnd'
+  | 'search';
 
 export type NavigationType = 'tab' | 'close' | 'open';
 

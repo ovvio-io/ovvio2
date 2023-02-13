@@ -1,35 +1,24 @@
-import React, { useMemo } from 'https://esm.sh/react@18.2.0';
+import React from 'https://esm.sh/react@18.2.0';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
   Tag,
-  Workspace,
 } from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { sortStampCompare } from '../../../../../../../cfds/client/sorting.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
 import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
 import {
   createUseStrings,
   format,
 } from '../../../../../core/localization/index.tsx';
-import {
-  CANCELLATION_REASONS,
-  DragAndDropContext,
-  DragSource,
-} from '../../../../../shared/dragndrop/index.ts';
+import { DragAndDropContext } from '../../../../../shared/dragndrop/index.ts';
 import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
-import { Dictionary } from '../../../../../../../base/collections/dict.ts';
-import {
-  GroupId,
-  Query,
-} from '../../../../../../../cfds/client/graph/query.ts';
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
 import { setDragSort } from '../card-item/draggable-card.tsx';
 import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { useFilter, usePartialFilter } from '../../../../index.tsx';
+import { usePartialFilter } from '../../../../index.tsx';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 import {
   filterIterable,

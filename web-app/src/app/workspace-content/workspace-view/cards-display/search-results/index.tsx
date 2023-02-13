@@ -1,48 +1,43 @@
-import { NS_NOTES } from '@ovvio/cfds';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useEventLogger } from 'core/analytics';
-import { useCfdsContext } from 'core/cfds/react/graph';
-import React, { useEffect, useMemo } from 'react';
-import { InnerListView, SortBy } from '../list-view';
+import React, { useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+import { usePartialFilter } from '../../../../index.tsx';
+import { InnerListView } from '../list-view/index.tsx';
 
 export interface SearchResultsProps {
-  query: string;
-  selectedWorkspaces: VertexManager<Workspace>[];
   className?: string;
 }
 
-export function SearchResults({
-  query,
-  selectedWorkspaces,
-  className,
-}: SearchResultsProps) {
-  const eventLogger = useEventLogger();
-  const { searchEngine } = useCfdsContext();
+export function SearchResults({ className }: SearchResultsProps) {
+  const logger = useLogger();
+  const graph = useGraphManager();
+  const searchEngine = graph.noteSearchEngine;
+  const { textQuery } = usePartialFilter(['textQuery']);
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
   useEffect(() => {
-    eventLogger.action('CARD_SEARCH_ACTIVATED', {});
+    logger.log({
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'search',
+    });
     return () => {
-      eventLogger.action('CARD_SEARCH_DEACTIVATED', {});
+      logger.log({
+        severity: 'INFO',
+        event: 'End',
+        flow: 'search',
+      });
     };
-  }, [eventLogger]);
+  }, [logger]);
   const results = useMemo(() => {
-    const items = searchEngine.search(
-      query,
-      x =>
-        x.namespace === NS_NOTES &&
-        selectedWorkspaces.some(ws => ws.key === x.workspace.key)
+    const items = searchEngine.search(textQuery, (note) =>
+      selectedWorkspacesQuery.hasVertex(note)
     );
     return {
       unpinned: items,
       pinned: [],
     };
-  }, [searchEngine, selectedWorkspaces, query]);
+  }, [searchEngine, selectedWorkspacesQuery, textQuery]);
 
-  return (
-    <InnerListView
-      className={className}
-      cards={results}
-      sortBy={SortBy.Created}
-    ></InnerListView>
-  );
+  return <InnerListView className={className} cards={results}></InnerListView>;
 }

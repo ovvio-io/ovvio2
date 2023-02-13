@@ -4,8 +4,10 @@ import React, {
   useState,
   useLayoutEffect,
 } from 'https://esm.sh/react@18.2.0';
-import { useHistory } from 'https://esm.sh/react-router-dom@6.7.0';
-import { History } from 'https://esm.sh/history@5.3.0';
+import {
+  NavigateFunction,
+  useNavigate,
+} from 'https://esm.sh/react-router-dom@6.7.0';
 import { notImplemented } from '../../../../base/error.ts';
 import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
@@ -22,11 +24,11 @@ function resolveUrl(
   return notImplemented();
 }
 
-function createDocumentRouter(history: History) {
+function createDocumentRouter(navigate: NavigateFunction) {
   return {
     goTo(doc: RoutableDocument | VertexManager<RoutableDocument>): void {
       const link = resolveUrl(doc);
-      history.push(link);
+      navigate(link);
     },
     urlFor(doc: RoutableDocument | VertexManager<RoutableDocument>): string {
       return resolveUrl(doc);
@@ -35,8 +37,8 @@ function createDocumentRouter(history: History) {
 }
 
 export function useDocumentRouter() {
-  const history = useHistory();
-  return createDocumentRouter(history);
+  const navigate = useNavigate();
+  return createDocumentRouter(navigate);
 }
 
 export function useWindowSize() {
