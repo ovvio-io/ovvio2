@@ -19,7 +19,54 @@
  * of filter'ed out items is really hard to get right.
  *
  * Instead, we take a different approach borrowing ideas from CRDTs
- * (Conflict-Free Replicated Datastructures).
+ * (Conflict-Free Replicated Datastructures). Our algorithm first models our
+ * list as individual items with their positions as a field, similar to the
+ * second approach above. However, instead of integer positions, we're using
+ * arbitrary numbers (real, not integers).
+ *
+ * List Insertion at index K:
+ * 1. Look at the item above and below K (K-1 & K+1).
+ *
+ * 2. Compute their average position, then shift the result randomly to one
+ *    side without crossing the neighboring values.
+ *
+ * 3. Set the result as the position of the new item.
+ *
+ * Example:
+ * List = [("A", 0), ("B", 1)]
+ * Insert("C", 1) => [("A", 0), ("C", 0.5 + RND1), ("B", 1)]
+ *
+ * This approach has several key advantages:
+ * - Writes are O(1) and touch only the modified items in the list.
+ *
+ * - Multiple writers may change the list concurrently without conflicting with
+ *   each other. Simply apply a Last-Write Wins policy at the item level.
+ *
+ * - Relative item order is properly preserved even when viewing and editing
+ *   a subset of the original list. For example, if we filter out "C" from the
+ *   example above, then execute
+ *
+ *   Insert("D", 1) => [("A", 0), ("D", 0.5 + RND2), ("B", 1)]
+ *
+ *   Finally look at the unfiltered result:
+ *   [("A", 0), ("C", 0.5 + RND1), ("D", 0.5 + RND2) ("B", 1)]
+ *
+ *   NOTE: The order between "C" and "D" is indeterminate.
+ *
+ * While this works, it has major one flaw that makes it impractical in the real
+ * world. Numbers in most environments have limited precision (64 bits usually),
+ * thus limiting the number of divisions we can do before we converge to zero.
+ *
+ * To void this issue without requiring big number support, we use strings
+ * instead of values, and assume lexicographical order between them. This file
+ * implements a bunch of utility functions that implement the above logic using
+ * strings.
+ *
+ * For easier compatibility with the outside world, we also support conversion
+ * of arbitrary numbers to strings using the ELEN algorithm (Efficient
+ * Lexicographic Encoding of Numbers). Using this technique we naturally create
+ * lists that are initially ordered by date, but can be modified to whatever
+ * order the user wants.
  */
 import * as ELEN from 'https://esm.sh/elen@1.0.10';
 import { commonPrefixLen } from '../../base/string.ts';
@@ -91,7 +138,7 @@ export function between(prev: string, next: string): string {
   // in next. Note that it may not actually exist (if prev is shorter than next)
   const minChar =
     prefixLen < prev.length ? prev.charCodeAt(prefixLen) : CHAR_CODE_MIN;
-  const maxChar = next.charCodeAt(prefixLen);
+  const maxChar = prefixLen > 0 ? next.charCodeAt(prefixLen) : CHAR_CODE_MAX;
   // Append a random char between prev[prefixLen] and next[prefixLen]. This
   // will place our result before next but also before prev.
   result += String.fromCharCode(randomInt(minChar, maxChar));
@@ -119,14 +166,18 @@ export function between(prev: string, next: string): string {
   //
   // In any case, we append a random sequence for two reasons:
   //
-  // 1. Guarantee that result comes after prev (due to greater length for a
-  //    short prev).
+  // 1. Guarantee that `result` comes after `prev` (`result.length` >
+  //    `prev.length`).
   //
-  // 2. Guarantee that no two clients pick the same value even if they try to
+  // 2. Guarantee that no two caller pick the same value even if they try to
   //    generate a stamp between the same values. This creates a (random) total
-  //    order on the results of all parties.
+  //    order on the results of all parties with a very high probabili2ty.
   for (let j = 0; j < RANDOM_SUFFIX_LEN; ++j) {
     result += String.fromCharCode(randomInt(CHAR_CODE_MIN, CHAR_CODE_MAX));
   }
   return result;
+}
+
+export function fromIndex(idx: number): string {
+  return ELEN.encode(idx);
 }
