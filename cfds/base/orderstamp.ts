@@ -64,9 +64,9 @@
  *
  * For easier compatibility with the outside world, we also support conversion
  * of arbitrary numbers to strings using the ELEN algorithm (Efficient
- * Lexicographic Encoding of Numbers). Using this technique we naturally create
- * lists that are initially ordered by date, but can be modified to whatever
- * order the user wants.
+ * Lexicographic Encoding of Numbers by Peter Seymour). Using this technique we
+ * naturally create lists that are initially ordered by date, but can be
+ * modified to whatever order the user wants.
  */
 import * as ELEN from 'https://esm.sh/elen@1.0.10';
 import { commonPrefixLen } from '../../base/string.ts';
@@ -79,7 +79,10 @@ const CHAR_CODE_MIN = 1; // Skip the null character to avoid possible problems
 // Note: Theoretically we can use the entire UTF-16 character space, however
 // some parts of our pipeline can't handle higher value characters properly
 // so we're sticking to single byte characters
+
 const CHAR_CODE_MAX = 254; // Exclusive. Reserves char 254 for right edge
+
+// Increase this value if there are many concurrent writers
 const RANDOM_SUFFIX_LEN = 16;
 
 const MIN_REF_DATE = new Date(1420074000000); // 1/1/2015 @ 01:00:00 GMT
