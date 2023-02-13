@@ -67,10 +67,10 @@
  * strings.
  *
  * For easier compatibility with the outside world, we also support conversion
- * of arbitrary numbers to strings using the ELEN algorithm (Efficient
- * Lexicographic Encoding of Numbers by Peter Seymour). Using this technique we
- * naturally create lists that are initially ordered by date, but can be
- * modified to whatever order the user wants.
+ * of arbitrary numbers to strings using the Efficient Lexicographic Encoding
+ * of Numbers algorithm (ELEN) by Peter Seymour). Using this technique we
+ * naturally create lists that are initially ordered, but can be modified to
+ * whatever order the user wants.
  */
 import * as ELEN from 'https://esm.sh/elen@1.0.10';
 import { commonPrefixLen } from '../../base/string.ts';
@@ -111,7 +111,7 @@ export function past(): string {
 
 /**
  * Generates an initial order stamp based on a timestamp and a unique id.
- * You should pass the key of the item (card) you're dealing with rather than
+ * You should pass the key of the item (record) you're dealing with rather than
  * generate a unique id on every call.
  */
 export function fromTimestamp(timestamp: Date, key?: string) {
