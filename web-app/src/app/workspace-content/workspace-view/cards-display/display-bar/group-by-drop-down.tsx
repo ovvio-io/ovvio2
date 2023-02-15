@@ -1,21 +1,21 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { IconGroup } from '@ovvio/styles/lib/components/new-icons/icon-group';
+import React, { useCallback, useEffect } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { IconGroup } from '../../../../../../../styles/components/new-icons/icon-group.tsx';
 import Menu, {
   MenuItem,
   SecondaryMenuItem,
-} from '@ovvio/styles/lib/components/menu';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import React, { useCallback, useEffect } from 'react';
-import localization from '../cards-display.strings.json';
-import { FiltersStateController, SharedParentTag } from './filters/state';
+} from '../../../../../../../styles/components/menu.tsx';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {
     marginLeft: styleguide.gridbase,
   },
@@ -26,15 +26,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const useStrings = createUseStrings(localization);
-
-export type GroupBy =
-  | {
-      type: 'assignee' | 'workspace';
-    }
-  | {
-      type: 'tag';
-      tag: SharedParentTag;
-    };
 
 interface GroupByTagButtonProps {
   tag: SharedParentTag;
@@ -162,7 +153,7 @@ export function GroupByDropDown({
         {strings.assignee}
       </MenuItem>
       <SecondaryMenuItem text={strings.groupByTag}>
-        {Object.values(filters.tags).map(x => (
+        {Object.values(filters.tags).map((x) => (
           <MenuItem key={x.key} onClick={() => setTag(x)}>
             {x.displayName}
           </MenuItem>

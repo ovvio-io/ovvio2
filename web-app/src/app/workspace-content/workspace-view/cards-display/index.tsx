@@ -137,32 +137,14 @@ export function CardsDisplay() {
     content = <SearchResults className={cn(styles.contentView)} />;
   } else {
     if (viewType === ViewType.List) {
-      const sort = isInSearch ? SortBy.LastModified : sortBy;
-      content = (
-        <ListView
-          noteType={noteType}
-          className={cn(styles.contentView)}
-          selectedWorkspaces={selectedWorkspaces}
-          sortBy={sort}
-          filters={filtersController}
-        />
-      );
+      content = <ListView className={cn(styles.contentView)} />;
     } else if (viewType === ViewType.Board) {
-      content = (
-        <BoardView
-          noteType={noteType}
-          className={cn(styles.contentView)}
-          selectedWorkspaces={selectedWorkspaces}
-          groupBy={groupBy}
-          filters={filtersController}
-        />
-      );
+      content = <BoardView className={cn(styles.contentView)} />;
     }
   }
 
   return (
     <div className={cn(styles.displayRoot)}>
-      <VideoTutorial />
       <div className={cn(styles.displayMain)}>
         {!isInSearch ? (
           <DisplayBar

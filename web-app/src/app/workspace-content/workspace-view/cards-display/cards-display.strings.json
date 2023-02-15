@@ -5,8 +5,8 @@
     "board": "Board View",
     "priority": "Priority",
     "groupBy": "Group By",
-    "created": "Created",
-    "lastModified": "Last Modified",
+    "created": "Date Created",
+    "lastModified": "Date Modified",
     "dueDate": "Due Date",
     "workspace": "Workspace",
     "assignee": "Assignee",
@@ -19,6 +19,10 @@
     "newTask": "New Task",
     "newNote": "New Note",
     "search": "Search...",
-    "clear": "Clear"
+    "clear": "Clear",
+    "Priority": "Priority",
+    "Created": "Date Created",
+    "Modified": "Date Modified",
+    "Due": "Due Date"
   }
 }

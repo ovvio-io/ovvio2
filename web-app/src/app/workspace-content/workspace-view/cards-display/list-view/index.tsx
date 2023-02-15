@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -15,7 +11,6 @@ import {
   cn,
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { useVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
@@ -23,7 +18,6 @@ import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   Draggable,
-  DragSource,
 } from '../../../../../shared/dragndrop/index.ts';
 import { EmptyListState } from './empty-state.tsx';
 import { InfiniteScroll } from './infinite-scroll.tsx';
@@ -31,8 +25,9 @@ import { InlineTaskButton } from './inline-task-button.tsx';
 import localization from './list.strings.json' assert { type: 'json' };
 import { ItemRow, ItemsTable, Row } from './table/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
-import { useQueryResults } from '../../../../../core/cfds/react/query.ts';
+import { useFilter } from '../../../../index.tsx';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { RenderDraggableProps } from '../../../../../shared/dragndrop/draggable.tsx';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -48,26 +43,23 @@ const useStyles = makeStyles((theme) => ({
 const useStrings = createUseStrings(localization);
 
 export interface ListViewProps {
-  filter: VertexManager<Filter>;
   className?: string;
 }
 
 const PAGE_SIZE = 20;
 
 interface CardsData {
-  pinned: VertexManager<Note>[];
-  unpinned: VertexManager<Note>[];
+  pinned: readonly VertexManager<Note>[];
+  unpinned: readonly VertexManager<Note>[];
 }
 
-export function ListView({ filter: filterMgr, className }: ListViewProps) {
-  const filter = useVertex(filterMgr);
-  const pinnedNotes = useQueryResults(
-    filter.buildQuery('listViewPinned', true)
-  );
-  const unpinnedNotes = useQueryResults(
+export function ListView({ className }: ListViewProps) {
+  const filter = useFilter();
+  const pinnedNotesQuery = useQuery2(filter.buildQuery('listViewPinned', true));
+  const unpinnedNotesQuery = useQuery2(
     filter.buildQuery('listViewUnpinned', false)
   );
-  if (!(pinnedNotes.length + unpinnedNotes.length)) {
+  if (pinnedNotesQuery.count + unpinnedNotesQuery.count <= 0) {
     return <EmptyListState />;
   }
   return (
@@ -75,8 +67,8 @@ export function ListView({ filter: filterMgr, className }: ListViewProps) {
       noteType={filter.noteType}
       className={className}
       cards={{
-        pinned: pinnedNotes,
-        unpinned: unpinnedNotes,
+        pinned: pinnedNotesQuery.results,
+        unpinned: unpinnedNotesQuery.results,
       }}
     />
   );
@@ -146,28 +138,27 @@ export function InnerListView({
   const onDragStarted = () => {
     logger.log({
       severity: 'INFO',
-      event: 'ItemDrag',
+      event: 'Start',
+      flow: 'dnd',
       uiSource: 'list',
-      uiStatus: 'started',
     });
   };
 
   const onReportDrop = () => {
     logger.log({
       severity: 'INFO',
-      event: 'ItemDrag',
+      event: 'End',
+      flow: 'dnd',
       uiSource: 'list',
-      uiStatus: 'ended',
     });
   };
 
   const onDragCancelled = ({ reason }: { reason: string }) => {
     logger.log({
       severity: 'INFO',
-      event: 'ItemDrag',
+      event: 'Cancel',
+      flow: 'dnd',
       uiSource: 'list',
-      uiStatus: 'cancelled',
-      reason,
     });
     if (reason === CANCELLATION_REASONS.DISABLED) {
       toastController.displayToast({
@@ -207,7 +198,7 @@ export function InnerListView({
               {cards.pinned.map((c, index) => (
                 <Draggable key={c.key} index={index} data={c}>
                   {(
-                    draggableProps: JSX.IntrinsicAttributes,
+                    draggableProps: RenderDraggableProps,
                     ref: React.MutableRefObject<HTMLTableRowElement>
                   ) => (
                     <ItemRow

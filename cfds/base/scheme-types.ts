@@ -170,7 +170,14 @@ export type SchemeFields = { [key: string]: ValueType };
 
 export type NoteStatus = 'ToDo' | 'InProgress' | 'Suspended' | 'Done';
 
-export type FilterSortBy = 'Priority' | 'Created' | 'Modified' | 'Due';
+export type FilterSortBy = typeof FilterSortByValues[number];
+
+export const FilterSortByValues = [
+  'Priority',
+  'Created',
+  'Modified',
+  'Due',
+] as const;
 
 export type FilterGroupBy = 'assignee' | 'workspace' | 'tag';
 

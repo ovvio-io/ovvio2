@@ -1,32 +1,42 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button, useButtonStyles } from '@ovvio/styles/lib/components/buttons';
-import { IconSort } from '@ovvio/styles/lib/components/new-icons/icon-sort';
-import { IconFilter } from '@ovvio/styles/lib/components/new-icons/icon-filter';
+import React, { useCallback } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import {
+  Button,
+  useButtonStyles,
+} from '../../../../../../../styles/components/buttons.tsx';
+import { IconSort } from '../../../../../../../styles/components/new-icons/icon-sort.tsx';
+import { IconFilter } from '../../../../../../../styles/components/new-icons/icon-filter.tsx';
 import DropDown, {
   DropDownItem,
-} from '@ovvio/styles/lib/components/inputs/drop-down';
-import { TabButton, TabsHeader } from '@ovvio/styles/lib/components/tabs';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { createUseStrings } from 'core/localization';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import React, { useCallback } from 'react';
-import { UserOnboard } from 'shared/tutorial';
-import { EventCategory, useEventLogger } from '../../../../../core/analytics';
-import { ToolbarRightItem } from '../../toolbar';
-import localization from '../cards-display.strings.json';
-import { SortBy } from '../list-view';
-import { VideoTutorialId } from '../video-demo';
-import { ComposeButton } from './compose-button';
-import { FiltersStateController, SharedParentTag } from './filters/state';
-import { GroupByDropDown } from './group-by-drop-down';
-import { useDisplayBarTutorialSteps } from './tutorial';
-import { ViewToggle } from './view-toggle';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
+} from '../../../../../../../styles/components/inputs/drop-down.tsx';
+import {
+  TabButton,
+  TabsHeader,
+} from '../../../../../../../styles/components/tabs/index.tsx';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import { MediaQueries } from '../../../../../../../styles/responsive.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { ToolbarRightItem } from '../../toolbar/index.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { ComposeButton } from './compose-button.tsx';
+import { GroupByDropDown } from './group-by-drop-down.tsx';
+import { ViewToggle } from './view-toggle.tsx';
+import {
+  FilterSortBy,
+  FilterSortByValues,
+} from '../../../../../../../cfds/base/scheme-types.ts';
+import { Filter } from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { useFilter, usePartialFilter } from '../../../../index.tsx';
+import { UISource } from '../../../../../../../logging/client-events.ts';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -95,54 +105,32 @@ const useStrings = createUseStrings(localization);
 
 export enum ViewType {
   List = 'list',
-  Grouped = 'grouped',
+  // Grouped = 'grouped',
   Board = 'board',
 }
 
-export type GroupBy =
-  | {
-      type: 'assignee' | 'workspace';
-    }
-  | {
-      type: 'tag';
-      tag: SharedParentTag;
-    };
-
 type ExtraFiltersProps = {
-  filters: FiltersStateController;
+  // filters: FiltersStateController;
   viewType: ViewType;
-  sortBy: SortBy;
-  setSortBy: (sortBy: SortBy) => void;
-  groupBy: GroupBy;
-  setGroupBy: (groupBy: GroupBy) => void;
-  selectedWorkspaces: VertexManager<Workspace>[];
+  // sortBy: SortBy;
+  // setSortBy: (sortBy: SortBy) => void;
+  // groupBy: GroupBy;
+  // setGroupBy: (groupBy: GroupBy) => void;
+  // selectedWorkspaces: VertexManager<Workspace>[];
 };
 
-const SORT_BY = [
-  SortBy.Priority,
-  SortBy.Created,
-  SortBy.LastModified,
-  SortBy.DueDate,
-];
-function parseSortBy(str: string): SortBy {
-  if (SORT_BY.includes(str as any)) {
-    return str as SortBy;
-  }
-  return SortBy.Priority;
-}
-
 function SortByDropDown({
-  sortBy,
-  setSortBy,
+  filter: filterMgr,
+  source,
 }: {
-  sortBy: SortBy;
-  setSortBy: (sortBy: SortBy) => void;
+  filter: VertexManager<Filter>;
+  source?: UISource;
 }) {
   const styles = useStyles();
   const strings = useStrings();
-  const eventLogger = useEventLogger();
-
-  useSyncUrlParam('sortBy', false, sortBy, val => setSortBy(parseSortBy(val)));
+  const logger = useLogger();
+  const partialFilter = usePartialFilter(['sortBy']);
+  const sortBy = partialFilter.sortBy;
 
   const renderSelected = useCallback(
     () => (
@@ -154,28 +142,27 @@ function SortByDropDown({
     [strings, sortBy, styles]
   );
 
-  const onOpen = () => {
-    eventLogger.action('SORTBY_CHANGE_STARTED', {
-      category: EventCategory.CARD_LIST,
-    });
-  };
-
-  const onChange = (val: any) => {
-    eventLogger.action('SORTBY_CHANGE_COMPLETED', {
-      category: EventCategory.CARD_LIST,
-      source: val,
-    });
-    setSortBy(val);
-  };
+  const onChange = useCallback(
+    (val: FilterSortBy) => {
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'sortBy',
+        vertex: partialFilter.key,
+        source,
+      });
+      partialFilter.sortBy = val;
+    },
+    [logger, partialFilter, source]
+  );
 
   return (
     <DropDown
       value={sortBy}
       onChange={onChange}
       renderSelected={renderSelected}
-      onOpen={onOpen}
     >
-      {SORT_BY.map(x => (
+      {FilterSortByValues.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
         </DropDownItem>
@@ -185,11 +172,10 @@ function SortByDropDown({
 }
 
 function ExtraFilters(props: ExtraFiltersProps) {
+  const filter = useFilter();
   let content = null;
   if (props.viewType === ViewType.List) {
-    content = (
-      <SortByDropDown sortBy={props.sortBy} setSortBy={props.setSortBy} />
-    );
+    content = <SortByDropDown filter={filter.manager} />;
   } else {
     content = (
       <GroupByDropDown
@@ -218,7 +204,7 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
     eventLogger.action(showFilters ? 'FILTER_BAR_HIDDEN' : 'FILTER_BAR_SHOWN', {
       category: EventCategory.FILTERS,
     });
-    setShowFilters(x => !x);
+    setShowFilters((x) => !x);
   };
 
   return (
@@ -247,7 +233,7 @@ function parseNoteType(val: string): NoteType {
 function NoteTypeToggle({ noteType, setNoteType }: NoteTypeToggleProps) {
   const strings = useStrings();
   const styles = useStyles();
-  useSyncUrlParam('type', false, noteType, val =>
+  useSyncUrlParam('type', false, noteType, (val) =>
     setNoteType(parseNoteType(val))
   );
   return (
