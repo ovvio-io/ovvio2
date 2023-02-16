@@ -48,7 +48,7 @@ export interface QueryOptions<
   sort?: SortDescriptor<OT>;
   listenOn?: (keyof IT)[];
   name?: string;
-  mapResult?: (results: VertexManager<IT>[]) => RT;
+  mapResult?: (results: readonly VertexManager<OT>[]) => RT;
   source?: Query<Vertex, IT> | UnionQuery<Vertex, IT> | GraphManager;
 }
 

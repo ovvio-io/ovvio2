@@ -93,7 +93,7 @@ export class Filter extends BaseVertex {
   }
 
   get sortBy(): FilterSortBy {
-    return this.record.get<FilterSortBy>('sortBy', 'Priority');
+    return this.record.get<FilterSortBy>('sortBy', 'priority');
   }
 
   set sortBy(v: FilterSortBy) {
@@ -131,6 +131,14 @@ export class Filter extends BaseVertex {
   get groupByPivot(): Vertex | undefined {
     const key = this.record.get<string>('groupByPivot');
     return key ? this.graph.getVertex(key) : undefined;
+  }
+
+  set groupByPivot(v: Vertex | undefined) {
+    if (v) {
+      this.record.set('groupByPivot', v.key);
+    } else {
+      this.record.delete('groupByPivot');
+    }
   }
 
   get textQuery(): string {
@@ -195,19 +203,19 @@ export class Filter extends BaseVertex {
     const tagsByParent = this.breakTagsByParents(this.tags);
     let sortByField: keyof Note;
     switch (this.sortBy) {
-      case 'Created':
+      case 'created':
         sortByField = 'creationDate';
         break;
 
-      case 'Modified':
+      case 'modified':
         sortByField = 'lastModified';
         break;
 
-      case 'Due':
+      case 'due':
         sortByField = 'dueDate';
         break;
 
-      case 'Priority':
+      case 'priority':
         sortByField = 'sortStamp';
         break;
     }

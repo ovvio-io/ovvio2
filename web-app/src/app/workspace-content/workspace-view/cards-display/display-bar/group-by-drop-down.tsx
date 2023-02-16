@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect } from 'https://esm.sh/react@18.2.0';
+import React, { useCallback } from 'https://esm.sh/react@18.2.0';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { IconGroup } from '../../../../../../../styles/components/new-icons/icon-group.tsx';
 import Menu, {
@@ -14,6 +13,15 @@ import {
 } from '../../../../../../../styles/css-objects/index.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { usePartialFilter } from '../../../../index.tsx';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
+import {
+  usePartialVertex,
+  VertexId,
+} from '../../../../../core/cfds/react/vertex.ts';
+import { FilterGroupBy } from '../../../../../../../cfds/base/scheme-types.ts';
 
 const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {
@@ -28,99 +36,44 @@ const useStyles = makeStyles((theme) => ({
 const useStrings = createUseStrings(localization);
 
 interface GroupByTagButtonProps {
-  tag: SharedParentTag;
-  setGroupBy: (groupBy: GroupBy) => void;
-  selectedWorkspaces: VertexManager<Workspace>[];
-  className?: string;
-  filters: FiltersStateController;
+  tag: VertexId<Tag>;
 }
 
-function GroupByTagButton({
-  tag,
-  filters,
-  className,
-  setGroupBy,
-  selectedWorkspaces,
-}: GroupByTagButtonProps) {
-  const equivalent = filters.tags[tag.key];
-
-  useEffect(() => {
-    if (filters.isLoading) {
-      return;
-    }
-
-    if (equivalent && equivalent !== tag) {
-      setGroupBy({ type: 'tag', tag: equivalent });
-    }
-  }, [filters.isLoading, equivalent, tag, setGroupBy]);
-  return <Text>{tag.displayName}</Text>;
+function GroupByTagButton({ tag }: GroupByTagButtonProps) {
+  const { parentTag, name: childName } = usePartialVertex(tag, [
+    'parentTag',
+    'name',
+  ]);
+  const { name: parentName } = usePartialVertex(parentTag!.manager, ['name']);
+  return <Text>{`${parentName}/${childName}`}</Text>;
 }
 
-export interface GroupByDropDownProps {
-  filters: FiltersStateController;
-  groupBy: GroupBy;
-  setGroupBy: (groupBy: GroupBy) => void;
-  selectedWorkspaces: VertexManager<Workspace>[];
-}
-
-function formatGroupBy(groupBy: GroupBy) {
-  if (groupBy.type === 'tag') {
-    return `${groupBy.type}/${groupBy.tag.key}`;
-  }
-  return groupBy.type;
-}
-
-export function GroupByDropDown({
-  groupBy,
-  setGroupBy,
-  selectedWorkspaces,
-  filters,
-}: GroupByDropDownProps) {
+export function GroupByDropDown() {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const strings = useStrings();
+  const partialFilter = usePartialFilter(['groupBy', 'groupByPivot']);
+  const parentTagsQuery = useSharedQuery('parentTags');
 
-  const mapQuery = (val: string) => {
-    if (!val) {
-      return;
-    }
-    const [type, tag] = val.split('/');
-    if (type === 'assignee' || type === 'workspace') {
-      setGroupBy({ type });
-    } else if (tag) {
-      const entry = Object.entries(filters.tags).find(
-        ([key, x]) => key === tag
-      );
-      if (!entry) {
-        return;
-      }
-      const [, tagSection] = entry;
-      setGroupBy({ type: 'tag', tag: tagSection });
-    }
-  };
-  useSyncUrlParam('groupBy', false, formatGroupBy(groupBy), mapQuery, {
-    isReady: !filters.isLoading,
-  });
-
-  const setGroup = (group: 'assignee' | 'workspace') => {
-    eventLogger.action('SET_GROUP_BY', {
-      data: {
-        groupBy: group,
-      },
-    });
-    setGroupBy({ type: group });
-  };
+  const setGroup = useCallback(
+    (group: 'assignee' | 'workspace') => {
+      logger.log({
+        severity: 'INFO',
+        event: 'FilterChange',
+        type: ('groupBy:' + group) as FilterGroupBy,
+      });
+      partialFilter.groupBy = group;
+    },
+    [logger, partialFilter]
+  );
   const renderButton = useCallback(() => {
     const content =
-      groupBy.type === 'tag' ? (
+      partialFilter.groupBy === 'tag' ? (
         <GroupByTagButton
-          filters={filters}
-          tag={groupBy.tag}
-          selectedWorkspaces={selectedWorkspaces}
-          setGroupBy={setGroupBy}
+          tag={partialFilter.groupByPivot!.manager as VertexManager<Tag>}
         />
       ) : (
-        <Text>{strings[groupBy.type]}</Text>
+        <Text>{strings[partialFilter.groupBy!]}</Text>
       );
 
     return (
@@ -132,17 +85,21 @@ export function GroupByDropDown({
         {content}
       </div>
     );
-  }, [strings, groupBy, selectedWorkspaces, setGroupBy, styles, filters]);
+  }, [strings, partialFilter, styles]);
 
-  const setTag = (tag: SharedParentTag) => {
-    eventLogger.action('SET_GROUP_BY', {
-      data: { groupBy: 'tag', tag: tag.displayName },
-    });
-    setGroupBy({
-      type: 'tag',
-      tag,
-    });
-  };
+  const setTag = useCallback(
+    (tag: Tag) => {
+      logger.log({
+        severity: 'INFO',
+        event: 'FilterChange',
+        type: 'groupBy:tag',
+        vertex: tag.key,
+      });
+      partialFilter.groupBy = 'tag';
+      partialFilter.groupByPivot = tag;
+    },
+    [logger, partialFilter]
+  );
 
   return (
     <Menu renderButton={renderButton} align="start">
@@ -153,9 +110,9 @@ export function GroupByDropDown({
         {strings.assignee}
       </MenuItem>
       <SecondaryMenuItem text={strings.groupByTag}>
-        {Object.values(filters.tags).map((x) => (
-          <MenuItem key={x.key} onClick={() => setTag(x)}>
-            {x.displayName}
+        {parentTagsQuery.map((tag) => (
+          <MenuItem key={tag.key} onClick={() => setTag(tag)}>
+            {tag.name}
           </MenuItem>
         ))}
       </SecondaryMenuItem>

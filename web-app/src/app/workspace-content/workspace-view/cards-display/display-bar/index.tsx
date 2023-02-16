@@ -36,7 +36,10 @@ import {
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { useFilter, usePartialFilter } from '../../../../index.tsx';
-import { UISource } from '../../../../../../../logging/client-events.ts';
+import {
+  FilterType,
+  UISource,
+} from '../../../../../../../logging/client-events.ts';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -119,13 +122,7 @@ type ExtraFiltersProps = {
   // selectedWorkspaces: VertexManager<Workspace>[];
 };
 
-function SortByDropDown({
-  filter: filterMgr,
-  source,
-}: {
-  filter: VertexManager<Filter>;
-  source?: UISource;
-}) {
+function SortByDropDown({ source }: { source?: UISource }) {
   const styles = useStyles();
   const strings = useStrings();
   const logger = useLogger();
@@ -146,8 +143,8 @@ function SortByDropDown({
     (val: FilterSortBy) => {
       logger.log({
         severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'sortBy',
+        event: 'FilterChange',
+        type: ('sortBy:' + val) as FilterType,
         vertex: partialFilter.key,
         source,
       });
@@ -172,19 +169,11 @@ function SortByDropDown({
 }
 
 function ExtraFilters(props: ExtraFiltersProps) {
-  const filter = useFilter();
   let content = null;
   if (props.viewType === ViewType.List) {
-    content = <SortByDropDown filter={filter.manager} />;
+    content = <SortByDropDown />;
   } else {
-    content = (
-      <GroupByDropDown
-        filters={props.filters}
-        groupBy={props.groupBy}
-        setGroupBy={props.setGroupBy}
-        selectedWorkspaces={props.selectedWorkspaces}
-      />
-    );
+    content = <GroupByDropDown />;
   }
 
   return <>{content}</>;

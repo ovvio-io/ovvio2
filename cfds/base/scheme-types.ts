@@ -173,10 +173,10 @@ export type NoteStatus = 'ToDo' | 'InProgress' | 'Suspended' | 'Done';
 export type FilterSortBy = typeof FilterSortByValues[number];
 
 export const FilterSortByValues = [
-  'Priority',
-  'Created',
-  'Modified',
-  'Due',
+  'priority',
+  'created',
+  'modified',
+  'due',
 ] as const;
 
 export type FilterGroupBy = 'assignee' | 'workspace' | 'tag';

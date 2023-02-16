@@ -53,7 +53,17 @@ export type DataType = 'workspace' | 'note' | 'task' | 'tag' | 'tag-category';
 
 export type UIStatus = 'started' | 'ended' | 'cancelled';
 
-export type FilterType = 'workspace' | 'tag' | 'assignee' | 'sortBy';
+export type FilterType =
+  | 'workspace'
+  | 'tag'
+  | 'assignee'
+  | 'sortBy:priority'
+  | 'sortBy:created'
+  | 'sortBy:modified'
+  | 'sortBy:due'
+  | 'groupBy:assignee'
+  | 'groupBy:workspace'
+  | 'groupBy:tag';
 
 export type UIFlow =
   | 'create'

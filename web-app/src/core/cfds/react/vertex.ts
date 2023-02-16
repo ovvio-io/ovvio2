@@ -93,6 +93,10 @@ export function useVertexByKey<V extends Vertex>(key: string): V | undefined {
 
 export type VertexId<T extends Vertex = Vertex> = T | string | VertexManager<T>;
 
+export function KeyFromVertexId<T extends Vertex>(id: VertexId<T>): string {
+  return typeof id === 'string' ? id : id.key;
+}
+
 export function useVertexManager<V extends Vertex>(
   id: VertexId<V> | undefined | null
 ): VertexManager<V> | undefined | null;
