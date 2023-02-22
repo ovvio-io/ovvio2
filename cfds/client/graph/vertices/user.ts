@@ -50,6 +50,13 @@ export class User extends BaseVertex {
   }
 
   compare(other: User): number {
+    const rootKey = this.graph.rootKey;
+    if (this.key === rootKey) {
+      return -1;
+    }
+    if (other.key === rootKey) {
+      return 1;
+    }
     return coreValueCompare(this.name, other.name) || super.compare(other);
   }
 }

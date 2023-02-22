@@ -6,6 +6,7 @@ import {
   Workspace,
 } from '../../../../cfds/client/graph/vertices/index.ts';
 import { NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
+import { KeyFromVertexId, VertexId } from '../../core/cfds/react/vertex.ts';
 
 type PartialCardData = Partial<TypeOfScheme<typeof NOTE_SCHEME>>;
 export type CardData = Omit<PartialCardData, 'type'> & { type: NoteType };
@@ -16,24 +17,24 @@ export const emptyDoc = () => ({
 
 export function createNewNote(
   graph: GraphManager,
-  ws: Workspace,
+  ws: VertexId<Workspace>,
   data: CardData
 ): Note {
   const { type } = data;
-  const tagsMap = new Map(
-    Array.from(type === NoteType.Note ? ws.noteTags : ws.taskTags).map(
-      ([p, t]) => [p.key, t.key]
-    )
-  );
+  // const tagsMap = new Map(
+  //   Array.from(type === NoteType.Note ? ws.noteTags : ws.taskTags).map(
+  //     ([p, t]) => [p.key, t.key]
+  //   )
+  // );
 
   const baseData: CardData = {
-    workspace: ws.key,
+    workspace: KeyFromVertexId(ws),
     createdBy: graph.rootKey,
     title: emptyDoc(),
     body: emptyDoc(),
     type: type,
     assignees: new Set<string>([graph.rootKey]),
-    tags: tagsMap,
+    // tags: tagsMap,
     creationDate: new Date(),
   };
   const card = graph.createVertex<Note>(NS_NOTES, {

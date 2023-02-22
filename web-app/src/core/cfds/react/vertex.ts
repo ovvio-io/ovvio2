@@ -8,7 +8,7 @@ import {
   MutationPack,
   mutationPackIter,
 } from '../../../../../cfds/client/graph/mutations.ts';
-import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
+import { Vertex, VertexId } from '../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { mapIterable } from '../../../../../base/common.ts';
 
@@ -89,12 +89,6 @@ export function useVertexByKey<V extends Vertex>(key: string): V | undefined {
   );
 
   return useVertex(vertexMng);
-}
-
-export type VertexId<T extends Vertex = Vertex> = T | string | VertexManager<T>;
-
-export function KeyFromVertexId<T extends Vertex>(id: VertexId<T>): string {
-  return typeof id === 'string' ? id : id.key;
 }
 
 export function useVertexManager<V extends Vertex>(

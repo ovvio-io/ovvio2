@@ -1,23 +1,36 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Tag, User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import Layer from '@ovvio/styles/lib/components/layer';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { createUniversalPortal } from '@ovvio/styles/lib/utils/ssr';
-import { useRootUser } from 'core/cfds/react/graph';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import React, { MouseEvent, useState } from 'react';
-import { FilterCheckbox } from './filter-checkbox';
-import localization from './filters.strings.json';
+import React, { MouseEvent, useState } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
-  FiltersStateController,
-  ParentTagState,
-  SharedParentTag,
-  SharedTag,
-} from './state';
+  Tag,
+  User,
+} from '../../../../../../../../cfds/client/graph/vertices/index.ts';
+import { layout, styleguide } from '../../../../../../../../styles/index.ts';
+import Layer from '../../../../../../../../styles/components/layer.tsx';
+import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { createUniversalPortal } from '../../../../../../../../styles/utils/ssr.ts';
+import { useRootUser } from '../../../../../../core/cfds/react/graph.tsx';
+import {
+  usePartialVertex,
+  useVertex,
+  useVertices,
+  VertexId,
+} from '../../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../../core/localization/index.tsx';
+import { FilterCheckbox } from './filter-checkbox.tsx';
+import localization from './filters.strings.json' assert { type: 'json' };
+import { useCallback } from 'https://esm.sh/v99/@types/react@18.0.25/index.d.ts';
+import {
+  useExistingQuery,
+  useSharedQuery,
+} from '../../../../../../core/cfds/react/query.ts';
+import * as SetUtils from '../../../../../../../../base/set.ts';
+import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
+import { useFilter } from '../../../../../index.tsx';
 
 const useStyles = makeStyles(
   () => ({
@@ -107,7 +120,7 @@ function AssigneeView({
   onToggle,
 }: {
   selected: boolean;
-  user: VertexManager<User>;
+  user: VertexId<User>;
   onToggle: () => void;
 }) {
   const u = usePartialVertex(user, ['name']);
@@ -121,7 +134,6 @@ function AssigneeView({
 
 export interface FiltersViewProps {
   className?: string;
-  filters: FiltersStateController;
   isVisible: boolean;
   setIsVisible: (visible: boolean) => void;
 }
@@ -135,11 +147,16 @@ function FilterBackdrop({
 }) {
   const styles = useStyles();
 
-  const click = (e: MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onClick();
-  };
+  const click = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (onClick) {
+        onClick();
+      }
+    },
+    [onClick]
+  );
 
   return createUniversalPortal(
     <div style={style} className={styles.backdrop} onClick={click} />
@@ -148,7 +165,6 @@ function FilterBackdrop({
 
 export function FiltersView({
   className,
-  filters,
   isVisible,
   setIsVisible,
 }: FiltersViewProps) {
@@ -156,7 +172,7 @@ export function FiltersView({
   return (
     <div className={cn(styles.root)}>
       <Layer>
-        {style => (
+        {(style) => (
           <React.Fragment>
             {isVisible && (
               <FilterBackdrop
@@ -173,7 +189,7 @@ export function FiltersView({
               )}
               style={{ zIndex: style.zIndex + 1 }}
             >
-              <InternalFiltersView filters={filters} />
+              <InternalFiltersView />
             </div>
           </React.Fragment>
         )}
@@ -184,18 +200,15 @@ export function FiltersView({
 
 const SECTION_SIZE = 5;
 
-function TagSection({
-  tag,
-  toggleTag,
-}: {
-  tag: Readonly<SharedParentTag>;
-  toggleTag: (tag: Tag | SharedTag) => void;
-}) {
+function TagSection({ tag }: { tag: VertexId<Tag> }) {
   const styles = useStyles();
   const strings = useStrings();
   const [showMore, setShowMore] = useState(false);
+  const parentTag = useVertex(tag);
+  const childTagsQuery = useExistingQuery(parentTag.childTagsQuery);
+  const filter = useFilter();
 
-  let visibleTags = Object.entries(tag.childTags);
+  let visibleTags = useVertices(childTagsQuery.results);
   const hasMore = visibleTags.length > SECTION_SIZE;
   if (!showMore) {
     visibleTags = visibleTags.slice(0, SECTION_SIZE);
@@ -204,25 +217,32 @@ function TagSection({
   return (
     <div className={cn(styles.section)}>
       <div className={cn(styles.sectionHeader)}>
-        <RadioCheckBox checked={tag.status} onChecked={() => toggleTag(tag)} />
-        {tag.displayName}
+        <RadioCheckBox
+          checked={parentTag.selected}
+          onChecked={() => toggleTag(tag)}
+        />
+        {parentTag.name}
       </div>
-      {visibleTags.map(([childKey, child]) => (
+      {visibleTags.map((childTag) => (
         <div
           className={cn(styles.sectionOption)}
-          key={childKey}
-          onClick={() => toggleTag(child)}
+          key={childTag.key}
+          onClick={() => {
+            childTag.selected = !childTag.selected;
+          }}
         >
           <RadioCheckBox
-            checked={child.selected}
-            onChecked={() => toggleTag(child)}
+            checked={childTag.selected}
+            onChecked={() => {
+              childTag.selected = !childTag.selected;
+            }}
           />
-          {child.displayName}
+          {childTag.name}
         </div>
       ))}
       {hasMore && (
         <div
-          onClick={() => setShowMore(x => !x)}
+          onClick={() => setShowMore((x) => !x)}
           className={cn(styles.showMore)}
         >
           {showMore ? strings.showLess : strings.showMore}
@@ -232,19 +252,16 @@ function TagSection({
   );
 }
 
-function InternalFiltersView({ filters }: { filters: FiltersStateController }) {
+function InternalFiltersView() {
   const styles = useStyles();
   const strings = useStrings();
-  const rootUser = useRootUser();
-  let assignees = filters.assignees
-    .slice()
-    .sort((a, b) =>
-      a.user.key === rootUser.key
-        ? -1
-        : b.user.key === rootUser.key
-        ? 1
-        : b.user.displayName.localeCompare(a.user.displayName)
-    );
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+  const selectedWorkspaces = useVertices(selectedWorkspacesQuery.results);
+  const assigneesSet = new Set<User>();
+  for (const ws of selectedWorkspaces) {
+    SetUtils.update(assigneesSet, ws.users);
+  }
+  let assignees = Array.from(assigneesSet).sort(coreValueCompare);
 
   const [showMore, setShowMore] = useState(false);
 
@@ -257,7 +274,7 @@ function InternalFiltersView({ filters }: { filters: FiltersStateController }) {
     <div className={cn(styles.filtersView)}>
       <div className={cn(styles.section)}>
         <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {assignees.map(assignee => (
+        {assignees.map((assignee) => (
           <AssigneeView
             key={assignee.user.key}
             {...assignee}
@@ -266,7 +283,7 @@ function InternalFiltersView({ filters }: { filters: FiltersStateController }) {
         ))}
         {hasMore && (
           <div
-            onClick={() => setShowMore(x => !x)}
+            onClick={() => setShowMore((x) => !x)}
             className={cn(styles.showMore)}
           >
             {showMore ? strings.showLess : strings.showMore}

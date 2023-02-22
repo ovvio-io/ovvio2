@@ -71,6 +71,12 @@ export interface VertexConfig {
   isLocal?: boolean;
 }
 
+export type VertexId<T extends Vertex = Vertex> = T | string | VertexManager<T>;
+
+export function KeyFromVertexId<T extends Vertex>(id: VertexId<T>): string {
+  return typeof id === 'string' ? id : id.key;
+}
+
 /**
  * WARNING: All mutable properties must be of type `CoreValue`. If you
  * use a custom class than implement the `Comparable` interface on it. If you

@@ -36,7 +36,11 @@ import {
   useGraphManager,
   useRootUser,
 } from '../../../../../core/cfds/react/graph.tsx';
-import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  useCurrentUser,
+  usePartialVertex,
+  useVertices,
+} from '../../../../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
 import {
   NOTE,
@@ -48,6 +52,7 @@ import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 
 const showAnim = keyframes({
   '0%': {
@@ -304,7 +309,7 @@ export function sortWorkspaces(
 }
 
 export interface SelectWorkspaceMenuProps {
-  value: VertexManager<Workspace>;
+  value: VertexManager<Workspace> | null;
   onChange: (wsMng: VertexManager<Workspace>) => void;
 }
 export function SelectWorkspaceMenu({
@@ -313,11 +318,13 @@ export function SelectWorkspaceMenu({
 }: SelectWorkspaceMenuProps) {
   const styles = useStyles();
   const graph = useGraphManager();
-  const user = useRootUser();
-  const { hiddenWorkspaces, pinnedWorkspaces, workspaces } = usePartialVertex(
-    user.manager as VertexManager<User>,
-    ['hiddenWorkspaces', 'pinnedWorkspaces', 'workspaces']
+  const user = useCurrentUser();
+  const { hiddenWorkspaces, pinnedWorkspaces } = usePartialVertex(
+    user.settings,
+    ['hiddenWorkspaces', 'pinnedWorkspaces']
   );
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results);
   const sortedWorkspaces = Array.from(workspaces)
     .filter((x) => !!x.name)
     .sort((ws1, ws2) =>

@@ -14,7 +14,7 @@ import {
   SourceType,
   UnionQuery,
 } from '../query.ts';
-import { Vertex } from '../vertex.ts';
+import { Vertex, VertexId } from '../vertex.ts';
 import { BaseVertex, Note, Tag, User, Workspace } from './index.ts';
 import { NoteType } from './note.ts';
 
@@ -46,6 +46,26 @@ export class Filter extends BaseVertex {
     );
   }
 
+  toggleTag(tagId: VertexId<Tag>): void {
+    const tag = this.graph.getVertex(tagId);
+    if (tag.parent) {
+      if (this.tags.has(tag)) {
+        this.tags.delete(tag);
+      } else {
+        this.tags.add(tag);
+      }
+    } else {
+      for (const t of tag.childTagsQuery.results) {
+        const childTag = t.getVertexProxy();
+        if (this.tags.has(childTag)) {
+          this.tags.delete(childTag);
+        } else {
+          this.tags.add(childTag);
+        }
+      }
+    }
+  }
+
   get assignees(): Set<User> {
     return this.vertSetForField('assignees');
   }
@@ -57,16 +77,16 @@ export class Filter extends BaseVertex {
     );
   }
 
-  get workspaces(): Set<Workspace> {
-    return this.vertSetForField('workspaces');
-  }
+  // get workspaces(): Set<Workspace> {
+  //   return this.vertSetForField('workspaces');
+  // }
 
-  set workspaces(workspaces: Set<Workspace>) {
-    this.record.set(
-      'workspaces',
-      SetUtils.map(workspaces, (ws) => ws.key)
-    );
-  }
+  // set workspaces(workspaces: Set<Workspace>) {
+  //   this.record.set(
+  //     'workspaces',
+  //     SetUtils.map(workspaces, (ws) => ws.key)
+  //   );
+  // }
 
   get noteType(): NoteType | undefined {
     return this.record.get<NoteType>('noteType');
@@ -154,9 +174,9 @@ export class Filter extends BaseVertex {
   }
 
   getEffectiveWorkspaces(): Workspace[] {
-    if (this.workspaces) {
-      return Array.from(this.workspaces);
-    }
+    // if (this.workspaces) {
+    //   return Array.from(this.workspaces);
+    // }
     return this.graph.sharedQueriesManager.selectedWorkspaces.results.map(
       (mgr) => mgr.getVertexProxy()
     );
@@ -186,9 +206,9 @@ export class Filter extends BaseVertex {
     pinned?: boolean,
     workspaces?: Set<Workspace>
   ): Query<Note, Note> {
-    if (!workspaces) {
-      workspaces = this.workspaces;
-    }
+    // if (!workspaces) {
+    //   workspaces = this.workspaces;
+    // }
     if (typeof pinned === 'undefined') {
       pinned = this.pinned;
     }

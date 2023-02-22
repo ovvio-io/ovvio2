@@ -3,7 +3,7 @@ import { duplicateCard } from '../../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
 import { initRichText } from '../../../../../../cfds/richtext/tree.ts';
-import { createNewCard } from '../../../../shared/card/create.ts';
+import { createNewNote } from '../../../../shared/card/create.ts';
 import { CardElement } from './index.tsx';
 
 export function withCards(
@@ -28,7 +28,7 @@ export function withCards(
           // happens, our next best effort is to duplicate the subtask without
           // its inner tasks
           if (duplicatedTask === undefined) {
-            duplicatedTask = createNewCard(
+            duplicatedTask = createNewNote(
               noteMgr.graph,
               noteMgr.getVertexProxy().workspace,
               {

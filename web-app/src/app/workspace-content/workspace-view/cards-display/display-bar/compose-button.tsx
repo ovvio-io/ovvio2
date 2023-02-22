@@ -1,25 +1,35 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import Menu, { MenuItem } from '@ovvio/styles/lib/components/menu';
-import { IconCompose } from '@ovvio/styles/lib/components/new-icons/icon-compose';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { useVertices } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import { useDocumentRouter } from 'core/react-utils';
-import React, { useState } from 'react';
-import { createNewCard } from 'shared/card/create';
-import { WorkspaceItem } from 'shared/invite-form/workspaces-dropdown';
-import { useTutorialStep } from 'shared/tutorial';
-import { SelectWorkspaceMenu } from '../card-item/workspace-indicator';
-import localization from '../cards-display.strings.json';
-import { DisplayBarSteps } from './tutorial';
+import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import {
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import Menu from '../../../../../../../styles/components/menu.tsx';
+import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
+import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../../../../styles/responsive.ts';
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import {
+  useVertices,
+  VertexId,
+} from '../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
+import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { NS_NOTES } from '../../../../../../../cfds/base/scheme-types.ts';
+import { createNewNote } from '../../../../../shared/card/create.ts';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+
 const useStyles = makeStyles(() => ({
   compose: {
     background: theme.colors.primaryButton,
@@ -51,10 +61,6 @@ const useStyles = makeStyles(() => ({
 
 const useStrings = createUseStrings(localization);
 
-export interface ComposeButtonProps {
-  selectedWorkspaces: VertexManager<Workspace>[];
-}
-
 const ComposeInternalButton = React.forwardRef(
   (
     { className }: { className?: string },
@@ -72,65 +78,51 @@ const ComposeInternalButton = React.forwardRef(
   }
 );
 
-export function ComposeButton({ selectedWorkspaces }: ComposeButtonProps) {
+export function ComposeButton() {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const docRouter = useDocumentRouter();
-  const workspaces = useVertices(selectedWorkspaces);
-  const [container, setContainer] = useState<HTMLDivElement>();
-  const { className: composeStepClassName, next: nextStep } = useTutorialStep(
-    DisplayBarSteps.CreateNote,
-    container
+  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const graph = useGraphManager();
+
+  const createCard = useCallback(
+    (ws: VertexId<Workspace>) => {
+      const note = createNewNote(graph, ws, {
+        type: NoteType.Note,
+      });
+
+      logger.log({
+        severity: 'INFO',
+        event: 'Create',
+        type: 'note',
+        source: 'toolbar:compose',
+        vertex: note.key,
+      });
+
+      docRouter.goTo(note);
+    },
+    [logger, graph, docRouter]
   );
 
-  const createCard = (ws: Workspace) => {
-    nextStep();
-
-    const note = createNewCard(ws.graph, ws, {
-      type: NoteType.Note,
-    });
-
-    eventLogger.cardAction('CARD_CREATED', note, {
-      category: EventCategory.FAB,
-    });
-
-    docRouter.goTo(note);
-  };
-
-  if (selectedWorkspaces.length === 1) {
+  if (selectedWorkspacesQuery.count === 1) {
     return (
-      <Button onClick={() => createCard(workspaces[0])}>
-        <ComposeInternalButton
-          ref={div => setContainer(div)}
-          className={composeStepClassName}
-        />
+      <Button onClick={() => createCard(selectedWorkspacesQuery.results[0])}>
+        <ComposeInternalButton ref={(div) => setContainer(div)} />
       </Button>
     );
   }
-  const onOpenMenu = () => {
-    eventLogger.action('COMPOSE_BUTTON_MENU_OPENED', {
-      category: EventCategory.GENERAL,
-    });
-    nextStep();
-  };
   return (
     <Menu
       renderButton={() => (
-        <ComposeInternalButton
-          ref={div => setContainer(div)}
-          className={composeStepClassName}
-        />
+        <ComposeInternalButton ref={(div) => setContainer(div)} />
       )}
       position="right"
       align="center"
       direction="in"
-      onClick={onOpenMenu}
       popupClassName={cn(styles.workspacesList)}
     >
-      <SelectWorkspaceMenu
-        value={null}
-        onChange={ws => createCard(ws.getVertexProxy())}
-      />
+      <SelectWorkspaceMenu value={null} onChange={(ws) => createCard(ws)} />
       {/* {selectedWorkspaces.map(workspace => (
         <MenuItem
           key={workspace.key}

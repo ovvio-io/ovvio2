@@ -5,6 +5,7 @@ import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
 import { brandLightTheme } from '../../theme.tsx';
 import { useTypographyStyles } from '../typography.tsx';
+import { NoteType } from '../../../cfds/client/graph/vertices/note.ts';
 
 const useStyles = makeStyles(
   (theme) => ({
@@ -92,10 +93,9 @@ export function TabButton({
   );
 }
 
-export interface TabsHeaderProps {
-  children: any;
-  selected: any;
-  setSelected: any;
+export interface TabsHeaderProps extends React.PropsWithChildren {
+  selected: NoteType;
+  setSelected: (type: NoteType) => void;
   className?: string;
 }
 export function TabsHeader({
@@ -142,9 +142,8 @@ export function TabsHeader({
   );
 }
 
-export interface TabsProps {
-  children: any;
-  selectedTab: any;
+export interface TabsProps extends React.PropsWithChildren {
+  selectedTab: NoteType;
   className?: string;
 }
 export function Tabs({ children, selectedTab, className }: TabsProps) {
@@ -190,8 +189,7 @@ export function Tabs({ children, selectedTab, className }: TabsProps) {
   );
 }
 
-export interface TabProps<TV = any> {
-  children: any;
+export interface TabProps<TV = any> extends React.PropsWithChildren {
   style?: any;
   className?: string;
   value: TV;

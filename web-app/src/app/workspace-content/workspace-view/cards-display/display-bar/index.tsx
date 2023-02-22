@@ -35,11 +35,16 @@ import {
 } from '../../../../../../../cfds/base/scheme-types.ts';
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { useFilter, usePartialFilter } from '../../../../index.tsx';
+import {
+  useFilter,
+  useFilterContext,
+  usePartialFilter,
+} from '../../../../index.tsx';
 import {
   FilterType,
   UISource,
 } from '../../../../../../../logging/client-events.ts';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -187,14 +192,17 @@ interface FilterButtonProps {
 function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
   const styles = useStyles();
   const strings = useStrings();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
-  const filterButtonClicked = () => {
-    eventLogger.action(showFilters ? 'FILTER_BAR_HIDDEN' : 'FILTER_BAR_SHOWN', {
-      category: EventCategory.FILTERS,
+  const filterButtonClicked = useCallback(() => {
+    logger.log({
+      severity: 'INFO',
+      event: 'Click',
+      source: 'toolbar:filterButton',
+      flag: !showFilters,
     });
     setShowFilters((x) => !x);
-  };
+  }, [logger, showFilters, setShowFilters]);
 
   return (
     <Button
@@ -207,28 +215,36 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
   );
 }
 
-interface NoteTypeToggleProps {
-  noteType: NoteType;
-  setNoteType: (noteType: NoteType) => void;
-}
+// interface NoteTypeToggleProps {
+//   noteType: NoteType;
+//   setNoteType: (noteType: NoteType) => void;
+// }
 
-function parseNoteType(val: string): NoteType {
-  if (val && val.toLowerCase() === NoteType.Note) {
-    return NoteType.Note;
-  }
-  return NoteType.Task;
-}
+// function parseNoteType(val: string): NoteType {
+//   if (val && val.toLowerCase() === NoteType.Note) {
+//     return NoteType.Note;
+//   }
+//   return NoteType.Task;
+// }
 
-function NoteTypeToggle({ noteType, setNoteType }: NoteTypeToggleProps) {
+function NoteTypeToggle() {
   const strings = useStrings();
   const styles = useStyles();
-  useSyncUrlParam('type', false, noteType, (val) =>
-    setNoteType(parseNoteType(val))
-  );
+  const filterContext = useFilterContext();
+  const graph = useGraphManager();
+  // useSyncUrlParam('type', false, noteType, (val) =>
+  //   setNoteType(parseNoteType(val))
+  // );
   return (
     <TabsHeader
-      selected={noteType}
-      setSelected={setNoteType}
+      selected={filterContext.filter.getVertexProxy().noteType!}
+      setSelected={(type: NoteType) =>
+        filterContext.setFilter(
+          graph.getVertexManager(
+            type === NoteType.Note ? 'NotesFilter' : 'TasksFilter'
+          )
+        )
+      }
       className={cn(styles.noteTypeToggle)}
     >
       <TabButton value={NoteType.Task}>{strings.task}</TabButton>
@@ -238,54 +254,45 @@ function NoteTypeToggle({ noteType, setNoteType }: NoteTypeToggleProps) {
 }
 
 export type DisplayBarProps = ExtraFiltersProps &
-  FilterButtonProps &
-  NoteTypeToggleProps & {
+  FilterButtonProps & {
     setViewType: (viewType: ViewType) => void;
     className?: string;
   };
 
-const After = [VideoTutorialId];
+// const After = [VideoTutorialId];
 
 export function DisplayBar(props: DisplayBarProps) {
-  const {
-    noteType,
-    setNoteType,
-    setViewType,
-    className,
-    showFilters,
-    setShowFilters,
-    selectedWorkspaces,
-    ...rest
-  } = props;
+  const { setViewType, className, showFilters, setShowFilters, ...rest } =
+    props;
   const { viewType } = props;
   const styles = useStyles();
-  const steps = useDisplayBarTutorialSteps();
+  // const steps = useDisplayBarTutorialSteps();
   // useSyncedFilter(props);
 
   return (
-    <UserOnboard playAfter={After} tutorialId="DISPLAY_BAR" steps={steps}>
-      <div className={cn(styles.bar, className)}>
-        <div className={cn(styles.barRow, styles.viewRow)}>
-          <NoteTypeToggle noteType={noteType} setNoteType={setNoteType} />
-        </div>
-        <div className={cn(styles.barRow)}>
-          <FilterButton
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-          />
-          <div className={cn(styles.separator)} />
-          <ViewToggle
-            viewType={viewType}
-            setViewType={setViewType}
-            className={cn(styles.viewToggle)}
-          />
-          <div className={cn(layout.flexSpacer)} />
-          <ExtraFilters {...rest} selectedWorkspaces={selectedWorkspaces} />
-          <ToolbarRightItem>
-            <ComposeButton selectedWorkspaces={selectedWorkspaces} />
-          </ToolbarRightItem>
-        </div>
+    // <UserOnboard playAfter={After} tutorialId="DISPLAY_BAR" steps={steps}>
+    <div className={cn(styles.bar, className)}>
+      <div className={cn(styles.barRow, styles.viewRow)}>
+        <NoteTypeToggle />
       </div>
-    </UserOnboard>
+      <div className={cn(styles.barRow)}>
+        <FilterButton
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+        />
+        <div className={cn(styles.separator)} />
+        <ViewToggle
+          viewType={viewType}
+          setViewType={setViewType}
+          className={cn(styles.viewToggle)}
+        />
+        <div className={cn(layout.flexSpacer)} />
+        <ExtraFilters {...rest} />
+        <ToolbarRightItem>
+          <ComposeButton />
+        </ToolbarRightItem>
+      </div>
+    </div>
+    // </UserOnboard>
   );
 }

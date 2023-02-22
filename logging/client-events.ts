@@ -28,6 +28,11 @@ export type EditorUISource =
   | 'editor:legend'
   | 'editor:tooltip';
 
+export type ToolbarUISource =
+  | 'toolbar'
+  | 'toolbar:filterButton'
+  | 'toolbar:compose';
+
 export type UISource =
   | 'list'
   | 'title'
@@ -38,7 +43,8 @@ export type UISource =
   | 'click-outside'
   | 'close-button'
   | SettingsType
-  | EditorUISource;
+  | EditorUISource
+  | ToolbarUISource;
 
 export type MetadataType =
   | 'attachment'

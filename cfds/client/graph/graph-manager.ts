@@ -6,7 +6,7 @@ import { Dictionary } from '../../../base/collections/dict.ts';
 import { CoreObject } from '../../../base/core-types/index.ts';
 import { UndoManager } from '../undo/manager.ts';
 import { MutationPack, mutationPackAppend } from './mutations.ts';
-import { Vertex } from './vertex.ts';
+import { KeyFromVertexId, Vertex, VertexId } from './vertex.ts';
 import {
   EVENT_CRITICAL_ERROR,
   EVENT_DID_CHANGE,
@@ -221,8 +221,8 @@ export class GraphManager extends VertexSource {
     return this.getVertexManager<T>(this.rootKey);
   }
 
-  getVertex<T extends Vertex>(key: string): T {
-    return this.getVertexManager<T>(key).getVertexProxy();
+  getVertex<T extends Vertex>(key: VertexId<T>): T {
+    return this.getVertexManager<T>(KeyFromVertexId(key)).getVertexProxy();
   }
 
   createVertex<T extends Vertex>(

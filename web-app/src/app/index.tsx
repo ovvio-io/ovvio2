@@ -63,7 +63,7 @@ export function FilterContextProvider({
 }: FilterContextProviderProps) {
   const graph = useGraphManager();
   const [filter, setFilter] = useState<VertexManager<Filter>>(
-    graph.getVertexManager(filterKey || 'MyTasks')
+    graph.getVertexManager(filterKey || 'TasksFilter')
   );
   return (
     <filterContext.Provider value={{ filter, setFilter }}>

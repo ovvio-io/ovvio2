@@ -15,7 +15,6 @@ import { BoardView } from './board-view/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
 import {
   DisplayBar,
-  GroupBy,
   MOBILE_PADDING,
   SIDES_PADDING,
   TABLET_PADDING,
@@ -148,16 +147,8 @@ export function CardsDisplay() {
       <div className={cn(styles.displayMain)}>
         {!isInSearch ? (
           <DisplayBar
-            filters={filtersController}
-            noteType={noteType}
-            setNoteType={setNoteType}
             viewType={viewType}
             setViewType={setViewType}
-            groupBy={groupBy}
-            setGroupBy={setGroupBy}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            selectedWorkspaces={selectedWorkspaces}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
           />
@@ -165,10 +156,14 @@ export function CardsDisplay() {
           <H2 className={cn(styles.title)}>{strings.searchResults}</H2>
         )}
         <ToolbarCenterItem className={cn(layout.flexSpacer)}>
-          <SearchField query={query} setQuery={setQuery} />
+          <SearchField
+            query={filter.textQuery}
+            setQuery={(q) => {
+              filter.textQuery = q;
+            }}
+          />
         </ToolbarCenterItem>
         <FiltersView
-          filters={filtersController}
           isVisible={showFilters}
           setIsVisible={setShowFilters}
           className={cn(styles.filters)}
