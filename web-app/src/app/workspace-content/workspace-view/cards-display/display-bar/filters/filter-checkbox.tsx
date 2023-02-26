@@ -1,13 +1,14 @@
-import { ParentTagState } from './state';
-
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { styleguide } from '@ovvio/styles';
-import { ChangeEvent } from 'react';
+import React, { ChangeEvent } from 'https://esm.sh/react@18.2.0';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../../styles/index.ts';
 
 const SIZE = styleguide.gridbase * 2;
 
 const useStyles = makeStyles(
-  theme => ({
+  (theme) => ({
     checkbox: {
       display: 'inline-flex',
       flexDirection: 'row',
@@ -26,17 +27,23 @@ const useStyles = makeStyles(
   'filter-checkbox_e52d7c'
 );
 
+export enum FilterCheckboxState {
+  Partial = -1,
+  Off = 0,
+  On = 1,
+}
+
 export interface FilterCheckboxProps {
-  checked: boolean | ParentTagState;
+  checked: boolean | FilterCheckboxState;
   onChecked: () => void;
 }
 
-function getChecked(checked: boolean | ParentTagState) {
+function getChecked(checked: boolean | FilterCheckboxState): boolean {
   switch (checked) {
-    case ParentTagState.None:
-    case ParentTagState.Some:
+    case FilterCheckboxState.Partial:
+    case FilterCheckboxState.Off:
       return false;
-    case ParentTagState.All:
+    case FilterCheckboxState.On:
       return true;
     default:
       return !!checked;
@@ -101,7 +108,7 @@ export function FilterCheckbox({ checked, onChecked }: FilterCheckboxProps) {
   return (
     <label className={cn(styles.checkbox)}>
       {isChecked && <CheckedIcon />}
-      {checked === ParentTagState.Some && <PartialIcon />}
+      {checked === FilterCheckboxState.Partial && <PartialIcon />}
       <input
         onChange={onChange}
         className={cn(styles.input)}

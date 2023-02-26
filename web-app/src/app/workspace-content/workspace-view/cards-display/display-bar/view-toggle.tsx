@@ -1,18 +1,23 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { IconListView } from '@ovvio/styles/lib/components/new-icons/icon-list-view';
-import { IconBoardView } from '@ovvio/styles/lib/components/new-icons/icon-board-view';
-import Tooltip from '@ovvio/styles/lib/components/tooltip';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import { ViewType } from '.';
-import localization from '../cards-display.strings.json';
+import React, { useCallback } from 'https://esm.sh/react@18.2.0';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import { IconListView } from '../../../../../../../styles/components/new-icons/icon-list-view.tsx';
+import { IconBoardView } from '../../../../../../../styles/components/new-icons/icon-board-view.tsx';
+import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { ViewType } from './index.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { usePartialFilter } from '../../../../index.tsx';
+import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 
 const HEIGHT = styleguide.gridbase * 4;
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   container: {
     basedOn: [layout.row],
   },
@@ -47,32 +52,27 @@ const useStyles = makeStyles(theme => ({
 const useStrings = createUseStrings(localization);
 
 export interface ViewToggleProps {
-  viewType: ViewType;
-  setViewType: (viewType: ViewType) => void;
   className?: string;
 }
 
-export function ViewToggle({
-  viewType,
-  setViewType,
-  className,
-}: ViewToggleProps) {
+export function ViewToggle({ className }: ViewToggleProps) {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const strings = useStrings();
-  useSyncUrlParam('viewType', false, viewType, val => {
-    const v = val === ViewType.Board ? ViewType.Board : ViewType.List;
-    setViewType(v);
-  });
+  const partialFilter = usePartialFilter(['noteType']);
 
-  const setView = (view: ViewType) => {
-    eventLogger.action('SET_VIEW_TYPE', {
-      data: {
-        viewType: view,
-      },
-    });
-    setViewType(view);
-  };
+  const setView = useCallback(
+    (type: NoteType) => {
+      logger.log({
+        severity: 'INFO',
+        event: 'Navigation',
+        type: 'tab',
+        source: type === 'note' ? 'toolbar:tab:notes' : 'toolbar:tab:tasks',
+      });
+      partialFilter.noteType = type;
+    },
+    [logger, partialFilter]
+  );
 
   return (
     <div className={cn(className, styles.container)}>
@@ -80,7 +80,7 @@ export function ViewToggle({
         <Button
           className={cn(
             styles.toggleButton,
-            viewType === ViewType.List && styles.selected
+            partialFilter.noteType === ViewType.List && styles.selected
           )}
           onClick={() => setView(ViewType.List)}
         >

@@ -1,13 +1,16 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { TextField } from '@ovvio/styles/lib/components/inputs';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
-import React from 'react';
-import localization from '../cards-display.strings.json';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { useTextfieldStyles } from '@ovvio/styles/lib/components/inputs/TextField';
+import React from 'https://esm.sh/react@18.2.0';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import { TextField } from '../../../../../../../styles/components/inputs/index.ts';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import { useTextfieldStyles } from '../../../../../../../styles/components/inputs/TextField.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
 const useStyles = makeStyles(() => ({
   base: {
@@ -54,7 +57,7 @@ export interface SearchFieldProps {
 export function SearchField({ query, setQuery }: SearchFieldProps) {
   const styles = useStyles();
   const strings = useStrings();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
 
   return (
     <div className={cn(styles.base)}>
@@ -63,7 +66,20 @@ export function SearchField({ query, setQuery }: SearchFieldProps) {
         value={query}
         onChange={(e: any) => setQuery(e.target.value)}
         onFocus={() => {
-          eventLogger.action('CARD_SEARCH_FOCUSED', {});
+          logger.log({
+            severity: 'INFO',
+            event: 'Start',
+            source: 'toolbar:search',
+            flow: 'edit',
+          });
+        }}
+        onBlur={() => {
+          logger.log({
+            severity: 'INFO',
+            event: 'End',
+            source: 'toolbar:search',
+            flow: 'edit',
+          });
         }}
         className={cn(styles.input)}
       />

@@ -17,11 +17,9 @@ import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { usePartialFilter } from '../../../../index.tsx';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
-import {
-  usePartialVertex,
-  VertexId,
-} from '../../../../../core/cfds/react/vertex.ts';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { FilterGroupBy } from '../../../../../../../cfds/base/scheme-types.ts';
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {

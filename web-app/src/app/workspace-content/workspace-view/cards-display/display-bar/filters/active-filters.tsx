@@ -1,13 +1,21 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { FiltersStateController, SharedTag } from './state';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import React from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
+import { layout, styleguide } from '../../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import {
+  useTheme,
+  brandLightTheme as theme,
+} from '../../../../../../../../styles/theme.tsx';
+import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
+import { useFilter } from '../../../../../index.tsx';
+import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -41,7 +49,6 @@ const useStyles = makeStyles(
 );
 
 export interface ActiveFiltersViewProps {
-  filters: FiltersStateController;
   className?: string;
 }
 
@@ -92,41 +99,53 @@ function TagPill({
   tag,
   onDelete,
 }: {
-  tag: SharedTag;
-  onDelete: (tag: SharedTag) => void;
+  tag: Tag;
+  onDelete: (tag: Tag) => void;
 }) {
   const styles = useStyles();
   return (
     <div className={cn(styles.filterPill)}>
-      <span className={cn(styles.filterText)}>{tag.displayName}</span>
+      <span className={cn(styles.filterText)}>{tag.name}</span>
       <CloseIcon onClick={() => onDelete(tag)} />
     </div>
   );
 }
 
-export function ActiveFiltersView({
-  filters,
-  className,
-}: ActiveFiltersViewProps) {
+export function ActiveFiltersView({ className }: ActiveFiltersViewProps) {
   const styles = useStyles();
-  const showClear = !!(
-    filters.activeAssignees.length || filters.activeTags.length
-  );
+  const filter = useFilter();
+  const showClear = filter.tags.size + filter.assignees.size > 0;
+
   return (
     <div className={className}>
       <div className={cn(styles.filtersView)}>
-        {filters.activeAssignees.map(user => (
-          <AssigneePill
-            key={user.key}
-            user={user}
-            onDelete={filters.toggleAssignee}
-          />
-        ))}
-        {filters.activeTags.map(tag => (
-          <TagPill key={tag.key} tag={tag} onDelete={filters.toggleTag} />
-        ))}
+        {Array.from(filter.assignees)
+          .sort(coreValueCompare)
+          .map((user) => (
+            <AssigneePill
+              key={user.key}
+              user={user.manager}
+              onDelete={() => filter.assignees.delete(user)}
+            />
+          ))}
+        {Array.from(filter.tags)
+          .sort(coreValueCompare)
+          .map((tag) => (
+            <TagPill
+              key={tag.key}
+              tag={tag}
+              onDelete={() => filter.tags.delete(tag)}
+            />
+          ))}
         {showClear && (
-          <Button onClick={() => filters.setActiveFilters([])}>Clear</Button>
+          <Button
+            onClick={() => {
+              filter.assignees.clear();
+              filter.tags.clear();
+            }}
+          >
+            Clear
+          </Button>
         )}
       </div>
     </div>

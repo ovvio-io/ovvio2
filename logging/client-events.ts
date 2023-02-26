@@ -31,7 +31,10 @@ export type EditorUISource =
 export type ToolbarUISource =
   | 'toolbar'
   | 'toolbar:filterButton'
-  | 'toolbar:compose';
+  | 'toolbar:compose'
+  | 'toolbar:search'
+  | 'toolbar:tab:tasks'
+  | 'toolbar:tab:notes';
 
 export type UISource =
   | 'list'

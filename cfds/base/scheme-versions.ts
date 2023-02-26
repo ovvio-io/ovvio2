@@ -263,6 +263,7 @@ const SCHEME_FILTER_1 = SCHEME_BASE_1.derive(
     groupBy: TYPE_STR,
     groupByPivot: TYPE_REF,
     textQuery: TYPE_STR,
+    viewType: TYPE_STR,
   },
   [],
   // Filters are currently personal and live under the user's private repo

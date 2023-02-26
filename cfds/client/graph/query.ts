@@ -229,7 +229,7 @@ export class Query<
     let result = 0;
     const graph = source instanceof GraphManager ? source : source.graph;
     for (const key of source.keys()) {
-      if (predicate(graph.getVertex(key))) {
+      if (predicate(graph.getVertex<IT>(key))) {
         ++result;
         if (limit !== undefined && result >= limit) {
           break;
@@ -497,12 +497,14 @@ export class Query<
         set.add(key);
       }
       // TODO: Wrap in a micro task timer to avoid timing issues around
-      // corountine cancellation
+      // corountine cancellation. This is currently not an issue since we're
+      // using cancelImmediately() rather than cancel().
       this.emit(EVENT_VERTEX_CHANGED, key, pack);
     } else if (wasInSourceKeys) {
       this._resultKeys.delete(key);
       // TODO: Wrap in a micro task timer to avoid timing issues around
-      // corountine cancellation
+      // corountine cancellation. This is currently not an issue since we're
+      // using cancelImmediately() rather than cancel().
       this.emit(EVENT_VERTEX_DELETED, key, pack);
     }
     if (!this.isLoading && wasInSourceKeys !== this.hasVertex(key)) {

@@ -1,6 +1,10 @@
-import React, { MouseEvent, useState } from 'https://esm.sh/react@18.2.0';
-import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+import React, {
+  MouseEvent,
+  useState,
+  useCallback,
+} from 'https://esm.sh/react@18.2.0';
 import {
+  Filter,
   Tag,
   User,
 } from '../../../../../../../../cfds/client/graph/vertices/index.ts';
@@ -13,17 +17,14 @@ import {
 } from '../../../../../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { createUniversalPortal } from '../../../../../../../../styles/utils/ssr.ts';
-import { useRootUser } from '../../../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
   useVertex,
   useVertices,
-  VertexId,
 } from '../../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../../core/localization/index.tsx';
-import { FilterCheckbox } from './filter-checkbox.tsx';
+import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
-import { useCallback } from 'https://esm.sh/v99/@types/react@18.0.25/index.d.ts';
 import {
   useExistingQuery,
   useSharedQuery,
@@ -31,6 +32,7 @@ import {
 import * as SetUtils from '../../../../../../../../base/set.ts';
 import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
 import { useFilter } from '../../../../../index.tsx';
+import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -200,6 +202,40 @@ export function FiltersView({
 
 const SECTION_SIZE = 5;
 
+function toggleTag(filter: Filter, tag: Tag): void {
+  if (tag.parent) {
+    if (filter.tags.has(tag)) {
+      filter.tags.delete(tag);
+    } else {
+      filter.tags.add(tag);
+    }
+  } else {
+    for (const t of tag.childTagsQuery.results) {
+      const childTag = t.getVertexProxy();
+      if (filter.tags.has(childTag)) {
+        filter.tags.delete(childTag);
+      } else {
+        filter.tags.add(childTag);
+      }
+    }
+  }
+}
+
+function getTagState(filter: Filter, tag: Tag): FilterCheckboxState {
+  const filterTags = filter.tags;
+  if (filterTags.has(tag)) {
+    return FilterCheckboxState.On;
+  }
+  if (!tag.parentTag) {
+    for (const childMgr of tag.childTagsQuery.results) {
+      if (filterTags.has(childMgr.getVertexProxy())) {
+        return FilterCheckboxState.Partial;
+      }
+    }
+  }
+  return FilterCheckboxState.Off;
+}
+
 function TagSection({ tag }: { tag: VertexId<Tag> }) {
   const styles = useStyles();
   const strings = useStrings();
@@ -218,8 +254,8 @@ function TagSection({ tag }: { tag: VertexId<Tag> }) {
     <div className={cn(styles.section)}>
       <div className={cn(styles.sectionHeader)}>
         <RadioCheckBox
-          checked={parentTag.selected}
-          onChecked={() => toggleTag(tag)}
+          checked={getTagState(filter, parentTag)}
+          onChecked={() => toggleTag(filter, parentTag)}
         />
         {parentTag.name}
       </div>
@@ -227,15 +263,11 @@ function TagSection({ tag }: { tag: VertexId<Tag> }) {
         <div
           className={cn(styles.sectionOption)}
           key={childTag.key}
-          onClick={() => {
-            childTag.selected = !childTag.selected;
-          }}
+          onClick={() => toggleTag(filter, childTag)}
         >
           <RadioCheckBox
-            checked={childTag.selected}
-            onChecked={() => {
-              childTag.selected = !childTag.selected;
-            }}
+            checked={getTagState(filter, childTag)}
+            onChecked={() => toggleTag(filter, childTag)}
           />
           {childTag.name}
         </div>
@@ -255,8 +287,10 @@ function TagSection({ tag }: { tag: VertexId<Tag> }) {
 function InternalFiltersView() {
   const styles = useStyles();
   const strings = useStrings();
+  const filter = useFilter();
   const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
   const selectedWorkspaces = useVertices(selectedWorkspacesQuery.results);
+  const parentTagsQuery = useSharedQuery('parentTags');
   const assigneesSet = new Set<User>();
   for (const ws of selectedWorkspaces) {
     SetUtils.update(assigneesSet, ws.users);
@@ -274,11 +308,11 @@ function InternalFiltersView() {
     <div className={cn(styles.filtersView)}>
       <div className={cn(styles.section)}>
         <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {assignees.map((assignee) => (
+        {assignees.map((user) => (
           <AssigneeView
-            key={assignee.user.key}
-            {...assignee}
-            onToggle={() => filters.toggleAssignee(assignee.user)}
+            user={user}
+            {...user}
+            onToggle={() => SetUtils.toggleMembership(filter.assignees, user)}
           />
         ))}
         {hasMore && (
@@ -290,8 +324,8 @@ function InternalFiltersView() {
           </div>
         )}
       </div>
-      {Object.entries(filters.tags).map(([key, parent]) => (
-        <TagSection key={key} tag={parent} toggleTag={filters.toggleTag} />
+      {parentTagsQuery.map((tag) => (
+        <TagSection tag={tag} />
       ))}
     </div>
   );
@@ -301,7 +335,7 @@ function RadioCheckBox({
   checked,
   onChecked,
 }: {
-  checked: boolean | ParentTagState;
+  checked: boolean | FilterCheckboxState;
   onChecked: () => void;
 }) {
   const styles = useStyles();

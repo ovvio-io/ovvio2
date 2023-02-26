@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
-import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { NoteType } from '../../../../../../cfds/client/graph/vertices/note.ts';
 import { layout, styleguide } from '../../../../../../styles/index.ts';
 import { H2 } from '../../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
 import { MediaQueries } from '../../../../../../styles/responsive.ts';
 import { createUseStrings } from '../../../../core/localization/index.tsx';
-import { useReffedValue } from '../../../../core/react-utils/index.ts';
-import { useSyncUrlParam } from '../../../../core/react-utils/history/use-sync-url-param.ts';
-import { useDemoInfo } from '../../../../shared/demo/index.tsx';
 import { ToolbarCenterItem } from '../toolbar/index.tsx';
 import { BoardView } from './board-view/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
@@ -25,11 +19,6 @@ import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
 import { SearchField } from './display-bar/search-field.tsx';
 import { ListView } from './list-view/index.tsx';
 import { SearchResults } from './search-results/index.tsx';
-import { Filter } from '../../../../../../cfds/client/graph/vertices/filter.ts';
-import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
-import { useContext } from 'https://esm.sh/v99/@types/react@18.0.25/index.d.ts';
-import { NS_FILTER } from '../../../../../../cfds/base/scheme-types.ts';
-import { useVertex } from '../../../../core/cfds/react/vertex.ts';
 import { useFilter } from '../../../index.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 
@@ -168,10 +157,7 @@ export function CardsDisplay() {
           setIsVisible={setShowFilters}
           className={cn(styles.filters)}
         />
-        <ActiveFiltersView
-          filters={filtersController}
-          className={cn(styles.activeFilters)}
-        />
+        <ActiveFiltersView className={cn(styles.activeFilters)} />
         <div className={cn(styles.displayContent)}>{content}</div>
       </div>
     </div>

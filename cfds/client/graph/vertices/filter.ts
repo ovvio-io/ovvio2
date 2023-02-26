@@ -46,26 +46,6 @@ export class Filter extends BaseVertex {
     );
   }
 
-  toggleTag(tagId: VertexId<Tag>): void {
-    const tag = this.graph.getVertex(tagId);
-    if (tag.parent) {
-      if (this.tags.has(tag)) {
-        this.tags.delete(tag);
-      } else {
-        this.tags.add(tag);
-      }
-    } else {
-      for (const t of tag.childTagsQuery.results) {
-        const childTag = t.getVertexProxy();
-        if (this.tags.has(childTag)) {
-          this.tags.delete(childTag);
-        } else {
-          this.tags.add(childTag);
-        }
-      }
-    }
-  }
-
   get assignees(): Set<User> {
     return this.vertSetForField('assignees');
   }

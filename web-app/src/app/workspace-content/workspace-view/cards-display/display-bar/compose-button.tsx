@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import {
   Note,
@@ -16,10 +15,6 @@ import {
 } from '../../../../../../../styles/css-objects/index.ts';
 import { MediaQueries } from '../../../../../../../styles/responsive.ts';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
-import {
-  useVertices,
-  VertexId,
-} from '../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
@@ -29,6 +24,7 @@ import { NS_NOTES } from '../../../../../../../cfds/base/scheme-types.ts';
 import { createNewNote } from '../../../../../shared/card/create.ts';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles(() => ({
   compose: {
