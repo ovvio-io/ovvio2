@@ -36,6 +36,8 @@ import {
 import { Filter } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import {
+  FilterKeyNotes,
+  FilterKeyTasks,
   useFilter,
   useFilterContext,
   usePartialFilter,
@@ -241,7 +243,7 @@ function NoteTypeToggle() {
       setSelected={(type: NoteType) =>
         filterContext.setFilter(
           graph.getVertexManager(
-            type === NoteType.Note ? 'NotesFilter' : 'TasksFilter'
+            type === NoteType.Note ? FilterKeyNotes : FilterKeyTasks
           )
         )
       }
@@ -281,11 +283,7 @@ export function DisplayBar(props: DisplayBarProps) {
           setShowFilters={setShowFilters}
         />
         <div className={cn(styles.separator)} />
-        <ViewToggle
-          viewType={viewType}
-          setViewType={setViewType}
-          className={cn(styles.viewToggle)}
-        />
+        <ViewToggle className={cn(styles.viewToggle)} />
         <div className={cn(layout.flexSpacer)} />
         <ExtraFilters {...rest} />
         <ToolbarRightItem>

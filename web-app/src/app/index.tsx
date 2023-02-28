@@ -27,6 +27,7 @@ import WorkspaceContentView from './workspace-content/index.tsx';
 import { WorkspacesBar } from './workspaces-bar/index.tsx';
 import { useSharedQuery } from '../core/cfds/react/query.ts';
 import { usePartialVertex, useVertex } from '../core/cfds/react/vertex.ts';
+import { VertexId } from '../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles((theme: any) => ({
   blurred: {
@@ -47,7 +48,7 @@ const useStyles = makeStyles((theme: any) => ({
 
 export interface FilterContext {
   filter: VertexManager<Filter>;
-  setFilter: (filter: VertexManager<Filter>) => void;
+  setFilter: (filter: VertexId<Filter>) => void;
 }
 
 const filterContext = React.createContext<FilterContext | undefined>(undefined);
@@ -57,16 +58,24 @@ export interface FilterContextProviderProps {
   children: React.ReactNode;
 }
 
+export const FilterKeyTasks = 'TasksFilter';
+export const FilterKeyNotes = 'NotesFilter';
+
 export function FilterContextProvider({
   filterKey,
   children,
 }: FilterContextProviderProps) {
   const graph = useGraphManager();
   const [filter, setFilter] = useState<VertexManager<Filter>>(
-    graph.getVertexManager(filterKey || 'TasksFilter')
+    graph.getVertexManager<Filter>(filterKey || FilterKeyTasks)
   );
   return (
-    <filterContext.Provider value={{ filter, setFilter }}>
+    <filterContext.Provider
+      value={{
+        filter,
+        setFilter: (id) => setFilter(graph.getVertexManager<Filter>(id)),
+      }}
+    >
       {children}
     </filterContext.Provider>
   );

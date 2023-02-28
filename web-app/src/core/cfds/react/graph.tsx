@@ -12,6 +12,8 @@ import { useLogger } from './logger.tsx';
 import { NS_FILTER } from '../../../../../cfds/base/scheme-types.ts';
 import { usePartialVertex, useVertex } from './vertex.ts';
 import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
+import { FilterKeyNotes, FilterKeyTasks } from '../../../app/index.tsx';
+import { NoteType } from '../../../../../cfds/client/graph/vertices/note.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -74,9 +76,6 @@ interface CfdsClientProviderProps {
 //   response => response.json()
 // );
 
-export const KeyNotesFilter = '_NotesFilter';
-export const KeyTasksFilter = '_TasksFilter';
-
 export function CfdsClientProvider({
   userId,
   sessionId,
@@ -92,9 +91,19 @@ export function CfdsClientProvider({
       'http://localhost'
     );
 
-    // Create our local filter holders
-    manager.createVertex(NS_FILTER, { owner: userId }, KeyNotesFilter, true);
-    manager.createVertex(NS_FILTER, { owner: userId }, KeyTasksFilter, true);
+    // Create local filters for our main UI tabs
+    manager.createVertex(
+      NS_FILTER,
+      { owner: userId, noteType: NoteType.Note },
+      FilterKeyNotes,
+      true
+    );
+    manager.createVertex(
+      NS_FILTER,
+      { owner: userId, noteType: NoteType.Task },
+      FilterKeyTasks,
+      true
+    );
     // Load cached contents
     manager.loadLocalContents();
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));

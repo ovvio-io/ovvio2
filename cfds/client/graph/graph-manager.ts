@@ -242,8 +242,21 @@ export class GraphManager extends VertexSource {
   getVertexManager<V extends Vertex = Vertex>(
     key: string,
     discoveredBy?: string
+  ): VertexManager<V>;
+
+  getVertexManager<V extends Vertex = Vertex>(
+    key: VertexId<V>,
+    discoveredBy?: string
+  ): VertexManager<V>;
+
+  getVertexManager<V extends Vertex = Vertex>(
+    key: VertexId<V>,
+    discoveredBy?: string
   ): VertexManager<V> {
-    return this._createVertIfNeeded<V>(key, discoveredBy || this.rootKey);
+    return this._createVertIfNeeded<V>(
+      KeyFromVertexId(key),
+      discoveredBy || this.rootKey
+    );
   }
 
   private _createVertIfNeeded<V extends Vertex = Vertex>(

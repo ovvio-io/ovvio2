@@ -1,4 +1,4 @@
-import { NoteStatus } from '../cfds/base/scheme-types.ts';
+import { NoteStatus, ViewType } from '../cfds/base/scheme-types.ts';
 import { ToggleAction } from '../web-app/src/app/workspaces-bar/ws-selection-utils.ts';
 import { BaseLogEntry } from './entry.ts';
 
@@ -34,7 +34,9 @@ export type ToolbarUISource =
   | 'toolbar:compose'
   | 'toolbar:search'
   | 'toolbar:tab:tasks'
-  | 'toolbar:tab:notes';
+  | 'toolbar:tab:notes'
+  | 'toolbar:menu'
+  | 'toolbar:header';
 
 export type UISource =
   | 'list'
@@ -93,7 +95,7 @@ export interface ClientEventEntry extends BaseLogEntry {
   source?: UISource;
   destination?: UISource;
   vertex?: string;
-  type?: MetadataType | FilterType | DataType | NavigationType;
+  type?: MetadataType | FilterType | DataType | NavigationType | ViewType;
   added?: string | string[] | 'ALL';
   removed?: string | string[] | 'ALL';
   origin?: string;

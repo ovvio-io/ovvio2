@@ -185,3 +185,8 @@ export interface TagValue extends CoreObject {
   value: string;
   sortStamp: string;
 }
+
+export enum ViewType {
+  List = 'list',
+  Board = 'board',
+}

@@ -12,7 +12,12 @@ import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { ViewType } from './index.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { usePartialFilter } from '../../../../index.tsx';
+import {
+  FilterKeyNotes,
+  FilterKeyTasks,
+  useFilterContext,
+  usePartialFilter,
+} from '../../../../index.tsx';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 
 const HEIGHT = styleguide.gridbase * 4;
@@ -59,17 +64,17 @@ export function ViewToggle({ className }: ViewToggleProps) {
   const styles = useStyles();
   const logger = useLogger();
   const strings = useStrings();
-  const partialFilter = usePartialFilter(['noteType']);
+  const partialFilter = usePartialFilter(['viewType']);
 
   const setView = useCallback(
-    (type: NoteType) => {
+    (type: ViewType) => {
       logger.log({
         severity: 'INFO',
         event: 'Navigation',
-        type: 'tab',
-        source: type === 'note' ? 'toolbar:tab:notes' : 'toolbar:tab:tasks',
+        type: type,
+        source: 'toolbar',
       });
-      partialFilter.noteType = type;
+      partialFilter.viewType = type;
     },
     [logger, partialFilter]
   );
@@ -80,22 +85,24 @@ export function ViewToggle({ className }: ViewToggleProps) {
         <Button
           className={cn(
             styles.toggleButton,
-            partialFilter.noteType === ViewType.List && styles.selected
+            partialFilter.viewType === ViewType.List && styles.selected
           )}
           onClick={() => setView(ViewType.List)}
         >
-          <IconListView isToggled={viewType === ViewType.List} />
+          <IconListView isToggled={partialFilter.viewType === ViewType.List} />
         </Button>
       </Tooltip>
       <Tooltip text={strings.board}>
         <Button
           className={cn(
             styles.toggleButton,
-            viewType === ViewType.Board && styles.selected
+            partialFilter.viewType === ViewType.Board && styles.selected
           )}
           onClick={() => setView(ViewType.Board)}
         >
-          <IconBoardView isToggled={viewType === ViewType.Board} />
+          <IconBoardView
+            isToggled={partialFilter.viewType === ViewType.Board}
+          />
         </Button>
       </Tooltip>
     </div>

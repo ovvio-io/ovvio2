@@ -5,6 +5,7 @@ import {
   FilterGroupBy,
   FilterSortBy,
   NoteStatus,
+  ViewType,
 } from '../../../base/scheme-types.ts';
 import {
   GroupByFuncResult,
@@ -160,6 +161,14 @@ export class Filter extends BaseVertex {
     return this.graph.sharedQueriesManager.selectedWorkspaces.results.map(
       (mgr) => mgr.getVertexProxy()
     );
+  }
+
+  get viewType(): ViewType {
+    return this.record.get('viewType', ViewType.List);
+  }
+
+  set viewType(type: ViewType) {
+    this.record.set('viewType', type);
   }
 
   private buildQuerySource(
