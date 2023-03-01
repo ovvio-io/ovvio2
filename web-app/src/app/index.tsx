@@ -16,8 +16,6 @@ import {
 } from '../../../styles/theme.tsx';
 import { useGraphManager } from '../core/cfds/react/graph.tsx';
 import { useSyncUrlParam } from '../core/react-utils/history/use-sync-url-param.ts';
-import { FileUploaderProvider } from '../shared/components/file-uploader/index.tsx';
-import { InvitationsProvider } from '../shared/invitation/index.tsx';
 import { VertexManager } from '../../../cfds/client/graph/vertex-manager.ts';
 import { Filter } from '../../../cfds/client/graph/vertices/filter.ts';
 import { Workspace } from '../../../cfds/client/graph/vertices/workspace.ts';
@@ -143,37 +141,30 @@ function Root({ style }: AppProps & { style?: any }) {
     <div className={cn(styles.root)} style={style}>
       <FilterContextProvider>
         {!loading ? (
-          <FileUploaderProvider>
-            <WorkspacesBar
-              expanded={expanded}
-              setExpanded={setExpanded}
-              // selectedWorkspaces={selectedWorkspaces}
-              // setSelectedWorkspaces={setSelectedWorkspaces}
-            />
+          <>
+            <WorkspacesBar expanded={expanded} setExpanded={setExpanded} />
             <div className={cn(styles.content)}>
-              <InvitationsProvider>
-                <BrowserRouter>
-                  <Route path="/new">
-                    <CreateWorkspaceView
-                      source="bar:workspace"
-                      onWorkspaceCreated={(wsKey) => {
-                        workspacesQuery.forEach(
-                          (ws) => (ws.selected = ws.key === wsKey)
-                        );
-                        // Depending on exact timings, our query may miss
-                        // the newly created workspace. Ensure it's always
-                        // selected.
-                        graph.getVertex<Workspace>(wsKey).selected = true;
-                      }}
-                    />
-                  </Route>
-                  <Route path="/">
-                    <WorkspaceContentView />
-                  </Route>
-                </BrowserRouter>
-              </InvitationsProvider>
+              <BrowserRouter>
+                <Route path="/new">
+                  <CreateWorkspaceView
+                    source="bar:workspace"
+                    onWorkspaceCreated={(wsKey) => {
+                      workspacesQuery.forEach(
+                        (ws) => (ws.selected = ws.key === wsKey)
+                      );
+                      // Depending on exact timings, our query may miss
+                      // the newly created workspace. Ensure it's always
+                      // selected.
+                      graph.getVertex<Workspace>(wsKey).selected = true;
+                    }}
+                  />
+                </Route>
+                <Route path="/">
+                  <WorkspaceContentView />
+                </Route>
+              </BrowserRouter>
             </div>
-          </FileUploaderProvider>
+          </>
         ) : (
           <LoadingView />
         )}

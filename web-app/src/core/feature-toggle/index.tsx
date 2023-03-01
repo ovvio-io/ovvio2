@@ -1,5 +1,4 @@
 import React from 'https://esm.sh/react@18.2.0';
-import config from '../config.ts';
 import { Features, getFeatureConfig } from './features.tsx';
 
 export { Features };
@@ -22,12 +21,12 @@ export function isFeatureActive(featureId: Features) {
     (query.get('forceProd') || 'false').toLowerCase() === 'true';
 
   switch (featureConf.status) {
-    case 'active': {
-      return true;
-    }
-    case 'beta': {
-      return !(config.isProduction || forceProd);
-    }
+    // case 'active': {
+    //   return true;
+    // }
+    // case 'beta': {
+    //   return !(config.isProduction || forceProd);
+    // }
     case 'disabled':
     default: {
       return false;

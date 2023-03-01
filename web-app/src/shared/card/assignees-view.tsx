@@ -7,7 +7,7 @@ import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';
 import Avatar from '../avatar/index.tsx';
 import { useTheme } from '../../../../styles/theme.tsx';
-import { MentionItem } from '../multi-select/drawer/actions/mention.js';
+import { MentionItem } from './mention.tsx';
 import { assignNote } from '../utils/assignees.ts';
 import {
   Note,
@@ -16,7 +16,6 @@ import {
 } from '../../../../cfds/client/graph/vertices/index.ts';
 import SelectionButton, { SORT_VALUES } from '../selection-button/index.tsx';
 import { IconClose } from '../../../../styles/components/icons/index.ts';
-import InvitationDialog from '../invitation-dialog/index.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { IconPlus } from '../../../../styles/components/new-icons/icon-plus.tsx';
@@ -348,7 +347,7 @@ export function AssignButton({
           ({
             value: u,
             sortValue: u.getVertexProxy().name,
-          } as { value: VertexManager<User> | string; sortValue: string })
+          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string })
       )
       .concat([
         {
@@ -489,13 +488,6 @@ export default function AssigneesView({
         )}
         onInviteUserSelected={onInviteUserSelected}
         style={assignStyle}
-      />
-      <InvitationDialog
-        workspaces={workspaces}
-        open={isInviteOpen}
-        source="card-footer"
-        hide={() => setIsInviteOpen(false)}
-        onUsersInvited={onUsersInvited}
       />
     </div>
   );

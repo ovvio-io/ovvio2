@@ -2,11 +2,11 @@ import { Record } from '../../../base/record.ts';
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Vertex, VertexConfig } from '../vertex.ts';
 import { VertexManager } from '../vertex-manager.ts';
-import { Invite } from './invite.ts';
 import { Note } from './note.ts';
 import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Workspace } from './workspace.ts';
+import { UserSettings } from './user-settings.ts';
 
 export default function vertexBuilder(
   manager: VertexManager,
@@ -27,8 +27,8 @@ export default function vertexBuilder(
     case SchemeNamespace.NOTES:
       return new Note(manager, record, prevVertex, config);
 
-    case SchemeNamespace.INVITES:
-      return new Invite(manager, record, prevVertex, config);
+    case SchemeNamespace.USER_SETTINGS:
+      return new UserSettings(manager, record, prevVertex, config);
 
     default:
       return new Vertex(manager, record, prevVertex, config);

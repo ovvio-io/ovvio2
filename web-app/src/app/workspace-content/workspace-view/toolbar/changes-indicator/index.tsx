@@ -1,10 +1,13 @@
-import { ErrorType, typeFromCode } from '@ovvio/cfds/lib/server/errors';
-import { styleguide } from '@ovvio/styles/lib';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useQuery } from 'core/cfds/react/query';
+import React from 'https://esm.sh/react@18.2.0';
+import { styleguide } from '../../../../../../../styles/index.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  cn,
+  makeStyles,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   indicator: {
     color: theme.background.placeholderText,
     whiteSpace: 'nowrap',
@@ -15,23 +18,12 @@ const useStyles = makeStyles(theme => ({
 
 export default function ChangesIndicator() {
   const styles = useStyles();
-  const saving = useQuery(
-    x =>
-      !x.isLocal &&
-      !x.isDemoData &&
-      x.hasPendingChanges &&
-      (x.errorCode === undefined ||
-        typeFromCode(x.errorCode) !== ErrorType.NoAccess),
-    [],
-    {
-      name: 'ChangesIndicator',
-    }
-  );
-  const hasPendingChanges = !!saving.results.length;
+  const hasPendingChangesQuery = useSharedQuery('hasPendingChanges');
+  const hasPendingChanges = hasPendingChangesQuery.count > 0;
 
   return (
     <div className={cn(styles.indicator)}>
-      <Text>{hasPendingChanges ? 'Saving...' : 'Updated Just Now'}</Text>
+      <Text>{hasPendingChanges ? 'Syncing...' : 'Updated Just Now'}</Text>
     </div>
   );
 }

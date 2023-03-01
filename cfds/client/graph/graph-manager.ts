@@ -221,6 +221,8 @@ export class GraphManager extends VertexSource {
     return this.getVertexManager<T>(this.rootKey);
   }
 
+  getVertex<T extends Vertex>(key: string): T;
+  getVertex<T extends Vertex>(key: VertexId<T>): T;
   getVertex<T extends Vertex>(key: VertexId<T>): T {
     return this.getVertexManager<T>(KeyFromVertexId(key)).getVertexProxy();
   }

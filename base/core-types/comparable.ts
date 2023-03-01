@@ -1,5 +1,7 @@
+import { notReached } from '../error.ts';
 import { CoreOptions, CoreType, CoreValue } from './base.ts';
 import { encodableValueHash } from './encoding/hash.ts';
+import { Comparable } from './index.ts';
 import { getCoreType, isEquatable, isComparable } from './utils.ts';
 
 export const MinComparableValue = {};
@@ -103,14 +105,24 @@ export function coreValueCompare(
       }
       break;
     case CoreType.ClassObject: {
-      if (isComparable(v1) && v1.constructor === v2?.constructor) {
-        return v1.compare(v2);
+      if (isComparable(v1)) {
+        // if (v1.constructor === v2?.constructor) {
+        //   return v1.compare(v2);
+        // }
+        if (v2 instanceof v1.constructor) {
+          return v1.compare(v2);
+        } else if (v1 instanceof v2!.constructor) {
+          return -1 * (v2 as Comparable).compare(v1);
+        }
       }
 
       if (isEquatable(v1) && v1.constructor === v2?.constructor) {
         if (v1.isEqual(v2)) return 0;
       }
 
+      notReached(
+        `Incomparable classes ${v1?.constructor.name} and ${v2?.constructor.name}`
+      );
       break;
     }
   }

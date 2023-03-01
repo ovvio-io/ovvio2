@@ -38,6 +38,8 @@ export type ToolbarUISource =
   | 'toolbar:menu'
   | 'toolbar:header';
 
+export type UIButton = 'button:close' | 'button:back';
+
 export type UISource =
   | 'list'
   | 'title'
@@ -46,7 +48,7 @@ export type UISource =
   | 'bar:workspace'
   | 'invite'
   | 'click-outside'
-  | 'close-button'
+  | UIButton
   | SettingsType
   | EditorUISource
   | ToolbarUISource;

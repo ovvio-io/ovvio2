@@ -2,11 +2,14 @@ import { NS_NOTES, TypeOfScheme } from '../../../../cfds/base/scheme-types.ts';
 import { NOTE_SCHEME } from '../../../../cfds/base/scheme-versions.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import {
+  VertexId,
+  KeyFromVertexId,
+} from '../../../../cfds/client/graph/vertex.ts';
+import {
   Note,
   Workspace,
 } from '../../../../cfds/client/graph/vertices/index.ts';
 import { NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
-import { KeyFromVertexId, VertexId } from '../../core/cfds/react/vertex.ts';
 
 type PartialCardData = Partial<TypeOfScheme<typeof NOTE_SCHEME>>;
 export type CardData = Omit<PartialCardData, 'type'> & { type: NoteType };

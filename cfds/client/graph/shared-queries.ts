@@ -22,7 +22,8 @@ export type SharedQueryName =
   | 'selectedWorkspaces'
   | 'selectedTags'
   | 'selectedUsers'
-  | 'parentTags';
+  | 'parentTags'
+  | 'hasPendingChanges';
 
 export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Vertex>
@@ -60,6 +61,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly selectedTags: Query<Tag, Tag>;
   readonly selectedUsers: Query<User, User>;
   readonly parentTags: Query<Tag, Tag>;
+  readonly hasPendingChanges: Query;
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
@@ -117,6 +119,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       coreValueCompare,
       'SharedParentTags'
     ).lock();
+    this.hasPendingChanges = new Query(graph, (v) => v.hasPendingChanges);
   }
 
   getVertexQuery<IT extends Vertex = Vertex, OT extends IT = IT>(

@@ -3,15 +3,15 @@ import React, {
   useRef,
   useLayoutEffect,
 } from 'https://esm.sh/react@18.2.0';
-import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../../../styles/index.ts';
-import { useFocusOnMount } from '../../../../core/react-utils/index.ts';
-import { TextField } from '../../../../../../styles/components/inputs/index.ts';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../styles/index.ts';
+import { TextField } from '../../../../styles/components/inputs/index.ts';
+import { useMenuClose } from '../../../../styles/components/menu.tsx';
+import { useFocusOnMount } from '../../core/react-utils/index.ts';
 import {
   Scroller,
   useScrollParent,
-} from '../../../../core/react-utils/scrolling.tsx';
-import { useMenuClose } from '../../../../../../styles/components/menu.tsx';
+} from '../../core/react-utils/scrolling.tsx';
 
 const useStyles = makeStyles((theme) => ({
   popup: {
@@ -53,21 +53,22 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+export interface MentionItemProps extends React.PropsWithChildren {
+  isSelected?: boolean;
+  onClick?: React.MouseEventHandler;
+}
+
 export function MentionItem({
   isSelected = false,
   children,
   onClick,
-}: {
-  isSelected?: boolean;
-  children: React.ReactNode;
-  onClick?: React.MouseEventHandler;
-}) {
+}: MentionItemProps) {
   const styles = useStyles();
   const ref = useRef<HTMLDivElement>(null);
   const scrollParent = useScrollParent();
   useLayoutEffect(() => {
-    if (isSelected && scrollParent) {
-      const parent = scrollParent;
+    if (isSelected && scrollParent /*&& scrollParent.current*/) {
+      const parent = scrollParent; //.current;
       const el = ref.current;
       const scrollOffset = el!.offsetTop - parent.offsetTop;
       const height = el!.clientHeight;
@@ -99,32 +100,35 @@ export function MentionItem({
   );
 }
 
-export type GetItems<T> = (filter: string) => T[];
-export type RenderItem<T> = (
+export interface MentionPopupRenderItemOpts {
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+export type MentionPopupRenderItem<T> = (
   item: T,
-  opts: {
-    isSelected: boolean;
-    onClick: React.MouseEventHandler;
-  }
+  opts: MentionPopupRenderItemOpts
 ) => React.ReactNode;
+
+export interface MentionPopupProps<T> {
+  trigger: string;
+  onSelected: (item: T, filter: string) => void;
+  getItems: (filter: string) => T[];
+  renderItem: MentionPopupRenderItem<T>;
+}
 
 export function MentionPopup<T>({
   trigger,
   onSelected,
   getItems,
   renderItem,
-}: {
-  trigger: string;
-  getItems: GetItems<T>;
-  onSelected: (item: T, filter: string) => void;
-  renderItem: RenderItem<T>;
-}) {
+}: MentionPopupProps<T>) {
   const close = useMenuClose();
   const styles = useStyles();
   const ref = useRef(null);
   useFocusOnMount(ref);
   const [filter, setFilter] = useState(trigger);
-  const onChange: React.FormEventHandler<HTMLInputElement> = ({ target }) => {
+  const onChange = ({ target }: React.FormEvent<HTMLInputElement>) => {
     let { value } = target as HTMLInputElement;
 
     if (!value.startsWith(trigger)) {

@@ -85,7 +85,6 @@ export class VertexManager<V extends Vertex = Vertex>
   private _record: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
-  private _head: string | undefined;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -106,7 +105,6 @@ export class VertexManager<V extends Vertex = Vertex>
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     const repo = this.repository;
     this._record = initialState || repo.valueForKey(this.key, graph.session);
-    this._head = repo.headForKey(key, graph.session)?.id;
     this.rebuildVertex();
     this.reportInitialFields(true);
   }

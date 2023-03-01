@@ -246,12 +246,14 @@ export const Backdrop = React.forwardRef<
   );
 });
 
+export type MenuRenderButton = (props: {
+  close: (e: React.MouseEvent) => void;
+  isOpen: boolean;
+}) => React.ReactNode;
+
 interface MenuProps {
   children: React.ReactNode;
-  renderButton: (props: {
-    close: (e: any) => void;
-    isOpen: boolean;
-  }) => React.ReactNode;
+  renderButton: MenuRenderButton;
   popupClassName?: string;
   backdropClassName?: string;
   className?: string;
@@ -270,22 +272,26 @@ export function IconMenu({ popupClassName, ...props }: MenuProps) {
   );
 }
 
-export function IconMenuItem({
-  IconComponent,
-  className,
-  tooltip,
-  fill,
-  ...props
-}) {
-  const styles = useStyles();
-  return (
-    <Tooltip className={cn(styles.tooltip)} text={tooltip} position="top">
-      <MenuItem {...props} className={cn(styles.iconItem, className)}>
-        <IconComponent fill={fill} />
-      </MenuItem>
-    </Tooltip>
-  );
-}
+// export interface IconMenuItemProps {
+//   IconComponent: React.ComponentType;
+// }
+
+// export function IconMenuItem({
+//   IconComponent,
+//   className,
+//   tooltip,
+//   fill,
+//   ...props
+// }: IconMenuItemProps) {
+//   const styles = useStyles();
+//   return (
+//     <Tooltip className={cn(styles.tooltip)} text={tooltip} position="top">
+//       <MenuItem {...props} className={cn(styles.iconItem, className)}>
+//         <IconComponent fill={fill} />
+//       </MenuItem>
+//     </Tooltip>
+//   );
+// }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
   return !!x;
@@ -306,8 +312,8 @@ export default function Menu({
 }: MenuProps) {
   const styles = useStyles();
   const [open, setOpen] = useState(false);
-  const anchor = useRef();
-  const backdrop = useRef();
+  const anchor = useRef(null);
+  const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
   const menuCtx = useContext(MenuContext);
 
@@ -333,7 +339,7 @@ export default function Menu({
     [close]
   );
 
-  const openMenu = (e) => {
+  const openMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setOpen((x) => !x);
@@ -350,8 +356,8 @@ export default function Menu({
 
   const content = (
     <Popper
-      className={null}
-      anchor={anchor.current}
+      className={undefined}
+      anchor={anchor.current!}
       open={open}
       position={position}
       align={align}

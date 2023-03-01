@@ -6,7 +6,6 @@ import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
-import { InviteForm } from '../../shared/invite-form/index.tsx';
 import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 import { UISource } from '../../../../logging/client-events.ts';
 
@@ -79,11 +78,11 @@ export const CreateWorkspaceView = ({
       <Toolbar />
       <div className={cn(styles.content)}>
         <div className={cn(styles.card)}>
-          {ws ? (
+          {/* {ws ? (
             <InviteForm showOnboard={true} close={closeView} source={source} />
-          ) : (
-            <WorkspaceForm source={source} onWorkspaceCreated={onCreated} />
-          )}
+          ) : ( */}
+          <WorkspaceForm source={source} onWorkspaceCreated={onCreated} />
+          {/* )} */}
         </div>
       </div>
     </div>
