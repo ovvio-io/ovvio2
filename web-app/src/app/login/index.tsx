@@ -10,10 +10,6 @@ import { RaisedButton } from '../../../../styles/components/buttons.tsx';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { MediaQueries } from '../../../../styles/responsive.ts';
 import { CfdsClientProvider } from '../../core/cfds/react/graph.tsx';
-import {
-  MarketingParams,
-  useHistory,
-} from '../../core/react-utils/history/index.tsx';
 import { LoginIllustration } from './illustrations.tsx';
 import AuthForm from './AuthForm.tsx';
 import { GlobalLogger, newLogger } from '../../../../logging/log.ts';
@@ -82,7 +78,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 export interface SessionInfo {
   userId: string;
   sessionId: string;
-  searchParams?: MarketingParams;
+  // searchParams?: MarketingParams;
 }
 
 interface LoginViewProps {
@@ -90,7 +86,7 @@ interface LoginViewProps {
 }
 export default function LoginView({ children }: LoginViewProps) {
   // const isLoading = useRef(true);
-  const history = useHistory();
+  // const history = useHistory();
 
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({
     userId: 'ofri',
@@ -101,15 +97,15 @@ export default function LoginView({ children }: LoginViewProps) {
 
   // const auth = getAuth();
 
-  const dataRef = useRef({
-    history,
-  });
+  // const dataRef = useRef({
+  //   history,
+  // });
 
-  useEffect(() => {
-    dataRef.current = {
-      history,
-    };
-  });
+  // useEffect(() => {
+  //   dataRef.current = {
+  //     history,
+  //   };
+  // });
 
   // useEffect(() => {
   //   return auth.onAuthStateChanged(async (user) => {

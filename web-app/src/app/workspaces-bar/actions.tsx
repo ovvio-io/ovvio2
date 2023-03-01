@@ -1,13 +1,10 @@
 import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
+import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
 import { createUseStrings } from '../../core/localization/index.tsx';
-import {
-  CREATE_WORKSPACE,
-  useHistoryStatic,
-} from '../../core/react-utils/history/index.tsx';
 // import InvitationDialog from '../../shared/invitation-dialog/index.tsx';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
@@ -67,8 +64,8 @@ export function WorkspaceBarActions({
 }: WorkspaceBarActionsProps) {
   const styles = useStyles();
   const strings = useStrings();
-  const history = useHistoryStatic();
   const logger = useLogger();
+  const navigate = useNavigate();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   const createNew = useCallback(() => {
@@ -79,7 +76,7 @@ export function WorkspaceBarActions({
       type: 'workspace',
       source: 'bar:workspace',
     });
-    history.push(CREATE_WORKSPACE);
+    navigate('/new');
   }, [history, logger]);
 
   return (

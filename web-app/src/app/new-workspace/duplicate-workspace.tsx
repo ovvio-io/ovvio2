@@ -6,7 +6,7 @@ import { useTypographyStyles } from '../../../../styles/components/typography.ts
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
 import { createUseStrings } from '../../core/localization/index.tsx';
-import { WorkspacesDropdown } from '../../shared/invite-form/workspaces-dropdown.tsx';
+import { WorkspacesDropdown } from './workspaces-dropdown.tsx';
 import localization from './new-workspace.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(
@@ -91,22 +91,22 @@ function DuplicateToggle({
 }
 
 export interface DuplicateWorkspaceViewProps {
-  workspaces: readonly VertexManager<Workspace>[];
+  allWorkspaces: readonly VertexManager<Workspace>[];
   setWorkspace: (ws: VertexManager<Workspace> | undefined) => void;
-  selectedWorkspace: VertexManager<Workspace> | undefined;
+  workspace: VertexManager<Workspace> | undefined;
   className?: string;
 }
 
 export function DuplicateWorkspaceView({
-  workspaces,
+  allWorkspaces,
   setWorkspace,
-  selectedWorkspace,
+  workspace,
   className,
 }: DuplicateWorkspaceViewProps) {
   const styles = useStyles();
   const strings = useStrings();
 
-  const [shouldDuplicate, setShouldDuplicate] = useState(!!selectedWorkspace);
+  const [shouldDuplicate, setShouldDuplicate] = useState(!!workspace);
   useEffect(() => {
     if (!shouldDuplicate) {
       setWorkspace(undefined);
@@ -121,9 +121,9 @@ export function DuplicateWorkspaceView({
       {shouldDuplicate && (
         <WorkspacesDropdown
           className={cn(styles.selector)}
-          selectedWorkspace={selectedWorkspace}
-          workspaces={workspaces}
-          setSelectedWorkspace={setWorkspace}
+          allWorkspaces={allWorkspaces}
+          workspace={workspace}
+          setWorkspace={setWorkspace}
           placeholder={strings.chooseDuplicateFrom}
         />
       )}

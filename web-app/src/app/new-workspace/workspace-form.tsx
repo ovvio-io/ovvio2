@@ -131,9 +131,9 @@ export function WorkspaceForm({
         {workspacesQuery.count > 0 && (
           <DuplicateWorkspaceView
             className={cn(styles.input)}
-            workspaces={workspacesQuery.results}
+            allWorkspaces={workspacesQuery.results}
             setWorkspace={setDuplicateWs}
-            selectedWorkspace={duplicateWs}
+            workspace={duplicateWs}
           />
         )}
         <TextField

@@ -6,10 +6,10 @@ import React, {
   useRef,
   useState,
 } from 'https://esm.sh/react@18.2.0';
+import { useLocation, useNavigate } from 'https://esm.sh/react-router@6.7.0';
 import * as SetUtils from '../../../../base/set.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { sortMngStampCompare } from '../../../../cfds/client/sorting.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
@@ -53,10 +53,6 @@ import {
   useVertices,
 } from '../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../core/localization/index.tsx';
-import {
-  LOGIN,
-  useHistoryStatic,
-} from '../../core/react-utils/history/index.tsx';
 import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
 import { WorkspaceBarActions } from './actions.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
@@ -570,7 +566,8 @@ function WorkspacesList({ expanded }: WorkspacesBarProps) {
   const visible = workspaces
     .filter((x) => !hiddenWorkspaces.has(x.key))
     .sort((x, y) => sortWorkspaces(x, y, pinnedWorkspaces, hiddenWorkspaces));
-  const history = useHistoryStatic();
+  const location = useLocation();
+  const navigate = useNavigate();
   const logger = useLogger();
   const lastSelectedKey = useRef<string>();
   const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
@@ -579,14 +576,13 @@ function WorkspacesList({ expanded }: WorkspacesBarProps) {
     e.stopPropagation();
 
     //Route back to / if not there already
-    const currentRoute = history.currentRoute;
-    if (!currentRoute || currentRoute.url !== '/') {
-      history.push(LOGIN);
+    if (location.pathname !== '/') {
+      navigate('/');
       logger.log({
         severity: 'INFO',
         event: 'Click',
         uiSource: 'workspace-bar',
-        routeInfo: `${currentRoute?.id}:${currentRoute?.url}`,
+        routeInfo: location.pathname + location.search + location.hash,
       });
       return;
     }
@@ -743,33 +739,6 @@ function WorkspaceBarInternal({
       removed: 'ALL',
     });
   }, [workspacesQuery, logger]);
-
-  const pinWorkspace = (ws: VertexManager<Workspace>, pinned?: boolean) => {
-    pinned ? pinnedWorkspaces.add(ws.key) : pinnedWorkspaces.delete(ws.key);
-    logger.log({
-      severity: 'INFO',
-      event: 'MetadataChanged',
-      type: 'pin',
-      flag: pinned,
-      vertex: ws.key,
-      uiSource: 'workspace-bar',
-    });
-  };
-
-  const hideWorkspace = (ws: VertexManager<Workspace>, hidden?: boolean) => {
-    hidden ? hiddenWorkspaces.add(ws.key) : hiddenWorkspaces.delete(ws.key);
-    logger.log({
-      severity: 'INFO',
-      event: 'MetadataChanged',
-      type: 'hide',
-      flag: hidden,
-      vertex: ws.key,
-      uiSource: 'workspace-bar',
-    });
-    if (hidden) {
-      ws.getVertexProxy().selected = false;
-    }
-  };
 
   return (
     <Layer priority={2}>

@@ -3,6 +3,7 @@ import React, {
   useRef,
   useState,
 } from 'https://esm.sh/react@18.2.0';
+import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -42,10 +43,6 @@ import {
   useVertices,
 } from '../../../../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
-import {
-  NOTE,
-  useHistory,
-} from '../../../../../core/react-utils/history/index.tsx';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
 import { moveCard } from '../../../../../shared/utils/move.ts';
 import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
@@ -173,8 +170,8 @@ export function CardWorkspaceIndicator({
   const workspaceManager = workspace?.manager as VertexManager<Workspace>;
   const graph = useGraphManager();
   const toastController = useToastController();
-  const history = useHistory();
   const logger = useLogger();
+  const navigate = useNavigate();
 
   if (!workspaceManager) {
     return null;
@@ -195,10 +192,7 @@ export function CardWorkspaceIndicator({
     });
 
     if (source === 'title') {
-      history.replace(NOTE, {
-        workspaceId: newCard.workspaceKey,
-        noteId: newCard.key,
-      });
+      navigate(`/${newCard.workspace.key}/${newCard.key}`);
     }
   };
 

@@ -15,7 +15,6 @@ import {
   ThemeProvider,
 } from '../../../styles/theme.tsx';
 import { useGraphManager } from '../core/cfds/react/graph.tsx';
-import { useSyncUrlParam } from '../core/react-utils/history/use-sync-url-param.ts';
 import { VertexManager } from '../../../cfds/client/graph/vertex-manager.ts';
 import { Filter } from '../../../cfds/client/graph/vertices/filter.ts';
 import { Workspace } from '../../../cfds/client/graph/vertices/workspace.ts';
