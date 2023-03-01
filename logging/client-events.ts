@@ -60,7 +60,8 @@ export type MetadataType =
   | 'pin'
   | 'hide'
   | 'name'
-  | 'status';
+  | 'status'
+  | 'due';
 
 export type DataType = 'workspace' | 'note' | 'task' | 'tag' | 'tag-category';
 
@@ -84,7 +85,8 @@ export type UIFlow =
   | 'permissions'
   | 'edit'
   | 'dnd'
-  | 'search';
+  | 'search'
+  | 'datePicker';
 
 export type NavigationType = 'tab' | 'close' | 'open';
 

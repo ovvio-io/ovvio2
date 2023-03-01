@@ -1,17 +1,22 @@
-import React, { useReducer, useMemo, useContext, useCallback } from 'react';
+import React, {
+  useReducer,
+  useMemo,
+  useContext,
+  useCallback,
+} from 'https://esm.sh/react@18.2.0';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-} from '@ovvio/styles/lib/components/dialog';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { DatePicker } from '@ovvio/styles/lib/components/inputs';
-import { styleguide } from '@ovvio/styles/lib';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useEventLogger } from 'core/analytics';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+} from '../../../../../styles/components/dialog/index.tsx';
+import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
+import { DatePicker } from '../../../../../styles/components/inputs/index.ts';
+import { styleguide } from '../../../../../styles/styleguide.ts';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { useLogger } from '../../../core/cfds/react/logger.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   datePicker: {
     margin: 'auto',
     marginTop: styleguide.gridbase * 3,
@@ -24,7 +29,7 @@ interface DueDate {
   edit: (card: Note) => void;
 }
 
-const dueDateContext = React.createContext<DueDate>(undefined);
+const dueDateContext = React.createContext<DueDate | undefined>(undefined);
 
 export function useDueDate() {
   return useContext(dueDateContext);
@@ -61,16 +66,16 @@ interface DueDataState {
   open: boolean;
 }
 
-export default function DueDateEditor({ children }) {
+export default function DueDateEditor({ children }: React.PropsWithChildren) {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const [state, dispatch] = useReducer(dueDateReducer, {
     open: false,
   });
 
   const value = useMemo<DueDate>(
     () => ({
-      edit: card => {
+      edit: (card) => {
         dispatch({ type: 'edit', card });
       },
     }),
@@ -82,19 +87,29 @@ export default function DueDateEditor({ children }) {
       const proxy = manager.getVertexProxy();
       proxy.dueDate = date;
 
-      eventLogger.cardAction('CARD_SET_DUE_DATE_COMPLETED', card, {});
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'due',
+        vertex: card.key,
+      });
 
       dispatch({ type: 'close' });
     },
-    [eventLogger, dispatch]
+    [logger, dispatch]
   );
 
   const onClose = useCallback(
     (card: Note) => {
-      eventLogger.cardAction('CARD_SET_DUE_DATE_CANCELED', card, {});
+      logger.log({
+        severity: 'INFO',
+        event: 'Cancel',
+        flow: 'datePicker',
+        vertex: card.key,
+      });
       dispatch({ type: 'close' });
     },
-    [eventLogger, dispatch]
+    [logger, dispatch]
   );
 
   return (
@@ -102,8 +117,8 @@ export default function DueDateEditor({ children }) {
       {children}
       <Dialog
         open={state.open}
-        onClickOutside={() => onClose(state.card)}
-        onClose={() => onClose(state.card)}
+        onClickOutside={() => onClose(state.card!)}
+        onClose={() => onClose(state.card!)}
       >
         {state.card && (
           <DialogContent>
@@ -111,8 +126,8 @@ export default function DueDateEditor({ children }) {
             <DatePicker
               className={cn(styles.datePicker)}
               value={state.card.dueDate}
-              onChange={date => {
-                onDateSelected(state.card, date);
+              onChange={(date) => {
+                onDateSelected(state.card!, date);
               }}
             />
           </DialogContent>
