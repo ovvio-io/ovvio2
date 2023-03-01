@@ -1,13 +1,22 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme } from '@ovvio/styles/lib/theme';
-import { useRootUser } from 'core/cfds/react/graph';
-import { usePartialVertex, useVertex } from 'core/cfds/react/vertex';
-import React, { useMemo } from 'react';
+import React, { useMemo } from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  User,
+  Workspace,
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { brandLightTheme } from '../../../../styles/theme.tsx';
+import {
+  usePartialUserSettings,
+  useRootUser,
+  useUserSettings,
+} from '../../core/cfds/react/graph.tsx';
+import { usePartialVertex, useVertex } from '../../core/cfds/react/vertex.ts';
+import { UserSettings } from '../../../../cfds/client/graph/vertices/user-settings.ts';
+import { useSharedQuery } from '../../core/cfds/react/query.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   ws: {
     overflow: 'hidden',
     flexShrink: 0,
@@ -99,26 +108,20 @@ const COLOR_MAP: WorkspaceColor[] = [
   },
 ];
 
-export function getColorForWorkspace(
-  user: Pick<User, 'workspaces' | 'workspaceColors'>,
-  workspace: Workspace
-): number {
+export function getColorForWorkspace(workspace: Workspace): number {
   if (!workspace) {
     return 0;
   }
-  const colorMap = user.workspaceColors;
+  const colorMap = usePartialUserSettings(['workspaceColors']).workspaceColors;
   if (colorMap.has(workspace.key)) {
-    return colorMap.get(workspace.key);
+    return colorMap.get(workspace.key)!;
   }
 
   const graph = workspace.graph;
   const keys = Array.from(colorMap.keys());
-  const availableKeys = Array.from(user.workspaces).map(x => x.key);
-  for (const key of keys) {
-    if (
-      !availableKeys.includes(key) &&
-      !graph.getVertex<Workspace>(key).isDemoData
-    ) {
+  const workspacesQuery = useSharedQuery('workspaces');
+  for (const key of workspacesQuery.keys()) {
+    if (!graph.getVertex<Workspace>(key).isDemoData) {
       colorMap.delete(key);
     }
   }
