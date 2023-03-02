@@ -335,7 +335,8 @@ export class VertexManager<V extends Vertex = Vertex>
       get: (target: T, prop: string | symbol): any => {
         const value = target[prop as keyof T];
         // Enable direct mutations of Set and Dictionary instances which saves
-        // tons of boilerplate on the client's side
+        // tons of boilerplate on the client's side.
+        // TODO: Cache proxies if needed
         if (value instanceof Set) {
           const setProxy = new SetProxy(value, (oldValue) => {
             target[prop as keyof T] = setProxy._target as T[keyof T];
