@@ -104,8 +104,24 @@ export function CfdsClientProvider({
       FilterKeyTasks,
       true
     );
-    // Load cached contents
-    manager.loadLocalContents();
+    // Load cached contents, then select pinned workspaces which is the default
+    // mode after reload.
+    manager.loadLocalContents().finally(() => {
+      const user = manager.getRootVertex<User>();
+      if (user.isNull) {
+        return;
+      }
+      const settings = user.settings;
+      if (settings.isNull) {
+        return;
+      }
+      const pinnedWorkspaces = settings.pinnedWorkspaces;
+      manager.sharedQueriesManager.workspaces.forEach((ws) => {
+        if (pinnedWorkspaces.has(ws.key)) {
+          ws.selected = true;
+        }
+      });
+    });
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
     return manager;
