@@ -17,9 +17,11 @@ import { isTag, useQuery } from '../../core/cfds/react/query.ts';
 import {
   MentionItem,
   MentionPopup,
-  RenderItem,
-} from '../../shared/multi-select/drawer/actions/mention.tsx';
+  MentionPopupRenderItem,
+} from '../../shared/card/mention.tsx';
 import { CreateTagContext, useCreateTag } from './create-tag-context.tsx';
+import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
+import { useGraphManager } from '../../core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   list: {
@@ -108,24 +110,22 @@ const TAG_NOT_FOUND = 'tag-not-found';
 
 interface AssignActionPopupProps {
   close?: any;
-  workspaceManager: VertexManager<Workspace>;
-  cardTagsMng: Dictionary<VertexManager<Tag>, VertexManager<Tag>>;
+  tagIds: VertexId<Tag>[];
   onTagged: (tagItem: Tag) => void;
 }
 function AssignActionPopup({
   close,
   onTagged,
-  workspaceManager,
-  cardTagsMng,
+  tagIds,
 }: AssignActionPopupProps) {
   const styles = useStyles();
   const theme = useTheme();
-  const createTag = useCreateTag();
+  const graph = useGraphManager();
 
-  const createTagRef = useRef<CreateTagContext>(createTag);
-  useEffect(() => {
-    createTagRef.current = createTag;
-  }, [createTag]);
+  // const createTagRef = useRef<CreateTagContext>(createTag);
+  // useEffect(() => {
+  //   createTagRef.current = createTag;
+  // }, [createTag]);
 
   const { results: childTags } = useQuery<Tag>(
     (x) => isTag(x) && !!x.name && !!x.parentTag && !!x.parentTag.name,
@@ -199,7 +199,10 @@ function AssignActionPopup({
       onTagged((item as VertexManager<Tag>).getVertexProxy());
     }
   };
-  const renderItem: RenderItem<VertexManager<Tag> | string> = (item, props) => {
+  const renderItem: MentionPopupRenderItem<VertexManager<Tag> | string> = (
+    item,
+    props
+  ) => {
     if (item === TAG_NOT_FOUND) {
       return (
         <MentionItem {...props} key={item}>
@@ -239,20 +242,19 @@ function AssignActionPopup({
 }
 
 interface TagButtonProps {
-  workspaceManager: VertexManager<Workspace>;
-  cardTagsMng: Dictionary<VertexManager<Tag>, VertexManager<Tag>>;
+  tagIds: VertexId<Tag>[];
   className?: string;
   onTagged: (tagItem: Tag) => void;
   isSmall?: boolean;
 }
 export default function TagButton({
-  workspaceManager,
-  cardTagsMng,
+  tagIds,
   className,
   onTagged,
   isSmall = true,
 }: TagButtonProps) {
   const styles = useStyles();
+  const graph = useGraphManager();
 
   return (
     <Menu
@@ -265,11 +267,7 @@ export default function TagButton({
       className={className}
       popupClassName={cn(styles.popup)}
     >
-      <AssignActionPopup
-        workspaceManager={workspaceManager}
-        cardTagsMng={cardTagsMng}
-        onTagged={onTagged}
-      />
+      <AssignActionPopup tagIds={tagIds} onTagged={onTagged} />
     </Menu>
   );
 }

@@ -13,7 +13,7 @@ import { Text } from '@ovvio/styles/lib/components/texts';
 import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
 import { CardHeaderPartProps, CardSize } from '.';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tagsView: {
     // height: styleguide.gridbase * 3,
     alignItems: 'center',
@@ -85,7 +85,7 @@ export function CardTags({
   const styles = useStyles();
   const eventLogger = useEventLogger();
   const cardTags = Array.from(tags.values()).filter(
-    tag =>
+    (tag) =>
       !tag.isLoading &&
       !tag.isDeleted &&
       (!tag.parentTag || !tag.parentTag.isDeleted)
@@ -146,7 +146,7 @@ export function CardTags({
         size === CardSize.Small && styles.tagsWrap
       )}
     >
-      {cardTags.sort(sortTags).map(tag => (
+      {cardTags.sort(sortTags).map((tag) => (
         <TagPill
           key={tag.key}
           tag={tag.manager as VertexManager<Tag>}
@@ -156,9 +156,8 @@ export function CardTags({
         />
       ))}
       <TagButton
-        onTagged={t => onTag(t.manager as VertexManager<Tag>)}
+        onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
         cardTagsMng={tagManagers}
-        workspaceManager={workspace.manager as VertexManager<Workspace>}
         className={cn(!isExpanded && styles.hide)}
       />
     </div>
