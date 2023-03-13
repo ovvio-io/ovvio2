@@ -1,11 +1,7 @@
-import React, { useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+import React from 'https://esm.sh/react@18.2.0';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Tag,
-  Workspace,
-} from '../../../../cfds/client/graph/vertices/index.ts';
+import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../cfds/client/suggestions.ts';
-import { Dictionary } from '../../../../base/collections/dict.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { IconCreateNew } from '../../../../styles/components/icons/index.ts';
 import Menu from '../../../../styles/components/menu.tsx';
@@ -13,15 +9,16 @@ import { IconPlus } from '../../../../styles/components/new-icons/icon-plus.tsx'
 import { IconSize } from '../../../../styles/components/new-icons/types.ts';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { useTheme } from '../../../../styles/theme.tsx';
-import { isTag, useQuery } from '../../core/cfds/react/query.ts';
+import { useSharedQuery } from '../../core/cfds/react/query.ts';
 import {
   MentionItem,
   MentionPopup,
   MentionPopupRenderItem,
 } from '../../shared/card/mention.tsx';
-import { CreateTagContext, useCreateTag } from './create-tag-context.tsx';
 import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
 import { useGraphManager } from '../../core/cfds/react/graph.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { unionIter } from '../../../../base/common.ts';
 
 const useStyles = makeStyles((theme) => ({
   list: {
@@ -110,34 +107,39 @@ const TAG_NOT_FOUND = 'tag-not-found';
 
 interface AssignActionPopupProps {
   close?: any;
-  tagIds: VertexId<Tag>[];
+  noteId: VertexId<Note>;
   onTagged: (tagItem: Tag) => void;
 }
-function AssignActionPopup({
+function AddTagActionPopup({
   close,
   onTagged,
-  tagIds,
+  noteId,
 }: AssignActionPopupProps) {
   const styles = useStyles();
   const theme = useTheme();
   const graph = useGraphManager();
+  const partialNote = usePartialVertex(noteId, ['tags']);
+  const existingTags = new Set(
+    unionIter(partialNote.tags.keys(), partialNote.tags.values())
+  );
 
   // const createTagRef = useRef<CreateTagContext>(createTag);
   // useEffect(() => {
   //   createTagRef.current = createTag;
   // }, [createTag]);
+  const childTagsQuery = useSharedQuery('childTags');
 
-  const { results: childTags } = useQuery<Tag>(
-    (x) => isTag(x) && !!x.name && !!x.parentTag && !!x.parentTag.name,
-    [workspaceManager?.key],
-    {
-      name: 'AssignActionPopup',
-      source: workspaceManager.graph.sharedQueriesManager.tagsQuery,
-    }
-  );
+  // const { results: childTags } = useQuery<Tag>(
+  //   (x) => isTag(x) && !!x.name && !!x.parentTag && !!x.parentTag.name,
+  //   [workspaceManager?.key],
+  //   {
+  //     name: 'AssignActionPopup',
+  //     source: workspaceManager.graph.sharedQueriesManager.tagsQuery,
+  //   }
+  // );
 
   const getItems = (filter: string) => {
-    if (!childTags) {
+    if (!childTagsQuery.count) {
       return [];
     }
     // const candidates: {
@@ -161,7 +163,7 @@ function AssignActionPopup({
 
     const filteredRes: (VertexManager<Tag> | string)[] = suggestResults(
       filter,
-      childTags,
+      childTagsQuery.results,
       (tag) => tag.getVertexProxy().fullName
     );
 
@@ -175,7 +177,9 @@ function AssignActionPopup({
     //     return b.dist - a.dist;
     //   });
 
-    filteredRes.push(TAG_NOT_FOUND);
+    if (filteredRes.length === 0) {
+      filteredRes.push(TAG_NOT_FOUND);
+    }
 
     return filteredRes;
   };
@@ -187,14 +191,14 @@ function AssignActionPopup({
         }
       }
 
-      createTagRef.current.requestCreateTag({
-        workspaceManager,
-        initialName: filter,
-        logSource: 'card-header',
-        onTagCreated: (tag) => {
-          onTagged(tag);
-        },
-      });
+      // createTagRef.current.requestCreateTag({
+      //   workspaceManager,
+      //   initialName: filter,
+      //   logSource: 'card-header',
+      //   onTagCreated: (tag) => {
+      //     onTagged(tag);
+      //   },
+      // });
     } else {
       onTagged((item as VertexManager<Tag>).getVertexProxy());
     }
@@ -242,19 +246,18 @@ function AssignActionPopup({
 }
 
 interface TagButtonProps {
-  tagIds: VertexId<Tag>[];
+  noteId: VertexId<Note>;
   className?: string;
   onTagged: (tagItem: Tag) => void;
   isSmall?: boolean;
 }
 export default function TagButton({
-  tagIds,
+  noteId,
   className,
   onTagged,
   isSmall = true,
 }: TagButtonProps) {
   const styles = useStyles();
-  const graph = useGraphManager();
 
   return (
     <Menu
@@ -267,7 +270,7 @@ export default function TagButton({
       className={className}
       popupClassName={cn(styles.popup)}
     >
-      <AssignActionPopup tagIds={tagIds} onTagged={onTagged} />
+      <AddTagActionPopup noteId={noteId} onTagged={onTagged} />
     </Menu>
   );
 }

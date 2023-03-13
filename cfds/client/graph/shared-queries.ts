@@ -23,6 +23,7 @@ export type SharedQueryName =
   | 'selectedTags'
   | 'selectedUsers'
   | 'parentTags'
+  | 'childTags'
   | 'hasPendingChanges';
 
 export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
@@ -43,6 +44,8 @@ export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<User>
   : N extends 'parentTags'
   ? Query<Tag>
+  : N extends 'childTags'
+  ? Query<Tag>
   : Query;
 
 export type GlobalSharedQueriesManager = {
@@ -61,6 +64,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly selectedTags: Query<Tag, Tag>;
   readonly selectedUsers: Query<User, User>;
   readonly parentTags: Query<Tag, Tag>;
+  readonly childTags: Query<Tag, Tag>;
   readonly hasPendingChanges: Query;
 
   constructor(graph: GraphManager) {
@@ -116,6 +120,12 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     this.parentTags = new Query(
       this.tags,
       (tag) => !tag.parentTag,
+      coreValueCompare,
+      'SharedParentTags'
+    ).lock();
+    this.childTags = new Query(
+      this.tags,
+      (tag) => typeof tag.parentTag !== 'undefined',
       coreValueCompare,
       'SharedParentTags'
     ).lock();
