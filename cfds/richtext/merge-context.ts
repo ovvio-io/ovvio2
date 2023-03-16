@@ -169,9 +169,9 @@ export class MergeContext {
     // correct results. This is the heart of our "conflict-free" approach.
     //
     // TODO(ofri): Properly tune the threshold
-    if (kDMP.diff_levenshtein(textDiffs) > 3) {
-      kDMP.diff_cleanupSemantic(textDiffs);
-    }
+    // if (kDMP.diff_levenshtein(textDiffs) > 3) {
+    //   kDMP.diff_cleanupSemantic(textDiffs);
+    // }
 
     const result: FlatRepAtom[] = [];
     for (const diff of textDiffs) {

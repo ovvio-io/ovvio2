@@ -40,7 +40,7 @@ export function isMention(node: TreeNode): node is MentionElement {
 }
 
 export function filterSortMentions<T>(
-  items: T[],
+  items: readonly T[],
   query: string,
   getSortValue: (item: T) => string
 ) {

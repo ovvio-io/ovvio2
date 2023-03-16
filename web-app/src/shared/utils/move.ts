@@ -7,7 +7,6 @@ import {
   Tag,
   Workspace,
 } from '../../../../cfds/client/graph/vertices/index.ts';
-import { crossWorkspaceTagKey } from '../../app/workspace-content/workspace-view/cards-display/display-bar/filters/state.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
 import { Logger } from '../../../../logging/log.ts';
 
@@ -18,29 +17,29 @@ import { Logger } from '../../../../logging/log.ts';
  *
  * @param card The root card.
  */
-function fixupCardTagsToWorkspace(card: Note): void {
-  const workspace = card.workspace;
-  for (const [parent, child] of Array.from(card.tags.entries())) {
-    // Skip tags that are in our card's workspace
-    if (parent.workspace === workspace) {
-      assert(child.workspace === workspace); // Sanity check
-      continue;
-    }
+// function fixupCardTagsToWorkspace(card: Note): void {
+//   const workspace = card.workspace;
+//   for (const [parent, child] of Array.from(card.tags.entries())) {
+//     // Skip tags that are in our card's workspace
+//     if (parent.workspace === workspace) {
+//       assert(child.workspace === workspace); // Sanity check
+//       continue;
+//     }
 
-    // Found a parent that's not a part of our workspace. Try to match it with
-    // a tag that is
-    const matchingTags = matchTagsToWorkspace(parent, child, workspace);
-    const newTags = card.tags;
-    newTags.delete(parent);
-    if (matchingTags !== undefined) {
-      newTags.set(matchingTags[0], matchingTags[1]);
-    }
-    card.tags = newTags;
-  }
-  for (const childCard of card.childCards) {
-    fixupCardTagsToWorkspace(childCard);
-  }
-}
+//     // Found a parent that's not a part of our workspace. Try to match it with
+//     // a tag that is
+//     const matchingTags = matchTagsToWorkspace(parent, child, workspace);
+//     const newTags = card.tags;
+//     newTags.delete(parent);
+//     if (matchingTags !== undefined) {
+//       newTags.set(matchingTags[0], matchingTags[1]);
+//     }
+//     card.tags = newTags;
+//   }
+//   for (const childCard of card.childCards) {
+//     fixupCardTagsToWorkspace(childCard);
+//   }
+// }
 
 /**
  * Given a parent / child tags pair, this method looks  for a matching pair
@@ -48,24 +47,24 @@ function fixupCardTagsToWorkspace(card: Note): void {
  *
  * @returns A [parent, child] pair or undefined if no match is found.
  */
-function matchTagsToWorkspace(
-  parentTag: Tag,
-  childTag: Tag,
-  workspace: Workspace
-): [Tag, Tag] | undefined {
-  const crossWsParentKey = crossWorkspaceTagKey(parentTag);
-  const crossWsChildKey = crossWorkspaceTagKey(childTag);
-  for (const parent of workspace.parentTags) {
-    if (crossWsParentKey === crossWorkspaceTagKey(parent)) {
-      for (const child of parent.childTags) {
-        if (crossWsChildKey === crossWorkspaceTagKey(child)) {
-          return [parent, child];
-        }
-      }
-    }
-  }
-  return undefined;
-}
+// function matchTagsToWorkspace(
+//   parentTag: Tag,
+//   childTag: Tag,
+//   workspace: Workspace
+// ): [Tag, Tag] | undefined {
+//   const crossWsParentKey = crossWorkspaceTagKey(parentTag);
+//   const crossWsChildKey = crossWorkspaceTagKey(childTag);
+//   for (const parent of workspace.parentTags) {
+//     if (crossWsParentKey === crossWorkspaceTagKey(parent)) {
+//       for (const child of parent.childTags) {
+//         if (crossWsChildKey === crossWorkspaceTagKey(child)) {
+//           return [parent, child];
+//         }
+//       }
+//     }
+//   }
+//   return undefined;
+// }
 
 function stripAssigneesNotInWorkspace(card: Note): void {
   const wsUsers = card.workspace.users;
@@ -94,7 +93,7 @@ export function moveCard(
 
   if (result !== undefined) {
     result.workspace = destinationMng.getVertexProxy();
-    fixupCardTagsToWorkspace(result);
+    // fixupCardTagsToWorkspace(result);
     stripAssigneesNotInWorkspace(result);
     cardManager.getVertexProxy().isDeleted = 1;
     logger.log({

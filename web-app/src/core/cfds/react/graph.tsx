@@ -14,6 +14,7 @@ import { usePartialVertex, useVertex } from './vertex.ts';
 import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
 import { FilterKeyNotes, FilterKeyTasks } from '../../../app/index.tsx';
 import { NoteType } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { SharedQueriesManager } from '../../../../../cfds/client/graph/shared-queries.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -25,6 +26,11 @@ export const CFDSContext = React.createContext<ContextProps>({});
 export function useGraphManager(): GraphManager {
   return useContext(CFDSContext).graphManager!;
 }
+
+export function useSharedQueriesManager(): SharedQueriesManager {
+  return useGraphManager().sharedQueriesManager;
+}
+
 export function useRootUser(): VertexManager<User> {
   const graph = useGraphManager();
   const key = graph.rootKey;

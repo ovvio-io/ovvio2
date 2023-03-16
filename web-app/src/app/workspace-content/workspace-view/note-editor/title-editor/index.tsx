@@ -14,10 +14,6 @@ import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { useTitleEditor } from '../../../../../core/slate/index.tsx';
 import { EditableCardContext } from '../../../../../core/slate/elements/card.element/index.tsx';
-import {
-  CreateTagContext,
-  useCreateTag,
-} from '../../../../../shared/tags/create-tag-context.tsx';
 import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 // import { useEventLogger } from '../../../../../core/analytics';
 import { FocusReporter } from '../focus-reporter.tsx';
@@ -148,15 +144,6 @@ export default function TitleEditorView({
   onDelete,
 }: TitleEditorProps) {
   const styles = useStyles();
-  const createTag = useCreateTag();
-
-  const createTagRef = useRef<CreateTagContext>(createTag);
-  useEffect(() => {
-    createTagRef.current = createTag;
-  }, [createTag]);
-
-  // const eventLogger = useEventLogger();
-
   const { editor, plugins, handlers } = useTitleEditor(
     cardManager,
     Title,

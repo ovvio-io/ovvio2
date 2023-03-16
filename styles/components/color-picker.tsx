@@ -44,7 +44,7 @@ const useStyles = makeStyles(
   'color-picker_e0a995'
 );
 
-export function makeTransparent(color) {
+export function makeTransparent(color: string): string {
   color = color.split('#').join('');
   const r = parseInt(color[0] + color[1], 16);
   const g = parseInt(color[2] + color[3], 16);
@@ -76,7 +76,7 @@ export function ColorCircle({
 interface ColorButtonProps {
   color: string;
   className?: string;
-  size?: 'xsmall' | 'small' | 'big';
+  size?: 'xsmall' | /*'small' |*/ 'big';
   isSelected: boolean;
   disabled?: boolean;
   onClick?: (e: any) => void;
@@ -129,7 +129,11 @@ export default function ColorPicker({
         <ColorButton
           color={c}
           isSelected={value === c}
-          onClick={() => onChange(c)}
+          onClick={() => {
+            if (onChange) {
+              onChange(c);
+            }
+          }}
           key={c}
           disabled={disabled}
         />

@@ -1,12 +1,16 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { Draggable } from 'shared/dragndrop';
-import { styleguide } from '@ovvio/styles/lib';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { CardSize } from '../card-item';
-import { DraggableCard } from '../card-item/draggable-card';
+import React from 'https://esm.sh/react@18.2.0';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { Draggable } from '../../../../../shared/dragndrop/draggable.tsx';
+import { CardSize } from '../card-item/index.tsx';
+import { DraggableCard } from '../card-item/draggable-card.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   item: {
     marginBottom: styleguide.gridbase * 2,
   },

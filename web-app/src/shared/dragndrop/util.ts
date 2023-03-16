@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { DragPosition } from './droppable';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+} from 'https://esm.sh/react@18.2.0';
+import { DragPosition } from './droppable.tsx';
 
 export function serializeId(id) {
   return id;
@@ -37,7 +41,7 @@ const PosMap: {
   },
 };
 
-export function deserializeId(id) {
+export function deserializeId(id: string): string | undefined {
   if (!id || !id.startsWith('ovvdnd:')) {
     return;
   }

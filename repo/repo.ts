@@ -408,7 +408,7 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
 
   constructor(commits?: Iterable<Commit>, maxCommits = 0) {
     this._commitsByRecordKey = new Map();
-    this._commitsById = new LRUCache(maxCommits, (id, commit) => {
+    this._commitsById = new LRUCache(maxCommits, (_id, commit) => {
       this._commitsByRecordKey.get(commit.key)?.delete(commit.id);
     });
     if (commits) {

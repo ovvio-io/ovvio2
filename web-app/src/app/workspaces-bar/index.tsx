@@ -56,7 +56,6 @@ import { createUseStrings } from '../../core/localization/index.tsx';
 import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
 import { WorkspaceBarActions } from './actions.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
-import WorkspaceSettingsDialog from './workspace-settings-dialog/index.tsx';
 import {
   toggleActionFromEvent,
   toggleSelectionItem,
@@ -512,12 +511,12 @@ function WorkspaceListItem({
           </Menu>
         </React.Fragment>
       )}
-      <WorkspaceSettingsDialog
+      {/* <WorkspaceSettingsDialog
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
         hide={() => setIsSettingsOpen(false)}
         source="bar:workspace"
-      />
+      /> */}
     </div>
   );
 }

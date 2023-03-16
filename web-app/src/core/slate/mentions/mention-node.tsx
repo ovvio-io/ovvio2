@@ -89,22 +89,26 @@ export interface MentionSuggestionsProps<T> {
   setSelectedItem: (item: T) => void;
 }
 
-interface SuggestionItemProps {
+interface SuggestionItemProps<T> {
   isSelected: boolean;
   children?: React.ReactNode;
-  onItemSelected: () => void;
+  item: T;
+  onItemSelected: (item: T) => void;
 }
 
-export const SuggestionItemIcon: React.FC<{}> = ({ children }) => {
+export const SuggestionItemIcon: React.FC<React.PropsWithChildren> = ({
+  children,
+}) => {
   const styles = useStyles();
   return <div className={cn(styles.suggestionIcon)}>{children}</div>;
 };
 
-export function SuggestionItem({
+export function SuggestionItem<T>({
   isSelected,
   children,
   onItemSelected,
-}: SuggestionItemProps) {
+  item,
+}: SuggestionItemProps<T>) {
   const styles = useStyles();
   const ref = useRef();
   const scrollParent = useScrollParent();
@@ -116,7 +120,7 @@ export function SuggestionItem({
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    onItemSelected();
+    onItemSelected(item);
   };
   return (
     <div
@@ -199,7 +203,7 @@ export function MentionElementNode<T>({
   MentionComponent,
 }: MentionElementNodeProps<T>) {
   const styles = useStyles();
-  const anchor = useRef();
+  const anchor = useRef(null);
   const editor = useSlateStatic();
   const selected = useSelected();
   const [open, setOpen] = useState(false);
@@ -258,7 +262,7 @@ export function MentionElementNode<T>({
       <span ref={anchor}>
         {children}
         <PopperView
-          anchor={anchor.current}
+          anchor={anchor.current!}
           position="bottom"
           align="start"
           contentEditable={false}

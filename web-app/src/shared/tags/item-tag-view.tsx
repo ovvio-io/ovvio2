@@ -1,11 +1,7 @@
 import React, { useCallback } from 'https://esm.sh/react@18.2.0';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';
-import {
-  Note,
-  Tag,
-  Workspace,
-} from '../../../../cfds/client/graph/vertices/index.ts';
+import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import TagView from './tag-view.tsx';
