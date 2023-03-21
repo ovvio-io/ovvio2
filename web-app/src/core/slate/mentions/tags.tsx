@@ -6,8 +6,6 @@ import {
   Workspace,
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { styleguide } from '../../../../../styles/index.ts';
-import { IconCreateNew } from '../../../../../styles/components/icons/index.ts';
-import { Text } from '../../../../../styles/components/texts.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import {
   isTag,
@@ -135,7 +133,7 @@ interface TagsPluginOptions
   extends Pick<MentionOptions<Tag>, 'canOpen' | 'editor'> {}
 
 export function createTagsPlugin(options: TagsPluginOptions): Partial<Plugin> {
-  return createMentionsPlugin<Tag>({
+  return createMentionsPlugin<VertexManager<Tag>>({
     ...options,
     trigger: '#',
     MentionComponent: TagsSuggestionComponent,

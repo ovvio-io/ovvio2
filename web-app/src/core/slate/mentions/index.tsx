@@ -1,7 +1,4 @@
-import React, {
-  JSXElementConstructor,
-  KeyboardEventHandler,
-} from 'https://esm.sh/react@18.2.0';
+import React, { KeyboardEventHandler } from 'https://esm.sh/react@18.2.0';
 import {
   BaseEditor,
   Editor,
@@ -9,7 +6,7 @@ import {
   Transforms,
 } from 'https://esm.sh/slate@0.87.0';
 
-import { FormattedText } from '../types.ts';
+import { FormattedText, OvvioEditor } from '../types.ts';
 import { Plugin } from '../plugins/index.ts';
 import {
   MentionElementNode,
@@ -21,14 +18,15 @@ import { isKeyPressed } from '../utils/hotkeys.ts';
 import { SelectionUtils } from '../utils/selection-utils.ts';
 import { ElementUtils } from '../utils/element-utils.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
+import { MentionElement } from '../../../../../cfds/richtext/model.ts';
 //import { wordDist } from '@ovvio/cfds/lib/primitives-old/plaintext';
 
-export interface MentionElement extends ElementNode {
-  tagName: 'mention';
-  pluginId: string;
-  children: FormattedText[];
-  isLocal: true;
-}
+// export interface MentionElement extends ElementNode {
+//   tagName: 'mention';
+//   pluginId: string;
+//   children: FormattedText[];
+//   isLocal: true;
+// }
 
 export interface MentionEditor extends BaseEditor {
   activeMention?: string;
@@ -59,7 +57,8 @@ export function filterSortMentions<T>(
 export function withMentions<T extends Editor>(editor: T): MentionEditor & T {
   const { isInline, apply } = editor;
 
-  editor.isInline = (element) => isMention(element) || isInline(element);
+  editor.isInline = (element) =>
+    isMention(element as TreeNode) || isInline(element);
   const mentionEditor = editor as unknown as MentionEditor & T;
 
   mentionEditor.apply = (operation) => {
@@ -87,7 +86,7 @@ export interface MentionOptions<T> {
   trigger: string;
   editor: Editor;
   canOpen: () => boolean;
-  MentionComponent: JSXElementConstructor<RenderMentionPopupProps<T>>;
+  MentionComponent: React.JSXElementConstructor<RenderMentionPopupProps<T>>;
 }
 
 export function createMentionsPlugin<T>({
@@ -130,8 +129,12 @@ export function createMentionsPlugin<T>({
         editor.discardMention = () => {
           const [mention, path] = ElementUtils.findNode(
             editor,
-            (node: MentionElement) =>
-              isMention(node) && node.pluginId === pluginId
+            (node: TreeNode | OvvioEditor) => {
+              if (isMention(node as TreeNode)) {
+                return (node as MentionElement).pluginId === pluginId;
+              }
+              return false;
+            }
           );
           if (!mention) {
             console.warn('Discard mention called but no mention found');

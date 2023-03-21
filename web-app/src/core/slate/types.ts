@@ -8,10 +8,11 @@ import {
   LoadingCardElement,
 } from './elements/card.element/index.tsx';
 import { ListItemElement } from './elements/list-item.element.tsx';
-import { MentionElement, MentionEditor } from './mentions/index.tsx';
+import { MentionEditor } from './mentions/index.tsx';
 import { ElementNode, TextNode } from '../../../../cfds/richtext/tree.ts';
 import { Header2Element } from './elements/header2.element.tsx';
 import { CfdsEditor } from './cfds/with-cfds.tsx';
+import { MentionElement } from '../../../../cfds/richtext/model.ts';
 
 export type OvvioEditor = BaseEditor & ReactEditor & CfdsEditor & MentionEditor;
 

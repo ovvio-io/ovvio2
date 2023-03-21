@@ -19,9 +19,9 @@ import { layout, styleguide } from '../../../../../styles/index.ts';
 
 import PopperView from '../../../../../styles/components/popper.tsx';
 import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import { MentionElement } from './index.tsx';
 import { CfdsEditor } from '../cfds/with-cfds.tsx';
 import { isKeyPressed } from '../utils/hotkeys.ts';
+import { MentionElement } from '../../../../../cfds/richtext/model.ts';
 
 const useStyles = makeStyles((theme) => ({
   scroller: {
@@ -68,7 +68,7 @@ export interface MentionElementNodeProps<T> extends RenderElementProps {
   element: MentionElement;
   trigger: string;
   registerKeyDown: (fn: KeyboardEventHandler) => () => void;
-  MentionComponent: JSXElementConstructor<RenderMentionPopupProps<T>>;
+  MentionComponent: React.JSXElementConstructor<RenderMentionPopupProps<T>>;
 }
 
 export interface SuggestionComponentProps<T> {
