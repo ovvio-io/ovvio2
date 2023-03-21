@@ -15,7 +15,8 @@ export type ClientEvent =
   | 'Cancel'
   | 'Navigation'
   | 'Create'
-  | 'Delete';
+  | 'Delete'
+  | 'Duplicate';
 
 export type SettingsType = 'settings:workspace' | 'settings:tags';
 
@@ -25,6 +26,7 @@ export type EditorUISource =
   | 'editor:key-down'
   | 'editor:title'
   | 'editor:body'
+  | 'editor:body:inline-task'
   | 'editor:legend'
   | 'editor:tooltip';
 
@@ -37,6 +39,14 @@ export type ToolbarUISource =
   | 'toolbar:tab:notes'
   | 'toolbar:menu'
   | 'toolbar:header';
+
+export type MenuUISource =
+  | 'menu'
+  | 'menu:note'
+  | 'menu:note:open'
+  | 'menu:note:view-in-parent'
+  | 'menu:note:delete'
+  | 'menu:note:convert';
 
 export type UIButton = 'button:close' | 'button:back';
 
@@ -51,7 +61,8 @@ export type UISource =
   | UIButton
   | SettingsType
   | EditorUISource
-  | ToolbarUISource;
+  | ToolbarUISource
+  | MenuUISource;
 
 export type MetadataType =
   | 'attachment'
@@ -61,7 +72,8 @@ export type MetadataType =
   | 'hide'
   | 'name'
   | 'status'
-  | 'due';
+  | 'due'
+  | 'type';
 
 export type DataType = 'workspace' | 'note' | 'task' | 'tag' | 'tag-category';
 
@@ -110,4 +122,5 @@ export interface ClientEventEntry extends BaseLogEntry {
   flag?: boolean;
   flow?: UIFlow;
   id?: string;
+  target?: string;
 }

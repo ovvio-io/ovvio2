@@ -3,12 +3,12 @@ import Menu from '../../../../styles/components/menu.tsx';
 import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
   EditCardAction,
-  UploadAttachmentAction,
+  // UploadAttachmentAction,
   EditDueDateAction,
   ViewInNoteAction,
   DeleteCardAction,
-  ExportMailAction,
-  ExportPdfAction,
+  // ExportMailAction,
+  // ExportPdfAction,
   DuplicateCardAction,
   // CopyUrlAction,
   ConvertNoteAction,
@@ -66,7 +66,7 @@ export default function CardMenuView({
       )}
       <EditDueDateAction cardManager={cardManager} source={source} />
 
-      <UploadAttachmentAction cardManager={cardManager} source={source} />
+      {/* <UploadAttachmentAction cardManager={cardManager} source={source} /> */}
       {partialNote.parentNote && (
         <ViewInNoteAction cardManager={cardManager} source={source} />
       )}
@@ -76,8 +76,8 @@ export default function CardMenuView({
         editorRootKey={editorRootKey}
         editor={editor}
       />
-      <ExportMailAction cardManager={cardManager} source={source} />
-      <ExportPdfAction cardManager={cardManager} source={source} />
+      {/* <ExportMailAction cardManager={cardManager} source={source} />
+      <ExportPdfAction cardManager={cardManager} source={source} /> */}
       <ConvertNoteAction cardManager={cardManager} source={source} />
       <DeleteCardAction
         cardManager={cardManager}

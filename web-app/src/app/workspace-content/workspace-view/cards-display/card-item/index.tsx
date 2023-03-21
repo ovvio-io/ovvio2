@@ -28,7 +28,6 @@ import {
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
 import { useTheme } from '../../../../../../../styles/theme.tsx';
-import { BodyPreview } from './body-preview.tsx';
 import { CardFooter } from './card-footer.tsx';
 import { CardTags } from './card-tag-view.tsx';
 import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
@@ -386,11 +385,11 @@ export const CardItem = React.forwardRef(function CardItemView(
             />
           </div>
         </div>
-        {size === CardSize.Regular ? (
+        {/* {size === CardSize.Regular ? (
           <BodyPreview card={card} className={cn(styles.preview)} />
-        ) : (
-          <div className={cn(styles.preview)} />
-        )}
+        ) : ( */}
+        <div className={cn(styles.preview)} />
+        {/* )} */}
         <CardFooter size={size} card={card} source={source} />
       </div>
       {showChildCards && !!childCards.length && (

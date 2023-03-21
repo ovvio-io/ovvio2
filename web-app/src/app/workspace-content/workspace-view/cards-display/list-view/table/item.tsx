@@ -56,7 +56,6 @@ import {
   Assignee,
 } from '../../../../../../shared/card/assignees-view.tsx';
 import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
-import InvitationDialog from '../../../../../../shared/invitation-dialog/index.tsx';
 import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
 import TagButton from '../../../../../../shared/tags/tag-button.tsx';
 import TagView from '../../../../../../shared/tags/tag-view.tsx';
@@ -462,7 +461,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        partial.status === NoteStatus.Done && styles.doneIndicatorActive
+        partial.status === 'Done' && styles.doneIndicatorActive
       )}
     />
   );
@@ -579,12 +578,6 @@ const AssigneesCell = ({
         className={cn(styles.visibleOnHover, styles.assignee)}
         onInviteUserSelected={onInviteUserSelected}
       />
-      <InvitationDialog
-        open={isInviteOpen}
-        hide={() => setIsInviteOpen(false)}
-        workspaces={workspaces}
-        onUsersInvited={onUsersInvited}
-      />
     </Cell>
   );
 };
@@ -659,8 +652,7 @@ const TagsCell = ({
       <TagButton
         onTagged={onTag}
         className={cn(styles.visibleOnHover)}
-        cardTagsMng={tagsMng}
-        workspaceManager={workspace.manager as VertexManager<Workspace>}
+        noteId={note}
       />
     </Cell>
   );
@@ -695,10 +687,8 @@ const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
   return (
     <CheckBox
       name={note.key}
-      checked={partial.status === NoteStatus.Done}
-      onChange={() =>
-        partial.status === NoteStatus.Done ? NoteStatus.ToDo : NoteStatus.Done
-      }
+      checked={partial.status === 'Done'}
+      onChange={() => (partial.status === 'Done' ? 'ToDo' : 'Done')}
     />
   );
 };

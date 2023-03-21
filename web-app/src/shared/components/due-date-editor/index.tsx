@@ -15,6 +15,7 @@ import { styleguide } from '../../../../../styles/styleguide.ts';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { useLogger } from '../../../core/cfds/react/logger.tsx';
+import { assert } from '../../../../../base/error.ts';
 
 const useStyles = makeStyles((theme) => ({
   datePicker: {
@@ -31,8 +32,10 @@ interface DueDate {
 
 const dueDateContext = React.createContext<DueDate | undefined>(undefined);
 
-export function useDueDate() {
-  return useContext(dueDateContext);
+export function useDueDate(): DueDate {
+  const dd = useContext(dueDateContext);
+  assert(dd !== undefined);
+  return dd;
 }
 
 function dueDateReducer(

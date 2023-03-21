@@ -1,4 +1,8 @@
-import React, { useMemo, useState } from 'https://esm.sh/react@18.2.0';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+} from 'https://esm.sh/react@18.2.0';
 import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
@@ -6,7 +10,6 @@ import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
-import { useCallback } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 import { UISource } from '../../../../logging/client-events.ts';
 
 const useStyles = makeStyles((theme) => ({
