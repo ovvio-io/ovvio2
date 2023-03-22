@@ -35,7 +35,6 @@ import * as SetUtils from '../../../base/set.ts';
 import { kRecordIdField } from '../../base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
-import { targetRange } from 'https://esm.sh/v99/slate-react@0.87.1/dist/utils/diff-text.d.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
