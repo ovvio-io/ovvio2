@@ -1,13 +1,11 @@
 import { assert } from '../../../../base/error.ts';
-import { FieldTriggers, Vertex, VertexConfig } from '../vertex.ts';
+import { Vertex, VertexConfig } from '../vertex.ts';
 import * as OrderStamp from '../../../base/orderstamp.ts';
 import {
   MutationPack,
   mutationPackAppend,
   mutationPackIter,
 } from '../mutations.ts';
-import { Workspace } from './workspace.ts';
-import { triggerChildren } from '../propagation-triggers.ts';
 import { VertexManager } from '../vertex-manager.ts';
 import { Record } from '../../../base/record.ts';
 import { IVertex } from '../types.ts';
@@ -21,8 +19,8 @@ export class BaseVertex extends Vertex {
     config: VertexConfig | undefined
   ) {
     super(mgr, record, prevVertex, config);
-    if (prevVertex && prevVertex instanceof Workspace) {
-      this.selected = prevVertex.selected;
+    if (prevVertex && prevVertex.namespace === this.namespace) {
+      this.selected = (prevVertex as typeof this).selected;
     }
   }
 
@@ -150,63 +148,3 @@ export class BaseVertex extends Vertex {
     return super.compare(other);
   }
 }
-
-export class ContentVertex extends BaseVertex {
-  get parent(): Vertex | undefined {
-    return this.workspace;
-  }
-
-  get createdBy(): Vertex | undefined {
-    const key = this.record.get<string>('createdBy');
-    return key ? this.graph.getVertex(key) : undefined;
-  }
-
-  set createdBy(v: Vertex | undefined) {
-    if (v) {
-      assert(v.graph === this.graph);
-      this.record.set('createdBy', v.key);
-    } else {
-      this.record.delete('createdBy');
-    }
-  }
-
-  get workspace(): Workspace {
-    const key = this.record.get<string>('workspace');
-    assert(typeof key === 'string');
-    return this.graph.getVertex<Workspace>(key);
-  }
-
-  get workspaceKey(): string {
-    return this.record.get('workspace') as string;
-  }
-
-  set workspace(ws: Workspace) {
-    assert(ws.graph === this.graph);
-    this.record.set('workspace', ws.key);
-  }
-
-  workspaceDidMutate(
-    local: boolean,
-    oldValue: Workspace | undefined
-  ): MutationPack {
-    if (this.parent?.isEqual(this.workspace)) {
-      return ['parent', local, oldValue];
-    }
-  }
-
-  parentWorkspaceDidMutate(): void {
-    this.workspace = (this.parent as ContentVertex).workspace;
-  }
-}
-
-const kFieldTriggersBase: FieldTriggers<BaseVertex> = {
-  isDeleted: triggerChildren('parentIsDeletedChanged'),
-};
-
-Vertex.registerFieldTriggers(BaseVertex, kFieldTriggersBase);
-
-const kFieldTriggersContent: FieldTriggers<ContentVertex> = {
-  workspace: triggerChildren('parentWorkspaceDidMutate'),
-};
-
-Vertex.registerFieldTriggers(ContentVertex, kFieldTriggersContent);

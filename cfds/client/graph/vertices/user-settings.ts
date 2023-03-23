@@ -1,7 +1,6 @@
 import * as SetUtils from '../../../../base/set.ts';
 import { OnboardingStep } from '../../../base/scheme-versions.ts';
 import { Vertex } from '../vertex.ts';
-import { Workspace } from './workspace.ts';
 
 export class UserSettings extends Vertex {
   get passwordHash(): string | undefined {

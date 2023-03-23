@@ -1,5 +1,5 @@
 import { User } from './user.ts';
-import { ContentVertex } from './base.ts';
+import { ContentVertex } from './content.ts';
 import {
   AttachmentData,
   NoteStatus,
