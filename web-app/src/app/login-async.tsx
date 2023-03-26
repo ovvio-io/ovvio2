@@ -19,7 +19,20 @@ import { MobileBlocker } from './mobile-blocker.tsx';
 
 const LazyApp = lazy(() => import('./index.tsx'));
 
-const router = createBrowserRouter([]);
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: (
+      <LoginScreen>
+        <MobileBlocker>
+          <Suspense fallback={<Fragment />}>
+            <LazyApp />
+          </Suspense>
+        </MobileBlocker>
+      </LoginScreen>
+    ),
+  },
+]);
 
 export default function LoginAsync() {
   return (
@@ -29,7 +42,7 @@ export default function LoginAsync() {
       <RouterProvider router={router} />
       {/* <TitleBarContainer> */}
       <ToastProvider>
-        <Route path="/">
+        {/* <Route path="/">
           <LoginScreen>
             <MobileBlocker>
               <Suspense fallback={<Fragment />}>
@@ -37,7 +50,7 @@ export default function LoginAsync() {
               </Suspense>
             </MobileBlocker>
           </LoginScreen>
-        </Route>
+        </Route> */}
       </ToastProvider>
       {/* </TitleBarContainer> */}
     </React.StrictMode>

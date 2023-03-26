@@ -96,14 +96,18 @@ export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
   res.severityCode = SeverityCodes[e.severity];
   res.timestamp = new Date();
   res.logId = uniqueId();
-  res.t_denoVersion = Deno.version.deno;
-  res.t_v8Version = Deno.version.v8;
-  res.t_tsVersion = Deno.version.typescript;
-  res.t_hostname = Deno.hostname();
-  res.t_pid = Deno.pid;
-  res.t_osBuild = Deno.build;
-  res.t_mainUrl = Deno.mainModule;
-  res.t_execPath = Deno.execPath();
+  try {
+    res.d_denoVersion = Deno.version.deno;
+    res.d_v8Version = Deno.version.v8;
+    res.d_tsVersion = Deno.version.typescript;
+    res.d_hostname = Deno.hostname();
+    res.d_pid = Deno.pid;
+    res.d_osBuild = Deno.build;
+    res.d_mainUrl = Deno.mainModule;
+    res.d_execPath = Deno.execPath();
+  } catch (_e: unknown) {
+    // Ignore any errors here
+  }
   for (const field of Object.keys(res)) {
     if (typeof res[field] === 'undefined') {
       delete res[field];

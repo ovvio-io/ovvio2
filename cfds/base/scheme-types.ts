@@ -3,7 +3,6 @@ import { ConcreteCoreValue, CoreObject } from '../../base/core-types/index.ts';
 
 // import { RichText as OldRichText } from '../primitives-old/richtext2';
 import { RichText } from '../richtext/tree.ts';
-import { Record as RecordObj } from './record.ts';
 import { ValueType } from './types/index.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 
@@ -71,7 +70,7 @@ export type ExtendedField<
   K extends FieldValue[T] = FieldValue[T]
 > = {
   type: T;
-  default?: (rec: RecordObj) => K;
+  default?: (rec: DataType) => K;
   required?: boolean;
 };
 type DefaultExtendedFields =

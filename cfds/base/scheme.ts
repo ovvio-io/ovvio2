@@ -159,15 +159,16 @@ export class Scheme implements Encodable {
 
   hasInitForField(fieldName: string): boolean {
     const desc = this._fieldDescriptors[fieldName];
-    return desc && desc.init;
+    return desc && (desc.init || desc.default);
   }
 
   initValueForField(fieldName: string, data: DataType) {
     const desc = this._fieldDescriptors[fieldName];
-    if (!desc || !desc.init) {
+    const initFunc = desc.init || desc.default;
+    if (!desc || !initFunc) {
       return undefined;
     }
-    return desc.init(data);
+    return initFunc(data);
   }
 
   clone(version: number): Scheme {

@@ -21,10 +21,10 @@ import {
   TYPE_REF_MAP,
   NS_USER_SETTINGS,
   NS_FILTER,
+  DataType,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { notReached } from '../../base/error.ts';
-import { Record } from './record.ts';
 
 //BASE SCHEMES
 const SCHEME_BASE_1 = new SchemeDef('', {
@@ -39,7 +39,7 @@ const SCHEME_BASE_1 = new SchemeDef('', {
   },
   lastModified: {
     type: TYPE_DATE,
-    default: (rec: Record) => rec.get('creationDate'),
+    default: (data: DataType) => data.creationDate || new Date(),
   },
   sortStamp: TYPE_STR,
 });

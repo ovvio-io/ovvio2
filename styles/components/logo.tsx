@@ -1,3 +1,4 @@
+import React from 'https://esm.sh/react@18.2.0';
 import { styleguide } from '../styleguide.ts';
 import { cn, makeStyles } from '../css-objects/index.ts';
 import { MediaQueries } from '../responsive.ts';

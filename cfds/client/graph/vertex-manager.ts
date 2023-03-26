@@ -103,7 +103,10 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     const repo = this.repository;
-    this._record = initialState || repo.valueForKey(this.key, graph.session);
+    this._record =
+      initialState ||
+      repo?.valueForKey(this.key, graph.session) ||
+      Record.nullRecord();
     this.rebuildVertex();
     this.reportInitialFields(true);
   }
@@ -130,7 +133,13 @@ export class VertexManager<V extends Vertex = Vertex>
     return this._record;
   }
 
-  get repositoryId(): string {
+  get repositoryId(): string | undefined {
+    if (this.key === this.graph.rootKey) {
+      return '/sys/dir';
+    }
+    if (!this.record) {
+      return undefined;
+    }
     const id = this.record.repositoryId;
     const res = id === kRecordIdField ? this.key : id;
     assert(
@@ -140,8 +149,9 @@ export class VertexManager<V extends Vertex = Vertex>
     return res!;
   }
 
-  get repository(): Repository<MemRepoStorage> {
-    return this.graph.repository(this.repositoryId);
+  get repository(): Repository<MemRepoStorage> | undefined {
+    const repoId = this.repositoryId;
+    return repoId ? this.graph.repository(repoId) : undefined;
   }
 
   /**
@@ -149,12 +159,14 @@ export class VertexManager<V extends Vertex = Vertex>
    * on the server.
    */
   get hasPendingChanges(): boolean {
-    return (
-      !this.isLocal &&
-      this.record.isEqual(
-        this.repository.valueForKey(this.key, this.graph.session)
-      )
-    );
+    if (this.isLocal) {
+      return false;
+    }
+    const repo = this.repository;
+    if (!repo) {
+      return false;
+    }
+    return this.record.isEqual(repo.valueForKey(this.key, this.graph.session));
   }
 
   get isRoot(): boolean {
@@ -234,8 +246,11 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.isLocal) {
       return;
     }
-    const graph = this.graph;
     const repo = this.repository;
+    if (!repo) {
+      return;
+    }
+    const graph = this.graph;
     const prevRecord = this.record;
     if (repo.setValueForKey(this.key, graph.session, this.record)) {
       const newRecord = repo.valueForKey(this.key, graph.session);
