@@ -74,7 +74,7 @@ export function isClonable(v: any): v is Clonable {
 }
 
 export function isComparable(v: any): v is Comparable {
-  return v !== undefined && typeof v.compareTo === 'function';
+  return v !== undefined && typeof v.compare === 'function';
 }
 
 export function isEquatable(v: any): v is Equatable {

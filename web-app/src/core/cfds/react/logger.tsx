@@ -21,7 +21,7 @@ import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
 import { SessionInfo } from '../../../app/login/index.tsx';
 import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
 import { kSyncConfigClient } from '../../../../../net/base-client.ts';
-import { ConsoleLogStream } from '../../../../../logging/stream.ts';
+import { ConsoleLogStream, LogStream } from '../../../../../logging/stream.ts';
 
 interface LoggerContext {
   logger: Logger;
@@ -33,9 +33,14 @@ const loggerContext = React.createContext<LoggerContext>({
 
 interface LoggerProviderProps {
   sessionInfo?: SessionInfo;
+  baseServerUrl?: string;
   children: React.ReactNode;
 }
-export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
+export function LoggerProvider({
+  sessionInfo,
+  children,
+  baseServerUrl,
+}: LoggerProviderProps) {
   const [ctx, setCtx] = useState<LoggerContext>({ logger: GlobalLogger });
   useEffect(() => {
     if (!sessionInfo) {
@@ -43,22 +48,24 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       return;
     }
 
-    const storage = new LogClientIDBStorage(sessionInfo.userId);
-    const client = new LogClient(
-      storage,
-      'http://localhost',
-      kSyncConfigClient
-    );
+    const storage = new LogClientIDBStorage('/logs/' + sessionInfo.userId);
+
+    const client = baseServerUrl
+      ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
+      : undefined;
     // Rather than using a different logger, we change the GlobalLogger's
     // streams to match the current user. This diverts logs from the entire
     // client stack rather than just UI stuff rendered with react.
-    const streams = [client, new ConsoleLogStream('DEBUG')];
+    const streams: LogStream[] = [new ConsoleLogStream('DEBUG')];
+    if (client) {
+      streams.unshift(client);
+    }
     setGlobalLoggerStreams(streams);
     // const clientLogger = newLogger([client, new ConsoleLogStream('DEBUG')]);
     // setCtx({ logger: clientLogger });
     const unloadHandler = () => {
       resetGlobalLoggerStreams();
-      client.close();
+      client?.close();
       storage.close();
     };
 
@@ -72,10 +79,14 @@ export function LoggerProvider({ sessionInfo, children }: LoggerProviderProps) {
       });
       // Reset our global logger to default mode
       resetGlobalLoggerStreams();
-      client.sync().finally(() => {
-        client.close();
+      if (client) {
+        client.sync().finally(() => {
+          client.close();
+          storage.close();
+        });
+      } else {
         storage.close();
-      });
+      }
     };
   }, [sessionInfo]);
   return (
@@ -129,6 +140,7 @@ class LogClientIDBStorage implements LogClientStorage {
   }
 
   async persistEntries(entries: NormalizedLogEntry[]): Promise<void> {
+    debugger;
     const db = await this.getDB();
     const txn = db.transaction('logEntries', 'readwrite', {
       durability: 'relaxed',
@@ -139,7 +151,7 @@ class LogClientIDBStorage implements LogClientStorage {
       promises.push(
         (async () => {
           try {
-            await store.put(e, e.logId);
+            await store.put(e);
           } catch (e) {
             log({
               severity: 'ERROR',

@@ -7,6 +7,7 @@ import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Workspace } from './workspace.ts';
 import { UserSettings } from './user-settings.ts';
+import { Filter } from './index.ts';
 
 export default function vertexBuilder(
   manager: VertexManager,
@@ -29,6 +30,9 @@ export default function vertexBuilder(
 
     case SchemeNamespace.USER_SETTINGS:
       return new UserSettings(manager, record, prevVertex, config);
+
+    case SchemeNamespace.FILTER:
+      return new Filter(manager, record, prevVertex, config);
 
     default:
       return new Vertex(manager, record, prevVertex, config);

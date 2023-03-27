@@ -69,65 +69,49 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
-    this.notDeleted = new Query(
-      graph,
-      (vert) => vert.isDeleted === 0,
-      coreValueCompare,
-      'SharedNotDeleted'
-    ).lock();
+    this.notDeleted = new Query(graph, (vert) => vert.isDeleted === 0, {
+      name: 'SharedNotDeleted',
+    }).lock();
     this.noNotes = new Query(
       this.notDeleted,
       (vert) => vert.namespace !== NS_NOTES,
-      coreValueCompare,
-      'SharedNoNotes'
+      { name: 'SharedNoNotes' }
     ).lock();
     this.workspaces = new Query<Vertex, Workspace>(
       this.noNotes,
       (vert) => vert.namespace === NS_WORKSPACE,
-      coreValueCompare,
-      'SharedWorkspaces'
+      { name: 'SharedWorkspaces' }
     ).lock();
     this.tags = new Query<Vertex, Tag>(
       this.noNotes,
       (vert) => vert.namespace === NS_TAGS,
-      coreValueCompare,
-      'SharedTags'
+      { name: 'SharedTags' }
     ).lock();
     this.users = new Query<Vertex, User>(
       this.noNotes,
       (vert) => vert.namespace === NS_USERS,
-      coreValueCompare,
-      'SharedUsers'
+      {
+        name: 'SharedUsers',
+      }
     ).lock();
     this.selectedWorkspaces = new Query(
       this.workspaces,
       (vert) => vert.selected,
-      coreValueCompare,
-      'SharedSelectedWorkspaces'
+      { name: 'SharedSelectedWorkspaces' }
     ).lock();
-    this.selectedTags = new Query(
-      this.tags,
-      (vert) => vert.selected,
-      coreValueCompare,
-      'SharedSelectedTags'
-    ).lock();
-    this.selectedUsers = new Query(
-      this.users,
-      (vert) => vert.selected,
-      coreValueCompare,
-      'SharedSelectedUsers'
-    ).lock();
-    this.parentTags = new Query(
-      this.tags,
-      (tag) => !tag.parentTag,
-      coreValueCompare,
-      'SharedParentTags'
-    ).lock();
+    this.selectedTags = new Query(this.tags, (vert) => vert.selected, {
+      name: 'SharedSelectedTags',
+    }).lock();
+    this.selectedUsers = new Query(this.users, (vert) => vert.selected, {
+      name: 'SharedSelectedUsers',
+    }).lock();
+    this.parentTags = new Query(this.tags, (tag) => !tag.parentTag, {
+      name: 'SharedParentTags',
+    }).lock();
     this.childTags = new Query(
       this.tags,
       (tag) => typeof tag.parentTag !== 'undefined',
-      coreValueCompare,
-      'SharedParentTags'
+      { name: 'SharedParentTags' }
     ).lock();
     this.hasPendingChanges = new Query(graph, (v) => v.hasPendingChanges);
   }

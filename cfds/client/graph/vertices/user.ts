@@ -19,7 +19,7 @@ export class User extends BaseVertex {
 
   get email(): string {
     const email = this.record.get<string>('email');
-    assert(typeof email === 'string' && email.length > 0);
+    // assert(typeof email === 'string' && email.length > 0);
     return email;
   }
 
@@ -29,7 +29,7 @@ export class User extends BaseVertex {
   }
 
   get name(): string {
-    return this.record.get('name', this.email);
+    return this.record.get('name', this.email || 'Unnamed User');
   }
 
   set name(n: string) {

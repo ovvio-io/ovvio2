@@ -178,6 +178,7 @@ export class GraphManager extends VertexSource {
       this._repoById.set(id, repo);
 
       if (this._baseServerUrl) {
+        debugger;
         const client = new RepoClient(
           repo,
           // serveAddr/repoId/sync

@@ -32,6 +32,9 @@ _Note: Everything is relative to a base data directory._
 - `/sys/dir`
   Main organization directory.
 
+- `/logs/<user_id>`
+  Stores a single user's usage data (client events, aka analytics)
+
 ### Workspace Repository
 
 Workspace repository holds all Notes contained in this workspace. It's typically
@@ -66,6 +69,13 @@ In this repository you'll find the following schemes:
 - Users
 - User Settings
 - Tags
+
+### Logs Repository
+
+A single user generates a bunch of usage data (events), also called analytics
+data. This is a logs repository and contains log messages rather than records.
+
+This repository is available both
 
 ## Workspace Creation
 

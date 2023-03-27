@@ -49,7 +49,7 @@ function MobileBlockView() {
 }
 
 interface MobileBlockerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 function MobileBlockerImpl({ children }: MobileBlockerProps) {
   const [isBlocking, setIsBlocking] = useState(() => isOnMobile());
@@ -70,7 +70,7 @@ function MobileBlockerImpl({ children }: MobileBlockerProps) {
   return <React.Fragment>{children}</React.Fragment>;
 }
 
-export function MobileBlocker({ children }: MobileBlockerProps) {
+export function MobileBlocker({ children }: MobileBlockerProps = {}) {
   const isMobileSupported = useIsFeatureActive(Features.Mobile);
 
   if (!isMobileSupported) {

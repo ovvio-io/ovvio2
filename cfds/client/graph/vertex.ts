@@ -208,6 +208,10 @@ export class Vertex implements IVertex, Comparable {
     return this._manager.key;
   }
 
+  get sortStamp(): string | undefined {
+    return undefined;
+  }
+
   get isNull() {
     return this.record.isNull;
   }

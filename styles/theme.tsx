@@ -358,11 +358,9 @@ interface ThemeProviderProps {
   children: ({ style }) => React.ReactNode;
   isRoot?: boolean;
 }
-export function ThemeProvider({
-  theme,
-  children,
-  isRoot = false,
-}: ThemeProviderProps) {
+export function ThemeProvider(props: ThemeProviderProps) {
+  debugger;
+  const { theme, children, isRoot = false } = props;
   const style = useMemo(() => {
     return {
       '--background-0': theme.background[0],

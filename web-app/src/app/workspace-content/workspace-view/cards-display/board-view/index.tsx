@@ -1,21 +1,14 @@
-import React, { ReactFragment, useMemo } from 'https://esm.sh/react@18.2.0';
+import React from 'https://esm.sh/react@18.2.0';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import {
   cn,
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
-import {
-  usePartialVertices,
-  useVertex,
-} from '../../../../../core/cfds/react/vertex.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import { GroupBy } from '../display-bar/index.tsx';
 import { AssigneesBoardView } from './assignees-board-view.tsx';
 import { TagBoardView } from './tag-board-view.tsx';
 import { WorkspaceBoardView } from './workspace-board-view.tsx';
-import { Filter } from '../../../../../../../cfds/client/graph/vertices/filter.ts';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { useFilter } from '../../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({

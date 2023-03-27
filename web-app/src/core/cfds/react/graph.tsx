@@ -9,12 +9,13 @@ import React, {
 } from 'https://esm.sh/react@18.2.0';
 import { NoteSearchEngine } from '../../../../../cfds/client/graph/note-search.ts';
 import { useLogger } from './logger.tsx';
-import { NS_FILTER } from '../../../../../cfds/base/scheme-types.ts';
+import { NS_FILTER, NS_USERS } from '../../../../../cfds/base/scheme-types.ts';
 import { usePartialVertex, useVertex } from './vertex.ts';
 import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
 import { FilterKeyNotes, FilterKeyTasks } from '../../../app/index.tsx';
 import { NoteType } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { SharedQueriesManager } from '../../../../../cfds/client/graph/shared-queries.ts';
+import { Scheme } from '../../../../../cfds/base/scheme.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -93,9 +94,14 @@ export function CfdsClientProvider({
   const graphManager = useMemo(() => {
     const manager = new GraphManager(
       userId,
-      (key: string) => key !== sessionPtrKey,
-      'http://localhost'
+      (key: string) => key !== sessionPtrKey
+      // 'http://localhost'
     );
+
+    const rootVertMgr = manager.getRootVertexManager();
+    if (rootVertMgr.record.isNull) {
+      rootVertMgr.scheme = Scheme.user();
+    }
 
     // Create local filters for our main UI tabs
     manager.createVertex(

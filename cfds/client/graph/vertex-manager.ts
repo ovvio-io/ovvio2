@@ -146,7 +146,7 @@ export class VertexManager<V extends Vertex = Vertex>
       undefined !== res,
       `Failed inferring repository id for ${this._key}`
     );
-    return res!;
+    return '/data/' + res!;
   }
 
   get repository(): Repository<MemRepoStorage> | undefined {

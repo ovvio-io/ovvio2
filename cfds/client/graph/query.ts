@@ -471,30 +471,37 @@ export class Query<
 
   private vertexChanged(key: string, pack: MutationPack): void {
     const wasInSourceKeys = this.hasVertex(key);
-    const prevGroupIds = this.existingGroupIdsForKey(key);
     const vertex = this.graph.getVertex<OT>(key);
+    if (vertex.isNull) {
+      debugger;
+    }
+    const prevGroupIds = this.existingGroupIdsForKey(key);
     const newGroupIds = this.groupIdsForVertex(key);
-    for (const groupId of prevGroupIds) {
-      const prevSet = this._groupedResultKeys!.get(groupId);
-      if (!prevSet) {
-        continue;
-      }
-      if (prevSet?.size === 1) {
-        assert(prevSet.has(key));
-        this._groupedResultKeys!.delete(groupId);
-      } else {
-        prevSet?.delete(key);
+    if (this._groupedResultKeys) {
+      for (const groupId of prevGroupIds) {
+        const prevSet = this._groupedResultKeys!.get(groupId);
+        if (!prevSet) {
+          continue;
+        }
+        if (prevSet?.size === 1) {
+          assert(prevSet.has(key));
+          this._groupedResultKeys!.delete(groupId);
+        } else {
+          prevSet?.delete(key);
+        }
       }
     }
     if (this.predicate(vertex)) {
       this._resultKeys.add(key);
-      for (const groupId of newGroupIds) {
-        let set = this._groupedResultKeys!.get(groupId);
-        if (!set) {
-          set = new Set();
-          this._groupedResultKeys!.set(groupId, set);
+      if (this._groupedResultKeys) {
+        for (const groupId of newGroupIds) {
+          let set = this._groupedResultKeys!.get(groupId);
+          if (!set) {
+            set = new Set();
+            this._groupedResultKeys!.set(groupId, set);
+          }
+          set.add(key);
         }
-        set.add(key);
       }
       // TODO: Wrap in a micro task timer to avoid timing issues around
       // corountine cancellation. This is currently not an issue since we're
@@ -566,11 +573,29 @@ export class Query<
   }
 
   private compareManagers(a: VertexManager<OT>, b: VertexManager<OT>): number {
+    if (a.key === b.key) {
+      return 0;
+    }
     const sortDesc = this.sortDescriptor;
     const v1 = a.getVertexProxy();
     const v2 = b.getVertexProxy();
     const ret = sortDesc ? sortDesc(v1, v2) : 0;
-    return ret === 0 ? coreValueCompare(v1, v2) : ret;
+    if (ret !== 0) {
+      return ret;
+    }
+    if (v1.namespace === v2.namespace) {
+      const r = coreValueCompare(v1, v2);
+      if (r !== 0) {
+        return r;
+      }
+    }
+    if (v1.sortStamp && v2.sortStamp) {
+      const r = coreValueCompare(v1.sortStamp, v2.sortStamp);
+      if (r !== 0) {
+        return r;
+      }
+    }
+    return coreValueCompare(v1.key, v2.key);
   }
 
   private _buildResultsIfNeeded(): void {

@@ -25,6 +25,7 @@ import { WorkspacesBar } from './workspaces-bar/index.tsx';
 import { useSharedQuery } from '../core/cfds/react/query.ts';
 import { usePartialVertex, useVertex } from '../core/cfds/react/vertex.ts';
 import { VertexId } from '../../../cfds/client/graph/vertex.ts';
+import { delay } from '../../../base/time.ts';
 
 const useStyles = makeStyles((theme: any) => ({
   blurred: {
@@ -52,19 +53,16 @@ const filterContext = React.createContext<FilterContext | undefined>(undefined);
 
 export interface FilterContextProviderProps {
   filterKey?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const FilterKeyTasks = 'TasksFilter';
 export const FilterKeyNotes = 'NotesFilter';
 
-export function FilterContextProvider({
-  filterKey,
-  children,
-}: FilterContextProviderProps) {
+export function FilterContextProvider(props: FilterContextProviderProps = {}) {
   const graph = useGraphManager();
   const [filter, setFilter] = useState<VertexManager<Filter>>(
-    graph.getVertexManager<Filter>(filterKey || FilterKeyTasks)
+    graph.getVertexManager<Filter>(props.filterKey || FilterKeyTasks)
   );
   return (
     <filterContext.Provider
@@ -73,7 +71,7 @@ export function FilterContextProvider({
         setFilter: (id) => setFilter(graph.getVertexManager<Filter>(id)),
       }}
     >
-      {children}
+      {props.children}
     </filterContext.Provider>
   );
 }
@@ -90,12 +88,14 @@ export function usePartialFilter(keys: (keyof Filter)[]): Filter {
   return usePartialVertex(useFilterContext().filter, keys);
 }
 
-interface AppProps {}
+interface AppProps {
+  style?: any;
+}
 
 // const isDarkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 const isDarkTheme = false;
 
-function Root({ style }: AppProps & { style?: any }) {
+function Root(props?: AppProps) {
   const styles = useStyles();
 
   // const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([]);
@@ -104,7 +104,8 @@ function Root({ style }: AppProps & { style?: any }) {
   const graph = useGraphManager();
 
   useEffect(() => {
-    graph.loadLocalContents().then(() => setLoading(false));
+    delay(3000, () => setLoading(false));
+    // graph.loadLocalContents().then(() => setLoading(false));
   }, [graph]);
 
   const device = useCurrentDevice();
@@ -137,10 +138,10 @@ function Root({ style }: AppProps & { style?: any }) {
   // }, []);
 
   return (
-    <div className={cn(styles.root)} style={style}>
+    <div className={cn(styles.root)} style={props?.style}>
       <FilterContextProvider>
         {!loading ? (
-          <>
+          <div>
             <WorkspacesBar expanded={expanded} setExpanded={setExpanded} />
             <div className={cn(styles.content)}>
               <BrowserRouter>
@@ -163,7 +164,7 @@ function Root({ style }: AppProps & { style?: any }) {
                 </Route>
               </BrowserRouter>
             </div>
-          </>
+          </div>
         ) : (
           <LoadingView />
         )}
@@ -175,6 +176,7 @@ function Root({ style }: AppProps & { style?: any }) {
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
+  debugger;
   return (
     <ThemeProvider theme={theme} isRoot={true}>
       {({ style }) => <Root style={style} />}
