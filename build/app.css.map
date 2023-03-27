@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../web-app/src/index.css"],
-  "sourcesContent": ["html,\nbody,\n#root {\n  margin: 0;\n  padding: 0;\n  width: 100vw;\n  height: 100vh;\n  font-family: 'Poppins', 'Heebo', sans-serif;\n  overflow: hidden;\n}\n.layout-column {\n  display: flex;\n  flex-direction: column;\n}\n\n.layout-row {\n  display: flex;\n  flex-direction: row;\n}\n\n.flex {\n  flex: 1 0 auto;\n}\n\n.flex-spacer {\n  flex: 1 1 auto;\n}\n"],
-  "mappings": "AAAA,mCAKE,YACA,aACA,qCACA,gBAEF,eACE,aACA,sBAGF,YACE,aACA,mBAGF,MACE,cAGF,aACE",
-  "names": []
-}
