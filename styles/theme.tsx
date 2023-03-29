@@ -394,9 +394,11 @@ export function ThemeProvider(props: ThemeProviderProps) {
       document.body.style.setProperty(key, value);
     }
   }, [isRoot, style]);
+
+  const generatedChildren = useMemo(() => children({ style }), [style]);
   return (
     <themeContext.Provider value={theme}>
-      {children({ style })}
+      {generatedChildren}
     </themeContext.Provider>
   );
 }

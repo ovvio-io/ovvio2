@@ -95,18 +95,18 @@ interface AppProps {
 // const isDarkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 const isDarkTheme = false;
 
-function Root(props?: AppProps) {
+function Root(props: AppProps) {
   const styles = useStyles();
 
   // const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const graph = useGraphManager();
 
-  useEffect(() => {
-    delay(3000, () => setLoading(false));
-    // graph.loadLocalContents().then(() => setLoading(false));
-  }, [graph]);
+  // useEffect(() => {
+  //   delay(3000, () => setLoading(false));
+  //   // graph.loadLocalContents().then(() => setLoading(false));
+  // }, [graph]);
 
   const device = useCurrentDevice();
 
@@ -176,7 +176,6 @@ function Root(props?: AppProps) {
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
-  debugger;
   return (
     <ThemeProvider theme={theme} isRoot={true}>
       {({ style }) => <Root style={style} />}

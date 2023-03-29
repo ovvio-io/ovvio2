@@ -10,6 +10,7 @@ import { ToastProvider } from '../../../styles/components/toast/index.tsx';
 // import TitleBarContainer from '../shared/electron-title-bar';
 import LoginScreen from './login/index.tsx';
 import { MobileBlocker } from './mobile-blocker.tsx';
+import App from './index.tsx';
 
 // if (isElectron()) {
 //   window
@@ -17,7 +18,7 @@ import { MobileBlocker } from './mobile-blocker.tsx';
 //     .ipcRenderer.send('on-app-loaded', { constants: electronConstants });
 // }
 
-const LazyApp = lazy(() => import('./index.tsx'));
+// const LazyApp = lazy(() => import('./index.tsx'));
 
 const router = createBrowserRouter([
   {
@@ -26,7 +27,7 @@ const router = createBrowserRouter([
       <LoginScreen>
         <MobileBlocker>
           <Suspense fallback={<Fragment />}>
-            <LazyApp />
+            <App />
           </Suspense>
         </MobileBlocker>
       </LoginScreen>
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
 ]);
 
 export default function LoginAsync() {
+  debugger;
   return (
     // <FirebaseAppInit>
     // <EventLoggerProvider>
