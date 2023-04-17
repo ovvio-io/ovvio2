@@ -1,5 +1,5 @@
 import { layout } from '../../layout.ts';
-import React, { MouseEventHandler, useRef } from 'https://esm.sh/react@18.2.0';
+import React, { MouseEventHandler, useRef } from 'react';
 import { cn, makeStyles } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { brandLightTheme as theme } from '../../theme.tsx';

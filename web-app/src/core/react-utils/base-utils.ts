@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+import { useEffect, useRef } from 'react';
 
 export function useMountedIndicator() {
   const isMountedRef = useRef(true);

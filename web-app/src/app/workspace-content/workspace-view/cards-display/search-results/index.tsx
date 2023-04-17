@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useMemo } from 'react';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';

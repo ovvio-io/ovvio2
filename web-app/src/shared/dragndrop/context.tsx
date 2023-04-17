@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useReducer,
   useRef,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import { CANCELLATION_REASONS } from './index.ts';
 import { DragPosition } from './droppable.tsx';
 

@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';

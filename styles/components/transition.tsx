@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useLayoutEffect,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { styleguide } from '../styleguide.ts';
 import { makeStyles, cn } from '../css-objects/index.ts';
 import { useMountedIndicator } from '../utils/hooks/use-mounted-indicator.ts';

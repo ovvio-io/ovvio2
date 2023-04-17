@@ -1,11 +1,6 @@
 import { isMention } from '../../mentions/index.tsx';
 import { FormattedText } from '../../types.ts';
-import React, {
-  MouseEvent,
-  useCallback,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent, useCallback, useRef, useState } from 'react';
 import { RenderLeafProps } from 'https://esm.sh/slate-react@0.87.1';
 import { styleguide, layout } from '../../../../../../styles/index.ts';
 import { IconLink } from '../../../../../../styles/components/icons/index.ts';

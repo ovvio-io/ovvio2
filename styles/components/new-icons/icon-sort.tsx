@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { IconSize, IconProps } from './types.ts';
 
 export function IconSort({ size = IconSize.Small, className }: IconProps) {

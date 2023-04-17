@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useState } from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';

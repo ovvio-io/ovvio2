@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
-import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
+import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';

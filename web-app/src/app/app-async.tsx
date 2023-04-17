@@ -1,4 +1,4 @@
-import React, { Fragment, lazy, Suspense } from 'https://esm.sh/react@18.2.0';
+import React, { Fragment, lazy, Suspense } from 'react';
 import { StyleProvider } from '../../../styles/css-objects/context.tsx';
 import Login from './login-async.tsx';
 

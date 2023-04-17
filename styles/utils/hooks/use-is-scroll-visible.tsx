@@ -1,4 +1,4 @@
-import { useState } from 'https://esm.sh/react@18.2.0';
+import { useState } from 'react';
 import { useIsomorphicLayoutEffect, isServerSide } from '../ssr.ts';
 
 export interface UseIsScrollVisibleOptions {

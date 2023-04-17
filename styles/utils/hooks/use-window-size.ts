@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+import { useState, useEffect } from 'react';
 
 export function useWindowSize() {
   const [size, setSize] = useState({

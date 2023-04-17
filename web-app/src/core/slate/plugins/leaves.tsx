@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { BaseRange, Editor, Node } from 'https://esm.sh/slate@0.87.0';
 import { RenderLeafProps } from 'https://esm.sh/slate-react@0.87.1';
 import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';

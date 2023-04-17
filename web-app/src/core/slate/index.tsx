@@ -1,6 +1,6 @@
 import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
 import { useCfdsContext } from '../cfds/react/graph.tsx';
-import { useEffect, useMemo, useRef } from 'https://esm.sh/react@18.2.0';
+import { useEffect, useMemo, useRef } from 'react';
 import { createEditor, Editor } from 'https://esm.sh/slate@0.87.0';
 import {
   RenderElementProps,

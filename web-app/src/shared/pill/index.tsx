@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
 import { styleguide } from '../../../../styles/styleguide.ts';
 import {

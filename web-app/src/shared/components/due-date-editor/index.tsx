@@ -1,9 +1,4 @@
-import React, {
-  useReducer,
-  useMemo,
-  useContext,
-  useCallback,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useReducer, useMemo, useContext, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,

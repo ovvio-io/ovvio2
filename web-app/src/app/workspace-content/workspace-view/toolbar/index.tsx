@@ -1,5 +1,5 @@
-import React from 'https://esm.sh/react@18.2.0';
-import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+import React from 'react';
+import ReactDOM from 'react-dom';
 import { layout, styleguide } from '../../../../../../styles/index.ts';
 import Layer from '../../../../../../styles/components/layer.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';

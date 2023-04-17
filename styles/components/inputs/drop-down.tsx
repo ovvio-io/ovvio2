@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useMemo } from 'react';
 import Menu, { MenuItem } from '../menu.tsx';
 
 interface DropDownItemProps {

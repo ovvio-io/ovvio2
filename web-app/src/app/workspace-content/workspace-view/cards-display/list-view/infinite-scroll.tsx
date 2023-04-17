@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useRef, useState } from 'react';
 import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import SpinnerView from '../../../../../../../styles/components/spinner-view.tsx';

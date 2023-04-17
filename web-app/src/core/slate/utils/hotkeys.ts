@@ -1,4 +1,4 @@
-import { KeyboardEvent } from 'https://esm.sh/react@18.2.0';
+import { KeyboardEvent } from 'react';
 import { JSONObject } from '../../../../../base/interfaces.ts';
 import { isMacOS } from '../../../utils.ts';
 

@@ -1,8 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useMemo } from 'react';
 
 export interface NewTheme {
   primary: {
@@ -359,7 +355,6 @@ interface ThemeProviderProps {
   isRoot?: boolean;
 }
 export function ThemeProvider(props: ThemeProviderProps) {
-  debugger;
   const { theme, children, isRoot = false } = props;
   const style = useMemo(() => {
     return {

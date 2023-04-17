@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext } from 'https://esm.sh/react@18.2.0';
+import React, { ReactElement, useContext } from 'react';
 
 const context = React.createContext(1);
 

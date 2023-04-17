@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'https://esm.sh/react@18.2.0';
+import React, { useMemo, useRef } from 'react';
 import {
   between,
   past,

@@ -4,8 +4,8 @@ import React, {
   useRef,
   useCallback,
   useContext,
-} from 'https://esm.sh/react@18.2.0';
-import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+} from 'react';
+import ReactDOM from 'react-dom';
 import { makeStyles, cn, keyframes } from '../../css-objects/index.ts';
 import { uniqueId } from '../../../base/common.ts';
 import { styleguide } from '../../styleguide.ts';

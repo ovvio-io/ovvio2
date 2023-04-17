@@ -1,12 +1,7 @@
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { NoteSearchEngine } from '../../../../../cfds/client/graph/note-search.ts';
 import { useLogger } from './logger.tsx';
 import { NS_FILTER, NS_USERS } from '../../../../../cfds/base/scheme-types.ts';

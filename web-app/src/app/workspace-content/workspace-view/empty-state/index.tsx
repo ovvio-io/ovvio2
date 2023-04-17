@@ -1,4 +1,4 @@
-import React, { useState } from 'https://esm.sh/react@18.2.0';
+import React, { useState } from 'react';
 import { layout, styleguide } from '../../../../../../styles/index.ts';
 import { H3, Text } from '../../../../../../styles/components/texts.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';

@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
   ref: React.RefObject<T>,

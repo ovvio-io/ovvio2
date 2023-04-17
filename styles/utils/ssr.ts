@@ -1,9 +1,5 @@
-import {
-  DependencyList,
-  EffectCallback,
-  useLayoutEffect,
-} from 'https://esm.sh/react@18.2.0';
-import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+import { DependencyList, EffectCallback, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 export const isServerSide =
   typeof window === 'undefined' || typeof document === 'undefined';

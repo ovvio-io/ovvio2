@@ -1,9 +1,4 @@
-import React, {
-  MouseEvent,
-  useCallback,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent, useCallback, useRef, useState } from 'react';
 import { makeStyles, cn } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';

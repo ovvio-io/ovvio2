@@ -1,8 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useRef,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useRef } from 'react';
 import { isServerSide } from '../utils/ssr.ts';
 
 export interface CssClass {

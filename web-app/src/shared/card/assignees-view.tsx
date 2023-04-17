@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useMemo,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useCallback, useMemo, useState } from 'react';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';
 import Avatar from '../avatar/index.tsx';

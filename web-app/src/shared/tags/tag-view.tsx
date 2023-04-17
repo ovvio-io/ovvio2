@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'https://esm.sh/react@18.2.0';
+import React, { useCallback, useRef } from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';

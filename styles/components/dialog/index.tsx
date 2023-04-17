@@ -1,9 +1,5 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
-import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { makeStyles, cn, keyframes } from '../../css-objects/index.ts';
 import { H2 } from '../texts.tsx';
 import { styleguide } from '../../styleguide.ts';

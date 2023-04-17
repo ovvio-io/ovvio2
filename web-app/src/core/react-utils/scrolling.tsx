@@ -1,8 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useState } from 'react';
 
 export const scrollingContext = React.createContext<HTMLElement | undefined>(
   document.body

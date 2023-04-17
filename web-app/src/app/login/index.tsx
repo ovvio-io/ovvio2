@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { uniqueId } from '../../../../base/common.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { RaisedButton } from '../../../../styles/components/buttons.tsx';

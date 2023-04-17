@@ -1,7 +1,4 @@
-import React, {
-  MouseEvent,
-  useImperativeHandle,
-} from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent, useImperativeHandle } from 'react';
 import { Node } from 'https://esm.sh/slate@0.87.0';
 import { Editable, Slate } from 'https://esm.sh/slate-react@0.87.1';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';

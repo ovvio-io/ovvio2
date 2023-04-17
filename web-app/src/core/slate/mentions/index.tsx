@@ -1,4 +1,4 @@
-import React, { KeyboardEventHandler } from 'https://esm.sh/react@18.2.0';
+import React, { KeyboardEventHandler } from 'react';
 import {
   BaseEditor,
   Editor,

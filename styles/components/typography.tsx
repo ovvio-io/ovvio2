@@ -1,5 +1,5 @@
 import { cn, makeStyles } from '../css-objects/index.ts';
-import React, { ElementType } from 'https://esm.sh/react@18.2.0';
+import React, { ElementType } from 'react';
 import { MediaQueries } from '../responsive.ts';
 import { brandLightTheme as theme } from '../theme.tsx';
 

@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useRef, useState } from 'react';
 import { NS_USERS, NS_WORKSPACE } from '../../../../cfds/base/scheme-types.ts';
 import { Record } from '../../../../cfds/base/record.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
@@ -20,6 +16,7 @@ import { DuplicateWorkspaceView } from './duplicate-workspace.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { uniqueId } from '../../../../base/common.ts';
+import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles((theme) => ({
   input: {
@@ -75,7 +72,7 @@ function createNewWorkspace(
 
 export interface WorkspaceFormProps {
   source?: UISource;
-  onWorkspaceCreated: (createResult: VertexManager<Workspace>) => void;
+  onWorkspaceCreated: (createResult: VertexId<Workspace>) => void;
 }
 
 export function WorkspaceForm({
@@ -115,6 +112,10 @@ export function WorkspaceForm({
       source,
       id: flowId,
     });
+    graph.sharedQueriesManager.workspaces.forEach(
+      (ws) => (ws.selected = ws.key === wsResult.key)
+    );
+    wsResult.getVertexProxy().selected = true;
     onWorkspaceCreated(wsResult);
   };
   return (

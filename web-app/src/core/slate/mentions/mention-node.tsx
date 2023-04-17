@@ -7,7 +7,7 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import { Node, Transforms } from 'https://esm.sh/slate@0.87.0';
 import {
   RenderElementProps,

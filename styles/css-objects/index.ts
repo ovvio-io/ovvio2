@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'https://esm.sh/react@18.2.0';
+import { useMemo, useState } from 'react';
 import { useEnsureAttached, __CssRegistry } from './context.tsx';
 import { cssTheme, Theme } from '../theme.tsx';
 import { isServerSide, useIsomorphicLayoutEffect } from '../utils/ssr.ts';

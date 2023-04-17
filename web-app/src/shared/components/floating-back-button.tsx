@@ -1,5 +1,5 @@
-import React from 'https://esm.sh/react@18.2.0';
-import { useLocation, useNavigate } from 'https://esm.sh/react-router@6.7.0';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';
 import { Button } from '../../../../styles/components/buttons.tsx';

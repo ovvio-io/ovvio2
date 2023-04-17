@@ -1,10 +1,5 @@
-import React, {
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
-import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
+import React, { useCallback, useContext, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Path } from 'https://esm.sh/slate@0.87.0';
 import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';

@@ -1,9 +1,5 @@
-import React, {
-  useMemo,
-  useState,
-  useCallback,
-} from 'https://esm.sh/react@18.2.0';
-import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
+import React, { useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
@@ -11,6 +7,7 @@ import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
+import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -52,25 +49,24 @@ const useStyles = makeStyles((theme) => ({
 
 interface CreateWorkspaceViewProps {
   source: UISource;
-  onWorkspaceCreated?: (wsKey: string) => void;
+  onWorkspaceCreated?: (wsKey: VertexId<Workspace>) => void;
 }
 export const CreateWorkspaceView = ({
   source,
   onWorkspaceCreated,
 }: CreateWorkspaceViewProps) => {
   const styles = useStyles();
-  const [ws, setWs] = useState<VertexManager<Workspace>>();
   const navigate = useNavigate();
 
-  const onCreated = useCallback(
-    (result: VertexManager<Workspace>) => {
-      setWs(result);
-      if (onWorkspaceCreated) {
-        onWorkspaceCreated(result.key);
-      }
-    },
-    [setWs]
-  );
+  // const onCreated = useCallback(
+  //   (result: VertexManager<Workspace>) => {
+  //     setWs(result);
+  //     if (onWorkspaceCreated) {
+  //       onWorkspaceCreated(result.key);
+  //     }
+  //   },
+  //   [setWs]
+  // );
 
   const closeView = useCallback(() => {
     navigate('/login');
@@ -84,7 +80,10 @@ export const CreateWorkspaceView = ({
           {/* {ws ? (
             <InviteForm showOnboard={true} close={closeView} source={source} />
           ) : ( */}
-          <WorkspaceForm source={source} onWorkspaceCreated={onCreated} />
+          <WorkspaceForm
+            source={source}
+            onWorkspaceCreated={onWorkspaceCreated || ((_) => {})}
+          />
           {/* )} */}
         </div>
       </div>

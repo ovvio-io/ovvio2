@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import CANCELLATION_REASONS from './cancellation-reasons.tsx';
 import { useDndContext } from './context.tsx';
 

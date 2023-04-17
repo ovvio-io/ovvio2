@@ -1,4 +1,4 @@
-import React, { useContext } from 'https://esm.sh/react@18.2.0';
+import React, { useContext } from 'react';
 
 type LanguageStrings<T> = {
   [K in keyof T]: T[K];

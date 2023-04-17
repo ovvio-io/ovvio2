@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { brandLightTheme as theme } from '../../theme.tsx';
 import { IconSize, IconProps, IconColor } from './types.ts';
 

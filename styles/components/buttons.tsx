@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { cn, makeStyles } from '../css-objects/index.ts';
 import { styleguide } from '../styleguide.ts';
 import { layout } from '../layout.ts';

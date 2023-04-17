@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useContext,
-  FormEvent,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useState, useRef, useContext, FormEvent } from 'react';
 
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';

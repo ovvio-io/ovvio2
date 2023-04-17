@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { wordDist } from '../../../../cfds/client/suggestions.ts';
 import { styleguide } from '../../../../styles/styleguide.ts';
 import Menu, { MenuRenderButton } from '../../../../styles/components/menu.tsx';

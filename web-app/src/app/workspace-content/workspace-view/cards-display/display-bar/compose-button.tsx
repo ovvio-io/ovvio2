@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'https://esm.sh/react@18.2.0';
+import React, { useCallback, useState } from 'react';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import {
   Note,

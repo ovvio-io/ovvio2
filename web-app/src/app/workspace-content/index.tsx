@@ -1,4 +1,4 @@
-import React, { useMemo } from 'https://esm.sh/react@18.2.0';
+import React, { useMemo } from 'react';
 import { useGraphManager } from '../../core/cfds/react/graph.tsx';
 import WorkspaceContentView from './workspace-view/index.tsx';
 

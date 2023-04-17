@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { TextField } from '../../../../../../../styles/components/inputs/index.ts';

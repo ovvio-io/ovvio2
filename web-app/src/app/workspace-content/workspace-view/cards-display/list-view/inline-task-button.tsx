@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { NS_NOTES } from '../../../../../../../cfds/base/scheme-types.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {

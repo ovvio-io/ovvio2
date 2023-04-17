@@ -1,4 +1,4 @@
-import React, { useCallback } from 'https://esm.sh/react@18.2.0';
+import React, { useCallback } from 'react';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { IconListView } from '../../../../../../../styles/components/new-icons/icon-list-view.tsx';

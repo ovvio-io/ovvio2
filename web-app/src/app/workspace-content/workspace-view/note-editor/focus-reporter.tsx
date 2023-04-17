@@ -1,4 +1,4 @@
-import React, { useEffect } from 'https://esm.sh/react@18.2.0';
+import React, { useEffect } from 'react';
 import { useFocused } from 'https://esm.sh/slate-react@0.87.1';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';

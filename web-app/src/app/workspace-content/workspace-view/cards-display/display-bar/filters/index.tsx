@@ -1,8 +1,4 @@
-import React, {
-  MouseEvent,
-  useState,
-  useCallback,
-} from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent, useState, useCallback } from 'react';
 import {
   Filter,
   Tag,

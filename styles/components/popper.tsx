@@ -1,10 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useLayoutEffect,
-} from 'https://esm.sh/react@18.2.0';
-import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'https://esm.sh/prop-types@15.8.1';
 import { styleguide } from '../styleguide.ts';
 import { useTransitionedOpen, TRANSITION_STATES } from './transition.tsx';

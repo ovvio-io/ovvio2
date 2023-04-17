@@ -1,11 +1,10 @@
-import React, {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
-import { Route } from 'https://esm.sh/react-router@6.7.0';
-import { BrowserRouter } from 'https://esm.sh/react-router-dom@6.7.0';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createBrowserRouter,
+  Route,
+  RouterProvider,
+  Routes,
+} from 'react-router-dom';
 import { layout } from '../../../styles/index.ts';
 import { cn, makeStyles } from '../../../styles/css-objects/index.ts';
 import { Devices, useCurrentDevice } from '../../../styles/responsive.ts';
@@ -14,7 +13,10 @@ import {
   lightTheme,
   ThemeProvider,
 } from '../../../styles/theme.tsx';
-import { useGraphManager } from '../core/cfds/react/graph.tsx';
+import {
+  CfdsClientProvider,
+  useGraphManager,
+} from '../core/cfds/react/graph.tsx';
 import { VertexManager } from '../../../cfds/client/graph/vertex-manager.ts';
 import { Filter } from '../../../cfds/client/graph/vertices/filter.ts';
 import { Workspace } from '../../../cfds/client/graph/vertices/workspace.ts';
@@ -26,6 +28,8 @@ import { useSharedQuery } from '../core/cfds/react/query.ts';
 import { usePartialVertex, useVertex } from '../core/cfds/react/vertex.ts';
 import { VertexId } from '../../../cfds/client/graph/vertex.ts';
 import { delay } from '../../../base/time.ts';
+import { uniqueId } from '../../../base/common.ts';
+import { StyleProvider } from '../../../styles/css-objects/context.tsx';
 
 const useStyles = makeStyles((theme: any) => ({
   blurred: {
@@ -144,25 +148,7 @@ function Root(props: AppProps) {
           <div>
             <WorkspacesBar expanded={expanded} setExpanded={setExpanded} />
             <div className={cn(styles.content)}>
-              <BrowserRouter>
-                <Route path="/new">
-                  <CreateWorkspaceView
-                    source="bar:workspace"
-                    onWorkspaceCreated={(wsKey) => {
-                      workspacesQuery.forEach(
-                        (ws) => (ws.selected = ws.key === wsKey)
-                      );
-                      // Depending on exact timings, our query may miss
-                      // the newly created workspace. Ensure it's always
-                      // selected.
-                      graph.getVertex<Workspace>(wsKey).selected = true;
-                    }}
-                  />
-                </Route>
-                <Route path="/">
-                  <WorkspaceContentView />
-                </Route>
-              </BrowserRouter>
+              <WorkspaceContentView />
             </div>
           </div>
         ) : (
@@ -173,12 +159,44 @@ function Root(props: AppProps) {
   );
 }
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root style={lightTheme} />,
+  },
+  {
+    path: '/new',
+    element: (
+      <CreateWorkspaceView
+        source="bar:workspace"
+        // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
+
+        //   workspacesQuery.forEach((ws) => (ws.selected = ws.key === wsKey));
+        //   // Depending on exact timings, our query may miss
+        //   // the newly created workspace. Ensure it's always
+        //   // selected.
+        //   graph.getVertex<Workspace>(wsKey).selected = true;
+        // }}
+      />
+    ),
+  },
+]);
+
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
+
   return (
-    <ThemeProvider theme={theme} isRoot={true}>
-      {({ style }) => <Root style={style} />}
-    </ThemeProvider>
+    <CfdsClientProvider userId="ofri" sessionId={`ofri/${uniqueId()}`}>
+      <StyleProvider dev={false}>
+        <ThemeProvider theme={theme} isRoot={true}>
+          {({ style }) => (
+            <React.StrictMode>
+              <RouterProvider router={router} />
+            </React.StrictMode>
+          )}
+        </ThemeProvider>
+      </StyleProvider>
+    </CfdsClientProvider>
   );
 }

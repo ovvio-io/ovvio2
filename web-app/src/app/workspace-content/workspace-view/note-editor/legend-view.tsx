@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IconKeyboard,
   IconClose,

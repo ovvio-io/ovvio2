@@ -1,4 +1,4 @@
-import React, { useContext } from 'https://esm.sh/react@18.2.0';
+import React, { useContext } from 'react';
 import { Editor, NodeEntry } from 'https://esm.sh/slate@0.87.0';
 import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
 import { ElementNode } from '../../../../../cfds/richtext/tree.ts';

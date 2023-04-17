@@ -1,8 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   openDB,
   deleteDB,
@@ -140,7 +136,6 @@ class LogClientIDBStorage implements LogClientStorage {
   }
 
   async persistEntries(entries: NormalizedLogEntry[]): Promise<void> {
-    debugger;
     const db = await this.getDB();
     const txn = db.transaction('logEntries', 'readwrite', {
       durability: 'relaxed',

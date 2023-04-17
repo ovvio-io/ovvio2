@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'https://esm.sh/react@18.2.0';
+import React, { useEffect, useState } from 'react';
 import { layout, styleguide } from '../../../styles/index.ts';
 import { Bold, H3 } from '../../../styles/components/texts.tsx';
 import { cn, makeStyles } from '../../../styles/css-objects/index.ts';

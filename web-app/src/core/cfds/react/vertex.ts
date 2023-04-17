@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'https://esm.sh/react@18.2.0';
+import { useEffect, useState, useMemo } from 'react';
 import { useGraphManager } from './graph.tsx';
 import {
   VertexManager,

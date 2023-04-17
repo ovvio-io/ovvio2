@@ -1,4 +1,4 @@
-import { MouseEvent } from 'https://esm.sh/react@18.2.0';
+import { MouseEvent } from 'react';
 
 export type ToggleAction = 'single' | 'range' | 'clearOthers' | 'clearAll';
 

@@ -1,13 +1,5 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useLayoutEffect,
-} from 'https://esm.sh/react@18.2.0';
-import {
-  NavigateFunction,
-  useNavigate,
-} from 'https://esm.sh/react-router-dom@6.7.0';
+import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { notImplemented } from '../../../../base/error.ts';
 import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';

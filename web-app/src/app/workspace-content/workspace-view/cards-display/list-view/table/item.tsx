@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import {
   Editable,
   ReactEditor,

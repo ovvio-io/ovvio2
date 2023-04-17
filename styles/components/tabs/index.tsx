@@ -1,4 +1,4 @@
-import React, { MouseEvent } from 'https://esm.sh/react@18.2.0';
+import React, { MouseEvent } from 'react';
 import { makeStyles, cn } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';

@@ -1,6 +1,6 @@
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { EVENT_CRITICAL_ERROR } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import { useEffect } from 'https://esm.sh/react@18.2.0';
+import { useEffect } from 'react';
 import { useGraphManager } from './graph.tsx';
 
 function registerOnCriticalError(

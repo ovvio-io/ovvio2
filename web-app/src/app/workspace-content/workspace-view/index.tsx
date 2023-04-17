@@ -1,5 +1,5 @@
-import React from 'https://esm.sh/react@18.2.0';
-import { Route } from 'https://esm.sh/react-router-dom@6.7.0';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import Toolbar, { useStyles as toolbarStyles } from './toolbar/index.tsx';
 import { layout } from '../../../../../styles/index.ts';
@@ -51,15 +51,22 @@ export default function WorkspaceContentView({ className }: ContentProps) {
       <DueDateEditor>
         <div className={cn(styles.content)}>
           <div className={cn(styles.router)}>
-            <Route path={`/:workspaceId/notes/:noteId`}>
-              <NoteView />
-            </Route>
-            <Route path="/">
-              selectedWorkspacesQuery.length ? (
-              <CardsDisplay />
-              ) : (
-              <EmptyState />)
-            </Route>
+            <Routes>
+              <Route
+                path={`/:workspaceId/notes/:noteId`}
+                element={<NoteView />}
+              />
+              <Route
+                path="/"
+                element={
+                  selectedWorkspacesQuery.count ? (
+                    <CardsDisplay />
+                  ) : (
+                    <EmptyState />
+                  )
+                }
+              />
+            </Routes>
           </div>
         </div>
       </DueDateEditor>

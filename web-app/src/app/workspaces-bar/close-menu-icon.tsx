@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { styleguide } from '../../../../styles/styleguide.ts';
 import { IconProps } from '../../../../styles/components/icons/IconBase.tsx';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';

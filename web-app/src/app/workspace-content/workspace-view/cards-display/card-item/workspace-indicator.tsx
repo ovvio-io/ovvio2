@@ -1,9 +1,5 @@
-import React, {
-  useCallback,
-  useRef,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
-import { useNavigate } from 'https://esm.sh/react-router@6.7.0';
+import React, { useCallback, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,

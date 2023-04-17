@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useLayoutEffect,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { styleguide, layout } from '../../../../styles/index.ts';
 import { TextField } from '../../../../styles/components/inputs/index.ts';

@@ -1,8 +1,4 @@
-import React, {
-  useContext,
-  useEffect,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useContext, useEffect, useState } from 'react';
 import { isServerSide } from '../ssr.ts';
 
 export const scrollingContext = React.createContext<HTMLElement>(

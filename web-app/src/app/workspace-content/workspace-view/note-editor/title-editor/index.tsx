@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'https://esm.sh/react@18.2.0';
+import React, { useRef, useEffect } from 'react';
 import {
   Editable,
   RenderElementProps,

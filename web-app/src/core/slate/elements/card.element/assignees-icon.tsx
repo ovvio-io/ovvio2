@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 
 export function AssigneesIcon(props: { fill?: string; className?: string }) {
   const { fill = '#706B80', className } = props;

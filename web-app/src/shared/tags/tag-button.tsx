@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../cfds/client/suggestions.ts';

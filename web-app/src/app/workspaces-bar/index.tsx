@@ -5,8 +5,8 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'https://esm.sh/react@18.2.0';
-import { useLocation, useNavigate } from 'https://esm.sh/react-router@6.7.0';
+} from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import * as SetUtils from '../../../../base/set.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';

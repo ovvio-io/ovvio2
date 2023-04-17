@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "global.d.ts": "./global.d.ts",
+    "prop-types": "https://unpkg.com/prop-types@15.8.1",
+    "scheduler/tracing": "https://unpkg.com/@types/scheduler@0.16.3/tracing.d.ts",
+    "csstype": "https://unpkg.com/csstype@3.1.2/index.d.ts",
+    "react": "https://unpkg.com/react@18/umd/react.development.js",
+    "react-dom": "https://unpkg.com/react-dom@18/umd/react-dom.development.js",
+    "react-dom/client": "https://unpkg.com/react-dom@18/umd/react-dom.development.js",
+    "react-router": "https://unpkg.com/react-router@6.9.0/dist/umd/react-router.development.js",
+    "react-router-dom": "https://unpkg.com/react-router-dom@6.9.0/dist/umd/react-router-dom.development.js",
+    "@remix-run/router": "https://cdn.jsdelivr.net/npm/@remix-run/router@1.4.0/+esm"
+  }
+}

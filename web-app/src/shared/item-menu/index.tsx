@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import Menu from '../../../../styles/components/menu.tsx';
 import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {

@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { Editor } from 'https://esm.sh/slate@0.87.0';
 import {
   ReactEditor,

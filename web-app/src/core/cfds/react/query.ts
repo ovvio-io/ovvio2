@@ -1,9 +1,4 @@
-import {
-  DependencyList,
-  useCallback,
-  useEffect,
-  useState,
-} from 'https://esm.sh/react@18.2.0';
+import { DependencyList, useCallback, useEffect, useState } from 'react';
 import {
   NS_NOTES,
   NS_TAGS,

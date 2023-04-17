@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useRef,
   useState,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import { MutableRefObject } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
 import CANCELLATION_REASONS from './cancellation-reasons.tsx';
 import { useDndContext } from './context.tsx';

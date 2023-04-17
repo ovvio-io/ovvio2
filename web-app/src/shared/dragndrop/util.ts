@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-} from 'https://esm.sh/react@18.2.0';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { DragPosition } from './droppable.tsx';
 
 export function serializeId(id) {

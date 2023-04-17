@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18.2.0';
+import React from 'react';
 import { IconProps, IconSize } from './types.ts';
 
 export function IconGroup({ size = IconSize.Small, className }: IconProps) {

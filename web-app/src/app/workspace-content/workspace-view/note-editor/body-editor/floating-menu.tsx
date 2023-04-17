@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
-} from 'https://esm.sh/react@18.2.0';
+} from 'react';
 import { Editor, Element, Path } from 'https://esm.sh/slate@0.87.0';
 import {
   ReactEditor,

@@ -1,9 +1,5 @@
-import React, { Fragment, lazy, Suspense } from 'https://esm.sh/react@18.2.0';
-import {
-  createBrowserRouter,
-  Route,
-  RouterProvider,
-} from 'https://esm.sh/react-router-dom@6.7.0';
+import React, { Fragment, lazy, Suspense } from 'react';
+import { createBrowserRouter, Route, RouterProvider } from 'react-router-dom';
 import { ToastProvider } from '../../../styles/components/toast/index.tsx';
 // import OvvioRouter from '../core/react-utils/history/index.tsx';
 // import { electronConstants } from '../shared/constants/electron-constants';
