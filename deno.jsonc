@@ -1,12 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"],
-    "types": [
-      "https://unpkg.com/csstype@3.1.2/index.d.ts",
-      "https://unpkg.com/@types/scheduler@0.16.3/tracing.d.ts",
-      "https://unpkg.com/@types/react@18.0.11/index.d.ts",
-      "https://unpkg.com/@types/react-dom@18.0.11/index.d.ts"
-    ]
+    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
-  "importMap": "./import-map-dev.json"
+  "importMap": "./import-map.json"
 }
