@@ -2,7 +2,7 @@ import {
   Database,
   Statement,
   Transaction,
-} from 'https://deno.land/x/sqlite3@0.6.1/mod.ts';
+} from 'https://deno.land/x/sqlite3@0.9.1/mod.ts';
 import { resolve as resolvePath } from 'https://deno.land/std@0.160.0/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {
