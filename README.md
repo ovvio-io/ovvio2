@@ -1,3 +1,27 @@
+# Running the Project
+
+We're using Deno as our server, and ES6 modules for package management.
+
+First, install deno from here https://deno.com/manual@v1.32.5/getting_started/installation
+
+## WebApp
+
+1. Install packup - https://github.com/kt3k/packup
+2. Run `packup --import-map=./import-map.json serve web-app/src/index.html`
+
+For debugging, use `packup --import-map=./import-map-dev.json serve web-app/src/index.html`
+
+Note: In the final version we'll have our server build and serve the app
+dynamically, thus skipping the need for packup.
+
+## Server
+
+Normal run:
+`deno run --unstable -A server/run-server.ts`
+
+Debug run:
+`deno run --unstable -A --inspect-brk server/run-server.ts`
+
 # Overview
 
 ## Development Requirements
