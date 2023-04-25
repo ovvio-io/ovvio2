@@ -158,6 +158,13 @@ export interface ISchemeManagerRegister {
   ): void;
 }
 
+export interface AttachmentData extends CoreObject {
+  filename: string;
+  fileId: string;
+  user?: string;
+  inProgress?: boolean;
+}
+
 export type SchemeFields = { [key: string]: ValueType };
 
 export type NoteStatus = 'ToDo' | 'InProgress' | 'Suspended' | 'Done';
