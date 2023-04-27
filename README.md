@@ -64,13 +64,17 @@ _Note: Everything is relative to a base data directory._
   Stores a single workspace's contents.
 
 - `/data/<user_id>`
-  Stores a single users's private contents.
+  Stores a single users's private contents. This is really a personal workspace
+  and holds the same type of records like a workspace.
 
 - `/sys/dir`
-  Main organization directory.
+  Main organization directory. Stores global records like workspaces, users,
+  tags, etc. Servers constantly keep this repository open and use it for
+  authorization of actions.
 
 - `/logs/<user_id>`
-  Stores a single user's usage data (client events, aka analytics)
+  Stores a single user's usage data (client events, aka analytics). This is not
+  a repository. Rather than commits, it stores individual log messages.
 
 ### Workspace Repository
 
@@ -112,17 +116,15 @@ In this repository you'll find the following schemes:
 A single user generates a bunch of usage data (events), also called analytics
 data. This is a logs repository and contains log messages rather than records.
 
-This repository is available both
-
 ## Workspace Creation
 
 When a client creates a new workspace, it'll locally create a new workspace
 record, a new workspace repository, and start adding contents to it. It'll then
 blindly try to sync everything in no particular order.
 
-The sever, however, will deny all access to the non-existing workspace
-repository until the workspace record had been sync'ed to it, effectively
-granting 'create' permissions. This enables us, the operators, to effectively
+The server, however, will deny all access to the non-existing workspace
+repository until the workspace record had been sync'ed to `/sys/dir`,
+effectively granting 'create' permissions. This enables us, the operators, to
 log the creation before actually accepting any data.
 
 The client isn't bothered by all of this, it'll just wait happily for everything

@@ -1,4 +1,4 @@
-import { allKeysOf, keysOf } from '../base/common.ts';
+import { allKeysOf } from '../base/common.ts';
 
 export type ParamDesc = [paramName: string, desc: string];
 

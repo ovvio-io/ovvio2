@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     .help()
     .parse();
   console.log(`Downloading repo from ${args.server}...`);
-  // Using in memory SQLite allows us to run queries locally
+  // Using SQLite allows us to run queries locally
   const tempDir = Deno.makeTempDirSync();
   const repoPath = joinPath(tempDir, uniqueId() + '.repo');
   const repo = new Repository(new SQLiteRepoStorage(repoPath));

@@ -1,5 +1,5 @@
 import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
-import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
+import yargs from 'https://deno.land/x/yargs@v17.7.1-deno/deno.ts';
 import { serve } from 'https://deno.land/std@0.160.0/http/server.ts';
 import { Repository } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
@@ -28,7 +28,7 @@ import { VersionInfoCurrent } from './version-info.ts';
 interface Arguments {
   port: number;
   replicas: string[];
-  path: string;
+  dir: string;
 }
 
 export class Server {
@@ -47,14 +47,28 @@ export class Server {
   constructor(args?: Arguments) {
     if (!args) {
       args = yargs(Deno.args)
-        .alias({ p: 'port', r: 'replicas' })
-        .default({
-          port: 8080,
-          replicas: [],
+        .option('port', {
+          alias: 'p',
+          type: 'number',
+          description: 'The port on which the server accepts incoming requests',
+          default: 8080,
         })
-        .number(['port'])
-        .array(['replicas'])
-        .demandOption(['path'])
+        .option('replicas', {
+          alias: 'r',
+          type: 'array',
+          default: [],
+          description:
+            'A list of replica URLs which this server will sync with',
+        })
+        .option('dir', {
+          alias: 'd',
+          description:
+            'A full path to a local directory which will host all repositories managed by this server',
+        })
+        .demandOption(
+          ['dir'],
+          'Please provide a local directory for this server'
+        )
         .parse();
     }
     this._args = args!;
@@ -82,7 +96,7 @@ export class Server {
     let repo = this._repositories.get(id);
     if (!repo) {
       repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this._args.path, 'repos', id + '.repo'))
+        new SQLiteRepoStorage(joinPath(this._args.dir, 'repos', id + '.repo'))
       );
       this._repositories.set(id, repo);
       const replicas = this._args.replicas;
@@ -105,7 +119,7 @@ export class Server {
     let storage = this._logs.get(id);
     if (!storage) {
       storage = new SQLiteLogStorage(
-        joinPath(this._args.path, 'logs', id + '.logs')
+        joinPath(this._args.dir, 'logs', id + '.logs')
       );
       this._logs.set(id, storage);
       const replicas = this._args.replicas;
