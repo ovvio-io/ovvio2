@@ -20,8 +20,8 @@ import {
   KeyFromVertexId,
   VertexId,
 } from '../../../../cfds/client/graph/vertex.ts';
-import { assert } from 'https://deno.land/std@0.160.0/_util/assert.ts';
 import { randomInt } from '../../../../logging/stream.ts';
+import { assert } from '../../../../base/error.ts';
 
 const useStyles = makeStyles((theme) => ({
   ws: {

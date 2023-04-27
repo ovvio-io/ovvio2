@@ -89,8 +89,8 @@ export function CfdsClientProvider({
   const graphManager = useMemo(() => {
     const manager = new GraphManager(
       userId,
-      (key: string) => key !== sessionPtrKey
-      // 'http://localhost'
+      (key: string) => key !== sessionPtrKey,
+      'http://localhost:8080'
     );
 
     const rootVertMgr = manager.getRootVertexManager();

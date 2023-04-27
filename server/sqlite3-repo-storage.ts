@@ -3,7 +3,10 @@ import {
   Statement,
   Transaction,
 } from 'https://deno.land/x/sqlite3@0.9.1/mod.ts';
-import { resolve as resolvePath } from 'https://deno.land/std@0.160.0/path/mod.ts';
+import {
+  resolve as resolvePath,
+  dirname,
+} from 'https://deno.land/std@0.183.0/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {
   JSONCyclicalDecoder,
@@ -34,8 +37,10 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   constructor(path?: string) {
     if (path) {
       path = resolvePath(path);
+      const dir = dirname(path);
+      Deno.mkdirSync(dir, { recursive: true });
     }
-    const db = new Database(path || ':memory:');
+    const db = new Database(path || ':memory:', { create: true });
     this.db = db;
     db.exec('PRAGMA journal_mode = WAL;');
     db.exec('PRAGMA busy_timeout = 1000;');
@@ -108,7 +113,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
 
   *commitsForKey(key: string): Generator<Commit> {
     const statement = this.db
-      .prepare(`SELECT json WHERE key = ${key} FROM ${TABLE_COMMITS};`)
+      .prepare(`SELECT json FROM ${TABLE_COMMITS} WHERE key = '${key}';`)
       .bind();
     for (const { json } of statement) {
       yield new Commit({

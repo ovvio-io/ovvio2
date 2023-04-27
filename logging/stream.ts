@@ -1,7 +1,7 @@
 import {
   join as joinPath,
   resolve as resolvePath,
-} from 'https://deno.land/std@0.160.0/path/mod.ts';
+} from 'https://deno.land/std@0.183.0/path/mod.ts';
 import {
   NormalizedLogEntry,
   Severity,

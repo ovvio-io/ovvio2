@@ -1,6 +1,6 @@
-import { join as joinPath } from 'https://deno.land/std@0.160.0/path/mod.ts';
+import { join as joinPath } from 'https://deno.land/std@0.183.0/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.7.1-deno/deno.ts';
-import { serve } from 'https://deno.land/std@0.160.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.183.0/http/server.ts';
 import { Repository } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { RepoClient } from './repo-client.ts';
@@ -87,7 +87,7 @@ export class Server {
       unit: 'Count',
       urls: this._args.replicas,
     });
-    return serve((req) => this.handleRequest(req), {
+    return serve((req: Request) => this.handleRequest(req), {
       port: this._args?.port,
     });
   }
@@ -145,6 +145,9 @@ export class Server {
       value: resp.status,
       unit: 'Count',
     });
+    resp.headers.set('Access-Control-Allow-Origin', '*');
+    resp.headers.set('Access-Control-Allow-Methods', '*');
+    resp.headers.set('Access-Control-Allow-Headers', '*');
     return resp;
   }
 
@@ -154,7 +157,7 @@ export class Server {
       req.method !== 'POST' ||
       !req.body ||
       path.length !== 4 ||
-      ['repo', 'log'].includes(path[1])
+      !['data', 'sys', 'log'].includes(path[1])
     ) {
       log({
         severity: 'INFO',
@@ -165,7 +168,16 @@ export class Server {
           hasBody: Boolean(req.body),
         },
       });
-      return this.processResponse(new Response(null, { status: 400 }));
+      return this.processResponse(
+        new Response(null, {
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+            'Access-Control-Allow-Headers': '*',
+          },
+        })
+      );
     }
 
     const storageType = path[1];
@@ -174,7 +186,7 @@ export class Server {
     let resp: Response;
     switch (cmd) {
       case 'sync':
-        if (storageType === 'repo') {
+        if (storageType === 'data' || storageType === 'sys') {
           resp = await this.handleSyncRequest(
             req,
             (values) =>
@@ -187,7 +199,7 @@ export class Server {
                 c,
               ]),
             () => this.getRepository(resourceId).numberOfCommits,
-            this._clientsForRepo.get(resourceId)!,
+            this._clientsForRepo.get(resourceId),
             true
           );
         } else if (storageType === 'log') {
@@ -200,7 +212,7 @@ export class Server {
                 e,
               ]),
             () => this.getLog(resourceId).numberOfEntries(),
-            this._clientsForLog.get(resourceId)!,
+            this._clientsForLog.get(resourceId),
             // TODO: Only include results when talking to other, trusted,
             // servers. Clients should never receive log entries from the
             // server.
@@ -210,11 +222,24 @@ export class Server {
         break;
 
       default:
+        debugger;
         log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
         resp = new Response(null, { status: 400 });
         break;
     }
     return this.processResponse(resp!);
+  }
+
+  private handleOPTIONSRequest(req: Request): Promise<Response> {
+    const resp = new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+      },
+    });
+
+    return Promise.resolve(resp);
   }
 
   private handleGETRequest(req: Request): Promise<Response> {
@@ -238,7 +263,16 @@ export class Server {
 
       // Health check
       case 'healthy': {
-        return Promise.resolve(new Response('OK', { status: 200 }));
+        return Promise.resolve(
+          new Response('OK', {
+            status: 200,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': '*',
+              'Access-Control-Allow-Headers': '*',
+            },
+          })
+        );
       }
 
       default: {
@@ -252,7 +286,16 @@ export class Server {
           },
         });
         return Promise.resolve(
-          this.processResponse(new Response(null, { status: 400 }))
+          this.processResponse(
+            new Response(null, {
+              status: 400,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            })
+          )
         );
       }
     }
@@ -266,6 +309,9 @@ export class Server {
       if (req.method === 'GET') {
         return this.handleGETRequest(req);
       }
+      if (req.method === 'OPTIONS') {
+        return this.handleOPTIONSRequest(req);
+      }
       log({
         severity: 'INFO',
         error: 'BadRequest',
@@ -276,7 +322,16 @@ export class Server {
         },
       });
       return Promise.resolve(
-        this.processResponse(new Response(null, { status: 400 }))
+        this.processResponse(
+          new Response(null, {
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': '*',
+              'Access-Control-Allow-Headers': '*',
+            },
+          })
+        )
       );
     } catch (e) {
       log({
@@ -286,7 +341,16 @@ export class Server {
         trace: e.stack,
       });
       return Promise.resolve(
-        this.processResponse(new Response(null, { status: 500 }))
+        this.processResponse(
+          new Response(null, {
+            status: 500,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': '*',
+              'Access-Control-Allow-Headers': '*',
+            },
+          })
+        )
       );
     }
   }
@@ -296,7 +360,7 @@ export class Server {
     persistValues: (values: T[]) => Promise<number>,
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
-    replicas: Iterable<BaseClient<T>>,
+    replicas: Iterable<BaseClient<T>> | undefined,
     includeMissing: boolean
   ): Promise<Response> {
     // TODO: Auth + Permissions
@@ -305,7 +369,7 @@ export class Server {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(json),
     });
-    if ((await persistValues(msg.values)) > 0) {
+    if ((await persistValues(msg.values)) > 0 && replicas) {
       // Sync changes with replicas
       for (const c of replicas) {
         c.touch();

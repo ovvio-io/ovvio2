@@ -197,6 +197,9 @@ export class SyncMessage<T extends SyncValueType>
     _options?: unknown
   ): void {
     this._buildVersion = decoder.get<VersionNumber>('ver')!;
+    if (!this._filter) {
+      this._filter = new BloomFilter({ size: 1, fpr: 0.5 });
+    }
     this._filter.deserialize(decoder.getDecoder('f'));
     this._size = decoder.get<number>('s')!;
     this._accessDenied = decoder.get('ad', []);
