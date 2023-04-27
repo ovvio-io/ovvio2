@@ -96,7 +96,9 @@ export class Server {
     let repo = this._repositories.get(id);
     if (!repo) {
       repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this._args.dir, 'repos', id + '.repo'))
+        new SQLiteRepoStorage(
+          joinPath(this._args.dir, id === 'dir' ? 'sys' : 'repos', id + '.repo')
+        )
       );
       this._repositories.set(id, repo);
       const replicas = this._args.replicas;

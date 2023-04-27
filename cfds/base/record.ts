@@ -147,6 +147,9 @@ export class Record implements ReadonlyRecord, Encodable {
       return kRecordIdField;
     }
     const repoId = this.get<string>(fieldName);
+    if (repoId === '<id>') {
+      return repoId;
+    }
     return repoId ? '/data/' + repoId : '/sys/dir';
   }
 

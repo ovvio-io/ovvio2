@@ -134,19 +134,18 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   get repositoryId(): string | undefined {
-    if (this.key === this.graph.rootKey) {
+    if (this.key === this.graph.rootKey || this.key.endsWith('_settings')) {
       return '/sys/dir';
     }
     if (!this.record) {
       return undefined;
     }
     const id = this.record.repositoryId;
-    const res = id === kRecordIdField ? this.key : id;
     assert(
-      undefined !== res,
+      typeof id !== undefined,
       `Failed inferring repository id for ${this._key}`
     );
-    return '/data/' + res!;
+    return id === kRecordIdField ? '/data/' + this.key : id;
   }
 
   get repository(): Repository<MemRepoStorage> | undefined {
