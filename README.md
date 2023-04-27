@@ -22,6 +22,19 @@ Normal run:
 Debug run:
 `deno run --unstable -A --inspect-brk server/run-server.ts`
 
+## Admin CLI
+
+The admin CLI allows you to connect to a specific repository, replicate it
+locally, and perform manual manipulation of the repository data.
+
+`deno run -A --unstable cli/admin.ts -s <http(s)://server.url/repoId>`
+
+The CLI will immediately replicate the remote repository locally, then enter
+an interactive mode.
+
+NOTE: The CLI does not automatically sync local changes to the origin
+repository. You must manually trigger a sync for changes to be published.
+
 # Overview
 
 ## Development Requirements

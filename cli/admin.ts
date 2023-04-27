@@ -3,10 +3,11 @@ import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
 import * as path from 'https://deno.land/std@0.160.0/path/mod.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
-import { MemRepoStorage, Repository } from '../cfds/base/repo.ts';
-import { Client, kSyncConfigClient } from '../net/client.ts';
-import { SQLiteRepoStorage } from '../server/sqlite3-storage.ts';
+import { MemRepoStorage, Repository } from '../repo/repo.ts';
+import { RepoClient } from '../net/repo-client.ts';
+import { SQLiteRepoStorage } from '../server/sqlite3-repo-storage.ts';
 import { buildHelpMessage, Manual } from './help.ts';
+import { kSyncConfigClient } from '../net/base-client.ts';
 
 interface Arguments {
   server: string;
@@ -64,7 +65,7 @@ async function main(): Promise<void> {
   const tempDir = Deno.makeTempDirSync();
   const repoPath = joinPath(tempDir, uniqueId() + '.repo');
   const repo = new Repository(new SQLiteRepoStorage(repoPath));
-  const client = new Client(repo, args.server, kSyncConfigClient);
+  const client = new RepoClient(repo, args.server, kSyncConfigClient);
   console.log(`Starting download to ${repoPath}...`);
   client.startSyncing();
   await client.sync();
