@@ -112,6 +112,14 @@ export class Commit implements Encodable, Decodable, Equatable {
     return this._buildVersion;
   }
 
+  get scheme(): Scheme | undefined {
+    const contents = this.contents;
+    if (commitContentsIsDelta(contents)) {
+      return contents.edit.scheme;
+    }
+    return contents.record.scheme;
+  }
+
   serialize(encoder: Encoder): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);

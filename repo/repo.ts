@@ -12,6 +12,7 @@ import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
 import { kRecordIdField } from '../cfds/base/scheme-types.ts';
 import { LRUCache } from '../base/collections/lru-cache.ts';
+import { Scheme } from '../cfds/base/scheme.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -234,26 +235,51 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       // If no LCA is found then we're dealing with concurrent writers who all
       // created of the same key unaware of each other.
       // Use the null record as a base in this case.
-      const base = lca ? this.recordForCommit(lca) : Record.nullRecord();
-      // TODO: Scheme upgrade
-      // TODO: Commit version upgrade
+      const base = lca
+        ? this.recordForCommit(lca).clone()
+        : Record.nullRecord();
+      // Find the newest scheme in this merge
+      let scheme: Scheme = base.scheme;
+      for (const c of commitsToMerge) {
+        const commitScheme = c.scheme;
+        if (!commitScheme || commitScheme.isNull) {
+          continue;
+        }
+        assert(
+          scheme.isNull || commitScheme.namespace === scheme.namespace,
+          'Commits with conflicting scheme detected'
+        );
+
+        if (
+          commitScheme.version > scheme.version &&
+          commitScheme.allowsAutoUpgradeFrom(scheme)
+        ) {
+          scheme = commitScheme;
+        }
+      }
+      // Upgrade base to merge scheme
+      base.upgradeScheme(scheme);
       // Compute a compound diff from our base to all unique records
       let changes: DataChanges = {};
       for (const c of commitsToMerge) {
+        const record = this.recordForCommit(c).clone();
+        // Before computing the diff, upgrade the record to the scheme decided
+        // for this merge.
+        record.upgradeScheme(scheme);
         changes = concatChanges(
           changes,
-          base.diff(this.recordForCommit(c), c.session === session)
+          base.diff(record, c.session === session)
         );
       }
-      const mergeRecord = base.clone();
-      mergeRecord.patch(changes);
+      // Patch, and we're done.
+      base.patch(changes);
       const mergeCommit = new Commit({
         session,
         key,
-        contents: mergeRecord,
+        contents: base,
         parents: leaves.map((c) => c.id),
       });
-      this.persistCommits([mergeCommit]);
+      this.persistCommits([this.deltaCompressIfNeeded(mergeCommit)]);
       return mergeCommit;
     } catch (e) {
       // We're dealing with partial history, so need to come up with some value
@@ -297,20 +323,27 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (!head && value.isNull) {
       return false;
     }
-    const lastRecordCommit = this.lastRecordCommitForKey(key);
     const fullCommit = new Commit({
       session,
       key,
       contents: value,
       parents: head?.id,
     });
+    this.persistCommits([this.deltaCompressIfNeeded(fullCommit)]);
+    return true;
+  }
+
+  private deltaCompressIfNeeded(fullCommit: Commit): Commit {
+    assert(commitContentsIsRecord(fullCommit.contents));
+    const key = fullCommit.key;
+    const lastRecordCommit = this.lastRecordCommitForKey(key);
     let deltaCommit: Commit | undefined;
     if (lastRecordCommit) {
       const baseRecord = this.recordForCommit(lastRecordCommit);
       const edit = new Edit({
-        changes: baseRecord.diff(value, false),
+        changes: baseRecord.diff(fullCommit.contents.record, false),
         srcChecksum: baseRecord.checksum,
-        dstChecksum: value.checksum,
+        dstChecksum: fullCommit.contentsChecksum,
       });
       const commitEncoder = new JSONCyclicalEncoder();
       commitEncoder.set('c', [fullCommit]);
@@ -321,7 +354,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       if (deltaLength <= fullLength * 0.85) {
         deltaCommit = new Commit({
           id: fullCommit.id,
-          session,
+          session: fullCommit.session,
           key,
           contents: { base: lastRecordCommit.id, edit },
           parents: fullCommit.parents,
@@ -334,8 +367,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         });
       }
     }
-    this.persistCommits([deltaCommit || fullCommit]);
-    return true;
+    return deltaCommit || fullCommit;
   }
 
   private lastRecordCommitForKey(key: string | null): Commit | undefined {

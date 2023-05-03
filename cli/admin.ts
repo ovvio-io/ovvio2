@@ -67,7 +67,7 @@ async function main(): Promise<void> {
   const repo = new Repository(new SQLiteRepoStorage(repoPath));
   const client = new RepoClient(repo, args.server, kSyncConfigClient);
   console.log(`Starting download to ${repoPath}...`);
-  client.startSyncing();
+  // client.startSyncing();
   await client.sync();
   console.log(`Download complete (${repo.numberOfCommits} commits).`);
 

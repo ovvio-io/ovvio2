@@ -87,9 +87,12 @@ export class Server {
       unit: 'Count',
       urls: this._args.replicas,
     });
-    return serve((req: Request) => this.handleRequest(req), {
-      port: this._args?.port,
-    });
+    return serve(
+      (req: Request) => this.processResponse(this.handleRequest(req), req),
+      {
+        port: this._args?.port,
+      }
+    );
   }
 
   getRepository(id: string): Repository<SQLiteRepoStorage> {
@@ -140,17 +143,42 @@ export class Server {
     return storage;
   }
 
-  private processResponse(resp: Response): Response {
-    log({
-      severity: 'INFO',
-      name: 'HttpStatusCode',
-      value: resp.status,
-      unit: 'Count',
-    });
-    resp.headers.set('Access-Control-Allow-Origin', '*');
-    resp.headers.set('Access-Control-Allow-Methods', '*');
-    resp.headers.set('Access-Control-Allow-Headers', '*');
-    return resp;
+  private updateCORSHeaders(req: Request, resp: Response): void {
+    resp.headers.set(
+      'access-control-allow-origin',
+      req.headers.get('origin') || '*'
+    );
+    resp.headers.set('access-control-allow-methods', req.method || '*');
+    resp.headers.set('access-control-allow-headers', '*');
+  }
+
+  private async processResponse(
+    respPromise: Promise<Response>,
+    request: Request
+  ): Promise<Response> {
+    try {
+      const resp = await respPromise;
+      log({
+        severity: 'INFO',
+        name: 'HttpStatusCode',
+        value: resp.status,
+        unit: 'Count',
+      });
+      this.updateCORSHeaders(request, resp);
+      return Promise.resolve(resp);
+    } catch (e) {
+      log({
+        severity: 'ERROR',
+        error: 'UncaughtServerError',
+        message: e.message,
+        url: request.url,
+      });
+      const resp = new Response(null, {
+        status: 500,
+      });
+      this.updateCORSHeaders(request, resp);
+      return Promise.resolve(resp);
+    }
   }
 
   private async handlePOSTRequest(req: Request): Promise<Response> {
@@ -170,16 +198,9 @@ export class Server {
           hasBody: Boolean(req.body),
         },
       });
-      return this.processResponse(
-        new Response(null, {
-          status: 400,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': '*',
-            'Access-Control-Allow-Headers': '*',
-          },
-        })
-      );
+      return new Response(null, {
+        status: 400,
+      });
     }
 
     const storageType = path[1];
@@ -229,19 +250,11 @@ export class Server {
         resp = new Response(null, { status: 400 });
         break;
     }
-    return this.processResponse(resp!);
+    return resp!;
   }
 
   private handleOPTIONSRequest(req: Request): Promise<Response> {
-    const resp = new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*',
-      },
-    });
-
-    return Promise.resolve(resp);
+    return Promise.resolve(new Response(null));
   }
 
   private handleGETRequest(req: Request): Promise<Response> {
@@ -268,11 +281,6 @@ export class Server {
         return Promise.resolve(
           new Response('OK', {
             status: 200,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': '*',
-              'Access-Control-Allow-Headers': '*',
-            },
           })
         );
       }
@@ -288,16 +296,9 @@ export class Server {
           },
         });
         return Promise.resolve(
-          this.processResponse(
-            new Response(null, {
-              status: 400,
-              headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': '*',
-                'Access-Control-Allow-Headers': '*',
-              },
-            })
-          )
+          new Response(null, {
+            status: 400,
+          })
         );
       }
     }
@@ -324,16 +325,9 @@ export class Server {
         },
       });
       return Promise.resolve(
-        this.processResponse(
-          new Response(null, {
-            status: 400,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': '*',
-              'Access-Control-Allow-Headers': '*',
-            },
-          })
-        )
+        new Response(null, {
+          status: 400,
+        })
       );
     } catch (e) {
       log({
@@ -343,16 +337,9 @@ export class Server {
         trace: e.stack,
       });
       return Promise.resolve(
-        this.processResponse(
-          new Response(null, {
-            status: 500,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': '*',
-              'Access-Control-Allow-Headers': '*',
-            },
-          })
-        )
+        new Response(null, {
+          status: 500,
+        })
       );
     }
   }
@@ -367,7 +354,6 @@ export class Server {
   ): Promise<Response> {
     // TODO: Auth + Permissions
     const json = await req.json();
-    const clientVersion = json.pv || 0;
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(json),
     });
@@ -385,9 +371,10 @@ export class Server {
       msg.size,
       syncConfigGetCycles(kSyncConfigClient),
       // Don't return new commits to old clients
-      includeMissing && clientVersion >= VersionNumber.Current
+      includeMissing && msg.buildVersion >= VersionNumber.Current
     );
 
+    debugger;
     return new Response(
       JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
       {

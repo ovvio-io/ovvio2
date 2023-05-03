@@ -193,26 +193,24 @@ export class Scheme implements Encodable {
     }
 
     const oldVersion = oldScheme.getVersion();
-    if (oldVersion === this.getVersion()) {
+    const currentVersion = this.getVersion();
+
+    if (oldVersion === currentVersion) {
       return true;
     }
 
-    if (oldVersion > this.getVersion()) {
+    if (oldVersion > currentVersion) {
       // deno-lint-ignore no-debugger
       debugger;
       return false;
     }
 
-    if (!SchemeManager.instance.schemeExists(oldNS, oldVersion + 1)) {
-      // deno-lint-ignore no-debugger
-      debugger;
-      return false;
-    }
-
-    if (!SchemeManager.instance.schemeExists(oldNS, this.getVersion())) {
-      // deno-lint-ignore no-debugger
-      debugger;
-      return false;
+    const ns = this.namespace;
+    for (let i = oldVersion; i <= currentVersion; ++i) {
+      if (!SchemeManager.instance.schemeExists(ns, i)) {
+        debugger;
+        return false;
+      }
     }
 
     return true;
