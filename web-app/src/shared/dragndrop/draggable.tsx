@@ -5,11 +5,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { MutableRefObject } from 'https://esm.sh/v96/@types/react@18.0.21/index.d.ts';
-import CANCELLATION_REASONS from './cancellation-reasons.tsx';
-import { useDndContext } from './context.tsx';
-import { DragPosition, dropZoneContext } from './droppable.tsx';
-import { serializeId, throttle, useDragPositionCalculator } from './util.ts';
+import CANCELLATION_REASONS from './cancellation-reasons';
+import { useDndContext } from './context';
+import { DragPosition, dropZoneContext } from './droppable';
+import { serializeId, throttle, useDragPositionCalculator } from './util';
 
 type TypeOf<T, K extends keyof T> = T[K];
 
@@ -48,9 +47,7 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
   const calcPosition = useDragPositionCalculator(
     ctx.state.dragData?.dropZone === dropZoneId
   );
-  const [dragPosition, setDragPosition] = useState<undefined | DragPosition>(
-    undefined
-  );
+  const [dragPosition, setDragPosition] = useState<DragPosition>(null);
   // const isInDrag =
   //   ctx.state.dragData &&
   //   ctx.state.dragData.dropZone === dropZoneId &&
@@ -61,7 +58,7 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
       ctx.state.dragData?.dropZone === dropZoneId &&
       ctx.state.dragData?.index === index;
     let cancelled = false;
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       if (!cancelled) {
         setIsInDrag(val);
       }
@@ -77,10 +74,10 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
   const onDragStart = (e: DragEvent) => {
     if (placeHolder.current) {
       placeHolder.current.remove();
-      placeHolder.current = undefined;
+      placeHolder.current = null;
     }
     const serialized = serializeId(id);
-    e.dataTransfer?.setData('text/ovvio', serialized);
+    e.dataTransfer.setData('text/ovvio', serialized);
     e.dataTransfer.effectAllowed = effectAllowed;
     let placeholderStyle = {};
     if (ref.current) {
@@ -97,7 +94,7 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
       placeholderStyle = {
         height: rect.height,
       };
-      e.dataTransfer?.setDragImage(
+      e.dataTransfer.setDragImage(
         el,
         e.clientX - rect.left,
         e.clientY - rect.top
@@ -126,7 +123,7 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
       if (!ctx.state.dragData) {
         return;
       }
-      setDragPosition((current) => {
+      setDragPosition(current => {
         const pos = calcPosition(e, current);
         if (pos) {
           ctx.setDragOverIndex(index, pos, dropZoneId);
@@ -145,10 +142,10 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
   const onDragEnd = (e: DragEvent) => {
     if (placeHolder.current) {
       placeHolder.current.remove();
-      placeHolder.current = undefined;
+      placeHolder.current = null;
     }
     // setIsInDrag(false);
-    if (e.dataTransfer?.dropEffect === 'none') {
+    if (e.dataTransfer.dropEffect === 'none') {
       ctx.onDragCancelled({
         reason: CANCELLATION_REASONS.USER_CANCELLED,
       });
@@ -177,14 +174,14 @@ export function Draggable<TElement extends HTMLElement = HTMLDivElement>({
       attributes,
       isInDrag,
       isDragActive: ctx.state.dragData?.dropZone === dropZoneId,
-      dragPosition: dragPosition!,
-      dropOverBefore: dropOverBefore!,
+      dragPosition,
+      dropOverBefore,
       isDraggedOver:
         ctx.state.dragOverData?.dropZone === dropZoneId &&
         ctx.state.dragOverData?.index === index,
       placeholderStyle:
         (ctx.state.dragData && ctx.state.dragData.placeholderStyle) || {},
     },
-    ref as MutableRefObject<TElement>
+    ref
   );
 }

@@ -1,11 +1,5 @@
-import { Record } from '../../base/record.ts';
 import { VertexManager } from './vertex-manager.ts';
 import { GraphManager } from './graph-manager.ts';
-import {
-  Dictionary,
-  isDictionary,
-  ReadonlyDict,
-} from '../../../base/collections/dict.ts';
 import {
   MutationPack,
   mutationPackIsEmpty,
@@ -16,21 +10,25 @@ import {
   Mutation,
   mutationPackIter,
 } from './mutations.ts';
-import { IVertex } from './types.ts';
+import { extractRefs as extractRefsFromRT } from '../../richtext/composer.ts';
+import { RichText, isRichText } from '../../richtext/tree.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { triggerChildren, triggerCompose } from './propagation-triggers.ts';
 import {
   Comparable,
   CoreObject,
   CoreValue,
   CoreValueCloneOpts,
-  coreValueCompare,
-} from '../../../base/core-types/index.ts';
-import { extractRefs as extractRefsFromRT } from '../../richtext/composer.ts';
-import { RichText, isRichText } from '../../richtext/tree.ts';
-import { isGenerator } from '../../../base/comparisons.ts';
+} from '../../../base/core-types/base.ts';
 import { assert, notImplemented } from '../../../base/error.ts';
-import { DataType, SchemeNamespace } from '../../base/scheme-types.ts';
-import { triggerChildren, triggerCompose } from './propagation-triggers.ts';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { ValueType } from '../../base/types/index.ts';
+import { isGenerator } from '../../../base/comparisons.ts';
+import {
+  ReadonlyDict,
+  Dictionary,
+  isDictionary,
+} from '../../../base/collections/dict.ts';
 
 /**
  * A marker for VertexManager indicating a specific field contains no refs by
@@ -58,13 +56,12 @@ export type FieldTriggers<T extends Vertex, DT extends Vertex = T> = {
   readonly [key in keyof T]?: FieldChangeTrigger<DT>;
 };
 
-type VertCls<V extends Vertex = Vertex> = {
+type VertCls = {
   new (
-    mgr: VertexManager<V>,
-    record: Record,
+    mgr: VertexManager,
     prevVertex: Vertex | undefined,
     config: VertexConfig
-  ): V;
+  ): Vertex;
 };
 
 export interface VertexConfig {
@@ -73,7 +70,7 @@ export interface VertexConfig {
 
 export type VertexId<T extends Vertex = Vertex> = T | string | VertexManager<T>;
 
-export function KeyFromVertexId<T extends Vertex>(id: VertexId<T>): string {
+export function VertexIdGetKey<T extends Vertex>(id: VertexId<T>): string {
   return typeof id === 'string' ? id : id.key;
 }
 
@@ -83,7 +80,7 @@ export function KeyFromVertexId<T extends Vertex>(id: VertexId<T>): string {
  * need a different, unsupported, primitive then please extend `CoreValue`
  * to support it.
  */
-export class Vertex implements IVertex, Comparable {
+export class Vertex implements Comparable {
   private static readonly _fieldTriggersByClass = new Map<
     VertCls,
     FieldTriggers<Vertex>
@@ -91,10 +88,10 @@ export class Vertex implements IVertex, Comparable {
 
   private static _didFinalizeFieldTriggers = false;
 
+  private readonly _compositeFieldsCache: Map<string, CoreValue>;
   private _cachedDepth: number;
 
-  private readonly _manager: VertexManager<this>;
-  private readonly _record: Record;
+  private readonly _manager: VertexManager<typeof this>;
   private _isLocal: boolean;
   public isDemoData: boolean;
 
@@ -150,9 +147,12 @@ export class Vertex implements IVertex, Comparable {
       for (const [fieldName, func] of Object.entries(triggers)) {
         // If a trigger was already installed installed by a superclass, we
         // run it before running the subclass's trigger
-        // deno-lint-ignore no-prototype-builtins
         if (result.hasOwnProperty(fieldName)) {
-          result[fieldName] = triggerCompose(result[fieldName]!, func);
+          result[fieldName] = triggerCompose(
+            result[fieldName]!,
+            func,
+            fieldName
+          );
         } else {
           result[fieldName] = func;
         }
@@ -184,36 +184,43 @@ export class Vertex implements IVertex, Comparable {
 
   constructor(
     mgr: VertexManager,
-    record: Record,
     prevVertex: Vertex | undefined,
     config: VertexConfig | undefined
   ) {
-    this._manager = mgr as VertexManager<this>;
-    this._record = record;
+    this._manager = mgr as VertexManager<typeof this>;
+    this._compositeFieldsCache = new Map();
     this._cachedDepth = -1;
     this._isLocal =
       prevVertex !== undefined ? prevVertex._isLocal : config?.isLocal === true;
     this.isDemoData = prevVertex !== undefined ? prevVertex.isDemoData : false;
   }
 
-  get manager(): VertexManager<this> {
+  get manager() {
     return this._manager;
   }
 
   get record() {
-    return this._record;
+    return this.manager.record;
   }
 
   get key(): string {
     return this._manager.key;
   }
 
-  get sortStamp(): string | undefined {
-    return undefined;
+  get proxy() {
+    return this.manager.getVertexProxy();
   }
 
   get isNull() {
-    return this.record.isNull;
+    return this.manager.isNull;
+  }
+
+  get isLoading() {
+    return this.manager.isLoading;
+  }
+
+  get errorCode(): number | undefined {
+    return this.manager.errorCode;
   }
 
   // Static value. Does not change during the lifetime of a vertex.
@@ -226,7 +233,7 @@ export class Vertex implements IVertex, Comparable {
   }
 
   get namespace(): string {
-    return this._record.scheme.namespace;
+    return this.record.scheme.namespace;
   }
 
   get graph(): GraphManager {
@@ -234,7 +241,17 @@ export class Vertex implements IVertex, Comparable {
   }
 
   get outRefs(): Set<string> {
-    return this._record.refs;
+    return this.record.refs;
+  }
+
+  get outRefsLoading(): boolean {
+    const graph = this.graph;
+    for (const key of this.outRefs) {
+      if (graph.getVertexManager(key).isLoading) {
+        return true;
+      }
+    }
+    return false;
   }
 
   get isDeleted(): number {
@@ -268,6 +285,11 @@ export class Vertex implements IVertex, Comparable {
   set isLocal(flag: boolean) {
     this._isLocal = flag;
   }
+
+  get inCriticalError(): boolean {
+    return this.manager.inCriticalError;
+  }
+
   parentDidMutate(
     local: boolean,
     oldValue: Vertex | undefined,
@@ -289,43 +311,85 @@ export class Vertex implements IVertex, Comparable {
     }
   }
 
+  *getChildManagers<T extends Vertex>(
+    ns?: SchemeNamespace
+  ): Generator<VertexManager<T>> {
+    for (const [mgr] of this.inEdgesManagers('parent')) {
+      if (ns === undefined || mgr.scheme.namespace === ns) {
+        yield mgr as VertexManager<T>;
+      }
+    }
+  }
+
   diffKeys(other: Vertex, local: boolean): string[] {
-    return this._record.diffKeys(other.record, local);
+    return this.record.diffKeys(other.record, local);
   }
 
-  cloneData(onlyFields?: string[]): DataType {
-    return this._record.cloneData(onlyFields);
+  cloneData(onlyFields?: string[]): CoreObject {
+    return this.record.cloneData(onlyFields);
   }
 
-  isEqual(v: IVertex | undefined): boolean {
-    if (v === undefined) {
+  isEqual<T extends this = this>(v: T): boolean {
+    if (!(v instanceof Vertex)) {
       return false;
     }
     return this.key === v.key;
   }
 
   isRecordEqual(v: Vertex, local?: boolean): boolean {
-    return this._record.isEqual(v.record, local);
+    return this.record.isEqual(v.record, local);
   }
 
-  compare(other: IVertex): number {
+  compare<T extends Vertex>(other: T): number {
+    if (!(other instanceof Vertex)) {
+      return 0;
+    }
     return coreValueCompare(this.key, other.key);
   }
 
-  *inEdges(fieldName?: string): Generator<[vertex: Vertex, fieldName: string]> {
+  *inEdges<T extends Vertex>(
+    fieldName?: string
+  ): Generator<[vertex: T, fieldName: string]> {
+    for (const [mgr, f] of this.inEdgesManagers(fieldName)) {
+      yield [mgr.getVertexProxy(), f];
+    }
+  }
+
+  *inEdgesManagers<T extends Vertex>(
+    fieldName?: string
+  ): Generator<[vertex: VertexManager<T>, fieldName: string]> {
     const graph = this.graph;
     for (const edge of graph.adjacencyList.inEdges(this.key, fieldName)) {
-      yield [graph.getVertex(edge.vertex), edge.fieldName];
+      yield [graph.getVertexManager(edge.vertex), edge.fieldName];
     }
   }
 
   *outEdges(
-    fieldName?: string
+    fieldName?: string,
+    graphLayer?: string
   ): Generator<[vertex: Vertex, fieldName: string]> {
     const graph = this.graph;
     for (const edge of graph.adjacencyList.outEdges(this.key, fieldName)) {
       yield [graph.getVertex(edge.vertex), edge.fieldName];
     }
+  }
+
+  onVertexChanged(callback: (mutations: MutationPack) => void): () => void {
+    return this.manager.onVertexChanged(callback);
+  }
+
+  getCompositeValue<T extends CoreValue = CoreValue>(
+    fieldName: string
+  ): T | undefined {
+    const impl = this.graph.getCompositeField(this.namespace, fieldName);
+    if (impl === undefined) {
+      return undefined;
+    }
+    const cache = this._compositeFieldsCache;
+    if (!cache.has(fieldName)) {
+      cache.set(fieldName, impl.calcValue(this));
+    }
+    return cache.get(fieldName) as T;
   }
 
   /******************************************************************
@@ -335,7 +399,14 @@ export class Vertex implements IVertex, Comparable {
   // WARNING: Never change a vertex manager's scheme inside this callback.
   didMutate(pack: MutationPack): MutationPack {
     const result = this._dispatchMutationCallback(pack);
-    this._runFieldTriggers(pack);
+    if (
+      this.isLocal ||
+      (this.manager.cacheLoaded &&
+        this.graph.cacheLoadingEnded &&
+        !this.graph.sharedQueriesManager.notDeleted.isLoading)
+    ) {
+      this._runFieldTriggers(pack);
+    }
     return result;
   }
 
@@ -355,6 +426,20 @@ export class Vertex implements IVertex, Comparable {
       }
       remainingMutations = mutationPackDeleteFirst(remainingMutations);
     }
+
+    // Let composite fields a chance to invalidate
+    for (const [key, impl] of this.graph.compositeFieldsForNamespace(
+      this.namespace
+    )) {
+      if (impl.shouldInvalidate(pack)) {
+        result = mutationPackAppend(result, [
+          key,
+          true,
+          this.getCompositeValue(key),
+        ]);
+        this._compositeFieldsCache.delete(key);
+      }
+    }
     return result;
   }
 
@@ -366,15 +451,22 @@ export class Vertex implements IVertex, Comparable {
     if (triggers === undefined) {
       return;
     }
+    const graph = this.graph;
+    const key = this.key;
     for (const mutation of mutationPackIter(pack)) {
-      const callback = triggers[mutation[0] as keyof Vertex];
-      if (typeof callback === 'function') {
+      const fieldName = mutation[0];
+      const callback = triggers[fieldName as keyof Vertex];
+      if (
+        typeof callback === 'function' &&
+        !graph.fieldTriggerHasExecuted(key, fieldName)
+      ) {
         callback(this, mutation);
+        graph.markFieldTriggerExecuted(key, fieldName);
       }
     }
   }
 
-  clone(opts?: CoreValueCloneOpts): IVertex {
+  clone(opts?: CoreValueCloneOpts): this {
     return this;
   }
 
@@ -386,7 +478,7 @@ export class Vertex implements IVertex, Comparable {
       const descriptors = Object.getOwnPropertyDescriptors(proto);
       for (const key in descriptors) {
         const desc = descriptors[key];
-        if (desc.get && desc.set && !this._record.scheme.hasField(key)) {
+        if (desc.get && desc.set && !this.record.scheme.hasField(key)) {
           fields.push(key);
         }
       }
@@ -395,7 +487,7 @@ export class Vertex implements IVertex, Comparable {
 
     for (const key in this) {
       if (this.hasOwnProperty(key)) {
-        if (!key.startsWith('_') && !this._record.scheme.hasField(key)) {
+        if (!key.startsWith('_') && !this.record.scheme.hasField(key)) {
           fields.push(key);
         }
       }
@@ -462,7 +554,7 @@ export class Vertex implements IVertex, Comparable {
   }
 
   protected vertSetForField<T extends Vertex>(fieldName: string): Set<T> {
-    const keys = this.record.get<Set<string>>(fieldName);
+    const keys = this.record.get(fieldName);
     if (!keys?.size) {
       return new Set();
     }
@@ -471,7 +563,7 @@ export class Vertex implements IVertex, Comparable {
     const result = new Set<T>();
     for (const k of keys) {
       const vert = graph.getVertex<T>(k);
-      if (vert && !vert.isDeleted) {
+      if (vert && !vert.isDeleted && !vert.isNull && !vert.isLoading) {
         result.add(vert);
       }
     }
@@ -480,7 +572,7 @@ export class Vertex implements IVertex, Comparable {
 }
 
 const kFieldTriggersBase: FieldTriggers<Vertex> = {
-  isLocal: triggerChildren<Vertex>('parentIsLocalChanged'),
+  isLocal: triggerChildren<Vertex>('parentIsLocalChanged', 'Vertex_isLocal'),
 };
 
 Vertex.registerFieldTriggers(Vertex, kFieldTriggersBase);

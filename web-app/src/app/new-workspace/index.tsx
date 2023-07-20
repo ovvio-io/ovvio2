@@ -1,22 +1,24 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { layout, styleguide } from '../../../../styles/index.ts';
-import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { WorkspaceForm } from './workspace-form.tsx';
-import { UISource } from '../../../../logging/client-events.ts';
-import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import Toolbar from 'app/workspace-content/workspace-view/toolbar';
+import { useCallback, useMemo, useState } from 'react';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { WorkspaceCreated, WorkspaceForm } from './workspace-form';
+import { LOGIN, useHistory } from 'core/react-utils/history';
+import { InviteForm } from 'shared/invite-form';
+import { useWorkspaceTutorialSteps } from './workspace-tutorial';
+import { UserOnboard } from 'shared/tutorial';
+import { usePartialView } from 'core/cfds/react/graph';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   root: {
     alignItems: 'stretch',
     flexShrink: 1,
     basedOn: [layout.column, layout.flex],
   },
   content: {
-    backgroundColor: theme.background[100],
+    backgroundColor: theme.background[150],
     alignItems: 'center',
     basedOn: [layout.column, layout.flex],
   },
@@ -48,45 +50,70 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 interface CreateWorkspaceViewProps {
-  source: UISource;
-  onWorkspaceCreated?: (wsKey: VertexId<Workspace>) => void;
+  location: any;
+  onWorkspaceCreated?: (wsKey: string) => void;
 }
 export const CreateWorkspaceView = ({
-  source,
+  location,
   onWorkspaceCreated,
 }: CreateWorkspaceViewProps) => {
   const styles = useStyles();
-  const navigate = useNavigate();
+  const [ws, setWs] = useState<VertexManager<Workspace>>();
+  const history = useHistory();
+  const workspaces = useMemo(() => [ws], [ws]);
+  const tutorialSteps = useWorkspaceTutorialSteps();
+  const view = usePartialView('selectedWorkspaces');
 
-  // const onCreated = useCallback(
-  //   (result: VertexManager<Workspace>) => {
-  //     setWs(result);
-  //     if (onWorkspaceCreated) {
-  //       onWorkspaceCreated(result.key);
-  //     }
-  //   },
-  //   [setWs]
-  // );
+  const onCreated = useCallback(
+    (result: WorkspaceCreated) => {
+      let wsKey: string;
+      if (result.loaded) {
+        setWs(result.workspace);
+        wsKey = result.workspace.key;
+        view.selectedWorkspaces.clear();
+        view.selectedWorkspaces.add(result.workspace.getVertexProxy());
+      } else {
+        wsKey = (result as any).workspaceId;
+        history.push(LOGIN);
+      }
 
-  const closeView = useCallback(() => {
-    navigate('/login');
-  }, [navigate]);
+      if (onWorkspaceCreated) {
+        onWorkspaceCreated(wsKey);
+      }
+    },
+    [history, onWorkspaceCreated, view, view.selectedWorkspaces]
+  );
+
+  const close = () => {
+    history.push(LOGIN);
+  };
 
   return (
-    <div className={cn(styles.root)}>
-      <Toolbar />
-      <div className={cn(styles.content)}>
-        <div className={cn(styles.card)}>
-          {/* {ws ? (
-            <InviteForm showOnboard={true} close={closeView} source={source} />
-          ) : ( */}
-          <WorkspaceForm
-            source={source}
-            onWorkspaceCreated={onWorkspaceCreated || ((_) => {})}
-          />
-          {/* )} */}
+    <UserOnboard
+      disabled={true}
+      steps={tutorialSteps}
+      tutorialId="CREATE_WORKSPACE"
+    >
+      <div className={cn(styles.root)}>
+        <Toolbar />
+        <div className={cn(styles.content)}>
+          <div className={cn(styles.card)}>
+            {ws ? (
+              <InviteForm
+                workspaces={workspaces}
+                showOnboard={true}
+                close={close}
+                source="new-workspace"
+              />
+            ) : (
+              <WorkspaceForm
+                location={location}
+                onWorkspaceCreated={onCreated}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </UserOnboard>
   );
 };

@@ -1,0 +1,14 @@
+{
+  "en": {
+    "tutorialWelcomeTitle": "Welcome to Ovvio",
+    "tutorialWelcomeText": "Workspaces are an important part of Ovvio, they represent a shared space for you and your team to collaborate in",
+    "tutorialNameWorkspaceTitle": "Name your workspace",
+    "tutorialNameWorkspaceText": "Give your workspace a name, this can be a project, a team name or whatever you feel like!",
+    "tutorialCreateWorkspaceTitle": "Create your workspace",
+    "tutorialCreateWorkspaceText": "Click on the create button to create your workspace and get to work!",
+    "fromNew": "Create fresh",
+    "duplicate": "Duplicate & Create",
+    "chooseDuplicateFrom": "Choose a workspace to duplicate",
+    "chooseWorkspace": "Choose Workspace"
+  }
+}

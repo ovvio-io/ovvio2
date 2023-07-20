@@ -28,7 +28,10 @@ import {
   JSONCyclicalEncoder,
 } from '../../base/core-types/encoding/json.ts';
 import { DataType, kRecordIdField } from './scheme-types.ts';
-import { MD5Checksum } from '../../base/core-types/encoding/checksum.ts';
+import {
+  ChecksumEncoderOpts,
+  MD5Checksum,
+} from '../../base/core-types/encoding/checksum.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import {
   ConcreteCoreValue,
@@ -43,10 +46,6 @@ export interface ReadonlyRecord {
   readonly scheme: Scheme;
   readonly isValid: boolean;
   readonly checksum: string;
-  /**
-   * @deprecated No longer used. Assume undefined.
-   */
-  readonly serverTimestamp?: Date;
   readonly refs: Set<string>;
 
   get(key: string, defaultValue?: any): any;
@@ -57,6 +56,7 @@ export interface ReadonlyRecord {
 export interface RecordConfig {
   scheme: Scheme;
   data: DataType;
+  normalized?: boolean;
 }
 
 export interface EncodedRecord {
@@ -64,7 +64,7 @@ export interface EncodedRecord {
   data: ReadonlyDecodedObject;
 }
 
-const checksumSerOptions: SerializeValueTypeOptions = {
+const checksumSerOptions: ChecksumEncoderOpts = {
   // For checksum purposes we need to use the flat rep or we won't account
   // for depth changes. Computing the checksum on a DFS run of the tree
   // completely strips out the depth info.
@@ -72,6 +72,14 @@ const checksumSerOptions: SerializeValueTypeOptions = {
   local: false,
   typeSafe: true,
 };
+
+export interface RecordValueWrapper<T> {
+  __wrappedValueForRecord(): T;
+}
+
+export function isRecordValueWrapper<T>(v: any): v is RecordValueWrapper<T> {
+  return typeof v.__wrappedValueForRecord === 'function';
+}
 
 export class Record implements ReadonlyRecord, Encodable {
   private _scheme!: Scheme;
@@ -87,6 +95,7 @@ export class Record implements ReadonlyRecord, Encodable {
       assert(isObject(config.data));
       this._scheme = config.scheme;
       this._data = config.data;
+      this._normalized = config.normalized === true;
     }
     this.normalize();
     this.assertValidData();
@@ -105,7 +114,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   get isValid(): boolean {
-    return <boolean>isValidData(this.scheme, this._data)[0];
+    return isValidData(this.scheme, this._data)[0] as boolean;
   }
 
   /**
@@ -143,20 +152,20 @@ export class Record implements ReadonlyRecord, Encodable {
 
   get repositoryId(): '<id>' | string {
     const fieldName = this.scheme.repositoryFieldName;
-    if (fieldName === kRecordIdField) {
-      return kRecordIdField;
+    if (fieldName) {
+      if (fieldName === kRecordIdField) {
+        return kRecordIdField;
+      }
+      const repoId = this.get<string>(fieldName);
+      if (repoId === kRecordIdField) {
+        return repoId;
+      }
+      return '/data/' + repoId;
     }
-    const repoId = this.get<string>(fieldName);
-    if (repoId === '<id>') {
-      return repoId;
-    }
-    return repoId ? '/data/' + repoId : '/sys/dir';
+    return '/sys/dir';
   }
 
-  get<T extends ConcreteCoreValue = ConcreteCoreValue>(
-    key: string,
-    defaultValue?: T
-  ): T {
+  get<T = any>(key: string, defaultValue?: T): T {
     assert(
       this.scheme.hasField(key),
       `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
@@ -164,7 +173,7 @@ export class Record implements ReadonlyRecord, Encodable {
     const data = this._data;
 
     if (data.hasOwnProperty(key)) {
-      return data[key] as T;
+      return data[key];
     }
     return (!isNoValue(defaultValue) ? defaultValue : undefined) as T;
   }
@@ -182,6 +191,9 @@ export class Record implements ReadonlyRecord, Encodable {
       this.scheme.hasField(key),
       `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
     );
+    if (isRecordValueWrapper(value)) {
+      value = value.__wrappedValueForRecord();
+    }
     if (value === undefined) {
       this.delete(key);
       return;
@@ -213,7 +225,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   isEqual(other: Record, local: boolean = false): boolean {
-    if (this === other) {
+    if (this === other /*|| (!local && this.checksum === other.checksum)*/) {
       return true;
     }
     if (!this.scheme.isEqual(other.scheme)) {
@@ -231,6 +243,7 @@ export class Record implements ReadonlyRecord, Encodable {
     const result = new Record({
       scheme,
       data: clone(scheme.getFields(), this._data),
+      normalized: this._normalized,
     });
     result._checksum = this._checksum;
     return result;
@@ -290,7 +303,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   normalize(): void {
-    if (this._normalized) {
+    if (this._normalized || this.isNull) {
       return;
     }
     this._invalidateCaches();
@@ -310,19 +323,22 @@ export class Record implements ReadonlyRecord, Encodable {
     encoder: Encoder<string, CoreValue>,
     options = { local: false }
   ): void {
+    this.normalize();
     encoder.set('s', this.scheme);
-
     const dataEncoder = encoder.newEncoder();
     serialize(dataEncoder, this.scheme.getFields(), this._data, {
       local: options.local,
     });
     encoder.set('d', dataEncoder.getOutput());
+    encoder.set('n', this._normalized);
   }
 
   deserialize(decoder: Decoder): void {
     this._scheme = new Scheme({ decoder: decoder.getDecoder('s') });
     this._data = deserialize(decoder.getDecoder('d'), this.scheme.fields);
+
     this._invalidateCaches();
+    this._normalized = decoder.get<boolean>('n') || false;
     this.normalize();
     this.assertValidData();
   }
@@ -335,7 +351,8 @@ export class Record implements ReadonlyRecord, Encodable {
 
   static fromJS(obj: ReadonlyJSONObject): Record {
     const decoder = new JSONCyclicalDecoder(obj);
-    return new this({ decoder });
+    const record = new this({ decoder });
+    return record;
   }
 
   assertValidData() {

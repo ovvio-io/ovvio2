@@ -1,16 +1,15 @@
-import React from 'react';
-import { BaseRange, Editor, Node } from 'https://esm.sh/slate@0.87.0';
-import { RenderLeafProps } from 'https://esm.sh/slate-react@0.87.1';
-import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import { KeyDownHandler, Plugin } from './index.ts';
-import { FormattedText } from '../types.ts';
+import { BaseRange, Editor, Node } from 'slate';
+import { RenderLeafProps } from 'slate-react';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { KeyDownHandler, Plugin } from '.';
+import { FormattedText } from '../types';
 import {
   getPlatformHotkey,
   Hotkey,
   isHotkeyActive,
   MetaKeys,
   Shortcut,
-} from '../utils/hotkeys.ts';
+} from '../utils/hotkeys';
 
 const useStyles = makeStyles(() => ({
   bold: {
@@ -35,7 +34,7 @@ const MARK_PROPS = ['bold', 'italic', 'underline', 'strikethrough'];
 function Leaf(props: RenderLeafProps) {
   const styles = useStyles();
   const { leaf } = props;
-  const classes = cn(MARK_PROPS.map((p) => leaf[p] && styles[p]));
+  const classes = cn(MARK_PROPS.map(p => leaf[p] && styles[p]));
 
   return (
     <span {...props.attributes} className={classes}>
@@ -94,7 +93,7 @@ function createKeyDownHandlers(editor: Editor): KeyDownHandler {
         if (isHotkeyActive(e, handler.hotkey)) {
           e.preventDefault();
           e.stopPropagation();
-          LeafUtils.toggleMark(editor, editor.selection!, handler.prop);
+          LeafUtils.toggleMark(editor, editor.selection, handler.prop);
           return;
         }
       }
@@ -122,7 +121,7 @@ export const LeafUtils = {
     mark: keyof FormattedText
   ): MarkToggleStatus {
     const fragment = Node.fragment(editor, at);
-    const leaves = fragment.flatMap((x) =>
+    const leaves = fragment.flatMap(x =>
       Array.from(Node.texts(x)).map(([text, path]) => [x, text, path])
     );
 
@@ -130,7 +129,7 @@ export const LeafUtils = {
     let some = false;
 
     for (const [, text] of leaves) {
-      const markVal = (text as FormattedText)[mark] as boolean;
+      const markVal = text[mark];
       all = all && markVal;
       some = some || markVal;
     }

@@ -1,19 +1,17 @@
 import { ConcreteCoreValue, CoreObject } from '../../base/core-types/index.ts';
-// import { COWMap } from '../collections/cow-map';
-
-// import { RichText as OldRichText } from '../primitives-old/richtext2';
 import { RichText } from '../richtext/tree.ts';
 import { ValueType } from './types/index.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
+import { Record as RecordObj } from './record.ts';
 
 export enum SchemeNamespace {
   WORKSPACE = 'workspaces',
   NOTES = 'notes',
   TAGS = 'tags',
   USERS = 'users',
-  USER_SETTINGS = 'user-settings',
-  ORGANIZATION = 'organization',
-  FILTER = 'filter',
+  INVITES = 'invites',
+  ROLES = 'roles',
+  VIEWS = 'views',
   Null = '',
 }
 
@@ -30,9 +28,9 @@ export const NS_WORKSPACE = SchemeNamespace.WORKSPACE;
 export const NS_NOTES = SchemeNamespace.NOTES;
 export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
-export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
-export const NS_ORGANIZATION = SchemeNamespace.ORGANIZATION;
-export const NS_FILTER = SchemeNamespace.FILTER;
+export const NS_INVITES = SchemeNamespace.INVITES;
+export const NS_ROLES = SchemeNamespace.ROLES;
+export const NS_VIEWS = SchemeNamespace.VIEWS;
 
 export const TYPE_STR = ValueType.STRING;
 export const TYPE_NUMBER = ValueType.NUMBER;
@@ -46,9 +44,9 @@ export const TYPE_REF_SET = ValueType.REF_SET;
 export const TYPE_MAP = ValueType.MAP;
 export const TYPE_REF_MAP = ValueType.REF_MAP;
 
-export interface DataType extends CoreObject {
-  [key: string]: ConcreteCoreValue;
-}
+export type DataType = {
+  [key: string]: any;
+};
 
 export type FieldValue = {
   [TYPE_STR]: string;
@@ -56,7 +54,7 @@ export type FieldValue = {
   [TYPE_DATE]: Date;
   // [TYPE_RICHTEXT]: OldRichText;
   [TYPE_STR_SET]: Set<string>;
-  [TYPE_SET]: Set<ConcreteCoreValue>;
+  [TYPE_SET]: Set<any>;
   [TYPE_REF]: string;
   [TYPE_REF_SET]: Set<string>;
   [TYPE_MAP]: Dictionary<string, ConcreteCoreValue>;
@@ -70,7 +68,7 @@ export type ExtendedField<
   K extends FieldValue[T] = FieldValue[T]
 > = {
   type: T;
-  default?: (rec: DataType) => K;
+  default?: (rec: RecordObj) => K;
   required?: boolean;
 };
 type DefaultExtendedFields =
@@ -98,7 +96,7 @@ export const kRecordIdField = '<id>';
 export class SchemeDef<T extends SchemeObject> {
   namespace: string;
   fieldDescriptors: T;
-  repositoryFieldName: string;
+  repositoryFieldName?: string;
 
   constructor(
     namespace: string,
@@ -107,7 +105,7 @@ export class SchemeDef<T extends SchemeObject> {
   ) {
     this.namespace = namespace;
     this.fieldDescriptors = fieldDescriptors;
-    this.repositoryFieldName = repositoryFieldName || kRecordIdField;
+    this.repositoryFieldName = repositoryFieldName;
   }
 
   derive<B extends SchemeObject>(
@@ -158,6 +156,12 @@ export interface ISchemeManagerRegister {
   ): void;
 }
 
+export enum InviteStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+}
+
 export interface AttachmentData extends CoreObject {
   filename: string;
   fileId: string;
@@ -167,25 +171,82 @@ export interface AttachmentData extends CoreObject {
 
 export type SchemeFields = { [key: string]: ValueType };
 
-export type NoteStatus = 'ToDo' | 'InProgress' | 'Suspended' | 'Done';
-
-export type FilterSortBy = typeof FilterSortByValues[number];
-
-export const FilterSortByValues = [
-  'priority',
-  'created',
-  'modified',
-  'due',
-] as const;
-
-export type FilterGroupBy = 'assignee' | 'workspace' | 'tag';
-
-export interface TagValue extends CoreObject {
-  value: string;
-  sortStamp: string;
+export enum NoteStatus {
+  Unchecked = 0,
+  Checked = 1,
 }
 
-export enum ViewType {
-  List = 'list',
-  Board = 'board',
+export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
+
+export const kShowChecked = [
+  'checked-unchecked',
+  'unchecked',
+  'checked',
+] as const;
+
+export type ShowChecked = (typeof kShowChecked)[number];
+
+export const kShowPinned = ['pinned-unpinned', 'pinned', 'all'] as const;
+
+export type ShowPinned = (typeof kShowPinned)[number];
+
+export enum SortBy {
+  // Priority = 'priority',
+  CreatedAscending = 'created-asc',
+  CreatedDescending = 'created-des',
+  LastModifiedAscending = 'lastModified-asc',
+  LastModifiedDescending = 'lastModified-des',
+  DueDateAscending = 'dueDate-asc',
+  DueDateDescending = 'dueDate-des',
+  TitleAscending = 'title-asc',
+  TitleDescending = 'title-des',
+  Default = DueDateAscending,
+}
+
+export const kGroupBy = [
+  'assignee',
+  'workspace',
+  'dueDate',
+  'note',
+  'tag',
+] as const;
+
+export type GroupBy = (typeof kGroupBy)[number];
+
+export const kViewType = ['list', 'board'] as const;
+
+export type ViewType = (typeof kViewType)[number];
+
+export const kTabIds = ['tasks', 'notes', 'overview'] as const;
+
+export type TabId = (typeof kTabIds)[number];
+
+export const kDateFilters = ['week', 'month'] as const;
+
+export type DateFilter = (typeof kDateFilters)[number];
+
+export type TagId = string;
+
+export function encodeTagId(
+  parentName?: string | null,
+  childName?: string | null
+): TagId {
+  return (
+    (parentName ? encodeURIComponent(parentName) : 'null') +
+    '/' +
+    (childName ? encodeURIComponent(childName) : 'null')
+  );
+}
+
+export function decodeTagId(
+  id: string
+): [parent: string | null, child: string | null] {
+  const comps = id.split('/');
+  if (!comps.length) {
+    return [null, null];
+  }
+  return [
+    decodeURIComponent(comps[0]),
+    comps.length > 1 ? decodeURIComponent(comps[1]) : null,
+  ];
 }

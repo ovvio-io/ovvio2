@@ -1,14 +1,11 @@
-import React, { ChangeEvent } from 'react';
-import {
-  cn,
-  makeStyles,
-} from '../../../../../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../../../../../styles/index.ts';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { styleguide } from '@ovvio/styles';
+import { ChangeEvent } from 'react';
 
 const SIZE = styleguide.gridbase * 2;
 
 const useStyles = makeStyles(
-  (theme) => ({
+  theme => ({
     checkbox: {
       display: 'inline-flex',
       flexDirection: 'row',
@@ -27,27 +24,20 @@ const useStyles = makeStyles(
   'filter-checkbox_e52d7c'
 );
 
-export enum FilterCheckboxState {
-  Partial = -1,
-  Off = 0,
-  On = 1,
+export type FilterCheckboxState = 'on' | 'off' | 'partial';
+
+export function getFilterCheckboxState(
+  s: boolean | FilterCheckboxState
+): FilterCheckboxState {
+  if (typeof s === 'string') {
+    return s;
+  }
+  return s ? 'on' : 'off';
 }
 
 export interface FilterCheckboxProps {
   checked: boolean | FilterCheckboxState;
   onChecked: () => void;
-}
-
-function getChecked(checked: boolean | FilterCheckboxState): boolean {
-  switch (checked) {
-    case FilterCheckboxState.Partial:
-    case FilterCheckboxState.Off:
-      return false;
-    case FilterCheckboxState.On:
-      return true;
-    default:
-      return !!checked;
-  }
 }
 
 function CheckedIcon() {
@@ -99,7 +89,7 @@ function PartialIcon() {
 
 export function FilterCheckbox({ checked, onChecked }: FilterCheckboxProps) {
   const styles = useStyles();
-  const isChecked = getChecked(checked);
+  checked = getFilterCheckboxState(checked);
   const onChange = (e: ChangeEvent) => {
     e.stopPropagation();
     onChecked();
@@ -107,13 +97,13 @@ export function FilterCheckbox({ checked, onChecked }: FilterCheckboxProps) {
 
   return (
     <label className={cn(styles.checkbox)}>
-      {isChecked && <CheckedIcon />}
-      {checked === FilterCheckboxState.Partial && <PartialIcon />}
+      {checked === 'on' && <CheckedIcon />}
+      {checked === 'partial' && <PartialIcon />}
       <input
         onChange={onChange}
         className={cn(styles.input)}
         type="checkbox"
-        checked={isChecked}
+        checked={checked === 'on'}
       />
     </label>
   );

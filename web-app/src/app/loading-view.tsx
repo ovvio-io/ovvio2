@@ -1,11 +1,6 @@
-import React from 'react';
-import { styleguide } from '../../../styles/styleguide.ts';
-import { LogoIcon } from '../../../styles/components/logo.tsx';
-import {
-  cn,
-  keyframes,
-  makeStyles,
-} from '../../../styles/css-objects/index.ts';
+import { styleguide } from '@ovvio/styles/lib';
+import { LogoIcon } from '@ovvio/styles/lib/components/logo';
+import { cn, keyframes, makeStyles } from '@ovvio/styles/lib/css-objects';
 
 const breath = keyframes({
   from: {

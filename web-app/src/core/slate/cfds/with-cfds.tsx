@@ -1,3 +1,7 @@
+import { uniqueId } from '@ovvio/base/lib/utils';
+import { Range } from '@ovvio/cfds/lib/richtext/doc-state';
+import { TextNode } from '@ovvio/cfds/lib/richtext/tree';
+import { TreeKeys } from '@ovvio/cfds/lib/richtext/tree-keys';
 import {
   BaseEditor,
   BaseRange,
@@ -6,22 +10,17 @@ import {
   Node,
   Operation,
   Path,
-} from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
-import { uniqueId } from '../../../../../base/common.ts';
-import { Range } from '../../../../../cfds/richtext/doc-state.ts';
-import { TextNode } from '../../../../../cfds/richtext/tree.ts';
-import { NodeKey, TreeKeys } from '../../../../../cfds/richtext/tree-keys.ts';
-import { CoreValue } from '../../../../../base/core-types/base.ts';
-import { ElementNodeType } from '../types.ts';
-import { CardElement } from '../elements/card.element/index.tsx';
-import { notReached } from '../../../../../base/error.ts';
+} from 'slate';
+import { ReactEditor } from 'slate-react';
+import { Key } from 'slate-react/dist/utils/key';
+import { CoreValue } from '@ovvio/cfds/lib/core-types';
+import { HistoryEditor } from 'slate-history';
+import { ElementNodeType } from '../types';
+import { CardElement } from '../elements/card.element';
 
-export interface CfdsEditor extends BaseEditor {
+export interface CfdsEditor extends BaseEditor, Omit<HistoryEditor, 'history'> {
   localKey: { id: string };
   onLocalSelectionChanged?: (selection: BaseRange) => void;
-  undo: () => void;
-  redo: () => void;
 }
 
 export interface CfdsEditorInternal extends CfdsEditor {
@@ -60,11 +59,12 @@ export default function withCfds<T extends Editor>(editor: T): T & CfdsEditor {
       !cfdsEditor._isInExternalSelectionChange &&
       cfdsEditor.onLocalSelectionChanged
     ) {
-      cfdsEditor.onLocalSelectionChanged(editor.selection!);
+      cfdsEditor.onLocalSelectionChanged(editor.selection);
     }
   };
   editor.insertFragment = (fragment: Node[]) => {
-    const sanitizedFragment: Node[] = fragment.map((node) => {
+    const sanitizedFragment: Node[] = fragment.map(node => {
+      //@ts-ignore
       const { localKey, ...newNode } = node;
       return newNode as Node;
     });
@@ -87,7 +87,7 @@ export function isCfdsInternal(
   return !!(editor as any)._isCfdsInternal;
 }
 
-ReactEditor.findKey = (editor: ReactEditor, node: Node): NodeKey => {
+ReactEditor.findKey = (editor: ReactEditor, node: Node): Key => {
   if (!isCfdsInternal(editor)) {
     return findKey(editor, node);
   }
@@ -96,33 +96,6 @@ ReactEditor.findKey = (editor: ReactEditor, node: Node): NodeKey => {
   }
   return editor._treeKeys.keyFor(node as CoreValue);
 };
-
-function slateRangeToCfdsRange(editor: Editor, range: BaseRange): Range;
-
-function slateRangeToCfdsRange(
-  editor: Editor,
-  range: BaseRange | null
-): Range | undefined;
-
-function slateRangeToCfdsRange(
-  editor: Editor,
-  range: BaseRange | null
-): Range | undefined {
-  if (!range) return undefined;
-  const anchor = Node.get(editor, range.anchor.path);
-  const focus = Node.get(editor, range.focus.path);
-
-  return {
-    anchor: {
-      node: anchor as TextNode,
-      offset: range.anchor.offset,
-    },
-    focus: {
-      node: focus as TextNode,
-      offset: range.focus.offset,
-    },
-  };
-}
 
 // eslint-disable-next-line
 export const CfdsEditor = {
@@ -133,7 +106,25 @@ export const CfdsEditor = {
     cfdsEditor.selection = selection;
     cfdsEditor._isInExternalSelectionChange = false;
   },
-  slateRangeToCfdsRange,
+  slateRangeToCfdsRange(
+    editor: Editor,
+    range: BaseRange | null
+  ): Range | undefined {
+    if (!range) return undefined;
+    const anchor = Node.get(editor, range.anchor.path);
+    const focus = Node.get(editor, range.focus.path);
+
+    return {
+      anchor: {
+        node: anchor as TextNode,
+        offset: range.anchor.offset,
+      },
+      focus: {
+        node: focus as TextNode,
+        offset: range.focus.offset,
+      },
+    };
+  },
   findPath(parent: ElementNodeType | Editor, child: Node): Path {
     for (let i = 0; i < parent.children.length; i++) {
       const current = parent.children[i];
@@ -148,7 +139,6 @@ export const CfdsEditor = {
         }
       }
     }
-    notReached('CfdsEditor.findPath() failed finding a path');
   },
   cfdsRangeToSlateRange(
     editor: Editor,

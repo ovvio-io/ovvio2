@@ -1,0 +1,25 @@
+{
+  "en": {
+    "list": "List View",
+    "group": "Group View",
+    "board": "Board View",
+    "priority": "Priority",
+    "groupBy": "Group By",
+    "created": "Date Created",
+    "modified": "Date Modified",
+    "due": "Due Date",
+    "workspace": "Workspace",
+    "assignee": "Assignee",
+    "tag": "Tag",
+    "groupByTag": "Tag...",
+    "filter": "Filter",
+    "searchResults": "Search Results",
+    "compose": "Compose",
+    "task": "Tasks",
+    "note": "Notes",
+    "newTask": "New Task",
+    "newNote": "New Note",
+    "search": "Search...",
+    "clear": "Clear"
+  }
+}

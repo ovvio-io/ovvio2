@@ -1,44 +1,37 @@
-import React, { KeyboardEventHandler } from 'react';
-import {
-  BaseEditor,
-  Editor,
-  Element,
-  Transforms,
-} from 'https://esm.sh/slate@0.87.0';
+import { JSXElementConstructor, KeyboardEventHandler } from 'react';
+import { BaseEditor, Editor, Element, Transforms } from 'slate';
 
-import { FormattedText, OvvioEditor } from '../types.ts';
-import { Plugin } from '../plugins/index.ts';
-import {
-  MentionElementNode,
-  RenderMentionPopupProps,
-} from './mention-node.tsx';
-import { ElementNode, TreeNode } from '../../../../../cfds/richtext/tree.ts';
-import { uniqueId } from '../../../../../base/common.ts';
-import { isKeyPressed } from '../utils/hotkeys.ts';
-import { SelectionUtils } from '../utils/selection-utils.ts';
-import { ElementUtils } from '../utils/element-utils.ts';
-import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
-import { MentionElement } from '../../../../../cfds/richtext/model.ts';
+import { FormattedText } from '../types';
+import { Plugin } from '../plugins';
+import { MentionElementNode, RenderMentionPopupProps } from './mention-node';
+import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
+import { uniqueId } from '@ovvio/base/lib/utils';
+import { isKeyPressed } from '../utils/hotkeys';
+import { SelectionUtils } from '../utils/selection-utils';
+import { ElementUtils } from '../utils/element-utils';
+import { suggestResults } from '@ovvio/cfds/lib/client/suggestions';
 //import { wordDist } from '@ovvio/cfds/lib/primitives-old/plaintext';
 
-// export interface MentionElement extends ElementNode {
-//   tagName: 'mention';
-//   pluginId: string;
-//   children: FormattedText[];
-//   isLocal: true;
-// }
+export const MENTION_NODE_TYPE = 'mention';
+
+export interface MentionElement extends ElementNode {
+  tagName: typeof MENTION_NODE_TYPE;
+  pluginId: string;
+  children: FormattedText[];
+  isLocal: true;
+}
 
 export interface MentionEditor extends BaseEditor {
   activeMention?: string;
   discardMention: () => void;
 }
 
-export function isMention(node: TreeNode): node is MentionElement {
-  return Element.isElement(node) && node.tagName === 'mention';
+export function isMention(node: any): node is MentionElement {
+  return Element.isElement(node) && node.tagName === MENTION_NODE_TYPE;
 }
 
 export function filterSortMentions<T>(
-  items: readonly T[],
+  items: T[],
   query: string,
   getSortValue: (item: T) => string
 ) {
@@ -57,11 +50,10 @@ export function filterSortMentions<T>(
 export function withMentions<T extends Editor>(editor: T): MentionEditor & T {
   const { isInline, apply } = editor;
 
-  editor.isInline = (element) =>
-    isMention(element as TreeNode) || isInline(element);
+  editor.isInline = element => isMention(element) || isInline(element);
   const mentionEditor = editor as unknown as MentionEditor & T;
 
-  mentionEditor.apply = (operation) => {
+  mentionEditor.apply = operation => {
     apply(operation);
     if (operation.type === 'set_selection' && mentionEditor.activeMention) {
       const [node] = editor.selection
@@ -86,7 +78,7 @@ export interface MentionOptions<T> {
   trigger: string;
   editor: Editor;
   canOpen: () => boolean;
-  MentionComponent: React.JSXElementConstructor<RenderMentionPopupProps<T>>;
+  MentionComponent: JSXElementConstructor<RenderMentionPopupProps<T>>;
 }
 
 export function createMentionsPlugin<T>({
@@ -105,20 +97,20 @@ export function createMentionsPlugin<T>({
   return {
     onKeyDown(e) {
       if (editor.activeMention === pluginId) {
-        handlers.forEach((fn) => fn(e));
+        handlers.forEach(fn => fn(e));
       }
       if (!editor.activeMention && isKeyPressed(e, trigger) && canOpen()) {
         e.preventDefault();
-        const path = [...editor.selection!.focus.path];
+        const path = [...editor.selection.focus.path];
         const index = path.pop();
         Editor.insertNode(editor, {
-          tagName: 'mention',
+          tagName: MENTION_NODE_TYPE,
           pluginId,
           isLocal: true,
           children: [{ text: `${trigger} ` }],
         });
         const point = {
-          path: [...path, index! + 1, 0],
+          path: [...path, index + 1, 0],
           offset: trigger.length,
         };
         Transforms.setSelection(editor, {
@@ -129,12 +121,7 @@ export function createMentionsPlugin<T>({
         editor.discardMention = () => {
           const [mention, path] = ElementUtils.findNode(
             editor,
-            (node: TreeNode | OvvioEditor) => {
-              if (isMention(node as TreeNode)) {
-                return (node as MentionElement).pluginId === pluginId;
-              }
-              return false;
-            }
+            node => isMention(node) && node.pluginId === pluginId
           );
           if (!mention) {
             console.warn('Discard mention called but no mention found');

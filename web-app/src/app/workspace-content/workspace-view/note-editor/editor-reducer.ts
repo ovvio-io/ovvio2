@@ -1,4 +1,4 @@
-import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
 
 export enum EditorActions {
   INVITE = 'INVITE',

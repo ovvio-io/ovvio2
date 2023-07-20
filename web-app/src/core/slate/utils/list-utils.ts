@@ -1,15 +1,8 @@
-import {
-  Editor,
-  Element,
-  Node,
-  NodeEntry,
-  Path,
-  Transforms,
-} from 'https://esm.sh/slate@0.87.0';
-import { BulletListElement } from '../elements/bullet-list.element.tsx';
-import { ListItemElement } from '../elements/list-item.element.tsx';
-import { NumberedListElement } from '../elements/numbered-list.element.tsx';
-import { ElementUtils } from './element-utils.ts';
+import { Editor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
+import { BulletListElement } from '../elements/bullet-list.element';
+import { ListItemElement } from '../elements/list-item.element';
+import { NumberedListElement } from '../elements/numbered-list.element';
+import { ElementUtils } from './element-utils';
 
 type NestedContainerElement = BulletListElement | NumberedListElement;
 type NestedChild = ListItemElement;
@@ -39,7 +32,7 @@ export const ListUtils = {
       mode: 'lowest',
       match: (node, p) =>
         !Path.equals(path, p) && ListUtils.isNestedContainer(node),
-    })!;
+    });
   },
   setList(editor: Editor, path: Path, listType: 'ul' | 'ol'): void {
     const [node] = Editor.node(editor, path);
@@ -78,7 +71,7 @@ export const ListUtils = {
           at: path,
           mode: 'lowest',
           match: ListUtils.isNestedChild,
-        })!;
+        });
     const itemRef = Editor.pathRef(editor, itemPath);
     const [containerNode, containerPath] = ListUtils.getContainerParent(
       editor,
@@ -103,26 +96,26 @@ export const ListUtils = {
         at: containerPath,
         to: [...splitPath, 0],
         match: (_, p) =>
-          Path.isSibling(p, itemRef.current!) &&
-          Path.isAfter(p, itemRef.current!),
+          Path.isSibling(p, itemRef.current) &&
+          Path.isAfter(p, itemRef.current),
       });
     }
-    const indexAfterSplit = itemRef.current![itemRef.current!.length - 1];
+    const indexAfterSplit = itemRef.current[itemRef.current.length - 1];
 
     Transforms.moveNodes(editor, {
-      at: itemRef.current!,
+      at: itemRef.current,
       to: indexAfterSplit === 0 ? containerPath : Path.next(containerPath),
     });
-    const newContainer = ListUtils.getContainerParent(editor, itemRef.current!);
+    const newContainer = ListUtils.getContainerParent(editor, itemRef.current);
     if (itemNode.tagName === 'li' && !newContainer) {
-      Transforms.setNodes(editor, { tagName: 'p' }, { at: itemRef.current! });
+      Transforms.setNodes(editor, { tagName: 'p' }, { at: itemRef.current });
     }
     itemRef.unref();
 
-    const [updatedContainer] = Editor.node(editor, containerPathRef.current!);
+    const [updatedContainer] = Editor.node(editor, containerPathRef.current);
 
     if (ElementUtils.isEmptyElement(updatedContainer)) {
-      Transforms.removeNodes(editor, { at: containerPathRef.current! });
+      Transforms.removeNodes(editor, { at: containerPathRef.current });
     }
     containerPathRef.unref();
   },

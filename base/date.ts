@@ -1,5 +1,7 @@
 import { isNumber } from './comparisons.ts';
 
+const kDayMs = 24 * 60 * 60 * 1000;
+
 export function serializeDate(date: Date): number {
   if (date instanceof Date) {
     return date.getTime() / 1000;
@@ -46,4 +48,15 @@ export function formatTimeDiff(date: Date) {
   return date.toLocaleDateString(undefined, {
     dateStyle: 'medium',
   });
+}
+
+export function numberOfDaysInCurrentMonth(): number {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+}
+
+export function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
 }

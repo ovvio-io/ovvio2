@@ -1,7 +1,7 @@
-import { GraphManager } from '../graph/graph-manager.ts';
-import { MutationPack } from '../graph/mutations.ts';
-import { VertexManager } from '../graph/vertex-manager.ts';
-import { UndoContext, UndoContextOptions } from './context.ts';
+import { GraphManager } from '../graph/graph-manager';
+import { MutationPack } from '../graph/mutations';
+import { VertexManager } from '../graph/vertex-manager';
+import { UndoContext, UndoContextOptions } from './context';
 
 export class UndoManager {
   private _graph: GraphManager;

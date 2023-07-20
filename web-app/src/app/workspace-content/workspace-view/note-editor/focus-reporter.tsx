@@ -1,28 +1,25 @@
-import React, { useEffect } from 'react';
-import { useFocused } from 'https://esm.sh/slate-react@0.87.1';
-import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
-import { UISource } from '../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../core/cfds/react/logger.tsx';
+import { VertexManager } from "@ovvio/cfds/lib/client/graph/vertex-manager";
+import { Note } from "@ovvio/cfds/lib/client/graph/vertices";
+import { useEffect } from "react";
+import { useFocused } from "slate-react";
+import { useEventLogger } from "../../../../core/analytics";
 
 interface FocusReporterProps {
   cardManager: VertexManager<Note>;
-  source: UISource;
+  source: string
 }
 
-export function FocusReporter({ cardManager, source }: FocusReporterProps) {
+export function FocusReporter({ cardManager, source}: FocusReporterProps) {
   const focused = useFocused();
-  const logger = useLogger();
+   const eventLogger = useEventLogger();
 
   useEffect(() => {
-    logger.log({
-      severity: 'INFO',
-      event: focused ? 'Start' : 'End',
-      flow: 'edit',
-      vertex: cardManager.key,
-      source,
-    });
-  }, [focused, logger, cardManager, source]);
+    if (focused) {
+      eventLogger.cardAction('EDITOR_FOCUSED', cardManager, {
+        source
+      });
+    }
+  }, [focused, eventLogger, cardManager, source]);
 
   return null;
 }

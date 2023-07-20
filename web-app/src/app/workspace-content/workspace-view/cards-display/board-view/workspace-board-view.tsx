@@ -1,69 +1,68 @@
-import React, { useCallback, useMemo } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { sortMngStampCompare } from '@ovvio/cfds/lib/client/sorting';
+import { useToastController } from '@ovvio/styles/lib/components/toast';
+import { useEventLogger } from 'core/analytics';
+import { usePartialVertices } from 'core/cfds/react/vertex';
+import { createUseStrings } from 'core/localization';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DragAndDropContext, DragSource } from 'shared/dragndrop';
+import { DragPosition } from 'shared/dragndrop/droppable';
+import { BoardCard } from './board-card';
+import { BoardColumn } from './board-column';
+import localization from './board.strings.json';
 import {
-  Note,
-  Workspace,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { sortMngStampCompare } from '../../../../../../../cfds/client/sorting.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import {
-  DragAndDropContext,
-  DragSource,
-} from '../../../../../shared/dragndrop/index.ts';
-import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
-import { BoardCard } from './board-card.tsx';
-import { BoardColumn } from './board-column.tsx';
-import localization from './board.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import {
-  GroupId,
-  Query,
-} from '../../../../../../../cfds/client/graph/query.ts';
-import { Dictionary } from '../../../../../../../base/collections/dict.ts';
-import { mapIterable } from '../../../../../../../base/common.ts';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
-import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+  InfiniteHorizontalScroll,
+  InfiniteVerticalScroll,
+} from '../list-view/infinite-scroll';
+import { useQuery2 } from 'core/cfds/react/query';
+import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
+import { BoardViewInternalProps } from '.';
+import { usePartialView } from 'core/cfds/react/graph';
+import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
 
 const useStrings = createUseStrings(localization);
+const PAGE_SIZE = 10;
 
-export interface WorkspaceBoardViewProps {
-  query: Query<Note, Note>;
-}
-
-export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
-  useQuery2(query, false);
-  const groups = query.groups;
-  const workspaces = usePartialVertices<Workspace>(groups.keys(), [
+export function WorkspaceBoardView({
+  filteredNotes,
+}: {
+  filteredNotes: FilteredNotes;
+}) {
+  const view = usePartialView('selectedWorkspaces');
+  const selectedWorkspaces = usePartialVertices(view.selectedWorkspaces, [
     'name',
-    'sortStamp',
-  ]) as Workspace[];
-  const logger = useLogger();
+  ]);
+  const notesQuery = useQuery2(
+    (filteredNotes as FilteredNotes<VertexManager<Workspace>>)[0]
+  );
+  const eventLogger = useEventLogger();
   const toast = useToastController();
   const strings = useStrings();
-  const columns = workspaces.sort(coreValueCompare);
+  const [yLimit, setYLimit] = useState(PAGE_SIZE);
+  const [xLimit, setXLimit] = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    notesQuery.limit = yLimit + PAGE_SIZE;
+    notesQuery.groupsLimit = xLimit + PAGE_SIZE;
+  }, [notesQuery, yLimit, xLimit]);
 
   const onDragCancelled = useCallback(() => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Cancel',
-      flow: 'dnd',
-      source: 'board',
-      type: 'workspace',
-      status: 'cancelled',
-      reason: 'not-supported',
+    eventLogger.action('DRAG_CANCELLED', {
+      source: DragSource.WorkspaceBoard,
+      data: {
+        reason: 'NOT_SUPPORTED',
+      },
     });
     toast.displayToast({
       duration: 5000,
       text: strings.dragNotSupported,
     });
-  }, [toast, logger, strings]);
+  }, [toast, eventLogger, strings]);
 
   const onDrop = (
     workspace: VertexManager<Workspace>,
-    items: readonly VertexManager<Note>[],
+    items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
@@ -75,33 +74,56 @@ export function WorkspaceBoardView({ query }: WorkspaceBoardViewProps) {
     // setDragSort(items, item, relativeTo, dragPosition);
   };
 
+  let maxColSize = 0;
+  for (const gid of notesQuery.groups()) {
+    maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
+  }
+
+  // console.log('Max col size = ' + maxColSize);
+
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {columns.map((column) => (
-        <BoardColumn
-          title={column.name}
-          key={column.key}
-          items={groups.get(column.key)!}
-          allowsDrop={() => false}
-          onDrop={(
-            item: VertexManager<Note>,
-            relativeTo: VertexManager<Note>,
-            dragPosition: DragPosition
-          ) =>
-            onDrop(
-              column.manager as VertexManager<Workspace>,
-              groups.get(column.key)!,
-              item,
-              relativeTo,
-              dragPosition
-            )
-          }
-        >
-          {groups.get(column.key)!.map((card, index) => (
-            <BoardCard card={card} index={index} key={card.key} />
-          ))}
-        </BoardColumn>
-      ))}
+      {Array.from(selectedWorkspaces)
+        .sort(coreValueCompare)
+        .slice(0, xLimit)
+        .map(column => (
+          <BoardColumn
+            title={column.name}
+            key={column.key}
+            items={notesQuery.group(column.manager as VertexManager<Workspace>)}
+            allowsDrop={() => false}
+            onDrop={(item, relativeTo, dragPosition) =>
+              onDrop(
+                column.manager as VertexManager<Workspace>,
+                notesQuery.group(column.manager as VertexManager<Workspace>),
+                item,
+                relativeTo,
+                dragPosition
+              )
+            }
+          >
+            {notesQuery
+              .group(column.manager as VertexManager<Workspace>)
+              .slice(0, yLimit)
+              .map((card, index) => (
+                <BoardCard card={card} index={index} key={card.key} />
+              ))}
+          </BoardColumn>
+        ))}
+      <InfiniteVerticalScroll
+        limit={yLimit}
+        setLimit={setYLimit}
+        pageSize={PAGE_SIZE}
+        recordsLength={maxColSize}
+        isVisible={false}
+      />
+      <InfiniteHorizontalScroll
+        limit={xLimit}
+        setLimit={setXLimit}
+        pageSize={PAGE_SIZE}
+        recordsLength={notesQuery.groupCount}
+        isVisible={false}
+      />
     </DragAndDropContext>
   );
 }

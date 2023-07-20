@@ -1,24 +1,19 @@
-import React, { useCallback, useRef } from 'react';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { Tag } from '../../../../cfds/client/graph/vertices/index.ts';
-import { layout, styleguide } from '../../../../styles/index.ts';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Tag } from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles/lib';
 import {
   IconClose,
   IconDropDownArrow,
-} from '../../../../styles/components/icons/index.ts';
+} from '@ovvio/styles/lib/components/icons';
 import DropDown, {
   DropDownItem,
-} from '../../../../styles/components/inputs/drop-down.tsx';
-import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
-import {
-  cn,
-  keyframes,
-  makeStyles,
-} from '../../../../styles/css-objects/index.ts';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { useAnimateWidth } from '../../core/react-utils/animate.ts';
-
+} from '@ovvio/styles/lib/components/inputs/drop-down';
+import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
+import { cn, keyframes, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { useAnimateWidth } from 'core/react-utils/animate';
+import React, { useCallback, useRef } from 'react';
 const showAnim = keyframes({
   '0%': {
     opacity: 0,
@@ -182,9 +177,12 @@ export default function TagView({
   renderSelected,
 }: PillViewProps) {
   const styles = useStyles();
-  const partialTag = usePartialVertex(tag, ['parentTag']);
-  const siblingsQuery = partialTag.parentTag?.childTagsQuery;
-  const siblings = siblingsQuery?.results || [];
+  const partialTag = usePartialVertex(tag, ['workspace', 'parentTag']);
+  const partialParent = usePartialVertex(
+    partialTag?.parentTag?.manager as VertexManager<Tag>,
+    ['childTags']
+  );
+  const siblings = partialParent?.childTags || [];
 
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
@@ -209,19 +207,17 @@ export default function TagView({
       className={buttonClassName}
       renderSelected={renderButton}
     >
-      {siblings.map((t) => (
+      {siblings.map(t => (
         <DropDownItem value={t} key={t.key}>
           <div className={cn(styles.circleContainer)}>
             <div
               className={cn(styles.circle)}
-              // style={{
-              //   backgroundColor: t.color,
-              // }}
+              style={{
+                backgroundColor: t.color,
+              }}
             />
           </div>
-          <span className={cn(styles.tagDropDownName)}>
-            {t.getVertexProxy().name}
-          </span>
+          <span className={cn(styles.tagDropDownName)}>{t.name}</span>
         </DropDownItem>
       ))}
       <DropDownItem value={DELETE_TAG}>

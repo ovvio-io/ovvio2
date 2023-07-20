@@ -160,7 +160,6 @@ export class Coroutine<T = unknown> {
    * it gives the executing code a chance to run cleanups before exiting.
    */
   cancel(): void {
-    debugger;
     this._cancelled = true;
   }
 
@@ -174,7 +173,6 @@ export class Coroutine<T = unknown> {
    *          when possible.
    */
   cancelImmediately(): void {
-    debugger;
     if (this._completed) {
       return;
     }

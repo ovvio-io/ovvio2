@@ -6,8 +6,8 @@ import { Note } from './note.ts';
 import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Workspace } from './workspace.ts';
-import { UserSettings } from './user-settings.ts';
-import { Filter } from './index.ts';
+import { Role } from './role.ts';
+import { View } from './view.ts';
 
 export default function vertexBuilder(
   manager: VertexManager,
@@ -17,24 +17,24 @@ export default function vertexBuilder(
 ): Vertex {
   switch (record.scheme.namespace) {
     case SchemeNamespace.WORKSPACE:
-      return new Workspace(manager, record, prevVertex, config);
+      return new Workspace(manager, prevVertex, config);
 
     case SchemeNamespace.USERS:
-      return new User(manager, record, prevVertex, config);
+      return new User(manager, prevVertex, config);
 
     case SchemeNamespace.TAGS:
-      return new Tag(manager, record, prevVertex, config);
+      return new Tag(manager, prevVertex, config);
 
     case SchemeNamespace.NOTES:
-      return new Note(manager, record, prevVertex, config);
+      return new Note(manager, prevVertex, config);
 
-    case SchemeNamespace.USER_SETTINGS:
-      return new UserSettings(manager, record, prevVertex, config);
+    case SchemeNamespace.ROLES:
+      return new Role(manager, prevVertex, config);
 
-    case SchemeNamespace.FILTER:
-      return new Filter(manager, record, prevVertex, config);
+    case SchemeNamespace.VIEWS:
+      return new View(manager, prevVertex, config);
 
     default:
-      return new Vertex(manager, record, prevVertex, config);
+      return new Vertex(manager, prevVertex, config);
   }
 }

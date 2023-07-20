@@ -1,7 +1,7 @@
-import { assert } from '../../../base/error.ts';
-import { unionIter } from '../../../base/set.ts';
-import { Dictionary } from '../../../base/collections/dict.ts';
-import { HashSet } from '../../../base/collections/hash-map.ts';
+import { assert } from '@ovvio/base/lib/utils';
+import { unionIter } from '@ovvio/base/lib/utils/set';
+import { Dictionary } from '../../collections/dict';
+import { HashSet } from '../../collections/hash-map';
 
 export interface Edge {
   vertex: string;
@@ -45,7 +45,7 @@ export class SimpleAdjacencyList implements AdjacencyList {
       outSet = new HashSet(hashEdge, eqEdges);
       this._outEdges.set(src, outSet);
     }
-    const success = outSet.add({
+    let success = outSet.add({
       vertex: dst,
       fieldName,
     });

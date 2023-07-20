@@ -1,24 +1,28 @@
+import { NS_NOTES, NS_USERS, NS_WORKSPACE, Record } from '@ovvio/cfds';
+import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
+import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { present } from '@ovvio/cfds/lib/primitives-old/orderstamp';
+import { styleguide } from '@ovvio/styles/lib';
+import { RaisedButton } from '@ovvio/styles/lib/components/buttons';
+import { TextField } from '@ovvio/styles/lib/components/inputs';
+import SpinnerView from '@ovvio/styles/lib/components/spinner-view';
+import { H2, Text } from '@ovvio/styles/lib/components/texts';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import RestClient from 'api';
+import { useEventLogger } from 'core/analytics';
+import { useGraphManager } from 'core/cfds/react/graph';
+import { isWorkspace, useExistingQuery, useQuery } from 'core/cfds/react/query';
+import { useScopedObservable } from 'core/state';
 import React, { useEffect, useRef, useState } from 'react';
-import { NS_USERS, NS_WORKSPACE } from '../../../../cfds/base/scheme-types.ts';
-import { Record } from '../../../../cfds/base/record.ts';
-import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/index.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { RaisedButton } from '../../../../styles/components/buttons.tsx';
-import { TextField } from '../../../../styles/components/inputs/index.ts';
-import { H2, Text } from '../../../../styles/components/texts.tsx';
-import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
-import { useGraphManager } from '../../core/cfds/react/graph.tsx';
-import { useSharedQuery } from '../../core/cfds/react/query.ts';
-import CreateIllustration from './create-workspace-illustration.tsx';
-import { DuplicateWorkspaceView } from './duplicate-workspace.tsx';
-import { UISource } from '../../../../logging/client-events.ts';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import { uniqueId } from '../../../../base/common.ts';
-import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
+import { useTutorialStep } from 'shared/tutorial';
+import UserStore from 'stores/user';
+import CreateIllustration from './create-workspace-illustration';
+import { DuplicateWorkspaceView } from './duplicate-workspace';
+import { WorkspaceSteps } from './workspace-tutorial';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   input: {
     marginTop: styleguide.gridbase * 3,
     width: '100%',
@@ -33,126 +37,254 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+interface CreateWorkspaceResult {
+  id: string;
+  wsRecordKeys: string[];
+}
+
+export type WorkspaceCreated =
+  | {
+      loaded: true;
+      workspace: VertexManager<Workspace>;
+    }
+  | {
+      loaded: false;
+      workspaceId: string;
+    };
+
 type CreateWorkspaceOptions = {
+  createDemoCards?: boolean;
   copyFrom?: VertexManager<Workspace>;
 };
 
-function duplicateWorkspace(
+async function createWorkspaceFromTemplate(
   name: string,
   graph: GraphManager,
-  src: VertexManager<Workspace>
-): VertexManager<Workspace> {
-  const subGraph = graph.exportSubGraph(src.key, 1, [NS_USERS], (r: Record) => {
-    if (r.scheme.namespace === NS_WORKSPACE) {
-      r.set('name', name);
+  templateWs: VertexManager<Workspace>
+): Promise<WorkspaceCreated> {
+  const workspace = templateWs.getVertexProxy();
+  const subGraph = graph.exportSubGraph(
+    templateWs.key,
+    1,
+    [NS_USERS],
+    (r: Record) => {
+      if (r.scheme.namespace === NS_WORKSPACE) {
+        r.set('name', name);
+      }
+      if (workspace.isTemplate) {
+        if (r.scheme.hasField('createdBy')) {
+          r.set('createdBy', graph.rootKey);
+        }
+        if (r.scheme.namespace === NS_NOTES) {
+          r.delete('assignees');
+        }
+      }
     }
-    if (r.scheme.hasField('createdBy')) {
-      r.set('createdBy', graph.rootKey);
-    }
-  });
+  );
 
   const data = graph.importSubGraph(subGraph, false);
-  return data[0] as VertexManager<Workspace>;
+  const dupWsMgr = data[0] as VertexManager<Workspace>;
+  const dupWs = dupWsMgr.getVertexProxy();
+  if (workspace.isTemplate) {
+    dupWs.users = new Set([graph.getRootVertex<User>()]);
+  }
+  dupWs.createdBy = graph.getRootVertex<User>();
+  const user = graph.getRootVertex<User>();
+  const updatedWorkspaces = new Set(user.workspaces);
+  updatedWorkspaces.add(dupWsMgr.getVertexProxy());
+  user.workspaces = updatedWorkspaces;
+  return {
+    loaded: true,
+    workspace: dupWsMgr,
+  };
 }
 
-function createNewWorkspace(
+async function createNewWorkspace(
   name: string,
   graphManager: GraphManager,
   opts: CreateWorkspaceOptions = {}
-): VertexManager<Workspace> {
-  const { copyFrom } = opts;
+): Promise<WorkspaceCreated> {
+  const { /*createDemoCards = false,*/ copyFrom } = opts;
   if (copyFrom) {
-    return duplicateWorkspace(name, graphManager, copyFrom);
+    return await createWorkspaceFromTemplate(name, graphManager, copyFrom);
   }
-  return graphManager.createVertex<Workspace>(NS_WORKSPACE, {
-    name,
+  const rootUser = graphManager.getRootVertex<User>();
+  const newWs = graphManager.createVertex<Workspace>(NS_WORKSPACE, {
     users: new Set([graphManager.rootKey]),
-  }).manager;
+    createdBy: graphManager.rootKey,
+    name,
+  });
+  rootUser.workspaces.add(newWs);
+  return Promise.resolve({
+    loaded: true,
+    workspace: newWs.manager,
+  });
+  // const restClient = new RestClient(user.currentUser);
+  //
+  // const res = await restClient.post<CreateWorkspaceResult>('/workspaces', {
+  //   name: name.trim(),
+  //   demoCards: createDemoCards,
+  // });
+  // return await new Promise((resolve, reject) => {
+  //   setTimeout(() => {
+  //     const wsGroup = graphManager.createGroup([
+  //       res.id,
+  //       ...(res.wsRecordKeys || []),
+  //     ]);
+  //     wsGroup.waitForReady(
+  //       () => {
+  //         const ws = wsGroup.get<Workspace>(res.id);
+  //         if (createDemoCards) {
+  //           //First Workspace card should be pushed to the top
+  //           if (user.firstCardKey) {
+  //             const firstCard = graphManager.getVertex<Note>(user.firstCardKey);
+  //             if (!firstCard.isLoading) {
+  //               firstCard.sortStamp = present();
+  //             }
+  //           }
+  //         }
+  //         resolve({
+  //           loaded: true,
+  //           workspace: ws.manager as VertexManager<Workspace>,
+  //         });
+  //       },
+  //       () => {
+  //         console.warn(`ws: ${res.id} created but waiting failed`);
+  //         resolve({
+  //           loaded: false,
+  //           workspaceId: res.id,
+  //         });
+  //       },
+  //       15
+  //     );
+  //   }, 500);
+  // });
 }
 
 export interface WorkspaceFormProps {
-  source?: UISource;
-  onWorkspaceCreated: (createResult: VertexId<Workspace>) => void;
+  location: any;
+  onWorkspaceCreated: (createResult: WorkspaceCreated) => void;
 }
 
 export function WorkspaceForm({
-  source,
+  location,
   onWorkspaceCreated,
 }: WorkspaceFormProps) {
   const styles = useStyles();
   const [name, setName] = useState('');
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
+  const [error, setError] = useState('');
+  const [processing, setProcessing] = useState(false);
   const graph = useGraphManager();
   const nameRef = useRef();
-  const createRef = useRef(null);
-  const workspacesQuery = useSharedQuery('workspaces');
+  const createRef = useRef();
+  const { results: workspaces, loading } = useExistingQuery(
+    graph.sharedQueriesManager.workspaces
+  );
   const [duplicateWs, setDuplicateWs] = useState<VertexManager<Workspace>>();
-  const [flowId] = useState(uniqueId());
+
+  const { className: nameInputClassName } = useTutorialStep(
+    WorkspaceSteps.NameWorkspace,
+    nameRef.current,
+    { context: name }
+  );
+  const { className: createClassName, next: nextStep } = useTutorialStep(
+    WorkspaceSteps.CreateWorkspace,
+    createRef.current
+  );
+
+  let source: string | undefined;
+  let onBoardFlow = false;
+  if (location && location.state) {
+    source = location.state.source;
+    onBoardFlow = location.state.onBoardFlow || false;
+  }
 
   useEffect(() => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'create',
-      type: 'workspace',
+    eventLogger.action('WORKSPACE_CREATE_STARTED', {
       source,
-      id: flowId,
     });
-  }, [logger, flowId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const createWorkspace = () => {
-    const wsResult = createNewWorkspace(name, graph, {
-      copyFrom: duplicateWs,
-    });
-    logger.log({
-      severity: 'INFO',
-      event: 'End',
-      flow: 'create',
-      type: 'workspace',
-      source,
-      id: flowId,
-    });
-    graph.sharedQueriesManager.workspaces.forEach(
-      (ws) => (ws.selected = ws.key === wsResult.key)
-    );
-    wsResult.getVertexProxy().selected = true;
-    onWorkspaceCreated(wsResult);
+  const createWorkspace = async () => {
+    if (nextStep) {
+      nextStep();
+    }
+    if (!name || processing) {
+      return;
+    }
+    setError('');
+    setProcessing(true);
+
+    try {
+      const wsResult = await createNewWorkspace(name, graph, {
+        createDemoCards: onBoardFlow,
+        copyFrom: duplicateWs,
+      });
+
+      eventLogger.action('WORKSPACE_CREATE_COMPLETED', {
+        workspaceId: wsResult.loaded
+          ? wsResult.workspace.key
+          : (wsResult as any).workspaceId,
+        source,
+      });
+      setProcessing(false);
+      onWorkspaceCreated(wsResult);
+    } catch (e) {
+      eventLogger.error(e, {
+        origin: 'WORKSPACE_CREATE',
+        source,
+      });
+
+      setError('Something went wrong, try again later');
+      setProcessing(false);
+    }
   };
   return (
     <React.Fragment>
       <H2>Create a new workspace</H2>
-      <React.Fragment>
-        <p>
-          <Text>
-            Organize your units, departments and projects with Workspaces. Write
-            meeting minutes or notes, and assign tasks to a specific group of
-            people.
-          </Text>
-        </p>
-        {workspacesQuery.count > 0 && (
-          <DuplicateWorkspaceView
-            className={cn(styles.input)}
-            allWorkspaces={workspacesQuery.results}
-            setWorkspace={setDuplicateWs}
-            workspace={duplicateWs}
+      {loading ? (
+        <SpinnerView />
+      ) : (
+        <React.Fragment>
+          <p>
+            <Text>
+              Organize your units, departments and projects with Workspaces.
+              Write meeting minutes or notes, and assign tasks to a specific
+              group of people.
+            </Text>
+          </p>
+          {!!workspaces.length && (
+            <DuplicateWorkspaceView
+              className={cn(styles.input)}
+              workspaces={workspaces}
+              setWorkspace={setDuplicateWs}
+              selectedWorkspace={duplicateWs}
+            />
+          )}
+          <TextField
+            placeholder="Name your workspace"
+            value={name}
+            onChange={(e: any) => setName(e.currentTarget.value)}
+            className={cn(styles.input, nameInputClassName)}
+            ref={nameRef}
           />
-        )}
-        <TextField
-          placeholder="Name your workspace"
-          value={name}
-          onChange={(e: any) => setName(e.currentTarget.value)}
-          className={cn(styles.input)}
-          ref={nameRef}
-        />
-        <RaisedButton
-          disabled={name.trim().length === 0}
-          className={cn(styles.input)}
-          onClick={createWorkspace}
-          ref={createRef}
-        >
-          <span>Create new workspace</span>
-        </RaisedButton>
-      </React.Fragment>
+          {error && <Text className={cn(styles.error)}>{error}</Text>}
+          <RaisedButton
+            disabled={name.trim().length === 0 || processing}
+            className={cn(styles.input, createClassName)}
+            onClick={createWorkspace}
+            ref={createRef}
+          >
+            {processing ? (
+              <SpinnerView size={styleguide.gridbase * 3} color="white" />
+            ) : (
+              <span>Create new workspace</span>
+            )}
+          </RaisedButton>
+        </React.Fragment>
+      )}
       <CreateIllustration className={cn(styles.illustration)} />
     </React.Fragment>
   );

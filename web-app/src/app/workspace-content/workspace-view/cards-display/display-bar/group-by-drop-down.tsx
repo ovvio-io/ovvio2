@@ -1,77 +1,70 @@
-import React, { useCallback } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { IconGroup } from '../../../../../../../styles/components/new-icons/icon-group.tsx';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { IconGroup } from '@ovvio/styles/lib/components/new-icons/icon-group';
 import Menu, {
   MenuItem,
   SecondaryMenuItem,
-} from '../../../../../../../styles/components/menu.tsx';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
-import {
-  cn,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { usePartialFilter } from '../../../../index.tsx';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { Tag } from '../../../../../../../cfds/client/graph/vertices/tag.ts';
-import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
-import { FilterGroupBy } from '../../../../../../../cfds/base/scheme-types.ts';
-import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
+} from '@ovvio/styles/lib/components/menu';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useEventLogger } from 'core/analytics';
+import { createUseStrings } from 'core/localization';
+import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
+import React, { useCallback, useEffect } from 'react';
+import localization from '../cards-display.strings.json';
+import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+import IconDropDownArrow from '@ovvio/styles/lib/components/icons/IconDropDownArrow';
+import { usePartialView } from 'core/cfds/react/graph';
+import { GroupBy } from '@ovvio/cfds/lib/base/scheme-types';
+import { useSharedQuery } from 'core/cfds/react/query';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   dropDownButtonText: {
     marginLeft: styleguide.gridbase,
   },
   dropDownButton: {
-    marginRight: styleguide.gridbase * 3,
+    // marginRight: styleguide.gridbase * 3,
+    padding: styleguide.gridbase,
     basedOn: [layout.row, layout.centerCenter],
   },
 }));
 
 const useStrings = createUseStrings(localization);
 
-interface GroupByTagButtonProps {
-  tag: VertexId<Tag>;
-}
-
-function GroupByTagButton({ tag }: GroupByTagButtonProps) {
-  const { parentTag, name: childName } = usePartialVertex(tag, [
-    'parentTag',
-    'name',
-  ]);
-  const { name: parentName } = usePartialVertex(parentTag!.manager, ['name']);
-  return <Text>{`${parentName}/${childName}`}</Text>;
-}
-
 export function GroupByDropDown() {
   const styles = useStyles();
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
   const strings = useStrings();
-  const partialFilter = usePartialFilter(['groupBy', 'groupByPivot']);
-  const parentTagsQuery = useSharedQuery('parentTags');
-
-  const setGroup = useCallback(
-    (group: 'assignee' | 'workspace') => {
-      logger.log({
-        severity: 'INFO',
-        event: 'FilterChange',
-        type: ('groupBy:' + group) as FilterGroupBy,
-      });
-      partialFilter.groupBy = group;
-    },
-    [logger, partialFilter]
+  const view = usePartialView(
+    'groupBy',
+    'pivot',
+    'selectedWorkspaces',
+    'noteType'
   );
+  const parentTagsByName = useSharedQuery('parentTagsByName');
+  const parentNames = parentTagsByName.groups().filter(gid => {
+    for (const mgr of parentTagsByName.group(gid)) {
+      if (view.selectedWorkspaces.has(mgr.getVertexProxy().workspace)) {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  const setGroup = (group: 'assignee' | 'workspace' | 'dueDate' | 'note') => {
+    eventLogger.action('SET_GROUP_BY', {
+      data: {
+        groupBy: group,
+      },
+    });
+    view.groupBy = group;
+    delete view.pivot;
+  };
   const renderButton = useCallback(() => {
     const content =
-      partialFilter.groupBy === 'tag' ? (
-        <GroupByTagButton
-          tag={partialFilter.groupByPivot!.manager as VertexManager<Tag>}
-        />
+      view.groupBy === 'tag' ? (
+        <Text>{view.pivot}</Text>
       ) : (
-        <Text>{strings[partialFilter.groupBy!]}</Text>
+        <Text>{strings[view.groupBy]}</Text>
       );
 
     return (
@@ -81,23 +74,23 @@ export function GroupByDropDown() {
           {strings.groupBy}:&nbsp;
         </Text>
         {content}
+        <IconDropDownArrow />
       </div>
     );
-  }, [strings, partialFilter, styles]);
+  }, [strings, styles, view]);
 
-  const setTag = useCallback(
-    (tag: Tag) => {
-      logger.log({
-        severity: 'INFO',
-        event: 'FilterChange',
-        type: 'groupBy:tag',
-        vertex: tag.key,
-      });
-      partialFilter.groupBy = 'tag';
-      partialFilter.groupByPivot = tag;
-    },
-    [logger, partialFilter]
-  );
+  const setTag = (tagName: string) => {
+    eventLogger.action('SET_GROUP_BY', {
+      data: { groupBy: 'tag', tag: tagName },
+    });
+    view.groupBy = 'tag';
+    view.pivot = tagName;
+  };
+
+  const parentNoteGrouping =
+    view.noteType === NoteType.Task ? (
+      <MenuItem onClick={() => setGroup('note')}>{strings.parentNote}</MenuItem>
+    ) : null;
 
   return (
     <Menu renderButton={renderButton} align="start">
@@ -107,12 +100,14 @@ export function GroupByDropDown() {
       <MenuItem onClick={() => setGroup('assignee')}>
         {strings.assignee}
       </MenuItem>
+      <MenuItem onClick={() => setGroup('dueDate')}>{strings.dueDate}</MenuItem>
+      {parentNoteGrouping}
       <SecondaryMenuItem text={strings.groupByTag}>
-        {parentTagsQuery.map((tag) => (
-          <MenuItem key={tag.key} onClick={() => setTag(tag)}>
-            {tag.name}
-          </MenuItem>
-        ))}
+        {parentNames.map(name =>
+          name === 'Status' ? null : (
+            <MenuItem onClick={() => setTag(name)}>{name}</MenuItem>
+          )
+        )}
       </SecondaryMenuItem>
     </Menu>
   );

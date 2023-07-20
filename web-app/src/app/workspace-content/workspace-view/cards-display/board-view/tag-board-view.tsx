@@ -1,113 +1,145 @@
-import React from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useToastController } from '@ovvio/styles/lib/components/toast';
+import { useEventLogger } from 'core/analytics';
+import { createUseStrings } from 'core/localization';
+import React, { useEffect, useState } from 'react';
+import { DragAndDropContext } from 'shared/dragndrop';
+import { BoardCard } from './board-card';
+import { BoardColumn } from './board-column';
+import localization from './board.strings.json';
 import {
-  Note,
-  Tag,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
-import {
-  createUseStrings,
-  format,
-} from '../../../../../core/localization/index.tsx';
-import { DragAndDropContext } from '../../../../../shared/dragndrop/index.ts';
-import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
-import { setDragSort } from '../card-item/draggable-card.tsx';
-import { BoardCard } from './board-card.tsx';
-import { BoardColumn } from './board-column.tsx';
-import localization from './board.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { usePartialFilter } from '../../../../index.tsx';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import {
-  filterIterable,
-  mapIterable,
-} from '../../../../../../../base/common.ts';
+  InfiniteHorizontalScroll,
+  InfiniteVerticalScroll,
+} from '../list-view/infinite-scroll';
+import { useQuery2 } from 'core/cfds/react/query';
+import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
 
 const useStrings = createUseStrings(localization);
-
-export interface TagBoardViewProps {
-  query: Query<Note, Note>;
-}
-
-export function TagBoardView({ query }: TagBoardViewProps) {
-  useQuery2(query, false);
-  const logger = useLogger();
-  const groups = query.groups;
-  const groupBy = usePartialFilter(['groupByPivot']).groupByPivot as Tag;
-  const graph = useGraphManager();
-  const childTagManagers = Array.from(
-    mapIterable(
-      filterIterable(groups.keys(), (k) => typeof k === 'string'),
-      (k) => graph.getVertexManager<Tag>(k!)
-    )
+const PAGE_SIZE = 10;
+export function TagBoardView({
+  filteredNotes,
+}: {
+  filteredNotes: FilteredNotes;
+}) {
+  const notesQuery = useQuery2(
+    (filteredNotes as FilteredNotes<string | null>)[0]
   );
-  const sortedChildTags = usePartialVertices(childTagManagers, ['name']).sort();
-  const unassigned = groups.get(undefined);
   const strings = useStrings();
+  const [yLimit, setYLimit] = useState(PAGE_SIZE);
+  const [xLimit, setXLimit] = useState(PAGE_SIZE);
 
-  const onDrop = (
-    tag: VertexManager<Tag> | undefined,
-    items: readonly VertexManager<Note>[],
-    item: VertexManager<Note>,
-    relativeTo: VertexManager<Note>,
-    dragPosition: DragPosition
-  ) => {
-    const note = item.getVertexProxy();
-    logger.log({
-      severity: 'INFO',
-      event: 'End',
-      flow: 'dnd',
-      vertex: item.key,
-      type: 'tag',
-      source: 'board',
-      added: tag?.key,
-      removed: tag === undefined ? note.tags.get(groupBy)?.key : undefined,
-    });
+  useEffect(() => {
+    notesQuery.limit = yLimit + PAGE_SIZE;
+    notesQuery.groupsLimit = xLimit + PAGE_SIZE;
+  }, [notesQuery, yLimit, xLimit]);
 
-    if (typeof tag === 'undefined') {
-      note.tags.delete(groupBy);
-    } else {
-      note.tags.set(groupBy, tag.vertex);
-    }
-    setDragSort(items, item, relativeTo, dragPosition);
-  };
+  // const activeTagNames = useMemo(
+  //   () => filters.activeTags.map(t => t.displayName),
+  //   [filters]
+  // );
+
+  // const onDrop = (
+  //   tag: string | null,
+  //   items: VertexManager<Note>[],
+  //   item: VertexManager<Note>,
+  //   relativeTo: VertexManager<Note>,
+  //   dragPosition: DragPosition
+  // ) => {
+  //   const proxy = item.getVertexProxy();
+  //   eventLogger.action('DRAG_DONE', {
+  //     cardId: item.key,
+  //     source: DragSource.TagBoard,
+  //   });
+
+  //   if (tag === null) {
+  //     const tags = proxy.tags;
+  //     tags.delete(wsParent);
+  //     proxy.tags = tags;
+  //   } else {
+  //     const wsTag = tag.managers[proxy.workspaceKey];
+  //     const tags = proxy.tags;
+  //     tags.set(wsParent, wsTag.getVertexProxy());
+  //     proxy.tags = tags;
+  //   }
+  //   setDragSort(items, item, relativeTo, dragPosition);
+  // };
+  // const allowsDrop = (tag: TagType, card: VertexManager<Note>) => {
+  //   if (tag === 'unassigned') {
+  //     return true;
+  //   }
+  //   const proxy = card.getVertexProxy();
+  //   if (tag.managers[proxy.workspaceKey]) {
+  //     return true;
+  //   }
+
+  //   return {
+  //     isAllowed: false,
+  //     context: {
+  //       tag,
+  //       card,
+  //     },
+  //   };
+  // };
+
+  // const onDragCancelled = ({ reason }: { reason: CANCELLATION_REASONS }) => {
+  // if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
+  //   eventLogger.action('DRAG_CANCELLED', {
+  //     cardId: context.card.key,
+  //     source: DragSource.TagBoard,
+  //     data: {
+  //       reason: 'TAG_NOT_IN_WORKSPACE',
+  //     },
+  //   });
+  //   toast.displayToast({
+  //     text: format(strings.tagNotInWorkspace, {
+  //       tag: context.tag.displayName,
+  //       workspace: context.card.getVertexProxy().workspace.name,
+  //     }),
+  //     duration: 5000,
+  //   });
+  // }
+  // };
+
+  let maxColSize = 0;
+  for (const gid of notesQuery.groups()) {
+    maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
+  }
+  // console.log('Max col size = ' + maxColSize);
 
   return (
     <DragAndDropContext>
-      {unassigned?.length || 0 > 0 ? (
-        <BoardColumn
-          key={undefined}
-          items={groups.get(undefined)!}
-          title={strings.unassigned}
-          onDrop={(...args) =>
-            onDrop(undefined, groups.get(undefined)!, ...args)
-          }
-        >
-          {groups.get(undefined)!.map((note, index) => (
-            <BoardCard key={note.key} card={note} index={index} />
-          ))}
-        </BoardColumn>
-      ) : null}
-      {sortedChildTags.map((tag) => (
-        <BoardColumn
-          key={tag.key}
-          items={groups.get(tag.key)!}
-          title={tag.name}
-          onDrop={(...args) =>
-            onDrop(
-              tag.manager as VertexManager<Tag>,
-              groups.get(tag.key)!,
-              ...args
-            )
-          }
-        >
-          {groups.get(tag.key)!.map((card, index) => (
-            <BoardCard key={card.key} card={card} index={index} />
-          ))}
-        </BoardColumn>
-      ))}
+      {notesQuery
+        .groups()
+        .slice(0, xLimit)
+        .map(col => (
+          <BoardColumn
+            key={col}
+            items={notesQuery.group(col)}
+            title={col === null ? strings.unassigned : col}
+            onDrop={() => {}}
+            // allowsDrop={item => allowsDrop(col.tag, item)}
+          >
+            {notesQuery
+              .group(col)
+              .slice(0, yLimit)
+              .map((card, index) => (
+                <BoardCard key={card.key} card={card} index={index} />
+              ))}
+          </BoardColumn>
+        ))}
+      <InfiniteVerticalScroll
+        limit={yLimit}
+        setLimit={setYLimit}
+        pageSize={PAGE_SIZE}
+        recordsLength={maxColSize}
+        isVisible={false}
+      />
+      <InfiniteHorizontalScroll
+        limit={xLimit}
+        setLimit={setXLimit}
+        pageSize={PAGE_SIZE}
+        recordsLength={notesQuery.groupCount}
+        isVisible={false}
+      />
     </DragAndDropContext>
   );
 }

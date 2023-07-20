@@ -1,5 +1,5 @@
-import { Descendant, Editor } from 'https://esm.sh/slate@0.87.0';
-import { createOvvioEditor } from './index.tsx';
+import { Descendant, Editor } from "slate";
+import { createOvvioEditor } from ".";
 
 export function createStaticEditor(value: Descendant[]): Editor {
   const editor = createOvvioEditor();

@@ -16,6 +16,7 @@ import { uniqueId } from '../base/common.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
 import { VersionNumber } from '../defs.ts';
+import { Scheme } from '../cfds/base/scheme.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 

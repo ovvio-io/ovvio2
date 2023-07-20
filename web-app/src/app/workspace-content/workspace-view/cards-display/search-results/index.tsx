@@ -1,43 +1,56 @@
+import { NS_NOTES } from '@ovvio/cfds';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { useEventLogger } from 'core/analytics';
+import { useCfdsContext } from 'core/cfds/react/graph';
 import React, { useEffect, useMemo } from 'react';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { usePartialFilter } from '../../../../index.tsx';
-import { InnerListView } from '../list-view/index.tsx';
+import { Query, UnionQuery } from '@ovvio/cfds/lib/client/graph/query';
 
 export interface SearchResultsProps {
+  searchTerm: string;
+  selectedWorkspaces: VertexManager<Workspace>[];
   className?: string;
 }
 
-export function SearchResults({ className }: SearchResultsProps) {
-  const logger = useLogger();
-  const graph = useGraphManager();
-  const searchEngine = graph.noteSearchEngine;
-  const { textQuery } = usePartialFilter(['textQuery']);
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+export function SearchResults({
+  searchTerm,
+  selectedWorkspaces,
+  className,
+}: SearchResultsProps) {
+  const eventLogger = useEventLogger();
+  const { searchEngine } = useCfdsContext();
   useEffect(() => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'search',
-    });
+    eventLogger.action('CARD_SEARCH_ACTIVATED', {});
     return () => {
-      logger.log({
-        severity: 'INFO',
-        event: 'End',
-        flow: 'search',
-      });
+      eventLogger.action('CARD_SEARCH_DEACTIVATED', {});
     };
-  }, [logger]);
+  }, [eventLogger]);
   const results = useMemo(() => {
-    const items = searchEngine.search(textQuery, (note) =>
-      selectedWorkspacesQuery.hasVertex(note)
+    const items = searchEngine.search(
+      searchTerm,
+      x =>
+        x.namespace === NS_NOTES &&
+        selectedWorkspaces.includes(x.workspace.manager)
     );
     return {
       unpinned: items,
       pinned: [],
     };
-  }, [searchEngine, selectedWorkspacesQuery, textQuery]);
+  }, [searchEngine, searchTerm, selectedWorkspaces]);
 
-  return <InnerListView className={className} cards={results}></InnerListView>;
+  let query;
+
+  // useEffect(() => {
+  //   const source = new UnionQuery(selectedWorkspaces.map(ws => ws.getVertexProxy().notesQuery));
+  //   query = new Query<Note, Note>(source, () => true)
+  // })
+
+  // return (
+  //   <InnerListView
+  //     className={className}
+  //     query={results}
+  //     sortBy={SortBy.Created}
+  //   ></InnerListView>
+  // );
+  return null;
 }

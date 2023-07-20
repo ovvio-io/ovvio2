@@ -1,44 +1,38 @@
-import React, { useCallback } from 'react';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Note,
-  User,
-  Workspace,
-} from '../../../../../cfds/client/graph/vertices/index.ts';
-import { IconCreateNew } from '../../../../../styles/components/icons/index.ts';
-import { Text } from '../../../../../styles/components/texts.tsx';
-import { usePartialVertex } from '../../cfds/react/vertex.ts';
-import { useMountedIndicator } from '../../react-utils/base-utils.ts';
-import AvatarView from '../../../shared/avatar/index.tsx';
-import {
-  createMentionsPlugin,
-  filterSortMentions,
-  MentionOptions,
-} from './index.tsx';
-import { useCurrentCard } from '../elements/card.element/index.tsx';
-import { Plugin } from '../plugins/index.ts';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { useMountedIndicator } from 'core/react-utils/base-utils';
+import { useCallback } from 'react';
+import AvatarView from 'shared/avatar';
+import { useInvitations } from 'shared/invitation';
+import { createMentionsPlugin, filterSortMentions, MentionOptions } from '.';
+import { useCurrentCard } from '../elements/card.element';
+import { Plugin } from '../plugins';
 import {
   RenderMentionPopupProps,
   SuggestionItem,
   SuggestionItemIcon,
-} from './mention-node.tsx';
+} from './mention-node';
 
-// const INVITE_USER = 'INVITE_USER';
-type UserItem = VertexManager<User>; //| typeof INVITE_USER;
+const INVITE_USER = 'INVITE_USER';
 
-// function InviteUserItem(props: {
-//   isSelected: boolean;
-//   onItemSelected: () => void;
-// }) {
-//   return (
-//     <SuggestionItem item={INVITE_USER} {...props}>
-//       <SuggestionItemIcon>
-//         <IconCreateNew />
-//       </SuggestionItemIcon>
-//       <Text>Invite</Text>
-//     </SuggestionItem>
-//   );
-// }
+type UserItem = VertexManager<User> | typeof INVITE_USER;
+
+function InviteUserItem(props: {
+  isSelected: boolean;
+  onItemSelected: () => void;
+}) {
+  return (
+    <SuggestionItem {...props}>
+      <SuggestionItemIcon>
+        <IconCreateNew />
+      </SuggestionItemIcon>
+      <Text>Invite</Text>
+    </SuggestionItem>
+  );
+}
 
 function UserSuggestion({
   item,
@@ -46,12 +40,12 @@ function UserSuggestion({
 }: {
   item: VertexManager<User>;
   isSelected: boolean;
-  onItemSelected: (item: UserItem) => void;
+  onItemSelected: () => void;
 }) {
   const { name } = usePartialVertex(item, ['name']);
 
   return (
-    <SuggestionItem item={item} {...rest}>
+    <SuggestionItem {...rest}>
       <SuggestionItemIcon>
         <AvatarView user={item} size="small" />
       </SuggestionItemIcon>
@@ -66,11 +60,11 @@ function UserItemComponent({
 }: {
   item: UserItem;
   isSelected: boolean;
-  onItemSelected: (item: UserItem) => void;
+  onItemSelected: () => void;
 }) {
-  // if (item === INVITE_USER) {
-  //   return <InviteUserItem {...rest} />;
-  // }
+  if (item === INVITE_USER) {
+    return <InviteUserItem {...rest} />;
+  }
 
   return <UserSuggestion item={item} {...rest} />;
 }
@@ -89,38 +83,40 @@ function AssigneesSuggestionComponent({
 
   const wsMng = partial.workspace.manager as VertexManager<Workspace>;
   const isMounted = useMountedIndicator();
-  // const { openInvite } = useInvitations();
+  const { openInvite } = useInvitations();
   const availableAssignees = Array.from(partial.workspace.users);
   const items = availableAssignees
-    .filter((u) => !partial.assignees.has(u))
-    .map((x) => x.manager as VertexManager<User>);
+    .filter(u => !partial.assignees.has(u))
+    .map(x => x.manager as VertexManager<User>);
 
-  const filteredTags = filterSortMentions(
-    items,
-    filter,
-    (t) => t.getVertexProxy().name
-  ) as UserItem[]; //.concat(INVITE_USER);
+  const filteredTags = (
+    filterSortMentions(
+      items,
+      filter,
+      t => t.getVertexProxy().name
+    ) as UserItem[]
+  ).concat(INVITE_USER);
   const keyForItem = useCallback(
-    (item: UserItem) => item.key, //(item === INVITE_USER ? INVITE_USER : item.key),
+    (item: UserItem) => (item === INVITE_USER ? INVITE_USER : item.key),
     []
   );
 
   const onItemSelected = (userItem: UserItem) => {
     closeMention();
-    // if (userItem === INVITE_USER) {
-    //   (async () => {
-    //     const r = await openInvite({
-    //       workspace: wsMng,
-    //     });
-    //     if (isMounted.current && r.userInvited) {
-    //       const currentCard = card.getVertexProxy();
-    //       const { assignees } = currentCard;
-    //       r.users.forEach((u) => assignees.add(u.getVertexProxy()));
-    //       currentCard.assignees = assignees;
-    //     }
-    //   })();
-    //   return;
-    // }
+    if (userItem === INVITE_USER) {
+      (async () => {
+        const r = await openInvite({
+          workspace: wsMng,
+        });
+        if (isMounted.current && r.userInvited) {
+          const currentCard = card.getVertexProxy();
+          const { assignees } = currentCard;
+          r.users.forEach(u => assignees.add(u.getVertexProxy()));
+          currentCard.assignees = assignees;
+        }
+      })();
+      return;
+    }
 
     const user = userItem.getVertexProxy();
 

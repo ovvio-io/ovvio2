@@ -26,7 +26,7 @@ import {
   SchemeFields,
   DataType,
   kRecordIdField,
-  NS_ORGANIZATION,
+  NS_ROLES,
 } from './scheme-types.ts';
 import { runRegister } from './scheme-versions.ts';
 import { isRefValueType, ValueType } from './types/index.ts';
@@ -53,7 +53,7 @@ export interface SchemeConfig {
   namespace: string;
   version?: number;
   fieldDescriptors: any;
-  repositoryFieldName: string;
+  repositoryFieldName?: string;
 }
 
 export interface EncodedScheme {
@@ -67,7 +67,7 @@ export class Scheme implements Encodable {
   private _fieldDescriptors: any;
   private _fields!: SchemeFields;
   private _requiredFields: string[] | undefined;
-  private _repoFieldName!: string;
+  private _repoFieldName?: string;
 
   constructor(config: SchemeConfig | ConstructorDecoderConfig<EncodedScheme>) {
     if (isDecoderConfig(config)) {
@@ -110,8 +110,12 @@ export class Scheme implements Encodable {
     return this._fields;
   }
 
-  get repositoryFieldName(): string {
+  get repositoryFieldName(): string | undefined {
     return this._repoFieldName;
+  }
+
+  fieldNames(): Iterable<string> {
+    return Object.keys(this.fields);
   }
 
   getFields(): SchemeFields {
@@ -159,16 +163,15 @@ export class Scheme implements Encodable {
 
   hasInitForField(fieldName: string): boolean {
     const desc = this._fieldDescriptors[fieldName];
-    return desc && (desc.init || desc.default);
+    return desc && desc.init;
   }
 
   initValueForField(fieldName: string, data: DataType) {
     const desc = this._fieldDescriptors[fieldName];
-    const initFunc = desc.init || desc.default;
-    if (!desc || !initFunc) {
+    if (!desc || !desc.init) {
       return undefined;
     }
-    return initFunc(data);
+    return desc.init(data);
   }
 
   clone(version: number): Scheme {
@@ -193,24 +196,23 @@ export class Scheme implements Encodable {
     }
 
     const oldVersion = oldScheme.getVersion();
-    const currentVersion = this.getVersion();
-
-    if (oldVersion === currentVersion) {
+    if (oldVersion === this.getVersion()) {
       return true;
     }
 
-    if (oldVersion > currentVersion) {
-      // deno-lint-ignore no-debugger
+    if (oldVersion > this.getVersion()) {
       debugger;
       return false;
     }
 
-    const ns = this.namespace;
-    for (let i = oldVersion; i <= currentVersion; ++i) {
-      if (!SchemeManager.instance.schemeExists(ns, i)) {
-        debugger;
-        return false;
-      }
+    if (!SchemeManager.instance.schemeExists(oldNS, oldVersion + 1)) {
+      debugger;
+      return false;
+    }
+
+    if (!SchemeManager.instance.schemeExists(oldNS, this.getVersion())) {
+      debugger;
+      return false;
     }
 
     return true;
@@ -221,7 +223,7 @@ export class Scheme implements Encodable {
     return latest.version > this._version;
   }
 
-  upgradeData(oldScheme: Scheme, oldData: DataType): DataType {
+  upgradeData(oldScheme: Scheme, oldData: any): any {
     const oldNS = oldScheme.getNamespace();
     assert(!oldNS || this.getNamespace() === oldScheme.getNamespace());
 
@@ -324,9 +326,9 @@ export class Scheme implements Encodable {
     return scheme;
   }
 
-  static organization(): Scheme {
-    const scheme = SchemeManager.instance.getScheme(NS_ORGANIZATION);
-    if (!scheme) throw new Error('Organization scheme not found');
+  static role(): Scheme {
+    const scheme = SchemeManager.instance.getScheme(NS_ROLES);
+    if (!scheme) throw new Error('Role scheme not found');
     return scheme;
   }
 
@@ -361,8 +363,8 @@ export class Scheme implements Encodable {
       case NS_USERS:
         return this.user();
 
-      case NS_ORGANIZATION:
-        return this.organization();
+      case NS_ROLES:
+        return this.role();
 
       default:
         break;
@@ -373,11 +375,11 @@ export class Scheme implements Encodable {
 class SchemeVersion {
   private _version: number;
   private _namespaces: Map<string, Scheme>;
-  private _upFunc?: (namespace: string, data: DataType) => void;
+  private _upFunc?: (namespace: string, data: any) => void;
 
   constructor(
     version: number,
-    upFunc?: (namespace: string, data: DataType) => void
+    upFunc?: (namespace: string, data: any) => void
   ) {
     this._version = version;
     this._namespaces = new Map<string, Scheme>();

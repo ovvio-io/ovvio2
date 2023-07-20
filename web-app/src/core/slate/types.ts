@@ -1,18 +1,14 @@
-import { BaseEditor } from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
-import { BulletListElement } from './elements/bullet-list.element.tsx';
-import { NumberedListElement } from './elements/numbered-list.element.tsx';
-import { HeaderElement } from './elements/header.element.tsx';
-import {
-  CardElement,
-  LoadingCardElement,
-} from './elements/card.element/index.tsx';
-import { ListItemElement } from './elements/list-item.element.tsx';
-import { MentionEditor } from './mentions/index.tsx';
-import { ElementNode, TextNode } from '../../../../cfds/richtext/tree.ts';
-import { Header2Element } from './elements/header2.element.tsx';
-import { CfdsEditor } from './cfds/with-cfds.tsx';
-import { MentionElement } from '../../../../cfds/richtext/model.ts';
+import { BaseEditor, Element } from 'slate';
+import { ReactEditor } from 'slate-react';
+import { BulletListElement } from './elements/bullet-list.element';
+import { NumberedListElement } from './elements/numbered-list.element';
+import { HeaderElement } from './elements/header.element';
+import { CardElement, LoadingCardElement } from './elements/card.element';
+import { ListItemElement } from './elements/list-item.element';
+import { MentionElement, MentionEditor } from './mentions';
+import { ElementNode, TextNode } from '@ovvio/cfds/lib/richtext/tree';
+import { Header2Element } from './elements/header2.element';
+import { CfdsEditor } from './cfds/with-cfds';
 
 export type OvvioEditor = BaseEditor & ReactEditor & CfdsEditor & MentionEditor;
 
@@ -29,7 +25,7 @@ export interface FormattedText extends TextNode {
   italic?: boolean;
   underline?: boolean;
   strikethrough?: boolean;
-  link?: string;
+  link?: string
 }
 
 export type ElementNodeType =
@@ -45,10 +41,16 @@ export type ElementNodeType =
 
 export type TextType = FormattedText | MentionElement;
 
-declare module 'https://esm.sh/slate@0.87.0' {
+declare module 'slate' {
   interface CustomTypes {
     Editor: OvvioEditor;
     Element: ElementNodeType;
     Text: TextType;
   }
 }
+
+export const ParagraphElement = {
+  isParagraph(value: any): value is ParagraphElement {
+    return Element.isElement(value) && value.tagName === 'p';
+  },
+};

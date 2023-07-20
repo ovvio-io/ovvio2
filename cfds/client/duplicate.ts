@@ -1,18 +1,18 @@
-import { uniqueId } from '../../base/common.ts';
-import { fromTimestamp } from '../base/orderstamp.ts';
-import { NS_NOTES } from '../base/scheme-types.ts';
-import { CoreObject } from '../../base/core-types/index.ts';
-import { isRefMarker, RefType } from '../richtext/model.ts';
+import { uniqueId } from '@ovvio/base/lib/utils';
+import { fromTimestamp } from '../base/orderstamp';
+import { NS_NOTES } from '../base/scheme-types';
+import { CoreObject } from '../core-types';
+import { isRefMarker, RefType } from '../richtext/model';
 import {
   dfs,
   isRichText,
   isTextNode,
   RichText,
   TextNode,
-} from '../richtext/tree.ts';
-import { GraphManager } from './graph/graph-manager.ts';
-import { Note } from './graph/vertices/note.ts';
-import { ISortable, sortStampCompare } from './sorting.ts';
+} from '../richtext/tree';
+import { CreateVertexInfo, GraphManager } from './graph/graph-manager';
+import { Note } from './graph/vertices/note';
+import { ISortable, sortStampCompare } from './sorting';
 
 const DUP_TITLE_SUFFIX = ' (copy)';
 
@@ -48,10 +48,19 @@ export function duplicateCard(
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  for (const [key, data] of Object.entries(outRecords)) {
-    graph.createVertex(NS_NOTES, data, key);
-  }
-  return graph.getVertex<Note>(newRootKey);
+  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map(x => {
+    return {
+      namespace: NS_NOTES,
+      initialData: x[1],
+      key: x[0],
+    };
+  });
+
+  const vertices = graph.createVertices<Note>(vInfos);
+
+  const vertex = vertices.find(v => v.key === newRootKey)!;
+
+  return vertex;
 }
 
 /**
@@ -61,7 +70,7 @@ export function duplicateCard(
 function checkRecords(graph: GraphManager, rootKey: string) {
   const root = graph.getVertex<Note>(rootKey);
 
-  if (root.isNull) {
+  if (root.errorCode || root.isLoading) {
     return false;
   }
 
@@ -134,7 +143,7 @@ function fixSorting(outRecords: { [s: string]: CoreObject }) {
     sortStampCompare(a[1] as unknown as ISortable, b[1] as unknown as ISortable)
   );
 
-  const timeStamp = new Date();
+  let timeStamp = new Date();
   timeStamp.setTime(timeStamp.getTime() + sortedRecords.length);
 
   for (const [key, data] of sortedRecords) {

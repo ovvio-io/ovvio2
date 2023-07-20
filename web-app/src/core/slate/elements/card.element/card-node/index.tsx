@@ -1,3 +1,23 @@
+import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import {
+  Note,
+  Tag,
+  User,
+  Workspace,
+} from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { getColorForUserId } from '@ovvio/styles/lib/colors';
+import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
+import { CheckBox } from '@ovvio/styles/lib/components/inputs';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { cn, keyframes, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useTheme } from '@ovvio/styles/lib/theme';
+import { useGraphManager } from 'core/cfds/react/graph';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { useAnimateHeight, useAnimateWidth } from 'core/react-utils/animate';
+import { ElementUtils } from 'core/slate/utils/element-utils';
+import { SelectionUtils } from 'core/slate/utils/selection-utils';
 import React, {
   useCallback,
   useEffect,
@@ -5,70 +25,37 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Node } from 'https://esm.sh/slate@0.87.0';
+import { CARD_SOURCE } from 'shared/card';
+import AssigneesView, {
+  Assignee,
+  RenderAssignee,
+} from 'shared/card/assignees-view';
+import { useCardPlaceholderText } from 'shared/card/placeholder';
+import { Pill, PillAction, PillContent, PillStyle } from 'shared/pill';
+import TagButton from 'shared/tags/tag-button';
+import { isCardActionable } from 'shared/tags/tag-utils';
+import {
+  default as TagPillView,
+  default as TagView,
+} from 'shared/tags/tag-view';
+import { useStatusTags } from 'shared/tags/use-status-tags';
+import { Node } from 'slate';
 import {
   ReactEditor,
   RenderElementProps,
   useFocused,
   useSelected,
   useSlateStatic,
-} from 'https://esm.sh/slate-react@0.87.1';
-import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Note,
-  Tag,
-  User,
-  Workspace,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { getColorForUserId } from '../../../../../../../styles/colors.ts';
-import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
-import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
-import {
-  cn,
-  keyframes,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import {
-  useTheme,
-  brandLightTheme,
-} from '../../../../../../../styles/theme.tsx';
-import { useGraphManager } from '../../../../cfds/react/graph.tsx';
-import { usePartialVertex } from '../../../../cfds/react/vertex.ts';
-import {
-  useAnimateHeight,
-  useAnimateWidth,
-} from '../../../../react-utils/animate.ts';
-import { ElementUtils } from '../../../utils/element-utils.ts';
-import { SelectionUtils } from '../../../utils/selection-utils.ts';
-import AssigneesView, {
-  Assignee,
-  RenderAssignee,
-} from '../../../../../shared/card/assignees-view.tsx';
-import { useCardPlaceholderText } from '../../../../../shared/card/placeholder.ts';
-import {
-  Pill,
-  PillAction,
-  PillContent,
-  PillStyle,
-} from '../../../../../shared/pill/index.tsx';
-import TagButton from '../../../../../shared/tags/tag-button.tsx';
-import {
-  default as TagPillView,
-  default as TagView,
-} from '../../../../../shared/tags/tag-view.tsx';
+} from 'slate-react';
 import {
   CardElement,
   EditableCardContext,
   LoadingCardElement,
   useCurrentCard,
-} from '../index.tsx';
-import { AssigneesIcon } from '../assignees-icon.tsx';
-import { TagIcon } from '../tag-icon.tsx';
-import { CardActions } from './card-actions.tsx';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+} from '../';
+import { AssigneesIcon } from '../assignees-icon';
+import { TagIcon } from '../tag-icon';
+import { CardActions } from './card-actions';
 
 const animName = keyframes({
   from: {
@@ -82,7 +69,7 @@ const animName = keyframes({
 const useStyles = makeStyles((theme, resolveClass) => ({
   root: {
     margin: [styleguide.gridbase, 0],
-    [`& + ${resolveClass!('root')}`]: {
+    [`& + ${resolveClass('root')}`]: {
       marginBottom: 0,
     },
   },
@@ -279,10 +266,11 @@ export const CardNode = function ({
     'title',
     'workspace',
     'type',
+    'isChecked',
   ]);
 
   const theme = useTheme();
-  const divRef = useRef<HTMLDivElement>(null);
+  const divRef = useRef<HTMLDivElement>();
   const selected = useSelected();
   const focused = useFocused();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -302,18 +290,21 @@ export const CardNode = function ({
     const thisNode = ElementUtils.getClosestNode(
       editor,
       path,
-      ((node) => CardElement.isCard(node) && node.ref === cardId) as (
+      (node => CardElement.isCard(node) && node.ref === cardId) as (
         node: Node
       ) => node is CardElement
     );
     return setIsExpanded(!!thisNode);
   }, [selected, editor, focused, cardId]);
 
-  const isActionable = card.type === NoteType.Task;
+  // const statusTags = useStatusTags(card.workspace);
 
-  const done = card.status === 'Done';
+  const isActionable = isCardActionable(card);
+
+  const done = card.isChecked;
   const onChecked = () => {
-    card.status = card.status === 'Done' ? 'ToDo' : 'Done';
+    // toggleDone(card, statusTags, !done);
+    card.isChecked = !card.isChecked;
   };
 
   const style = useAnimateHeight(divRef, isExpanded);
@@ -357,7 +348,7 @@ export const CardNode = function ({
             {!isExpanded && <ShortCardMetadata cardManager={cardManager} />}
             <CardActions
               card={cardManager}
-              editorRootKey={rootCard!.key}
+              editorRootKey={rootCard.key}
               className={cn(styles.actionsContainer)}
             />
           </div>
@@ -388,7 +379,7 @@ function AssigneeDropDown({
 }: AssigneeDropDownProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(assignable, ['name']);
-  const ref = useRef(null);
+  const ref = useRef();
 
   const width = useAnimateWidth(ref, showExpanded);
   const style = useMemo(() => {
@@ -433,13 +424,13 @@ function InlineAssignee({
   const styles = useStyles();
   const { users } = usePartialVertex(workspaceManager, ['users']);
   const userManagers = useMemo(
-    () => Array.from(users).map((u) => u.manager as VertexManager<User>),
+    () => Array.from(users).map(u => u.manager as VertexManager<User>),
     [users]
   );
 
   const { assignees } = usePartialVertex(cardManager, ['assignees']);
   const assigneesManagers = useMemo(
-    () => Array.from(assignees).map((u) => u.manager as VertexManager<User>),
+    () => Array.from(assignees).map(u => u.manager as VertexManager<User>),
     [assignees]
   );
 
@@ -447,7 +438,7 @@ function InlineAssignee({
   const userKey = user.key;
   const color = useMemo(() => getColorForUserId(`${userKey}`), [userKey]);
   const renderSelected = useCallback(
-    ({ user }: { user: VertexManager<User> }) => (
+    ({ user }) => (
       <AssigneeDropDown
         assignable={user}
         showExpanded={expanded}
@@ -469,7 +460,7 @@ function InlineAssignee({
         users={userManagers}
         cardManager={cardManager}
         assignees={assigneesManagers}
-        source={'editor:title'}
+        source={CARD_SOURCE.TITLE}
         onInviteUserSelected={() => {}}
         renderSelected={renderSelected}
         className={cn(styles.tagButton)}
@@ -485,32 +476,37 @@ function InlineTag({
   tag: VertexManager<Tag>;
   cardManager: VertexManager<Note>;
 }) {
+  const { color } = usePartialVertex(tag, ['color']);
   const [expanded, setExpanded] = useState(false);
 
   const renderSelected = useCallback(
     (tagMng: VertexManager<Tag>) => (
       <AssigneeDropDown
         assignable={tagMng}
-        color={brandLightTheme.mono.m1}
+        color={color}
         showExpanded={expanded}
         prefix="#"
       />
     ),
-    [expanded]
+    [expanded, color]
   );
 
   const onSelected = useCallback(
     (t: Tag) => {
-      const note = cardManager.getVertexProxy();
-      note.tags.set(t.parentTag!, t);
+      const proxy = cardManager.getVertexProxy();
+      const tags = proxy.tags;
+      tags.set(t.parentTag, t);
+      proxy.tags = tags;
     },
     [cardManager]
   );
 
   const onDelete = useCallback(
     (t: Tag) => {
-      const note = cardManager.getVertexProxy();
-      note.tags.delete(t.parentTag!);
+      const proxy = cardManager.getVertexProxy();
+      const tags = proxy.tags;
+      tags.delete(t.parentTag);
+      proxy.tags = tags;
     },
     [cardManager]
   );
@@ -545,7 +541,7 @@ const ShortCardMetadata = React.memo(function ({
 
   return (
     <div className={cn(styles.inlineMetadata)} contentEditable={false}>
-      {Array.from(assignees).map((user) => (
+      {Array.from(assignees).map(user => (
         <InlineAssignee
           key={user.key}
           user={user.manager as VertexManager<User>}
@@ -553,13 +549,15 @@ const ShortCardMetadata = React.memo(function ({
           cardManager={cardManager}
         />
       ))}
-      {Array.from(tags).map(([parentTag, tag]) => (
-        <InlineTag
-          key={tag.key}
-          tag={tag.manager as VertexManager<Tag>}
-          cardManager={cardManager}
-        />
-      ))}
+      {Array.from(tags)
+        .filter(([parent, child]) => parent.name !== 'Status')
+        .map(([parentTag, tag]) => (
+          <InlineTag
+            key={tag.key}
+            tag={tag.manager as VertexManager<Tag>}
+            cardManager={cardManager}
+          />
+        ))}
     </div>
   );
 });
@@ -630,19 +628,22 @@ const ExtendedCardMetadata = React.forwardRef<
     >
       <div className={cn(styles.metadataRow)}>
         <TagIcon />
-        {Array.from(card.tags).map(([_, tag]) => (
-          <TagPillView
-            buttonClassName={cn(styles.tag)}
-            key={tag.key}
-            tag={tag.manager as VertexManager<Tag>}
-            onSelected={onTagSelected}
-            onDelete={onTagDeleted}
-            showMenu={true}
-          />
-        ))}
+        {Array.from(card.tags)
+          .filter(([parent, child]) => parent.name !== 'Status')
+          .map(([_, tag]) => (
+            <TagPillView
+              buttonClassName={cn(styles.tag)}
+              key={tag.key}
+              tag={tag.manager as VertexManager<Tag>}
+              onSelected={onTagSelected}
+              onDelete={onTagDeleted}
+              showMenu={true}
+            />
+          ))}
         <TagButton
-          noteId={card}
+          cardTagsMng={tagsMng}
           onTagged={onTagSelected}
+          workspaceManager={wsMng}
           className={cn(styles.tag)}
         />
       </div>
@@ -651,7 +652,7 @@ const ExtendedCardMetadata = React.forwardRef<
         <AssigneesView
           cardManager={cardManager}
           cardType="regular"
-          source={'editor:body:inline-task'}
+          source={CARD_SOURCE.CHILD}
           reverse={true}
           renderAssignee={renderAssignee}
         />

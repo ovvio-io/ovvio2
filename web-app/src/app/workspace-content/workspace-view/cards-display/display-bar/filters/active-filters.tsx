@@ -1,21 +1,15 @@
-import React from 'react';
-import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
-import { layout, styleguide } from '../../../../../../../../styles/index.ts';
-import { Button } from '../../../../../../../../styles/components/buttons.tsx';
-import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
-import {
-  cn,
-  makeStyles,
-} from '../../../../../../../../styles/css-objects/index.ts';
-import {
-  useTheme,
-  brandLightTheme as theme,
-} from '../../../../../../../../styles/theme.tsx';
-import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
-import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
-import { useFilter } from '../../../../../index.tsx';
-import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { User } from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles';
+import { Button } from '@ovvio/styles/lib/components/buttons';
+import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useTheme } from '@ovvio/styles/lib/theme';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import { usePartialView } from 'core/cfds/react/graph';
+import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
+import { TagId, decodeTagId } from '@ovvio/cfds/lib/base/scheme-types';
 
 const useStyles = makeStyles(
   () => ({
@@ -77,71 +71,57 @@ function CloseIcon({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function AssigneePill({
-  user,
-  onDelete,
-}: {
-  user: VertexManager<User>;
-  onDelete: (user: VertexManager<User>) => void;
-}) {
+function AssigneePill({ user }: { user: VertexManager<User> }) {
   const styles = useStyles();
   const { name } = usePartialVertex(user, ['name']);
+  const view = usePartialView('selectedAssignees');
 
   return (
     <div className={cn(styles.filterPill)}>
       <span className={cn(styles.filterText)}>{name}</span>
-      <CloseIcon onClick={() => onDelete(user)} />
+      <CloseIcon
+        onClick={() => view.selectedAssignees.delete(user.getVertexProxy())}
+      />
     </div>
   );
 }
 
-function TagPill({
-  tag,
-  onDelete,
-}: {
-  tag: Tag;
-  onDelete: (tag: Tag) => void;
-}) {
+function TagPill({ tagId }: { tagId: TagId }) {
   const styles = useStyles();
+  const view = usePartialView('selectedTagIds');
+  const [parent, child] = decodeTagId(tagId);
   return (
     <div className={cn(styles.filterPill)}>
-      <span className={cn(styles.filterText)}>{tag.name}</span>
-      <CloseIcon onClick={() => onDelete(tag)} />
+      <span className={cn(styles.filterText)}>{child}</span>
+      <CloseIcon onClick={() => view.selectedTagIds.delete(tagId)} />
     </div>
   );
 }
 
 export function ActiveFiltersView({ className }: ActiveFiltersViewProps) {
   const styles = useStyles();
-  const filter = useFilter();
-  const showClear = filter.tags.size + filter.assignees.size > 0;
+  const view = usePartialView('selectedAssignees', 'selectedTagIds');
+  const showClear =
+    view.selectedAssignees.size > 0 || view.selectedTagIds.size > 0;
+  const sortedAssignees = Array.from(view.selectedAssignees).sort(
+    coreValueCompare
+  );
+  const sortedTagIds = Array.from(view.selectedTagIds).sort(coreValueCompare);
 
   return (
     <div className={className}>
       <div className={cn(styles.filtersView)}>
-        {Array.from(filter.assignees)
-          .sort(coreValueCompare)
-          .map((user) => (
-            <AssigneePill
-              key={user.key}
-              user={user.manager}
-              onDelete={() => filter.assignees.delete(user)}
-            />
-          ))}
-        {Array.from(filter.tags)
-          .sort(coreValueCompare)
-          .map((tag) => (
-            <TagPill
-              key={tag.key}
-              tag={tag}
-              onDelete={() => filter.tags.delete(tag)}
-            />
-          ))}
+        {sortedAssignees.map(user => (
+          <AssigneePill key={user.key} user={user.manager} />
+        ))}
+        {sortedTagIds.map(tag => (
+          <TagPill tagId={tag} />
+        ))}
         {showClear && (
           <Button
             onClick={() => {
-              filter.assignees.clear();
-              filter.tags.clear();
+              view.selectedAssignees.clear();
+              view.selectedTagIds.clear();
             }}
           >
             Clear

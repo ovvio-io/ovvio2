@@ -1,23 +1,23 @@
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { useBodyEditor } from 'core/slate';
+import { EditableCardContext } from 'core/slate/elements/card.element';
+import { SelectionUtils } from 'core/slate/utils/selection-utils';
+import { useObservable } from 'core/state';
 import React, { MouseEvent, useImperativeHandle } from 'react';
-import { Node } from 'https://esm.sh/slate@0.87.0';
-import { Editable, Slate } from 'https://esm.sh/slate-react@0.87.1';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
-import { useBodyEditor } from '../../../../../core/slate/index.tsx';
-import { EditableCardContext } from '../../../../../core/slate/elements/card.element/index.tsx';
-import { SelectionUtils } from '../../../../../core/slate/utils/selection-utils.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import {
-  makeStyles,
-  cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { FocusReporter } from '../focus-reporter.tsx';
-import { FloatingMenu } from './floating-menu.tsx';
-import TaskCtaView from './task-cta-view.tsx';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { Node } from 'slate';
+import { Editable, Slate } from 'slate-react';
+import { CurrentUser } from 'stores/user';
+import { styleguide } from '@ovvio/styles/lib';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { EventCategory, useEventLogger } from '../../../../../core/analytics';
+import { FocusReporter } from '../focus-reporter';
+import { EditorTutorial } from './editor-tutorial';
+import { FloatingMenu } from './floating-menu';
+import TaskCtaView from './task-cta-view';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   editor: {
     margin: '0 auto',
     boxSizing: 'border-box',
@@ -74,21 +74,24 @@ function usePlaceholder(cardManager: VertexManager<Note>): string {
 
 interface BodyProps {
   cardManager: VertexManager<Note>;
+  currentUser: CurrentUser;
   className?: string;
   isRtl?: boolean;
+  dispatch: (any) => void;
 }
 export interface EditorHandle {
   focus: () => void;
 }
 
 export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
-  { cardManager, className, isRtl },
+  { cardManager, currentUser, className, isRtl, dispatch },
   ref
 ) {
   const styles = useStyles();
+  useObservable(currentUser);
   const placeholder = usePlaceholder(cardManager);
   const { editor, plugins, handlers } = useBodyEditor(cardManager);
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
   useImperativeHandle(
     ref,
     () => ({
@@ -99,11 +102,8 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
     [editor]
   );
   const onCtaClick = () => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'editor:task-cta',
-      vertex: cardManager.key,
+    eventLogger.cardAction('TASK_CTA_CLICKED', cardManager, {
+      category: EventCategory.EDITOR,
     });
     SelectionUtils.focusAtEnd(editor);
   };
@@ -121,26 +121,27 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
       className={cn(className, styles.editor, isRtl && styles.rtl)}
       onClick={onClick}
     >
-      <React.StrictMode>
-        <EditableCardContext cardManager={cardManager}>
-          <Slate editor={editor} {...handlers}>
-            <FocusReporter cardManager={cardManager} source="editor:body" />
-            <Editable
-              {...plugins}
-              tabIndex={1}
-              placeholder={placeholder}
-              // onFocus={e => {
-              //   if (!editor.selection) {
-              //     e.preventDefault();
-              //   }
-              // }}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <FloatingMenu rootManager={cardManager} />
-            <TaskCtaView onClick={onCtaClick} />
-          </Slate>
-        </EditableCardContext>
-      </React.StrictMode>
+      {/* <React.StrictMode> */}
+      <EditableCardContext cardManager={cardManager}>
+        <Slate editor={editor} {...handlers}>
+          <FocusReporter cardManager={cardManager} source="body" />
+          <Editable
+            {...plugins}
+            tabIndex={1}
+            placeholder={placeholder}
+            // onFocus={e => {
+            //   if (!editor.selection) {
+            //     e.preventDefault();
+            //   }
+            // }}
+            onClick={e => e.stopPropagation()}
+          />
+          <EditorTutorial />
+          <FloatingMenu rootManager={cardManager} />
+          <TaskCtaView onClick={onCtaClick} />
+        </Slate>
+      </EditableCardContext>
+      {/* </React.StrictMode> */}
     </div>
   );
 });

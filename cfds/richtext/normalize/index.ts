@@ -1,6 +1,11 @@
-import { assert } from '../../../base/error.ts';
-import { coreValueClone } from '../../../base/core-types/index.ts';
-import { flattenRichText, reconstructRichText } from '../flat-rep.ts';
+import { assert } from '@ovvio/base/lib/utils';
+import { coreValueClone, coreValueEquals } from '../../core-types';
+import {
+  FlatRepAtom,
+  flattenRichText,
+  isTreeNode,
+  reconstructRichText,
+} from '../flat-rep';
 import {
   dfs,
   ElementNode,
@@ -13,10 +18,11 @@ import {
   pointersForNode,
   RichText,
   TextNode,
+  treeAtomKeyFilter,
   TreeNode,
-} from '../tree.ts';
-import { getRuleActions } from './rules.ts';
-import { inlineElementTags } from './setup.ts';
+} from '../tree';
+import { getRuleActions } from './rules';
+import { inlineElementTags } from './setup';
 
 export function normalizeRichText(richText: RichText): RichText {
   // normalizeNodeText(richText, richText.root);

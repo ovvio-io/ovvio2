@@ -1,4 +1,8 @@
-import { Editor } from 'https://esm.sh/slate@0.87.0';
+import React from 'react';
+import { createMentionsPlugin } from "core/slate/mentions";
+import { Editor } from "slate";
+import { MentionSuggestionsProps } from 'core/slate/mentions/mention-node';
+import { CardElement } from '.';
 
 // function AssigneesComponent({ filter, selectedIndex, setLength }: MentionSuggestionsProps) {
 //   return null

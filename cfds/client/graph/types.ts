@@ -1,22 +1,38 @@
-import { Record } from '../../base/record.ts';
-import { DataType } from '../../base/scheme-types.ts';
+import { Record } from '../../base/record';
+import { DataType } from '../../base/scheme-types';
 import {
   Clonable,
   Comparable,
+  CoreValue,
   Equatable,
   ReadonlyCoreObject,
-} from '../../../base/core-types/index.ts';
+} from '../../core-types';
+import { MutationPack } from './mutations';
 
 export interface IVertex
   extends Comparable<IVertex>,
     Equatable<IVertex>,
-    Clonable<IVertex> {
+    Clonable {
   readonly key: string;
   readonly record: Record;
   readonly namespace: string;
+  readonly isLoading: boolean;
+  readonly errorCode: number | undefined;
   readonly isDeleted: number;
 
+  getCompositeValue<T extends CoreValue = CoreValue>(
+    fieldName: string
+  ): T | undefined;
+
   cloneData(): DataType;
+}
+
+export interface CompositeField<
+  V extends IVertex = IVertex,
+  T extends CoreValue = CoreValue
+> {
+  calcValue(vertex: V): T;
+  shouldInvalidate(pack: MutationPack): boolean;
 }
 
 export function isVertex(val: any): val is IVertex {
@@ -29,6 +45,6 @@ export function isVertex(val: any): val is IVertex {
 }
 
 export interface VertexSnapshot {
-  data: DataType;
+  data: ReadonlyCoreObject;
   local: ReadonlyCoreObject;
 }

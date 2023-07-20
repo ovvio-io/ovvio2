@@ -1,2 +1,2 @@
-export { ItemsTable } from './grid.tsx';
-export { ItemRow, Row } from './item.tsx';
+export { ItemsTable } from './grid';
+export { ItemRow, Row } from './item';

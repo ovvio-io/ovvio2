@@ -8,7 +8,6 @@
     "tutorialCreateWorkspaceText": "Click on the create button to create your workspace and get to work!",
     "fromNew": "Create fresh",
     "duplicate": "Duplicate & Create",
-    "chooseDuplicateFrom": "Choose a workspace to duplicate",
-    "chooseWorkspace": "Choose Workspace"
+    "chooseDuplicateFrom": "Choose a workspace to duplicate"
   }
 }

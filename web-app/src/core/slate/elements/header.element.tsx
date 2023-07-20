@@ -1,22 +1,16 @@
-import React from 'react';
-import {
-  Editor,
-  Element,
-  NodeEntry,
-  Point,
-  Transforms,
-  Range,
-} from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
-import { ElementNode, TextNode } from '../../../../../cfds/richtext/tree.ts';
-import { styleguide } from '../../../../../styles/index.ts';
-import { H2 } from '../../../../../styles/components/texts.tsx';
-import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import { KeyDownHandler, mergePlugins } from '../plugins/index.ts';
-import { TextType } from '../types.ts';
-import { createAutoReplaceHandler } from '../utils/auto-replace.ts';
-import { isKeyPressed } from '../utils/hotkeys.ts';
-import { MarkupNode } from '../../../../../cfds/richtext/model.ts';
+import { ElementNode, TextNode } from '@ovvio/cfds/lib/richtext/tree';
+import { Editor, Element, NodeEntry, Point, Transforms, Range } from 'slate';
+import { RenderElementProps } from 'slate-react';
+import { styleguide } from '@ovvio/styles/lib';
+import { H2 } from '@ovvio/styles/lib/components/texts';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { KeyDownHandler, mergePlugins } from '../plugins';
+import { TextType } from '../types';
+import { createAutoReplaceHandler } from '../utils/auto-replace';
+import { ElementUtils } from '../utils/element-utils';
+import { isKeyPressed } from '../utils/hotkeys';
+import { element } from 'core/richtext/document-writer';
+import { MarkupNode } from '@ovvio/cfds/lib/richtext/model';
 
 const useStyles = makeStyles(() => ({
   header: {

@@ -1,5 +1,7 @@
-import { commonPrefixLen, commonSuffixLen } from '../../base/string.ts';
-import { kDMP } from '../base/defs.ts';
+import { commonPrefixLen, commonSuffixLen } from '@ovvio/base/lib/utils/string';
+import { kDMP } from '../base/defs';
+
+const MIN_SUGGESTIONS = 10;
 
 /**
  * Given an expected text and a user input, this functions calculates a boost
@@ -72,34 +74,23 @@ function phraseDist(expected: string, input: string): number {
 
 type SuggestionEntry<T> = [dist: number, value: T];
 
-export function suggestResults(
-  userInput: string,
-  values: readonly string[]
-): string[];
-
 export function suggestResults<T>(
   userInput: string,
-  values: readonly T[],
-  getValue: (v: T) => string
-): T[];
-
-export function suggestResults<T>(
-  userInput: string,
-  values: readonly T[],
-  getValue: (v: T) => string = (v) => v as unknown as string
+  values: T[],
+  getValue: (v: T) => string = v => v as unknown as string
 ): T[] {
-  if (userInput.length <= 0) {
-    return Array.from(values);
-  }
   // const matchThreshold = 0.3;
   const entries: SuggestionEntry<T>[] = [];
   for (const v of values) {
     const dist = phraseDist(getValue(v), userInput);
-    if (/*dist > 0 ||*/ userInput.length === 0) {
+    if (dist > 0 || userInput.length === 0) {
       entries.push([dist, v]);
     }
   }
-  return entries.sort((e1, e2) => e2[0] - e1[0]).map((e) => e[1]);
+  return entries
+    .sort((e1, e2) => e2[0] - e1[0])
+    .slice(0, MIN_SUGGESTIONS)
+    .map(e => e[1]);
 }
 
 // console.log(

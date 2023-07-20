@@ -1,51 +1,29 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Note,
-  User,
-  Workspace,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { sortStampCompare } from '../../../../../../../cfds/client/sorting.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import {
-  Button,
-  RaisedButton,
-} from '../../../../../../../styles/components/buttons.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { sortStampCompare } from '@ovvio/cfds/lib/client/sorting';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { Button, RaisedButton } from '@ovvio/styles/lib/components/buttons';
 import {
   Dialog,
   DialogActions,
   DialogContent,
-} from '../../../../../../../styles/components/dialog/index.tsx';
-import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
-import Menu, {
-  MenuItem,
-} from '../../../../../../../styles/components/menu.tsx';
-import { H2, Text } from '../../../../../../../styles/components/texts.tsx';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import {
-  cn,
-  keyframes,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
-import {
-  useGraphManager,
-  useRootUser,
-} from '../../../../../core/cfds/react/graph.tsx';
-import {
-  useCurrentUser,
-  usePartialVertex,
-  useVertices,
-} from '../../../../../core/cfds/react/vertex.ts';
-import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
-import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import { moveCard } from '../../../../../shared/utils/move.ts';
-import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
-import { UISource } from '../../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+} from '@ovvio/styles/lib/components/dialog';
+import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
+import Menu, { MenuItem } from '@ovvio/styles/lib/components/menu';
+import { H2, Text } from '@ovvio/styles/lib/components/texts';
+import { useToastController } from '@ovvio/styles/lib/components/toast';
+import { cn, keyframes, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useTheme } from '@ovvio/styles/lib/theme';
+import { useEventLogger } from 'core/analytics';
+import { useGraphManager } from 'core/cfds/react/graph';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { useAnimateWidth } from 'core/react-utils/animate';
+import { NOTE, useHistory } from 'core/react-utils/history';
+import { Scroller } from 'core/react-utils/scrolling';
+import React, { useCallback, useRef, useState } from 'react';
+import { CARD_SOURCE } from 'shared/card';
+import { moveCard } from 'shared/utils/move';
+import WorkspaceIcon from 'shared/workspace-icon';
 
 const showAnim = keyframes({
   '0%': {
@@ -59,7 +37,7 @@ const showAnim = keyframes({
   },
 });
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   workspaceItem: {
     alignItems: 'center',
     basedOn: [layout.row],
@@ -124,7 +102,7 @@ function WorkspaceIndicatorButton({
 }: WorkspaceIndicatorButtonProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
-  const ref = useRef(null);
+  const ref = useRef();
   const style = useAnimateWidth(ref, isExpanded);
   const theme = useTheme();
 
@@ -152,7 +130,7 @@ function WorkspaceIndicatorButton({
 interface CardWorkspaceIndicatorProps {
   card: VertexManager<Note>;
   isExpanded: boolean;
-  source: UISource;
+  source: CARD_SOURCE;
   className?: string;
 }
 
@@ -166,29 +144,25 @@ export function CardWorkspaceIndicator({
   const workspaceManager = workspace?.manager as VertexManager<Workspace>;
   const graph = useGraphManager();
   const toastController = useToastController();
-  const logger = useLogger();
-  const navigate = useNavigate();
+  const history = useHistory();
+  const eventLogger = useEventLogger();
 
   if (!workspaceManager) {
     return null;
   }
 
   const onMove = (ws: VertexManager<Workspace>) => {
-    const newCard = moveCard(card, ws, graph, logger, source);
-    if (!newCard) {
-      toastController.displayToast({
-        text: `Move failed. Try again later`,
-        duration: 1500,
-      });
-      return;
-    }
+    const newCard = moveCard(card, ws, graph, eventLogger, source);
     toastController.displayToast({
       text: `Card moved to ${ws.getVertexProxy().name}`,
       duration: 1500,
     });
 
-    if (source === 'title') {
-      navigate(`/${newCard.workspace.key}/${newCard.key}`);
+    if (source === CARD_SOURCE.TITLE) {
+      history.replace(NOTE, {
+        workspaceId: newCard.workspaceKey,
+        noteId: newCard.key,
+      });
     }
   };
 
@@ -236,9 +210,7 @@ export function WorkspaceIndicator({
     [workspace, className, isExpanded, readOnly, ButtonComponent]
   );
 
-  const [changeTo, setChangeTo] = useState<VertexManager<Workspace> | null>(
-    null
-  );
+  const [changeTo, setChangeTo] = useState<VertexManager<Workspace>>(null);
   const onWsChanged = (ws: VertexManager<Workspace>) => {
     if (validateMove) {
       setChangeTo(ws);
@@ -248,7 +220,7 @@ export function WorkspaceIndicator({
   };
 
   const onMove = () => {
-    setWorkspace(changeTo!);
+    setWorkspace(changeTo);
     setChangeTo(null);
   };
 
@@ -295,11 +267,11 @@ export function sortWorkspaces(
     return -1;
   }
 
-  return coreValueCompare(ws1, ws2);
+  return sortStampCompare(ws1, ws2);
 }
 
 export interface SelectWorkspaceMenuProps {
-  value: VertexManager<Workspace> | null;
+  value: VertexManager<Workspace>;
   onChange: (wsMng: VertexManager<Workspace>) => void;
 }
 export function SelectWorkspaceMenu({
@@ -308,15 +280,13 @@ export function SelectWorkspaceMenu({
 }: SelectWorkspaceMenuProps) {
   const styles = useStyles();
   const graph = useGraphManager();
-  const user = useCurrentUser();
-  const { hiddenWorkspaces, pinnedWorkspaces } = usePartialVertex(
-    user.settings,
-    ['hiddenWorkspaces', 'pinnedWorkspaces']
+  const user = graph.getRootVertex<User>();
+  const { hiddenWorkspaces, pinnedWorkspaces, workspaces } = usePartialVertex(
+    user.manager as VertexManager<User>,
+    ['hiddenWorkspaces', 'pinnedWorkspaces', 'workspaces']
   );
-  const workspacesQuery = useSharedQuery('workspaces');
-  const workspaces = useVertices(workspacesQuery.results);
   const sortedWorkspaces = Array.from(workspaces)
-    .filter((x) => !!x.name)
+    .filter(x => !!x.name)
     .sort((ws1, ws2) =>
       sortWorkspaces(ws1, ws2, pinnedWorkspaces, hiddenWorkspaces)
     );
@@ -328,9 +298,9 @@ export function SelectWorkspaceMenu({
   };
   return (
     <Scroller>
-      {(ref) => (
+      {ref => (
         <div ref={ref} className={cn(styles.move)}>
-          {sortedWorkspaces.map((ws) => (
+          {sortedWorkspaces.map(ws => (
             <MenuItem
               key={ws.key}
               className={cn(

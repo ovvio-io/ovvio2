@@ -1,16 +1,18 @@
-import React, { useCallback, useReducer, useRef } from 'react';
-import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
-import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
-import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
-import { layout, styleguide } from '../../../../../../styles/index.ts';
-import { MediaQueries } from '../../../../../../styles/responsive.ts';
-import BodyEditor, { EditorHandle } from './body-editor/index.tsx';
-import { Scroller } from '../../../../core/react-utils/scrolling.tsx';
-import LegendButton from './legend-view.tsx';
-import reducer, { initialState } from './editor-reducer.ts';
-import TitleEditorView from './title-editor/index.tsx';
+import { useCallback, useReducer, useRef } from 'react';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import BodyEditor, { EditorHandle } from './body-editor';
+import { Scroller } from 'core/react-utils/scrolling';
+import LegendButton from './legend-view';
+import reducer, { initialState } from './editor-reducer';
+import { UserStore } from 'stores/user';
+import { useScopedObservable } from 'core/state';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import TitleEditorView from './title-editor';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { MediaQueries } from '@ovvio/styles/lib/responsive';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   container: {
     flexShrink: 1,
     overflowY: 'auto',
@@ -71,13 +73,15 @@ export default function CardEditorContent({
   showWS = false,
 }: CardEditorProps) {
   const styles = useStyles();
+  const currentUser = useScopedObservable(UserStore);
   // const rtl = useMemo(() => {
   //   const str = plainTextSerializer.deserialize(title);
 
   //   return isRTL(str);
   // }, [title]);
   const rtl = false;
-  const bodyEditorRef = useRef<EditorHandle>(null);
+  const bodyEditorRef = useRef<EditorHandle>();
+  const [, dispatch] = useReducer(reducer, initialState);
   const focusNext = useCallback(() => {
     bodyEditorRef.current?.focus();
   }, []);
@@ -87,15 +91,16 @@ export default function CardEditorContent({
 
   return (
     <Scroller>
-      {(ref) => (
+      {ref => (
         <div className={cn(styles.container)} ref={ref}>
           <div
             className={cn(styles.headerContainer)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <TitleEditorView
               cardManager={cardManager}
               isRtl={rtl}
+              dispatch={dispatch}
               className={cn(styles.header, styles.contained)}
               showWS={showWS}
               focusNext={focusNext}
@@ -107,6 +112,8 @@ export default function CardEditorContent({
             className={cn(styles.contained)}
             cardManager={cardManager}
             isRtl={rtl}
+            dispatch={dispatch}
+            currentUser={currentUser}
             ref={bodyEditorRef}
           />
           {/* )}

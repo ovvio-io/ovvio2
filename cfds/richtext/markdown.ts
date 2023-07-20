@@ -1,4 +1,4 @@
-import { dfs, ElementNode, isTextNode } from './tree.ts';
+import { dfs, ElementNode, isTextNode } from './tree';
 
 export function treeToMarkdown(root: ElementNode | undefined): string {
   if (!root) {

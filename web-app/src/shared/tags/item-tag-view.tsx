@@ -1,14 +1,14 @@
-import React, { useCallback } from 'react';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
-import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import TagView from './tag-view.tsx';
-import TagButton from './tag-button.tsx';
-import { UISource } from '../../../../logging/client-events.ts';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import React from 'react';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { styleguide, layout } from '@ovvio/styles/lib';
+import TagView from './tag-view';
+import * as tagUtils from './tag-utils';
+import TagButton from './tag-button';
+import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { useEventLogger } from 'core/analytics';
+import { CARD_SOURCE } from 'shared/card';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
 
 const useStyles = makeStyles((theme, resolveClass) => ({
   tagsView: {
@@ -32,7 +32,7 @@ interface TagsViewProps {
   tagClassName?: string;
   showTagButton?: boolean;
   visibleOnHoverClassName?: string;
-  source: UISource;
+  source: CARD_SOURCE;
   isInHover?: boolean;
 }
 export default function TagsView({
@@ -52,51 +52,46 @@ export default function TagsView({
   const tags =
     (cardTags &&
       cardTags.filter(
-        (t) =>
-          !t.isNull && !t.isDeleted && (!t.parentTag || !t.parentTag.isNull)
+        t =>
+          !t.isLoading &&
+          !t.isDeleted &&
+          (!t.parentTag || !t.parentTag.isLoading)
       )) ||
     [];
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
 
-  const onDelete = useCallback(
-    (tag: Tag) => {
-      const newTags = pCard.tags;
-      const tagToDelete = tag.parentTag || tag;
-      newTags.delete(tagToDelete);
-      pCard.tags = newTags;
+  const onDelete = (tag: Tag) => {
+    const newTags = pCard.tags;
+    const tagToDelete = tag.parentTag || tag;
+    newTags.delete(tagToDelete);
+    pCard.tags = newTags;
 
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'tag',
-        vertex: pCard.key,
-        removed: tag.key,
-      });
-    },
-    [pCard, logger]
-  );
+    eventLogger.cardAction('CARD_TAG_REMOVED', cardManager, {
+      source,
+      tagId: tag.key,
+      parentTagId: tag.parentTagKey,
+    });
+  };
 
-  const onTagged = useCallback(
-    (tag: Tag) => {
-      const newTags = pCard.tags;
+  const onTagged = (tag: Tag) => {
+    const newTags = pCard.tags;
 
-      const tagKey = tag.parentTag || tag;
+    const tagKey = tag.parentTag || tag;
 
-      const currentSubtag = newTags.get(tagKey);
-      newTags.set(tagKey, tag);
-      pCard.tags = newTags;
+    const exists = newTags.has(tagKey);
+    newTags.set(tagKey, tag);
+    pCard.tags = newTags;
 
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'tag',
-        vertex: pCard.key,
-        added: tag.key,
-        removed: currentSubtag?.key,
-      });
-    },
-    [pCard, logger]
-  );
+    eventLogger.cardAction(
+      exists ? 'CARD_TAG_REPLACED' : 'CARD_TAG_ADDED',
+      cardManager,
+      {
+        source,
+        tagId: tag.key,
+        parentTagId: tag.parentTagKey,
+      }
+    );
+  };
 
   const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
   for (const [p, c] of pCard.tags) {
@@ -111,7 +106,7 @@ export default function TagsView({
       className={cn(className, styles.tagsView, reverse && styles.reverse)}
       {...props}
     >
-      {tags.sort(coreValueCompare).map((tag) => (
+      {tags.sort(tagUtils.sortTags).map(tag => (
         <TagView
           key={tag.key}
           tag={tag.manager as VertexManager<Tag>}
@@ -125,7 +120,8 @@ export default function TagsView({
         <TagButton
           onTagged={onTagged}
           className={visibleOnHoverClassName}
-          noteId={cardManager}
+          workspaceManager={pCard.workspace.manager as VertexManager<Workspace>}
+          cardTagsMng={tagsMng}
         />
       )}
     </div>

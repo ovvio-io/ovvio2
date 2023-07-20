@@ -1,35 +1,32 @@
-import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
-import { useCfdsContext } from '../cfds/react/graph.tsx';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import { useCfdsContext } from 'core/cfds/react/graph';
 import { useEffect, useMemo, useRef } from 'react';
-import { createEditor, Editor } from 'https://esm.sh/slate@0.87.0';
-import {
-  RenderElementProps,
-  withReact,
-} from 'https://esm.sh/slate-react@0.87.1';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor.ts';
-import withCfds from './cfds/with-cfds.tsx';
-import { createBulletListPlugin } from './elements/bullet-list.element.tsx';
-import { createCardPlugin } from './elements/card.element/index.tsx';
-import { withCards } from './elements/card.element/with-cards.ts';
-import { createHeaderPlugin } from './elements/header.element.tsx';
-import { createHeader2Plugin } from './elements/header2.element.tsx';
-import { createListItemPlugin } from './elements/list-item.element.tsx';
-import { createNumberedListPlugin } from './elements/numbered-list.element.tsx';
-import { withMentions } from './mentions/index.tsx';
-import { createTagsPlugin } from './mentions/tags.tsx';
-import { createPluginStack, PluginStack } from './plugins/index.ts';
+import { createEditor, Editor } from 'slate';
+import { withReact } from 'slate-react';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor';
+import withCfds from './cfds/with-cfds';
+import { createBulletListPlugin } from './elements/bullet-list.element';
+import { createCardPlugin } from './elements/card.element';
+import { withCards } from './elements/card.element/with-cards';
+import { createHeaderPlugin } from './elements/header.element';
+import { createHeader2Plugin } from './elements/header2.element';
+import { createListItemPlugin } from './elements/list-item.element';
+import { createNumberedListPlugin } from './elements/numbered-list.element';
+import { withMentions } from './mentions';
+import { createTagsPlugin } from './mentions/tags';
+import { createPluginStack, PluginStack } from './plugins';
 import {
   createBaseBodyPlugin,
   createBaseRender,
   createBaseTitlePlugin,
-} from './plugins/base.tsx';
-import { createAssigneesPlugin } from './mentions/assignees.tsx';
-import { useCurrentUser } from '../cfds/react/vertex.ts';
-import { isDefined } from '../../../../base/comparisons.ts';
-import { createLinkDecoration } from './plugins/link-decoration/index.tsx';
-import { useLogger } from '../cfds/react/logger.tsx';
-import { UISource } from '../../../../logging/client-events.ts';
+} from './plugins/base';
+import { createAssigneesPlugin } from './mentions/assignees';
+import { useCurrentUser } from 'core/cfds/react/vertex';
+import { CARD_SOURCE } from '../../shared/card';
+import { isDefined } from '@ovvio/base/lib/utils';
+import { useEventLogger } from '../analytics';
+import { createLinkDecoration } from './plugins/link-decoration';
 
 export function createOvvioEditor(getNote?: () => VertexManager<Note>): Editor {
   return withCfds(withCards(withReact(withMentions(createEditor())), getNote));
@@ -40,19 +37,23 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
   plugins: PluginStack;
   handlers: EditorHandler;
 } {
-  const { sessionId } = useCfdsContext();
+  const { sessionId, user } = useCfdsContext();
   const noteManagerRef = useRef(noteManager);
   const currentUser = useCurrentUser();
+  const userRef = useRef(currentUser);
   const editor = useMemo(
     () => createOvvioEditor(() => noteManagerRef.current),
     []
   );
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
 
   useEffect(() => {
     noteManagerRef.current = noteManager;
   }, [noteManager]);
 
+  useEffect(() => {
+    userRef.current = currentUser;
+  }, [currentUser]);
   const plugins = useMemo(
     () =>
       createPluginStack([
@@ -64,20 +65,20 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
         createNumberedListPlugin(editor),
         createCardPlugin(
           editor,
-          () => noteManager,
-          () => currentUser,
-          logger
+          () => noteManagerRef.current,
+          () => userRef.current,
+          eventLogger
         ),
         createLinkDecoration(),
         createBaseBodyPlugin(editor),
       ]),
-    [editor, logger, currentUser, noteManager]
+    [editor, eventLogger]
   );
   const handlers = useCfdsEditor(
     noteManager,
     'body',
     editor,
-    `${currentUser.key}/${sessionId}`,
+    `${user.id}/${sessionId}`,
     { undoAddBodyRefs: true }
   );
 
@@ -100,21 +101,20 @@ const DEFAULT_OPTS: UseTitleEditorOptions = {
 
 export function useTitleEditor(
   note: VertexManager<Note>,
-  DefaultComponent: React.ReactNode | React.ComponentType<RenderElementProps>,
-  source?: UISource,
+  DefaultComponent: any,
+  source?: CARD_SOURCE,
   opts: Partial<UseTitleEditorOptions> = {}
 ): {
   editor: Editor;
   plugins: PluginStack;
   handlers: EditorHandler;
-  source?: UISource;
+  source?: CARD_SOURCE;
 } {
   const { onFocusNext } = {
     ...DEFAULT_OPTS,
     ...opts,
   };
-  const { sessionId } = useCfdsContext();
-  const user = useCurrentUser();
+  const { sessionId, user } = useCfdsContext();
   const noteRef = useRef(note);
   useEffect(() => {
     noteRef.current = note;
@@ -125,13 +125,13 @@ export function useTitleEditor(
     () =>
       createPluginStack(
         [
-          !source || source !== 'list'
+          !source || source !== CARD_SOURCE.LIST
             ? createTagsPlugin({
                 canOpen: () => true,
                 editor,
               })
             : undefined,
-          !source || source !== 'list'
+          !source || source !== CARD_SOURCE.LIST
             ? createAssigneesPlugin({
                 canOpen: () => true,
                 editor,
@@ -146,7 +146,7 @@ export function useTitleEditor(
     note,
     'title',
     editor,
-    `${user.key}/${sessionId}`
+    `${user.id}/${sessionId}`
   );
 
   return {

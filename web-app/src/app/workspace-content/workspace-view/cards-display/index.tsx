@@ -1,28 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { layout, styleguide } from '../../../../../../styles/index.ts';
-import { H2 } from '../../../../../../styles/components/typography.tsx';
-import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
-import { MediaQueries } from '../../../../../../styles/responsive.ts';
-import { createUseStrings } from '../../../../core/localization/index.tsx';
-import { ToolbarCenterItem } from '../toolbar/index.tsx';
-import { BoardView } from './board-view/index.tsx';
-import localization from './cards-display.strings.json' assert { type: 'json' };
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { H2 } from '@ovvio/styles/lib/components/typography';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { MediaQueries } from '@ovvio/styles/lib/responsive';
+import { createUseStrings } from 'core/localization';
+import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
+import { useEffect, useState } from 'react';
+import { useDemoInfo } from 'shared/demo';
+import { ToolbarCenterItem } from '../toolbar';
+import { BoardView } from './board-view';
+import localization from './cards-display.strings.json';
 import {
   DisplayBar,
   MOBILE_PADDING,
   SIDES_PADDING,
   TABLET_PADDING,
-  ViewType,
-} from './display-bar/index.tsx';
-import { FiltersView } from './display-bar/filters/index.tsx';
-import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
-import { SearchField } from './display-bar/search-field.tsx';
-import { ListView } from './list-view/index.tsx';
-import { SearchResults } from './search-results/index.tsx';
-import { useFilter } from '../../../index.tsx';
-import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
+} from './display-bar';
+import { FiltersView } from './display-bar/filters';
+import { ActiveFiltersView } from './display-bar/filters/active-filters';
+import { ListView } from './list-view';
+import { VideoTutorial } from './video-demo';
+import { usePartialView } from 'core/cfds/react/graph';
+import { SortBy } from '@ovvio/cfds/lib/base/scheme-types';
+import { Dashboard } from './dashboard/dashboard';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   displayRoot: {
     flexShrink: 0,
     flexGrow: 0,
@@ -84,79 +88,49 @@ const useStyles = makeStyles((theme) => ({
 
 const useStrings = createUseStrings(localization);
 
+function isQueryValid(query: string): boolean {
+  return query && query.length >= 2;
+}
+
+let firstLoad = true;
+
 export function CardsDisplay() {
   const styles = useStyles();
-  const [viewType, setViewType] = useState(ViewType.List);
-  // const [noteType, setNoteType] = useState(NoteType.Task);
-  // const [sortBy, setSortBy] = useState(SortBy.Priority);
-  // const [groupBy, setGroupBy] = useState<GroupBy>(
-  //   selectedWorkspaces.length < 1 ? { type: 'workspace' } : { type: 'assignee' }
-  // );
-  // const [query, setQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const view = usePartialView('viewType', 'selectedTabId');
   const strings = useStrings();
-  const filter = useFilter();
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
-  // const length = useReffedValue(selectedWorkspaces.length);
-  // const tasksFilter = useFiltersController(selectedWorkspaces);
-  // const notesFilter = useFiltersController(selectedWorkspaces);
-  // const filtersController =
-  //   noteType === NoteType.Task ? tasksFilter : notesFilter;
-  useEffect(() => {
-    if (viewType === ViewType.Board) {
-      filter.groupBy =
-        selectedWorkspacesQuery.count > 1 ? 'workspace' : 'assignee';
-    }
-  }, [viewType, filter, selectedWorkspacesQuery]);
-  // useSyncUrlParam(
-  //   'filter',
-  //   true,
-  //   filtersController.activeFilters,
-  //   filtersController.setActiveFilters,
-  //   {
-  //     isReady: !filtersController.isLoading,
-  //     route: '/',
-  //   }
-  // );
 
   let content = null;
-  const isInSearch = (filter.textQuery?.length || 0) > 0;
+  const isInSearch = false; //isQueryValid(query);
   if (isInSearch) {
-    content = <SearchResults className={cn(styles.contentView)} />;
+    // content = (
+    //   <SearchResults
+    //     className={cn(styles.contentView)}
+    //     searchTerm={query}
+    //   />
+    // );
+  } else if (view.selectedTabId === 'overview') {
+    content = <Dashboard />;
   } else {
-    if (viewType === ViewType.List) {
-      content = <ListView className={cn(styles.contentView)} />;
-    } else if (viewType === ViewType.Board) {
+    if (view.viewType === 'list') {
+      content = <ListView key={'list'} className={cn(styles.contentView)} />;
+    } else if (view.viewType === 'board') {
       content = <BoardView className={cn(styles.contentView)} />;
     }
   }
 
   return (
     <div className={cn(styles.displayRoot)}>
+      <VideoTutorial />
       <div className={cn(styles.displayMain)}>
         {!isInSearch ? (
-          <DisplayBar
-            viewType={viewType}
-            setViewType={setViewType}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-          />
+          <DisplayBar />
         ) : (
           <H2 className={cn(styles.title)}>{strings.searchResults}</H2>
         )}
         <ToolbarCenterItem className={cn(layout.flexSpacer)}>
-          <SearchField
-            query={filter.textQuery}
-            setQuery={(q) => {
-              filter.textQuery = q;
-            }}
-          />
+          {/* <SearchField query={query} setQuery={setQuery} /> */}
         </ToolbarCenterItem>
-        <FiltersView
-          isVisible={showFilters}
-          setIsVisible={setShowFilters}
-          className={cn(styles.filters)}
-        />
+        <FiltersView className={cn(styles.filters)} />
         <ActiveFiltersView className={cn(styles.activeFilters)} />
         <div className={cn(styles.displayContent)}>{content}</div>
       </div>

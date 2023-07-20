@@ -1,35 +1,35 @@
-import React, { useCallback, useState } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Note,
-  NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
-import {
-  cn,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+import { styleguide } from '@ovvio/styles/lib';
+import { useToastController } from '@ovvio/styles/lib/components/toast';
+import { LabelSm } from '@ovvio/styles/lib/components/typography';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { EventCategory, useEventLogger } from 'core/analytics';
+import { useQuery2 } from 'core/cfds/react/query';
+import { createUseStrings } from 'core/localization';
+import { useDocumentRouter } from 'core/react-utils';
+import { Scroller } from 'core/react-utils/scrolling';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   Draggable,
-} from '../../../../../shared/dragndrop/index.ts';
-import { EmptyListState } from './empty-state.tsx';
-import { InfiniteScroll } from './infinite-scroll.tsx';
-import { InlineTaskButton } from './inline-task-button.tsx';
-import localization from './list.strings.json' assert { type: 'json' };
-import { ItemRow, ItemsTable, Row } from './table/index.tsx';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { useFilter } from '../../../../index.tsx';
-import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { RenderDraggableProps } from '../../../../../shared/dragndrop/draggable.tsx';
+  DragSource,
+} from 'shared/dragndrop';
+import { EmptyListState } from './empty-state';
+import { InfiniteVerticalScroll } from './infinite-scroll';
+import { InlineTaskButton } from './inline-task-button';
+import localization from './list.strings.json';
+import { ItemRow, ItemsTable, Row } from './table';
+import { usePartialView } from 'core/cfds/react/graph';
+import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
+import { Query } from '@ovvio/cfds/lib/client/graph/query';
+import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
 
-const useStyles = makeStyles((theme) => ({
+// export { SortBy };
+
+const useStyles = makeStyles(theme => ({
   item: {
     position: 'relative',
     marginBottom: styleguide.gridbase * 2,
@@ -48,57 +48,31 @@ export interface ListViewProps {
 
 const PAGE_SIZE = 20;
 
-interface CardsData {
-  pinned: readonly VertexManager<Note>[];
-  unpinned: readonly VertexManager<Note>[];
-}
-
 export function ListView({ className }: ListViewProps) {
-  const filter = useFilter();
-  const pinnedNotesQuery = useQuery2(filter.buildQuery('listViewPinned', true));
-  const unpinnedNotesQuery = useQuery2(
-    filter.buildQuery('listViewUnpinned', false)
-  );
-  if (pinnedNotesQuery.count + unpinnedNotesQuery.count <= 0) {
-    return <EmptyListState />;
-  }
+  const filteredNotes = useFilteredNotes('listView');
   return (
-    <InnerListView
-      noteType={filter.noteType}
-      className={className}
-      cards={{
-        pinned: pinnedNotesQuery.results,
-        unpinned: unpinnedNotesQuery.results,
-      }}
-    />
+    <ListViewInternal className={className} filteredNotes={filteredNotes} />
   );
 }
 
-const EMPTY_ARRAY: VertexManager<Note>[] = [];
+interface ListViewInternalProps extends ListViewProps {
+  filteredNotes: FilteredNotes;
+}
 
-// function getCardSize(containerWidth: number) {
-//   return containerWidth < 640 ? CardSize.Small : CardSize.Regular;
-// }
-
-export function InnerListView({
-  cards,
-  className,
-  noteType,
-}: {
-  cards: CardsData;
-  className?: string;
-  noteType?: NoteType;
-}) {
+function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
   const strings = useStrings();
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
   const toastController = useToastController();
   // const containerRef = useRef();
   const docRouter = useDocumentRouter();
+  const view = usePartialView('noteType');
 
-  // const size = useElementSize(containerRef.current);
-  // const cardSize = getCardSize(size.width);
+  const pinnedQuery = useQuery2(filteredNotes[0]);
+  const unpinnedQuery: Query<Vertex, Note> | undefined = useQuery2(
+    filteredNotes[1]
+  );
 
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
@@ -107,58 +81,37 @@ export function InnerListView({
     [docRouter]
   );
 
-  // usePartialVertices(sortBy === SortBy.Priority ? cards.pinned : EMPTY_ARRAY, [
-  //   'sortStamp',
-  // ]);
-  // usePartialVertices(
-  //   sortBy === SortBy.Priority ? cards.unpinned : EMPTY_ARRAY,
-  //   ['sortStamp']
-  // );
-  const [draft, setDraft] = useState<null | VertexManager<Note>>(null);
+  useEffect(() => {
+    if (unpinnedQuery) {
+      unpinnedQuery.limit = limit + PAGE_SIZE;
+    }
+  }, [unpinnedQuery, limit]);
 
-  let visibleCards = cards.unpinned;
-  // if (sortBy === SortBy.Priority) {
-  //   visibleCards = visibleCards.sort(sortMngStampCompare);
-  // }
-  visibleCards = visibleCards
-    .slice(0, limit)
-    .filter((x) => x.key !== draft?.key);
-  // useEffect(() => {
-  //   setLimit(PAGE_SIZE);
-  // }, [sortBy]);
-  // const onDrop = (
-  //   item: VertexManager<Note>,
-  //   relativeTo: VertexManager<Note>,
-  //   dragPosition: DragPosition
-  // ) => {
-  //   console.log(`DROP`, item);
-  //   return;
-  //   setDragSort(visibleCards, item, relativeTo, dragPosition);
-  // };
+  console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
+
+  const [draft, setDraft] = useState<VertexManager<Note>>(null);
+
   const onDragStarted = () => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'dnd',
-      uiSource: 'list',
+    eventLogger.action('DRAG_STARTED', {
+      category: EventCategory.CARD_LIST,
+      source: DragSource.List,
     });
   };
 
   const onReportDrop = () => {
-    logger.log({
-      severity: 'INFO',
-      event: 'End',
-      flow: 'dnd',
-      uiSource: 'list',
+    eventLogger.action('DRAG_DONE', {
+      category: EventCategory.CARD_LIST,
+      source: DragSource.List,
     });
   };
 
-  const onDragCancelled = ({ reason }: { reason: string }) => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Cancel',
-      flow: 'dnd',
-      uiSource: 'list',
+  const onDragCancelled = ({ reason }) => {
+    eventLogger.action('DRAG_CANCELLED', {
+      category: EventCategory.CARD_LIST,
+      source: DragSource.List,
+      data: {
+        reason,
+      },
     });
     if (reason === CANCELLATION_REASONS.DISABLED) {
       toastController.displayToast({
@@ -167,13 +120,18 @@ export function InnerListView({
       });
     }
   };
+
+  // if (unpinnedQuery.isLoading || pinnedQuery.isLoading) {
+  //   return null;
+  // }
+
   let headerText = '';
-  if (noteType === NoteType.Note) {
-    headerText = cards.pinned.length
-      ? strings.pinnedNotes
-      : strings.pinNotesCta;
-  } else if (noteType === NoteType.Task) {
-    headerText = cards.pinned.length ? strings.pinnedTasks : strings.pinTaskCta;
+  if (view.noteType === NoteType.Note) {
+    headerText =
+      pinnedQuery.count > 0 ? strings.pinnedNotes : strings.pinNotesCta;
+  } else if (view.noteType === NoteType.Task) {
+    headerText =
+      pinnedQuery.count > 0 ? strings.pinnedTasks : strings.pinTaskCta;
   }
   return (
     <DragAndDropContext
@@ -183,7 +141,7 @@ export function InnerListView({
       onDragCancelled={onDragCancelled}
     >
       <Scroller>
-        {(ref) => (
+        {ref => (
           <div ref={ref} className={cn(styles.listRoot, className)}>
             <ItemsTable>
               {!!headerText && (
@@ -195,17 +153,21 @@ export function InnerListView({
               {/* <Droppable items={cards.pinned} onDrop={onDrop}>
                     {({ attributes }) => (
                       <div {...attributes} style={{ display: 'contents' }}> */}
-              {cards.pinned.map((c, index) => (
-                <Draggable key={c.key} index={index} data={c}>
+              {pinnedQuery?.map((c, index) => (
+                <Draggable
+                  key={`list/pinned/draggable/${c.key}`}
+                  index={index}
+                  data={c}
+                >
                   {(
-                    draggableProps: RenderDraggableProps,
+                    draggableProps,
                     ref: React.MutableRefObject<HTMLTableRowElement>
                   ) => (
                     <ItemRow
                       index={index}
-                      note={c}
-                      key={c.key}
+                      note={c.manager}
                       ref={ref}
+                      key={`list/pinned/row/${c.key}`}
                       onClick={onNoteSelected}
                       {...draggableProps}
                     />
@@ -214,19 +176,27 @@ export function InnerListView({
               ))}
 
               <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
-              {noteType === NoteType.Task && (
-                <InlineTaskButton draft={draft!} setDraft={setDraft} />
+              {view.noteType === NoteType.Task && (
+                <InlineTaskButton
+                  key={`list/inline-task`}
+                  draft={draft}
+                  setDraft={setDraft}
+                />
               )}
-              {visibleCards.map((c) => (
-                <ItemRow note={c} key={c.key} onClick={onNoteSelected} />
+              {unpinnedQuery?.results.slice(0, limit).map(c => (
+                <ItemRow
+                  note={c}
+                  key={`list/unpinned/row/${c.key}`}
+                  onClick={onNoteSelected}
+                />
               ))}
             </ItemsTable>
-            <InfiniteScroll
+            <InfiniteVerticalScroll
               limit={limit}
               setLimit={setLimit}
               pageSize={PAGE_SIZE}
-              recordsLength={cards.unpinned.length}
-              isVisible={true}
+              recordsLength={unpinnedQuery?.count || 0}
+              isVisible={false}
             />
             {/* <Droppable items={visibleCards} onDrop={onDrop}>
               {({ attributes }) => (

@@ -1,16 +1,15 @@
-import React from 'react';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import Layer from '@ovvio/styles/lib/components/layer';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { MediaQueries } from '@ovvio/styles/lib/responsive';
+import { isServerSide } from '@ovvio/styles/lib/utils/ssr';
 import ReactDOM from 'react-dom';
-import { layout, styleguide } from '../../../../../../styles/index.ts';
-import Layer from '../../../../../../styles/components/layer.tsx';
-import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
-import { MediaQueries } from '../../../../../../styles/responsive.ts';
-import { isServerSide } from '../../../../../../styles/utils/ssr.ts';
-import ChangesIndicator from './changes-indicator/index.tsx';
-import { ToolbarMenu } from './header.tsx';
+import ChangesIndicator from './changes-indicator';
+import { ToolbarMenu } from './header';
 
-export const TOOLBAR_HEIGHT = styleguide.gridbase * 9;
+export const TOOLBAR_HEIGHT = styleguide.gridbase * 10;
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   toolbar: {
     height: TOOLBAR_HEIGHT,
     backgroundColor: theme.background[0],
@@ -93,11 +92,7 @@ export default function Toolbar({ children }: ToolbarProps) {
   );
 }
 
-export interface FixedToolbarItemProps extends React.PropsWithChildren {
-  className?: string;
-}
-
-export const ToolbarRightItem: React.FC<FixedToolbarItemProps> = ({
+export const ToolbarRightItem: React.FC<{ className?: string }> = ({
   children,
   className,
 }) => {
@@ -110,7 +105,7 @@ export const ToolbarRightItem: React.FC<FixedToolbarItemProps> = ({
   );
 };
 
-export const ToolbarLeftItem: React.FC<FixedToolbarItemProps> = ({
+export const ToolbarLeftItem: React.FC<{ className?: string }> = ({
   children,
   className,
 }) => {
@@ -123,7 +118,7 @@ export const ToolbarLeftItem: React.FC<FixedToolbarItemProps> = ({
   );
 };
 
-export const ToolbarCenterItem: React.FC<FixedToolbarItemProps> = ({
+export const ToolbarCenterItem: React.FC<{ className?: string }> = ({
   children,
   className,
 }) => {
@@ -143,16 +138,10 @@ const SIDE_TO_ID: Record<Side, string> = {
   center: TOOLBAR_CENTER_ID,
 };
 
-interface ExternalToolbarItem extends React.PropsWithChildren {
+const ExternalToolbarItem: React.FC<{
   className?: string;
   side: Side;
-}
-
-const ExternalToolbarItem: React.FC<ExternalToolbarItem> = ({
-  children,
-  side,
-  className,
-}) => {
+}> = ({ children, side, className }) => {
   const styles = useStyles();
   if (isServerSide) {
     return null;
@@ -168,7 +157,7 @@ const ExternalToolbarItem: React.FC<ExternalToolbarItem> = ({
   );
 };
 
-export const ToolbarItem = ({ children }: React.PropsWithChildren) => {
+export const ToolbarItem = ({ children }) => {
   const styles = useStyles();
   return <div className={cn(styles.item)}>{children}</div>;
 };

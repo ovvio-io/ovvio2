@@ -13,9 +13,7 @@ const useStrings = createUseStrings(localization);
 export function InviteButton({ className }: { className?: string }) {
   const strings = useStrings();
   const graph = useGraphManager();
-  const { results } = useExistingQuery(
-    graph.sharedQueriesManager.workspacesQuery
-  );
+  const { results } = useExistingQuery(graph.sharedQueriesManager.workspaces);
   const [isOpen, setIsOpen] = useState(false);
 
   return (

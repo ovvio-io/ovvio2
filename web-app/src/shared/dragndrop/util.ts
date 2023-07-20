@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { DragPosition } from './droppable.tsx';
+import { useCallback, useEffect, useRef } from 'react';
+import { DragPosition } from './droppable';
 
 export function serializeId(id) {
   return id;
@@ -37,7 +37,7 @@ const PosMap: {
   },
 };
 
-export function deserializeId(id: string): string | undefined {
+export function deserializeId(id) {
   if (!id || !id.startsWith('ovvdnd:')) {
     return;
   }

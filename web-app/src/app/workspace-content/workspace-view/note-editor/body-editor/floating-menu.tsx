@@ -1,20 +1,7 @@
-import React, {
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { Editor, Element, Path } from 'https://esm.sh/slate@0.87.0';
-import {
-  ReactEditor,
-  useSlate,
-  useSlateStatic,
-} from 'https://esm.sh/slate-react@0.87.1';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { Button } from '@ovvio/styles/lib/components/buttons';
 import {
   IconBold,
   IconBulletList,
@@ -23,30 +10,32 @@ import {
   IconStrikethrough,
   IconTask,
   IconUnderline,
-} from '../../../../../../../styles/components/icons/index.ts';
-import { Tooltip } from '../../../../../../../styles/components/tooltip/index.tsx';
-import {
-  cn,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useCurrentUser } from '../../../../../core/cfds/react/vertex.ts';
+} from '@ovvio/styles/lib/components/icons';
+import { Tooltip } from '@ovvio/styles/lib/components/tooltip';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { useCurrentUser } from 'core/cfds/react/vertex';
 import {
   AllowedElementType,
   ALLOWED_ELEMENTS,
   CardElement,
-} from '../../../../../core/slate/elements/card.element/index.tsx';
-import { LeafUtils } from '../../../../../core/slate/plugins/leaves.tsx';
-import { FormattedText } from '../../../../../core/slate/types.ts';
-import {
-  ElementUtils,
-  NodeToggleStatus,
-} from '../../../../../core/slate/utils/element-utils.ts';
-import { ListUtils } from '../../../../../core/slate/utils/list-utils.ts';
-import { SelectionUtils } from '../../../../../core/slate/utils/selection-utils.ts';
-import { TreeNode } from '../../../../../../../cfds/richtext/tree.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+} from 'core/slate/elements/card.element';
+import { LeafUtils } from 'core/slate/plugins/leaves';
+import { FormattedText } from 'core/slate/types';
+import { ElementUtils, NodeToggleStatus } from 'core/slate/utils/element-utils';
+import { ListUtils } from 'core/slate/utils/list-utils';
+import { SelectionUtils } from 'core/slate/utils/selection-utils';
+import React, {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { Editor, Element, Path } from 'slate';
+import { ReactEditor, useSlate, useSlateStatic } from 'slate-react';
+import { useEventLogger } from '../../../../../core/analytics';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   menu: {
     position: 'absolute',
     bottom: styleguide.gridbase * 3,
@@ -113,10 +102,10 @@ function HeaderButton({
     ElementUtils.getNodeToggleStatus(
       editor,
       selection,
-      (node) => Element.isElement(node) && node.tagName === headerType
+      node => Element.isElement(node) && node.tagName === headerType
     ) === NodeToggleStatus.On;
   const otherTags = useMemo(
-    () => ALLOWED_ELEMENTS.filter((x) => x !== headerType),
+    () => ALLOWED_ELEMENTS.filter(x => x !== headerType),
     [headerType]
   );
 
@@ -125,16 +114,15 @@ function HeaderButton({
 
     ElementUtils.toggleNode(
       editor,
-      selection!,
+      selection,
       { tagName: headerType },
-      (node: TreeNode) =>
+      node =>
         Element.isElement(node) &&
         (node.tagName === headerType ||
-          !(otherTags as string[]).includes(node.tagName)),
+          !otherTags.includes(node.tagName as any)),
       {
-        match: (n: TreeNode) =>
-          Element.isElement(n) &&
-          (ALLOWED_ELEMENTS as string[]).includes(n.tagName),
+        match: (n, p) =>
+          Element.isElement(n) && ALLOWED_ELEMENTS.includes(n.tagName as any),
       }
     );
   };
@@ -164,9 +152,9 @@ function makeMarkButton(
       (e: MouseEvent) => {
         e.preventDefault();
         ReactEditor.focus(editor);
-        setTimeout(() => {
+        window.setTimeout(() => {
           ReactEditor.focus(editor);
-          LeafUtils.toggleMark(editor, editor.selection!, mark);
+          LeafUtils.toggleMark(editor, editor.selection, mark);
         }, 0);
       },
       [editor]
@@ -212,7 +200,7 @@ function TaskButton({
   const editor = useSlate();
   const user = useCurrentUser();
   const { selection } = editor;
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
 
   const selectionState = useMemo(() => {
     if (!isVisible) {
@@ -243,11 +231,19 @@ function TaskButton({
 
   const handler = () => {
     if (selectionState === TaskButtonState.Active) {
-      CardElement.unwrapCard(editor, editor.selection!.focus.path);
+      CardElement.unwrapCard(editor, editor.selection.focus.path);
     } else {
       const [node, path] =
-        ElementUtils.getSingleElement<AllowedElementType>(editor)!;
-      CardElement.replaceAsCard(editor, node, path, rootManager, user);
+        ElementUtils.getSingleElement<AllowedElementType>(editor);
+      CardElement.replaceAsCard(
+        editor,
+        node,
+        path,
+        rootManager,
+        user,
+        eventLogger,
+        'floating-button'
+      );
     }
   };
 
@@ -301,11 +297,11 @@ function ListButton({
     //   match: n => !Editor.isEditor(n),
     // });
     // for (const [node, path] of nodes) {
-    ListUtils.setList(editor, path!, listType);
+    ListUtils.setList(editor, path, listType);
     // }
   };
   useEffect(() => {
-    setVisible(isParagraph === true);
+    setVisible(isParagraph);
   }, [isParagraph, setVisible]);
   if (!isParagraph) {
     return null;
@@ -329,7 +325,7 @@ export const FloatingMenu = React.memo(
     >([false, false, false]);
 
     const setVisible = (index: number, visible: boolean) => {
-      setListsVisible((current) => {
+      setListsVisible(current => {
         const v = current.concat();
         if (v[index] === visible) {
           return current;
@@ -344,9 +340,12 @@ export const FloatingMenu = React.memo(
       e.preventDefault();
       ReactEditor.focus(editor);
     };
-    const marks = Editor.marks(editor) || {};
+    let marks = {};
+    try {
+      marks = Editor.marks(editor);
+    } catch {}
 
-    const showSeparator = listsVisible.some((x) => x);
+    const showSeparator = listsVisible.some(x => x);
 
     return (
       <div className={cn(styles.menu, styles.visible)} onClick={handleClick}>
@@ -361,17 +360,17 @@ export const FloatingMenu = React.memo(
         <ListButton
           editor={editor}
           listType="ol"
-          setVisible={(x) => setVisible(0, x)}
+          setVisible={x => setVisible(0, x)}
         />
         <ListButton
           editor={editor}
           listType="ul"
-          setVisible={(x) => setVisible(1, x)}
+          setVisible={x => setVisible(1, x)}
         />
         <TaskButton
           isVisible={true}
           rootManager={rootManager}
-          setVisible={(x) => setVisible(2, x)}
+          setVisible={x => setVisible(2, x)}
         />
       </div>
     );

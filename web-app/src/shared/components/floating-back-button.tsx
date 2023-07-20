@@ -1,15 +1,15 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
-import { Button } from '../../../../styles/components/buttons.tsx';
-import { Text } from '../../../../styles/components/texts.tsx';
-import { IconBack } from '../../../../styles/components/icons/index.ts';
-import Layer from '../../../../styles/components/layer.tsx';
-import { MediaQueries } from '../../../../styles/responsive.ts';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { LOGIN, useHistory } from 'core/react-utils/history';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { styleguide, layout } from '@ovvio/styles/lib';
+import { Button } from '@ovvio/styles/lib/components/buttons';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { IconBack } from '@ovvio/styles/lib/components/icons';
+import Layer from '@ovvio/styles/lib/components/layer';
+import { useEventLogger } from '../../core/analytics';
+import { MediaQueries } from '@ovvio/styles/lib/responsive';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   button: {
     position: 'absolute',
     top: styleguide.gridbase * 3,
@@ -40,17 +40,20 @@ const useStyles = makeStyles((theme) => ({
 
 export default function FloatingBackButton() {
   const styles = useStyles();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const logger = useLogger();
+  const history = useHistory();
+  const eventLogger = useEventLogger();
 
   const onClick = () => {
-    navigate('/');
-    logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'button:back',
-      routeInfo: location.pathname + location.search + location.hash,
+    const currState = history.getRouteInformation(0);
+    const prevState = history.getRouteInformation(1);
+    if (prevState === undefined || prevState === null) {
+      history.replace(LOGIN);
+    } else {
+      history.pop();
+    }
+
+    eventLogger.action('BACK_BUTTON_CLICKED', {
+      source: `${currState.id}:${currState.url}`,
     });
   };
 
@@ -58,11 +61,11 @@ export default function FloatingBackButton() {
     return null;
   }
 
-  const text = 'Back';
+  let text = 'Back';
 
   return (
     <Layer>
-      {(style) => (
+      {style => (
         <Button className={cn(styles.button)} onClick={onClick} style={style}>
           <IconBack />
           <Text className={cn(styles.text)}>{text}</Text>

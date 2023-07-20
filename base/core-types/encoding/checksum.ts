@@ -16,6 +16,8 @@ import * as StreamMD5 from '../../../external/md5.ts';
 
 export interface ChecksumEncoderOpts extends CoreOptions {
   typeSafe?: boolean;
+  flatRep?: boolean;
+  local?: boolean;
 }
 
 export abstract class ChecksumEncoder<

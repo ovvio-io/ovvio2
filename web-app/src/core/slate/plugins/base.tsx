@@ -1,21 +1,13 @@
+import { useStyles as typography } from '@ovvio/styles/lib/components/texts';
+import { cn } from '@ovvio/styles/lib/css-objects';
 import React from 'react';
-import { Editor } from 'https://esm.sh/slate@0.87.0';
-import {
-  ReactEditor,
-  RenderElementProps,
-} from 'https://esm.sh/slate-react@0.87.1';
-import { useStyles as typography } from '../../../../../styles/components/texts.tsx';
-import { cn } from '../../../../../styles/css-objects/index.ts';
-import {
-  KeyDownHandler,
-  mergePlugins,
-  Plugin,
-  RenderElementHandler,
-} from './index.ts';
-import { ElementUtils } from '../utils/element-utils.ts';
-import { isKeyPressed } from '../utils/hotkeys.ts';
-import { ListUtils } from '../utils/list-utils.ts';
-import { createLeafPlugin } from './leaves.tsx';
+import { Editor } from 'slate';
+import { ReactEditor, RenderElementProps } from 'slate-react';
+import { KeyDownHandler, mergePlugins, Plugin, RenderElementHandler } from '.';
+import { ElementUtils } from '../utils/element-utils';
+import { isKeyPressed } from '../utils/hotkeys';
+import { ListUtils } from '../utils/list-utils';
+import { createLeafPlugin } from './leaves';
 
 // const Paragraph = React.forwardRef<HTMLDivElement, RenderElementProps>(
 //   ({ attributes, children }, ref) => {
@@ -61,7 +53,7 @@ function createNestedContainersHandler(editor: Editor): KeyDownHandler {
       if (!isNestedChild) {
         return;
       }
-      const [node, path] = Editor.node(editor, editor.selection!);
+      const [node, path] = Editor.node(editor, editor.selection);
       switch (e.key) {
         case 'Enter':
         case 'Backspace': {

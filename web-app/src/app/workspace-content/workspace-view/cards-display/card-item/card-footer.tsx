@@ -1,35 +1,31 @@
-import React, { MouseEvent, useCallback } from 'react';
-import { formatTimeDiff } from '../../../../../../../base/date.ts';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
-import {
-  createUseStrings,
-  format,
-} from '../../../../../core/localization/index.tsx';
-import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
+import { EventCategory, useEventLogger } from 'core/analytics';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { formatTimeDiff } from 'core/dateutils';
+import { createUseStrings, format } from 'core/localization';
+import { AttachmentItem } from 'core/slate/elements/card.element/card-node/card-actions';
+import { MouseEvent, useCallback } from 'react';
+import { useAttachments } from 'shared/attachments';
+import { CARD_SOURCE } from 'shared/card';
+import { useDueDate } from 'shared/components/due-date-editor';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { Button } from '@ovvio/styles/lib/components/buttons';
 import {
   IconAttachment,
   IconCalendar,
-} from '../../../../../../../styles/components/icons/index.ts';
-import { IconContent } from '../../../../../../../styles/components/new-icons/icon-content.tsx';
-import Menu from '../../../../../../../styles/components/menu.tsx';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
-import {
-  makeStyles,
-  cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
-import { CardSize } from './index.tsx';
-// import localization from './card.strings.json' assert { type: 'json' };
-import { UISource } from '../../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+} from '@ovvio/styles/lib/components/icons';
+import { IconContent } from '@ovvio/styles/lib/components/new-icons/icon-content';
+import Menu from '@ovvio/styles/lib/components/menu';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { useTheme } from '@ovvio/styles/lib/theme';
+import { CardSize } from '.';
+import localization from './card.strings.json';
 
 export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   footer: {
     alignItems: 'center',
     minHeight: styleguide.gridbase,
@@ -52,77 +48,73 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-// const useStrings = createUseStrings(localization);
+const useStrings = createUseStrings(localization);
 
 export interface CardFooterProps {
   card: VertexManager<Note>;
-  source: UISource;
+  source: CARD_SOURCE;
   size?: CardSize;
   className?: string;
 }
 
-// function Attachments({ card, source }: CardFooterProps) {
-//   const styles = useStyles();
-//   const { attachments, openAttachment, removeAttachment } = useAttachments(
-//     card,
-//     source
-//   );
-//   const strings = useStrings();
+function Attachments({ card, source }: CardFooterProps) {
+  const styles = useStyles();
+  const { attachments, openAttachment, removeAttachment } = useAttachments(
+    card,
+    source
+  );
+  const strings = useStrings();
 
-//   const renderButton = useCallback(
-//     () => (
-//       <div className={cn(styles.attachments)}>
-//         <IconAttachment size="small" />
-//         <Text className={cn(styles.attachment)}>
-//           {attachments.length === 1
-//             ? strings.singleAttachment
-//             : format(strings.multipleAttachments, {
-//                 count: attachments.length,
-//               })}
-//         </Text>
-//       </div>
-//     ),
-//     [attachments, strings, styles]
-//   );
+  const renderButton = useCallback(
+    () => (
+      <div className={cn(styles.attachments)}>
+        <IconAttachment size="small" />
+        <Text className={cn(styles.attachment)}>
+          {attachments.length === 1
+            ? strings.singleAttachment
+            : format(strings.multipleAttachments, {
+                count: attachments.length,
+              })}
+        </Text>
+      </div>
+    ),
+    [attachments, strings, styles]
+  );
 
-//   if (!attachments?.length) {
-//     return null;
-//   }
+  if (!attachments?.length) {
+    return null;
+  }
 
-//   return (
-//     <Menu renderButton={renderButton} className={cn(styles.footerItem)}>
-//       {attachments.map((file) => (
-//         <AttachmentItem
-//           key={file.fileId}
-//           file={file}
-//           openAttachment={openAttachment}
-//           removeAttachment={removeAttachment}
-//         />
-//       ))}
-//     </Menu>
-//   );
-// }
+  return (
+    <Menu renderButton={renderButton} className={cn(styles.footerItem)}>
+      {attachments.map(file => (
+        <AttachmentItem
+          key={file.fileId}
+          file={file}
+          openAttachment={openAttachment}
+          removeAttachment={removeAttachment}
+        />
+      ))}
+    </Menu>
+  );
+}
 
 function DueDateIndicator({ card, source }: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
-  const logger = useLogger();
+  const eventLogger = useEventLogger();
   const theme = useTheme();
   if (!dueDate) {
     return null;
   }
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'edit',
-      type: 'due',
-      vertex: card.key,
-      source,
+    eventLogger.cardAction('CARD_SET_DUE_DATE_STARTED', card, {
+      category: EventCategory.CARD_LIST,
+      source: source,
     });
-    dueDateEditor!.edit(card.getVertexProxy());
+    dueDateEditor.edit(card.getVertexProxy());
   };
 
   const isOverdue = dueDate < new Date();
@@ -160,6 +152,7 @@ export function CardFooter({
   return (
     <div className={cn(styles.footer, className)}>
       {size === CardSize.Small && <ContentIndicator card={card} />}
+      <Attachments card={card} source={source} />
       <div className={cn(layout.flexSpacer)} />
       <DueDateIndicator card={card} source={source} />
     </div>

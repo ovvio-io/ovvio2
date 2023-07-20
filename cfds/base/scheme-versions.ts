@@ -1,4 +1,3 @@
-import { isString } from '../../base/comparisons.ts';
 import {
   SchemeDef,
   ISchemeManagerRegister,
@@ -6,6 +5,7 @@ import {
   NS_TAGS,
   NS_USERS,
   NS_WORKSPACE,
+  NS_ROLES,
   TYPE_DATE,
   TYPE_MAP,
   TYPE_NUMBER,
@@ -15,49 +15,47 @@ import {
   TYPE_SET,
   TYPE_STR,
   TYPE_STR_SET,
+  NS_INVITES,
+  InviteStatus,
   AttachmentData,
+  DataType,
   TYPE_RICHTEXT_V3,
   SchemeNamespace,
   TYPE_REF_MAP,
-  NS_USER_SETTINGS,
-  NS_FILTER,
-  DataType,
+  NS_VIEWS,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
-import { notReached } from '../../base/error.ts';
+import { isString } from '../../base/comparisons.ts';
 
 //BASE SCHEMES
 const SCHEME_BASE_1 = new SchemeDef('', {
   creationDate: {
     type: TYPE_DATE,
     required: true,
-    default: () => new Date(),
+    init: () => new Date(),
   },
   isDeleted: {
     type: TYPE_NUMBER,
-    default: () => 0,
+    init: () => 0,
   },
   lastModified: {
     type: TYPE_DATE,
-    default: (data: DataType) => data.creationDate || new Date(),
+    init: (d: DataType) => d['creationDate'],
   },
   sortStamp: TYPE_STR,
 });
 
-const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive(
-  '',
-  {
-    createdBy: {
-      type: TYPE_STR,
-    },
-    workspace: {
-      type: TYPE_REF,
-    },
+const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive('', {
+  createdBy: {
+    type: TYPE_STR,
   },
-  [],
-  'workspace'
-);
+  workspace: {
+    type: TYPE_REF,
+    required: true,
+  },
+});
 
+//ACTUAL SCHEMES
 const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   owner: {
     type: TYPE_REF,
@@ -71,11 +69,11 @@ const SCHEME_WORKSPACE_1 = SCHEME_BASE_1.derive(NS_WORKSPACE, {
   icon: TYPE_STR,
   noteTags: {
     type: TYPE_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
   taskTags: {
     type: TYPE_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
   exportImage: TYPE_STR,
   footerHtml: TYPE_STR,
@@ -94,18 +92,14 @@ const SCHEME_WORKSPACE_2 = SCHEME_WORKSPACE_1.derive(
 const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
   noteTags: {
     type: TYPE_REF_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
   taskTags: {
     type: TYPE_REF_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
+  isTemplate: TYPE_NUMBER,
 });
-
-const SCHEME_WORKSPACE_4 = SCHEME_WORKSPACE_3.derive(NS_WORKSPACE, {}, [
-  'noteTags',
-  'taskTags',
-]);
 
 export enum OnboardingStep {
   Start = 0,
@@ -115,8 +109,8 @@ export enum OnboardingStep {
 const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   avatarUrl: TYPE_STR,
   email: TYPE_STR,
-  name: TYPE_STR,
   lastLoggedIn: TYPE_DATE,
+  name: TYPE_STR,
   workspaces: {
     type: TYPE_REF_SET,
     init: () => new Set<string>(),
@@ -143,99 +137,61 @@ const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   },
 });
 
-const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
-  'lastLoggedIn',
-  'workspaces',
-  'workspaceColors',
-  'hiddenWorkspaces',
-  'pinnedWorkspaces',
-  'onboardingStep',
-  'seenTutorials',
-]);
-
-const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
-  passwordHash: TYPE_STR, // Hash + salt
-  lastLoggedIn: TYPE_DATE,
-  seenTutorials: {
-    type: TYPE_STR_SET,
-    default: () => new Set<string>(),
-  },
-  workspaceColors: {
-    type: TYPE_MAP,
-    default: () => new Map<string, number>(),
-  },
-  hiddenWorkspaces: {
-    type: TYPE_STR_SET,
-    default: () => new Set<string>(),
-  },
-  pinnedWorkspaces: {
-    type: TYPE_SET,
-    default: () => new Set<string>(),
-  },
-  onboardingStep: {
-    type: TYPE_NUMBER,
-    default: () => OnboardingStep.Start,
-  },
-});
-
 const SCHEME_NOTE_1 = SCHEME_CONTENT_BASE_1.derive(NS_NOTES, {
   assignees: {
     type: TYPE_STR_SET,
-    default: () => new Set<string>(),
+    init: () => new Set<string>(),
   },
   attachments: {
     type: TYPE_SET,
-    default: () => new Set<AttachmentData>(),
+    init: () => new Set<AttachmentData>(),
   },
   // body: TYPE_RICHTEXT,
-  dueDate: TYPE_DATE, // Task only, zero on convert
+  dueDate: TYPE_DATE,
   // title: TYPE_RICHTEXT,
-  parentNote: TYPE_STR, // Let's debate
-  status: TYPE_NUMBER, // Task only, zero on convert
+  parentNote: TYPE_STR,
+  status: TYPE_NUMBER,
   tags: {
     type: TYPE_SET,
-    default: () => new Set(),
+    init: () => new Set(),
   },
-  type: TYPE_STR, // Undo for convert
+  type: TYPE_STR,
 });
 
 const SCHEME_NOTE_2 = SCHEME_NOTE_1.derive(NS_NOTES, {
   parentNote: TYPE_REF,
   tags: {
     type: TYPE_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
 });
 
 const SCHEME_NOTE_3 = SCHEME_NOTE_2.derive(NS_NOTES, {
   title: {
     type: TYPE_RICHTEXT_V3,
-    default: () => initRichText(),
+    init: () => initRichText(),
   },
   body: {
     type: TYPE_RICHTEXT_V3,
-    default: () => initRichText(),
+    init: () => initRichText(),
   },
 });
 
 const SCHEME_NOTE_4 = SCHEME_NOTE_3.derive(NS_NOTES, {
   assignees: {
     type: TYPE_REF_SET,
-    default: () => new Set<string>(),
+    init: () => new Set<string>(),
   },
   tags: {
     type: TYPE_REF_MAP,
-    default: () => new Map(),
+    init: () => new Map(),
   },
   pinnedBy: {
     type: TYPE_SET,
-    default: () => new Set<string>(),
+    init: () => new Set<string>(),
   },
   parentNote: TYPE_REF,
-});
-
-const SCHEME_NOTE_5 = SCHEME_NOTE_4.derive(NS_NOTES, {
-  status: TYPE_STR,
+  completionDate: TYPE_DATE,
 });
 
 const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
@@ -244,48 +200,82 @@ const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   parentTag: TYPE_REF,
 });
 
-const SCHEME_TAG_2 = SCHEME_TAG_1.derive(NS_TAGS, {}, ['color']);
-
-const SCHEME_FILTER_1 = SCHEME_BASE_1.derive(
-  NS_FILTER,
-  {
-    owner: {
-      type: TYPE_REF,
-      required: true,
-    },
-    tags: TYPE_REF_SET,
-    assignees: TYPE_REF_SET,
-    workspaces: TYPE_REF_SET,
-    noteType: TYPE_STR,
-    statuses: TYPE_STR_SET,
-    sortBy: TYPE_STR,
-    pinned: TYPE_NUMBER,
-    groupBy: TYPE_STR,
-    groupByPivot: TYPE_REF,
-    textQuery: TYPE_STR,
-    viewType: TYPE_STR,
+const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
+  status: {
+    type: TYPE_STR, //InviteStatus values
+    init: () => InviteStatus.PENDING,
   },
-  [],
-  // Filters are currently personal and live under the user's private repo
-  'owner'
-);
+  email: {
+    type: TYPE_STR,
+    required: true,
+  },
+  emailSent: {
+    type: TYPE_NUMBER, //0 - not sent, 1 - sent
+    init: () => 0,
+  },
+  invitee: TYPE_STR, //The invited name
+  inviteeUser: TYPE_REF, //The invites user id
+});
+
+const SCHEME_ROLE_1 = SCHEME_BASE_1.derive(NS_ROLES, {
+  name: TYPE_STR,
+  assignees: TYPE_REF_SET,
+  tags: TYPE_STR_SET,
+  users: TYPE_REF_SET,
+});
+
+const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
+  owner: {
+    type: TYPE_STR,
+    required: true,
+  },
+  parentView: TYPE_REF,
+
+  // Screen-level settings
+  selectedTab: TYPE_STR,
+  noteType: TYPE_STR,
+  workspaceGrouping: TYPE_STR,
+  selectedWorkspaces: TYPE_REF_SET,
+  expandedWorkspaceGroups: TYPE_STR_SET,
+  workspaceBarCollapsed: TYPE_NUMBER,
+
+  // Tab-level settings
+  selectedAssignees: TYPE_REF_SET,
+  selectedTagIds: TYPE_STR_SET,
+  showChecked: TYPE_STR,
+  sortBy: TYPE_STR,
+  showPinned: TYPE_STR,
+  groupBy: TYPE_STR,
+  pivot: TYPE_STR,
+  viewType: TYPE_STR,
+  notesExpandOverride: TYPE_STR_SET,
+  notesExpandBase: TYPE_NUMBER,
+  dateFilter: TYPE_STR,
+});
 
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
-  SCHEME_WORKSPACE_4 as WORKSPACE_SCHEME,
-  SCHEME_NOTE_5 as NOTE_SCHEME,
-  SCHEME_TAG_2 as TAG_SCHEME,
-  SCHEME_USER_2 as USER_SCHEME,
-  SCHEME_USER_SETTINGS_1 as USER_SETTINGS,
-  SCHEME_FILTER_1 as SCHEME_FILTER,
+  SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
+  SCHEME_NOTE_4 as NOTE_SCHEME,
+  SCHEME_TAG_1 as TAG_SCHEME,
+  SCHEME_INVITE_1 as INVITE_SCHEME,
+  SCHEME_USER_1 as USER_SCHEME,
+  SCHEME_ROLE_1 as ROLE_SCHEME,
+  SCHEME_VIEW_1 as VIEW_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
   //V1
   manager.register(
     1,
-    [SCHEME_WORKSPACE_1, SCHEME_USER_1, SCHEME_NOTE_1, SCHEME_TAG_1],
+    [
+      SCHEME_WORKSPACE_1,
+      SCHEME_USER_1,
+      SCHEME_NOTE_1,
+      SCHEME_TAG_1,
+      SCHEME_INVITE_1,
+    ],
     []
   );
 
@@ -293,7 +283,12 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     2,
     [SCHEME_NOTE_2],
-    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
+    [
+      SchemeNamespace.INVITES,
+      SchemeNamespace.TAGS,
+      SchemeNamespace.USERS,
+      SchemeNamespace.WORKSPACE,
+    ],
     (namespace, data) => {
       if (namespace === NS_NOTES) {
         if (data.attachments) {
@@ -318,18 +313,21 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     3,
     [SCHEME_NOTE_3],
-    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
+    [
+      SchemeNamespace.INVITES,
+      SchemeNamespace.TAGS,
+      SchemeNamespace.USERS,
+      SchemeNamespace.WORKSPACE,
+    ],
     (namespace, data) => {
-      if (namespace === NS_NOTES) {
-        if (data.title) {
-          notReached('Unsupported old format RichText v2');
-          // data.title = migrationToRichtextV3(data.title);
-        }
-        if (data.body) {
-          notReached('Unsupported old format RichText v2');
-          // data.body = migrationToRichtextV3(data.body);
-        }
-      }
+      //   if (namespace === NS_NOTES) {
+      //     if (data.title) {
+      //       data.title = migrationToRichtextV3(data.title);
+      //     }
+      //     if (data.body) {
+      //       data.body = migrationToRichtextV3(data.body);
+      //     }
+      //   }
     }
   );
 
@@ -337,7 +335,12 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     4,
     [SCHEME_WORKSPACE_2],
-    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.NOTES],
+    [
+      SchemeNamespace.INVITES,
+      SchemeNamespace.TAGS,
+      SchemeNamespace.USERS,
+      SchemeNamespace.NOTES,
+    ],
     (namespace, data) => {
       if (namespace === NS_WORKSPACE) {
         data.createdBy = data.owner;
@@ -349,44 +352,9 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V5
   manager.register(
     5,
-    [SCHEME_WORKSPACE_3, SCHEME_NOTE_4],
-    [SchemeNamespace.TAGS, SchemeNamespace.USERS],
+    [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_ROLE_1, SCHEME_VIEW_1],
+    [SchemeNamespace.INVITES, SchemeNamespace.TAGS, SchemeNamespace.USERS],
     (namespace, data) => {}
-  );
-
-  //V6
-  manager.register(
-    6,
-    [
-      SCHEME_WORKSPACE_4,
-      SCHEME_USER_2,
-      SCHEME_USER_SETTINGS_1,
-      SCHEME_TAG_2,
-      SCHEME_FILTER_1,
-      SCHEME_NOTE_5,
-    ],
-    [],
-    (namespace, data) => {
-      if (namespace === NS_TAGS) {
-        delete data.color;
-        delete data.workspace;
-        delete data.createdBy;
-      } else if (namespace === NS_USERS) {
-        delete data.lastLoggedIn;
-        delete data.workspaces;
-        delete data.workspaceColors;
-        delete data.hiddenWorkspaces;
-        delete data.pinnedWorkspaces;
-        delete data.onboardingStep;
-        delete data.seenTutorials;
-      } else if (namespace === NS_WORKSPACE) {
-        delete data.noteTags;
-        delete data.taskTags;
-        delete data.createdBy;
-      } else if (namespace === NS_NOTES) {
-        delete data.status;
-      }
-    }
   );
 
   //Next Version Here

@@ -1,0 +1,17 @@
+{
+  "en": {
+    "myWorkspaces": "My Workspaces",
+    "selectAll": "Select All",
+    "unselectAll": "Unselect All",
+    "add": "New Workspace",
+    "addShort": "Add",
+    "invite": "Invite to Workspace",
+    "inviteShort": "Invite",
+    "workspaceSettings": "Settings",
+    "hideWorkspace": "Hide for me",
+    "showWorkspace": "Show for me",
+    "hiddenWorkspaces": "Hidden Workspaces",
+    "hiddenWorkspacesShort": "Hidden",
+    "inDemo": "This is not available while in demo"
+  }
+}

@@ -1,8 +1,8 @@
-import { isRefMarker } from '../model.ts';
-import { ElementNode, isElementNode, isTextNode, TreeNode } from '../tree.ts';
-import { userDefinedRules } from './setup.ts';
-import { ConditionSource, RuleAction } from './types.ts';
-import * as SetUtils from '../../../base/set.ts';
+import { Utils } from '@ovvio/base';
+import { isRefMarker } from '../model';
+import { ElementNode, isElementNode, isTextNode, TreeNode } from '../tree';
+import { userDefinedRules } from './setup';
+import { ConditionSource, RuleAction } from './types';
 
 interface SingleRuleCondition {
   source: ConditionSource;
@@ -162,7 +162,7 @@ function convertNodeCondition(node: any): string[] | undefined {
     keys.push('t_' + node.tag);
   }
   if (node.tags !== undefined && Array.isArray(node.tags)) {
-    keys.push(...(node.tags as string[]).map((t) => 't_' + t));
+    keys.push(...(node.tags as string[]).map(t => 't_' + t));
   }
   if (typeof node.isElement === 'boolean') {
     if (node.isElement) {
@@ -199,7 +199,7 @@ function convertRuleCondition(condition: any): SingleRuleCondition | undefined {
     converted.tags = new Set<string>([condition.tag]);
   }
   if (condition.tags !== undefined && Array.isArray(condition.tags)) {
-    converted.tags = SetUtils.union(
+    converted.tags = Utils.Set.union(
       converted.tags || new Set<string>(),
       condition.tags
     );

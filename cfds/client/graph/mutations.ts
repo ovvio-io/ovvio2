@@ -1,10 +1,22 @@
-import * as ArrayUtils from '../../../base/array.ts';
-import { CoreValue } from '../../../base/core-types/index.ts';
+import { Utils } from '@ovvio/base';
+import { CoreValue, coreValueClone } from '../../core-types';
 
-// A tuple of [fieldName, local, oldValue]
-export type Mutation = [fieldname: string, local: boolean, value: CoreValue];
+// boolean === true => local
+// boolean === false => remote
+export type MutationOrigin = boolean | 'user' | 'remote' | 'rule';
+
+// A tuple of [fieldName, source, oldValue]
+export type Mutation = [
+  fieldname: string,
+  source: MutationOrigin,
+  value: CoreValue
+];
 
 export type MutationPack = Mutation | Mutation[] | undefined | void;
+
+export function mutationSourceIsUser(source: MutationOrigin): boolean {
+  return source === true || source === 'user';
+}
 
 function isMutation(pack: MutationPack): pack is Mutation {
   return (
@@ -31,7 +43,7 @@ export function mutationPackAppend(
   if (isMutation(mutation)) {
     pack.push(mutation);
   } else {
-    ArrayUtils.append(pack, mutation);
+    Utils.Array.append(pack, mutation);
   }
   return mutationPackOptimize(pack);
 }
@@ -135,7 +147,7 @@ export function mutationPackClone(pack: MutationPack): MutationPack {
   if (isMutation(pack)) {
     return [pack[0], pack[1], pack[2]];
   }
-  return (pack as Mutation[]).map((m) => [m[0], m[1], m[2]] as Mutation);
+  return (pack as Mutation[]).map(m => [m[0], m[1], m[2]] as Mutation);
 }
 
 export function mutationPackHasRemote(pack: MutationPack): boolean {
@@ -143,8 +155,26 @@ export function mutationPackHasRemote(pack: MutationPack): boolean {
     if (isMutation(pack)) {
       return pack[1] === false;
     }
-    for (const [_f, local] of pack) {
-      if (!local) {
+    for (const [_f, source] of pack) {
+      if (source === false || source === 'remote') {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export function mutationPackHasLocal(pack: MutationPack): boolean {
+  return !mutationPackHasRemote(pack);
+}
+
+export function mutationPackHasRule(pack: MutationPack): boolean {
+  if (pack !== undefined) {
+    if (isMutation(pack)) {
+      return pack[1] === false;
+    }
+    for (const [_f, source] of pack) {
+      if (source === 'rule') {
         return true;
       }
     }
@@ -162,15 +192,6 @@ export function mutationPackHasField(
     }
   }
   return false;
-}
-
-export function mutationPackIsLocal(pack: MutationPack): boolean {
-  for (const m of mutationPackIter(pack)) {
-    if (!m[1]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 export function mutationPackDeleteField(

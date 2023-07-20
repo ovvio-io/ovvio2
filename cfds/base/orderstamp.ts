@@ -114,8 +114,12 @@ export function past(): string {
  * You should pass the key of the item (record) you're dealing with rather than
  * generate a unique id on every call.
  */
-export function fromTimestamp(timestamp: Date, key?: string) {
-  return ELEN.encode(serializeDate(timestamp)) + key || '';
+export function fromTimestamp(timestamp: Date | number, key?: string) {
+  return (
+    ELEN.encode(
+      typeof timestamp === 'number' ? timestamp : serializeDate(timestamp)
+    ) + key || ''
+  );
 }
 
 /**

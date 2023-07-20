@@ -1,5 +1,5 @@
-import { VertexManager } from './graph/vertex-manager.ts';
-import { BaseVertex } from './graph/vertices/base.ts';
+import { VertexManager } from './graph/vertex-manager';
+import { BaseVertex } from './graph/vertices/base';
 
 export interface ISortable {
   sortStamp: string;

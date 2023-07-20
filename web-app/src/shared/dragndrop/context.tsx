@@ -5,40 +5,34 @@ import React, {
   useReducer,
   useRef,
 } from 'react';
-import { CANCELLATION_REASONS } from './index.ts';
-import { DragPosition } from './droppable.tsx';
+import { CANCELLATION_REASONS } from '.';
+import { DragPosition } from './droppable';
 
 function generateId() {
   return ++_id;
 }
 
-interface DNDCallbacks {
-  onDragStarted?: <T>(
-    data: T,
+interface DNDContext {
+  id: string;
+  state: DragAndDropState;
+  onDragStarted: (
+    data: any,
     index: number,
     dropZone: string,
     placeholderStyle: {}
   ) => void;
-  setDragOverIndex?: (
+  setDragOverIndex: (
     index: number,
     dragPosition: DragPosition,
     dropZone: string
   ) => void;
-  onDragCancelled?: (e: {
-    reason: CANCELLATION_REASONS;
-    context?: any;
-  }) => void;
-  onDrop?: <T>(
+  onDragCancelled: (e: { reason: CANCELLATION_REASONS; context?: any }) => void;
+  onDrop: <T>(
     item: T,
     relativeTo: T,
     dragPosition: DragPosition,
     index?: number
   ) => void;
-}
-
-interface DNDContext extends DNDCallbacks {
-  id: string;
-  state: DragAndDropState;
 }
 
 const dragCtx = React.createContext<DNDContext | null>(null);
@@ -84,13 +78,13 @@ type DNDAction =
 
 interface DragAndDropState {
   disabled: boolean;
-  dragData: null | {
+  dragData: {
     data: any;
     index: number;
     dropZone: string;
     placeholderStyle: {};
   };
-  dragOverData: null | {
+  dragOverData: {
     dropZone: string;
     dragPosition: DragPosition;
     index: number;
@@ -143,7 +137,7 @@ function dndReducer(
         return state;
       }
       if (
-        payload.dropZone === state.dragData?.dropZone &&
+        payload.dropZone === state.dragData.dropZone &&
         (payload.index === state.dragData.index ||
           payload.index === state.dragData.index - 1)
       ) {
@@ -177,8 +171,14 @@ function dndReducer(
   }
 }
 
-interface DragAndDropProps extends DNDCallbacks {
+interface DragAndDropProps {
   children: React.ReactNode;
+  onDragStarted?: any;
+  onDragCancelled?: (e: {
+    reason: CANCELLATION_REASONS;
+    context?: any;
+  }) => void;
+  onDrop?: any;
   disabled?: boolean;
 }
 
@@ -196,7 +196,7 @@ export function DragAndDropContext({
     onDrop,
   });
   const id = useMemo(() => `ctx_${generateId()}`, []);
-  const ctx = useMemo<DNDContext>(
+  const ctx = useMemo(
     () => ({
       id,
       onDragStarted(data, index, dropZone, placeholderStyle) {
@@ -209,18 +209,18 @@ export function DragAndDropContext({
             placeholderStyle,
           },
         });
-        listeners.current.onDragStarted(
-          data,
-          index,
-          dropZone,
-          placeholderStyle
-        );
+        listeners.current.onDragStarted();
       },
       onDragCancelled(e) {
         dispatch({ type: CANCEL_DRAG });
         listeners.current.onDragCancelled(e);
       },
-      onDrop(item, relativeTo, dragPosition, index) {
+      onDrop<T>(
+        item: T,
+        relativeTo: T,
+        dragPosition: DragPosition,
+        index: number
+      ) {
         dispatch({ type: END_DRAG });
         listeners.current.onDrop(item, relativeTo, dragPosition, index);
       },

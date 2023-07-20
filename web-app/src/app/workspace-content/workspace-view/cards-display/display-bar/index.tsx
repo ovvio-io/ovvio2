@@ -1,52 +1,50 @@
-import React, { useCallback } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import {
-  Button,
-  useButtonStyles,
-} from '../../../../../../../styles/components/buttons.tsx';
-import { IconSort } from '../../../../../../../styles/components/new-icons/icon-sort.tsx';
-import { IconFilter } from '../../../../../../../styles/components/new-icons/icon-filter.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Role, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { Button, useButtonStyles } from '@ovvio/styles/lib/components/buttons';
+import { IconSort } from '@ovvio/styles/lib/components/new-icons/icon-sort';
+import { IconFilter } from '@ovvio/styles/lib/components/new-icons/icon-filter';
+import { IconShow } from '@ovvio/styles/lib/components/new-icons/icon-show';
 import DropDown, {
   DropDownItem,
-} from '../../../../../../../styles/components/inputs/drop-down.tsx';
+} from '@ovvio/styles/lib/components/inputs/drop-down';
+import { TabButton, TabsHeader } from '@ovvio/styles/lib/components/tabs';
+import { Text } from '@ovvio/styles/lib/components/texts';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import { createUseStrings } from 'core/localization';
+import React, { useCallback, useState } from 'react';
+import { UserOnboard } from 'shared/tutorial';
+import { EventCategory, useEventLogger } from '../../../../../core/analytics';
+import { ToolbarRightItem } from '../../toolbar';
+import localization from '../cards-display.strings.json';
+import { VideoTutorialId } from '../video-demo';
+import { ComposeButton } from './compose-button';
+import { GroupByDropDown } from './group-by-drop-down';
+import { useDisplayBarTutorialSteps } from './tutorial';
+import { ViewToggle } from './view-toggle';
+import { MediaQueries } from '@ovvio/styles/lib/responsive';
+import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
+import { IconDownloadXLS } from '@ovvio/styles/lib/components/new-icons/icon-download-xls';
+import { downloadCSV } from 'core/insights/precise';
 import {
-  TabButton,
-  TabsHeader,
-} from '../../../../../../../styles/components/tabs/index.tsx';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
+  useGraphManager,
+  usePartialView,
+  useRootUser,
+} from 'core/cfds/react/graph';
 import {
-  cn,
-  makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
-import { MediaQueries } from '../../../../../../../styles/responsive.ts';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import { ToolbarRightItem } from '../../toolbar/index.tsx';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
-import { ComposeButton } from './compose-button.tsx';
-import { GroupByDropDown } from './group-by-drop-down.tsx';
-import { ViewToggle } from './view-toggle.tsx';
-import {
-  FilterSortBy,
-  FilterSortByValues,
-} from '../../../../../../../cfds/base/scheme-types.ts';
-import { Filter } from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import {
-  FilterKeyNotes,
-  FilterKeyTasks,
-  useFilter,
-  useFilterContext,
-  usePartialFilter,
-} from '../../../../index.tsx';
-import {
-  FilterType,
-  UISource,
-} from '../../../../../../../logging/client-events.ts';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
+  ShowChecked,
+  SortBy,
+  kShowChecked,
+  DateFilter,
+  kDateFilters,
+  TabId,
+  kTabIds,
+} from '@ovvio/cfds/lib/base/scheme-types';
+import { IconPin } from '@ovvio/styles/lib/components/new-icons/icon-pin';
+import { IconCollapseExpand } from '@ovvio/styles/lib/components/new-icons/icon-collapse-expand';
+import { IconDueDate } from '@ovvio/styles/lib/components/new-icons/icon-due-date';
+import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -57,13 +55,13 @@ const useStyles = makeStyles(() => ({
   bar: {
     justifyContent: 'flex-end',
     alignItems: 'stretch',
-    marginTop: styleguide.gridbase * 2,
+    marginTop: styleguide.gridbase * 4,
     boxSizing: 'border-box',
     basedOn: [layout.column],
   },
   barRow: {
     padding: [0, SIDES_PADDING],
-    height: styleguide.gridbase * 6,
+    height: styleguide.gridbase * 4,
     basedOn: [layout.row, layout.centerCenter],
   },
   viewRow: {
@@ -82,14 +80,18 @@ const useStyles = makeStyles(() => ({
   },
   dropDownButtonText: {
     marginLeft: styleguide.gridbase,
+    marginRight: styleguide.gridbase,
   },
   dropDownButton: {
-    marginRight: styleguide.gridbase * 3,
+    // marginRight: styleguide.gridbase * 3,
     basedOn: [layout.row, layout.centerCenter],
   },
 
   viewToggle: {},
-  noteTypeToggle: {
+  noteTypeToggleBig: {
+    width: styleguide.gridbase * 60,
+  },
+  noteTypeToggleSmall: {
     width: styleguide.gridbase * 40,
   },
   separator: {
@@ -109,64 +111,72 @@ const useStyles = makeStyles(() => ({
   hasFilters: {
     backgroundColor: theme.colors.secondaryButtonActive,
   },
+  iconItem: {
+    padding: styleguide.gridbase,
+  },
+  extraFiltersSeparator: {
+    display: 'inline-block',
+    width: '2px',
+    height: '24px',
+    backgroundColor: theme.secondary.s5,
+    borderRadius: '2px',
+    // margin: [0, styleguide.gridbase * 2],
+  },
 }));
 
 const useStrings = createUseStrings(localization);
 
-export enum ViewType {
-  List = 'list',
-  // Grouped = 'grouped',
-  Board = 'board',
-}
+const SORT_BY = [
+  SortBy.DueDateAscending,
+  SortBy.DueDateDescending,
+  SortBy.LastModifiedDescending,
+  SortBy.CreatedAscending,
+  SortBy.CreatedDescending,
+  SortBy.TitleAscending,
+  SortBy.TitleDescending,
+];
 
-type ExtraFiltersProps = {
-  // filters: FiltersStateController;
-  viewType: ViewType;
-  // sortBy: SortBy;
-  // setSortBy: (sortBy: SortBy) => void;
-  // groupBy: GroupBy;
-  // setGroupBy: (groupBy: GroupBy) => void;
-  // selectedWorkspaces: VertexManager<Workspace>[];
-};
-
-function SortByDropDown({ source }: { source?: UISource }) {
+function SortByDropDown() {
   const styles = useStyles();
   const strings = useStrings();
-  const logger = useLogger();
-  const partialFilter = usePartialFilter(['sortBy']);
-  const sortBy = partialFilter.sortBy;
+  const eventLogger = useEventLogger();
+  const view = usePartialView('sortBy');
 
   const renderSelected = useCallback(
     () => (
-      <div className={cn(styles.dropDownButton)}>
+      <div className={cn(styles.dropDownButton, styles.iconItem)}>
         <IconSort />
-        <Text className={cn(styles.dropDownButtonText)}>{strings[sortBy]}</Text>
+        <Text className={cn(styles.dropDownButtonText)}>
+          {strings.sortBy}:&nbsp;{strings[view.sortBy]}
+        </Text>
+        <IconDropDownArrow />
       </div>
     ),
-    [strings, sortBy, styles]
+    [strings, view, styles]
   );
 
-  const onChange = useCallback(
-    (val: FilterSortBy) => {
-      logger.log({
-        severity: 'INFO',
-        event: 'FilterChange',
-        type: ('sortBy:' + val) as FilterType,
-        vertex: partialFilter.key,
-        source,
-      });
-      partialFilter.sortBy = val;
-    },
-    [logger, partialFilter, source]
-  );
+  const onOpen = () => {
+    eventLogger.action('SORTBY_CHANGE_STARTED', {
+      category: EventCategory.CARD_LIST,
+    });
+  };
+
+  const onChange = (val: SortBy) => {
+    eventLogger.action('SORTBY_CHANGE_COMPLETED', {
+      category: EventCategory.CARD_LIST,
+      source: val,
+    });
+    view.sortBy = val;
+  };
 
   return (
     <DropDown
-      value={sortBy}
+      value={view.sortBy}
       onChange={onChange}
       renderSelected={renderSelected}
+      onOpen={onOpen}
     >
-      {FilterSortByValues.map((x) => (
+      {SORT_BY.map(x => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
         </DropDownItem>
@@ -175,41 +185,258 @@ function SortByDropDown({ source }: { source?: UISource }) {
   );
 }
 
-function ExtraFilters(props: ExtraFiltersProps) {
-  let content = null;
-  if (props.viewType === ViewType.List) {
-    content = <SortByDropDown />;
-  } else {
-    content = <GroupByDropDown />;
-  }
-
-  return <>{content}</>;
-}
-
-interface FilterButtonProps {
-  showFilters: boolean;
-  setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
+function ShowCheckedDropDown() {
   const styles = useStyles();
   const strings = useStrings();
-  const logger = useLogger();
+  const view = usePartialView('showChecked');
+  // const eventLogger = useEventLogger();
+
+  const renderSelected = useCallback(
+    () => (
+      <div className={cn(styles.dropDownButton, styles.iconItem)}>
+        <IconShow />
+        <Text className={cn(styles.dropDownButtonText)}>
+          {strings.showChecked}:&nbsp;{strings[view.showChecked]}
+        </Text>
+        <IconDropDownArrow />
+      </div>
+    ),
+    [strings, view, styles]
+  );
+
+  const onOpen = () => {
+    // eventLogger.action('SORTBY_CHANGE_STARTED', {
+    //   category: EventCategory.CARD_LIST,
+    // });
+  };
+
+  const onChange = useCallback(
+    (val: ShowChecked) => {
+      // eventLogger.action('SORTBY_CHANGE_COMPLETED', {
+      //   category: EventCategory.CARD_LIST,
+      //   source: val,
+      // });
+      view.showChecked = val;
+    },
+    [view]
+  );
+
+  return (
+    <DropDown
+      value={view.showChecked}
+      onChange={onChange}
+      renderSelected={renderSelected}
+      onOpen={onOpen}
+    >
+      {kShowChecked.map(x => (
+        <DropDownItem value={x} key={x}>
+          <Text>{strings[x]}</Text>
+        </DropDownItem>
+      ))}
+    </DropDown>
+  );
+}
+
+function DateFilterDropdown() {
+  const styles = useStyles();
+  const strings = useStrings();
+  const view = usePartialView('dateFilter', 'selectedTabId');
+
+  const text = view.dateFilter
+    ? `${
+        view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
+      } ${
+        (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
+        strings[view.dateFilter]
+      }`
+    : view.selectedTabId === 'overview'
+    ? strings.noTimeFrame
+    : strings.noDateFilter;
+
+  const renderSelected = useCallback(
+    () => (
+      <div className={cn(styles.dropDownButton, styles.iconItem)}>
+        <IconDueDate />
+        <Text className={cn(styles.dropDownButtonText)}>{text}</Text>
+        <IconDropDownArrow />
+      </div>
+    ),
+    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text]
+  );
+
+  const onOpen = () => {
+    // eventLogger.action('SORTBY_CHANGE_STARTED', {
+    //   category: EventCategory.CARD_LIST,
+    // });
+  };
+
+  const onChange = useCallback(
+    (val: DateFilter | undefined) => {
+      // eventLogger.action('SORTBY_CHANGE_COMPLETED', {
+      //   category: EventCategory.CARD_LIST,
+      //   source: val,
+      // });
+      view.dateFilter = val;
+    },
+    [view]
+  );
+
+  return (
+    <DropDown
+      value={view.dateFilter}
+      onChange={onChange}
+      renderSelected={renderSelected}
+      onOpen={onOpen}
+    >
+      <DropDownItem value={undefined} key={'clearDueDateFilter'}>
+        <Text>{strings.all}</Text>
+      </DropDownItem>
+      {kDateFilters.map(x => (
+        <DropDownItem value={x} key={x}>
+          <Text>
+            {(view.selectedTabId === 'overview'
+              ? ''
+              : strings.thisPrefix + ' ') + strings[x]}
+          </Text>
+        </DropDownItem>
+      ))}
+    </DropDown>
+  );
+}
+
+function DownloadCSVButton() {
+  const styles = useStyles();
+  const strings = useStrings();
+  const graph = useGraphManager();
+  // const eventLogger = useEventLogger();
+  const view = usePartialView('selectedWorkspaces');
+  const downloadButtonClicked = useCallback(() => {
+    downloadCSV(
+      graph,
+      Array.from(view.selectedWorkspaces).map(ws => ws.key)
+    );
+  }, [graph, view]);
+
+  return (
+    <Button
+      onClick={downloadButtonClicked}
+      // className={cn(styles.filterButton, styles.hasFilters)}
+    >
+      <IconDownloadXLS />
+      <Text className={cn(styles.dropDownButtonText)}>
+        {strings.downloadDashboard}
+      </Text>
+    </Button>
+  );
+}
+
+function ShowPinnedButton() {
+  const view = usePartialView('showPinned');
+  const styles = useStyles();
+
+  const togglePinned = useCallback(() => {
+    view.showPinned =
+      view.showPinned === 'pinned' ? 'pinned-unpinned' : 'pinned';
+  }, [view, view.showPinned]);
+
+  return (
+    <Button
+      onClick={togglePinned}
+      className={cn(styles.iconItem)}
+      // className={cn(styles.filterButton, styles.hasFilters)}
+    >
+      <IconPin on={view.showPinned === 'pinned'} />
+    </Button>
+  );
+}
+
+function CollapseExpandeToggle() {
+  const view = usePartialView('notesExpandBase');
+  const styles = useStyles();
+
+  const togglePinned = useCallback(() => {
+    view.notesExpandBase = !view.notesExpandBase;
+    view.notesExpandOverride = new Set();
+  }, [view]);
+
+  return (
+    <Button
+      className={cn(styles.iconItem)}
+      onClick={togglePinned}
+      // className={cn(styles.filterButton, styles.hasFilters)}
+    >
+      <IconCollapseExpand on={view.notesExpandBase} />
+    </Button>
+  );
+}
+
+function ExtraFilters() {
+  const styles = useStyles();
+  const graph = useGraphManager();
+  const unassignableRole = graph.getVertex<Role>('Unassignable').users;
+  const items: JSX.Element[] = [];
+  const rootUser = graph.getRootVertex<User>();
+  const view = usePartialView('noteType', 'viewType');
+  // if (unassignableRole.has(rootUser) || rootUser.email.endsWith('@ovvio.io')) {
+  //   if (items.length > 0) {
+  //     items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+  //   }
+  //   items.push(<DownloadCSVButton />);
+  // }
+  if (items.length > 0) {
+    items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+  }
+  items.push(<DateFilterDropdown />);
+  if (view.selectedTabId !== 'overview' && view.noteType === NoteType.Task) {
+    if (items.length > 0) {
+      items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+    }
+    items.push(<ShowCheckedDropDown />);
+  }
+  if (view.selectedTabId !== 'overview') {
+    if (items.length > 0) {
+      items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+    }
+    items.push(<SortByDropDown />);
+  }
+  if (view.selectedTabId !== 'overview' && view.viewType === 'board') {
+    if (items.length > 0) {
+      items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+    }
+    items.push(<GroupByDropDown />);
+  }
+  if (view.selectedTabId !== 'overview' && view.viewType === 'list') {
+    if (items.length > 0) {
+      items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+    }
+    items.push(<CollapseExpandeToggle />);
+    items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+    items.push(<ShowPinnedButton />);
+    items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
+  }
+  return <>{items}</>;
+}
+
+function FilterButton() {
+  const styles = useStyles();
+  const strings = useStrings();
+  const eventLogger = useEventLogger();
+  const view = usePartialView('showFilters');
 
   const filterButtonClicked = useCallback(() => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'toolbar:filterButton',
-      flag: !showFilters,
-    });
-    setShowFilters((x) => !x);
-  }, [logger, showFilters, setShowFilters]);
+    eventLogger.action(
+      view.showFilters ? 'FILTER_BAR_HIDDEN' : 'FILTER_BAR_SHOWN',
+      {
+        category: EventCategory.FILTERS,
+      }
+    );
+    view.showFilters = !view.showFilters;
+  }, [eventLogger, view]);
 
   return (
     <Button
       onClick={filterButtonClicked}
-      className={cn(styles.filterButton, showFilters && styles.hasFilters)}
+      className={cn(styles.filterButton, view.showFilters && styles.hasFilters)}
     >
       <IconFilter />
       <Text className={cn(styles.dropDownButtonText)}>{strings.filter}</Text>
@@ -217,80 +444,89 @@ function FilterButton({ showFilters, setShowFilters }: FilterButtonProps) {
   );
 }
 
-// interface NoteTypeToggleProps {
-//   noteType: NoteType;
-//   setNoteType: (noteType: NoteType) => void;
-// }
+function parseNoteType(val: string): NoteType {
+  if (val && val.toLowerCase() === NoteType.Note) {
+    return NoteType.Note;
+  }
+  return NoteType.Task;
+}
 
-// function parseNoteType(val: string): NoteType {
-//   if (val && val.toLowerCase() === NoteType.Note) {
-//     return NoteType.Note;
-//   }
-//   return NoteType.Task;
-// }
-
-function NoteTypeToggle() {
+function TabView() {
   const strings = useStrings();
   const styles = useStyles();
-  const filterContext = useFilterContext();
+  const view = usePartialView('noteType', 'selectedTabId');
   const graph = useGraphManager();
-  // useSyncUrlParam('type', false, noteType, (val) =>
-  //   setNoteType(parseNoteType(val))
-  // );
+  const unassignable = graph.getVertex<Role>('Unassignable');
+  const rootUser = graph.getRootVertex<User>();
+  const showOverview =
+    unassignable.users.has(rootUser) || rootUser.email.endsWith('@ovvio.io');
+
+  const setSelected = useCallback(
+    (tabId: TabId) => {
+      view.selectedTabId = tabId;
+      if (tabId !== 'overview') {
+        view.noteType = tabId === 'tasks' ? NoteType.Task : NoteType.Note;
+      }
+      view.closeFiltersDrawer();
+    },
+    [view]
+  );
+  const tabs: React.ReactElement[] = [];
+  for (const tabId of kTabIds) {
+    if (tabId === 'overview' && !showOverview) {
+      continue;
+    }
+    tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
+  }
   return (
     <TabsHeader
-      selected={filterContext.filter.getVertexProxy().noteType!}
-      setSelected={(type: NoteType) =>
-        filterContext.setFilter(
-          graph.getVertexManager(
-            type === NoteType.Note ? FilterKeyNotes : FilterKeyTasks
-          )
-        )
-      }
-      className={cn(styles.noteTypeToggle)}
+      selected={view.selectedTabId}
+      setSelected={setSelected}
+      className={cn(
+        showOverview ? styles.noteTypeToggleBig : styles.noteTypeToggleSmall
+      )}
     >
-      <TabButton value={NoteType.Task}>{strings.task}</TabButton>
-      <TabButton value={NoteType.Note}>{strings.note}</TabButton>
+      {tabs}
     </TabsHeader>
   );
 }
 
-export type DisplayBarProps = ExtraFiltersProps &
-  FilterButtonProps & {
-    setViewType: (viewType: ViewType) => void;
-    className?: string;
-  };
+export type DisplayBarProps = {
+  className?: string;
+};
 
-// const After = [VideoTutorialId];
+const After = [VideoTutorialId];
 
 export function DisplayBar(props: DisplayBarProps) {
-  const { setViewType, className, showFilters, setShowFilters, ...rest } =
-    props;
-  const { viewType } = props;
+  const { className, ...rest } = props;
   const styles = useStyles();
-  // const steps = useDisplayBarTutorialSteps();
+  const steps = useDisplayBarTutorialSteps();
+  const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
 
+  const leftHand = (
+    <>
+      <FilterButton />
+      <div className={cn(styles.separator)} />
+      <ViewToggle className={cn(styles.viewToggle)} />
+    </>
+  );
+
   return (
-    // <UserOnboard playAfter={After} tutorialId="DISPLAY_BAR" steps={steps}>
-    <div className={cn(styles.bar, className)}>
-      <div className={cn(styles.barRow, styles.viewRow)}>
-        <NoteTypeToggle />
+    <UserOnboard playAfter={After} tutorialId="DISPLAY_BAR" steps={steps}>
+      <div className={cn(styles.bar, className)}>
+        <div className={cn(styles.barRow, styles.viewRow)}>
+          <TabView />
+        </div>
+        <div className={cn(styles.barRow)}>
+          {view.selectedTabId !== 'overview' ? leftHand : null}
+          <div className={cn(layout.flexSpacer)} />
+          <ExtraFilters {...rest} />
+          <ToolbarRightItem>
+            <ComposeButton />
+          </ToolbarRightItem>
+        </div>
       </div>
-      <div className={cn(styles.barRow)}>
-        <FilterButton
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-        />
-        <div className={cn(styles.separator)} />
-        <ViewToggle className={cn(styles.viewToggle)} />
-        <div className={cn(layout.flexSpacer)} />
-        <ExtraFilters {...rest} />
-        <ToolbarRightItem>
-          <ComposeButton />
-        </ToolbarRightItem>
-      </div>
-    </div>
-    // </UserOnboard>
+    </UserOnboard>
   );
 }

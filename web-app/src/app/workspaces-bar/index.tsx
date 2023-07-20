@@ -1,3 +1,44 @@
+import * as SetUtils from '@ovvio/base/lib/utils/set';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Role, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { sortMngStampCompare } from '@ovvio/cfds/lib/client/sorting';
+import { layout, styleguide } from '@ovvio/styles';
+import { useBackdropStyles } from '@ovvio/styles/lib/components/backdrop';
+import { Button } from '@ovvio/styles/lib/components/buttons';
+import { IconOverflow } from '@ovvio/styles/lib/components/icons';
+import Layer from '@ovvio/styles/lib/components/layer';
+import { LogoIcon, LogoText } from '@ovvio/styles/lib/components/logo';
+import Menu, { MenuItem } from '@ovvio/styles/lib/components/menu';
+import { IconPinOff } from '@ovvio/styles/lib/components/new-icons/icon-pin-off';
+import { IconPinOn } from '@ovvio/styles/lib/components/new-icons/icon-pin-on';
+import { IconMore } from '@ovvio/styles/lib/components/new-icons/icon-more';
+import Tooltip from '@ovvio/styles/lib/components/tooltip';
+import {
+  LabelSm,
+  TextSm,
+  useTypographyStyles,
+} from '@ovvio/styles/lib/components/typography';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import {
+  Devices,
+  MediaQueries,
+  useCurrentDevice,
+} from '@ovvio/styles/lib/responsive';
+import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+import { Scroller } from '@ovvio/styles/lib/utils/scrolling';
+import { createUniversalPortal } from '@ovvio/styles/lib/utils/ssr';
+import { EventCategory, useEventLogger } from 'core/analytics';
+import {
+  useGraphManager,
+  usePartialRootUser,
+  usePartialGlobalView,
+  useRootUser,
+  useActiveViewManager,
+} from 'core/cfds/react/graph';
+import { useExistingQuery, useQuery2 } from 'core/cfds/react/query';
+import { usePartialVertex } from 'core/cfds/react/vertex';
+import { createUseStrings } from 'core/localization';
+import { LOGIN, useHistoryStatic } from 'core/react-utils/history';
 import React, {
   MouseEvent,
   MouseEventHandler,
@@ -6,64 +47,21 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import * as SetUtils from '../../../../base/set.ts';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { layout, styleguide } from '../../../../styles/index.ts';
-import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
-import { Button } from '../../../../styles/components/buttons.tsx';
-import { IconOverflow } from '../../../../styles/components/icons/index.ts';
-import Layer from '../../../../styles/components/layer.tsx';
-import { LogoIcon, LogoText } from '../../../../styles/components/logo.tsx';
-import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
-import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
-import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
-import Tooltip from '../../../../styles/components/tooltip/index.tsx';
-import {
-  LabelSm,
-  TextSm,
-  useTypographyStyles,
-} from '../../../../styles/components/typography.tsx';
-import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
-import {
-  Devices,
-  MediaQueries,
-  useCurrentDevice,
-} from '../../../../styles/responsive.ts';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
-import { Scroller } from '../../../../styles/utils/scrolling/index.tsx';
-import { createUniversalPortal } from '../../../../styles/utils/ssr.ts';
-import { sortWorkspaces } from '../../app/workspace-content/workspace-view/cards-display/card-item/workspace-indicator.tsx';
-import {
-  useGraphManager,
-  usePartialCurrentUser,
-  usePartialUserSettings,
-  useRootUser,
-  useUserSettings,
-} from '../../core/cfds/react/graph.tsx';
-import {
-  useExistingQuery,
-  useSharedQuery,
-} from '../../core/cfds/react/query.ts';
-import {
-  usePartialVertex,
-  usePartialVertices,
-  useVertex,
-  useVertices,
-} from '../../core/cfds/react/vertex.ts';
-import { createUseStrings } from '../../core/localization/index.tsx';
-import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
-import { WorkspaceBarActions } from './actions.tsx';
-import localization from './workspace-bar.strings.json' assert { type: 'json' };
+import { useWorkspaceColor } from 'shared/workspace-icon';
+import { WorkspaceBarActions } from './actions';
+import localization from './workspace-bar.strings.json';
+import WorkspaceSettingsDialog from './workspace-settings-dialog';
 import {
   toggleActionFromEvent,
   toggleSelectionItem,
-} from './ws-selection-utils.ts';
-import { User } from '../../../../cfds/client/graph/vertices/user.ts';
-import { UserSettings } from '../../../../cfds/client/graph/vertices/user-settings.ts';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import { Query } from '../../../../cfds/client/graph/query.ts';
+} from './ws-selection-utils';
+import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
+import { Query } from '@ovvio/cfds/lib/client/graph/query';
+import { WorkspaceGrouping } from '@ovvio/cfds/lib/base/scheme-types';
+import { GroupId } from '@ovvio/cfds/lib/client/graph/vertex-source';
+import { kViewPropsGlobal } from '@ovvio/cfds/lib/client/graph/vertices/view';
+import { useEffect } from 'react';
+import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -119,6 +117,12 @@ const useStyles = makeStyles(
       ...styleguide.transition.standard,
       transitionProperty: 'transform',
     },
+    separator: {
+      height: '1px',
+      width: '100%',
+      backgroundColor: theme.mono.m1,
+      marginBottom: styleguide.gridbase * 0.5,
+    },
     header: {
       width: '100%',
       flexShrink: 0,
@@ -130,7 +134,8 @@ const useStyles = makeStyles(
       boxSizing: 'border-box',
       width: '100%',
       marginTop: styleguide.gridbase * 3,
-      padding: [0, styleguide.gridbase * 2],
+      paddingLeft: styleguide.gridbase * 2,
+      paddingRight: styleguide.gridbase * 1,
       alignItems: 'center',
       basedOn: [layout.row],
     },
@@ -154,8 +159,14 @@ const useStyles = makeStyles(
     rotated: {
       transform: 'rotate(180deg)',
     },
+    workspacesHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      // marginRight: styleguide.gridbase,
+      marginLeft: styleguide.gridbase,
+    },
     toggleView: {
-      padding: [0, styleguide.gridbase * 2],
+      padding: [0, styleguide.gridbase * 1],
       boxSizing: 'border-box',
       marginBottom: styleguide.gridbase * 0.5,
       width: '100%',
@@ -164,8 +175,14 @@ const useStyles = makeStyles(
       whiteSpace: 'nowrap',
       basedOn: [layout.column],
     },
+    moreButton: {
+      marginRight: styleguide.gridbase * 1,
+      marginLeft: styleguide.gridbase * 0.5,
+    },
     toggleActions: {
       marginTop: styleguide.gridbase,
+      marginLeft: styleguide.gridbase,
+      marginRight: styleguide.gridbase * 3.5,
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       basedOn: [layout.row],
@@ -200,7 +217,6 @@ const useStyles = makeStyles(
       },
       basedOn: [layout.row],
     },
-
     itemTab: {
       cursor: 'pointer',
       userSelect: 'none',
@@ -211,7 +227,7 @@ const useStyles = makeStyles(
       borderTopRightRadius: styleguide.gridbase * 2,
       maxWidth: styleguide.gridbase * 20.5,
       paddingLeft: styleguide.gridbase * 2,
-      paddingRight: styleguide.gridbase,
+      paddingRight: styleguide.gridbase * 0.5,
 
       boxSizing: 'border-box',
       alignItems: 'center',
@@ -257,12 +273,14 @@ const useStyles = makeStyles(
       opacity: 0,
       ...styleguide.transition.short,
       transitionProperty: 'opacity',
+      marginRight: styleguide.gridbase,
     },
     expander: {
       height: styleguide.gridbase * 4,
-      padding: [styleguide.gridbase, styleguide.gridbase * 2],
+      padding: [0, styleguide.gridbase * 2],
       boxSizing: 'border-box',
-      alignItems: 'center',
+      alignItems: 'left',
+      width: '100%',
       basedOn: [layout.row],
       color: theme.colors.text,
       ':disabled': {
@@ -272,10 +290,11 @@ const useStyles = makeStyles(
     expanderText: {
       color: 'inherit',
       basedOn: [layout.flexSpacer, useTypographyStyles.bold],
+      textAlign: 'left',
     },
     expanderIcon: {
       color: 'inherit',
-      marginLeft: styleguide.gridbase,
+      marginRight: styleguide.gridbase,
       transform: 'rotate(90deg)',
     },
     expanderIconOpen: {
@@ -285,6 +304,8 @@ const useStyles = makeStyles(
       opacity: 0,
       ...styleguide.transition.short,
       transitionProperty: 'opacity',
+      marginLeft: styleguide.gridbase * 0.5,
+      marginRight: styleguide.gridbase * 0.5,
     },
     pinButtonPinned: {
       opacity: 1,
@@ -294,6 +315,99 @@ const useStyles = makeStyles(
 );
 
 const useStrings = createUseStrings(localization);
+
+type WorkspaceSystemGID = 'pinned' | 'hidden' | 'templates';
+
+type WorkspaceGID = GroupId<VertexManager<User> | WorkspaceSystemGID>;
+
+type GroupByMapping = {
+  [key in WorkspaceGrouping]: (ws: Workspace) => WorkspaceGID | WorkspaceGID[];
+};
+
+function WorkspaceGIDToString(gid: WorkspaceGID): string {
+  if (gid === null) {
+    return 'null';
+  }
+  return typeof gid === 'string' ? gid : gid.key;
+}
+
+function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | undefined {
+  const user = ws.graph.getRootVertex<User>();
+  if (user.hiddenWorkspaces.has(ws.key)) {
+    return 'hidden';
+  }
+  if (user.pinnedWorkspaces.has(ws.key)) {
+    return 'pinned';
+  }
+  if (ws.isTemplate) {
+    return 'templates';
+  }
+  return null;
+}
+
+const kWorkspaceGIDOrder: readonly (WorkspaceGID | 'groups')[] = [
+  'pinned',
+  null,
+  'groups',
+  'hidden',
+  'templates',
+];
+
+function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
+  if (gid1 === gid2) {
+    return 0;
+  }
+  if (gid1 instanceof VertexManager && gid2 instanceof VertexManager) {
+    return coreValueCompare(gid1, gid2);
+  }
+  const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
+  const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
+  const idx1 = kWorkspaceGIDOrder.indexOf(
+    typeof marker1 === 'string' ? marker1 : null
+  );
+  const idx2 = kWorkspaceGIDOrder.indexOf(
+    typeof marker2 === 'string' ? marker2 : null
+  );
+  return idx1 - idx2;
+}
+
+const GROUP_BY: GroupByMapping = {
+  none: systemGIDForWorkspace,
+  assignee: (ws: Workspace) => {
+    const sysGID = systemGIDForWorkspace(ws);
+    if (sysGID) {
+      return sysGID;
+    }
+    const res: WorkspaceGID[] = [];
+    for (const u of ws.assignees) {
+      if (!u.isRoot) {
+        res.push(u.manager);
+      }
+    }
+    if (res.length === 0) {
+      res.push(null);
+    }
+    return res;
+  },
+  teamLeader: (ws: Workspace) => {
+    const sysGID = systemGIDForWorkspace(ws);
+    if (sysGID) {
+      return sysGID;
+    }
+    const res: WorkspaceGID[] = [];
+    const role = ws.graph.getVertex<Role>('RoleTeamLeader');
+    const teamLeaders = role.assignees;
+    for (const u of ws.assignees) {
+      if (teamLeaders.has(u) && !u.isRoot) {
+        res.push(u.manager);
+      }
+    }
+    if (res.length === 0) {
+      res.push(null);
+    }
+    return res;
+  },
+};
 
 function WorkspaceCheckbox({ toggled }: { toggled: boolean }) {
   const styles = useStyles();
@@ -305,10 +419,6 @@ function WorkspaceCheckbox({ toggled }: { toggled: boolean }) {
 }
 
 export interface WorkspacesBarProps {
-  expanded: boolean;
-  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
-  // selectedWorkspaces: string[];
-  // setSelectedWorkspaces: React.Dispatch<React.SetStateAction<string[]>>;
   className?: string;
 }
 
@@ -375,28 +485,60 @@ function CollapseIcon({ className }: { className?: string }) {
 }
 
 interface WorkspaceToggleViewProps {
-  expanded: boolean;
   onSelectAll: () => void;
   onUnselectAll: () => void;
-  selectedRatio: number;
-  className?: string;
+  query: Query<Workspace, Workspace, WorkspaceGID>;
 }
 
 function WorkspaceToggleView({
-  selectedRatio,
+  query,
   onSelectAll,
   onUnselectAll,
-  className,
-  expanded,
 }: WorkspaceToggleViewProps) {
   const strings = useStrings();
   const styles = useStyles();
+  const view = usePartialGlobalView(
+    'workspaceGrouping',
+    'workspaceBarCollapsed',
+    'selectedWorkspaces'
+  );
+  query = useQuery2(query, false);
+  const selectedRatio =
+    query.count && view.selectedWorkspaces.size / query.count;
 
   return (
     <div className={cn(styles.toggleView)}>
-      {expanded && (
-        <div>
+      {!view.workspaceBarCollapsed && (
+        <div className={cn(styles.workspacesHeader)}>
           <LabelSm>{strings.myWorkspaces}</LabelSm>
+          <Menu
+            renderButton={() => <IconMore className={cn(styles.moreButton)} />}
+            direction="out"
+            position="right"
+          >
+            <LabelSm>Group By</LabelSm>
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'none';
+              }}
+            >
+              {strings.none}
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'assignee';
+              }}
+            >
+              {strings.assignee}
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'teamLeader';
+              }}
+            >
+              {strings.teamLeader}
+            </MenuItem>
+          </Menu>
         </div>
       )}
       <div className={cn(styles.toggleActions)}>
@@ -425,28 +567,27 @@ function WorkspaceToggleView({
 
 function WorkspaceListItem({
   workspace,
-  expanded,
-  isSelected,
-  onClick,
-  isHidden,
-  setIsHidden,
-  isPinned,
-  setIsPinned,
+  groupId,
 }: {
   workspace: VertexManager<Workspace>;
-  expanded: boolean;
-  isSelected: boolean;
-  isHidden: boolean;
-  setIsHidden: (hidden?: boolean) => void;
-  isPinned: boolean;
-  setIsPinned: (pinned?: boolean) => void;
-  onClick: MouseEventHandler;
+  groupId: WorkspaceGID;
 }) {
   const color = useWorkspaceColor(workspace);
-  const { name } = usePartialVertex(workspace, ['name']);
+  const { name, isTemplate } = usePartialVertex(workspace, [
+    'name',
+    'isTemplate',
+  ]);
   const styles = useStyles();
   const strings = useStrings();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const view = usePartialGlobalView(
+    'workspaceBarCollapsed',
+    'selectedWorkspaces'
+  );
+  const user = usePartialVertex(useRootUser(), [
+    'hiddenWorkspaces',
+    'pinnedWorkspaces',
+  ]);
 
   const style = useMemo<any>(
     () => ({
@@ -457,18 +598,48 @@ function WorkspaceListItem({
     [color]
   );
 
-  const textRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>();
   const isOverflowing =
     textRef.current &&
     textRef.current.offsetWidth < textRef.current.scrollWidth;
 
-  const renderButton = useCallback(() => <IconOverflow />, []);
+  const renderButton = useCallback(() => <IconMore />, []);
+
+  const setWorkspaceState = useCallback(
+    (state: 'template' | 'hidden' | 'pinned' | 'none') => {
+      const vert = workspace.getVertexProxy();
+      vert.isTemplate = state === 'template';
+      user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
+      user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
+      if (state === 'template' || state === 'hidden') {
+        view.selectedWorkspaces.delete(vert);
+      }
+    },
+    [
+      user.hiddenWorkspaces,
+      user.pinnedWorkspaces,
+      view.selectedWorkspaces,
+      workspace,
+    ]
+  );
+
+  const toggleSelected = useCallback(() => {
+    const selectedWorkspaces = view.selectedWorkspaces;
+    const vert = workspace.getVertexProxy();
+    if (selectedWorkspaces.has(vert)) {
+      selectedWorkspaces.delete(vert);
+    } else {
+      selectedWorkspaces.add(vert);
+    }
+  }, [view, workspace]);
+
+  const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
 
   return (
     <div
       className={cn(
         styles.listItem,
-        expanded && styles.listItemExpanded,
+        !view.workspaceBarCollapsed && styles.listItemExpanded,
         isSelected && styles.listItemSelected
       )}
       style={style}
@@ -476,8 +647,8 @@ function WorkspaceListItem({
       <Tooltip text={name} disabled={!isOverflowing} position="right">
         <div
           className={cn(styles.itemTab)}
-          onClick={onClick}
-          onContextMenu={onClick}
+          onClick={toggleSelected}
+          // onContextMenu={toggleSelected}
         >
           <div ref={textRef} className={cn(styles.itemText)}>
             {name}
@@ -486,14 +657,19 @@ function WorkspaceListItem({
           <WorkspaceCheckbox toggled={isSelected} />
         </div>
       </Tooltip>
-      <div className={cn(layout.flexSpacer)} />
-      {expanded && (
+      <div /*className={cn(layout.flexSpacer)}*/ />
+      {!view.workspaceBarCollapsed && (
         <React.Fragment>
           <Button
-            className={cn(styles.pinButton, isPinned && styles.pinButtonPinned)}
-            onClick={() => setIsPinned()}
+            className={cn(
+              styles.pinButton,
+              groupId === 'pinned' && styles.pinButtonPinned
+            )}
+            onClick={() =>
+              setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+            }
           >
-            {isPinned ? <IconPinOn /> : <IconPinOff />}
+            {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
           </Button>
           <Menu
             renderButton={renderButton}
@@ -505,18 +681,38 @@ function WorkspaceListItem({
             <MenuItem onClick={() => setIsSettingsOpen(true)}>
               {strings.workspaceSettings}
             </MenuItem>
-            <MenuItem onClick={() => setIsHidden()}>
-              {isHidden ? strings.showWorkspace : strings.hideWorkspace}
-            </MenuItem>
+            {!isTemplate && (
+              <MenuItem
+                onClick={() =>
+                  setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
+                }
+              >
+                {groupId === 'hidden'
+                  ? strings.showWorkspace
+                  : strings.hideWorkspace}
+              </MenuItem>
+            )}
+            {groupId !== 'hidden' && (
+              <MenuItem
+                onClick={() =>
+                  setWorkspaceState(
+                    groupId === 'templates' ? 'none' : 'template'
+                  )
+                }
+              >
+                {groupId === 'templates'
+                  ? strings.unsetTemplate
+                  : strings.setTemplate}
+              </MenuItem>
+            )}
           </Menu>
         </React.Fragment>
       )}
-      {/* <WorkspaceSettingsDialog
+      <WorkspaceSettingsDialog
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
         hide={() => setIsSettingsOpen(false)}
-        source="bar:workspace"
-      /> */}
+      />
     </div>
   );
 }
@@ -549,254 +745,316 @@ function ExpanderIcon({ className }: { className?: string }) {
   );
 }
 
-function WorkspacesList({ expanded }: WorkspacesBarProps) {
+interface WorkspaceListProps {
+  query: Query<Workspace, Workspace, WorkspaceGID>;
+}
+
+function WorkspacesList({ query }: WorkspaceListProps) {
   const styles = useStyles();
   const strings = useStrings();
-  const [showHidden, setShowHidden] = useState(false);
-  const settings = usePartialUserSettings([
-    'hiddenWorkspaces',
-    'pinnedWorkspaces',
-  ]);
-  const { hiddenWorkspaces, pinnedWorkspaces } = settings;
-  const workspacesQuery = useSharedQuery('workspaces');
-  const workspaces = useVertices(workspacesQuery.results);
-  const hidden = workspaces.filter((x) => hiddenWorkspaces.has(x.key));
+  const view = usePartialGlobalView(
+    'expandedWorkspaceGroups',
+    'workspaceBarCollapsed',
+    'selectedWorkspaces'
+  );
+  useQuery2(query);
 
-  const visible = workspaces
-    .filter((x) => !hiddenWorkspaces.has(x.key))
-    .sort((x, y) => sortWorkspaces(x, y, pinnedWorkspaces, hiddenWorkspaces));
-  const location = useLocation();
-  const navigate = useNavigate();
-  const logger = useLogger();
-  const lastSelectedKey = useRef<string>();
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
-  const toggle = (e: MouseEvent, wsMng: VertexManager<Workspace>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const toggleExpanded = useCallback(
+    (gid: WorkspaceGID) => {
+      const expandedWorkspaceGroups = view.expandedWorkspaceGroups;
+      const key = WorkspaceGIDToString(gid);
+      if (expandedWorkspaceGroups.has(key)) {
+        expandedWorkspaceGroups.delete(key);
+      } else {
+        expandedWorkspaceGroups.add(key);
+      }
+    },
+    [view]
+  );
 
-    //Route back to / if not there already
-    if (location.pathname !== '/') {
-      navigate('/');
-      logger.log({
-        severity: 'INFO',
-        event: 'Click',
-        uiSource: 'workspace-bar',
-        routeInfo: location.pathname + location.search + location.hash,
-      });
-      return;
+  const contents: JSX.Element[] = [];
+  const groups = query.groups();
+  if (!groups.includes('hidden')) {
+    groups.push('hidden');
+  }
+  for (const gid of query.groups()) {
+    if (contents.length > 0) {
+      contents.push(<div className={cn(styles.separator)} />);
     }
-    const proxy = wsMng.getVertexProxy();
-    const collection = hidden.includes(proxy) ? hidden : visible;
-
-    const toggleAction = toggleActionFromEvent(e);
-    const r = toggleSelectionItem(
-      collection.map((x) => x.key),
-      wsMng.key,
-      Array.from(selectedWorkspacesQuery.keys()),
-      lastSelectedKey.current,
-      toggleAction
+    const rows = query.group(gid);
+    const expanded = view.expandedWorkspaceGroups.has(
+      WorkspaceGIDToString(gid)
     );
-    const selectedKeys = new Set<string>(r ? r.allSelectedItems : []);
-    const prevSelectedKeys = new Set(selectedWorkspacesQuery.keys());
-    workspacesQuery.forEach((ws) => (ws.selected = selectedKeys.has(ws.key)));
-    const didSelect = r?.toggleType === 'selected';
-    if (didSelect) {
-      lastSelectedKey.current = wsMng.key;
+    if (gid !== 'pinned' && gid !== null) {
+      const selectedCount = SetUtils.intersectionSize(
+        view.selectedWorkspaces,
+        query.vertices(gid)
+      );
+      contents.push(
+        <Button
+          key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
+          className={cn(styles.expander)}
+          disabled={!rows.length}
+          onClick={() => toggleExpanded(gid)}
+        >
+          <div className={cn(styles.expanderText)}>
+            {typeof gid === 'string'
+              ? expanded
+                ? strings[gid]
+                : strings[gid + 'Short']
+              : gid.getVertexProxy().name}
+            {selectedCount > 0 ? ` [${selectedCount}]` : ''}
+          </div>
+          <ExpanderIcon
+            className={cn(
+              styles.expanderIcon,
+              expanded && styles.expanderIconOpen
+            )}
+          />
+        </Button>
+      );
     }
-    logger.log({
-      severity: 'INFO',
-      event: 'FilterChange',
-      type: 'workspace',
-      added: Array.from(SetUtils.subtract(selectedKeys, prevSelectedKeys)),
-      removed: Array.from(SetUtils.subtract(prevSelectedKeys, selectedKeys)),
-      uiSource: 'workspace-bar',
-      action: r.actionType,
-    });
-  };
-
-  const setIsHidden = useCallback(
-    (ws: Workspace, hidden: boolean | undefined) => {
-      hidden = Boolean(hidden);
-      hidden
-        ? settings.hiddenWorkspaces.add(ws.key)
-        : settings.hiddenWorkspaces.delete(ws.key);
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'hide',
-        flag: hidden,
-        vertex: ws.key,
-        uiSource: 'workspace-bar',
-      });
-    },
-    [settings, logger]
-  );
-
-  const setIsPinned = useCallback(
-    (ws: Workspace, pinned: boolean | undefined) => {
-      pinned = Boolean(pinned);
-      pinned
-        ? settings.pinnedWorkspaces.add(ws.key)
-        : settings.pinnedWorkspaces.delete(ws.key);
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'pin',
-        flag: pinned,
-        vertex: ws.key,
-        uiSource: 'workspace-bar',
-      });
-    },
-    [settings, logger]
-  );
+    if (gid === 'pinned' || gid === null || expanded) {
+      for (const ws of rows) {
+        contents.push(
+          <WorkspaceListItem
+            key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
+              ws.key
+            }`}
+            workspace={ws}
+            groupId={gid}
+          />
+        );
+      }
+    }
+  }
 
   return (
     <Scroller>
-      {(ref) => (
+      {ref => (
         <div ref={ref} className={cn(styles.list)}>
-          {visible.map((ws) => (
-            <WorkspaceListItem
-              setIsHidden={(hidden) => setIsHidden(ws, hidden)}
-              setIsPinned={(pinned) => setIsPinned(ws, pinned)}
-              isHidden={false}
-              isPinned={pinnedWorkspaces.has(ws.key)}
-              key={ws.key}
-              workspace={ws.manager as VertexManager<Workspace>}
-              expanded={expanded}
-              onClick={() => (ws.selected = !ws.selected)}
-              isSelected={ws.selected}
-            />
-          ))}
-          <Button
-            className={cn(styles.expander)}
-            disabled={!hidden.length}
-            onClick={() => setShowHidden((x) => !x)}
-          >
-            <div className={cn(styles.expanderText)}>
-              {expanded
-                ? strings.hiddenWorkspaces
-                : strings.hiddenWorkspacesShort}
-            </div>
-            <ExpanderIcon
-              className={cn(
-                styles.expanderIcon,
-                showHidden && styles.expanderIconOpen
-              )}
-            />
-          </Button>
-          {showHidden &&
-            hidden.map((ws) => (
-              <WorkspaceListItem
-                setIsHidden={(hidden) => setIsHidden(ws, hidden)}
-                setIsPinned={(pinned) => setIsPinned(ws, pinned)}
-                isHidden={true}
-                isPinned={false}
-                key={ws.key}
-                workspace={ws.manager as VertexManager<Workspace>}
-                expanded={expanded}
-                onClick={(e) => (ws.selected = !ws.selected)}
-                isSelected={ws.selected}
-              />
-            ))}
+          {contents}
         </div>
       )}
     </Scroller>
   );
 }
 
-function WorkspaceBarInternal({
-  expanded,
-  setExpanded,
-  className,
-}: WorkspacesBarProps) {
-  const styles = useStyles();
-  const { hiddenWorkspaces, pinnedWorkspaces } = usePartialUserSettings([
-    'hiddenWorkspaces',
-    'pinnedWorkspaces',
-  ]);
+function shouldAutoSelectWorkspace(
+  ws: Workspace,
+  groups: Iterable<WorkspaceGID>,
+  expandedWorkspaceGroups: Set<string>
+): boolean {
+  if (ws.isTemplate) {
+    return false;
+  }
+  const user = ws.graph.getRootVertex<User>();
+  const hiddenWorkspaces = user.hiddenWorkspaces;
+  if (hiddenWorkspaces.has(ws.key)) {
+    return false;
+  }
+  if (user.pinnedWorkspaces.has(ws.key)) {
+    return true;
+  }
+  for (const gid of groups) {
+    if (
+      gid === null ||
+      (gid instanceof VertexManager && expandedWorkspaceGroups.has(gid.key))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
-  const workspacesQuery = useSharedQuery('workspaces');
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
-  const logger = useLogger();
+function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
+  const graph = useGraphManager();
+  const view = usePartialGlobalView('workspaceGrouping');
+  const partialUser = usePartialRootUser(
+    'hiddenWorkspaces',
+    'pinnedWorkspaces'
+  );
+
+  const query = useMemo(
+    () => {
+      return new Query(graph.sharedQuery('workspaces'), () => true, {
+        groupBy: view.workspaceGrouping
+          ? GROUP_BY[view.workspaceGrouping]
+          : undefined,
+        groupComparator: compareWorkspaceGID,
+        name: 'WorkspaceBar',
+        contentSensitive: true,
+        contentFields: ['isTemplate'],
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      graph,
+      // view,
+      view.workspaceGrouping,
+      partialUser.hiddenWorkspaces,
+      partialUser.pinnedWorkspaces,
+    ]
+  );
+  return <WorkspaceBarInternal className={className} query={query} />;
+}
+
+function WorkspaceBarInternal({
+  className,
+  query,
+}: {
+  className?: string;
+  query: Query<Workspace, Workspace, WorkspaceGID>;
+}) {
+  const styles = useStyles();
+  // const user = useRootUser();
+  const eventLogger = useEventLogger();
+  const activeViewMgr = useActiveViewManager();
+  const view = usePartialGlobalView(
+    'selectedWorkspaces',
+    'expandedWorkspaceGroups',
+    'workspaceBarCollapsed',
+    'noteType'
+  );
+
   const selectAll = useCallback(() => {
-    workspacesQuery.forEach(
-      (ws) => (ws.selected = !hiddenWorkspaces.has(ws.key))
+    view.selectedWorkspaces = new Set(
+      query.transform(
+        ws =>
+          shouldAutoSelectWorkspace(
+            ws,
+            query.groupsForKey(ws.key),
+            view.expandedWorkspaceGroups
+          ),
+        mgr => mgr.getVertexProxy()
+      )
     );
-    logger.log({
-      severity: 'INFO',
-      event: 'FilterChange',
-      uiSource: 'workspace-bar',
-      added: 'ALL',
-    });
-  }, [workspacesQuery, logger, hiddenWorkspaces]);
+    eventLogger.action('WORKSPACES_ALL_SELECTED', {});
+  }, [view, eventLogger, query]);
+
+  // Clear view settings when no workspace is selected
+  useEffect(() => {
+    if (view.selectedWorkspaces.size === 0) {
+      const activeView = activeViewMgr.getVertexProxy();
+      activeView.clearFilters();
+      activeView.clearContentsDisplaySettings();
+    }
+  }, [activeViewMgr, view.selectedWorkspaces]);
+
   const unselectAll = useCallback(() => {
-    workspacesQuery.forEach((ws) => (ws.selected = false));
-    logger.log({
-      severity: 'INFO',
-      event: 'FilterChange',
-      uiSource: 'workspace-bar',
-      removed: 'ALL',
-    });
-  }, [workspacesQuery, logger]);
+    view.selectedWorkspaces.clear();
+    eventLogger.action('WORKSPACES_ALL_UNSELECTED', {});
+  }, [eventLogger, view]);
+
+  // const pinWorkspace = (ws: VertexManager<Workspace>, pinned?: boolean) => {
+  //   const proxy = user.getVertexProxy();
+  //   const current = new Set(proxy.pinnedWorkspaces);
+  //   const hidden = new Set(proxy.hiddenWorkspaces);
+  //   pinned = typeof pinned === 'undefined' ? !current.has(ws.key) : pinned;
+  //   if (pinned) {
+  //     current.add(ws.key);
+  //     if (hidden.has(ws.key)) {
+  //       hidden.delete(ws.key);
+  //       proxy.hiddenWorkspaces = hidden;
+  //     }
+  //   } else if (current.has(ws.key)) {
+  //     current.delete(ws.key);
+  //   }
+  //   eventLogger.wsAction(pinned ? 'PIN_WORKSPACE' : 'UNPIN_WORKSPACE', ws, {});
+  //   proxy.pinnedWorkspaces = current;
+  // };
+
+  // const hideWorkspace = (ws: VertexManager<Workspace>, hidden?: boolean) => {
+  //   const proxy = user.getVertexProxy();
+  //   const current = new Set(proxy.hiddenWorkspaces);
+  //   const pinned = new Set(proxy.pinnedWorkspaces);
+  //   hidden = typeof hidden === 'undefined' ? !current.has(ws.key) : hidden;
+  //   if (hidden) {
+  //     current.add(ws.key);
+  //     if (pinned.has(ws.key)) {
+  //       pinned.delete(ws.key);
+  //       proxy.pinnedWorkspaces = pinned;
+  //     }
+  //   } else if (current.has(ws.key)) {
+  //     current.delete(ws.key);
+  //   }
+  //   eventLogger.wsAction(hidden ? 'HIDE_WORKSPACE' : 'SHOW_WORKSPACE', ws, {});
+  //   proxy.hiddenWorkspaces = current;
+  //   if (hidden && view.selectedWorkspaces.has(ws.getVertexProxy())) {
+  //     view.selectedWorkspaces.delete(ws.getVertexProxy());
+  //     setView({
+  //       ...view,
+  //       selectedWorkspaces: view.selectedWorkspaces,
+  //     });
+  //   }
+  // };
 
   return (
     <Layer priority={2}>
-      {(style) => (
+      {style => (
         <div
           style={style}
-          className={cn(styles.root, !expanded && styles.collapsed, className)}
+          className={cn(
+            styles.root,
+            view.workspaceBarCollapsed && styles.collapsed,
+            className
+          )}
         >
           <div className={cn(styles.header)}>
             <div className={cn(styles.logoContainer)}>
-              <LogoIcon className={cn(styles.logoIcon)} />
-              {expanded && <LogoText className={cn(styles.logoText)} />}
+              {/* <LogoIcon className={cn(styles.logoIcon)} /> */}
+              <img src="/Logo_precise_fold.png" alt="logo-small" />
+              {/* {expanded && <LogoText className={cn(styles.logoText)} />} */}
+              {!view.workspaceBarCollapsed && (
+                <img src="/Logo_precise_open.png" alt="logo-ful" />
+              )}
               <div className={cn(layout.flexSpacer)} />
               <Button
                 className={cn(styles.openBarButton)}
-                onClick={() => setExpanded((x) => !x)}
+                onClick={() => {
+                  view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
+                }}
               >
                 <CollapseIcon
-                  className={expanded ? styles.rotated : undefined}
+                  className={view.workspaceBarCollapsed && styles.rotated}
                 />
               </Button>
             </div>
             <WorkspaceToggleView
-              expanded={expanded}
-              selectedRatio={
-                workspacesQuery.count &&
-                selectedWorkspacesQuery.count / workspacesQuery.count
-              }
+              // selectedRatio={
+              //   query.count && view.selectedWorkspaces.size / query.count
+              // }
+              query={query}
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
             />
           </div>
-          <WorkspacesList expanded={expanded} setExpanded={setExpanded} />
-          <WorkspaceBarActions expanded={expanded} />
+          <WorkspacesList query={query} />
+          <WorkspaceBarActions />
         </div>
       )}
     </Layer>
   );
 }
 
-function MobileBar({ expanded, setExpanded, ...rest }: WorkspacesBarProps) {
+function MobileBar({ ...rest }: WorkspacesBarProps) {
   const styles = useStyles();
+  const view = usePartialGlobalView('workspaceBarCollapsed');
 
   return createUniversalPortal(
     <Layer priority={3}>
-      {(style) => (
+      {style => (
         <React.Fragment>
-          {expanded && (
+          {!view.workspaceBarCollapsed && (
             <div
               style={style}
               className={cn(styles.backdrop)}
-              onClick={() => setExpanded(false)}
+              onClick={() => {
+                view.workspaceBarCollapsed = true;
+              }}
             />
           )}
-          <WorkspaceBarInternal
-            {...rest}
-            expanded={expanded}
-            setExpanded={setExpanded}
-          />
+          <WorkspaceBarWrapper {...rest} />
         </React.Fragment>
       )}
     </Layer>
@@ -804,7 +1062,7 @@ function MobileBar({ expanded, setExpanded, ...rest }: WorkspacesBarProps) {
 }
 
 function DesktopBar(props: WorkspacesBarProps) {
-  return <WorkspaceBarInternal {...props} />;
+  return <WorkspaceBarWrapper {...props} />;
 }
 
 export function WorkspacesBar(props: WorkspacesBarProps) {

@@ -3,6 +3,9 @@
     "myWorkspaces": "My Workspaces",
     "selectAll": "Select All",
     "unselectAll": "Unselect All",
+    "none": "None",
+    "assignee": "Member",
+    "teamLeader": "Team Leader",
     "add": "New Workspace",
     "addShort": "Add",
     "invite": "Invite to Workspace",
@@ -10,8 +13,12 @@
     "workspaceSettings": "Settings",
     "hideWorkspace": "Hide for me",
     "showWorkspace": "Show for me",
-    "hiddenWorkspaces": "Hidden Workspaces",
-    "hiddenWorkspacesShort": "Hidden",
+    "hidden": "Hidden",
+    "hiddenShort": "Hidden",
+    "templates": "Templates",
+    "templatesShort": "Templates",
+    "setTemplate": "Set as Template",
+    "unsetTemplate": "Unset as Template",
     "inDemo": "This is not available while in demo"
   }
 }

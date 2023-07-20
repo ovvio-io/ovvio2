@@ -2,11 +2,16 @@
  * This file contains a set of common field triggers that can be installed
  * on specific Vertex fields.
  */
-import { assert } from '../../../base/error.ts';
-import { SchemeNamespace } from '../../base/scheme-types.ts';
-import { CoreValue } from '../../../base/core-types/index.ts';
-import { Mutation, MutationPack, mutationPackIsEmpty } from './mutations.ts';
-import { FieldChangeTrigger, Vertex } from './vertex.ts';
+import { assert } from '@ovvio/base/lib/utils';
+import { SchemeNamespace } from 'src/base/scheme-types';
+import { CoreValue } from '../../core-types';
+import {
+  Mutation,
+  MutationPack,
+  MutationOrigin,
+  mutationPackIsEmpty,
+} from './mutations';
+import { FieldChangeTrigger, Vertex } from './vertex';
 
 /**
  * An interface of a method that gets called in response to a neighboring
@@ -21,7 +26,7 @@ export interface NeighborDidMutateCallback {
    *
    * @requires MutationPack A mutation pack with side effects of this.
    */
-  (local: boolean, oldValue: CoreValue, neighbor: Vertex): MutationPack;
+  (source: MutationOrigin, oldValue: CoreValue, neighbor: Vertex): MutationPack;
 }
 
 /**
@@ -39,28 +44,43 @@ export interface NeighborDidMutateCallback {
  */
 export function triggerParent<T extends Vertex>(
   vertCallback: keyof T,
+  fieldName: string,
   parentScheme?: SchemeNamespace
 ): FieldChangeTrigger<T> {
-  return (vert: T, mutation: Mutation) => {
-    const parent = vert.parent as T | undefined;
-    if (
-      parent !== undefined &&
-      (parentScheme === undefined ||
-        parent.manager.scheme.namespace === parentScheme)
-    ) {
-      const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
-      assert(
-        callback !== undefined,
-        `Parent mutation handler '${String(
-          vertCallback
-        )}' does not exist on vertex of type '${vert.namespace}'`
-      );
-      const sideEffects = callback.call(parent, mutation[1], mutation[2], vert);
-      if (!mutationPackIsEmpty(sideEffects)) {
-        parent.manager.vertexDidMutate(sideEffects);
+  return wrapInName(
+    '__t_parent_' + fieldName,
+    (vert: T, mutation: Mutation) => {
+      const parent = vert.parent as T | undefined;
+      if (
+        parent !== undefined &&
+        (parentScheme === undefined ||
+          parent.manager.scheme.namespace === parentScheme)
+      ) {
+        const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
+        assert(
+          callback !== undefined,
+          `Parent mutation handler '${String(
+            vertCallback
+          )}' does not exist on vertex of type '${vert.namespace}'`
+        );
+        const sideEffects = callback.call(
+          parent,
+          mutation[1],
+          mutation[2],
+          vert
+        );
+        if (!mutationPackIsEmpty(sideEffects)) {
+          parent.manager.vertexDidMutate(sideEffects);
+        }
       }
     }
-  };
+  );
+}
+
+export interface TriggerChildrenOptions<T extends Vertex> {
+  namespace?: SchemeNamespace;
+  fieldName?: string;
+  condition?: (vert: T, mutation: Mutation) => boolean;
 }
 
 /**
@@ -79,32 +99,52 @@ export function triggerParent<T extends Vertex>(
  */
 export function triggerChildren<T extends Vertex>(
   vertCallback: keyof T,
-  childScheme?: SchemeNamespace
+  fieldName: string,
+  childSchemeOrOpts?: SchemeNamespace | TriggerChildrenOptions<T>
 ): FieldChangeTrigger<T> {
-  return (vert: T, mutation: Mutation) => {
-    for (const [child] of vert.inEdges('parent')) {
-      // Skip children that don't match the provided scheme
+  const opts: TriggerChildrenOptions<T> | undefined =
+    (typeof childSchemeOrOpts === 'string'
+      ? { namespace: childSchemeOrOpts }
+      : childSchemeOrOpts) || {};
+  const namespace = opts.namespace;
+  return wrapInName(
+    '__t_children_' + fieldName,
+    (vert: T, mutation: Mutation) => {
       if (
-        childScheme !== undefined &&
-        child.manager.scheme.namespace !== childScheme
+        typeof opts.condition === 'function' &&
+        !opts.condition(vert, mutation)
       ) {
-        continue;
+        return;
       }
-      const callback: NeighborDidMutateCallback = (child as T)[
-        vertCallback
-      ] as any;
-      assert(
-        callback !== undefined,
-        `Parent mutation handler '${String(
+      for (const [child] of vert.inEdges(opts.fieldName || 'parent')) {
+        // Skip children that don't match the provided scheme
+        if (
+          namespace !== undefined &&
+          child.manager.scheme.namespace !== namespace
+        ) {
+          continue;
+        }
+        const callback: NeighborDidMutateCallback = (child as T)[
           vertCallback
-        )}' does not exist on vertex of type '${vert.namespace}'`
-      );
-      const sideEffects = callback.call(child, mutation[1], mutation[2], vert);
-      if (!mutationPackIsEmpty(sideEffects)) {
-        child.manager.vertexDidMutate(sideEffects);
+        ] as any;
+        assert(
+          callback !== undefined,
+          `Parent mutation handler '${String(
+            vertCallback
+          )}' does not exist on vertex of type '${vert.namespace}'`
+        );
+        const sideEffects = callback.call(
+          child,
+          mutation[1],
+          mutation[2],
+          vert
+        );
+        if (!mutationPackIsEmpty(sideEffects)) {
+          child.manager.vertexDidMutate(sideEffects);
+        }
       }
     }
-  };
+  );
 }
 
 /**
@@ -116,10 +156,21 @@ export function triggerChildren<T extends Vertex>(
  */
 export function triggerCompose<T extends Vertex>(
   t1: FieldChangeTrigger<T>,
-  t2: FieldChangeTrigger<T>
+  t2: FieldChangeTrigger<T>,
+  name: string
 ): FieldChangeTrigger<T> {
-  return (vert: T, mutation: Mutation) => {
+  return wrapInName('__t_composite_' + name, (vert: T, mutation: Mutation) => {
     t1(vert, mutation);
     t2(vert, mutation);
-  };
+  });
+}
+
+function wrapInName<T extends Vertex>(
+  name: string,
+  impl: FieldChangeTrigger<T>
+): FieldChangeTrigger<T> {
+  // eslint-disable-next-line no-eval
+  return eval(`(function ${name}(v, m) {
+    impl(v, m);
+  })`);
 }

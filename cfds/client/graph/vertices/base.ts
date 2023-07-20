@@ -1,26 +1,27 @@
-import { assert } from '../../../../base/error.ts';
-import { Vertex, VertexConfig } from '../vertex.ts';
+import { FieldTriggers, Vertex, VertexConfig } from '../vertex.ts';
 import * as OrderStamp from '../../../base/orderstamp.ts';
 import {
   MutationPack,
   mutationPackAppend,
   mutationPackIter,
 } from '../mutations.ts';
+import { Workspace } from './workspace.ts';
+import { triggerChildren } from '../propagation-triggers.ts';
 import { VertexManager } from '../vertex-manager.ts';
-import { Record } from '../../../base/record.ts';
-import { IVertex } from '../types.ts';
+import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 
 export class BaseVertex extends Vertex {
+  private _cachedSortStamp?: string;
+
   constructor(
     mgr: VertexManager,
-    record: Record,
     prevVertex: Vertex | undefined,
     config: VertexConfig | undefined
   ) {
-    super(mgr, record, prevVertex, config);
-    if (prevVertex && prevVertex.namespace === this.namespace) {
-      this.selected = (prevVertex as typeof this).selected;
+    super(mgr, prevVertex, config);
+    if (prevVertex instanceof BaseVertex) {
+      this._cachedSortStamp = prevVertex._cachedSortStamp;
     }
   }
 
@@ -37,7 +38,7 @@ export class BaseVertex extends Vertex {
   // }
 
   get lastModified(): Date {
-    const d = this.record.get<Date>('lastModified');
+    const d = this.record.get('lastModified', this.creationDate);
     assert(d instanceof Date);
     return d;
   }
@@ -54,7 +55,7 @@ export class BaseVertex extends Vertex {
     if (parentDeleted) {
       return parentDeleted;
     }
-    const v = this.record.get<number>('isDeleted');
+    const v = this.record.get('isDeleted');
     assert(typeof v === 'number');
     return v;
   }
@@ -68,10 +69,13 @@ export class BaseVertex extends Vertex {
   }
 
   get sortStamp(): string {
-    return this.record.get(
-      'sortStamp',
-      OrderStamp.fromTimestamp(this.creationDate, this.key)
-    );
+    if (!this._cachedSortStamp) {
+      this._cachedSortStamp = this.record.get(
+        'sortStamp',
+        OrderStamp.fromTimestamp(this.creationDate, this.key)
+      );
+    }
+    return this._cachedSortStamp!;
   }
 
   set sortStamp(v: string) {
@@ -82,10 +86,8 @@ export class BaseVertex extends Vertex {
     this.record.delete('sortStamp');
   }
 
-  selected = false;
-
-  clearSelected() {
-    this.selected = false;
+  sortStampDidMutate(): void {
+    this._cachedSortStamp = undefined;
   }
 
   // Override by subclasses
@@ -112,7 +114,10 @@ export class BaseVertex extends Vertex {
     parent: Vertex
   ): MutationPack {
     // Our parent's isDeleted affects us only when we're not explicitly deleted
-    if (!this.record.get('isDeleted')) {
+    if (
+      !this.record.get('isDeleted') &&
+      (oldValue === 1) !== (parent.isDeleted === 1)
+    ) {
       return ['isDeleted', local, this.calcIsDeleted(oldValue)];
     }
   }
@@ -138,7 +143,7 @@ export class BaseVertex extends Vertex {
     return super.valueForRefCalc(fieldName);
   }
 
-  compare(other: IVertex): number {
+  compare<T extends Vertex>(other: T): number {
     if (other instanceof BaseVertex) {
       // Default order is descending which places newer items first. This
       // enables us to show intermediate results of queries and still make
@@ -148,3 +153,65 @@ export class BaseVertex extends Vertex {
     return super.compare(other);
   }
 }
+
+export class ContentVertex extends BaseVertex {
+  get parent(): Vertex | undefined {
+    return this.workspace;
+  }
+
+  get createdBy(): Vertex | undefined {
+    const key = this.record.get<string | undefined>('createdBy');
+    return key ? this.graph.getVertex(key) : undefined;
+  }
+
+  set createdBy(v: Vertex | undefined) {
+    if (v) {
+      assert(v.graph === this.graph);
+      this.record.set('createdBy', v.key);
+    } else {
+      this.record.delete('createdBy');
+    }
+  }
+  get workspaceKey(): string {
+    return this.record.get('workspace') as string;
+  }
+
+  get workspace(): Workspace {
+    const key = this.record.get('workspace');
+    assert(typeof key === 'string');
+    return this.graph.getVertex<Workspace>(key);
+  }
+
+  set workspace(ws: Workspace) {
+    assert(ws.graph === this.graph);
+    this.record.set('workspace', ws.key);
+  }
+
+  workspaceDidMutate(
+    local: boolean,
+    oldValue: Workspace | undefined
+  ): MutationPack {
+    if (this.parent?.isEqual(this.workspace)) {
+      return ['parent', local, oldValue];
+    }
+  }
+
+  parentWorkspaceDidMutate(): void {
+    this.workspace = (this.parent as ContentVertex).workspace;
+  }
+}
+
+const kFieldTriggersBase: FieldTriggers<BaseVertex> = {
+  isDeleted: triggerChildren('parentIsDeletedChanged', 'BaseVertex_isDeleted'),
+};
+
+Vertex.registerFieldTriggers(BaseVertex, kFieldTriggersBase);
+
+const kFieldTriggersContent: FieldTriggers<ContentVertex> = {
+  workspace: triggerChildren(
+    'parentWorkspaceDidMutate',
+    'ContentVertex_workspace'
+  ),
+};
+
+Vertex.registerFieldTriggers(ContentVertex, kFieldTriggersContent);

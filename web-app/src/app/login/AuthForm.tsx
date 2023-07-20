@@ -1,19 +1,32 @@
-import React, { useState, useRef, useContext, FormEvent } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
-import { TextField } from '../../../../styles/components/inputs/index.ts';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { styleguide, layout } from '@ovvio/styles/lib';
+import { TextField } from '@ovvio/styles/lib/components/inputs';
 import {
   RaisedButton,
   useRaisedButtonStyles,
-} from '../../../../styles/components/buttons.tsx';
-import { IconGoogle } from '../../../../styles/components/icons/index.ts';
-import { Dialog } from '../../../../styles/components/dialog/index.tsx';
-import { toastContext } from '../../../../styles/components/toast/index.tsx';
-import { OnLoginInfoFunc } from './index.tsx';
-import { H1, H2 } from '../../../../styles/components/texts.tsx';
+} from '@ovvio/styles/lib/components/buttons';
+import { IconGoogle } from '@ovvio/styles/lib/components/icons';
+import { Dialog } from '@ovvio/styles/lib/components/dialog';
+import { isElectron } from 'electronUtils';
+import { toastContext } from '@ovvio/styles/lib/components/toast';
+import { OnLoginInfoFunc } from '.';
+import {
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+  getAdditionalUserInfo,
+  getAuth,
+  GoogleAuthProvider,
+  linkWithCredential,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth';
+import { H1, H2 } from '@ovvio/styles/lib/components/texts';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   form: {
     alignItems: 'stretch',
     width: '100%',
@@ -74,9 +87,10 @@ type GoToState = (state: AUTH_STATE) => void;
 
 interface SignUpFormProps {
   goToState: GoToState;
+  signInWithGoogle: (e: any) => Promise<void>;
   onLogin: OnLoginInfoFunc;
 }
-function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
+function SignUpForm({ goToState, signInWithGoogle, onLogin }: SignUpFormProps) {
   const styles = useStyles();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -85,7 +99,7 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const onSubmit = async (e: FormEvent) => {
+  const onSubmit = async e => {
     e.stopPropagation();
     e.preventDefault();
     if (!email || !password || !name) {
@@ -104,22 +118,22 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
       return setError('Passwords do not match');
     }
 
-    // const auth = getAuth();
+    const auth = getAuth();
 
     try {
-      // setProcessing(true);
-      // setError('');
-      // const { user } = await createUserWithEmailAndPassword(
-      //   auth,
-      //   email,
-      //   password
-      // );
+      setProcessing(true);
+      setError('');
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      // await updateProfile(user, {
-      //   displayName: name,
-      // });
+      await updateProfile(user, {
+        displayName: name,
+      });
       onLogin({
-        userId: 'test',
+        user,
         isNew: true,
       });
     } catch (error) {
@@ -130,15 +144,15 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
     }
   };
 
-  // const googleSignIn = async (e: any) => {
-  //   try {
-  //     setProcessing(true);
-  //     await signInWithGoogle(e);
-  //   } catch (err) {
-  //     setProcessing(false);
-  //     setError(err.message);
-  //   }
-  // };
+  const googleSignIn = async (e: any) => {
+    try {
+      setProcessing(true);
+      await signInWithGoogle(e);
+    } catch (err) {
+      setProcessing(false);
+      setError(err.message);
+    }
+  };
 
   return (
     <form className={cn(styles.form)} onSubmit={onSubmit}>
@@ -190,7 +204,7 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
       >
         Sign up
       </RaisedButton>
-      {/* {isElectron() ? null : (
+      {isElectron() ? null : (
         <RaisedButton
           className={cn(styles.button, styles.googleButton)}
           onClick={googleSignIn}
@@ -200,7 +214,7 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
           <span className={cn(layout.flex)}>Sign in with Google</span>
           <div className={cn(styles.googleIcon)} />
         </RaisedButton>
-      )} */}
+      )}
       <p>
         Already have an account?{' '}
         <span
@@ -216,17 +230,17 @@ function SignUpForm({ goToState, onLogin }: SignUpFormProps) {
 
 interface LoginFormProps {
   goToState: GoToState;
-  // signInWithGoogle: (e: any) => Promise<void>;
+  signInWithGoogle: (e: any) => Promise<void>;
   onLogin: OnLoginInfoFunc;
 }
-function LoginForm({ goToState, onLogin }: LoginFormProps) {
+function LoginForm({ goToState, signInWithGoogle, onLogin }: LoginFormProps) {
   const styles = useStyles();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const onSubmit = async (e: FormEvent) => {
+  const onSubmit = async (e: any) => {
     e.stopPropagation();
     e.preventDefault();
 
@@ -244,26 +258,26 @@ function LoginForm({ goToState, onLogin }: LoginFormProps) {
     setProcessing(true);
     setError('');
 
-    // const auth = getAuth();
+    const auth = getAuth();
 
     try {
-      // const { user } = await signInWithEmailAndPassword(auth, email, password);
-      onLogin({ userId: 'test' });
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      onLogin({ user });
     } catch (error) {
       const { message } = error;
       setProcessing(false);
       setError(message);
     }
   };
-  // const googleSignIn = async (e) => {
-  //   try {
-  //     setProcessing(true);
-  //     await signInWithGoogle(e);
-  //   } catch (err) {
-  //     setProcessing(false);
-  //     setError(err.message);
-  //   }
-  // };
+  const googleSignIn = async e => {
+    try {
+      setProcessing(true);
+      await signInWithGoogle(e);
+    } catch (err) {
+      setProcessing(false);
+      setError(err.message);
+    }
+  };
   return (
     <form className={cn(styles.form)} onSubmit={onSubmit}>
       <H1 className={cn(styles.h1)}>Sign In</H1>
@@ -295,7 +309,7 @@ function LoginForm({ goToState, onLogin }: LoginFormProps) {
       >
         Log in
       </RaisedButton>
-      {/* {isElectron() ? null : (
+      {isElectron() ? null : (
         <RaisedButton
           className={cn(styles.button, styles.googleButton)}
           onClick={googleSignIn}
@@ -305,7 +319,7 @@ function LoginForm({ goToState, onLogin }: LoginFormProps) {
           <span className={cn(layout.flex)}>Sign in with Google</span>
           <div className={cn(styles.googleIcon)} />
         </RaisedButton>
-      )} */}
+      )}
       <p
         className={cn(styles.link)}
         onClick={() => goToState(AUTH_STATE.RESET_PASSWORD)}
@@ -336,7 +350,7 @@ function ResetPasswordForm({ goToState }: ResetPasswordFormProps) {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const onSubmit = async (e: FormEvent) => {
+  const onSubmit = async e => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -346,9 +360,9 @@ function ResetPasswordForm({ goToState }: ResetPasswordFormProps) {
 
     setProcessing(true);
 
-    // const auth = getAuth();
+    const auth = getAuth();
     try {
-      // await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email);
       toastProvider.displayToast({
         duration: 2000,
         text: 'Email sent. check your inbox',
@@ -378,7 +392,7 @@ function ResetPasswordForm({ goToState }: ResetPasswordFormProps) {
         type="email"
         name="email"
         placeholder="email"
-        onChange={(e) => setEmail(e.currentTarget.value)}
+        onChange={e => setEmail(e.currentTarget.value)}
         required
       />
       {error && <p className={cn(styles.error)}>{error}</p>}
@@ -408,53 +422,53 @@ export default function AuthFormView({ onLogin }: AuthFormViewProps) {
   const [currentPassword, setCurrentPassword] = useState('');
   const credentials = useRef(null);
 
-  // const auth = getAuth();
+  const auth = getAuth();
 
-  // const signInWithGoogle = async (e) => {
-  //   e.preventDefault();
-  //   e.stopPropagation();
-  //   try {
-  //     const userCred = await signInWithPopup(auth, new GoogleAuthProvider());
+  const signInWithGoogle = async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const userCred = await signInWithPopup(auth, new GoogleAuthProvider());
 
-  //     const additionalUserInfo = await getAdditionalUserInfo(userCred);
+      const additionalUserInfo = await getAdditionalUserInfo(userCred);
 
-  //     onLogin({
-  //       user: userCred.user,
-  //       isNew: additionalUserInfo ? additionalUserInfo.isNewUser : false,
-  //     });
-  //   } catch (error) {
-  //     if (error.code === 'auth/account-exists-with-different-credential') {
-  //       const { credential, email } = error;
+      onLogin({
+        user: userCred.user,
+        isNew: additionalUserInfo ? additionalUserInfo.isNewUser : false,
+      });
+    } catch (error) {
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        const { credential, email } = error;
 
-  //       const methods = await fetchSignInMethodsForEmail(auth, email);
+        const methods = await fetchSignInMethodsForEmail(auth, email);
 
-  //       if (methods[0] === 'password') {
-  //         setKnownEmail(email);
-  //         setCurrentPassword('');
-  //         setRequestPassword(true);
-  //         credentials.current = credential;
-  //       }
-  //     } else {
-  //       throw error;
-  //     }
-  //   }
-  // };
+        if (methods[0] === 'password') {
+          setKnownEmail(email);
+          setCurrentPassword('');
+          setRequestPassword(true);
+          credentials.current = credential;
+        }
+      } else {
+        throw error;
+      }
+    }
+  };
   const linkAccount = async (event: any) => {
     event.preventDefault();
     event.stopPropagation();
 
-    // const userCred = await signInWithEmailAndPassword(
-    //   auth,
-    //   knownEmail,
-    //   currentPassword
-    // );
+    const userCred = await signInWithEmailAndPassword(
+      auth,
+      knownEmail,
+      currentPassword
+    );
 
-    // await linkWithCredential(userCred.user, this.state._credentials);
-    onLogin({ userId: 'test' });
+    await linkWithCredential(userCred.user, this.state._credentials);
+    onLogin({ user: userCred.user });
   };
   const dismissLink = () => {
-    setKnownEmail('');
-    setCurrentPassword('');
+    setKnownEmail(null);
+    setCurrentPassword(null);
     setRequestPassword(false);
     credentials.current = null;
   };
@@ -464,7 +478,7 @@ export default function AuthFormView({ onLogin }: AuthFormViewProps) {
     content = (
       <SignUpForm
         goToState={setLoginState}
-        // signInWithGoogle={signInWithGoogle}
+        signInWithGoogle={signInWithGoogle}
         onLogin={onLogin}
       />
     );
@@ -474,7 +488,7 @@ export default function AuthFormView({ onLogin }: AuthFormViewProps) {
     content = (
       <LoginForm
         goToState={setLoginState}
-        // signInWithGoogle={signInWithGoogle}
+        signInWithGoogle={signInWithGoogle}
         onLogin={onLogin}
       />
     );
@@ -497,7 +511,7 @@ export default function AuthFormView({ onLogin }: AuthFormViewProps) {
             name="currentPassword"
             type="password"
             value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.currentTarget.value)}
+            onChange={e => setCurrentPassword(e.currentTarget.value)}
           />
           <RaisedButton>Link accounts</RaisedButton>
         </form>

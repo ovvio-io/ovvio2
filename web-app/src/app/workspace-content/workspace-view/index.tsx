@@ -1,15 +1,18 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import Toolbar, { useStyles as toolbarStyles } from './toolbar/index.tsx';
-import { layout } from '../../../../../styles/index.ts';
-import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx';
-import NoteView from './note-editor/index.tsx';
-import { CardsDisplay } from './cards-display/index.tsx';
-import { EmptyState } from './empty-state/index.tsx';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { Route, Switch, Redirect } from 'react-router-dom';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import Toolbar, { useStyles as toolbarStyles } from './toolbar';
+import { layout } from '@ovvio/styles/lib';
+import DueDateEditor from 'shared/components/due-date-editor';
+import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import NotesView from './note-editor';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { CardsDisplay } from './cards-display';
+import { EmptyState } from './empty-state';
+import { useDemoInfo } from 'shared/demo';
+import { DemoIndicator } from './demo-indicator';
+import { usePartialView } from 'core/cfds/react/graph';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   blurred: {
     filter: 'blur(2px)',
   },
@@ -43,7 +46,7 @@ interface ContentProps {
 
 export default function WorkspaceContentView({ className }: ContentProps) {
   const styles = useStyles();
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
+  const view = usePartialView('selectedWorkspaces');
 
   return (
     <div className={cn(styles.main, className)}>
@@ -51,22 +54,24 @@ export default function WorkspaceContentView({ className }: ContentProps) {
       <DueDateEditor>
         <div className={cn(styles.content)}>
           <div className={cn(styles.router)}>
-            <Routes>
+            <Switch>
               <Route
                 path={`/:workspaceId/notes/:noteId`}
-                element={<NoteView />}
+                render={props => <NotesView {...props} />}
               />
               <Route
                 path="/"
-                element={
-                  selectedWorkspacesQuery.count ? (
+                exact
+                render={() =>
+                  view.selectedWorkspaces.size ? (
                     <CardsDisplay />
                   ) : (
                     <EmptyState />
                   )
                 }
               />
-            </Routes>
+              <Route path="/" render={() => <Redirect to="/" />} />
+            </Switch>
           </div>
         </div>
       </DueDateEditor>

@@ -1,8 +1,7 @@
-import React from 'react';
-import { BaseRange, Text } from 'https://esm.sh/slate@0.87.0';
-import { isMention } from '../../mentions/index.tsx';
-import { DecorateHandler, RenderLeafHandler } from '../index.ts';
-import { isLinkLeafProps, LinkLeaf } from './link-leaf.tsx';
+import { Text } from 'slate';
+import { isMention } from '../../mentions';
+import { DecorateHandler, RenderLeafHandler } from '..';
+import { isLinkLeafProps, LinkLeaf } from './link-leaf';
 
 function getUrlRanges(
   str: string
@@ -30,7 +29,7 @@ function getUrlRanges(
   return ranges;
 }
 
-const EMPTY: BaseRange[] = [];
+const EMPTY = [];
 
 export function createLinkDecoration(): DecorateHandler & RenderLeafHandler {
   return {
@@ -40,7 +39,7 @@ export function createLinkDecoration(): DecorateHandler & RenderLeafHandler {
       }
 
       const urls = getUrlRanges(node.text);
-      return urls.map((data) => ({
+      return urls.map(data => ({
         link: data.url,
         anchor: { path, offset: data.start },
         focus: { path, offset: data.end },
@@ -50,7 +49,6 @@ export function createLinkDecoration(): DecorateHandler & RenderLeafHandler {
       if (isLinkLeafProps(props)) {
         return <LinkLeaf {...props} />;
       }
-      return null;
     },
   };
 }

@@ -1,12 +1,12 @@
+import config from 'core/config';
 import React from 'react';
-import { Features, getFeatureConfig } from './features.tsx';
+import { Features, getFeatureConfig } from './features';
 
 export { Features };
 
 export interface FeatureProps {
   id: Features;
   nonActiveComponent?: React.ComponentType<{}>;
-  children: React.ReactNode;
 }
 
 function NoopComponent() {
@@ -21,12 +21,12 @@ export function isFeatureActive(featureId: Features) {
     (query.get('forceProd') || 'false').toLowerCase() === 'true';
 
   switch (featureConf.status) {
-    // case 'active': {
-    //   return true;
-    // }
-    // case 'beta': {
-    //   return !(config.isProduction || forceProd);
-    // }
+    case 'active': {
+      return true;
+    }
+    case 'beta': {
+      return !(config.isProduction || forceProd);
+    }
     case 'disabled':
     default: {
       return false;

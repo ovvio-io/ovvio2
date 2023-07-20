@@ -1,13 +1,13 @@
-import React, { useContext } from 'react';
-import { Editor, NodeEntry } from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
-import { ElementNode } from '../../../../../cfds/richtext/tree.ts';
-import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import { mergePlugins } from '../plugins/index.ts';
-import { createAutoReplaceHandler } from '../utils/auto-replace.ts';
-import { ListUtils } from '../utils/list-utils.ts';
-import { listContext, ListItemElement } from './list-item.element.tsx';
-import { NumberedListElement } from './numbered-list.element.tsx';
+import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
+import { Editor, NodeEntry } from 'slate';
+import { RenderElementProps } from 'slate-react';
+import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { mergePlugins } from '../plugins';
+import { createAutoReplaceHandler } from '../utils/auto-replace';
+import { ListUtils } from '../utils/list-utils';
+import { listContext, ListItemElement } from './list-item.element';
+import { NumberedListElement } from './numbered-list.element';
+import { useContext } from 'react';
 
 const useStyles = makeStyles(() => ({
   bulletList: {

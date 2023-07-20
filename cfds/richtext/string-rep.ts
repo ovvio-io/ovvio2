@@ -1,10 +1,10 @@
-import { assert } from '../../base/error.ts';
-import { Dictionary } from '../../base/collections/dict.ts';
-import { HashMap } from '../../base/collections/hash-map.ts';
-import { CoreOptions } from '../../base/core-types/base.ts';
-import { coreValueEquals } from '../../base/core-types/index.ts';
-import { encodableValueHash } from '../../base/core-types/encoding/hash.ts';
-import { FlatRepAtom, isElementSpacer, kElementSpacer } from './flat-rep.ts';
+import { assert } from '@ovvio/base/lib/utils';
+import { Dictionary } from '../collections/dict';
+import { HashMap } from '../collections/hash-map';
+import { CoreOptions, CoreValue } from '../core-types/base';
+import { coreValueEquals } from '../core-types';
+import { encodableValueHash } from '../encoding/hash';
+import { FlatRepAtom, isElementSpacer, kElementSpacer } from './flat-rep';
 
 type ReverseMapping = (FlatRepAtom | null)[];
 
@@ -24,7 +24,7 @@ export class StringRep {
 
   constructor(opts?: CoreOptions) {
     this._dict = new HashMap<FlatRepAtom, string>(
-      (v) => encodableValueHash(v, opts),
+      v => encodableValueHash(v, opts),
       (v1, v2) => coreValueEquals(v1, v2, opts)
     );
     this._reverseMapping = [];

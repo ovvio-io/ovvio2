@@ -1,7 +1,7 @@
-import { notReached } from '../../base/error.ts';
-import { kDMP } from '../base/defs.ts';
-import { Dictionary } from '../../base/collections/dict.ts';
-import { HashMap, HashSet } from '../../base/collections/hash-map.ts';
+import { notReached } from '@ovvio/base/lib/utils/error';
+import { kDMP } from '../base/defs';
+import { Dictionary } from '../collections/dict';
+import { HashMap, HashSet } from '../collections/hash-map';
 import {
   CoreDictionary,
   CoreType,
@@ -12,11 +12,11 @@ import {
   getCoreType,
   isReadonlyCoreObject,
   ReadonlyCoreObject,
-} from '../../base/core-types/index.ts';
-import { EqualOptions } from '../../base/core-types/equals.ts';
-import { encodableValueHash } from '../../base/core-types/encoding/index.ts';
-import { MergeContext } from './merge-context.ts';
-import { StringRep } from './string-rep.ts';
+} from '../core-types';
+import { EqualOptions } from '../core-types/equals';
+import { encodableValueHash } from '../encoding';
+import { MergeContext } from './merge-context';
+import { StringRep } from './string-rep';
 import {
   kCoreValueTreeNodeOpts,
   TextNode,
@@ -33,7 +33,7 @@ import {
   RichTextValue,
   isExpiredPointer,
   isTrivialTextNode,
-} from './tree.ts';
+} from './tree';
 
 /**
  * A representation of a pointer by value. The pointer points at the text node
@@ -108,9 +108,9 @@ const gFrozenTextNodes: Dictionary<
   TreeNode,
   Dictionary<string | undefined, TreeNode>
 > = new HashMap(
-  (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
+  v => encodableValueHash(v, kCoreValueTreeNodeOpts),
   (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts),
-  (v) => {
+  v => {
     return coreValueClone(v, {
       ...kCoreValueTreeNodeOpts,
       fieldCloneOverride: (
@@ -210,7 +210,7 @@ export function* flattenTextNode(
     yield getFrozenTextNode(node, c);
     // Process all pointers on this character
     if (sortedPointers !== undefined) {
-      for (const ptrAtom of pointersForNode(sortedPointers, node, local, idx)) {
+      for (let ptrAtom of pointersForNode(sortedPointers, node, local, idx)) {
         // A Pointer is field-compatible with PointerValue so we just spit the
         // original pointers unmodified
         yield ptrAtom;
@@ -225,7 +225,7 @@ export function* flattenTextNode(
     emittedEmptyText = true;
   }
   if (sortedPointers !== undefined) {
-    for (const ptrAtom of pointersForNode(sortedPointers, node, local, idx)) {
+    for (let ptrAtom of pointersForNode(sortedPointers, node, local, idx)) {
       if (!emittedEmptyText) {
         yield getFrozenTextNode(node, '');
         emittedEmptyText = true;
@@ -465,7 +465,7 @@ export function* flattenSiblingNodes(
 function cleanCloneTreeAtomField(
   obj: ReadonlyCoreObject | CoreDictionary,
   key: string,
-  _opts?: CoreValueCloneOpts
+  opts?: CoreValueCloneOpts
 ): CoreValue {
   if (key === 'children' && isElementNode(obj as CoreValue)) {
     return [];
@@ -885,15 +885,19 @@ export function* stripFormattingFilter(
         hasOpenParagraph = true;
       }
       // Trivial or non text nodes can be returned as is
-      if (isTrivialTextNode(atom) || !isElementNode(atom)) {
+      const isText = isTextNode(atom);
+      if (
+        (isText && isTrivialTextNode(atom)) ||
+        (!isText && !isElementNode(atom))
+      ) {
         yield atom;
-      } else {
+      } else if (isText) {
         // Non-trivial text nodes need to have their formatting stripped out
         // (i.e make them trivial)
         const copy: TextNode = {
           text: (atom as unknown as TextNode).text,
         };
-        if (copy.isLocal === true) {
+        if (atom.isLocal === true) {
           copy.isLocal = true;
         }
         yield copy;

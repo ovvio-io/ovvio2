@@ -1,4 +1,7 @@
-import { CoreObject } from '../../base/core-types/index.ts';
+import { CoreObject } from '../core-types';
+import { Diff } from 'diff-match-patch-typescript';
+import { count } from '@ovvio/base/lib/utils/common';
+import { kDMP } from '../base/defs';
 import {
   RichText,
   Pointer,
@@ -8,14 +11,23 @@ import {
   dfs,
   TreeNode,
   isTextNode,
+  pointToAbsOffset,
+  pointFromAbsOffset,
   PointerDirection,
   Point,
   PointerType,
-} from './tree.ts';
-import { assert, notReached } from '../../base/error.ts';
-import { TreeKeys } from './tree-keys.ts';
-import { PointerValue, projectPointers } from './flat-rep.ts';
-import { Dictionary } from '../../base/collections/dict.ts';
+} from './tree';
+import { OrderedMap } from '../collections/orderedmap';
+import { notReached } from '@ovvio/base/lib/utils/error';
+import { assert } from '@ovvio/base/lib/utils';
+import { TreeKeys } from './tree-keys';
+import {
+  flattenRichText,
+  isTreeNode,
+  PointerValue,
+  projectPointers,
+} from './flat-rep';
+import { Dictionary } from '../collections/dict';
 
 export interface Range extends CoreObject {
   anchor: Point;
@@ -111,6 +123,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
   if (rt.pointers === undefined) {
     return result;
   }
+  const now = Date.now();
   let lastTextNode: TextNode | undefined;
   let firstTextNode: TextNode | undefined;
   for (const ptr of rt.pointers) {

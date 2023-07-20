@@ -7,16 +7,15 @@ import {
   Path,
   Point,
   Range,
-} from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
-import { CfdsEditor } from '../cfds/with-cfds.tsx';
-import { ElementUtils } from './element-utils.ts';
-import { TreeNode } from '../../../../../cfds/richtext/tree.ts';
+} from 'slate';
+import { ReactEditor } from 'slate-react';
+import { CfdsEditor } from '../cfds/with-cfds';
+import { ElementUtils } from './element-utils';
 
 export const SelectionUtils = {
   extractSingleElement(
     editor: Editor,
-    at?: BaseRange | null
+    at?: BaseRange
   ): NodeEntry<Element> | [null, null] {
     at = at || editor.selection;
     if (!at) {
@@ -36,9 +35,9 @@ export const SelectionUtils = {
     let node: Node = editor;
     const path: Path = [];
     while (node.children) {
-      const index: number = (node.children as []).length - 1;
+      const index = (node.children as []).length - 1;
       path.push(index);
-      node = (node.children as TreeNode[])[index] as Node;
+      node = node.children[index];
     }
     const offset = Node.string(node).length;
 

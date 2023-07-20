@@ -1,20 +1,29 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import { layout, styleguide } from '../../../../../../styles/index.ts';
-import { Button } from '../../../../../../styles/components/buttons.tsx';
-import { IconOverflow } from '../../../../../../styles/components/icons/index.ts';
+import { Logger } from '@ovvio/base';
+import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
+import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+import { layout, styleguide } from '@ovvio/styles/lib';
+import { Button } from '@ovvio/styles/lib/components/buttons';
+import { IconOverflow } from '@ovvio/styles/lib/components/icons';
 import Menu, {
   MenuItem,
   MenuItemStyle,
-} from '../../../../../../styles/components/menu.tsx';
-import { useTypographyStyles } from '../../../../../../styles/components/typography.tsx';
-import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
-import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
-import { usePartialVertices } from '../../../../core/cfds/react/vertex.ts';
-import { isWindowsOS } from '../../../../utils.ts';
-import { useLogger } from '../../../../core/cfds/react/logger.tsx';
+} from '@ovvio/styles/lib/components/menu';
+import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
+import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
+import { EventCategory, useEventLogger } from 'core/analytics';
+import { useGraphManager } from 'core/cfds/react/graph';
+import { isWorkspace, useExistingQuery, useQuery } from 'core/cfds/react/query';
+import config from 'core/config';
+import { LOGIN, useHistory } from 'core/react-utils/history';
+import { useScopedObservable } from 'core/state';
+import { isElectron } from 'electronUtils';
+import React from 'react';
+import { electronConstants } from 'shared/constants/electron-constants';
+import UserStore from 'stores/user';
+import { usePartialVertices } from '../../../../core/cfds/react/vertex';
+import { isWindowsOS } from '../../../../utils';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(theme => ({
   headerRoot: {
     basedOn: [layout.column],
   },
@@ -37,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const isWindows = isWindowsOS();
-const OPEN_APP_ENABLED = false; //isWindows && !isElectron();
+const OPEN_APP_ENABLED = isWindows && !isElectron();
 
 export interface ToolbarMenuProps {
   className?: string;
@@ -45,28 +54,67 @@ export interface ToolbarMenuProps {
 
 export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const styles = useStyles();
-  const logger = useLogger();
+  const userStore = useScopedObservable(UserStore);
+  const eventLogger = useEventLogger();
+  const history = useHistory();
+
+  const downloadApp = () => {
+    const installOS = isWindows ? 'windows' : 'mac';
+
+    if (config.appInstallations && config.appInstallations[installOS]) {
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = config.appInstallations[installOS];
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      eventLogger.action('DESKTOP_APP_DOWNLOAD_CLICKED', {
+        category: EventCategory.MENU_ITEM,
+      });
+    } else {
+      Logger.error(
+        'App install failed',
+        `config.appInstallations.${installOS} not configured`
+      );
+    }
+  };
+  const signInToApp = () => {
+    userStore.getElectronSSOToken().then(token => {
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = `${electronConstants.PROTOCOL_NAME}://userId=${userStore.id};token=${token}`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      eventLogger.action('DESKTOP_APP_SIGNIN_CLICKED', {
+        category: EventCategory.MENU_ITEM,
+      });
+    });
+  };
 
   return (
     <Menu
       onClick={() => {
-        logger.log({
-          severity: 'INFO',
-          event: 'Click',
-          source: 'toolbar:menu',
+        eventLogger.action('TOOLBAR_MENU_OPENED', {
+          category: EventCategory.MENU_ITEM,
         });
       }}
       className={className}
       popupClassName={cn(styles.menu)}
       renderButton={() => <IconOverflow />}
     >
-      <MenuItem onClick={() => {}}>Sign out of Ovvio</MenuItem>
-      {/* {OPEN_APP_ENABLED && (
+      <MenuItem onClick={() => userStore.logout(history)}>
+        Sign out of Ovvio
+      </MenuItem>
+      {OPEN_APP_ENABLED && (
         <MenuItem onClick={downloadApp}>Download Desktop App</MenuItem>
       )}
       {OPEN_APP_ENABLED && (
         <MenuItem onClick={signInToApp}>Sign in to Desktop App</MenuItem>
-      )} */}
+      )}
     </Menu>
   );
 }
@@ -77,26 +125,25 @@ export interface OvvioHeaderProps {
 
 export default function OvvioHeader({ className }: OvvioHeaderProps) {
   const styles = useStyles();
-  const logger = useLogger();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const selectedWorkspacesQuery = useSharedQuery('selectedWorkspaces');
-  const workspacesQuery = useSharedQuery('workspaces');
-  const partialSelectedWorkspaces = usePartialVertices(
-    selectedWorkspacesQuery.results,
-    ['name']
-  );
+  const history = useHistory();
+
+  const eventLogger = useEventLogger();
+  const graph = useGraphManager();
+  const { results } = useExistingQuery(graph.sharedQueriesManager.workspaces);
+
+  const workspaces = usePartialVertices(results, ['name', 'selected']);
+  const selected = workspaces.filter(x => x.selected);
 
   const title = (function () {
-    switch (selectedWorkspacesQuery.count) {
-      case workspacesQuery.count: {
+    switch (selected.length) {
+      case workspaces.length: {
         return 'All Workspaces';
       }
       case 0: {
         return '';
       }
       case 1: {
-        return partialSelectedWorkspaces[0].name;
+        return selected[0].name;
       }
       default: {
         return 'Multiple Workspaces';
@@ -106,13 +153,13 @@ export default function OvvioHeader({ className }: OvvioHeaderProps) {
 
   const ovvioHeaderClicked = () => {
     //Route back to / if not there already
-    logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'toolbar:header',
+    const currentRoute = history.currentRoute;
+    eventLogger.action('OVVIO_HEADER_CLICKED', {
+      source: `${currentRoute.id}:${currentRoute.url}`,
     });
-    if (location.pathname !== '/') {
-      navigate('/');
+    if (!currentRoute || currentRoute.url !== '/') {
+      history.push(LOGIN);
+      return;
     }
   };
 

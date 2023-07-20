@@ -3,7 +3,12 @@ import {
   OperationalErrorLogEntry,
   SystemErrorLogEntry,
 } from './errors.ts';
-import { GenericLogEntry, normalizeLogEntry, SeverityCodes } from './entry.ts';
+import {
+  GenericLogEntry,
+  normalizeLogEntry,
+  Severity,
+  SeverityCodes,
+} from './entry.ts';
 import { ConsoleLogStream, LogStream } from './stream.ts';
 import { MetricLogEntry } from './metrics.ts';
 import { ClientEventEntry } from './client-events.ts';
@@ -29,6 +34,10 @@ export function setGlobalLoggerStreams(streams: LogStream[]): void {
 
 export function resetGlobalLoggerStreams(): void {
   gLogStreams = kDefaultLoggerStreams;
+}
+
+export function setGlobalLoggerSeverity(level: Severity): void {
+  gLogLevel = SeverityCodes[level];
 }
 
 export function log(entry: LogEntry, outputStreams = gLogStreams): void {

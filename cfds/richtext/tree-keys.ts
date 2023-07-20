@@ -1,13 +1,14 @@
-import { Dictionary } from '../../base/collections/dict.ts';
-import { HashMap } from '../../base/collections/hash-map.ts';
+import { Dictionary } from '../collections/dict';
+import { HashMap } from '../collections/hash-map';
 import {
+  Comparable,
   Clonable,
   Equatable,
   CoreValue,
   coreValueEquals,
-} from '../../base/core-types/index.ts';
-import { encodableValueHash } from '../../base/core-types/encoding/index.ts';
-import { dfs, ElementNode, kCoreValueTreeNodeOpts } from './tree.ts';
+} from '../core-types';
+import { encodableValueHash } from '../encoding';
+import { dfs, ElementNode, kCoreValueTreeNodeOpts, TreeNode } from './tree';
 
 export type NodeKey = { id: string };
 
@@ -23,7 +24,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
     this._root = root;
     this._keys = new Map();
     this._counts = new HashMap<CoreValue, number>(
-      (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
+      v => encodableValueHash(v, kCoreValueTreeNodeOpts),
       (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts)
     );
     for (const [node] of dfs(root)) {
@@ -50,8 +51,8 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
     return nodeKey;
   }
 
-  clone(): TreeKeys {
-    return new TreeKeys(this._root);
+  clone(): this {
+    return new TreeKeys(this._root) as this;
   }
 
   isEqual(other: TreeKeys): boolean {

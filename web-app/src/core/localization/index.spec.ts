@@ -1,4 +1,4 @@
-import { format } from './index.tsx';
+import { format } from '.';
 
 describe('localization', () => {
   describe('format', () => {

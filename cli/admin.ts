@@ -8,6 +8,7 @@ import { RepoClient } from '../net/repo-client.ts';
 import { SQLiteRepoStorage } from '../server/sqlite3-repo-storage.ts';
 import { buildHelpMessage, Manual } from './help.ts';
 import { kSyncConfigClient } from '../net/base-client.ts';
+import { setGlobalLoggerSeverity } from '../logging/log.ts';
 
 interface Arguments {
   server: string;
@@ -54,6 +55,7 @@ async function main(): Promise<void> {
   let updateKey: string | undefined;
   let updatePath: string | undefined;
 
+  setGlobalLoggerSeverity('ERROR');
   const args: Arguments = yargs(Deno.args)
     .alias({ s: 'server' })
     // .default()

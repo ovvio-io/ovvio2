@@ -1,84 +1,66 @@
-import React, { useCallback, useMemo } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Note,
-  User,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { sortMngStampCompare } from '../../../../../../../cfds/client/sorting.ts';
-import {
-  usePartialVertices,
-  useVertices,
-} from '../../../../../core/cfds/react/vertex.ts';
-import {
-  createUseStrings,
-  format,
-} from '../../../../../core/localization/index.tsx';
+import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import { Note, User } from '@ovvio/cfds/lib/client/graph/vertices';
+import { useEventLogger } from 'core/analytics';
+import { createUseStrings, format } from 'core/localization';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   CANCELLATION_REASONS,
   DragAndDropContext,
   DragSource,
-} from '../../../../../shared/dragndrop/index.ts';
-import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import { setDragSort } from '../card-item/draggable-card.tsx';
-import { BoardCard } from './board-card.tsx';
-import { BoardColumn } from './board-column.tsx';
-import localization from './board.strings.json' assert { type: 'json' };
+} from 'shared/dragndrop';
+import { DragPosition } from 'shared/dragndrop/droppable';
+import { useToastController } from '@ovvio/styles/lib/components/toast';
+import { setDragSort } from '../card-item/draggable-card';
+import { BoardCard } from './board-card';
+import { BoardColumn } from './board-column';
+import localization from './board.strings.json';
 import {
-  GroupId,
-  Query,
-} from '../../../../../../../cfds/client/graph/query.ts';
-import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import {
-  mapIterable,
-  filterIterable,
-} from '../../../../../../../base/common.ts';
-import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
-
-export interface AssigneesBoardViewProps {
-  query: Query<Note>;
-}
-
-interface AssigneesDnDContext {
-  user: VertexManager<User> | undefined;
-  card: VertexManager<Note>;
-}
+  InfiniteHorizontalScroll,
+  InfiniteVerticalScroll,
+} from '../list-view/infinite-scroll';
+import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
+import { useQuery2 } from 'core/cfds/react/query';
 
 const useStrings = createUseStrings(localization);
 
-export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
-  useQuery2(query);
-  const logger = useLogger();
+const PAGE_SIZE = 10;
+
+export function AssigneesBoardView({
+  filteredNotes,
+}: {
+  filteredNotes: FilteredNotes;
+}) {
+  const notesQuery = useQuery2(
+    (filteredNotes as FilteredNotes<VertexManager<User>>)[0]
+  );
+  const eventLogger = useEventLogger();
   const strings = useStrings();
+  const [yLimit, setYLimit] = useState(PAGE_SIZE);
+  const [xLimit, setXLimit] = useState(PAGE_SIZE);
+
+  useEffect(() => {
+    notesQuery.limit = yLimit + PAGE_SIZE;
+    notesQuery.groupsLimit = xLimit + PAGE_SIZE;
+  }, [notesQuery, yLimit, xLimit]);
+
   const toast = useToastController();
-  const sortedUsers = usePartialVertices<User>(
-    filterIterable(
-      query.groups.keys(),
-      (id: GroupId | undefined) => typeof id !== 'undefined'
-    ),
-    ['name']
-  ).sort(coreValueCompare);
+
   const onDragCancelled = useCallback(
     ({
       reason,
       context,
     }: {
       reason: CANCELLATION_REASONS;
-      context?: AssigneesDnDContext;
+      context?: { user: VertexManager<User>; card: VertexManager<Note> };
     }) => {
       if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
-        logger.log({
-          severity: 'INFO',
-          event: 'Cancel',
-          flow: 'dnd',
-          type: 'assignee',
-          reason: 'denied',
-          source: 'board',
-          added: context?.user?.key,
-          vertex: context?.card.key,
+        eventLogger.action('DRAG_CANCELLED', {
+          source: DragSource.AssigneeBoard,
+          data: {
+            reason: 'USER_NOT_IN_WORKSPACE',
+          },
         });
-        const wsName = context?.card.vertex.workspace.name;
+        const wsName = context.card.getVertexProxy().workspace.name;
         toast.displayToast({
           duration: 5000,
           text: format(strings.userNotInWorkspace, { workspace: wsName }),
@@ -91,77 +73,104 @@ export function AssigneesBoardView({ query }: AssigneesBoardViewProps) {
         });
       }
     },
-    [toast, strings, logger]
+    [toast, strings, eventLogger]
   );
 
   const onDrop = (
-    // sourceUser: VertexManager<User> | undefined,
-    destinationUser: VertexManager<User>, // | undefined,
-    items: readonly VertexManager<Note>[],
+    user: VertexManager<User> | 'unassigned',
+    items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
   ) => {
-    const card = item.getVertexProxy();
-    logger.log({
-      severity: 'INFO',
-      event: 'End',
-      flow: 'dnd',
-      type: 'assignee',
-      vertex: item.key,
-      source: 'board',
-      added: destinationUser?.key,
-      removed: Array.from(card.assignees).map((u) => u.key),
+    eventLogger.action('DRAG_DONE', {
+      source: DragSource.AssigneeBoard,
+      cardId: item.key,
     });
-    // if (typeof destinationUser === 'undefined') {
-    card.clearAssignees();
-    // } else {
-    // if (sourceUser) {
-    // card.assignees.delete(sourceUser.vertex);
-    // }
-    card.assignees.add(destinationUser.vertex);
-    // }
+    const card = item.getVertexProxy();
+    if (user === 'unassigned') {
+      card.assignees = new Set();
+    } else {
+      card.assignees = new Set([user.getVertexProxy()]);
+    }
     setDragSort(items, item, relativeTo, dragPosition);
   };
 
-  const allowsDrop = (user: User | undefined, note: Note) => {
-    if (typeof user === 'undefined') {
+  const allowsDrop = (
+    user: VertexManager<User> | 'unassigned',
+    card: VertexManager<Note>
+  ) => {
+    if (user === 'unassigned') {
       return true;
     }
+    const proxy = card.getVertexProxy();
     return (
-      note.workspace.users.has(user) || {
+      proxy.workspace.assignees.has(user.getVertexProxy()) || {
         isAllowed: false,
         context: {
-          user: user?.manager,
-          card: note.manager,
-        } as AssigneesDnDContext,
+          user,
+          card,
+        },
       }
     );
   };
 
+  let maxColSize = 0;
+  for (const gid of notesQuery.groups()) {
+    maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
+  }
+
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {sortedUsers.map((user) => (
-        <BoardColumn
-          title={user ? user.name : strings.unassigned}
-          key={user?.key}
-          items={query.groups.get(user?.key)!}
-          allowsDrop={(item) => allowsDrop(user as User, item)}
-          onDrop={(item, relativeTo, dragPosition) =>
-            onDrop(
-              user!.manager,
-              query.groups.get(user?.key)!,
-              item,
-              relativeTo,
-              dragPosition
-            )
-          }
-        >
-          {query.groups.get(user?.key)!.map((card, index) => (
-            <BoardCard card={card} index={index} key={card.key} />
-          ))}
-        </BoardColumn>
-      ))}
+      {notesQuery
+        .groups()
+        .slice(0, xLimit)
+        .map(column => (
+          <BoardColumn
+            title={
+              column === null
+                ? strings.unassigned
+                : column.getVertexProxy().name
+            }
+            key={column ? column.key : 'unassigned'}
+            items={notesQuery.group(column)}
+            allowsDrop={item => allowsDrop(column, item)}
+            onDrop={(item, relativeTo, dragPosition) =>
+              onDrop(
+                column,
+                notesQuery.group(column),
+                item,
+                relativeTo,
+                dragPosition
+              )
+            }
+          >
+            {notesQuery
+              .group(column)
+              .slice(0, yLimit)
+              .map((card, index) => (
+                <BoardCard
+                  card={card}
+                  index={index}
+                  key={`${column ? column.key : 'unassigned'}/${card.key}`}
+                />
+              ))}
+          </BoardColumn>
+        ))}
+      <InfiniteVerticalScroll
+        limit={yLimit}
+        setLimit={setYLimit}
+        pageSize={10}
+        recordsLength={maxColSize}
+        isVisible={false}
+      />
+      <InfiniteHorizontalScroll
+        limit={xLimit}
+        setLimit={setXLimit}
+        pageSize={10}
+        recordsLength={notesQuery.groupCount}
+        isVisible={false}
+      />
     </DragAndDropContext>
   );
 }

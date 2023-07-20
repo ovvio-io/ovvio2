@@ -1,6 +1,10 @@
 import { MouseEvent } from 'react';
 
-export type ToggleAction = 'single' | 'range' | 'clearOthers' | 'clearAll';
+export enum ToggleAction {
+  Single = 'single',
+  Range = 'range',
+  ClearOthers = 'clearOthers',
+}
 
 export type SelectionItem = string;
 
@@ -15,25 +19,21 @@ export function toggleSelectionItem(
   toggled: SelectionItem,
   selectedKeys: SelectionItem[],
   lastSelectedKey?: string,
-  actionType: ToggleAction = 'single'
+  actionType = ToggleAction.Single
 ): SelectionResult {
-  const toggledIndex = items.findIndex((x) => x === toggled);
+  const toggledIndex = items.findIndex(x => x === toggled);
   if (toggledIndex === -1) {
     debugger;
-    return {
-      actionType: 'clearAll',
-      toggleType: 'deselected',
-      allSelectedItems: [],
-    };
+    return;
   }
 
-  if ((!lastSelectedKey && actionType === 'range') || !actionType) {
-    actionType = 'single';
+  if ((!lastSelectedKey && actionType === ToggleAction.Range) || !actionType) {
+    actionType = ToggleAction.Single;
   }
 
   switch (actionType) {
-    case 'range': {
-      const lastSelectedIndex = items.findIndex((x) => x === lastSelectedKey);
+    case ToggleAction.Range: {
+      const lastSelectedIndex = items.findIndex(x => x === lastSelectedKey);
       const slice = items.slice(
         Math.min(lastSelectedIndex, toggledIndex),
         Math.max(lastSelectedIndex, toggledIndex) + 1
@@ -41,41 +41,33 @@ export function toggleSelectionItem(
       const selected = selectedKeys.includes(toggled);
       let allSelectedItems = selectedKeys;
       if (selected) {
-        allSelectedItems = selectedKeys.filter((x) => !slice.includes(x));
+        allSelectedItems = selectedKeys.filter(x => !slice.includes(x));
       } else {
         allSelectedItems = Array.from(new Set([...selectedKeys, ...slice]));
       }
       return {
-        actionType: 'range',
+        actionType: ToggleAction.Range,
         toggleType: selected ? 'selected' : 'deselected',
         allSelectedItems,
       };
     }
-    case 'clearOthers': {
+    case ToggleAction.ClearOthers: {
       return {
-        actionType: 'clearOthers',
+        actionType: ToggleAction.ClearOthers,
         toggleType: 'selected',
         allSelectedItems: [toggled],
       };
     }
-
-    case 'clearAll':
-      return {
-        actionType: 'clearAll',
-        toggleType: 'deselected',
-        allSelectedItems: [],
-      };
-
-    case 'single':
+    case ToggleAction.Single:
     default: {
-      const newSelected = selectedKeys.filter((x) => x !== toggled);
+      const newSelected = selectedKeys.filter(x => x !== toggled);
       const toggleType =
         newSelected.length === selectedKeys.length ? 'selected' : 'deselected';
       if (toggleType === 'selected') {
         newSelected.push(toggled);
       }
       return {
-        actionType: 'single',
+        actionType: ToggleAction.Single,
         toggleType,
         allSelectedItems: newSelected,
       };
@@ -83,12 +75,12 @@ export function toggleSelectionItem(
   }
 }
 
-export function toggleActionFromEvent(e: MouseEvent): ToggleAction {
+export function toggleActionFromEvent(e: MouseEvent) {
   if (e.ctrlKey) {
-    return 'clearOthers';
+    return ToggleAction.ClearOthers;
   }
   if (e.shiftKey) {
-    return 'range';
+    return ToggleAction.Range;
   }
-  return 'single';
+  return ToggleAction.Single;
 }
