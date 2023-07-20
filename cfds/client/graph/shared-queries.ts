@@ -28,6 +28,7 @@ import { EVENT_VERTEX_SOURCE_CLOSED } from './vertex-source.ts';
 import { NOTE_SORT_BY, NoteType } from './vertices/note.ts';
 import { CoreValue } from '../../../base/core-types/base.ts';
 import { assert, notReached } from '../../../base/error.ts';
+import { VertexManager } from './vertex-manager.ts';
 
 export type SharedQueryName =
   | 'notDeleted'
@@ -36,7 +37,8 @@ export type SharedQueryName =
   | 'tags'
   | 'parentTagsByName'
   | 'childTagsByParentName'
-  | 'users';
+  | 'users'
+  | 'parentTagsByWorkspace';
 // | 'users'
 // | 'hasPendingChanges';
 
@@ -54,6 +56,8 @@ export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Tag, Tag, string>
   : N extends 'users'
   ? Query<Vertex, User>
+  : N extends 'parentTagsByWorkspace'
+  ? Query<Tag, Tag, VertexManager<Workspace>>
   : Query;
 
 export type GlobalSharedQueriesManager = {
@@ -76,6 +80,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly parentTagsByName: Query<Tag, Tag, string>;
   readonly childTagsByParentName: Query<Tag, Tag, string>;
   readonly users: Query<Vertex, User>;
+  readonly parentTagsByWorkspace: Query<Tag, Tag, VertexManager<Workspace>>;
 
   constructor(graph: GraphManager) {
     this._vertexQueries = new Map();
@@ -134,6 +139,14 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       undefined,
       'SharedUsers'
     ).lock();
+    this.parentTagsByWorkspace = new Query(
+      this.tags,
+      (tag) => typeof tag.parentTag === 'undefined',
+      {
+        name: 'SharedTagsByWorkspace',
+        groupBy: (tag) => tag.workspace.manager,
+      }
+    );
   }
 
   noteQuery(sortBy?: SortBy): Query<Vertex, Note, string> {
