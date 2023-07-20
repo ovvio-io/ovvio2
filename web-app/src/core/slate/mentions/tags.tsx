@@ -1,27 +1,38 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { styleguide } from '@ovvio/styles/lib';
-import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { isTag, useQuery } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
 import React, { useCallback, useMemo } from 'react';
-import { useCreateTag } from 'shared/tags/create-tag-context';
-import { createMentionsPlugin, filterSortMentions, MentionOptions } from '.';
-import { useCurrentCard } from '../elements/card.element';
-import { Plugin } from '../plugins';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  Tag,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { styleguide } from '../../../../../styles/index.ts';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import {
+  isTag,
+  useQuery,
+  useQuery2,
+  useSharedQuery,
+} from '../../cfds/react/query.ts';
+import { usePartialVertex } from '../../cfds/react/vertex.ts';
+import {
+  createMentionsPlugin,
+  filterSortMentions,
+  MentionOptions,
+} from './index.tsx';
+import { useCurrentCard } from '../elements/card.element/index.tsx';
+import { Plugin } from '../plugins/index.ts';
 import {
   RenderMentionPopupProps,
   SuggestionItem,
   SuggestionItemIcon,
-} from './mention-node';
+} from './mention-node.tsx';
+import { Query } from '../../../../../cfds/client/graph/query.ts';
+import {
+  useGraphManager,
+  useSharedQueriesManager,
+} from '../../cfds/react/graph.tsx';
 
-const CREATE_NEW_TAG = 'CREATE_NEW_TAG';
-
-type TagItem = VertexManager<Tag> | typeof CREATE_NEW_TAG;
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tagIndicator: {
     width: styleguide.gridbase,
     height: styleguide.gridbase,
@@ -30,19 +41,19 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function CreateNewItem(props: {
-  isSelected: boolean;
-  onItemSelected: () => void;
-}) {
-  return (
-    <SuggestionItem {...props}>
-      <SuggestionItemIcon>
-        <IconCreateNew />
-      </SuggestionItemIcon>
-      <Text>Create New</Text>
-    </SuggestionItem>
-  );
-}
+// function CreateNewItem(props: {
+//   isSelected: boolean;
+//   onItemSelected: () => void;
+// }) {
+//   return (
+//     <SuggestionItem {...props}>
+//       <SuggestionItemIcon>
+//         <IconCreateNew />
+//       </SuggestionItemIcon>
+//       <Text>Create New</Text>
+//     </SuggestionItem>
+//   );
+// }
 
 function TagSuggestion({
   item,
@@ -50,20 +61,14 @@ function TagSuggestion({
 }: {
   item: VertexManager<Tag>;
   isSelected: boolean;
-  onItemSelected: () => void;
+  onItemSelected: (item: VertexManager<Tag>) => void;
 }) {
   const styles = useStyles();
-  const { color, name } = usePartialVertex(item, ['color', 'name']);
-  const style = useMemo(
-    () => ({
-      backgroundColor: color,
-    }),
-    [color]
-  );
+  const { name } = usePartialVertex(item, ['name']);
   return (
-    <SuggestionItem {...rest}>
+    <SuggestionItem item={item} {...rest}>
       <SuggestionItemIcon>
-        <div className={cn(styles.tagIndicator)} style={style} />
+        <div className={cn(styles.tagIndicator)} />
       </SuggestionItemIcon>
       {name}
     </SuggestionItem>
@@ -74,13 +79,13 @@ function TagItemComponent({
   item,
   ...rest
 }: {
-  item: TagItem;
+  item: VertexManager<Tag>;
   isSelected: boolean;
-  onItemSelected: () => void;
+  onItemSelected: (item: VertexManager<Tag>) => void;
 }) {
-  if (item === CREATE_NEW_TAG) {
-    return <CreateNewItem {...rest} />;
-  }
+  // if (item === CREATE_NEW_TAG) {
+  //   return <CreateNewItem {...rest} />;
+  // }
 
   return <TagSuggestion item={item} {...rest} />;
 }
@@ -89,66 +94,35 @@ function TagsSuggestionComponent({
   filter,
   SuggestionComponent,
   closeMention,
-}: RenderMentionPopupProps<TagItem>) {
-  const card = useCurrentCard();
-  const partial = usePartialVertex(card as VertexManager<Note>, [
-    'tags',
-    'workspace',
-    'workspaceKey',
-  ]);
-
-  const wsMng = partial.workspace.manager as VertexManager<Workspace>;
-  const { results: childTags } = useQuery<Tag>(
-    x => isTag(x) && x.parentTag && x.workspaceKey === partial?.workspaceKey,
-    [partial?.workspaceKey]
+}: RenderMentionPopupProps<VertexManager<Tag>>) {
+  const card = useCurrentCard()!;
+  const partial = usePartialVertex(card, ['tags']);
+  const sharedQueries = useSharedQueriesManager();
+  const childTagsQuery = useQuery2(
+    new Query(sharedQueries.childTags, (tag) => {
+      const cardTagChild = partial.tags.get(tag.parentTag!);
+      return !cardTagChild || tag !== cardTagChild;
+    })
   );
 
-  const { requestCreateTag } = useCreateTag();
-
-  const items = childTags.filter(child => {
-    const tag = child.getVertexProxy();
-    const cardTagChild = partial.tags[tag.parentTagKey];
-    return (
-      tag.name !== 'Status' &&
-      tag.parentTag!.name !== 'Status' &&
-      (!cardTagChild || child.key !== cardTagChild)
-    );
-  });
-
-  const filteredTags = (
-    filterSortMentions(items, filter, t => t.getVertexProxy().name) as TagItem[]
-  ).concat(CREATE_NEW_TAG);
-  const keyForItem = useCallback(
-    (item: TagItem) => (item === CREATE_NEW_TAG ? CREATE_NEW_TAG : item.key),
-    []
+  const filteredTags = filterSortMentions(
+    childTagsQuery.results,
+    filter,
+    (t) => t.getVertexProxy().name
   );
 
-  const onItemSelected = (tagMng: TagItem) => {
+  const onItemSelected = (mgr: VertexManager<Tag>) => {
     closeMention();
-    if (tagMng === CREATE_NEW_TAG) {
-      requestCreateTag({
-        workspaceManager: wsMng,
-        initialName: filter,
-        onTagCreated(tag) {
-          const currentTags = partial.tags;
-          currentTags.set(tag.parentTag || tag, tag);
-          partial.tags = currentTags;
-        },
-      });
-      return;
-    }
-
-    const tag = tagMng.getVertexProxy();
-
     const { tags } = partial;
-    tags.set(tag.parentTag, tag);
+    const tag = mgr.getVertexProxy();
+    tags.set(tag.parentTag!, tag);
     partial.tags = tags;
   };
 
   return (
     <SuggestionComponent
       items={filteredTags}
-      keyForItem={keyForItem}
+      keyForItem={(mgr: VertexManager<Tag>) => mgr.key}
       onItemSelected={onItemSelected}
       ItemSuggestionComponent={TagItemComponent}
     />
@@ -159,7 +133,7 @@ interface TagsPluginOptions
   extends Pick<MentionOptions<Tag>, 'canOpen' | 'editor'> {}
 
 export function createTagsPlugin(options: TagsPluginOptions): Partial<Plugin> {
-  return createMentionsPlugin<TagItem>({
+  return createMentionsPlugin<VertexManager<Tag>>({
     ...options,
     trigger: '#',
     MentionComponent: TagsSuggestionComponent,

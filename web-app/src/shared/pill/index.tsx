@@ -1,4 +1,3 @@
-import { useAnimateWidth } from 'core/react-utils/animate';
 import React, {
   useCallback,
   useContext,
@@ -6,8 +5,13 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { styleguide } from '@ovvio/styles/lib';
-import { makeStyles, cn, keyframes } from '@ovvio/styles/lib/css-objects';
+import { useAnimateWidth } from '../../core/react-utils/animate.ts';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import {
+  makeStyles,
+  cn,
+  keyframes,
+} from '../../../../styles/css-objects/index.ts';
 
 const showAnim = keyframes({
   '0%': {
@@ -27,7 +31,7 @@ export enum PillStyle {
   None = 'none',
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   pill: {
     direction: 'ltr',
     height: styleguide.gridbase * 3,
@@ -80,7 +84,7 @@ const useStyles = makeStyles(theme => ({
 
 const PillContext = React.createContext(false);
 
-export interface PillActionProps {
+export interface PillActionProps extends React.PropsWithChildren {
   className?: string;
 }
 
@@ -100,7 +104,7 @@ export const PillAction: React.FC<PillActionProps> = ({
   );
 };
 
-export interface PillContentProps {
+export interface PillContentProps extends React.PropsWithChildren {
   className?: string;
 }
 
@@ -112,7 +116,7 @@ export const PillContent: React.FC<PillContentProps> = ({
   return <div className={cn(styles.pillContent, className)}>{children}</div>;
 };
 
-export interface PillProps {
+export interface PillProps extends React.PropsWithChildren {
   className?: string;
   extended?: boolean;
   color?: string;
@@ -128,7 +132,7 @@ export const Pill: React.FC<PillProps> = ({
 }) => {
   const styles = useStyles();
   const [isHover, setIsHover] = useState(false);
-  const ref = useRef();
+  const ref = useRef(null);
   const showAction = typeof extended === 'undefined' ? isHover : extended;
   const { width } = useAnimateWidth(ref, showAction);
   const style = useMemo(

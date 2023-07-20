@@ -225,7 +225,7 @@ export class VertexManager<V extends Vertex = Vertex>
     return this.getVertexProxy();
   }
 
-  getVertexProxy<T extends Vertex = V>(): T {
+  getVertexProxy<T extends V = V>(): T {
     if (this._vertex === undefined) {
       this.rebuildVertex();
     }
@@ -251,6 +251,13 @@ export class VertexManager<V extends Vertex = Vertex>
     for (const edge of graph.adjacencyList.outEdges(this.key, fieldName)) {
       yield [graph.getVertexManager(edge.vertex), edge.fieldName];
     }
+  }
+
+  onVertexChanged(callback: (mutations: MutationPack) => void): () => void {
+    this.on(EVENT_DID_CHANGE, callback);
+    return () => {
+      this.off(EVENT_DID_CHANGE, callback);
+    };
   }
 
   /**

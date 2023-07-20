@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
-  ref: React.MutableRefObject<T>,
+  ref: React.RefObject<T>,
   animateProp: any
 ): Partial<{ width: number }> {
   const size = useAnimateSize(ref.current, animateProp, 'width');
@@ -14,10 +14,10 @@ export function useAnimateWidth<T extends HTMLElement = HTMLElement>(
 }
 
 export function useAnimateHeight<T extends HTMLElement = HTMLElement>(
-  ref: React.MutableRefObject<T>,
+  ref: React.MutableRefObject<T | undefined | null>,
   animateProp: any
 ): Partial<{ height: number }> {
-  const size = useAnimateSize(ref.current, animateProp, 'height');
+  const size = useAnimateSize(ref.current || null, animateProp, 'height');
   return useMemo(() => {
     if (size === null) {
       return {};
@@ -27,13 +27,13 @@ export function useAnimateHeight<T extends HTMLElement = HTMLElement>(
 }
 
 export function useAnimateSize<T extends HTMLElement>(
-  el: T,
+  el: T | null,
   animateProp: any,
   animateSizeKey: 'height' | 'width'
 ): number | null {
   const lastValue = useRef(animateProp);
 
-  const [size, setSize] = useState<number>(null);
+  const [size, setSize] = useState<number | null>(null);
 
   // useEffect(() => {
   //   setSize(null);

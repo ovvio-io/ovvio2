@@ -1,34 +1,31 @@
-import Menu from '@ovvio/styles/lib/components/menu';
-import { IconOverflow } from '@ovvio/styles/lib/components/icons';
+import React from 'react';
+import Menu from '../../../../styles/components/menu.tsx';
+import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
   EditCardAction,
-  UploadAttachmentAction,
+  // UploadAttachmentAction,
   EditDueDateAction,
   ViewInNoteAction,
   DeleteCardAction,
-  ExportMailAction,
-  ExportPdfAction,
+  // ExportMailAction,
+  // ExportPdfAction,
   DuplicateCardAction,
-  CopyUrlAction,
+  // CopyUrlAction,
   ConvertNoteAction,
-  ClearDueDateAction,
-  ToggleSubTasksAction,
-} from './actions';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { CARD_SOURCE } from 'shared/card';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { OvvioEditor } from 'core/slate/types';
-import { isElectron } from '../../electronUtils';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+} from './actions/index.tsx';
+import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { OvvioEditor } from '../../core/slate/types.ts';
+import { UISource } from '../../../../logging/client-events.ts';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 
 export interface CardMenuViewProps {
   cardManager: VertexManager<Note>;
   allowsEdit?: boolean;
   onDeleted?: () => void;
   className?: any;
-  source: CARD_SOURCE;
+  source: UISource;
   editorRootKey?: string;
   direction?: 'in' | 'out';
   position?: 'top' | 'bottom' | 'left' | 'right';
@@ -46,17 +43,11 @@ export default function CardMenuView({
   position,
   editor,
 }: CardMenuViewProps) {
-  const eventLogger = useEventLogger();
-  const note = usePartialVertex(cardManager, [
-    'dueDate',
-    'type',
-    'isChecked',
-    'childCards',
-  ]);
+  const logger = useLogger();
+  const partialNote = usePartialVertex(cardManager, ['parentNote']);
   if (!cardManager) {
     return null;
   }
-  const electron = isElectron();
 
   return (
     <Menu
@@ -64,12 +55,6 @@ export default function CardMenuView({
       align="end"
       direction={direction}
       position={position}
-      onClick={() => {
-        eventLogger.cardAction('CARD_OPTIONS_CLICKED', cardManager, {
-          category: EventCategory.MENU_ITEM,
-          source,
-        });
-      }}
       className={className}
     >
       {allowsEdit && (
@@ -80,12 +65,9 @@ export default function CardMenuView({
         />
       )}
       <EditDueDateAction cardManager={cardManager} source={source} />
-      {note.dueDate && (
-        <ClearDueDateAction cardManager={cardManager} source={source} />
-      )}
 
-      <UploadAttachmentAction cardManager={cardManager} source={source} />
-      {source !== CARD_SOURCE.CHILD && (
+      {/* <UploadAttachmentAction cardManager={cardManager} source={source} /> */}
+      {partialNote.parentNote && (
         <ViewInNoteAction cardManager={cardManager} source={source} />
       )}
       <DuplicateCardAction
@@ -94,24 +76,15 @@ export default function CardMenuView({
         editorRootKey={editorRootKey}
         editor={editor}
       />
-      {source === CARD_SOURCE.TITLE && (
-        <ExportMailAction cardManager={cardManager} source={source} />
-      )}
-      {source === CARD_SOURCE.TITLE && (
-        <ExportPdfAction cardManager={cardManager} source={source} />
-      )}
-      {/* <ConvertNoteAction cardManager={cardManager} source={source} /> */}
-      {electron && source === CARD_SOURCE.TITLE && (
-        <CopyUrlAction cardManager={cardManager} source={source} />
-      )}
-      {note.childCards.length > 0 && (
-        <ToggleSubTasksAction cardManager={cardManager} source={source} />
-      )}
+      {/* <ExportMailAction cardManager={cardManager} source={source} />
+      <ExportPdfAction cardManager={cardManager} source={source} /> */}
+      <ConvertNoteAction cardManager={cardManager} source={source} />
       <DeleteCardAction
         cardManager={cardManager}
         source={source}
         onDeleted={onDeleted}
       />
+      {/* <CopyUrlAction cardManager={cardManager} source={source} /> */}
     </Menu>
   );
 }

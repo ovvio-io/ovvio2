@@ -1,15 +1,15 @@
-import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
 import React from 'react';
-import { Editor, NodeEntry, Transforms } from 'slate';
-import { RenderElementProps } from 'slate-react';
-import { styleguide } from '@ovvio/styles/lib';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { mergePlugins } from '../plugins';
-import { TextType } from '../types';
-import { createAutoReplaceHandler } from '../utils/auto-replace';
-import { H3 } from '@ovvio/styles/lib/components/texts';
-import { createEnterHandler } from './header.element';
-const useStyles = makeStyles(theme => ({
+import { Editor, NodeEntry, Transforms } from 'https://esm.sh/slate@0.87.0';
+import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { ElementNode } from '../../../../../cfds/richtext/tree.ts';
+import { styleguide } from '../../../../../styles/index.ts';
+import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
+import { mergePlugins } from '../plugins/index.ts';
+import { TextType } from '../types.ts';
+import { createAutoReplaceHandler } from '../utils/auto-replace.ts';
+import { H3 } from '../../../../../styles/components/texts.tsx';
+import { createEnterHandler } from './header.element.tsx';
+const useStyles = makeStyles((theme) => ({
   header2: {
     marginBottom: styleguide.gridbase,
   },

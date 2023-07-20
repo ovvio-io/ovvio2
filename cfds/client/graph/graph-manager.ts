@@ -27,6 +27,7 @@ import {
   SharedQueryType,
 } from './shared-queries.ts';
 import {
+  EVENT_LOADING_FINISHED,
   EVENT_VERTEX_CHANGED,
   EVENT_VERTEX_SOURCE_CLOSED,
   VertexSource,
@@ -205,6 +206,7 @@ export class GraphManager extends VertexSource {
           this.repository(repoId).persistCommits(commits);
         }
         this._isLoading = false;
+        this.emit(EVENT_LOADING_FINISHED);
       })();
     }
     return this._loadContentsPromise;

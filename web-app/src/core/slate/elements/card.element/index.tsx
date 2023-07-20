@@ -1,28 +1,39 @@
-import { NS_NOTES } from '@ovvio/cfds';
-import { Note, User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { UnkeyedDocument } from '@ovvio/cfds/lib/richtext/doc-state';
-import { ElementNode } from '@ovvio/cfds/lib/richtext/tree';
-import { createTagsPlugin } from 'core/slate/mentions/tags';
-import { ElementUtils } from 'core/slate/utils/element-utils';
-import { SelectionUtils } from 'core/slate/utils/selection-utils';
 import React, { ReactNode, useContext } from 'react';
-import { Editor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
-import { RenderElementProps } from 'slate-react';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { mergePlugins } from '../../plugins';
-import { ParagraphElement } from '../../types';
-import { createAutoReplaceHandler } from '../../utils/auto-replace';
-import { HeaderElement } from '../header.element';
-import { Header2Element } from '../header2.element';
+import {
+  Editor,
+  Element,
+  Node,
+  NodeEntry,
+  Path,
+  Transforms,
+} from 'https://esm.sh/slate@0.87.0';
+import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { NS_NOTES } from '../../../../../../cfds/base/scheme-types.ts';
+import {
+  Note,
+  User,
+} from '../../../../../../cfds/client/graph/vertices/index.ts';
+import { UnkeyedDocument } from '../../../../../../cfds/richtext/doc-state.ts';
+import { ElementNode } from '../../../../../../cfds/richtext/tree.ts';
+import { createTagsPlugin } from '../../mentions/tags.tsx';
+import { ElementUtils } from '../../utils/element-utils.ts';
+import { SelectionUtils } from '../../utils/selection-utils.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { mergePlugins } from '../../plugins/index.ts';
+import { ParagraphElement } from '../../types.ts';
+import { createAutoReplaceHandler } from '../../utils/auto-replace.ts';
+import { HeaderElement } from '../header.element.tsx';
+import { Header2Element } from '../header2.element.tsx';
 import {
   CardElementProps,
   CardNode,
   LoadingCardElementProps,
   LoadingCardNode,
-} from './card-node';
-import { createAssigneesPlugin } from 'core/slate/mentions/assignees';
-import { EventCategory, EventLogger } from '../../../analytics';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+} from './card-node/index.tsx';
+import { createAssigneesPlugin } from '../../mentions/assignees.tsx';
+import { NoteType } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { Logger } from '../../../../../../logging/log.ts';
+import { UISource } from '../../../../../../logging/client-events.ts';
 export const CARD_TYPE = 'ref';
 export const CARD_LOADING_TYPE = 'NON_EXISTENT';
 export interface CardElement extends ElementNode {
@@ -39,7 +50,7 @@ export interface LoadingCardElement extends ElementNode {
   loading: true;
 }
 
-const cardContext = React.createContext<VertexManager<Note>>(null);
+const cardContext = React.createContext<VertexManager<Note> | null>(null);
 
 export function EditableCardContext({
   cardManager,
@@ -89,8 +100,6 @@ interface CreateNoteOptions {
 export function createNote(
   parent: Note,
   currentUser: User,
-  eventLogger: EventLogger,
-  eventSource: string,
   options?: CreateNoteOptions
 ): Note {
   //const refKey = uniqueId();
@@ -103,34 +112,29 @@ export function createNote(
       root: { children: [{ tagName: 'p', children: [{ text: '' }] }] },
     },
   } = options || {};
-  const tags = likeSibling ? likeSibling.tags : parent.workspace.taskTags;
+  // const tags = likeSibling ? likeSibling.tags : parent.workspace.taskTags;
 
-  const tagsMap = new Map(Array.from(tags).map(([p, t]) => [p.key, t.key]));
+  // const tagsMap = new Map(Array.from(tags).map(([p, t]) => [p.key, t.key]));
 
-  const taskTags = parent.workspace.taskTags;
-  if (taskTags) {
-    for (const [p, c] of taskTags) {
-      tagsMap.set(p.key, c.key);
-    }
-  }
+  // const taskTags = parent.workspace.taskTags;
+  // if (taskTags) {
+  //   for (const [p, c] of taskTags) {
+  //     tagsMap.set(p.key, c.key);
+  //   }
+  // }
 
   const assignees = likeSibling ? likeSibling.assignees : [currentUser];
 
   const child = parent.graph.createVertex<Note>(NS_NOTES, {
     creationDate: new Date(),
     workspace: parent.workspaceKey,
-    tags: tagsMap,
+    // tags: tagsMap,
     title,
     body,
     type: NoteType.Task,
     parentNote: parent.key,
-    assignees: new Set(Array.from(assignees).map(x => x.key)),
+    assignees: new Set(Array.from(assignees).map((x) => x.key)),
     createdBy: currentUser.key,
-  });
-
-  eventLogger.cardAction('CARD_CREATED', child, {
-    category: EventCategory.EDITOR,
-    source: eventSource,
   });
 
   return child;
@@ -140,7 +144,7 @@ export function createCardPlugin(
   editor: Editor,
   getContainingNote: () => VertexManager<Note>,
   getCurrentUser: () => User,
-  eventLogger: EventLogger
+  logger: Logger
 ) {
   return mergePlugins([
     createAutoReplaceHandler({
@@ -162,9 +166,7 @@ export function createCardPlugin(
           el,
           path,
           getContainingNote(),
-          getCurrentUser(),
-          eventLogger,
-          'replace'
+          getCurrentUser()
         );
       },
     }),
@@ -210,14 +212,13 @@ export function createCardPlugin(
           e.preventDefault();
 
           CardElement.unwrapCard(editor, currentPath);
-          eventLogger.cardAction(
-            'CARD_BACKSPACED',
-            containing.graph.getVertex<Note>(node.ref),
-            {
-              category: EventCategory.EDITOR,
-              source: `Key-Down-${e.key}`,
-            }
-          );
+          logger.log({
+            severity: 'INFO',
+            event: 'Delete',
+            vertex: node.ref,
+            source: 'editor:key-down',
+            id: e.key,
+          });
           return;
         }
         if (e.key === 'Backspace') {
@@ -225,16 +226,8 @@ export function createCardPlugin(
         }
         e.preventDefault();
 
-        const current = containing.graph.getVertex<Note>(node.ref);
-        const child = createNote(
-          containing.getVertexProxy(),
-          getCurrentUser(),
-          eventLogger,
-          'key-down',
-          {
-            likeSibling: current,
-          }
-        );
+        // const current = containing.graph.getVertex<Note>(node.ref);
+        const child = createNote(containing.getVertexProxy(), getCurrentUser());
 
         const insertAt = Path.next(path);
         CardElement.insertNote(editor, child, insertAt);
@@ -317,31 +310,23 @@ export const CardElement = {
     node: AllowedElementType,
     path: Path,
     parentNoteMng: VertexManager<Note>,
-    currentUser: User,
-    eventLogger: EventLogger,
-    eventSource: string
+    currentUser: User
   ) {
-    const child = createNote(
-      parentNoteMng.getVertexProxy(),
-      currentUser,
-      eventLogger,
-      eventSource,
-      {
-        title: {
-          root: {
-            children: [
-              {
-                tagName: 'p',
-                children: node.children.map(x => {
-                  const { localKey, ...text } = x;
-                  return text;
-                }),
-              },
-            ],
-          },
+    const child = createNote(parentNoteMng.getVertexProxy(), currentUser, {
+      title: {
+        root: {
+          children: [
+            {
+              tagName: 'p',
+              children: node.children.map((x) => {
+                const { localKey, ...text } = x;
+                return text;
+              }),
+            },
+          ],
         },
-      }
-    );
+      },
+    });
     const reffedPath = Editor.pathRef(editor, path);
 
     CardElement.insertNote(editor, child, path);
@@ -359,16 +344,16 @@ export const CardElement = {
     }
     Transforms.setSelection(editor, {
       focus: {
-        path: [...cardPath.current, 0],
+        path: [...cardPath.current!, 0],
         offset: 0,
       },
       anchor: {
-        path: [...cardPath.current, 0],
+        path: [...cardPath.current!, 0],
         offset: 0,
       },
     });
     Transforms.removeNodes(editor, {
-      at: reffedPath.current,
+      at: reffedPath.current || undefined,
     });
     reffedPath.unref();
     cardPath.unref();

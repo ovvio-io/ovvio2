@@ -5,10 +5,10 @@ import {
   NodeEntry,
   Transforms,
   Node,
-} from 'slate';
-import { KeyDownHandler } from '../plugins';
-import { ElementUtils } from './element-utils';
-import { getPlatformHotkey, isHotkeyActive, Shortcut } from './hotkeys';
+} from 'https://esm.sh/slate@0.87.0';
+import { KeyDownHandler } from '../plugins/index.ts';
+import { ElementUtils } from './element-utils.ts';
+import { getPlatformHotkey, isHotkeyActive, Shortcut } from './hotkeys.ts';
 
 export interface AutoReplaceOptions {
   trigger: Shortcut;

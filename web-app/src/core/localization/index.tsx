@@ -41,9 +41,9 @@ export function createUseStrings<T>(strings: Localizations<T>): UseStrings<T> {
   };
 }
 
-export const LocalizationProvider: React.FC<{ lang: SupportedLanguage }> = ({
-  lang,
-  children,
-}) => {
+export const LocalizationProvider: React.FC<{
+  lang: SupportedLanguage;
+  children: React.ReactNode;
+}> = ({ lang, children }) => {
   return <ctx.Provider value={lang}>{children}</ctx.Provider>;
 };

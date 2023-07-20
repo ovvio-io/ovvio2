@@ -1,41 +1,42 @@
-import * as SetUtils from '@ovvio/base/lib/utils/set';
+import { useMemo, useEffect } from 'react';
+import { CoreValue } from '../../../../../base/core-types/base.ts';
+import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
+import {
+  startOfToday,
+  numberOfDaysInCurrentMonth,
+  kDayMs,
+  numberOfWorkDaysLeftInWeek,
+} from '../../../../../base/date.ts';
+import * as SetUtils from '../../../../../base/set.ts';
+import {
+  GroupBy,
+  DateFilter,
+  SortBy,
+  decodeTagId,
+} from '../../../../../cfds/base/scheme-types.ts';
+import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import {
   GroupByFunction,
   GroupIdComparator,
-  Query,
   UnionQuery,
-} from '@ovvio/cfds/lib/client/graph/query';
+  Query,
+} from '../../../../../cfds/client/graph/query.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { VertexSource } from '../../../../../cfds/client/graph/vertex-source.ts';
 import {
-  Vertex,
   VertexId,
   VertexIdGetKey,
-} from '@ovvio/cfds/lib/client/graph/vertex';
-import { User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
+  Vertex,
+} from '../../../../../cfds/client/graph/vertex.ts';
 import {
-  NOTE_SORT_BY,
   Note,
   NoteType,
-} from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { CoreValue, coreValueCompare } from '@ovvio/cfds/lib/core-types';
-import { useGraphManager, usePartialView } from './graph';
-import { useEffect, useMemo } from 'react';
-import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
-import {
-  DateFilter,
-  GroupBy,
-  SortBy,
-  decodeTagId,
-} from '@ovvio/cfds/lib/base/scheme-types';
-import {
-  kDayMs,
-  kWeekMs,
-  numberOfDaysInCurrentMonth,
-  numberOfWorkDaysLeftInWeek,
-  startOfToday,
-} from '@ovvio/base/lib/utils/date';
-import { View } from '@ovvio/cfds/lib/client/graph/vertices/view';
-import { VertexSource } from '@ovvio/cfds/lib/client/graph/vertex-source';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+  NOTE_SORT_BY,
+} from '../../../../../cfds/client/graph/vertices/note.ts';
+import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
+import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useGraphManager, usePartialView } from './graph.tsx';
 
 export const kDueDateColumns = [
   'Overdue',
@@ -48,7 +49,7 @@ export const kDueDateColumns = [
   'Rest',
   'NoDueDate',
 ] as const;
-export type DueDateColumn = typeof kDueDateColumns[number];
+export type DueDateColumn = (typeof kDueDateColumns)[number];
 
 function groupByDueDate(note: Note): DueDateColumn {
   const dueDate = note.dueDate;
@@ -95,13 +96,16 @@ function groupByRootTitle(note: Note): string | undefined {
   return root ? root.plaintextTitle : undefined;
 }
 
-export const GROUP_BY: Record<GroupBy, GroupByFunction<Note, CoreValue>> = {
-  workspace: (note => note.workspace.manager) as GroupByFunction<
+export const GROUP_BY: Record<
+  GroupBy,
+  GroupByFunction<Note, CoreValue> | undefined
+> = {
+  workspace: ((note) => note.workspace.manager) as GroupByFunction<
     Note,
     VertexManager<Workspace>
   >,
-  assignee: (note =>
-    Array.from(note.assignees).map(u => u.manager)) as GroupByFunction<
+  assignee: ((note) =>
+    Array.from(note.assignees).map((u) => u.manager)) as GroupByFunction<
     Note,
     VertexManager<User>
   >,
@@ -110,7 +114,10 @@ export const GROUP_BY: Record<GroupBy, GroupByFunction<Note, CoreValue>> = {
   tag: undefined,
 };
 
-const GROUP_COMPARATOR: Record<GroupBy, GroupIdComparator<CoreValue>> = {
+const GROUP_COMPARATOR: Record<
+  GroupBy,
+  GroupIdComparator<CoreValue> | undefined
+> = {
   workspace: undefined,
   assignee: undefined,
   dueDate: (g1, g2) =>
@@ -151,7 +158,6 @@ const kDatePredicates: Record<DateFilter, (n: Note) => boolean> = {
     if (!n.dueDate) {
       return false;
     }
-    // TODO: Account for calendar week
     const startOfTodayMs = startOfToday().getTime();
     const dueMs = n.dueDate.getTime();
     if (!n.isChecked && dueMs < startOfTodayMs) {
@@ -183,9 +189,9 @@ export function createUnionWorkspacesSource(
   selectedWorkspaces: VertexId<Workspace>[],
   sortBy: SortBy,
   name: string
-): UnionQuery {
+): UnionQuery<Vertex, Note, string> {
   return new UnionQuery(
-    selectedWorkspaces.sort(coreValueCompare).map(id => {
+    selectedWorkspaces.sort(coreValueCompare).map((id) => {
       return {
         query: graph.sharedQueriesManager.noteQuery(sortBy),
         groupId: VertexIdGetKey(id),

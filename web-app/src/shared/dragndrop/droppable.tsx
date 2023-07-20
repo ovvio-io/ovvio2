@@ -1,10 +1,10 @@
 import React from 'react';
-import CANCELLATION_REASONS from './cancellation-reasons';
-import { useDndContext } from './context';
+import CANCELLATION_REASONS from './cancellation-reasons.tsx';
+import { useDndContext } from './context.tsx';
 
 const DROP_ZONE = 'DROP_ZONE';
 
-export const dropZoneContext = React.createContext<any>(undefined);
+export const dropZoneContext = React.createContext<string>('');
 
 // function getDragId(el) {
 //   let dragId = el.dataset.dragId;
@@ -28,7 +28,7 @@ export interface RenderDroppableProps {
 
 export type RenderDroppableHandler = (
   props: RenderDroppableProps
-) => JSX.Element;
+) => React.ReactNode;
 
 export type AllowsDropResult = {
   isAllowed: boolean;
@@ -42,14 +42,14 @@ function isAllowsDropResult(
 }
 
 export interface DroppableProps<T> {
-  children: RenderDroppableHandler;
-  allowsDrop?: (item: any) => boolean | AllowsDropResult;
-  items: T[];
+  children: RenderDroppableHandler | React.ReactNode;
+  allowsDrop?: (item: any) => boolean | AllowsDropResult | boolean;
+  items: readonly T[];
   onDrop: (item: T, relativeTo: T, dragPosition: DragPosition) => void;
 }
 export function Droppable<T>({
   children,
-  allowsDrop = item => !!item,
+  allowsDrop = (item) => !!item,
   items,
   onDrop,
 }: DroppableProps<T>) {
@@ -57,23 +57,23 @@ export function Droppable<T>({
   const onDropImpl = (e: DragEvent) => {
     const { dragOverData, disabled, dragData } = ctx.state;
     if (!dragData) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.USER_CANCELLED,
       });
     }
     if (disabled) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.DISABLED,
       });
     }
     if (!dragOverData || dragOverData.dropZone !== id) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NO_DATA,
       });
     }
-    const item = ctx.state.dragData.data;
+    const item = ctx.state.dragData?.data;
     if (!item) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NO_DATA,
       });
     }
@@ -87,30 +87,30 @@ export function Droppable<T>({
     // }
     let relativeTo = items[dragOverData.index];
     const { dragPosition } = dragOverData;
-    const res = allowsDrop(item);
+    const res = typeof allowsDrop === 'boolean' ? allowsDrop : allowsDrop(item);
     if ((isAllowsDropResult(res) && !res.isAllowed) || !res) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.NOT_ALLOWED,
         context: isAllowsDropResult(res) && res.context,
       });
     }
     if (item === relativeTo) {
-      return ctx.onDragCancelled({
+      return ctx.onDragCancelled!({
         reason: CANCELLATION_REASONS.USER_CANCELLED,
       });
     }
     onDrop(item, relativeTo, dragPosition);
-    ctx.onDrop(item, relativeTo, dragPosition);
+    ctx.onDrop!(item, relativeTo, dragPosition);
   };
 
   const onDragOver = (e: DragEvent) => {
-    if (e.dataTransfer.types.includes('text/ovvio')) {
+    if (e.dataTransfer?.types.includes('text/ovvio')) {
       if (!ctx.state.dragData) {
         return;
       }
       e.preventDefault();
       if (!items.length) {
-        ctx.setDragOverIndex(0, { x: 'left', y: 'top' }, id);
+        ctx.setDragOverIndex!(0, { x: 'left', y: 'top' }, id);
       }
     }
   };
@@ -118,7 +118,7 @@ export function Droppable<T>({
 
   const isInDrag = !!ctx.state.dragData;
   const isDragOver =
-    ctx.state.dragOverData && ctx.state.dragOverData.dropZone === id;
+    ctx.state.dragOverData !== null && ctx.state.dragOverData.dropZone === id;
 
   const attributes = {
     onDragOver,
@@ -129,7 +129,9 @@ export function Droppable<T>({
 
   return (
     <dropZoneContext.Provider value={id}>
-      {children({ attributes, isInDrag, isDragOver })}
+      {typeof children === 'function'
+        ? children({ attributes, isInDrag, isDragOver })
+        : children}
     </dropZoneContext.Provider>
   );
 }

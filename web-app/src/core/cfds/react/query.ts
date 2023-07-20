@@ -1,36 +1,39 @@
-import { NS_NOTES, NS_TAGS, NS_WORKSPACE } from '@ovvio/cfds';
 import {
-  CacheLoadingStatus,
-  EVENT_CACHE_LOADED,
-  GraphManager,
-} from '@ovvio/cfds/lib/client/graph/graph-manager';
-import {
-  EVENT_QUERY_RESULTS_CHANGED,
-  Predicate,
-  Query,
-  SortDescriptor,
-  UnionQuery,
-} from '@ovvio/cfds/lib/client/graph/query';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import {
-  DependencyList,
+  useState,
   useCallback,
   useEffect,
   useMemo,
-  useState,
+  DependencyList,
 } from 'react';
-import { BaseQueryProvider } from '../query-provider';
-import { useGraphManager } from './graph';
-import { assert } from '@ovvio/base/lib/utils';
+import {
+  NS_WORKSPACE,
+  NS_NOTES,
+  NS_TAGS,
+} from '../../../../../cfds/base/scheme-types.ts';
+import {
+  GraphManager,
+  CacheLoadingStatus,
+} from '../../../../../cfds/client/graph/graph-manager.ts';
+import {
+  SortDescriptor,
+  Query,
+  UnionQuery,
+  Predicate,
+  EVENT_QUERY_RESULTS_CHANGED,
+} from '../../../../../cfds/client/graph/query.ts';
 import {
   SharedQueryName,
   SharedQueryType,
-} from '@ovvio/cfds/lib/client/graph/shared-queries';
-import { EVENT_LOADING_FINISHED } from '@ovvio/cfds/lib/client/graph/vertex-source';
-import { useRootUser } from './graph';
-import { usePartialVertex } from './vertex';
+} from '../../../../../cfds/client/graph/shared-queries.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { EVENT_LOADING_FINISHED } from '../../../../../cfds/client/graph/vertex-source.ts';
+import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { Tag } from '../../../../../cfds/client/graph/vertices/tag.ts';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useGraphManager } from './graph.tsx';
+import { usePartialVertex } from './vertex.ts';
+import { assert } from '../../../../../base/error.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -39,42 +42,6 @@ export interface IAsyncQuery {
 export type BaseResult<T> = {
   result: T;
 };
-export function useBaseQueryProvider<TParams, TResult>(
-  TConstructor: { new (): BaseQueryProvider<TParams, TResult> },
-  params: TParams,
-  initialValue: TResult,
-  listen = true
-): BaseResult<TResult> & IAsyncQuery {
-  const graph = useGraphManager();
-  const [result, setResult] = useState<BaseResult<TResult> & IAsyncQuery>({
-    result: initialValue,
-    called: false,
-  });
-
-  const queryProvider = useMemo<BaseQueryProvider<TParams, TResult>>(() => {
-    return new TConstructor();
-  }, [TConstructor]);
-
-  useEffect(() => {
-    let closeListen: (() => void) | undefined;
-    if (listen) {
-      closeListen = queryProvider.listen(res =>
-        setResult({ result: res, called: true })
-      );
-    }
-
-    return () => {
-      if (closeListen) closeListen();
-      queryProvider.close();
-    };
-  }, [queryProvider, listen]);
-
-  useEffect(() => {
-    queryProvider.run(graph.indexQueryManager, params);
-  }, [queryProvider, graph, params]);
-
-  return result;
-}
 
 export interface QueryOptions<IT extends Vertex = Vertex, OT extends IT = IT> {
   sort?: SortDescriptor<OT>;
@@ -101,7 +68,7 @@ export interface UseQueryResult<T extends Vertex = Vertex> {
   results: VertexManager<T>[];
 }
 
-function defaultMap(x) {
+function defaultMap(x: any) {
   return x;
 }
 
@@ -217,10 +184,12 @@ export function useIsGraphLoading() {
 
   useEffect(() => {
     const notDeleted = graph.sharedQuery('notDeleted');
-    let cleanup = notDeleted.onResultsChanged(() => {
+    let cleanup: undefined | (() => void) = notDeleted.onResultsChanged(() => {
       if (!graph.sharedQuery('notDeleted').isLoading) {
         setNotDeletedLoading(false);
-        cleanup();
+        if (cleanup) {
+          cleanup();
+        }
         cleanup = undefined;
       }
     });
@@ -231,23 +200,18 @@ export function useIsGraphLoading() {
     };
   }, [graph]);
 
-  return (
-    loading ||
-    graph.cacheStatus === CacheLoadingStatus.CriticalLoading ||
-    rootUser.isLoading ||
-    notDeletedLoading
-  ); // || query.count > 0;
+  return loading || graph.isLoading || rootUser.isLoading || notDeletedLoading; // || query.count > 0;
 }
-
-export function useQuery2<T extends Query>(
-  queryOrName: undefined,
-  closeOnCleanup?: boolean
-): undefined;
 
 export function useQuery2<T extends Query>(
   queryOrName: T | SharedQueryName,
   closeOnCleanup?: boolean
 ): T;
+
+export function useQuery2<T extends Query>(
+  queryOrName: undefined,
+  closeOnCleanup?: boolean
+): undefined;
 
 export function useQuery2<T extends Query>(
   queryOrName: T | SharedQueryName | undefined,
@@ -275,7 +239,7 @@ export function useQuery2<T extends Query>(
       // results. This prevents redundant UI refreshes and keeps everything
       // smooth.
       // if (!query.isLoading || Date.now() - startTime > 500) {
-      setCounter(x => x + 1);
+      setCounter((x) => x + 1);
       // }
     });
     return () => {
@@ -294,5 +258,5 @@ export function useSharedQuery<T extends SharedQueryName>(
 ): SharedQueryType<T> {
   const graph = useGraphManager();
   const q = graph.sharedQueriesManager[name];
-  return useQuery2(q as SharedQueryType<T>) as SharedQueryType<T>;
+  return useQuery2(q as Query) as unknown as SharedQueryType<T>;
 }

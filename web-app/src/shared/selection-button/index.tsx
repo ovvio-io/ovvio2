@@ -1,11 +1,12 @@
-import { wordDist } from '@ovvio/cfds/lib/primitives-old/plaintext';
 import React from 'react';
-import { MentionPopup } from 'shared/multi-select/drawer/actions/mention';
-import { styleguide } from '@ovvio/styles/lib';
-import Menu from '@ovvio/styles/lib/components/menu';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import { wordDist } from '../../../../cfds/client/suggestions.ts';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import Menu, { MenuRenderButton } from '../../../../styles/components/menu.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { MentionPopup, MentionPopupRenderItemOpts } from '../card/mention.tsx';
+import { CoreObject } from '../../../../base/core-types/base.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: theme.background[0],
     width: styleguide.gridbase * 32,
@@ -30,19 +31,30 @@ function calculateDist(sortValue: string | SORT_VALUES, filter: string) {
   }
 }
 
-type RenderItemFunction<T> = (props: {
+interface RenderItemFunctionProps<T> {
   item: T;
-  [key: string]: any;
-}) => JSX.Element | null;
+  key?: string;
+}
+
+type RenderItemFunction<
+  T,
+  PT extends RenderItemFunctionProps<T> = RenderItemFunctionProps<T>
+> = (props: PT) => React.ReactNode;
+
 interface SelectionPopupProps<T> {
-  close?: () => void;
   onSelected: (item: T) => void;
   trigger?: string;
   getItems: (filter: string) => SelectionItem<T>[];
   renderItem: RenderItemFunction<T>;
 }
+
+interface SelectionPopupItemInternal<T> {
+  value: T;
+  key: string;
+  dist: number;
+  isFixed: boolean;
+}
 function SelectionPopup<T>({
-  close,
   onSelected,
   trigger,
   getItems,
@@ -50,30 +62,37 @@ function SelectionPopup<T>({
 }: SelectionPopupProps<T>) {
   const getItemsImpl = (filter: string) =>
     getItems(filter)
-      .map(item => ({
-        value: item.value,
-        key:
-          (item.value as any).key || (item.value as any).id || item.sortValue,
-        dist: calculateDist(item.sortValue, filter),
-        isFixed:
-          item.sortValue === SORT_VALUES.BOTTOM ||
-          item.sortValue === SORT_VALUES.TOP,
-      }))
-      .filter(x => !filter || x.dist > filter.length * 0.1 || x.isFixed)
+      .map(
+        (item) =>
+          ({
+            value: item.value,
+            key:
+              (item.value as any).key ||
+              (item.value as any).id ||
+              item.sortValue,
+            dist: calculateDist(item.sortValue, filter),
+            isFixed:
+              item.sortValue === SORT_VALUES.BOTTOM ||
+              item.sortValue === SORT_VALUES.TOP,
+          } as SelectionPopupItemInternal<T>)
+      )
+      .filter((x) => !filter || x.dist > filter.length * 0.1 || x.isFixed)
       .sort((a, b) => b.dist - a.dist);
 
-  const onSelectedImpl = item => {
+  const onSelectedImpl = (item: SelectionPopupItemInternal<T>) => {
     const { value } = item;
 
     onSelected(value);
   };
-  const renderItemImpl = (item, props) =>
-    renderItem({ ...props, item: item.value, key: item.key });
+  const renderItemImpl = (
+    item: SelectionPopupItemInternal<T>,
+    opts: MentionPopupRenderItemOpts
+  ) => renderItem({ ...opts, item: item.value, key: item.key });
 
   return (
     <MentionPopup
       getItems={getItemsImpl}
-      trigger={trigger}
+      trigger={trigger || ''}
       onSelected={onSelectedImpl}
       renderItem={renderItemImpl}
     />
@@ -83,11 +102,12 @@ function SelectionPopup<T>({
 export interface SelectionItem<T> {
   value: T;
   sortValue: string | SORT_VALUES;
+  key?: string;
 }
 
 interface SelectionButtonProps<T> {
   className?: string;
-  children: any;
+  children: MenuRenderButton;
   onSelected: (item: T) => void;
   trigger?: string;
   getItems: (filter: string) => SelectionItem<T>[];

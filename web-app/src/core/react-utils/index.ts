@@ -1,15 +1,8 @@
-import React, {
-  useEffect,
-  useRef,
-  useContext,
-  useState,
-  useLayoutEffect,
-} from 'react';
-import { useHistory } from 'react-router-dom';
-import { History } from 'history';
-import { notImplemented } from '@ovvio/base/lib/utils/error';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { NavigateFunction, useNavigate } from 'react-router-dom';
+import { notImplemented } from '../../../../base/error.ts';
+import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 
 export type RoutableDocument = Note;
 
@@ -23,11 +16,11 @@ function resolveUrl(
   return notImplemented();
 }
 
-function createDocumentRouter(history: History) {
+function createDocumentRouter(navigate: NavigateFunction) {
   return {
     goTo(doc: RoutableDocument | VertexManager<RoutableDocument>): void {
       const link = resolveUrl(doc);
-      history.push(link);
+      navigate(link);
     },
     urlFor(doc: RoutableDocument | VertexManager<RoutableDocument>): string {
       return resolveUrl(doc);
@@ -36,8 +29,8 @@ function createDocumentRouter(history: History) {
 }
 
 export function useDocumentRouter() {
-  const history = useHistory();
-  return createDocumentRouter(history);
+  const navigate = useNavigate();
+  return createDocumentRouter(navigate);
 }
 
 export function useWindowSize() {
@@ -54,9 +47,9 @@ export function useWindowSize() {
       });
     };
 
-    window.addEventListener('resize', handler);
+    addEventListener('resize', handler);
     return () => {
-      window.removeEventListener('resize', handler);
+      removeEventListener('resize', handler);
     };
   }, []);
 
@@ -82,10 +75,10 @@ export function useElementSize(element: HTMLElement) {
       });
     };
 
-    window.addEventListener('resize', handler);
+    addEventListener('resize', handler);
     handler();
     return () => {
-      window.removeEventListener('resize', handler);
+      removeEventListener('resize', handler);
     };
   }, [element]);
 
@@ -94,40 +87,42 @@ export function useElementSize(element: HTMLElement) {
 
 export function useRenderLogging() {
   const stack = new Error().stack;
+  const componentName = stack?.split('\n')[2].trim().split(' ')[1];
 
-  const componentName = stack.split('\n')[2].trim().split(' ')[1];
   useEffect(() => {
-    console.log(`${componentName} - Rendered`);
-  });
-}
-
-export function useTraceUpdate(props) {
-  const prevProps = useRef(props);
-  const stack = new Error().stack;
-
-  const componentName = stack.split('\n')[2].trim().split(' ')[1];
-  useEffect(() => {
-    const changedProps = Object.entries(props).reduce((ps, [k, v]) => {
-      if (prevProps.current[k] !== v) {
-        ps[k] = [prevProps.current[k], v];
-      }
-      return ps;
-    }, {});
-    if (Object.keys(changedProps).length > 0) {
-      console.log(`${componentName} changed props: `, changedProps);
+    if (componentName) {
+      console.log(`${componentName} - Rendered`);
     }
-    prevProps.current = props;
   });
 }
 
-export function useReffedContext(context) {
-  const val = useContext(context);
-  const ref = useRef(val);
-  useEffect(() => {
-    ref.current = val;
-  }, [val]);
-  return ref;
-}
+// export function useTraceUpdate(props: any) {
+//   const prevProps = useRef(props);
+//   const stack = new Error().stack;
+
+//   const componentName = stack?.split('\n')[2].trim().split(' ')[1];
+//   useEffect(() => {
+//     const changedProps = Object.entries(props).reduce((ps, [k, v]) => {
+//       if (prevProps.current[k] !== v) {
+//         ps[k] = [prevProps.current[k], v];
+//       }
+//       return ps;
+//     }, {});
+//     if (Object.keys(changedProps).length > 0) {
+//       console.log(`${componentName} changed props: `, changedProps);
+//     }
+//     prevProps.current = props;
+//   });
+// }
+
+// export function useReffedContext(context) {
+//   const val = useContext(context);
+//   const ref = useRef(val);
+//   useEffect(() => {
+//     ref.current = val;
+//   }, [val]);
+//   return ref;
+// }
 
 export function useReffedValue<T>(val: T): React.MutableRefObject<T> {
   const ref = useRef(val);
@@ -149,7 +144,9 @@ export function useMountedIndicator() {
   return isMountedRef;
 }
 
-export function useFocusOnMount(ref) {
+export function useFocusOnMount<T extends HTMLElement>(
+  ref: React.RefObject<T>
+) {
   useLayoutEffect(() => {
     if (ref.current) {
       ref.current.focus();

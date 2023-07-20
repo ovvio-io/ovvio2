@@ -1,12 +1,15 @@
-import { useState, useRef, useLayoutEffect } from 'react';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { useFocusOnMount } from 'core/react-utils';
-import { TextField } from '@ovvio/styles/lib/components/inputs';
-import { Scroller, useScrollParent } from 'core/react-utils/scrolling';
-import { useMenuClose } from '@ovvio/styles/lib/components/menu';
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../styles/index.ts';
+import { TextField } from '../../../../styles/components/inputs/index.ts';
+import { useMenuClose } from '../../../../styles/components/menu.tsx';
+import { useFocusOnMount } from '../../core/react-utils/index.ts';
+import {
+  Scroller,
+  useScrollParent,
+} from '../../core/react-utils/scrolling.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: theme.background[0],
     width: styleguide.gridbase * 32,
@@ -46,18 +49,27 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export function MentionItem({ isSelected = false, children, onClick = null }) {
+export interface MentionItemProps extends React.PropsWithChildren {
+  isSelected?: boolean;
+  onClick?: React.MouseEventHandler;
+}
+
+export function MentionItem({
+  isSelected = false,
+  children,
+  onClick,
+}: MentionItemProps) {
   const styles = useStyles();
-  const ref = useRef();
+  const ref = useRef<HTMLDivElement>(null);
   const scrollParent = useScrollParent();
   useLayoutEffect(() => {
-    if (isSelected && scrollParent && scrollParent.current) {
-      const parent = scrollParent.current;
+    if (isSelected && scrollParent /*&& scrollParent.current*/) {
+      const parent = scrollParent; //.current;
       const el = ref.current;
-      const scrollOffset = el.offsetTop - parent.offsetTop;
-      const height = el.clientHeight;
+      const scrollOffset = el!.offsetTop - parent.offsetTop;
+      const height = el!.clientHeight;
       if (scrollOffset < parent.scrollTop) {
-        el.scrollIntoView();
+        el!.scrollIntoView();
       } else if (
         scrollOffset + height >
         parent.scrollTop + parent.clientHeight
@@ -84,14 +96,36 @@ export function MentionItem({ isSelected = false, children, onClick = null }) {
   );
 }
 
-export function MentionPopup({ trigger, onSelected, getItems, renderItem }) {
+export interface MentionPopupRenderItemOpts {
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+export type MentionPopupRenderItem<T> = (
+  item: T,
+  opts: MentionPopupRenderItemOpts
+) => React.ReactNode;
+
+export interface MentionPopupProps<T> {
+  trigger: string;
+  onSelected: (item: T, filter: string) => void;
+  getItems: (filter: string) => T[];
+  renderItem: MentionPopupRenderItem<T>;
+}
+
+export function MentionPopup<T>({
+  trigger,
+  onSelected,
+  getItems,
+  renderItem,
+}: MentionPopupProps<T>) {
   const close = useMenuClose();
   const styles = useStyles();
-  const ref = useRef();
+  const ref = useRef(null);
   useFocusOnMount(ref);
   const [filter, setFilter] = useState(trigger);
-  const onChange = ({ target }) => {
-    let { value } = target;
+  const onChange = ({ target }: React.FormEvent<HTMLInputElement>) => {
+    let { value } = target as HTMLInputElement;
 
     if (!value.startsWith(trigger)) {
       value = `${trigger}${value}`;
@@ -100,22 +134,22 @@ export function MentionPopup({ trigger, onSelected, getItems, renderItem }) {
   };
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const select = item => {
+  const select = (item: T) => {
     onSelected(item, filter);
     close();
   };
   const items = getItems(filter.substring(trigger.length));
-  const onKeyDown = e => {
+  const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowUp':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex(x => (x - 1 < 0 ? items.length - 1 : x - 1));
+        setSelectedIndex((x) => (x - 1 < 0 ? items.length - 1 : x - 1));
         break;
       case 'ArrowDown':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex(x => (x + 1) % items.length);
+        setSelectedIndex((x) => (x + 1) % items.length);
         break;
       case 'Backspace':
         if (!filter) {
@@ -149,7 +183,7 @@ export function MentionPopup({ trigger, onSelected, getItems, renderItem }) {
         ref={ref}
       />
       <Scroller>
-        {ref => (
+        {(ref) => (
           <div className={cn(styles.list)} ref={ref}>
             {items.map((item, i) =>
               renderItem(item, {

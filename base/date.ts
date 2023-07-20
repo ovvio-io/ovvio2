@@ -1,6 +1,7 @@
 import { isNumber } from './comparisons.ts';
 
-const kDayMs = 24 * 60 * 60 * 1000;
+export const kDayMs = 24 * 60 * 60 * 1000;
+export const kWeekMs = 7 * kDayMs;
 
 export function serializeDate(date: Date): number {
   if (date instanceof Date) {
@@ -59,4 +60,8 @@ export function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+export function numberOfWorkDaysLeftInWeek(): number {
+  return Math.max(0, 6 - new Date().getDay() - 1);
 }

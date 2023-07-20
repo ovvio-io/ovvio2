@@ -1,7 +1,7 @@
-import { GraphManager } from '@ovvio/cfds/lib/client/graph/graph-manager';
-import { EVENT_CRITICAL_ERROR } from '@ovvio/cfds/lib/client/graph/vertex-manager';
 import { useEffect } from 'react';
-import { useGraphManager } from './graph';
+import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
+import { EVENT_CRITICAL_ERROR } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { useGraphManager } from './graph.tsx';
 
 function registerOnCriticalError(
   manager: GraphManager | undefined | null,

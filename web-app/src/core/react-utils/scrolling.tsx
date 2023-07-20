@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
 
-export const scrollingContext = React.createContext<HTMLElement>(document.body);
+export const scrollingContext = React.createContext<HTMLElement | undefined>(
+  document.body
+);
 
 export function useScrollingRerendering() {
   const parent = useContext(scrollingContext);
