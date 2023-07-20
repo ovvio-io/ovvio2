@@ -1,5 +1,5 @@
-import { commonPrefixLen, commonSuffixLen } from '@ovvio/base/lib/utils/string';
-import { kDMP } from '../base/defs';
+import { commonPrefixLen, commonSuffixLen } from '../../base/string.ts';
+import { kDMP } from '../base/defs.ts';
 
 const MIN_SUGGESTIONS = 10;
 
@@ -77,7 +77,7 @@ type SuggestionEntry<T> = [dist: number, value: T];
 export function suggestResults<T>(
   userInput: string,
   values: T[],
-  getValue: (v: T) => string = v => v as unknown as string
+  getValue: (v: T) => string = (v) => v as unknown as string
 ): T[] {
   // const matchThreshold = 0.3;
   const entries: SuggestionEntry<T>[] = [];
@@ -90,7 +90,7 @@ export function suggestResults<T>(
   return entries
     .sort((e1, e2) => e2[0] - e1[0])
     .slice(0, MIN_SUGGESTIONS)
-    .map(e => e[1]);
+    .map((e) => e[1]);
 }
 
 // console.log(

@@ -1,5 +1,5 @@
-import { Utils } from '@ovvio/base';
-import { CoreValue, coreValueClone } from '../../core-types';
+import * as ArrayUtils from '../../../base/array.ts';
+import { CoreValue } from '../../../base/core-types/index.ts';
 
 // boolean === true => local
 // boolean === false => remote
@@ -43,7 +43,7 @@ export function mutationPackAppend(
   if (isMutation(mutation)) {
     pack.push(mutation);
   } else {
-    Utils.Array.append(pack, mutation);
+    ArrayUtils.append(pack, mutation);
   }
   return mutationPackOptimize(pack);
 }
@@ -147,7 +147,7 @@ export function mutationPackClone(pack: MutationPack): MutationPack {
   if (isMutation(pack)) {
     return [pack[0], pack[1], pack[2]];
   }
-  return (pack as Mutation[]).map(m => [m[0], m[1], m[2]] as Mutation);
+  return (pack as Mutation[]).map((m) => [m[0], m[1], m[2]] as Mutation);
 }
 
 export function mutationPackHasRemote(pack: MutationPack): boolean {

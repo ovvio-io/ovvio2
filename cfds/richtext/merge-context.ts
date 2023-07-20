@@ -1,13 +1,23 @@
-import { Utils } from '@ovvio/base';
-import { Diff, DiffOperation } from 'diff-match-patch-typescript';
-import { assert } from '@ovvio/base/lib/utils';
-import { kDMP } from '../base/defs';
-import { CoreOptions, CoreType, CoreValue, getCoreType } from '../core-types';
-import { FlatRepAtom, flattenTextNode } from './flat-rep';
-import { Dictionary } from '../collections/dict';
-import { StringRep } from './string-rep';
-import { RichTextChange } from '../change/richtext-change';
-import { TreeNode, isTextNode, isElementNode } from './tree';
+import {
+  Diff,
+  DIFF_DELETE,
+  DIFF_EQUAL,
+  DIFF_INSERT,
+} from '../../external/diff-match-patch.ts';
+import { assert } from '../../base/error.ts';
+import { kDMP } from '../base/defs.ts';
+import {
+  CoreOptions,
+  CoreType,
+  CoreValue,
+  getCoreType,
+} from '../../base/core-types/index.ts';
+import { FlatRepAtom, flattenTextNode } from './flat-rep.ts';
+import { Dictionary } from '../../base/collections/dict.ts';
+import { StringRep } from './string-rep.ts';
+import { RichTextChange } from '../change/richtext-change.ts';
+import { TreeNode, isTextNode, isElementNode } from './tree.ts';
+import * as ArrayUtils from '../../base/array.ts';
 
 export enum Operation {
   Delete = -1,
@@ -165,7 +175,7 @@ export class MergeContext {
 
     const result: FlatRepAtom[] = [];
     for (const diff of textDiffs) {
-      Utils.Array.append(result, strRep.decode(diff[1]));
+      ArrayUtils.append(result, strRep.decode(diff[1]));
     }
     return result;
   }
@@ -187,12 +197,12 @@ export class MergeContext {
         continue;
       }
       switch (op) {
-        case DiffOperation.DIFF_EQUAL:
+        case DIFF_EQUAL:
           text1Idx += text.length;
           text2Idx += text.length;
           break;
 
-        case DiffOperation.DIFF_DELETE: {
+        case DIFF_DELETE: {
           if (text.length === 1) {
             yield {
               operation: Operation.Delete,
@@ -209,7 +219,7 @@ export class MergeContext {
           break;
         }
 
-        case DiffOperation.DIFF_INSERT: {
+        case DIFF_INSERT: {
           yield {
             operation: Operation.Insert,
             start: text1Idx,

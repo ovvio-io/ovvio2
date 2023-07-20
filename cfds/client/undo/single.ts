@@ -1,10 +1,10 @@
-import { Utils } from '@ovvio/base';
-import { clone, concatChanges, diff, patch } from '../../base/object';
-import * as TypeUtils from '../../base/types/utils';
-import { Scheme } from '../../base/scheme';
-import { CoreObject, coreValueEquals } from '../../core-types';
-import { EqualOptions } from '../../core-types/equals';
-import { VertexSnapshot } from '../graph/types';
+import { assert } from '../../../base/error.ts';
+import { clone, concatChanges, diff, patch } from '../../base/object.ts';
+import * as TypeUtils from '../../base/types/utils.ts';
+import { Scheme } from '../../base/scheme.ts';
+import { CoreObject, coreValueEquals } from '../../../base/core-types/index.ts';
+import { EqualOptions } from '../../../base/core-types/equals.ts';
+import { VertexSnapshot } from '../graph/vertex-manager.ts';
 
 enum UndoType {
   Local = 'l',
@@ -101,7 +101,7 @@ export class SingleUndoManager {
     }
 
     const prevLast = this._undoList[this._undoList.length - 2];
-    Utils.assert(prevLast.type === UndoType.Local);
+    assert(prevLast.type === UndoType.Local);
 
     return prevLast as LocalUndo;
   }
@@ -125,7 +125,7 @@ export class SingleUndoManager {
    * @returns true if a new undo is added to the list
    */
   changedLocally(group: number) {
-    Utils.assert(group > 0, 'group must be larger than 0');
+    assert(group > 0, 'group must be larger than 0');
 
     const snapshot = this._object.getSnapshot(this._snapshotFields);
 
@@ -164,7 +164,7 @@ export class SingleUndoManager {
     const last = this.lastUndo;
 
     if (local) {
-      Utils.assert(group !== undefined);
+      assert(group !== undefined);
       group = group!;
       if (last.type === UndoType.Local && last.group === group) {
         //Undo with the same group
@@ -271,7 +271,7 @@ export class SingleUndoManager {
 
       //2. get prev2 item. must exist
       const prev2 = this._undoList[this._undoList.length - 3];
-      Utils.assert(prev2 !== undefined);
+      assert(prev2 !== undefined);
 
       //3. 3 way merge: prev1 is base, prev2 and last are branches
       const mergedSnapshot = this.threeWayMerge(
@@ -456,7 +456,7 @@ export class SingleUndoManager {
 }
 
 function ensureLocalItem(item: UndoItem): LocalUndo {
-  Utils.assert(item.type === UndoType.Local);
+  assert(item.type === UndoType.Local);
   return item as LocalUndo;
 }
 

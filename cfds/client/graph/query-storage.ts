@@ -1,10 +1,10 @@
-import { mapIterable } from '@ovvio/base/lib/utils/common';
-import { GraphManager } from './graph-manager';
-import { SortDescriptor } from './query';
-import { Vertex } from './vertex';
-import { VertexManager } from './vertex-manager';
-import { coreValueCompare, coreValueEquals } from '../../core-types';
-import { SortedList } from '../../collections/sorted-list';
+import { GraphManager } from './graph-manager.ts';
+import { SortDescriptor } from './query.ts';
+import { Vertex } from './vertex.ts';
+import { VertexManager } from './vertex-manager.ts';
+import { SortedList } from '../../../base/collections/sorted-list.ts';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
+import { coreValueEquals } from '../../../base/core-types/equals.ts';
 
 export class QueryStorage<T extends Vertex> {
   private readonly _keys: Set<string>;

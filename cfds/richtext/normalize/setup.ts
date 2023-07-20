@@ -1,5 +1,5 @@
-import { ElementNode, isElementNode } from '../tree';
-import { RuleSetup } from './types';
+import { ElementNode, isElementNode } from '../tree.ts';
+import { RuleSetup } from './types.ts';
 
 export const userDefinedRules: RuleSetup[] = [
   {
@@ -129,7 +129,7 @@ export const userDefinedRules: RuleSetup[] = [
     node: { tags: ['ref', 'inline-task'] },
     condition: {
       source: 'node',
-      func: n => {
+      func: (n) => {
         //first child of ref must be a text node
         const firstChild = (n as ElementNode).children[0];
         return firstChild && isElementNode(firstChild);

@@ -1,5 +1,5 @@
-import * as SetUtils from '@ovvio/base/lib/utils/set';
-import { CacheLoadingStatus, GraphManager } from './graph-manager';
+import * as SetUtils from '../../../base/set.ts';
+import { GraphManager } from './graph-manager.ts';
 import {
   EVENT_LOADING_FINISHED,
   EVENT_VERTEX_CHANGED,
@@ -7,22 +7,23 @@ import {
   EVENT_VERTEX_SOURCE_CLOSED,
   GroupId,
   VertexSource,
-} from './vertex-source';
-import { Vertex } from './vertex';
-import { VertexManager } from './vertex-manager';
-import { assert, unionIter } from '@ovvio/base/lib/utils';
-import { MicroTaskTimer, SimpleTimer, Timer } from '../timer';
+} from './vertex-source.ts';
+import { Vertex } from './vertex.ts';
+import { VertexManager } from './vertex-manager.ts';
+import { MutationPack, mutationPackHasField } from './mutations.ts';
+import { QueryStorage } from './query-storage.ts';
+import { CoreValue } from '../../../base/core-types/base.ts';
 import {
   CancellablePromise,
   CoroutineQueue,
   CoroutineScheduler,
+  Scheduler,
   SchedulerPriority,
-} from '../coroutine';
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { CoreValue, coreValueCompare } from '../../core-types';
-import { MutationPack, mutationPackHasField } from './mutations';
-import { QueryStorage } from './query-storage';
-import { Scheduler } from '../coroutine';
+} from '../../../base/coroutine.ts';
+import { SimpleTimer, Timer } from '../../../base/timer.ts';
+import { assert, notReached } from '../../../base/error.ts';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
+import { unionIter } from '../../../base/common.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -117,7 +118,7 @@ export class Query<
     let resolve: (
       value: QueryResults<OT> | PromiseLike<QueryResults<OT>>
     ) => void;
-    const promise = new Promise<QueryResults<OT>>(res => (resolve = res));
+    const promise = new Promise<QueryResults<OT>>((res) => (resolve = res));
     const query = new this(source, predicate, sortDescriptor, name);
     query.on(EVENT_QUERY_RESULTS_CHANGED, () => {
       if (!query.isLoading) {
@@ -200,7 +201,7 @@ export class Query<
     this._id = ++gQueryId;
     this._vertexChangedListener = (key, mutations) =>
       this.vertexChanged(key, mutations);
-    this._vertexDeletedListener = key => this.vertexDeleted(key);
+    this._vertexDeletedListener = (key) => this.vertexDeleted(key);
     this._closeListener = () => {
       this.unlock();
       this.close();
@@ -299,9 +300,9 @@ export class Query<
 
   vertices(gid?: GroupId<GT>): OT[] {
     if (typeof gid !== 'undefined') {
-      return this.group(gid).map(mgr => mgr.getVertexProxy());
+      return this.group(gid).map((mgr) => mgr.getVertexProxy());
     }
-    return this.results.map(mgr => mgr.getVertexProxy());
+    return this.results.map((mgr) => mgr.getVertexProxy());
   }
 
   get count(): number {
@@ -393,13 +394,13 @@ export class Query<
 
   keys(gid?: GroupId<GT>): Iterable<string> {
     if (typeof gid === 'undefined') {
-      return this.results.map(mgr => mgr.key);
+      return this.results.map((mgr) => mgr.key);
     }
     const storage = this._results.get(gid);
     if (!storage) {
       return [];
     }
-    return storage.results.map(mgr => mgr.key);
+    return storage.results.map((mgr) => mgr.key);
   }
 
   *groupsForKey(key: string): Iterable<GroupId<GT>> {
@@ -438,7 +439,7 @@ export class Query<
       vert: VertexManager<OT>,
       idx: number,
       groupId: GroupId<GT>
-    ) => T = vert => vert as unknown as T
+    ) => T = (vert) => vert as unknown as T
   ): T[] {
     const result: T[] = [];
     this.forEach((vert, idx, gid) => {
@@ -752,7 +753,7 @@ export class UnionQuery<
     this._changeListeners = new Map();
     this._closeListener = () => this.close();
     let loadingCount = 0;
-    this.sources = Array.from(sources).map(src =>
+    this.sources = Array.from(sources).map((src) =>
       src instanceof Query ? { query: src } : src
     );
     for (let src of this.sources) {
@@ -785,6 +786,7 @@ export class UnionQuery<
   }
 
   // eslint-disable-next-line getter-return
+  // deno-lint-ignore getter-return
   get graph(): GraphManager {
     for (const q of this.queries()) {
       return q.graph;
@@ -807,7 +809,7 @@ export class UnionQuery<
   *keys(): Generator<string> {
     const processedKeys = new Set<string>();
     for (const key of unionIter(
-      ...this.sources.map(src => src.query.keys(src.groupId))
+      ...this.sources.map((src) => src.query.keys(src.groupId))
     )) {
       if (!processedKeys.has(key)) {
         processedKeys.add(key);

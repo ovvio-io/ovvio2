@@ -1,4 +1,4 @@
-import { TreeNode } from '../tree';
+import { TreeNode } from '../tree.ts';
 
 interface SingleTagCondition {
   tag: string;

@@ -1,18 +1,18 @@
-import { uniqueId } from '@ovvio/base/lib/utils';
-import { fromTimestamp } from '../base/orderstamp';
-import { NS_NOTES } from '../base/scheme-types';
-import { CoreObject } from '../core-types';
-import { isRefMarker, RefType } from '../richtext/model';
+import { uniqueId } from '../../base/common.ts';
+import { CoreObject } from '../../base/core-types/base.ts';
+import { fromTimestamp } from '../base/orderstamp.ts';
+import { NS_NOTES } from '../base/scheme-types.ts';
+import { isRefMarker, RefType } from '../richtext/model.ts';
 import {
   dfs,
   isRichText,
   isTextNode,
   RichText,
   TextNode,
-} from '../richtext/tree';
-import { CreateVertexInfo, GraphManager } from './graph/graph-manager';
-import { Note } from './graph/vertices/note';
-import { ISortable, sortStampCompare } from './sorting';
+} from '../richtext/tree.ts';
+import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
+import { Note } from './graph/vertices/note.ts';
+import { ISortable, sortStampCompare } from './sorting.ts';
 
 const DUP_TITLE_SUFFIX = ' (copy)';
 
@@ -48,7 +48,7 @@ export function duplicateCard(
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map(x => {
+  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
     return {
       namespace: NS_NOTES,
       initialData: x[1],
@@ -58,7 +58,7 @@ export function duplicateCard(
 
   const vertices = graph.createVertices<Note>(vInfos);
 
-  const vertex = vertices.find(v => v.key === newRootKey)!;
+  const vertex = vertices.find((v) => v.key === newRootKey)!;
 
   return vertex;
 }

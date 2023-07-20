@@ -1,4 +1,3 @@
-import { notReached } from '@ovvio/base/lib/utils/error';
 import {
   NS_NOTES,
   NS_ROLES,
@@ -6,16 +5,16 @@ import {
   NS_USERS,
   NS_WORKSPACE,
   SortBy,
-} from '../../base/scheme-types';
-import { GraphManager } from './graph-manager';
+} from '../../base/scheme-types.ts';
+import { GraphManager } from './graph-manager.ts';
 import {
   Predicate,
   Query,
   QueryOptions,
   SortDescriptor,
   UnionQuery,
-} from './query';
-import { Vertex } from './vertex';
+} from './query.ts';
+import { Vertex } from './vertex.ts';
 import {
   BaseVertex,
   ContentVertex,
@@ -23,12 +22,12 @@ import {
   Tag,
   User,
   Workspace,
-} from './vertices';
-import { Role } from './vertices/role';
-import { CoreValue, coreValueCompare } from '../../core-types';
-import { assert } from '@ovvio/base/lib/utils';
-import { EVENT_VERTEX_SOURCE_CLOSED } from './vertex-source';
-import { NOTE_SORT_BY, NoteType } from './vertices/note';
+} from './vertices/index.ts';
+import { Role } from './vertices/role.ts';
+import { EVENT_VERTEX_SOURCE_CLOSED } from './vertex-source.ts';
+import { NOTE_SORT_BY, NoteType } from './vertices/note.ts';
+import { CoreValue } from '../../../base/core-types/base.ts';
+import { assert, notReached } from '../../../base/error.ts';
 
 export type SharedQueryName =
   | 'notDeleted'
@@ -83,7 +82,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     this._noteQueries = new Map();
     this.notDeleted = new Query<Vertex, Vertex, CoreValue>(
       graph,
-      vert => !vert.isNull && vert.isDeleted === 0,
+      (vert) => !vert.isNull && vert.isDeleted === 0,
       {
         name: 'SharedNotDeleted',
         groupBy: groupByWorkspace,
@@ -92,46 +91,46 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     ).lock();
     this.noNotes = new Query(
       this.notDeleted,
-      vert => vert.namespace !== NS_NOTES,
+      (vert) => vert.namespace !== NS_NOTES,
       undefined,
       'SharedNoNotes'
     ).lock();
     this.workspaces = new Query<Vertex, Workspace>(
       this.noNotes,
-      vert => vert.namespace === NS_WORKSPACE,
+      (vert) => vert.namespace === NS_WORKSPACE,
       undefined,
       'SharedWorkspaces'
     ).lock();
     this.tags = new Query<Vertex, Tag>(
       this.noNotes,
-      vert => vert.namespace === NS_TAGS,
-      { name: 'SharedTags', groupBy: tag => tag.workspace.key }
+      (vert) => vert.namespace === NS_TAGS,
+      { name: 'SharedTags', groupBy: (tag) => tag.workspace.key }
     ).lock();
     this.parentTagsByName = new Query<Tag, Tag, string>(
       this.tags,
-      tag => tag.parentTag === undefined,
+      (tag) => tag.parentTag === undefined,
       {
         name: 'SharedParentTags',
-        groupBy: tag => tag.name,
+        groupBy: (tag) => tag.name,
       }
     ).lock();
     this.childTagsByParentName = new Query<Tag, Tag, string>(
       this.tags,
-      tag => tag.parentTag !== undefined,
+      (tag) => tag.parentTag !== undefined,
       {
         name: 'SharedChildTags',
-        groupBy: tag => tag.parentTag!.name,
+        groupBy: (tag) => tag.parentTag!.name,
       }
     ).lock();
     this.roles = new Query<Vertex, Role>(
       this.noNotes,
-      vert => vert.namespace === NS_ROLES,
+      (vert) => vert.namespace === NS_ROLES,
       undefined,
       'SharedRoles'
     ).lock();
     this.users = new Query<Vertex, User>(
       this.noNotes,
-      vert => vert.namespace === NS_USERS,
+      (vert) => vert.namespace === NS_USERS,
       undefined,
       'SharedUsers'
     ).lock();
@@ -145,10 +144,10 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     if (!query) {
       query = new Query(
         this.notDeleted,
-        vert => vert instanceof Note && vert.parentType !== NoteType.Task,
+        (vert) => vert instanceof Note && vert.parentType !== NoteType.Task,
         {
           sortBy: NOTE_SORT_BY[sortBy],
-          groupBy: note => note.workspace.key,
+          groupBy: (note) => note.workspace.key,
           name: 'SharedSortedNotes-' + sortBy,
         }
       ).lock();

@@ -2,16 +2,16 @@
  * This file contains a set of common field triggers that can be installed
  * on specific Vertex fields.
  */
-import { assert } from '@ovvio/base/lib/utils';
-import { SchemeNamespace } from 'src/base/scheme-types';
-import { CoreValue } from '../../core-types';
+import { CoreValue } from '../../../base/core-types/base.ts';
+import { assert } from '../../../base/error.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
 import {
   Mutation,
   MutationPack,
   MutationOrigin,
   mutationPackIsEmpty,
-} from './mutations';
-import { FieldChangeTrigger, Vertex } from './vertex';
+} from './mutations.ts';
+import { FieldChangeTrigger, Vertex } from './vertex.ts';
 
 /**
  * An interface of a method that gets called in response to a neighboring

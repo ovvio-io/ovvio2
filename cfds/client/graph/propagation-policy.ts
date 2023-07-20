@@ -1,8 +1,8 @@
-import { assert } from 'console';
-import { SchemeNamespace } from 'src/base/scheme-types';
-import { CoreValue } from 'src/core-types';
-import { Mutation, MutationOrigin } from './mutations';
-import { Vertex } from './vertex';
+import { CoreValue } from '../../../base/core-types/base.ts';
+import { assert } from '../../../base/error.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
+import { Mutation, MutationOrigin } from './mutations.ts';
+import { Vertex } from './vertex.ts';
 
 export type MutationSource = [scheme: SchemeNamespace, fieldName: string];
 

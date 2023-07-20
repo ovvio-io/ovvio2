@@ -1,55 +1,51 @@
-import EventEmitter from 'eventemitter3';
-import { Logger } from '@ovvio/base';
-import { Record } from '../../base/record';
-import { SchemeManager } from '../../base/scheme';
-import { assert, uniqueId } from '@ovvio/base/lib/utils';
-import { Dictionary } from '../../collections/dict';
-import { CoreObject, coreValueCompare } from '../../core-types';
-import { CacheEntry, ClientCache } from '../client-cache';
-import { IndexQueryManager } from '../indexes/manager';
-import { NetworkAdapter } from '../net/network-adapter';
-import { UndoManager } from '../undo/manager';
-import { Socket } from '../net/socket';
-// import { LayerDef, LayeredAdjacencyList } from './adj-list';
+import { Record } from '../../base/record.ts';
+import { SchemeManager } from '../../base/scheme.ts';
+import { assert } from '../../../base/error.ts';
+import { uniqueId } from '../../../base/common.ts';
+import { Dictionary } from '../../../base/collections/dict.ts';
+import { CoreObject } from '../../../base/core-types/index.ts';
+import { UndoManager } from '../undo/manager.ts';
 import {
   MutationPack,
   mutationPackAppend,
   mutationPackToArr,
-} from './mutations';
-import { CompositeField } from './types';
-import { Vertex, VertexId, VertexIdGetKey } from './vertex';
-import VertexGroup from './vertex-group';
+} from './mutations.ts';
+import { Vertex, VertexId, VertexIdGetKey } from './vertex.ts';
 import {
   EVENT_CRITICAL_ERROR,
   EVENT_DID_CHANGE,
   RefsChange,
   VertexManager,
-} from './vertex-manager';
-import { delay } from '@ovvio/base/lib/utils/time';
-import { NS_NOTES, NS_TAGS, SchemeNamespace } from '../../base/scheme-types';
-import { MicroTaskTimer } from '../timer';
-import {
-  JSONObject,
-  ReadonlyJSONObject,
-} from '@ovvio/base/lib/utils/interfaces';
-import { unionIter } from '@ovvio/base/lib/utils/set';
-import { CoroutineScheduler, SchedulerPriority } from '../coroutine';
+} from './vertex-manager.ts';
+import { DataType, NS_NOTES } from '../../base/scheme-types.ts';
+import { MicroTaskTimer } from '../../../base/timer.ts';
+import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
+import { unionIter } from '../../../base/set.ts';
 import {
   SharedQueriesManager,
   SharedQueryName,
   SharedQueryType,
-} from './shared-queries';
+} from './shared-queries.ts';
 import {
-  EVENT_LOADING_FINISHED,
   EVENT_VERTEX_CHANGED,
   EVENT_VERTEX_SOURCE_CLOSED,
   VertexSource,
-} from './vertex-source';
-import { AdjacencyList, SimpleAdjacencyList } from './adj-list';
-import { CoroutineTimer } from '../coroutine-timer';
+} from './vertex-source.ts';
+import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
+import {
+  EVENT_NEW_COMMIT,
+  MemRepoStorage,
+  Repository,
+} from '../../../repo/repo.ts';
+import { Commit } from '../../../repo/commit.ts';
+import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
+import { RepoClient } from '../../../net/repo-client.ts';
+import { kSyncConfigClient } from '../../../net/base-client.ts';
+import { appendPathComponent } from '../../../base/string.ts';
 
-const kMaxInitialNotesLoad = 100000;
-const kOldestNotesToLoadMs = 1000 * 60 * 60 * 24 * 30;
+// We consider only commits from the last 30 days to be "hot", and load them
+// automatically
+const K_HOT_COMMITS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -127,104 +123,65 @@ export class GraphManager extends VertexSource {
   private readonly _rootKey: string;
   private readonly _adjList: AdjacencyList;
   private readonly _vertManagers: Dictionary<string, VertexManager>;
-  private readonly _clientCache: ClientCache | undefined;
   private readonly _pendingMutations: Dictionary<string, MutationPack>;
   private readonly _undoManager: UndoManager;
   private readonly _ptrFilterFunc: PointerFilterFunc;
-  private _socket: Socket | undefined;
-  private readonly _indexQueryManager: IndexQueryManager;
-  private readonly _compositeFields: {
-    [ns: string]: { [fieldName: string]: CompositeField };
-  };
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
-  private _cacheLoadPromise: Promise<void> | undefined;
-  private _cacheStatus: CacheLoadingStatus;
+  private readonly _session: string;
+  private readonly _repoById: Dictionary<string, Repository<MemRepoStorage>>;
+  private readonly _backup: IDBRepositoryBackup;
+  private readonly _repoClients: Dictionary<string, RepoClient<MemRepoStorage>>;
+  private readonly _baseServerUrl: string | undefined;
+  private _loadContentsPromise: Promise<void> | undefined;
+  private _isLoading = true;
 
   constructor(
     rootKey: string,
     ptrFilterFunc: PointerFilterFunc,
-    networkAdapter?: NetworkAdapter,
-    cache?: ClientCache
+    baseServerUrl?: string
   ) {
     super();
     this._rootKey = rootKey;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    this._clientCache = cache;
+    this._session = rootKey + '/' + uniqueId();
+    this._ptrFilterFunc = ptrFilterFunc;
     this._pendingMutations = new Map();
     this._ptrFilterFunc = ptrFilterFunc;
-    if (networkAdapter !== undefined) {
-      this._socket = new Socket(networkAdapter);
-    }
-    this._indexQueryManager = new IndexQueryManager(
-      (...args) => this.registerCompositeField(...args),
-      key => this.getVertexManager(key) as any
-    );
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
       this._processPendingMutations()
     );
     this._executedFieldTriggers = new Map();
     this._undoManager = new UndoManager(this);
-    this._compositeFields = {};
-    this._cacheStatus = CacheLoadingStatus.CriticalLoading;
 
-    this._createVertIfNeeded(this._rootKey);
     this.sharedQueriesManager = new SharedQueriesManager(this);
+    this._repoById = new Map();
+    this._backup = new IDBRepositoryBackup(rootKey);
+    this._repoClients = new Map();
+    this._baseServerUrl = baseServerUrl;
+
+    // Automatically init the directory as everything depends on its presence.
+    this.repository('/sys/dir');
+    this._createVertIfNeeded(this._rootKey);
   }
 
   close(): void {
     this.emit(EVENT_VERTEX_SOURCE_CLOSED);
     this._processPendingMutationsTimer.unschedule();
-    if (this._socket) {
-      this._socket.networkAdapter.close();
-      this._socket = undefined;
-    }
-    // this._notesSearch.close();
-    // this._backup.close();
+    this._backup.close();
   }
 
   get adjacencyList(): AdjacencyList {
     return this._adjList;
   }
 
-  get socket(): Socket | undefined {
-    return this._socket;
-  }
-
-  get cache(): ClientCache | undefined {
-    return this._clientCache;
-  }
-
-  get indexQueryManager() {
-    return this._indexQueryManager;
-  }
-
   get undoManager() {
     return this._undoManager;
   }
 
-  get cacheLoaded(): boolean {
-    return (
-      !this._clientCache ||
-      this._cacheStatus !== CacheLoadingStatus.CriticalLoading
-    );
-  }
-
-  get cacheStatus(): CacheLoadingStatus {
-    return this._cacheStatus;
-  }
-
-  get cacheLoadingEnded(): boolean {
-    const status = this.cacheStatus;
-    return (
-      status === CacheLoadingStatus.Done ||
-      status === CacheLoadingStatus.NoCache
-    );
-  }
-
-  get isLoading(): boolean {
-    return !this.cacheLoaded;
+  get session(): string {
+    return this._session;
   }
 
   get rootKey(): string {
@@ -233,6 +190,82 @@ export class GraphManager extends VertexSource {
 
   get ptrFilterFunc(): PointerFilterFunc {
     return this._ptrFilterFunc;
+  }
+
+  get isLoading(): boolean {
+    return this._isLoading;
+  }
+
+  loadLocalContents(): Promise<void> {
+    if (!this._loadContentsPromise) {
+      this._loadContentsPromise = (async () => {
+        for (const [repoId, commits] of Object.entries(
+          await this._backup.loadCommits()
+        )) {
+          this.repository(repoId).persistCommits(commits);
+        }
+        this._isLoading = false;
+      })();
+    }
+    return this._loadContentsPromise;
+  }
+
+  repository(id: string): Repository<MemRepoStorage> {
+    let repo = this._repoById.get(id);
+    if (!repo) {
+      repo = new Repository(new MemRepoStorage());
+      repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+        if (!c.key) {
+          return;
+        }
+        const record = repo!.recordForCommit(c);
+        const ns = record.scheme.namespace;
+        if (
+          ns === NS_NOTES &&
+          c.timestamp.getTime() < Date.now() - K_HOT_COMMITS_WINDOW_MS
+        ) {
+          return;
+        }
+        // The following line does two major things:
+        //
+        // 1. It creates the vertex manager if it doesn't already exist.
+        //    Since this event gets triggered when loading from cache, this
+        //    implicitly boots our graph.
+        //
+        // 2. A commit will be performed if we need to merge some newly
+        //    discovered commits.
+        this.getVertexManager(c.key).scheduleCommitIfNeeded();
+
+        // Any kind of activity needs to reset the sync timer. This causes
+        // the initial sync to run at full speed, which is a desired side
+        // effect.
+        this._repoClients.get(id)?.touch();
+      });
+      this._repoById.set(id, repo);
+
+      if (this._baseServerUrl) {
+        const client = new RepoClient(
+          repo,
+          // serveAddr/repoId/sync
+          appendPathComponent(this._baseServerUrl, id, 'sync'),
+          kSyncConfigClient
+        );
+        this._repoClients.set(id, client);
+        client.startSyncing();
+      }
+    }
+    return repo;
+  }
+
+  repositoryForKey(
+    key: string
+  ): [string | undefined, Repository<MemRepoStorage> | undefined] {
+    for (const [id, repo] of this._repoById) {
+      if (repo.hasKey(key)) {
+        return [id, repo];
+      }
+    }
+    return [undefined, undefined];
   }
 
   keys(): Iterable<string> {
@@ -249,13 +282,6 @@ export class GraphManager extends VertexSource {
 
   sharedQuery<T extends SharedQueryName>(name: T): SharedQueryType<T> {
     return this.sharedQueriesManager[name] as SharedQueryType<T>;
-  }
-
-  disconnect(): void {
-    if (this.socket !== undefined) {
-      this.socket.networkAdapter.close();
-      this._socket = undefined;
-    }
   }
 
   hasVertex(key: string): boolean {
@@ -284,10 +310,8 @@ export class GraphManager extends VertexSource {
   ): T {
     return this._createVertIfNeeded<T>(
       key || uniqueId(),
-      undefined,
       namespace,
       initialData,
-      true,
       local
     ).getVertexProxy();
   }
@@ -297,7 +321,6 @@ export class GraphManager extends VertexSource {
     for (const vInfo of vInfos) {
       const newV = this._createVertIfNeeded<T>(
         vInfo.key || uniqueId(),
-        undefined,
         vInfo.namespace,
         vInfo.initialData,
         false
@@ -305,14 +328,7 @@ export class GraphManager extends VertexSource {
 
       vManagers.push(newV);
     }
-    for (const v of vManagers) {
-      if (this.cacheLoaded) {
-        v.onCacheLoaded(undefined);
-        v.onGraphCacheLoaded();
-      }
-    }
-    const vertices = vManagers.map(v => v.getVertexProxy());
-
+    const vertices = vManagers.map((v) => v.getVertexProxy());
     return vertices;
   }
 
@@ -336,72 +352,10 @@ export class GraphManager extends VertexSource {
     );
   }
 
-  /**
-   * Create a Vertex group that you can listen to changes together
-   */
-  createGroup(keys?: string[]): VertexGroup {
-    return new VertexGroup(this, keys);
-  }
-
-  registerCompositeField(
-    namespaces: string | string[] | undefined,
-    fieldName: string,
-    impl: CompositeField
-  ): void {
-    if (namespaces === undefined) {
-      namespaces = [''];
-    } else if (typeof namespaces === 'string') {
-      namespaces = [namespaces];
-    }
-    const compositeFields = this._compositeFields;
-    for (const ns of namespaces) {
-      let nsDict = compositeFields[ns];
-      if (nsDict === undefined) {
-        nsDict = {};
-        compositeFields[ns] = nsDict;
-      }
-      nsDict[fieldName] = impl;
-    }
-  }
-
-  getCompositeField(
-    namespace: string,
-    fieldName: string
-  ): CompositeField | undefined {
-    const nsDict = this._compositeFields[namespace];
-    if (nsDict && nsDict[fieldName]) {
-      return nsDict[fieldName];
-    }
-    const allDict = this._compositeFields[''];
-    if (allDict && allDict[fieldName]) {
-      return allDict[fieldName];
-    }
-    return undefined;
-  }
-
-  *compositeFieldsForNamespace(
-    namespace: string
-  ): Generator<[fieldName: string, impl: CompositeField]> {
-    const nsDict = this._compositeFields[namespace];
-    if (nsDict) {
-      for (const entry of Object.entries(nsDict)) {
-        yield entry;
-      }
-    }
-    const allDict = this._compositeFields[''];
-    if (allDict) {
-      for (const entry of Object.entries(allDict)) {
-        yield entry;
-      }
-    }
-  }
-
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
-    discoveredBy?: string,
     ns?: string,
     initialData?: CoreObject,
-    runOnCacheLoaded = true,
     local = false
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
@@ -415,28 +369,21 @@ export class GraphManager extends VertexSource {
               data: initialData!,
             })
           : undefined;
-      mgr = new VertexManager(this, key, record, discoveredBy, local);
+      mgr = new VertexManager(this, key, record, local);
       this._vertManagers.set(key, mgr);
-      this._setupVertexManager(mgr, runOnCacheLoaded);
+      this._setupVertexManager(mgr);
     }
     return mgr as VertexManager<V>;
   }
 
-  private _setupVertexManager(
-    mgr: VertexManager,
-    runOnCacheLoaded: boolean
-  ): void {
+  private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
-    mgr.on(EVENT_DID_CHANGE, (pack: MutationPack, refsChange, RefsChange) =>
-      this._vertexDidChange(key, pack, refsChange)
+    mgr.on(
+      EVENT_DID_CHANGE,
+      (pack: MutationPack, refsChange: RefsChange, RefsChange: RefsChange) =>
+        this._vertexDidChange(key, pack, refsChange)
     );
     mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
-    if (runOnCacheLoaded) {
-      mgr.onCacheLoaded(undefined);
-      if (this.cacheLoaded) {
-        mgr.onGraphCacheLoaded();
-      }
-    }
   }
 
   private _vertexDidChange(
@@ -444,15 +391,10 @@ export class GraphManager extends VertexSource {
     pack: MutationPack,
     refsChange: RefsChange
   ): void {
-    this.getVertexManager(key).traceLog(
-      `Vertex mutated ${mutationPackToArr(pack).map(x => x[0])}`
-    );
     const pendingMutations = this._pendingMutations;
     pack = mutationPackAppend(pendingMutations.get(key), pack);
     pendingMutations.set(key, pack);
-    if (this.cacheLoaded) {
-      this._processPendingMutationsTimer.schedule();
-    }
+    this._processPendingMutationsTimer.schedule();
     // this.emit(EVENT_VERTEX_DID_CHANGE, key, pack, refsChange);
     this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
   }
@@ -470,7 +412,6 @@ export class GraphManager extends VertexSource {
       this._pendingMutations.clear();
 
       //Send mutations to index/query/undo ...
-      this._indexQueryManager.update(mutations);
       this._undoManager.update(mutations);
 
       this._executedFieldTriggers.clear();
@@ -500,140 +441,6 @@ export class GraphManager extends VertexSource {
     }
   }
 
-  loadCache(): Promise<void> {
-    if (this._cacheLoadPromise === undefined) {
-      this._cacheLoadPromise = this._loadCacheImpl();
-    }
-    return this._cacheLoadPromise;
-  }
-
-  private async _loadCacheImpl(): Promise<void> {
-    assert(!this.cacheLoaded);
-    Logger.info('Cache loading starting...');
-    const startTime = Date.now();
-    const cache = this.cache;
-    const rootKey = this.rootKey;
-    const allEntries: CacheEntry[] = [];
-    const keysToEntries = new Map<string, CacheEntry>();
-    // First, fetch the entire cache to memory
-    if (undefined !== cache) {
-      try {
-        await cache.loadAll(entry => {
-          allEntries.push(entry);
-          keysToEntries.set(entry.key, entry);
-        });
-      } catch (err) {
-        Logger.error('Failed loading cache', err);
-      }
-    }
-    // Sort all cache entries by the order we need to load them. Everything but
-    // notes is at the top, followed by a long list of notes.
-    allEntries.sort(compareCacheEntries);
-    // We load notes up to the cutoff defined above. Everything else will be
-    // loaded asynchronously in the background later.
-    // const cutoff = Date.now() - kOldestNotesToLoadMs;
-    let nextEntryToLoadIdx = 0;
-    let firstNoteIdx = -1;
-    for (const entry of allEntries) {
-      const lastMod = entry.record?.get<Date | undefined>('creationDate');
-      if (entry.record?.scheme.namespace === NS_NOTES) {
-        if (
-          firstNoteIdx > 0 &&
-          nextEntryToLoadIdx - firstNoteIdx >= kMaxInitialNotesLoad &&
-          lastMod !== undefined &&
-          Date.now() - lastMod.getTime() < kOldestNotesToLoadMs
-        ) {
-          break;
-        }
-        if (firstNoteIdx < 0) {
-          firstNoteIdx = nextEntryToLoadIdx;
-        }
-      }
-      this._createVertIfNeeded(
-        entry.key,
-        rootKey,
-        undefined,
-        undefined,
-        false
-      ).onCacheLoaded(entry);
-      ++nextEntryToLoadIdx;
-    }
-    // As a result of loading the initial sub-graph from the cache, a bunch of
-    // adjacent vertices may have been created. Call onCacheLoaded() on them so
-    // we have a somewhat complete sub graph
-    // let didLoad = true;
-    // while (didLoad) {
-    // didLoad = false;
-    for (const mgr of this._vertManagers.values()) {
-      const key = mgr.key;
-      if (!mgr.cacheLoaded) {
-        mgr.onCacheLoaded(keysToEntries.get(key));
-        // didLoad = true;
-      }
-    }
-    // }
-    // Update our cache status to reflect what actually happened
-    this._cacheStatus =
-      allEntries.length > 0
-        ? CacheLoadingStatus.BackgroundLoading
-        : CacheLoadingStatus.NoCache;
-    // Finalize cache loading for the vertexes that did load
-    // for (const mgr of this._vertManagers.values()) {
-    //   assert(mgr.cacheLoaded);
-    // mgr.onGraphCacheLoaded();
-    // }
-    this._processPendingMutations();
-    Logger.info(
-      `Cache loading took ${
-        (Date.now() - startTime) / 1000
-      }sec. Loaded ${nextEntryToLoadIdx} entries. ${
-        allEntries.length - nextEntryToLoadIdx
-      } are left to load in background. First note index: ${firstNoteIdx}`
-    );
-    // Let everyone know cache loading completed
-    this.emit(EVENT_CACHE_LOADED);
-    this.emit(EVENT_LOADING_FINISHED);
-    // Start a background task to load the remaining cache entries
-    if (nextEntryToLoadIdx < allEntries.length) {
-      const backgroundStartTime = Date.now();
-      new CoroutineTimer(
-        CoroutineScheduler.sharedScheduler(),
-        () => {
-          const entry = allEntries[nextEntryToLoadIdx];
-          const ns = entry.record?.scheme.namespace;
-          if (ns && ns !== NS_NOTES) {
-            debugger;
-          }
-          const mgr = this._createVertIfNeeded(
-            entry.key,
-            rootKey,
-            undefined,
-            undefined,
-            false
-          );
-          if (!mgr.cacheLoaded) {
-            assert(mgr.isLoading && mgr.isNull);
-            mgr.onCacheLoaded(entry);
-            mgr.onGraphCacheLoaded();
-          }
-          ++nextEntryToLoadIdx;
-          if (nextEntryToLoadIdx >= allEntries.length) {
-            this._cacheStatus = CacheLoadingStatus.Done;
-            console.log(
-              `Background load finished in ${
-                Date.now() - backgroundStartTime
-              }ms`
-            );
-          }
-          return nextEntryToLoadIdx < allEntries.length;
-        },
-        SchedulerPriority.Background
-      ).schedule();
-    } else {
-      this._cacheStatus = CacheLoadingStatus.Done;
-    }
-  }
-
   /**
    * Given a source vertex in the graph, this method performs a BFS run starting
    * at the source, and exports all encountered vertices.
@@ -658,7 +465,7 @@ export class GraphManager extends VertexSource {
   exportSubGraph(
     srcKey: string,
     distance: number,
-    excludeNs: string[] = [SchemeNamespace.INVITES],
+    excludeNs: string[] = [],
     editRecord: (r: Record) => void = () => {}
   ): ReadonlyJSONObject {
     const rootKey = this.rootKey;
@@ -695,7 +502,6 @@ export class GraphManager extends VertexSource {
         continue;
       }
       const record = vert.record.clone();
-      record.serverVersion = 0;
       record.rewriteRefs(rewriteKeys, deletedKeys);
       editRecord(record);
       result[key] = record.toJS(false);
@@ -739,14 +545,14 @@ export class GraphManager extends VertexSource {
     for (const [key, record] of decodedGraph) {
       // Sanity checks
       assert(key !== this.rootKey && !vertManagers.has(key));
-      const mgr = new VertexManager(this, key, record, this.rootKey, local);
+      const mgr = new VertexManager(this, key, record, local);
       vertManagers.set(key, mgr);
       createdManagers.push(mgr);
     }
     // Actually connect our graph. This triggers the initial values mutation
     // which causes the vertices to actually appear in query results.
     for (const mgr of createdManagers) {
-      this._setupVertexManager(mgr, true);
+      this._setupVertexManager(mgr);
     }
     return createdManagers;
   }
@@ -769,48 +575,4 @@ export class GraphManager extends VertexSource {
     console.log(keysMapping);
     return result;
   }
-}
-
-function compareCacheEntries(e1: CacheEntry, e2: CacheEntry): number {
-  if (e1.record && !e2.record) {
-    return -1;
-  }
-  if (!e1.record && e2.record) {
-    return 1;
-  }
-  if (e1.isDeleted && !e2.isDeleted) {
-    return 1;
-  }
-  if (!e1.isDeleted && e2.isDeleted) {
-    return -1;
-  }
-  if (
-    e1.record?.scheme.namespace !== NS_NOTES &&
-    e2.record?.scheme.namespace === NS_NOTES
-  ) {
-    return -1;
-  }
-  if (
-    e1.record?.scheme.namespace === NS_NOTES &&
-    e2.record?.scheme.namespace !== NS_NOTES
-  ) {
-    return 1;
-  }
-  if (e1.depth && !e2.depth) {
-    return -1;
-  }
-  if (!e1.depth && e2.depth) {
-    return 1;
-  }
-  if (e1.depth !== e2.depth) {
-    return e1.depth! - e2.depth!;
-  }
-  const d1 =
-    // e1.record?.get('sortStamp') ||
-    e1.record?.get('lastModified') || e1.record?.get('creationDate') || 0;
-  const d2 =
-    // e2.record?.get('sortStamp') ||
-    e2.record?.get('lastModified') || e2.record?.get('creationDate') || 0;
-  const diff = coreValueCompare(d1, d2);
-  return diff !== 0 ? diff : coreValueCompare(e1.key, e2.key);
 }

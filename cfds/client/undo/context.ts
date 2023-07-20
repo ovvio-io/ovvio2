@@ -1,10 +1,10 @@
-import { EqualOptions } from '../../core-types/equals';
-import { isRichText } from '../../richtext/tree';
-import { GraphManager } from '../graph/graph-manager';
-import { MutationPack, mutationPackHasRemote } from '../graph/mutations';
-import { IVertex, VertexSnapshot } from '../graph/types';
-import { VertexManager } from '../graph/vertex-manager';
-import { SingleUndoManager } from './single';
+import { EqualOptions } from '../../../base/core-types/equals.ts';
+import { isRichText } from '../../richtext/tree.ts';
+import { GraphManager } from '../graph/graph-manager.ts';
+import { MutationPack, mutationPackHasRemote } from '../graph/mutations.ts';
+import { VertexManager, VertexSnapshot } from '../graph/vertex-manager.ts';
+import { Vertex } from '../graph/vertex.ts';
+import { SingleUndoManager } from './single.ts';
 
 export interface UndoContextOptions {
   vertices?: UndoVertexOptions[];
@@ -13,13 +13,13 @@ export interface UndoContextOptions {
 
 interface UndoVertexOptions {
   keys: string[] | Iterable<string>;
-  filter?: (vertex: IVertex, mutations: MutationPack) => boolean;
+  filter?: (vertex: Vertex, mutations: MutationPack) => boolean;
   limit?: number;
   snapshotFields?: string[];
 }
 
 interface UndoFilterOptions {
-  filter: (vertex: IVertex, mutations: MutationPack) => boolean;
+  filter: (vertex: Vertex, mutations: MutationPack) => boolean;
   limit?: number;
   initialSnapshot?: VertexSnapshot;
   snapshotFields?: string[];
