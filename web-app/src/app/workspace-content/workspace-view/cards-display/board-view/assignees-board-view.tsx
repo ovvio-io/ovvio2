@@ -1,25 +1,31 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings, format } from 'core/localization';
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { format } from '../../../../../core/localization/index.tsx';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { FilteredNotes } from '../../../../../core/cfds/react/filter.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import CANCELLATION_REASONS from '../../../../../shared/dragndrop/cancellation-reasons.tsx';
+import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
 import {
-  CANCELLATION_REASONS,
-  DragAndDropContext,
   DragSource,
-} from 'shared/dragndrop';
-import { DragPosition } from 'shared/dragndrop/droppable';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { setDragSort } from '../card-item/draggable-card';
-import { BoardCard } from './board-card';
-import { BoardColumn } from './board-column';
-import localization from './board.strings.json';
+  DragAndDropContext,
+} from '../../../../../shared/dragndrop/index.ts';
+import { setDragSort } from '../card-item/draggable-card.tsx';
 import {
-  InfiniteHorizontalScroll,
   InfiniteVerticalScroll,
-} from '../list-view/infinite-scroll';
-import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
-import { useQuery2 } from 'core/cfds/react/query';
+  InfiniteHorizontalScroll,
+} from '../list-view/infinite-scroll.tsx';
+import { BoardCard } from './board-card.tsx';
+import { BoardColumn } from './board-column.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { CoreValue } from '../../../../../../../base/core-types/base.ts';
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
+import localization from './board.strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 
@@ -31,9 +37,8 @@ export function AssigneesBoardView({
   filteredNotes: FilteredNotes;
 }) {
   const notesQuery = useQuery2(
-    (filteredNotes as FilteredNotes<VertexManager<User>>)[0]
+    filteredNotes[0] as unknown as Query<Vertex, Note, VertexManager<User>>
   );
-  const eventLogger = useEventLogger();
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
@@ -54,13 +59,7 @@ export function AssigneesBoardView({
       context?: { user: VertexManager<User>; card: VertexManager<Note> };
     }) => {
       if (reason === CANCELLATION_REASONS.NOT_ALLOWED) {
-        eventLogger.action('DRAG_CANCELLED', {
-          source: DragSource.AssigneeBoard,
-          data: {
-            reason: 'USER_NOT_IN_WORKSPACE',
-          },
-        });
-        const wsName = context.card.getVertexProxy().workspace.name;
+        const wsName = context!.card.getVertexProxy().workspace.name;
         toast.displayToast({
           duration: 5000,
           text: format(strings.userNotInWorkspace, { workspace: wsName }),
@@ -73,7 +72,7 @@ export function AssigneesBoardView({
         });
       }
     },
-    [toast, strings, eventLogger]
+    [toast, strings]
   );
 
   const onDrop = (
@@ -83,10 +82,6 @@ export function AssigneesBoardView({
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
   ) => {
-    eventLogger.action('DRAG_DONE', {
-      source: DragSource.AssigneeBoard,
-      cardId: item.key,
-    });
     const card = item.getVertexProxy();
     if (user === 'unassigned') {
       card.assignees = new Set();
@@ -121,11 +116,11 @@ export function AssigneesBoardView({
   }
 
   return (
-    <DragAndDropContext onDragCancelled={onDragCancelled}>
+    <DragAndDropContext>
       {notesQuery
         .groups()
         .slice(0, xLimit)
-        .map(column => (
+        .map((column) => (
           <BoardColumn
             title={
               column === null
@@ -134,16 +129,7 @@ export function AssigneesBoardView({
             }
             key={column ? column.key : 'unassigned'}
             items={notesQuery.group(column)}
-            allowsDrop={item => allowsDrop(column, item)}
-            onDrop={(item, relativeTo, dragPosition) =>
-              onDrop(
-                column,
-                notesQuery.group(column),
-                item,
-                relativeTo,
-                dragPosition
-              )
-            }
+            onDrop={() => {}}
           >
             {notesQuery
               .group(column)

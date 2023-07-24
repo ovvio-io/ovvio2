@@ -34,6 +34,7 @@ import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.t
 import { useGraphManager } from './graph.tsx';
 import { usePartialVertex } from './vertex.ts';
 import { assert } from '../../../../../base/error.ts';
+import { CoreValue } from '../../../../../base/core-types/base.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -203,32 +204,36 @@ export function useIsGraphLoading() {
   return loading || graph.isLoading || rootUser.isLoading || notDeletedLoading; // || query.count > 0;
 }
 
-export function useQuery2<T extends Query>(
-  queryOrName: T | SharedQueryName,
-  closeOnCleanup?: boolean
-): T;
+type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =
+  T extends SharedQueryName ? SharedQueryType<T> : undefined;
 
-export function useQuery2<T extends Query>(
-  queryOrName: undefined,
+export function useQuery2<T extends SharedQueryName | undefined = undefined>(
+  queryOrName: T,
   closeOnCleanup?: boolean
-): undefined;
+): SharedQueryResultType<T>;
 
-export function useQuery2<T extends Query>(
-  queryOrName: T | SharedQueryName | undefined,
-  closeOnCleanup?: boolean
-): T | undefined;
+export function useQuery2<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue
+>(queryOrName: Query<IT, OT, GT>, closeOnCleanup?: boolean): Query<IT, OT, GT>;
 
-export function useQuery2<T extends Query>(
-  queryOrName: T | SharedQueryName | undefined,
+export function useQuery2<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue,
+  T extends SharedQueryName | undefined = undefined
+>(
+  queryOrName: Query<IT, OT, GT> | T,
   closeOnCleanup = true
-): T | undefined {
+): Query<IT, OT, GT> | SharedQueryResultType<T> {
   const [_, setCounter] = useState(0);
   const graph = useGraphManager();
   if (typeof queryOrName === 'string') {
-    queryOrName = graph.sharedQueriesManager[queryOrName] as T;
+    queryOrName = graph.sharedQueriesManager[queryOrName] as unknown as T;
   }
   assert(queryOrName instanceof Query || typeof queryOrName === 'undefined');
-  const query = queryOrName as T;
+  const query = queryOrName as Query<IT, OT, GT>;
   useEffect(() => {
     if (!query) {
       return;
@@ -257,6 +262,6 @@ export function useSharedQuery<T extends SharedQueryName>(
   name: T
 ): SharedQueryType<T> {
   const graph = useGraphManager();
-  const q = graph.sharedQueriesManager[name];
-  return useQuery2(q as Query) as unknown as SharedQueryType<T>;
+  const q = graph.sharedQueriesManager[name] as Query;
+  return useQuery2(q) as SharedQueryType<T>;
 }

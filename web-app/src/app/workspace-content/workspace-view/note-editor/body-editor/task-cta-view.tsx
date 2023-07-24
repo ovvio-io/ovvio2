@@ -1,14 +1,18 @@
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { styleguide } from '@ovvio/styles/lib';
-import { ElementUtils } from 'core/slate/utils/element-utils';
-import { CardElement } from 'core/slate/elements/card.element';
-import { useSlate } from 'slate-react';
-import { Editor, Node } from 'slate';
-import { createUseStrings } from 'core/localization';
-import localization from './body-editor.strings.json';
+import React from 'react';
+import { Editor, Node } from 'https://esm.sh/slate@0.87.0';
+import { useSlate } from 'https://esm.sh/slate-react@0.87.1';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { ElementUtils } from '../../../../../core/slate/utils/element-utils.ts';
+import { CardElement } from '../../../../../core/slate/elements/card.element/index.tsx';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import localization from './body-editor.strings.json' assert { type: 'json' };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   placeholder: {
     marginTop: styleguide.gridbase,
     height: styleguide.gridbase * 3,

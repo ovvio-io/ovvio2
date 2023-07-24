@@ -1,17 +1,15 @@
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
-import React, { useEffect, useState } from 'react';
-import { DragAndDropContext } from 'shared/dragndrop';
-import { BoardCard } from './board-card';
-import { BoardColumn } from './board-column';
-import localization from './board.strings.json';
+import React, { useState, useEffect } from 'react';
+import { FilteredNotes } from '../../../../../core/cfds/react/filter.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { DragAndDropContext } from '../../../../../shared/dragndrop/index.ts';
 import {
-  InfiniteHorizontalScroll,
   InfiniteVerticalScroll,
-} from '../list-view/infinite-scroll';
-import { useQuery2 } from 'core/cfds/react/query';
-import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
+  InfiniteHorizontalScroll,
+} from '../list-view/infinite-scroll.tsx';
+import { BoardCard } from './board-card.tsx';
+import { BoardColumn } from './board-column.tsx';
+import localization from './board.strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
@@ -110,7 +108,7 @@ export function TagBoardView({
       {notesQuery
         .groups()
         .slice(0, xLimit)
-        .map(col => (
+        .map((col) => (
           <BoardColumn
             key={col}
             items={notesQuery.group(col)}

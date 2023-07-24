@@ -1,25 +1,24 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { sortMngStampCompare } from '@ovvio/cfds/lib/client/sorting';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { useEventLogger } from 'core/analytics';
-import { usePartialVertices } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DragAndDropContext, DragSource } from 'shared/dragndrop';
-import { DragPosition } from 'shared/dragndrop/droppable';
-import { BoardCard } from './board-card';
-import { BoardColumn } from './board-column';
-import localization from './board.strings.json';
+import React, { useState, useEffect, useCallback } from 'react';
+import { coreValueCompare } from '../../../../../../../base/core-types/index.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { FilteredNotes } from '../../../../../core/cfds/react/filter.ts';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { DragAndDropContext } from '../../../../../shared/dragndrop/context.tsx';
+import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
+import { DragSource } from '../../../../../shared/dragndrop/index.ts';
 import {
-  InfiniteHorizontalScroll,
   InfiniteVerticalScroll,
-} from '../list-view/infinite-scroll';
-import { useQuery2 } from 'core/cfds/react/query';
-import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
-import { BoardViewInternalProps } from '.';
-import { usePartialView } from 'core/cfds/react/graph';
-import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
+  InfiniteHorizontalScroll,
+} from '../list-view/infinite-scroll.tsx';
+import { BoardCard } from './board-card.tsx';
+import { BoardColumn } from './board-column.tsx';
+import localization from './board.strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
@@ -34,9 +33,8 @@ export function WorkspaceBoardView({
     'name',
   ]);
   const notesQuery = useQuery2(
-    (filteredNotes as FilteredNotes<VertexManager<Workspace>>)[0]
+    (filteredNotes as unknown as FilteredNotes<VertexManager<Workspace>>)[0]
   );
-  const eventLogger = useEventLogger();
   const toast = useToastController();
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
@@ -48,17 +46,11 @@ export function WorkspaceBoardView({
   }, [notesQuery, yLimit, xLimit]);
 
   const onDragCancelled = useCallback(() => {
-    eventLogger.action('DRAG_CANCELLED', {
-      source: DragSource.WorkspaceBoard,
-      data: {
-        reason: 'NOT_SUPPORTED',
-      },
-    });
     toast.displayToast({
       duration: 5000,
       text: strings.dragNotSupported,
     });
-  }, [toast, eventLogger, strings]);
+  }, [toast, strings]);
 
   const onDrop = (
     workspace: VertexManager<Workspace>,
@@ -86,7 +78,7 @@ export function WorkspaceBoardView({
       {Array.from(selectedWorkspaces)
         .sort(coreValueCompare)
         .slice(0, xLimit)
-        .map(column => (
+        .map((column) => (
           <BoardColumn
             title={column.name}
             key={column.key}

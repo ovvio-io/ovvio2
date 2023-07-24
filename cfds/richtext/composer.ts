@@ -322,6 +322,27 @@ export function extractRefs(
   return outSet;
 }
 
+export function extractOrderedRefs(
+  root: ElementNode,
+  local: boolean,
+  outKeys?: string[]
+): string[] {
+  if (outKeys === undefined) {
+    outKeys = [];
+  }
+  for (const [node] of dfs(root)) {
+    if (node.isLocal === true && !local) {
+      continue;
+    }
+    if (isRefMarker(node) || isRefNode(node)) {
+      if (!outKeys.includes(node.ref)) {
+        outKeys.push(node.ref);
+      }
+    }
+  }
+  return outKeys;
+}
+
 /**
  * <p>
  * <span>

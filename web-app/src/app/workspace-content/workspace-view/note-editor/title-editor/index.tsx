@@ -1,21 +1,26 @@
-import { useRef, useEffect } from 'react';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { CreateTagContext, useCreateTag } from 'shared/tags/create-tag-context';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useTitleEditor } from 'core/slate';
-import { Editable, RenderElementProps, Slate } from 'slate-react';
-import { EditableCardContext } from 'core/slate/elements/card.element';
-import { H1 } from '@ovvio/styles/lib/components/texts';
-import { CARD_SOURCE } from 'shared/card';
-import CardMenuView from 'shared/item-menu';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import React, { useRef, useEffect } from 'react';
+import {
+  Editable,
+  RenderElementProps,
+  Slate,
+} from 'https://esm.sh/slate-react@0.87.1';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../../../../styles/index.ts';
+import { H1 } from '../../../../../../../styles/components/texts.tsx';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useTitleEditor } from '../../../../../core/slate/index.tsx';
+import { EditableCardContext } from '../../../../../core/slate/elements/card.element/index.tsx';
+import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 // import { useEventLogger } from '../../../../../core/analytics';
-import { FocusReporter } from '../focus-reporter';
-import { CardFooter } from '../../cards-display/card-item/card-footer';
-import { CardHeader, CardSize } from '../../cards-display/card-item';
+import { FocusReporter } from '../focus-reporter.tsx';
+import { CardFooter } from '../../cards-display/card-item/card-footer.tsx';
+import { CardHeader, CardSize } from '../../cards-display/card-item/index.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   placeholder: {
     marginLeft: styleguide.gridbase * 1.5,
     marginRight: styleguide.gridbase * 1.5,
@@ -37,7 +42,7 @@ const useStyles = makeStyles(theme => ({
     minHeight: styleguide.gridbase * 7,
     basedOn: [layout.row],
     ':hover': {
-      backgroundColor: theme.background[150],
+      backgroundColor: theme.background[100],
       overflowIcon: {
         opacity: 1,
       },
@@ -118,16 +123,15 @@ const useStyles = makeStyles(theme => ({
 //   );
 // }
 
-const Title = ({ children, attributes, element }: RenderElementProps) => {
+function Title({ children, attributes }: RenderElementProps): JSX.Element {
   return <H1 {...attributes}>{children}</H1>;
-};
+}
 
 interface TitleEditorProps {
   cardManager: VertexManager<Note>;
   className?: string;
   isRtl?: boolean;
   focusNext?: () => void;
-  dispatch: (x: any) => void;
   onDelete?: () => void;
   showWS?: boolean;
 }
@@ -140,19 +144,10 @@ export default function TitleEditorView({
   onDelete,
 }: TitleEditorProps) {
   const styles = useStyles();
-  const createTag = useCreateTag();
-
-  const createTagRef = useRef<CreateTagContext>(createTag);
-  useEffect(() => {
-    createTagRef.current = createTag;
-  }, [createTag]);
-
-  // const eventLogger = useEventLogger();
-
   const { editor, plugins, handlers } = useTitleEditor(
     cardManager,
     Title,
-    CARD_SOURCE.TITLE,
+    'title',
     {
       onFocusNext: focusNext,
     }
@@ -164,14 +159,14 @@ export default function TitleEditorView({
         <CardHeader
           size={CardSize.Regular}
           card={cardManager}
-          source={CARD_SOURCE.TITLE}
+          source="title"
           isExpanded={true}
           hideMenu={true}
         />
         <div className={cn(styles.textContainer)}>
           <div className={cn(layout.flex, styles.noteEditor)}>
             <EditableCardContext cardManager={cardManager}>
-              <FocusReporter cardManager={cardManager} source="editor-title" />
+              <FocusReporter cardManager={cardManager} source="editor:title" />
               <Editable
                 {...plugins}
                 placeholder="Name your card"
@@ -188,7 +183,7 @@ export default function TitleEditorView({
           <CardMenuView
             cardManager={cardManager}
             onDeleted={onDelete}
-            source={CARD_SOURCE.TITLE}
+            source="title"
             position="bottom"
             editorRootKey={cardManager.key}
           />
@@ -196,7 +191,7 @@ export default function TitleEditorView({
         <CardFooter
           className={cn(styles.footer)}
           card={cardManager}
-          source={CARD_SOURCE.TITLE}
+          source="title"
         />
       </Slate>
     </div>

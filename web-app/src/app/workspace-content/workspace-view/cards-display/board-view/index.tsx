@@ -1,15 +1,23 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { Scroller } from 'core/react-utils/scrolling';
-import { AssigneesBoardView } from './assignees-board-view';
-import { TagBoardView } from './tag-board-view';
-import { WorkspaceBoardView } from './workspace-board-view';
-import { DueDateBoardView } from './dates-board-view';
-import { NoteBoardView } from './note-board-view';
-import { usePartialView } from 'core/cfds/react/graph';
-import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
+import React from 'react';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import {
+  FilteredNotes,
+  useFilteredNotes,
+} from '../../../../../core/cfds/react/filter.ts';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
+import { AssigneesBoardView } from './assignees-board-view.tsx';
+import { DueDateBoardView } from './dates-board-view.tsx';
+import { NoteBoardView } from './note-board-view.tsx';
+import { TagBoardView } from './tag-board-view.tsx';
+import { WorkspaceBoardView } from './workspace-board-view.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   boardRoot: {
     overflowY: 'auto',
     height: '100%',
@@ -28,7 +36,7 @@ export function BoardView({ className }: { className?: string }) {
   const styles = useStyles();
   const view = usePartialView('groupBy');
   const filteredNotes = useFilteredNotes('BoardView');
-  let content = null;
+  let content: React.ReactNode = null;
   const groupBy = view.groupBy;
   if (groupBy === 'workspace') {
     content = <WorkspaceBoardView filteredNotes={filteredNotes} />;
@@ -44,7 +52,7 @@ export function BoardView({ className }: { className?: string }) {
 
   return (
     <Scroller>
-      {ref => (
+      {(ref) => (
         <div ref={ref} className={cn(styles.boardRoot, className)}>
           {content}
         </div>

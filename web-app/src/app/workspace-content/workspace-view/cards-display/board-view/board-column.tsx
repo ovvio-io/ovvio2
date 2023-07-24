@@ -1,16 +1,21 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { IconCreateNew } from '@ovvio/styles/lib/components/icons';
-import Layer from '@ovvio/styles/lib/components/layer';
-import { H4 } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useScrollParent } from 'core/react-utils/scrolling';
-import { useEffect, useState } from 'react';
-import { Droppable, DroppableProps } from 'shared/dragndrop/droppable';
+import React, { useState, useEffect } from 'react';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import IconCreateNew from '../../../../../../../styles/components/icons/IconCreateNew.tsx';
+import Layer from '../../../../../../../styles/components/layer.tsx';
+import { H4 } from '../../../../../../../styles/components/texts.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
+import { DroppableProps } from '../../../../../shared/dragndrop/droppable.tsx';
+import { Droppable } from '../../../../../shared/dragndrop/index.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   column: {
     marginTop: styleguide.gridbase,
     position: 'relative',
@@ -75,17 +80,17 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
     }
 
     const observer = new IntersectionObserver(
-      records => {
+      (records) => {
         for (const record of records) {
           const targetInfo = record.boundingClientRect;
           const rootBoundsInfo = record.rootBounds;
-          if (targetInfo.bottom < rootBoundsInfo.top) {
+          if (targetInfo.bottom < rootBoundsInfo!.top) {
             setIsSticky(true);
           }
 
           if (
-            targetInfo.bottom > rootBoundsInfo.top &&
-            targetInfo.bottom < rootBoundsInfo.bottom
+            targetInfo.bottom > rootBoundsInfo!.top &&
+            targetInfo.bottom < rootBoundsInfo!.bottom
           ) {
             setIsSticky(false);
           }
@@ -100,7 +105,7 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
   }, [sentinel, scrollParent]);
   return (
     <Layer>
-      {style => (
+      {(style) => (
         <div
           className={cn(styles.columnTitle, isSticky && styles.stickyShadow)}
           style={style}
@@ -116,7 +121,7 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
           </div>
           <div
             className={cn(styles.stickyNotifier)}
-            ref={ref => setSentinel(ref)}
+            ref={(ref) => setSentinel(ref!)}
           />
         </div>
       )}
@@ -144,7 +149,7 @@ export const BoardColumn: React.FC<
 > = ({ title, children, ...props }) => {
   return (
     <Droppable {...props}>
-      {droppableProps => (
+      {(droppableProps) => (
         <Column {...droppableProps.attributes} title={title}>
           {children}
         </Column>

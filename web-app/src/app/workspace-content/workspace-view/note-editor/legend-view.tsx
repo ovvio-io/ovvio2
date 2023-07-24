@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IconKeyboard, IconClose } from '@ovvio/styles/lib/components/icons';
-import { IconButton, Button } from '@ovvio/styles/lib/components/buttons';
-import { makeStyles, cn, keyframes } from '@ovvio/styles/lib/css-objects';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { H3, Text, Bold } from '@ovvio/styles/lib/components/texts';
-import { useEventLogger, EventCategory } from 'core/analytics';
-import Popper from '@ovvio/styles/lib/components/popper';
-import { isMacOS } from '../../../../utils';
+import {
+  IconKeyboard,
+  IconClose,
+} from '../../../../../../styles/components/icons/index.ts';
+import {
+  IconButton,
+  Button,
+} from '../../../../../../styles/components/buttons.tsx';
+import {
+  makeStyles,
+  cn,
+  keyframes,
+} from '../../../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../../../styles/index.ts';
+import { H3, Text, Bold } from '../../../../../../styles/components/texts.tsx';
+import Popper from '../../../../../../styles/components/popper.tsx';
+import { isMacOS } from '../../../../utils.ts';
+import { useLogger } from '../../../../core/cfds/react/logger.tsx';
 
-const blinkAnim = keyframes(theme => ({
+const blinkAnim = keyframes((theme) => ({
   from: {
     backgroundColor: 'transparent',
   },
@@ -17,7 +27,7 @@ const blinkAnim = keyframes(theme => ({
   },
 }));
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   hintButton: {
     position: 'absolute',
     bottom: styleguide.gridbase * 2,
@@ -133,7 +143,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function mapKey(key) {
+function mapKey(key: string) {
   if (key !== 'Meta') {
     return key;
   }
@@ -174,7 +184,13 @@ function Shortcut({ children, keys, macOSKeys }: ShortcutProps) {
   );
 }
 
-function LegendTooltip({ anchor, open, onClose }) {
+interface LegendTooltipProps {
+  anchor: HTMLElement;
+  open: boolean;
+  onClose: React.MouseEventHandler<HTMLButtonElement>;
+}
+
+function LegendTooltip({ anchor, open, onClose }: LegendTooltipProps) {
   const styles = useStyles();
   return (
     <Popper
@@ -298,40 +314,50 @@ function shouldBeOpen() {
 
 export default function LegendButton() {
   const styles = useStyles();
-  const anchor = useRef();
+  const anchor = useRef(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [legendState, setLegendState] = useState(LegendState.Close);
 
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const t = setTimeout(() => {
       if (shouldBeOpen()) {
         setShowTooltip(true);
       }
     }, 2000);
     return () => {
-      window.clearTimeout(t);
+      clearTimeout(t);
     };
   }, []);
   const click = () => {
-    eventLogger.action('SHOW_LEGEND', {
-      category: EventCategory.EDITOR,
+    logger.log({
+      severity: 'INFO',
+      event: 'Navigation',
+      type: 'open',
+      source: 'editor:legend',
     });
+
     setShowTooltip(false);
     setLegendState(LegendState.Opening);
   };
 
   const onClose = () => {
-    eventLogger.action('HIDE_LEGEND', {
-      category: EventCategory.EDITOR,
+    logger.log({
+      severity: 'INFO',
+      event: 'Navigation',
+      type: 'close',
+      source: 'editor:legend',
     });
-    window.localStorage.setItem('did_dismiss_legend', Date.now() + '');
+    localStorage.setItem('did_dismiss_legend', Date.now() + '');
     setLegendState(LegendState.Closing);
   };
 
   const hideTooltip = () => {
-    eventLogger.action('HIDE_TOOLTIP', {
-      category: EventCategory.EDITOR,
+    logger.log({
+      severity: 'INFO',
+      event: 'Navigation',
+      type: 'close',
+      source: 'editor:tooltip',
     });
     window.localStorage.setItem('did_dismiss_legend', Date.now() + '');
     setShowTooltip(false);
@@ -351,7 +377,7 @@ export default function LegendButton() {
         <IconKeyboard />
       </IconButton>
       <LegendTooltip
-        anchor={anchor.current}
+        anchor={anchor.current!}
         open={showTooltip}
         onClose={hideTooltip}
       />

@@ -1,32 +1,27 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { H2 } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { createUseStrings } from 'core/localization';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import { useEffect, useState } from 'react';
-import { useDemoInfo } from 'shared/demo';
-import { ToolbarCenterItem } from '../toolbar';
-import { BoardView } from './board-view';
-import localization from './cards-display.strings.json';
+import React from 'react';
+import { H2 } from '../../../../../../styles/components/typography.tsx';
+import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../styles/layout.ts';
+import { MediaQueries } from '../../../../../../styles/responsive.ts';
+import { styleguide } from '../../../../../../styles/styleguide.ts';
+import { usePartialView } from '../../../../core/cfds/react/graph.tsx';
+import { createUseStrings } from '../../../../core/localization/index.tsx';
+import { ToolbarCenterItem } from '../toolbar/index.tsx';
+import { BoardView } from './board-view/index.tsx';
+import { Dashboard } from './dashboard/dashboard.tsx';
+import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
+import { FiltersView } from './display-bar/filters/index.tsx';
 import {
-  DisplayBar,
-  MOBILE_PADDING,
   SIDES_PADDING,
   TABLET_PADDING,
-} from './display-bar';
-import { FiltersView } from './display-bar/filters';
-import { ActiveFiltersView } from './display-bar/filters/active-filters';
-import { ListView } from './list-view';
-import { VideoTutorial } from './video-demo';
-import { usePartialView } from 'core/cfds/react/graph';
-import { SortBy } from '@ovvio/cfds/lib/base/scheme-types';
-import { Dashboard } from './dashboard/dashboard';
+  MOBILE_PADDING,
+  DisplayBar,
+} from './display-bar/index.tsx';
+import { ListView } from './list-view/index.tsx';
+import { VideoTutorial } from './video-demo/index.tsx';
+import localization from './cards-display.strings.json' assert { type: 'json' };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   displayRoot: {
     flexShrink: 0,
     flexGrow: 0,
@@ -88,19 +83,13 @@ const useStyles = makeStyles(theme => ({
 
 const useStrings = createUseStrings(localization);
 
-function isQueryValid(query: string): boolean {
-  return query && query.length >= 2;
-}
-
-let firstLoad = true;
-
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
   const strings = useStrings();
 
   let content = null;
-  const isInSearch = false; //isQueryValid(query);
+  const isInSearch = false;
   if (isInSearch) {
     // content = (
     //   <SearchResults

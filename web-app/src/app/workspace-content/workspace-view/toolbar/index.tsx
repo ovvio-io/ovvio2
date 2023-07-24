@@ -1,15 +1,16 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import Layer from '@ovvio/styles/lib/components/layer';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { isServerSide } from '@ovvio/styles/lib/utils/ssr';
+import React from 'react';
 import ReactDOM from 'react-dom';
-import ChangesIndicator from './changes-indicator';
-import { ToolbarMenu } from './header';
+import { layout, styleguide } from '../../../../../../styles/index.ts';
+import Layer from '../../../../../../styles/components/layer.tsx';
+import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../../../styles/responsive.ts';
+import { isServerSide } from '../../../../../../styles/utils/ssr.ts';
+import ChangesIndicator from './changes-indicator/index.tsx';
+import { ToolbarMenu } from './header.tsx';
 
 export const TOOLBAR_HEIGHT = styleguide.gridbase * 10;
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   toolbar: {
     height: TOOLBAR_HEIGHT,
     backgroundColor: theme.background[0],
@@ -157,7 +158,7 @@ const ExternalToolbarItem: React.FC<{
   );
 };
 
-export const ToolbarItem = ({ children }) => {
+export const ToolbarItem = ({ children }: React.PropsWithChildren<{}>) => {
   const styles = useStyles();
   return <div className={cn(styles.item)}>{children}</div>;
 };

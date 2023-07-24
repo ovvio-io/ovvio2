@@ -1,12 +1,9 @@
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { RaisedButton } from '@ovvio/styles/lib/components/buttons';
-import { useGraphManager } from 'core/cfds/react/graph';
-import { isWorkspace, useExistingQuery, useQuery } from 'core/cfds/react/query';
-import { createUseStrings } from 'core/localization';
 import React, { useState } from 'react';
-import InvitationDialog from 'shared/invitation-dialog';
-import localization from './strings.json';
+import { RaisedButton } from '../../../../../../styles/components/buttons.tsx';
+import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import { useExistingQuery } from '../../../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../../../core/localization/index.tsx';
+import localization from './strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 
@@ -21,12 +18,12 @@ export function InviteButton({ className }: { className?: string }) {
       <RaisedButton onClick={() => setIsOpen(true)} className={className}>
         {strings.invite}
       </RaisedButton>
-      <InvitationDialog
+      {/* <InvitationDialog
         workspaces={results}
         open={isOpen}
         hide={() => setIsOpen(false)}
         source="global-share"
-      />
+      /> */}
     </React.Fragment>
   );
 }

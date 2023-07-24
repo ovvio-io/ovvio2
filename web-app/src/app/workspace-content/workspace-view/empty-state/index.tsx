@@ -1,15 +1,15 @@
-import { layout, styleguide } from '@ovvio/styles';
-import { H3, Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { createUseStrings } from 'core/localization';
-import { useState } from 'react';
-import localization from './empty-state.strings.json';
+import React, { useState } from 'react';
+import { layout, styleguide } from '../../../../../../styles/index.ts';
+import { H3, Text } from '../../../../../../styles/components/texts.tsx';
+import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../../../styles/responsive.ts';
+import { createUseStrings } from '../../../../core/localization/index.tsx';
+import localization from './empty-state.strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 
 const useStyles = makeStyles(
-  theme => ({
+  (theme) => ({
     root: {
       position: 'relative',
       paddingTop: styleguide.gridbase * 8,
@@ -49,7 +49,10 @@ const useStyles = makeStyles(
 export function EmptyState({ className }: { className?: string }) {
   const styles = useStyles();
   const strings = useStrings();
-  const [handPoint, setHandPoint] = useState<{ x: number; y: number }>();
+  const [handPoint, setHandPoint] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
 
   return (
     <div className={cn(className, styles.root)}>
