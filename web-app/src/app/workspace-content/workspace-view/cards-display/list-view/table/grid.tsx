@@ -1,6 +1,9 @@
-import { styleguide } from '@ovvio/styles';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
 import React from 'react';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 export enum GridColumns {
   DragAnchor = 'dragAnchor',
   Type = 'icon',

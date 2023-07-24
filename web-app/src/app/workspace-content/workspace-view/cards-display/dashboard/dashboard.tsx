@@ -1,43 +1,43 @@
-import * as am5 from '@amcharts/amcharts5';
-import * as am5xy from '@amcharts/amcharts5/xy';
-import am5themes_Animated from '@amcharts/amcharts5/themes/Animated';
-import * as SetUtils from '@ovvio/base/lib/utils/set';
-import { GroupByFunction, Query } from '@ovvio/cfds/lib/client/graph/query';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
+import React, { useRef, useLayoutEffect, useMemo } from 'react';
+import * as am5 from '../../../../../../../external/amcharts5/index.js';
+import * as am5xy from '../../../../../../../external/amcharts5/xy.js';
+import am5themes_Animated from '../../../../../../../external/amcharts5/themes/Animated.js';
+import * as SetUtils from '../../../../../../../base/set.ts';
+import { CoreValue } from '../../../../../../../base/core-types/base.ts';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
+import { coreValueEquals } from '../../../../../../../base/core-types/equals.ts';
+import {
+  startOfToday,
+  numberOfDaysLeftInCurrentMonth,
+  kWeekMs,
+  kDayMs,
+} from '../../../../../../../base/date.ts';
+import { DateFilter } from '../../../../../../../cfds/base/scheme-types.ts';
+import {
+  Query,
+  GroupByFunction,
+} from '../../../../../../../cfds/client/graph/query.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
-  Role,
-  User,
-  Workspace,
-} from '@ovvio/cfds/lib/client/graph/vertices';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { GROUP_BY } from 'core/cfds/react/filter';
-import { useGraphManager, usePartialView } from 'core/cfds/react/graph';
-import { useQuery2 } from 'core/cfds/react/query';
-import { useLayoutEffect, useMemo, useRef } from 'react';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
-import { CoreValue } from '@ovvio/cfds/lib/core-types/base';
-import { styleguide } from '@ovvio/styles';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
+import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import { H1, H4, Text } from '../../../../../../../styles/components/texts.tsx';
 import {
-  H1,
-  H4,
-  LabelSm,
-  TextSm,
-  Text,
-  H2,
-  H3,
-} from '@ovvio/styles/lib/components/typography';
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { GROUP_BY } from '../../../../../core/cfds/react/filter.ts';
 import {
-  kDayMs,
-  kWeekMs,
-  numberOfDaysLeftInCurrentMonth,
-  startOfToday,
-} from '@ovvio/base/lib/utils/date';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { DateFilter } from '@ovvio/cfds/lib/base/scheme-types';
-import { coreValueCompare, coreValueEquals } from '@ovvio/cfds/lib/core-types';
-import { Scroller } from 'core/react-utils/scrolling';
+  usePartialView,
+  useGraphManager,
+} from '../../../../../core/cfds/react/graph.tsx';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles({
   dashboardRoot: {
@@ -279,10 +279,10 @@ function OverviewRow(props: OverviewRowProps) {
 const kDatePredicates: Record<DateFilter, (n: Note) => boolean> = {
   week: (n: Note) =>
     isOpenTaskWithDue(n, kWeekMs) &&
-    n.dueDate.getTime() >= startOfToday().getTime(),
+    n.dueDate!.getTime() >= startOfToday().getTime(),
   month: (n: Note) =>
     isOpenTaskWithDue(n, numberOfDaysLeftInCurrentMonth() * kDayMs) &&
-    n.dueDate.getTime() >= startOfToday().getTime(),
+    n.dueDate!.getTime() >= startOfToday().getTime(),
 };
 
 function noteCompletedInDateFilter(
@@ -347,7 +347,7 @@ function ProjectProgressGraph(props: ProjectProgressGraphProps) {
 
   const data = Array.from(view.selectedWorkspaces)
     .sort(coreValueCompare)
-    .map(ws => {
+    .map((ws) => {
       const done = doneQuery.group(ws.manager).length;
       const todo = todoQuery.group(ws.manager).length;
       return {
@@ -509,7 +509,7 @@ function TodoByWorkspaceGraph(props: TodoByWorkspaceGraphProps) {
 
   const data = Array.from(view.selectedWorkspaces)
     .sort(coreValueCompare)
-    .map(ws => {
+    .map((ws) => {
       const value = query.group(ws.manager).length;
       return {
         name: ws.name,
@@ -660,7 +660,7 @@ function CompletedPerEmployeeProjectGraph(
   }
   const data = Array.from(assignees)
     .sort(coreValueCompare)
-    .map(u => {
+    .map((u) => {
       const countByWorkspace = new Map<Workspace, number>();
       for (const note of query.group(u.manager)) {
         const ws = note.getVertexProxy().workspace;
@@ -833,7 +833,7 @@ function TodoByAssigneeGraph(props: TodoByAssigneeGraphProps) {
   const chartRef = useRef<am5xy.XYChart | undefined>(undefined);
   const query = useQuery2(props.query);
 
-  const data = query.groups().map(u => {
+  const data = query.groups().map((u) => {
     const value = query.group(u).length;
     return {
       name: u.getVertexProxy().name,
@@ -1083,7 +1083,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           isOpenTaskWithDue(note, 0) &&
           isTaskAssignedToTeamLeader(note),
@@ -1097,7 +1097,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           isTaskInTeamLeaderApproval(note),
         {
@@ -1110,7 +1110,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           isOpenTaskWithDue(note, 0),
         {
@@ -1123,7 +1123,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&
           note.dueDate.getTime() >= startOfToday().getTime(),
@@ -1137,7 +1137,8 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<Workspace>>(
         graph.sharedQueriesManager.noteQuery(),
-        note => view.selectedWorkspaces.has(note.workspace) && !note.isChecked,
+        (note) =>
+          view.selectedWorkspaces.has(note.workspace) && !note.isChecked,
         {
           name: 'Dashboard/UncheckedByWorkspace',
           groupBy: GROUP_BY.workspace as GroupByFunction<
@@ -1152,7 +1153,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<Workspace>>(
         graph.sharedQueriesManager.noteQuery(),
-        note => view.selectedWorkspaces.has(note.workspace) && note.isChecked,
+        (note) => view.selectedWorkspaces.has(note.workspace) && note.isChecked,
         {
           name: 'Dashboard/TodoByWorkspace',
           groupBy: GROUP_BY.workspace as GroupByFunction<
@@ -1167,7 +1168,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<User>>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           noteCompletedInDateFilter(note, view.dateFilter),
         {
@@ -1181,7 +1182,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<Workspace>>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&
           note.dueDate.getTime() >= startOfToday().getTime(),
@@ -1200,7 +1201,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<User>>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           note.assignees.size > 0 &&
           noteCompletedInDateFilter(note, view.dateFilter),
@@ -1219,7 +1220,7 @@ export function Dashboard() {
     () =>
       new Query<Note, Note, VertexManager<User>>(
         graph.sharedQueriesManager.noteQuery(),
-        note =>
+        (note) =>
           view.selectedWorkspaces.has(note.workspace) &&
           note.assignees.size > 0 &&
           isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&

@@ -1,9 +1,13 @@
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { GridColumns } from './grid';
-import { Cell, useRowStyles } from './item';
+import React from 'react';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { GridColumns } from './grid.tsx';
+import { useRowStyles, Cell } from './item.tsx';
 
 const useStyles = makeStyles(
-  theme => ({
+  (theme) => ({
     inline: {
       basedOn: [useRowStyles.row, useRowStyles.itemRow],
     },

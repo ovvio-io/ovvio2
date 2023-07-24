@@ -146,8 +146,7 @@ function AddAssigneeIcon({
 }
 
 const REMOVE_ASSIGNEE = 'REMOVE_ASSIGNEE';
-const INVITE_USER = 'INVITE_USER';
-type ACTION_ITEM = typeof REMOVE_ASSIGNEE | typeof INVITE_USER;
+type ACTION_ITEM = typeof REMOVE_ASSIGNEE;
 
 const RenderedItem = ({
   item,
@@ -161,14 +160,6 @@ const RenderedItem = ({
       <MentionItem {...props} key={REMOVE_ASSIGNEE}>
         <IconClose />
         <span className={cn(styles.userName)}>Remove Assignee</span>
-      </MentionItem>
-    );
-  }
-  if (item === INVITE_USER) {
-    return (
-      <MentionItem {...props} key={INVITE_USER}>
-        <AddAssigneeIcon className={cn(styles.inviteIcon)} />
-        <span>Invite to workspace</span>
       </MentionItem>
     );
   }
@@ -210,7 +201,6 @@ interface AssigneeProps {
   className?: string;
   source: UISource;
   renderSelected?: RenderAssignee;
-  onInviteUserSelected: () => void;
   size?: 'big' | 'small';
   style?: {};
 }
@@ -238,7 +228,6 @@ export function Assignee({
   assignees,
   className,
   renderSelected = DEFAULT_RENDER,
-  onInviteUserSelected,
   size = 'big',
   style = {},
 }: AssigneeProps) {
@@ -263,19 +252,10 @@ export function Assignee({
           value: REMOVE_ASSIGNEE,
           sortValue: SORT_VALUES.TOP,
         },
-        {
-          value: INVITE_USER,
-          sortValue: SORT_VALUES.BOTTOM,
-        },
       ]);
   }, [users, assignees, user]);
 
   const onSelected = (value: VertexManager<User> | ACTION_ITEM) => {
-    if (value === INVITE_USER) {
-      onInviteUserSelected();
-      return;
-    }
-
     const card = cardManager.getVertexProxy();
     const current = user.getVertexProxy();
 
@@ -320,7 +300,6 @@ interface AssignButtonProps {
   assignees: VertexManager<User>[];
   className?: string;
   source: UISource;
-  onInviteUserSelected: () => void;
   style?: {};
 }
 export function AssignButton({
@@ -329,7 +308,6 @@ export function AssignButton({
   users,
   assignees,
   source,
-  onInviteUserSelected,
   style = {},
 }: AssignButtonProps) {
   const styles = useStyles();
@@ -344,22 +322,11 @@ export function AssignButton({
             value: u,
             sortValue: u.getVertexProxy().name,
           } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string })
-      )
-      .concat([
-        {
-          value: INVITE_USER,
-          sortValue: SORT_VALUES.BOTTOM,
-        },
-      ]);
+      );
   }, [users, assignees]);
 
   const onSelected = (selected: VertexManager<User> | ACTION_ITEM) => {
     if (selected === REMOVE_ASSIGNEE) {
-      return;
-    }
-
-    if (selected === INVITE_USER) {
-      onInviteUserSelected();
       return;
     }
     const card = cardManager.getVertexProxy();
@@ -465,7 +432,6 @@ export default function AssigneesView({
             users={users}
             assignees={assignees}
             user={user}
-            onInviteUserSelected={onInviteUserSelected}
             size={size}
             style={style}
             renderSelected={renderAssignee}
@@ -482,7 +448,6 @@ export default function AssigneesView({
           !isExpanded && styles.hide,
           assignClassName
         )}
-        onInviteUserSelected={onInviteUserSelected}
         style={assignStyle}
       />
     </div>

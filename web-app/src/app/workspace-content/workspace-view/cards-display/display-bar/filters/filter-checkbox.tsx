@@ -1,11 +1,14 @@
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { styleguide } from '@ovvio/styles';
-import { ChangeEvent } from 'react';
+import React, { ChangeEvent } from 'react';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 
 const SIZE = styleguide.gridbase * 2;
 
 const useStyles = makeStyles(
-  theme => ({
+  (theme) => ({
     checkbox: {
       display: 'inline-flex',
       flexDirection: 'row',

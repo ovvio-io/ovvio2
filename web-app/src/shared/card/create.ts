@@ -3,7 +3,7 @@ import { NOTE_SCHEME } from '../../../../cfds/base/scheme-versions.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import {
   VertexId,
-  KeyFromVertexId,
+  VertexIdGetKey,
 } from '../../../../cfds/client/graph/vertex.ts';
 import {
   Note,
@@ -31,7 +31,7 @@ export function createNewNote(
   // );
 
   const baseData: CardData = {
-    workspace: KeyFromVertexId(ws),
+    workspace: VertexIdGetKey(ws),
     createdBy: graph.rootKey,
     title: emptyDoc(),
     body: emptyDoc(),

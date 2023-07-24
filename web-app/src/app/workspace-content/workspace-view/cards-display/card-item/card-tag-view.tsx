@@ -1,19 +1,30 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Tag, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { useEventLogger } from 'core/analytics';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { useCallback, useMemo } from 'react';
-import { Pill, PillStyle, PillContent, PillAction } from 'shared/pill';
-import TagButton from 'shared/tags/tag-button';
-import { sortTags } from 'shared/tags/tag-utils';
-import TagView from 'shared/tags/tag-view';
-import { styleguide, layout } from '@ovvio/styles/lib';
-import { IconDropDownArrow } from '@ovvio/styles/lib/components/icons';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { CardHeaderPartProps, CardSize } from '.';
+import React, { useCallback, useMemo } from 'react';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Tag,
+  Workspace,
+} from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  Pill,
+  PillStyle,
+  PillContent,
+  PillAction,
+} from '../../../../../shared/pill/index.tsx';
+import TagButton from '../../../../../shared/tags/tag-button.tsx';
+import TagView from '../../../../../shared/tags/tag-view.tsx';
+import { styleguide, layout } from '../../../../../../../styles/index.ts';
+import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { CardHeaderPartProps, CardSize } from './index.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tagsView: {
     // height: styleguide.gridbase * 3,
     alignItems: 'center',
@@ -44,12 +55,11 @@ interface TagPillProps {
 
 function TagPill({ tag, setTag, onDelete, isExpanded }: TagPillProps) {
   const styles = useStyles();
-  const { color, name } = usePartialVertex(tag, ['color', 'name']);
+  const { name } = usePartialVertex(tag, ['name']);
   const renderSelected = useCallback(
     () => (
       <Pill
         className={cn(styles.tag)}
-        color={color}
         extended={isExpanded}
         pillStyle={isExpanded ? PillStyle.Border : PillStyle.None}
       >
@@ -57,11 +67,11 @@ function TagPill({ tag, setTag, onDelete, isExpanded }: TagPillProps) {
           <Text>#{name}</Text>
         </PillContent>
         <PillAction>
-          <IconDropDownArrow fill={color} />
+          <IconDropDownArrow />
         </PillAction>
       </Pill>
     ),
-    [color, name, isExpanded, styles]
+    [name, isExpanded, styles]
   );
 
   return (
@@ -83,64 +93,70 @@ export function CardTags({
 }: CardHeaderPartProps) {
   const { tags, workspace } = usePartialVertex(card, ['tags', 'workspace']);
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const cardTags = Array.from(tags.values()).filter(
-    tag =>
-      !tag.isLoading &&
+    (tag) =>
+      !tag.isNull &&
       !tag.isDeleted &&
-      (!tag.parentTag || !tag.parentTag.isDeleted) &&
-      tag.parentTag &&
-      tag.parentTag !== tag &&
-      tag.parentTag?.name !== 'Status'
+      (!tag.parentTag || !tag.parentTag.isDeleted)
   );
 
-  const tagManagers = useMemo(
-    () =>
-      new Map(
-        Array.from(tags.entries()).map(([parent, child]) => [
-          parent.manager as VertexManager<Tag>,
-          child.manager as VertexManager<Tag>,
-        ])
-      ),
-    [tags]
-  );
+  // const tagManagers = useMemo(
+  //   () =>
+  //     new Map(
+  //       Array.from(tags.entries()).map(([parent, child]) => [
+  //         parent.manager as VertexManager<Tag>,
+  //         child.manager as VertexManager<Tag>,
+  //       ])
+  //     ),
+  //   [tags]
+  // );
 
-  const onDelete = (tagManager: VertexManager<Tag>) => {
-    const tag = tagManager.getVertexProxy();
-    const proxy = card.getVertexProxy();
-    const newTags = proxy.tags;
-    const tagToDelete = tag.parentTag || tag;
-    newTags.delete(tagToDelete);
-    proxy.tags = newTags;
+  const onDelete = useCallback(
+    (tagManager: VertexManager<Tag>) => {
+      const tag = tagManager.getVertexProxy();
+      const proxy = card.getVertexProxy();
+      const newTags = proxy.tags;
+      const tagToDelete = tag.parentTag || tag;
+      newTags.delete(tagToDelete);
+      proxy.tags = newTags;
 
-    eventLogger.cardAction('CARD_TAG_REMOVED', card, {
-      source,
-      tagId: tag.key,
-      parentTagId: tag.parentTagKey,
-    });
-  };
-
-  const onTag = (tagManager: VertexManager<Tag>) => {
-    const proxy = card.getVertexProxy();
-    const tag = tagManager.getVertexProxy();
-    const newTags = proxy.tags;
-
-    const tagKey = tag.parentTag || tag;
-
-    const exists = newTags.has(tagKey);
-    newTags.set(tagKey, tag);
-    proxy.tags = newTags;
-
-    eventLogger.cardAction(
-      exists ? 'CARD_TAG_REPLACED' : 'CARD_TAG_ADDED',
-      card,
-      {
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'tag',
+        removed: tag.key,
+        vertex: card.key,
         source,
-        tagId: tag.key,
-        parentTagId: tag.parentTagKey,
-      }
-    );
-  };
+      });
+    },
+    [card, logger]
+  );
+
+  const onTag = useCallback(
+    (tagManager: VertexManager<Tag>) => {
+      const proxy = card.getVertexProxy();
+      const tag = tagManager.getVertexProxy();
+      const newTags = proxy.tags;
+
+      const tagKey = tag.parentTag || tag;
+
+      const currentTag = newTags.get(tagKey);
+      newTags.set(tagKey, tag);
+      proxy.tags = newTags;
+
+      logger.log({
+        severity: 'INFO',
+        event: 'MetadataChanged',
+        type: 'tag',
+        vertex: card.key,
+        removed: currentTag?.key,
+        added: tag.key,
+        source,
+      });
+    },
+    [card, logger]
+  );
 
   return (
     <div
@@ -149,7 +165,7 @@ export function CardTags({
         size === CardSize.Small && styles.tagsWrap
       )}
     >
-      {cardTags.sort(sortTags).map(tag => (
+      {cardTags.sort(coreValueCompare).map((tag) => (
         <TagPill
           key={tag.key}
           tag={tag.manager as VertexManager<Tag>}
@@ -159,9 +175,8 @@ export function CardTags({
         />
       ))}
       <TagButton
-        onTagged={t => onTag(t.manager as VertexManager<Tag>)}
-        cardTagsMng={tagManagers}
-        workspaceManager={workspace.manager as VertexManager<Workspace>}
+        onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
+        noteId={card}
         className={cn(!isExpanded && styles.hide)}
       />
     </div>

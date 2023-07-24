@@ -1,13 +1,17 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { TextField } from '@ovvio/styles/lib/components/inputs';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
 import React from 'react';
-import localization from '../cards-display.strings.json';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { useTextfieldStyles } from '@ovvio/styles/lib/components/inputs/TextField';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import TextField, {
+  useTextfieldStyles,
+} from '../../../../../../../styles/components/inputs/TextField.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(() => ({
   base: {
@@ -54,7 +58,6 @@ export interface SearchFieldProps {
 export function SearchField({ query, setQuery }: SearchFieldProps) {
   const styles = useStyles();
   const strings = useStrings();
-  const eventLogger = useEventLogger();
 
   return (
     <div className={cn(styles.base)}>
@@ -62,9 +65,6 @@ export function SearchField({ query, setQuery }: SearchFieldProps) {
         placeholder={strings.search}
         value={query}
         onChange={(e: any) => setQuery(e.target.value)}
-        onFocus={() => {
-          eventLogger.action('CARD_SEARCH_FOCUSED', {});
-        }}
         className={cn(styles.input)}
       />
       {query && (

@@ -1,23 +1,25 @@
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { IconGroup } from '@ovvio/styles/lib/components/new-icons/icon-group';
+import React, { useCallback } from 'react';
+import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import IconDropDownArrow from '../../../../../../../styles/components/icons/IconDropDownArrow.tsx';
 import Menu, {
   MenuItem,
   SecondaryMenuItem,
-} from '@ovvio/styles/lib/components/menu';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useEventLogger } from 'core/analytics';
-import { createUseStrings } from 'core/localization';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import React, { useCallback, useEffect } from 'react';
-import localization from '../cards-display.strings.json';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import IconDropDownArrow from '@ovvio/styles/lib/components/icons/IconDropDownArrow';
-import { usePartialView } from 'core/cfds/react/graph';
-import { GroupBy } from '@ovvio/cfds/lib/base/scheme-types';
-import { useSharedQuery } from 'core/cfds/react/query';
+} from '../../../../../../../styles/components/menu.tsx';
+import { IconGroup } from '../../../../../../../styles/components/new-icons/icon-group.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {
     marginLeft: styleguide.gridbase,
   },
@@ -32,7 +34,7 @@ const useStrings = createUseStrings(localization);
 
 export function GroupByDropDown() {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const strings = useStrings();
   const view = usePartialView(
     'groupBy',
@@ -41,7 +43,7 @@ export function GroupByDropDown() {
     'noteType'
   );
   const parentTagsByName = useSharedQuery('parentTagsByName');
-  const parentNames = parentTagsByName.groups().filter(gid => {
+  const parentNames = parentTagsByName.groups().filter((gid) => {
     for (const mgr of parentTagsByName.group(gid)) {
       if (view.selectedWorkspaces.has(mgr.getVertexProxy().workspace)) {
         return true;
@@ -51,10 +53,11 @@ export function GroupByDropDown() {
   });
 
   const setGroup = (group: 'assignee' | 'workspace' | 'dueDate' | 'note') => {
-    eventLogger.action('SET_GROUP_BY', {
-      data: {
-        groupBy: group,
-      },
+    logger.log({
+      severity: 'INFO',
+      event: 'FilterChange',
+      type: `groupBy:${group}`,
+      source: 'toolbar:groupBy',
     });
     view.groupBy = group;
     delete view.pivot;
@@ -79,13 +82,20 @@ export function GroupByDropDown() {
     );
   }, [strings, styles, view]);
 
-  const setTag = (tagName: string) => {
-    eventLogger.action('SET_GROUP_BY', {
-      data: { groupBy: 'tag', tag: tagName },
-    });
-    view.groupBy = 'tag';
-    view.pivot = tagName;
-  };
+  const setTag = useCallback(
+    (tagName: string) => {
+      logger.log({
+        severity: 'INFO',
+        event: 'FilterChange',
+        groupBy: 'tag',
+        source: 'toolbar:groupBy',
+        pivot: tagName,
+      });
+      view.groupBy = 'tag';
+      view.pivot = tagName;
+    },
+    [logger, view]
+  );
 
   const parentNoteGrouping =
     view.noteType === NoteType.Task ? (
@@ -103,9 +113,9 @@ export function GroupByDropDown() {
       <MenuItem onClick={() => setGroup('dueDate')}>{strings.dueDate}</MenuItem>
       {parentNoteGrouping}
       <SecondaryMenuItem text={strings.groupByTag}>
-        {parentNames.map(name =>
+        {parentNames.map((name) =>
           name === 'Status' ? null : (
-            <MenuItem onClick={() => setTag(name)}>{name}</MenuItem>
+            <MenuItem onClick={() => setTag(name!)}>{name}</MenuItem>
           )
         )}
       </SecondaryMenuItem>

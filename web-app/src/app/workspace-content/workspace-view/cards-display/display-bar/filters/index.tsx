@@ -1,34 +1,39 @@
-import * as SetUtils from '@ovvio/base/lib/utils/set';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Tag, User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import Layer from '@ovvio/styles/lib/components/layer';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { createUniversalPortal } from '@ovvio/styles/lib/utils/ssr';
-import {
-  useGraphManager,
-  usePartialView,
-  useRootUser,
-} from 'core/cfds/react/graph';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
 import React, {
-  MouseEvent,
   useCallback,
-  useEffect,
   useMemo,
   useState,
+  useEffect,
+  MouseEventHandler,
 } from 'react';
-import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox';
-import localization from './filters.strings.json';
-import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
-import { VertexId } from '@ovvio/cfds/lib/client/graph/vertex';
-import { useSharedQuery } from 'core/cfds/react/query';
-import { notReached } from '@ovvio/base/lib/utils/error';
-import { decodeTagId, encodeTagId } from '@ovvio/cfds/lib/base/scheme-types';
-import { mapIterable } from '@ovvio/base/lib/utils/common';
+import { mapIterable } from '../../../../../../../../base/common.ts';
+import * as SetUtils from '../../../../../../../../base/set.ts';
+import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
+import { notReached } from '../../../../../../../../base/error.ts';
+import {
+  encodeTagId,
+  decodeTagId,
+} from '../../../../../../../../cfds/base/scheme-types.ts';
+import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
+import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
+import Layer from '../../../../../../../../styles/components/layer.tsx';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
+import { createUniversalPortal } from '../../../../../../../../styles/utils/ssr.ts';
+import {
+  usePartialView,
+  useRootUser,
+} from '../../../../../../core/cfds/react/graph.tsx';
+import { useSharedQuery } from '../../../../../../core/cfds/react/query.ts';
+import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../../core/localization/index.tsx';
+import { FilterCheckboxState, FilterCheckbox } from './filter-checkbox.tsx';
+import localization from './filters.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(
   () => ({
@@ -148,11 +153,16 @@ function FilterBackdrop({
 }) {
   const styles = useStyles();
 
-  const click = (e: MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onClick();
-  };
+  const click: MouseEventHandler<HTMLDivElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (onClick) {
+        onClick();
+      }
+    },
+    [onClick]
+  );
 
   return createUniversalPortal(
     <div style={style} className={styles.backdrop} onClick={click} />
@@ -166,7 +176,7 @@ export function FiltersView({ className }: FiltersViewProps) {
   return (
     <div className={cn(styles.root)}>
       <Layer>
-        {style => (
+        {(style) => (
           <React.Fragment>
             {view.showFilters && (
               <FilterBackdrop
@@ -253,7 +263,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
   }
 
   const toggleTag = useCallback(
-    name => {
+    (name) => {
       const id = encodeTagId(parentTagName, name);
       if (view.selectedTagIds.has(id)) {
         view.selectedTagIds.delete(id);
@@ -270,7 +280,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
         <RadioCheckBox checked={sectionState} onChecked={toggleSection} />
         {parentTagName}
       </div>
-      {values.map(child => (
+      {values.map((child) => (
         <div
           className={cn(styles.sectionOption)}
           onClick={() => toggleTag(child)}
@@ -284,7 +294,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
       ))}
       {hasMore && (
         <div
-          onClick={() => setShowMore(x => !x)}
+          onClick={() => setShowMore((x) => !x)}
           className={cn(styles.showMore)}
         >
           {showMore ? strings.showLess : strings.showMore}
@@ -320,7 +330,8 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
 
   // Clear selected assignees that are no longer relevant
   useEffect(
-    () => view.deleteFromSet('selectedAssignees', u => !assignees.includes(u)),
+    () =>
+      view.deleteFromSet('selectedAssignees', (u) => !assignees.includes(u)),
     [assignees, view]
   );
 
@@ -359,22 +370,22 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
         if (selectedWorkspaces.has(t.workspace)) {
           SetUtils.update(
             values,
-            mapIterable(t.childTags, tag => tag.name)
+            mapIterable(t.childTags, (tag) => tag.name)
           );
         }
       }
       if (values.size > 0) {
-        result.push([name, ...Array.from(values).sort(coreValueCompare)]);
+        result.push([name!, ...Array.from(values).sort(coreValueCompare)]);
       }
     }
     return result;
   }, [view.selectedWorkspaces, parentTagsByName]);
 
   useEffect(() => {
-    view.deleteFromSet('selectedTagIds', id => {
+    view.deleteFromSet('selectedTagIds', (id) => {
       const [parent, child] = decodeTagId(id);
       for (const [cat, ...values] of result) {
-        if (cat === parent && values.includes(child)) {
+        if (cat === parent && values.includes(child!)) {
           return false;
         }
       }
@@ -395,12 +406,12 @@ function InternalFiltersView() {
     <div className={cn(styles.filtersView)}>
       <div className={cn(styles.section)}>
         <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {assignees.map(assignee => (
+        {assignees.map((assignee) => (
           <AssigneeView user={assignee} />
         ))}
         {hasMore && (
           <div
-            onClick={() => setShowMore(x => !x)}
+            onClick={() => setShowMore((x) => !x)}
             className={cn(styles.showMore)}
           >
             {showMore ? strings.showLess : strings.showMore}

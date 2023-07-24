@@ -1,4 +1,9 @@
-import { GroupBy, NoteStatus, ViewType } from '../cfds/base/scheme-types.ts';
+import {
+  GroupBy,
+  NoteStatus,
+  SortBy,
+  ViewType,
+} from '../cfds/base/scheme-types.ts';
 import { ToggleAction } from '../web-app/src/app/workspaces-bar/ws-selection-utils.ts';
 import { BaseLogEntry } from './entry.ts';
 
@@ -10,13 +15,16 @@ export type ClientEvent =
   | 'VertexMoved'
   | 'Click'
   | 'FilterChange'
+  | 'ViewChange'
   | 'Start'
   | 'End'
   | 'Cancel'
   | 'Navigation'
   | 'Create'
   | 'Delete'
-  | 'Duplicate';
+  | 'Duplicate'
+  | 'Show'
+  | 'Hide';
 
 export type SettingsType = 'settings:workspace' | 'settings:tags';
 
@@ -39,7 +47,11 @@ export type ToolbarUISource =
   | 'toolbar:tab:notes'
   | 'toolbar:menu'
   | 'toolbar:header'
-  | 'toolbar:logo';
+  | 'toolbar:logo'
+  | 'toolbar:groupBy'
+  | 'toolbar:viewType'
+  | 'toolbar:sortBy'
+  | 'toolbar:filterMenu';
 
 export type MenuUISource =
   | 'menu'
@@ -84,13 +96,8 @@ export type FilterType =
   | 'workspace'
   | 'tag'
   | 'assignee'
-  | 'sortBy:priority'
-  | 'sortBy:created'
-  | 'sortBy:modified'
-  | 'sortBy:due'
-  | 'groupBy:assignee'
-  | 'groupBy:workspace'
-  | 'groupBy:tag';
+  | `sortBy:${SortBy}`
+  | `groupBy:${GroupBy}`;
 
 export type UIFlow =
   | 'create'
@@ -124,5 +131,6 @@ export interface ClientEventEntry extends BaseLogEntry {
   flow?: UIFlow;
   id?: string;
   target?: string;
-  groupBy: GroupBy;
+  value?: string;
+  secondaryValue?: string;
 }

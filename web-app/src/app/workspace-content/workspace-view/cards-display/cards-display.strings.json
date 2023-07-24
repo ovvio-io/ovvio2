@@ -19,6 +19,7 @@
     "parentNote": "Note",
     "workspace": "Workspace",
     "assignee": "Assignee",
+    "note": "Note",
     "checked": "Checked",
     "unchecked": "Unchecked",
     "checked-unchecked": "All",

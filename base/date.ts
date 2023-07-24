@@ -56,9 +56,25 @@ export function numberOfDaysInCurrentMonth(): number {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
 
+export function numberOfDaysLeftInCurrentMonth(): number {
+  const today = startOfToday();
+  const startOfNextMonth = new Date(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    1
+  );
+  return Math.round((startOfNextMonth.getTime() - today.getTime()) / kDayMs);
+}
+
 export function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function startOfThisMonth(): Date {
+  const d = startOfToday();
+  d.setDate(0);
   return d;
 }
 

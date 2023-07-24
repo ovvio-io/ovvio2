@@ -1,26 +1,27 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import Menu, { MenuItem } from '@ovvio/styles/lib/components/menu';
-import { IconCompose } from '@ovvio/styles/lib/components/new-icons/icon-compose';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { MediaQueries } from '@ovvio/styles/lib/responsive';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { useVertices } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import { useDocumentRouter } from 'core/react-utils';
 import React, { useState } from 'react';
-import { createNewCard } from 'shared/card/create';
-import { WorkspaceItem } from 'shared/invite-form/workspaces-dropdown';
-import { useTutorialStep } from 'shared/tutorial';
-import { SelectWorkspaceMenu } from '../card-item/workspace-indicator';
-import localization from '../cards-display.strings.json';
-import { DisplayBarSteps } from './tutorial';
-import { usePartialView } from 'core/cfds/react/graph';
+import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import Menu from '../../../../../../../styles/components/menu.tsx';
+import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
+import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+import { MediaQueries } from '../../../../../../../styles/responsive.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
+import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { createNewNote } from '../../../../../shared/card/create.ts';
+import localization from '../cards-display.strings.json' assert { type: 'json' };
+
 const useStyles = makeStyles(() => ({
   compose: {
     background: theme.colors.primaryButton,
@@ -71,25 +72,22 @@ const ComposeInternalButton = React.forwardRef(
 
 export function ComposeButton() {
   const styles = useStyles();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const docRouter = useDocumentRouter();
   const view = usePartialView('selectedWorkspaces');
   const workspaces = useVertices(view.selectedWorkspaces);
-  const [container, setContainer] = useState<HTMLDivElement>();
-  const { className: composeStepClassName, next: nextStep } = useTutorialStep(
-    DisplayBarSteps.CreateNote,
-    container
-  );
+  const [container, setContainer] = useState<HTMLDivElement | null>();
 
   const createCard = (ws: Workspace) => {
-    nextStep();
-
-    const note = createNewCard(ws.graph, ws, {
+    const note = createNewNote(ws.graph, ws, {
       type: NoteType.Note,
     });
 
-    eventLogger.cardAction('CARD_CREATED', note, {
-      category: EventCategory.FAB,
+    logger.log({
+      severity: 'INFO',
+      event: 'Create',
+      type: 'note',
+      source: 'toolbar',
     });
 
     docRouter.goTo(note);
@@ -98,36 +96,23 @@ export function ComposeButton() {
   if (view.selectedWorkspaces.size === 1) {
     return (
       <Button onClick={() => createCard(workspaces[0])}>
-        <ComposeInternalButton
-          ref={div => setContainer(div)}
-          className={composeStepClassName}
-        />
+        <ComposeInternalButton ref={(div) => setContainer(div)} />
       </Button>
     );
   }
-  const onOpenMenu = () => {
-    eventLogger.action('COMPOSE_BUTTON_MENU_OPENED', {
-      category: EventCategory.GENERAL,
-    });
-    nextStep();
-  };
   return (
     <Menu
       renderButton={() => (
-        <ComposeInternalButton
-          ref={div => setContainer(div)}
-          className={composeStepClassName}
-        />
+        <ComposeInternalButton ref={(div) => setContainer(div)} />
       )}
       position="right"
       align="center"
       direction="in"
-      onClick={onOpenMenu}
       popupClassName={cn(styles.workspacesList)}
     >
       <SelectWorkspaceMenu
         value={null}
-        onChange={ws => createCard(ws.getVertexProxy())}
+        onChange={(ws) => createCard(ws.getVertexProxy())}
       />
       {/* {selectedWorkspaces.map(workspace => (
         <MenuItem

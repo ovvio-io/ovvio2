@@ -1,28 +1,34 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { useDocumentRouter } from 'core/react-utils';
-import { useAnimateHeight } from 'core/react-utils/animate';
-import { useTitleEditor } from 'core/slate';
 import React, { useCallback, useRef, useState } from 'react';
-import CardMenuView from 'shared/item-menu';
-import { CARD_SOURCE } from 'shared/card';
-import AssigneesView from 'shared/card/assignees-view';
-import { isCardActionable } from 'shared/tags/tag-utils';
-import { useStatusTags } from 'shared/tags/use-status-tags';
-import { Editable, Slate } from 'slate-react';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import { IconExpander } from '@ovvio/styles/lib/components/icons';
-import { CheckBox } from '@ovvio/styles/lib/components/inputs';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { BodyPreview } from './body-preview';
-import { CardFooter } from './card-footer';
-import { CardTags } from './card-tag-view';
-import { CardWorkspaceIndicator } from './workspace-indicator';
-import { treeToPlaintext } from '@ovvio/cfds/lib/richtext/tree';
+import {
+  Editable,
+  RenderElementProps,
+  Slate,
+} from 'https://esm.sh/slate-react@0.87.1';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
+import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
+import { useTitleEditor } from '../../../../../core/slate/index.tsx';
+import CardMenuView from '../../../../../shared/item-menu/index.tsx';
+import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { IconExpander } from '../../../../../../../styles/components/icons/index.ts';
+import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../../../../styles/theme.tsx';
+import { CardFooter } from './card-footer.tsx';
+import { CardTags } from './card-tag-view.tsx';
+import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
+import { UISource } from '../../../../../../../logging/client-events.ts';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -46,7 +52,7 @@ function getStrikethroughSVG(fill: string) {
   );
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   cardContainer: {
     position: 'relative',
   },
@@ -140,10 +146,6 @@ const useStyles = makeStyles(theme => ({
   titleText: {
     fontSize: 16,
     lineHeight: `${TITLE_LINE_HEIGHT}px`,
-    // whiteSpace: 'nowrap',
-    // overflow: 'hidden',
-    // textOverflow: 'ellipsis',
-    // width: styleguide.gridbase * 33,
   },
   preview: {
     marginTop: styleguide.gridbase * 1.25,
@@ -162,29 +164,43 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+interface TitleElementProps extends RenderElementProps {
+  className?: string;
+}
+
+const TitleNode = React.forwardRef(
+  (
+    { className, ...props }: TitleElementProps,
+    ref: React.ForwardedRef<HTMLSpanElement>
+  ) => {
+    const styles = useStyles();
+    return (
+      <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
+    );
+  }
+);
+
 function Title({
   card,
   source,
 }: {
   card: VertexManager<Note>;
-  source: CARD_SOURCE;
+  source: UISource;
 }) {
-  const styles = useStyles();
-  const title = usePartialVertex(card, ['plaintextTitle']).plaintextTitle;
+  const { editor, plugins, handlers } = useTitleEditor(card, TitleNode, source);
 
   return (
     <div>
-      {/* <Slate editor={editor} {...handlers}>
+      <Slate editor={editor} {...handlers}>
         <Editable {...plugins} readOnly={true} />
-      </Slate> */}
-      <div className={cn(styles.titleText)}>{title}</div>
+      </Slate>
     </div>
   );
 }
 
 export interface CardHeaderPartProps extends CardItemProps {
   isExpanded: boolean;
-  source: CARD_SOURCE;
+  source: UISource;
   hideMenu?: boolean;
 }
 
@@ -246,43 +262,29 @@ export function StatusCheckbox({
   source,
 }: {
   card: VertexManager<Note>;
-  source: CARD_SOURCE;
+  source: UISource;
 }) {
   const styles = useStyles();
   const theme = useTheme();
-  // const eventLogger = useEventLogger();
-  const pCard = usePartialVertex(card, [
-    // 'tags',
-    // 'workspace',
-    'type',
-    'isChecked',
-  ]);
-  const isTask = isCardActionable(pCard);
-  // const statusTags = useStatusTags(pCard.workspace);
-  if (!isTask) {
+  const logger = useLogger();
+  const pCard = usePartialVertex(card, ['tags', 'workspace', 'type', 'status']);
+  if (pCard.type !== NoteType.Task || pCard.status !== 'Done') {
     return <div className={cn(styles.checkboxPlaceholder, styles.status)} />;
   }
 
-  const isDone = pCard.isChecked;
+  const isDone = pCard.status === 'Done';
 
-  const onChange = () => {
-    // const { newChildTag, newParentTag } = toggleDone(
-    //   pCard,
-    //   statusTags,
-    //   !isDone
-    // );
-    pCard.isChecked = !isDone;
-
-    // eventLogger.cardActionAsync(
-    //   isDone ? 'CARD_TASK_UNCHECKED' : 'CARD_TASK_CHECKED',
-    //   card,
-    //   {
-    //     source,
-    //     tagId: newChildTag.key,
-    //     parentTagId: newParentTag.key,
-    //   }
-    // );
-  };
+  const onChange = useCallback(() => {
+    pCard.status = pCard.status === 'Done' ? 'ToDo' : 'Done';
+    logger.log({
+      severity: 'INFO',
+      event: 'MetadataChanged',
+      type: 'status',
+      vertex: pCard.key,
+      status: pCard.status,
+      source,
+    });
+  }, [pCard, logger, source, isDone]);
 
   return (
     <div className={cn(styles.status)}>
@@ -309,21 +311,21 @@ export const CardItem = React.forwardRef(function CardItemView(
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
-  const childListRef = useRef();
+  const childListRef = useRef(null);
   const documentRouter = useDocumentRouter();
   const pCard = usePartialVertex(card, [
     'childCards',
     'tags',
     'type',
-    'isChecked',
+    'status',
   ]);
   const { childCards } = pCard;
   const [expanded, setExpanded] = useState(false);
   const style = useAnimateHeight(childListRef, expanded);
   const [isInHover, setIsInHover] = useState(false);
-  const isTask = isCardActionable(pCard);
-  const isDone = pCard.isChecked;
-  const eventLogger = useEventLogger();
+  const isTask = pCard.type === NoteType.Task;
+  const isDone = pCard.status === 'Done';
+  const logger = useLogger();
 
   const onMouseEnter = useCallback(() => {
     setIsInHover(true);
@@ -332,15 +334,20 @@ export const CardItem = React.forwardRef(function CardItemView(
   const onMouseLeave = useCallback(() => {
     setIsInHover(false);
   }, []);
-  const source = CARD_SOURCE.LIST;
+
+  const source: UISource = 'list';
 
   const onClick = useCallback(() => {
     documentRouter.goTo(card);
-    eventLogger.cardAction('CARD_OPENED', card, {
+    logger.log({
+      severity: 'INFO',
+      event: 'Navigation',
+      type: 'open',
       source,
-      category: EventCategory.CARD,
+      destination: 'editor',
+      vertex: card.key,
     });
-  }, [card, documentRouter, eventLogger, source]);
+  }, [card, documentRouter, logger, source]);
 
   return (
     <div
@@ -374,17 +381,17 @@ export const CardItem = React.forwardRef(function CardItemView(
             />
           </div>
         </div>
-        {size === CardSize.Regular ? (
+        {/* {size === CardSize.Regular ? (
           <BodyPreview card={card} className={cn(styles.preview)} />
-        ) : (
-          <div className={cn(styles.preview)} />
-        )}
+        ) : ( */}
+        <div className={cn(styles.preview)} />
+        {/* )} */}
         <CardFooter size={size} card={card} source={source} />
       </div>
       {showChildCards && !!childCards.length && (
         <div
           className={cn(styles.expander)}
-          onClick={() => setExpanded(x => !x)}
+          onClick={() => setExpanded((x) => !x)}
         >
           <IconExpander
             className={cn(

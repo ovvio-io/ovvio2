@@ -6,6 +6,7 @@ import { Button } from '../buttons.tsx';
 import { brandLightTheme } from '../../theme.tsx';
 import { useTypographyStyles } from '../typography.tsx';
 import { NoteType } from '../../../cfds/client/graph/vertices/note.ts';
+import { TabId } from '../../../cfds/base/scheme-types.ts';
 
 const useStyles = makeStyles(
   (theme) => ({
@@ -93,11 +94,11 @@ export function TabButton({
   );
 }
 
-export interface TabsHeaderProps extends React.PropsWithChildren {
-  selected: NoteType;
-  setSelected: (type: NoteType) => void;
+export type TabsHeaderProps = React.PropsWithChildren<{
+  selected: TabId;
+  setSelected: (type: TabId) => void;
   className?: string;
-}
+}>;
 export function TabsHeader({
   children,
   selected,
@@ -142,10 +143,10 @@ export function TabsHeader({
   );
 }
 
-export interface TabsProps extends React.PropsWithChildren {
+export type TabsProps = React.PropsWithChildren<{
   selectedTab: NoteType;
   className?: string;
-}
+}>;
 export function Tabs({ children, selectedTab, className }: TabsProps) {
   const styles = useStyles();
   let length = React.Children.count(children);
@@ -189,11 +190,12 @@ export function Tabs({ children, selectedTab, className }: TabsProps) {
   );
 }
 
-export interface TabProps<TV = any> extends React.PropsWithChildren {
+export type TabProps<TV = any> = React.PropsWithChildren<{
   style?: any;
   className?: string;
   value: TV;
-}
+}>;
+
 export function Tab<TV>({ children, style, className }: TabProps<TV>) {
   return (
     <div style={style} className={className}>

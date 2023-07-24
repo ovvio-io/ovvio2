@@ -49,10 +49,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export interface MentionItemProps extends React.PropsWithChildren {
+export type MentionItemProps = React.PropsWithChildren<{
   isSelected?: boolean;
   onClick?: React.MouseEventHandler;
-}
+}>;
 
 export function MentionItem({
   isSelected = false,

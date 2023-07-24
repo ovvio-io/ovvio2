@@ -1,15 +1,23 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { User } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout, styleguide } from '@ovvio/styles';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { useTheme } from '@ovvio/styles/lib/theme';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { usePartialView } from 'core/cfds/react/graph';
-import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
-import { TagId, decodeTagId } from '@ovvio/cfds/lib/base/scheme-types';
+import React from 'react';
+import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
+import {
+  TagId,
+  decodeTagId,
+} from '../../../../../../../../cfds/base/scheme-types.ts';
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
+import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
+import { useTheme } from '../../../../../../../../styles/theme.tsx';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -111,10 +119,10 @@ export function ActiveFiltersView({ className }: ActiveFiltersViewProps) {
   return (
     <div className={className}>
       <div className={cn(styles.filtersView)}>
-        {sortedAssignees.map(user => (
+        {sortedAssignees.map((user) => (
           <AssigneePill key={user.key} user={user.manager} />
         ))}
-        {sortedTagIds.map(tag => (
+        {sortedTagIds.map((tag) => (
           <TagPill tagId={tag} />
         ))}
         {showClear && (
