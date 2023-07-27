@@ -7,7 +7,6 @@ import {
   lightTheme,
   ThemeProvider,
 } from '../../../styles/theme.tsx';
-import { CriticalErrorDialog } from '../../src-old/app/critical-error-view.tsx';
 import { useIsGraphLoading } from '../core/cfds/react/query.ts';
 import LoadingView from './loading-view.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
@@ -54,7 +53,6 @@ function Root({ style }: AppProps & { style?: any }) {
 
   return (
     <div className={cn(styles.root)} style={style}>
-      <CriticalErrorDialog />
       {loaded ? (
         <div>
           <WorkspacesBar key={'wsbar'} />

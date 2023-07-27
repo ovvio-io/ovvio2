@@ -44,7 +44,6 @@ import {
 } from '../../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { ToolbarRightItem } from '../../toolbar/index.tsx';
-import { VideoTutorialId } from '../video-demo/index.tsx';
 import { ComposeButton } from './compose-button.tsx';
 import { GroupByDropDown } from './group-by-drop-down.tsx';
 import { ViewToggle } from './view-toggle.tsx';
@@ -470,8 +469,6 @@ function TabView() {
 export type DisplayBarProps = {
   className?: string;
 };
-
-const After = [VideoTutorialId];
 
 export function DisplayBar(props: DisplayBarProps) {
   const { className, ...rest } = props;

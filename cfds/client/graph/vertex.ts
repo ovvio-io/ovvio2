@@ -212,15 +212,7 @@ export class Vertex implements Comparable {
   }
 
   get isNull() {
-    return this.manager.isNull;
-  }
-
-  get isLoading() {
-    return this.manager.isLoading;
-  }
-
-  get errorCode(): number | undefined {
-    return this.manager.errorCode;
+    return this.manager.record.isNull;
   }
 
   // Static value. Does not change during the lifetime of a vertex.
@@ -242,16 +234,6 @@ export class Vertex implements Comparable {
 
   get outRefs(): Set<string> {
     return this.record.refs;
-  }
-
-  get outRefsLoading(): boolean {
-    const graph = this.graph;
-    for (const key of this.outRefs) {
-      if (graph.getVertexManager(key).isLoading) {
-        return true;
-      }
-    }
-    return false;
   }
 
   get isDeleted(): number {
@@ -284,10 +266,6 @@ export class Vertex implements Comparable {
 
   set isLocal(flag: boolean) {
     this._isLocal = flag;
-  }
-
-  get inCriticalError(): boolean {
-    return this.manager.inCriticalError;
   }
 
   parentDidMutate(
@@ -378,20 +356,6 @@ export class Vertex implements Comparable {
     return this.manager.onVertexChanged(callback);
   }
 
-  getCompositeValue<T extends CoreValue = CoreValue>(
-    fieldName: string
-  ): T | undefined {
-    const impl = this.graph.getCompositeField(this.namespace, fieldName);
-    if (impl === undefined) {
-      return undefined;
-    }
-    const cache = this._compositeFieldsCache;
-    if (!cache.has(fieldName)) {
-      cache.set(fieldName, impl.calcValue(this));
-    }
-    return cache.get(fieldName) as T;
-  }
-
   /******************************************************************
    ******************* Methods for VertexManager *******************
    ******************************************************************/
@@ -399,12 +363,7 @@ export class Vertex implements Comparable {
   // WARNING: Never change a vertex manager's scheme inside this callback.
   didMutate(pack: MutationPack): MutationPack {
     const result = this._dispatchMutationCallback(pack);
-    if (
-      this.isLocal ||
-      (this.manager.cacheLoaded &&
-        this.graph.cacheLoadingEnded &&
-        !this.graph.sharedQueriesManager.notDeleted.isLoading)
-    ) {
+    if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
       this._runFieldTriggers(pack);
     }
     return result;
@@ -425,20 +384,6 @@ export class Vertex implements Comparable {
         );
       }
       remainingMutations = mutationPackDeleteFirst(remainingMutations);
-    }
-
-    // Let composite fields a chance to invalidate
-    for (const [key, impl] of this.graph.compositeFieldsForNamespace(
-      this.namespace
-    )) {
-      if (impl.shouldInvalidate(pack)) {
-        result = mutationPackAppend(result, [
-          key,
-          true,
-          this.getCompositeValue(key),
-        ]);
-        this._compositeFieldsCache.delete(key);
-      }
     }
     return result;
   }
@@ -563,7 +508,7 @@ export class Vertex implements Comparable {
     const result = new Set<T>();
     for (const k of keys) {
       const vert = graph.getVertex<T>(k);
-      if (vert && !vert.isDeleted && !vert.isNull && !vert.isLoading) {
+      if (vert && !vert.isDeleted && !vert.isNull) {
         result.add(vert);
       }
     }

@@ -8,7 +8,7 @@ import {
 import {
   typeFromCode,
   ErrorType,
-} from '../../../../../../../cfds-old/base/errors.ts';
+} from '../../../../../../../cfds/base/errors.ts';
 import { useQuery } from '../../../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles((theme) => ({
@@ -23,12 +23,7 @@ const useStyles = makeStyles((theme) => ({
 export default function ChangesIndicator() {
   const styles = useStyles();
   const saving = useQuery(
-    (x) =>
-      !x.isLocal &&
-      !x.isDemoData &&
-      x.hasPendingChanges &&
-      (x.errorCode === undefined ||
-        typeFromCode(x.errorCode) !== ErrorType.NoAccess),
+    (x) => !x.isLocal && !x.isDemoData && x.hasPendingChanges,
     [],
     {
       name: 'ChangesIndicator',

@@ -27,10 +27,6 @@ import {
   SuggestionItemIcon,
 } from './mention-node.tsx';
 import { Query } from '../../../../../cfds/client/graph/query.ts';
-import {
-  useGraphManager,
-  useSharedQueriesManager,
-} from '../../cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   tagIndicator: {
@@ -97,10 +93,13 @@ function TagsSuggestionComponent({
 }: RenderMentionPopupProps<VertexManager<Tag>>) {
   const card = useCurrentCard()!;
   const partial = usePartialVertex(card, ['tags']);
-  const sharedQueries = useSharedQueriesManager();
+  const sharedTags = useSharedQuery('tags');
   const childTagsQuery = useQuery2(
-    new Query(sharedQueries.childTags, (tag) => {
-      const cardTagChild = partial.tags.get(tag.parentTag!);
+    new Query(sharedTags, (tag) => {
+      if (!tag.parentTag) {
+        return false;
+      }
+      const cardTagChild = partial.tags.get(tag.parentTag);
       return !cardTagChild || tag !== cardTagChild;
     })
   );
@@ -129,8 +128,7 @@ function TagsSuggestionComponent({
   );
 }
 
-interface TagsPluginOptions
-  extends Pick<MentionOptions<Tag>, 'canOpen' | 'editor'> {}
+export type TagsPluginOptions = Pick<MentionOptions<Tag>, 'canOpen' | 'editor'>;
 
 export function createTagsPlugin(options: TagsPluginOptions): Partial<Plugin> {
   return createMentionsPlugin<VertexManager<Tag>>({

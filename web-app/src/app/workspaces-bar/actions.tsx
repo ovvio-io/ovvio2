@@ -1,17 +1,16 @@
-import { layout, styleguide } from '@ovvio/styles';
-import Tooltip from '@ovvio/styles/lib/components/tooltip';
-import { useTypographyStyles } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { useEventLogger } from 'core/analytics';
-import { usePartialView } from 'core/cfds/react/graph';
-import { useSharedQuery } from 'core/cfds/react/query';
-import { createUseStrings } from 'core/localization';
-import { CREATE_WORKSPACE, useHistoryStatic } from 'core/react-utils/history';
-import { useCallback, useState } from 'react';
-import { useDemoInfo } from 'shared/demo';
-import InvitationDialog from 'shared/invitation-dialog';
-import localization from './workspace-bar.strings.json';
+import React, { useState, useCallback } from 'react';
+import Tooltip from '../../../../styles/components/tooltip/index.tsx';
+import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../styles/layout.ts';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { usePartialView } from '../../core/cfds/react/graph.tsx';
+import { useSharedQuery } from '../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import localization from './workspace-bar.strings.json' assert { type: 'json' };
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { useNavigate } from 'react-router-dom';
 
 const useStyles = makeStyles(
   () => ({
@@ -62,64 +61,47 @@ export interface WorkspaceBarActionsProps {
 }
 
 export function WorkspaceBarActions({ className }: WorkspaceBarActionsProps) {
-  const { isInDemo } = useDemoInfo();
   const styles = useStyles();
   const strings = useStrings();
-  const history = useHistoryStatic();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const workspaces = useSharedQuery('workspaces').results;
   const [isShareOpen, setIsShareOpen] = useState(false);
   const view = usePartialView('workspaceBarCollapsed');
+  const navigate = useNavigate();
 
   const createNew = useCallback(() => {
-    if (isInDemo) {
-      return;
-    }
-    eventLogger.action('ADD_WORKSPACE_CLICKED', {});
-    history.push(CREATE_WORKSPACE);
-  }, [history, eventLogger, isInDemo]);
+    logger.log({
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'create',
+      type: 'workspace',
+      source: 'bar:workspace',
+    });
+    navigate('/new');
+  }, [logger, navigate]);
 
   const openInvite = useCallback(() => {
-    if (isInDemo) {
-      return;
-    }
     setIsShareOpen(true);
-  }, [isInDemo]);
+  }, [setIsShareOpen]);
 
   return (
     <div className={cn(styles.root, className)}>
-      <Tooltip text={strings.inDemo} disabled={!isInDemo}>
-        <div
-          className={cn(styles.action, isInDemo && styles.disabled)}
-          onClick={createNew}
-        >
-          <div className={cn(styles.actionIcon)}>
-            <IconPlus />
-          </div>
-          <div className={cn(styles.actionText)}>
-            {view.workspaceBarCollapsed ? strings.addShort : strings.add}
-          </div>
+      <div className={cn(styles.action)} onClick={createNew}>
+        <div className={cn(styles.actionIcon)}>
+          <IconPlus />
         </div>
-      </Tooltip>
-      <Tooltip text={strings.inDemo} disabled={!isInDemo}>
-        <div
-          className={cn(styles.action, isInDemo && styles.disabled)}
-          onClick={openInvite}
-        >
-          <div className={cn(styles.actionIcon)}>
-            <IconInvite />
-          </div>
-          <div className={cn(styles.actionText)}>
-            {view.workspaceBarCollapsed ? strings.inviteShort : strings.invite}
-          </div>
+        <div className={cn(styles.actionText)}>
+          {view.workspaceBarCollapsed ? strings.addShort : strings.add}
         </div>
-      </Tooltip>
-      <InvitationDialog
-        workspaces={workspaces}
-        open={isShareOpen}
-        hide={() => setIsShareOpen(false)}
-        source="workspace-bar"
-      />
+      </div>
+      <div className={cn(styles.action)} onClick={openInvite}>
+        <div className={cn(styles.actionIcon)}>
+          <IconInvite />
+        </div>
+        <div className={cn(styles.actionText)}>
+          {view.workspaceBarCollapsed ? strings.inviteShort : strings.invite}
+        </div>
+      </div>
     </div>
   );
 }

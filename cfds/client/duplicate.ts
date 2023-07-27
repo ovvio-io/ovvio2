@@ -1,5 +1,6 @@
 import { uniqueId } from '../../base/common.ts';
 import { CoreObject } from '../../base/core-types/base.ts';
+import { coreValueCompare } from '../../base/core-types/comparable.ts';
 import { fromTimestamp } from '../base/orderstamp.ts';
 import { NS_NOTES } from '../base/scheme-types.ts';
 import { isRefMarker, RefType } from '../richtext/model.ts';
@@ -12,7 +13,6 @@ import {
 } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
 import { Note } from './graph/vertices/note.ts';
-import { ISortable, sortStampCompare } from './sorting.ts';
 
 const DUP_TITLE_SUFFIX = ' (copy)';
 
@@ -139,9 +139,7 @@ function deepDuplicateImpl(
  * sort stamp will be relative to the sorting today
  */
 function fixSorting(outRecords: { [s: string]: CoreObject }) {
-  const sortedRecords = Object.entries(outRecords).sort((a, b) =>
-    sortStampCompare(a[1] as unknown as ISortable, b[1] as unknown as ISortable)
-  );
+  const sortedRecords = Object.entries(outRecords).sort(coreValueCompare);
 
   let timeStamp = new Date();
   timeStamp.setTime(timeStamp.getTime() + sortedRecords.length);

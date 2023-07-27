@@ -49,9 +49,9 @@ import { createUseStrings } from '../../core/localization/index.tsx';
 import { Scroller } from '../../core/react-utils/scrolling.tsx';
 import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
 import { WorkspaceBarActions } from './actions.tsx';
-import localization from './workspace-bar.strings.json' assert { type: 'json' };
 import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
+import localization from './workspace-bar.strings.json' assert { type: 'json' };
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;

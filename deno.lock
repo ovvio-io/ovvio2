@@ -8,6 +8,7 @@
     "https://cdn.skypack.dev/-/react@v17.0.1-yH0aYV1FOvoIPeKBbHxg/dist=es2019,mode=types/global.d.ts": "ecf78e637f710f340ec08d5d92b3f31b134a46a4fcf2e758690d8c46ce62cba6",
     "https://cdn.skypack.dev/-/react@v17.0.1-yH0aYV1FOvoIPeKBbHxg/dist=es2019,mode=types/index.d.ts": "4fb2db619b0d7ea4f5f25e00f777c8ea425d9c3f7908b60bcb43898fe7388b3e",
     "https://cdn.skypack.dev/react@17.0.1?dts": "abb60c0ca31aab69e8b26906186e66d5e384cc9cf930f6c1b023d4ad2fccd9bd",
+    "https://cdn.skypack.dev/react@17.0.2?dts": "abb60c0ca31aab69e8b26906186e66d5e384cc9cf930f6c1b023d4ad2fccd9bd",
     "https://deno.land/std@0.159.0/encoding/base64.ts": "c57868ca7fa2fbe919f57f88a623ad34e3d970d675bdc1ff3a9d02bba7409db2",
     "https://deno.land/std@0.160.0/_util/assert.ts": "e94f2eb37cebd7f199952e242c77654e43333c1ac4c5c700e929ea3aa5489f74",
     "https://deno.land/std@0.160.0/_util/os.ts": "8a33345f74990e627b9dfe2de9b040004b08ea5146c7c9e8fe9a29070d193934",
