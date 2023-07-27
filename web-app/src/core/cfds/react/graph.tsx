@@ -20,6 +20,10 @@ import VersionMismatchView from '../../../app/version-mismatch/index.tsx';
 import { usePartialVertex, useVertex } from './vertex.ts';
 import { useLogger } from './logger.tsx';
 import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
+import {
+  VertexId,
+  VertexIdGetKey,
+} from '../../../../../cfds/client/graph/vertex.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -77,7 +81,7 @@ export function useCfdsContext(): ContextProps {
 }
 
 interface CfdsClientProviderProps {
-  user: any;
+  user: VertexId<User>;
   sessionId: string;
   children: React.ReactNode;
 }
@@ -98,11 +102,12 @@ export function CfdsClientProvider({
   const logger = useLogger();
   const [versionMismatchFound, setVersionMismatchFound] = useState(false);
   const [sendSessionAlive, setSendSessionAlive] = useState(true);
-  const sessionPtrKey = `${user.id}/${sessionId}`;
+  const userKey = VertexIdGetKey(user);
+  const sessionPtrKey = `${userKey}/${sessionId}`;
   const device = useCurrentDevice();
 
   const graphManager = useMemo(() => {
-    const manager = new GraphManager(user.id, (key) => key !== sessionPtrKey);
+    const manager = new GraphManager(userKey, (key) => key !== sessionPtrKey);
 
     manager.createVertex(
       NS_ROLES,
@@ -302,7 +307,7 @@ export function CfdsClientProvider({
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
     return manager;
-  }, [user, sessionId, sessionPtrKey, device]);
+  }, [userKey, sessionId, sessionPtrKey, device]);
 
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
@@ -322,9 +327,9 @@ export function CfdsClientProvider({
     () => ({
       graphManager: graphManager,
       sessionId,
-      user,
+      userKey,
     }),
-    [graphManager, sessionId, user]
+    [graphManager, sessionId, userKey]
   );
 
   if (versionMismatchFound) {

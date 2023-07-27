@@ -1,6 +1,8 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
 
-const storeContext = React.createContext<ChangeRecordStore>(undefined);
+const storeContext = React.createContext<ChangeRecordStore | undefined>(
+  undefined
+);
 
 export class ChangeRecord {
   private _data: any;
@@ -40,7 +42,7 @@ export class ChangeRecord {
   set(key: string, value: any) {
     this._data[key] = value;
     this.isDirty = true;
-    this._listeners.forEach(fn => fn(this));
+    this._listeners.forEach((fn) => fn(this));
   }
 
   clear(key: string) {
@@ -48,12 +50,12 @@ export class ChangeRecord {
     if (!Object.keys(this._data).length) {
       this.isDirty = false;
     }
-    this._listeners.forEach(fn => fn(this));
+    this._listeners.forEach((fn) => fn(this));
   }
 
   clearAll() {
     this._data = {};
-    this._listeners.forEach(fn => fn(this));
+    this._listeners.forEach((fn) => fn(this));
   }
 }
 
@@ -82,11 +84,11 @@ class ChangeRecordStore {
   }
 
   notifyRecordChanged(record: ChangeRecord) {
-    this._listeners.forEach(fn => fn(this, record));
+    this._listeners.forEach((fn) => fn(this, record));
   }
 
   getRecordForKey(key: string, onCommit: (cRec: ChangeRecord) => void) {
-    let item = this._records.find(r => r.key === key);
+    let item = this._records.find((r) => r.key === key);
     if (!item) {
       item = {
         key,
@@ -130,10 +132,10 @@ export function useChangeRecord(
 ) {
   const ctx = useContext(storeContext);
   const [, setChange] = useState(0);
-  const record = ctx.getRecordForKey(key, onCommit);
+  const record = ctx?.getRecordForKey(key, onCommit);
   useEffect(() => {
     if (record) {
-      return record.listen(() => setChange(x => x + 1));
+      return record.listen(() => setChange((x) => x + 1));
     }
   }, [record]);
   return record;
@@ -143,7 +145,10 @@ export function useRecordStore() {
   return useContext(storeContext);
 }
 
-export function ChangeStoreProvider({ children }) {
+export type ChangeStoreProviderProps = React.PropsWithChildren<
+  Record<string | number | symbol, never>
+>;
+export function ChangeStoreProvider({ children }: ChangeStoreProviderProps) {
   const context = useMemo(() => new ChangeRecordStore(), []);
   return (
     <storeContext.Provider value={context}>{children}</storeContext.Provider>

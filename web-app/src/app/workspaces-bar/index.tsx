@@ -698,11 +698,11 @@ function WorkspaceListItem({
           </Menu>
         </React.Fragment>
       )}
-      <WorkspaceSettingsDialog
+      {/* <WorkspaceSettingsDialog
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
         hide={() => setIsSettingsOpen(false)}
-      />
+      /> */}
     </div>
   );
 }

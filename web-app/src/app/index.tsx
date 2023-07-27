@@ -1,37 +1,24 @@
-import { ReadonlyJSONObject } from '@ovvio/base/lib/utils/interfaces';
-import { NS_WORKSPACE } from '@ovvio/cfds';
-import { OnboardingStep } from '@ovvio/cfds/lib/base/scheme-versions';
-import { Note, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { layout } from '@ovvio/styles/lib';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { Devices, useCurrentDevice } from '@ovvio/styles/lib/responsive';
-import { darkTheme, lightTheme, ThemeProvider } from '@ovvio/styles/lib/theme';
+import React, { useState, useMemo } from 'react';
+import { Route, RouterProvider } from 'react-router';
+import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
+import { layout } from '../../../styles/layout.ts';
 import {
-  useGraphManager,
-  useRootUser,
-  usePartialView,
-} from 'core/cfds/react/graph';
-import { useIsGraphLoading } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import config from 'core/config';
-import { Features, useIsFeatureActive } from 'core/feature-toggle';
-import { useSyncUrlParam } from 'core/react-utils/history/use-sync-url-param';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Route, Switch, useLocation } from 'react-router';
-import { FileUploaderProvider } from 'shared/components/file-uploader';
-import { DemoProvider } from 'shared/demo';
-import { InvitationsProvider } from 'shared/invitation';
-import { CriticalErrorDialog } from './critical-error-view';
-import LoadingView from './loading-view';
-import { CreateWorkspaceView } from './new-workspace';
-import WorkspaceContentView from './workspace-content';
-import { WorkspacesBar } from './workspaces-bar/index';
+  darkTheme,
+  lightTheme,
+  ThemeProvider,
+} from '../../../styles/theme.tsx';
+import { CriticalErrorDialog } from '../../src-old/app/critical-error-view.tsx';
+import { useIsGraphLoading } from '../core/cfds/react/query.ts';
+import LoadingView from './loading-view.tsx';
+import { CreateWorkspaceView } from './new-workspace/index.tsx';
+import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
+import { WorkspacesBar } from './workspaces-bar/index.tsx';
+import { createBrowserRouter } from 'react-router-dom';
+import { uniqueId } from '../../../base/common.ts';
+import { StyleProvider } from '../../../styles/css-objects/context.tsx';
+import { CfdsClientProvider } from '../core/cfds/react/graph.tsx';
 
-if (!config.isProduction) {
-  document.title = `Ovvio - ${config.name}`;
-}
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   blurred: {
     filter: 'blur(2px)',
   },
@@ -69,26 +56,12 @@ function Root({ style }: AppProps & { style?: any }) {
     <div className={cn(styles.root)} style={style}>
       <CriticalErrorDialog />
       {loaded ? (
-        <FileUploaderProvider>
+        <div>
           <WorkspacesBar key={'wsbar'} />
           <div className={cn(styles.content)}>
-            <InvitationsProvider>
-              <Switch>
-                <Route
-                  path="/new"
-                  exact
-                  render={props => (
-                    <CreateWorkspaceView location={props.location} />
-                  )}
-                />
-                <Route
-                  path="/"
-                  render={() => <WorkspaceContentView key={'contents'} />}
-                />
-              </Switch>
-            </InvitationsProvider>
+            <WorkspaceContentView />
           </div>
-        </FileUploaderProvider>
+        </div>
       ) : (
         <LoadingView />
       )}
@@ -96,12 +69,44 @@ function Root({ style }: AppProps & { style?: any }) {
   );
 }
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root style={lightTheme} />,
+  },
+  {
+    path: '/new',
+    element: (
+      <CreateWorkspaceView
+        source="bar:workspace"
+        // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
+
+        //   workspacesQuery.forEach((ws) => (ws.selected = ws.key === wsKey));
+        //   // Depending on exact timings, our query may miss
+        //   // the newly created workspace. Ensure it's always
+        //   // selected.
+        //   graph.getVertex<Workspace>(wsKey).selected = true;
+        // }}
+      />
+    ),
+  },
+]);
+
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
+
   return (
-    <ThemeProvider theme={theme} isRoot={true}>
-      {({ style }) => <Root style={style} />}
-    </ThemeProvider>
+    <CfdsClientProvider user="ofri" sessionId={`ofri/${uniqueId()}`}>
+      <StyleProvider dev={false}>
+        <ThemeProvider theme={theme} isRoot={true}>
+          {({ style }) => (
+            <React.StrictMode>
+              <RouterProvider router={router} />
+            </React.StrictMode>
+          )}
+        </ThemeProvider>
+      </StyleProvider>
+    </CfdsClientProvider>
   );
 }
