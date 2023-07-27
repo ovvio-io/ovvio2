@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase, { IconProps } from './IconBase.tsx';
 
 const IconDueDate = ({ fill = '#9CB2CD', className }: IconProps) => (

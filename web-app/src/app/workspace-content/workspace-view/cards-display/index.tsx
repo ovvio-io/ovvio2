@@ -18,7 +18,6 @@ import {
   DisplayBar,
 } from './display-bar/index.tsx';
 import { ListView } from './list-view/index.tsx';
-import { VideoTutorial } from './video-demo/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles((theme) => ({
@@ -109,7 +108,6 @@ export function CardsDisplay() {
 
   return (
     <div className={cn(styles.displayRoot)}>
-      <VideoTutorial />
       <div className={cn(styles.displayMain)}>
         {!isInSearch ? (
           <DisplayBar />

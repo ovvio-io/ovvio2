@@ -1,8 +1,10 @@
 {
   "imports": {
-    "react": "https://cdn.skypack.dev/react@17.0.1?dts",
-    "react-dom": "https://cdn.skypack.dev/react-dom@17.0.1?dts",
-    "react-dom/client": "https://cdn.skypack.dev/react-dom@17.0.1/client?dts",
+    "react": "https://cdn.skypack.dev/react@17.0.2?dts",
+    "react-dom": "https://cdn.skypack.dev/react-dom@17.0.2?dts",
+    "@types/react": "https://cdn.skypack.dev/@types/react@17.0.2",
+    "@types/react-dom": "https://cdn.skypack.dev/@types/react-dom@17.0.2",
+    "react-dom/client": "https://cdn.skypack.dev/react-dom@17.0.2/client?dts",
     "react-router": "https://cdn.skypack.dev/react-router@6.7.0?dts",
     "react-router-dom": "https://cdn.skypack.dev/react-router-dom@6.7.0?dts"
   }

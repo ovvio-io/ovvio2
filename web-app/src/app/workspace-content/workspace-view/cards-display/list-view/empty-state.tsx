@@ -1,9 +1,13 @@
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
-import { Text } from '@ovvio/styles/lib/components/texts';
-import { layout } from '@ovvio/styles/lib';
-import EmptyIllustration from './empty-illustration';
+import React from 'react';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
+import EmptyIllustration from './empty-illustration.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   image: {
     display: 'flex',
     marginTop: '30px',

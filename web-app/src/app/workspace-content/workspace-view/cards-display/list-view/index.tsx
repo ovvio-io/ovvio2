@@ -1,35 +1,41 @@
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Note } from '@ovvio/cfds/lib/client/graph/vertices';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
-import { styleguide } from '@ovvio/styles/lib';
-import { useToastController } from '@ovvio/styles/lib/components/toast';
-import { LabelSm } from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import { useQuery2 } from 'core/cfds/react/query';
-import { createUseStrings } from 'core/localization';
-import { useDocumentRouter } from 'core/react-utils';
-import { Scroller } from 'core/react-utils/scrolling';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
 import {
-  CANCELLATION_REASONS,
-  DragAndDropContext,
-  Draggable,
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import {
+  useFilteredNotes,
+  FilteredNotes,
+} from '../../../../../core/cfds/react/filter.ts';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
+import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
+import CANCELLATION_REASONS from '../../../../../shared/dragndrop/cancellation-reasons.tsx';
+import { Draggable } from '../../../../../shared/dragndrop/draggable.tsx';
+import {
   DragSource,
-} from 'shared/dragndrop';
-import { EmptyListState } from './empty-state';
-import { InfiniteVerticalScroll } from './infinite-scroll';
-import { InlineTaskButton } from './inline-task-button';
-import localization from './list.strings.json';
-import { ItemRow, ItemsTable, Row } from './table';
-import { usePartialView } from 'core/cfds/react/graph';
-import { FilteredNotes, useFilteredNotes } from 'core/cfds/react/filter';
-import { Query } from '@ovvio/cfds/lib/client/graph/query';
-import { Vertex } from '@ovvio/cfds/lib/client/graph/vertex';
+  DragAndDropContext,
+} from '../../../../../shared/dragndrop/index.ts';
+import { InfiniteVerticalScroll } from './infinite-scroll.tsx';
+import { InlineTaskButton } from './inline-task-button.tsx';
+import { ItemsTable } from './table/grid.tsx';
+import { Row, ItemRow } from './table/item.tsx';
+import localization from './list.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 
-// export { SortBy };
-
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   item: {
     position: 'relative',
     marginBottom: styleguide.gridbase * 2,
@@ -63,7 +69,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
   const strings = useStrings();
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const toastController = useToastController();
   // const containerRef = useRef();
   const docRouter = useDocumentRouter();
@@ -89,30 +95,13 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
 
   console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
 
-  const [draft, setDraft] = useState<VertexManager<Note>>(null);
+  const [draft, setDraft] = useState<VertexManager<Note> | null>(null);
 
-  const onDragStarted = () => {
-    eventLogger.action('DRAG_STARTED', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
-    });
-  };
+  const onDragStarted = () => {};
 
-  const onReportDrop = () => {
-    eventLogger.action('DRAG_DONE', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
-    });
-  };
+  const onReportDrop = () => {};
 
-  const onDragCancelled = ({ reason }) => {
-    eventLogger.action('DRAG_CANCELLED', {
-      category: EventCategory.CARD_LIST,
-      source: DragSource.List,
-      data: {
-        reason,
-      },
-    });
+  const onDragCancelled = ({ reason }: { reason: string }) => {
     if (reason === CANCELLATION_REASONS.DISABLED) {
       toastController.displayToast({
         text: `Drag and drop is not supported in the selected sort mode`,
@@ -141,7 +130,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
       onDragCancelled={onDragCancelled}
     >
       <Scroller>
-        {ref => (
+        {(ref) => (
           <div ref={ref} className={cn(styles.listRoot, className)}>
             <ItemsTable>
               {!!headerText && (
@@ -183,7 +172,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                   setDraft={setDraft}
                 />
               )}
-              {unpinnedQuery?.results.slice(0, limit).map(c => (
+              {unpinnedQuery?.results.slice(0, limit).map((c) => (
                 <ItemRow
                   note={c}
                   key={`list/unpinned/row/${c.key}`}

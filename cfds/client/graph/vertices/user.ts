@@ -6,6 +6,8 @@ import { Vertex, VertexConfig } from '../vertex.ts';
 import { OnboardingStep } from '../../../base/scheme-versions.ts';
 import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { UserSettings } from './user-settings.ts';
+import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
 
 export class User extends BaseVertex {
   constructor(
@@ -154,5 +156,14 @@ export class User extends BaseVertex {
 
   set onboardingStep(step: OnboardingStep) {
     this.record.set('onboardingStep', step);
+  }
+
+  get settings(): UserSettings {
+    return this.graph.createVertex(
+      NS_USER_SETTINGS,
+      {},
+      this.key + '_settings',
+      false
+    );
   }
 }

@@ -9,6 +9,7 @@ export enum SchemeNamespace {
   NOTES = 'notes',
   TAGS = 'tags',
   USERS = 'users',
+  USER_SETTINGS = 'user-settings',
   INVITES = 'invites',
   ROLES = 'roles',
   VIEWS = 'views',
@@ -28,6 +29,7 @@ export const NS_WORKSPACE = SchemeNamespace.WORKSPACE;
 export const NS_NOTES = SchemeNamespace.NOTES;
 export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
+export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
 export const NS_INVITES = SchemeNamespace.INVITES;
 export const NS_ROLES = SchemeNamespace.ROLES;
 export const NS_VIEWS = SchemeNamespace.VIEWS;

@@ -1,10 +1,14 @@
-import { useScrollParent } from 'core/react-utils/scrolling';
-import React, { useEffect, useRef, useState } from 'react';
-import { layout, styleguide } from '@ovvio/styles/lib';
-import SpinnerView from '@ovvio/styles/lib/components/spinner-view';
-import { makeStyles, cn } from '@ovvio/styles/lib/css-objects';
+import React, { useRef, useState, useEffect } from 'react';
+import SpinnerView from '../../../../../../../styles/components/spinner-view.tsx';
+import {
+  makeStyles,
+  cn,
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   loaderContainer: {
     basedOn: [layout.row, layout.centerCenter],
   },
@@ -47,7 +51,7 @@ export function InfiniteVerticalScroll({
         const diff =
           parentEl.scrollHeight - (parentEl.scrollTop + parentEl.clientHeight);
         if (diff < Y_THRESHOLD) {
-          setLimit(x => x + pageSize);
+          setLimit((x) => x + pageSize);
         }
       };
       parentEl.addEventListener('scroll', handler);
@@ -106,7 +110,7 @@ export function InfiniteHorizontalScroll({
         const diff =
           parentEl.scrollWidth - (parentEl.scrollLeft + parentEl.clientWidth);
         if (diff < Y_THRESHOLD) {
-          setLimit(x => x + pageSize);
+          setLimit((x) => x + pageSize);
         }
       };
       parentEl.addEventListener('scroll', handler);

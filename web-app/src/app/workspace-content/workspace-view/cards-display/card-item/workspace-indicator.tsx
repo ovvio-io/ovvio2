@@ -133,10 +133,12 @@ function WorkspaceIndicatorButton({
       ref={ref}
       style={style}
     >
-      <WorkspaceIcon
-        workspaceManager={workspace}
-        size={styleguide.gridbase * 2.75}
-      />
+      {workspace ? (
+        <WorkspaceIcon
+          workspaceManager={workspace}
+          size={styleguide.gridbase * 2.75}
+        />
+      ) : null}
       <Text className={cn(styles.wsName)}>{name}</Text>
       {readOnly !== true && (
         <div className={cn(styles.wsArrow, !isExpanded && styles.hide)}>
@@ -203,7 +205,7 @@ export function CardWorkspaceIndicator({
 }
 
 export interface WorkspaceIndicatorProps {
-  workspace: VertexManager<Workspace>;
+  workspace: null | VertexManager<Workspace>;
   setWorkspace: (workspace: VertexManager<Workspace>) => void;
   isExpanded: boolean;
   className?: string;

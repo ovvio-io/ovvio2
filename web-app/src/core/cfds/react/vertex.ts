@@ -94,7 +94,7 @@ export function useVertexByKey<V extends Vertex>(key: string): V {
 }
 
 export function usePartialVertex<V extends Vertex, K extends keyof V = keyof V>(
-  vertexId: VertexId<V> | undefined,
+  vertexId: VertexId<V> | undefined | null,
   keys: readonly K[],
   opts: OnChangeOpts = EMPTY_OPTS
 ): Pick<V, K> & Vertex {

@@ -1,67 +1,57 @@
-import * as SetUtils from '@ovvio/base/lib/utils/set';
-import { VertexManager } from '@ovvio/cfds/lib/client/graph/vertex-manager';
-import { Role, User, Workspace } from '@ovvio/cfds/lib/client/graph/vertices';
-import { sortMngStampCompare } from '@ovvio/cfds/lib/client/sorting';
-import { layout, styleguide } from '@ovvio/styles';
-import { useBackdropStyles } from '@ovvio/styles/lib/components/backdrop';
-import { Button } from '@ovvio/styles/lib/components/buttons';
-import { IconOverflow } from '@ovvio/styles/lib/components/icons';
-import Layer from '@ovvio/styles/lib/components/layer';
-import { LogoIcon, LogoText } from '@ovvio/styles/lib/components/logo';
-import Menu, { MenuItem } from '@ovvio/styles/lib/components/menu';
-import { IconPinOff } from '@ovvio/styles/lib/components/new-icons/icon-pin-off';
-import { IconPinOn } from '@ovvio/styles/lib/components/new-icons/icon-pin-on';
-import { IconMore } from '@ovvio/styles/lib/components/new-icons/icon-more';
-import Tooltip from '@ovvio/styles/lib/components/tooltip';
-import {
-  LabelSm,
-  TextSm,
-  useTypographyStyles,
-} from '@ovvio/styles/lib/components/typography';
-import { cn, makeStyles } from '@ovvio/styles/lib/css-objects';
-import {
-  Devices,
-  MediaQueries,
-  useCurrentDevice,
-} from '@ovvio/styles/lib/responsive';
-import { brandLightTheme as theme } from '@ovvio/styles/lib/theme';
-import { Scroller } from '@ovvio/styles/lib/utils/scrolling';
-import { createUniversalPortal } from '@ovvio/styles/lib/utils/ssr';
-import { EventCategory, useEventLogger } from 'core/analytics';
-import {
-  useGraphManager,
-  usePartialRootUser,
-  usePartialGlobalView,
-  useRootUser,
-  useActiveViewManager,
-} from 'core/cfds/react/graph';
-import { useExistingQuery, useQuery2 } from 'core/cfds/react/query';
-import { usePartialVertex } from 'core/cfds/react/vertex';
-import { createUseStrings } from 'core/localization';
-import { LOGIN, useHistoryStatic } from 'core/react-utils/history';
 import React, {
-  MouseEvent,
-  MouseEventHandler,
-  useCallback,
+  useState,
   useMemo,
   useRef,
-  useState,
+  useCallback,
+  useEffect,
 } from 'react';
-import { useWorkspaceColor } from 'shared/workspace-icon';
-import { WorkspaceBarActions } from './actions';
-import localization from './workspace-bar.strings.json';
-import WorkspaceSettingsDialog from './workspace-settings-dialog';
+import * as SetUtils from '../../../../base/set.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { WorkspaceGrouping } from '../../../../cfds/base/scheme-types.ts';
+import { Query } from '../../../../cfds/client/graph/query.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { GroupId } from '../../../../cfds/client/graph/vertex-source.ts';
+import { Role } from '../../../../cfds/client/graph/vertices/role.ts';
+import { User } from '../../../../cfds/client/graph/vertices/user.ts';
+import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
+import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
+import { Button } from '../../../../styles/components/buttons.tsx';
+import Layer from '../../../../styles/components/layer.tsx';
+import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
+import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
+import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
+import Tooltip from '../../../../styles/components/tooltip/index.tsx';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
 import {
-  toggleActionFromEvent,
-  toggleSelectionItem,
-} from './ws-selection-utils';
-import { coreValueCompare } from '@ovvio/cfds/lib/core-types';
-import { Query } from '@ovvio/cfds/lib/client/graph/query';
-import { WorkspaceGrouping } from '@ovvio/cfds/lib/base/scheme-types';
-import { GroupId } from '@ovvio/cfds/lib/client/graph/vertex-source';
-import { kViewPropsGlobal } from '@ovvio/cfds/lib/client/graph/vertices/view';
-import { useEffect } from 'react';
-import { NoteType } from '@ovvio/cfds/lib/client/graph/vertices/note';
+  useTypographyStyles,
+  LabelSm,
+  TextSm,
+} from '../../../../styles/components/typography.tsx';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../styles/layout.ts';
+import {
+  MediaQueries,
+  useCurrentDevice,
+  Devices,
+} from '../../../../styles/responsive.ts';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import { createUniversalPortal } from '../../../../styles/utils/ssr.ts';
+import {
+  usePartialGlobalView,
+  useRootUser,
+  useGraphManager,
+  usePartialRootUser,
+  useActiveViewManager,
+} from '../../core/cfds/react/graph.tsx';
+import { useQuery2 } from '../../core/cfds/react/query.ts';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { createUseStrings } from '../../core/localization/index.tsx';
+import { Scroller } from '../../core/react-utils/scrolling.tsx';
+import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
+import { WorkspaceBarActions } from './actions.tsx';
+import localization from './workspace-bar.strings.json' assert { type: 'json' };
+import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -331,7 +321,7 @@ function WorkspaceGIDToString(gid: WorkspaceGID): string {
   return typeof gid === 'string' ? gid : gid.key;
 }
 
-function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | undefined {
+function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | null {
   const user = ws.graph.getRootVertex<User>();
   if (user.hiddenWorkspaces.has(ws.key)) {
     return 'hidden';
@@ -598,7 +588,7 @@ function WorkspaceListItem({
     [color]
   );
 
-  const textRef = useRef<HTMLDivElement>();
+  const textRef = useRef<HTMLDivElement>(null);
   const isOverflowing =
     textRef.current &&
     textRef.current.offsetWidth < textRef.current.scrollWidth;
@@ -801,7 +791,7 @@ function WorkspacesList({ query }: WorkspaceListProps) {
             {typeof gid === 'string'
               ? expanded
                 ? strings[gid]
-                : strings[gid + 'Short']
+                : strings[`${gid}Short`]
               : gid.getVertexProxy().name}
             {selectedCount > 0 ? ` [${selectedCount}]` : ''}
           </div>
@@ -831,7 +821,7 @@ function WorkspacesList({ query }: WorkspaceListProps) {
 
   return (
     <Scroller>
-      {ref => (
+      {(ref) => (
         <div ref={ref} className={cn(styles.list)}>
           {contents}
         </div>
@@ -877,15 +867,19 @@ function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
 
   const query = useMemo(
     () => {
-      return new Query(graph.sharedQuery('workspaces'), () => true, {
-        groupBy: view.workspaceGrouping
-          ? GROUP_BY[view.workspaceGrouping]
-          : undefined,
-        groupComparator: compareWorkspaceGID,
-        name: 'WorkspaceBar',
-        contentSensitive: true,
-        contentFields: ['isTemplate'],
-      });
+      return new Query<Workspace, Workspace, WorkspaceGID>(
+        graph.sharedQuery('workspaces'),
+        () => true,
+        {
+          groupBy: view.workspaceGrouping
+            ? GROUP_BY[view.workspaceGrouping]
+            : undefined,
+          groupComparator: compareWorkspaceGID,
+          name: 'WorkspaceBar',
+          contentSensitive: true,
+          contentFields: ['isTemplate'],
+        }
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -907,8 +901,7 @@ function WorkspaceBarInternal({
   query: Query<Workspace, Workspace, WorkspaceGID>;
 }) {
   const styles = useStyles();
-  // const user = useRootUser();
-  const eventLogger = useEventLogger();
+  const logger = useLogger();
   const activeViewMgr = useActiveViewManager();
   const view = usePartialGlobalView(
     'selectedWorkspaces',
@@ -920,17 +913,23 @@ function WorkspaceBarInternal({
   const selectAll = useCallback(() => {
     view.selectedWorkspaces = new Set(
       query.transform(
-        ws =>
+        (ws) =>
           shouldAutoSelectWorkspace(
             ws,
             query.groupsForKey(ws.key),
             view.expandedWorkspaceGroups
           ),
-        mgr => mgr.getVertexProxy()
+        (mgr) => mgr.getVertexProxy()
       )
     );
-    eventLogger.action('WORKSPACES_ALL_SELECTED', {});
-  }, [view, eventLogger, query]);
+    logger.log({
+      severity: 'INFO',
+      event: 'FilterChange',
+      type: 'workspace',
+      source: 'bar:workspace',
+      added: 'ALL',
+    });
+  }, [view, logger, query]);
 
   // Clear view settings when no workspace is selected
   useEffect(() => {
@@ -943,8 +942,14 @@ function WorkspaceBarInternal({
 
   const unselectAll = useCallback(() => {
     view.selectedWorkspaces.clear();
-    eventLogger.action('WORKSPACES_ALL_UNSELECTED', {});
-  }, [eventLogger, view]);
+    logger.log({
+      severity: 'INFO',
+      event: 'FilterChange',
+      type: 'workspace',
+      source: 'bar:workspace',
+      removed: 'ALL',
+    });
+  }, [logger, view]);
 
   // const pinWorkspace = (ws: VertexManager<Workspace>, pinned?: boolean) => {
   //   const proxy = user.getVertexProxy();
@@ -991,7 +996,7 @@ function WorkspaceBarInternal({
 
   return (
     <Layer priority={2}>
-      {style => (
+      {(style) => (
         <div
           style={style}
           className={cn(
@@ -1016,7 +1021,9 @@ function WorkspaceBarInternal({
                 }}
               >
                 <CollapseIcon
-                  className={view.workspaceBarCollapsed && styles.rotated}
+                  className={
+                    view.workspaceBarCollapsed ? styles.rotated : undefined
+                  }
                 />
               </Button>
             </div>
@@ -1043,7 +1050,7 @@ function MobileBar({ ...rest }: WorkspacesBarProps) {
 
   return createUniversalPortal(
     <Layer priority={3}>
-      {style => (
+      {(style) => (
         <React.Fragment>
           {!view.workspaceBarCollapsed && (
             <div

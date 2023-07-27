@@ -17,14 +17,13 @@ import {
 } from '../../../../../cfds/client/graph/vertices/view.ts';
 import { useCurrentDevice, Devices } from '../../../../../styles/responsive.ts';
 import VersionMismatchView from '../../../app/version-mismatch/index.tsx';
-import { CurrentUser } from '../../../stores/user.ts';
-import { usePartialVertex } from './vertex.ts';
+import { usePartialVertex, useVertex } from './vertex.ts';
 import { useLogger } from './logger.tsx';
+import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
   sessionId?: string;
-  user?: CurrentUser;
 };
 
 export const CFDSContext = React.createContext<ContextProps>({});
@@ -46,6 +45,31 @@ export function usePartialRootUser<K extends keyof User = keyof User>(
   ...keys: K[]
 ) {
   return usePartialVertex(useRootUser(), keys);
+}
+
+export function usePartialCurrentUser<K extends keyof User>(keys?: K[]) {
+  const graph = useGraphManager();
+  return usePartialVertex(graph.getRootVertexManager<User>(), keys || []);
+}
+
+export function useCurrentUser(): User {
+  const graph = useGraphManager();
+  return useVertex(graph.getRootVertexManager<User>());
+}
+
+export function useUserSettings(): UserSettings {
+  const u = usePartialCurrentUser(['settings']);
+  return useVertex(u.settings.manager as VertexManager<UserSettings>);
+}
+
+export function usePartialUserSettings<K extends keyof UserSettings>(
+  keys?: K[]
+) {
+  const u = usePartialCurrentUser(['settings']);
+  return usePartialVertex(
+    u.settings.manager as VertexManager<UserSettings>,
+    keys || []
+  );
 }
 
 export function useCfdsContext(): ContextProps {

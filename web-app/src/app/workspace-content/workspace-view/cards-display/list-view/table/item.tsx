@@ -22,12 +22,14 @@ import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts
 import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
 import IconDelete from '../../../../../../../../styles/components/icons/IconDelete.tsx';
-import IconDueDate from '../../../../../../../../styles/components/icons/IconDueDate.tsx';
 import IconNote from '../../../../../../../../styles/components/icons/IconNote.tsx';
 import CheckBox from '../../../../../../../../styles/components/inputs/CheckBox.tsx';
 import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
 import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
-import { DueDateState } from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import {
+  IconDueDate,
+  DueDateState,
+} from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { useToastController } from '../../../../../../../../styles/components/toast/index.tsx';
@@ -858,7 +860,7 @@ const DateCell = ({ note }: { note: VertexManager<Note> }) => {
     'isChecked',
   ]);
   let content = null;
-  const isLate = dueDate < new Date() && !isChecked;
+  const isLate = dueDate instanceof Date && dueDate < new Date() && !isChecked;
 
   if (dueDate) {
     content = (
@@ -922,7 +924,7 @@ const MenuCell = ({ note }: { note: VertexManager<Note> }) => {
         styles[GridColumns.Menu]
       )}
     >
-      <CardMenuView cardManager={note} source={CARD_SOURCE.LIST} />
+      <CardMenuView cardManager={note} source="list" />
     </Cell>
   );
 };

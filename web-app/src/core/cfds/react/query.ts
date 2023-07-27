@@ -10,10 +10,7 @@ import {
   NS_NOTES,
   NS_TAGS,
 } from '../../../../../cfds/base/scheme-types.ts';
-import {
-  GraphManager,
-  CacheLoadingStatus,
-} from '../../../../../cfds/client/graph/graph-manager.ts';
+import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import {
   SortDescriptor,
   Query,
@@ -221,12 +218,27 @@ export function useQuery2<
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
+  GT extends CoreValue = CoreValue
+>(
+  queryOrName: Query<IT, OT, GT> | undefined,
+  closeOnCleanup?: boolean
+): Query<IT, OT, GT> | undefined;
+
+export function useQuery2<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue
+>(queryOrName: undefined, closeOnCleanup: boolean): undefined;
+
+export function useQuery2<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
   GT extends CoreValue = CoreValue,
   T extends SharedQueryName | undefined = undefined
 >(
-  queryOrName: Query<IT, OT, GT> | T,
+  queryOrName: Query<IT, OT, GT> | T | undefined,
   closeOnCleanup = true
-): Query<IT, OT, GT> | SharedQueryResultType<T> {
+): Query<IT, OT, GT> | SharedQueryResultType<T> | undefined {
   const [_, setCounter] = useState(0);
   const graph = useGraphManager();
   if (typeof queryOrName === 'string') {

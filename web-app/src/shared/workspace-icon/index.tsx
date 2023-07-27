@@ -17,8 +17,8 @@ import { usePartialVertex, useVertex } from '../../core/cfds/react/vertex.ts';
 import { UserSettings } from '../../../../cfds/client/graph/vertices/user-settings.ts';
 import { useSharedQuery } from '../../core/cfds/react/query.ts';
 import {
-  KeyFromVertexId,
   VertexId,
+  VertexIdGetKey,
 } from '../../../../cfds/client/graph/vertex.ts';
 import { randomInt } from '../../../../logging/stream.ts';
 import { assert } from '../../../../base/error.ts';
@@ -119,7 +119,7 @@ export function useWorkspaceColor(
   workspaceId: VertexId<Workspace>
 ): WorkspaceColor {
   const graph = useGraphManager();
-  const workspaceKey = KeyFromVertexId(workspaceId);
+  const workspaceKey = VertexIdGetKey(workspaceId);
   const colorMap = usePartialUserSettings(['workspaceColors']).workspaceColors;
   const workspacesQuery = useSharedQuery('workspaces');
 

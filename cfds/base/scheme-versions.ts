@@ -23,6 +23,7 @@ import {
   SchemeNamespace,
   TYPE_REF_MAP,
   NS_VIEWS,
+  NS_USER_SETTINGS,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { isString } from '../../base/comparisons.ts';
@@ -134,6 +135,41 @@ const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   onboardingStep: {
     type: TYPE_NUMBER,
     init: () => OnboardingStep.Start,
+  },
+});
+
+const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
+  'lastLoggedIn',
+  'workspaces',
+  'workspaceColors',
+  'hiddenWorkspaces',
+  'pinnedWorkspaces',
+  'onboardingStep',
+  'seenTutorials',
+]);
+
+const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
+  passwordHash: TYPE_STR, // Hash + salt
+  lastLoggedIn: TYPE_DATE,
+  seenTutorials: {
+    type: TYPE_STR_SET,
+    default: () => new Set<string>(),
+  },
+  workspaceColors: {
+    type: TYPE_MAP,
+    default: () => new Map<string, number>(),
+  },
+  hiddenWorkspaces: {
+    type: TYPE_STR_SET,
+    default: () => new Set<string>(),
+  },
+  pinnedWorkspaces: {
+    type: TYPE_SET,
+    default: () => new Set<string>(),
+  },
+  onboardingStep: {
+    type: TYPE_NUMBER,
+    default: () => OnboardingStep.Start,
   },
 });
 
@@ -355,6 +391,39 @@ export function runRegister(manager: ISchemeManagerRegister) {
     [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_ROLE_1, SCHEME_VIEW_1],
     [SchemeNamespace.INVITES, SchemeNamespace.TAGS, SchemeNamespace.USERS],
     (namespace, data) => {}
+  );
+
+  //V6
+  manager.register(
+    6,
+    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1],
+    [
+      SchemeNamespace.NOTES,
+      SchemeNamespace.TAGS,
+      SchemeNamespace.WORKSPACE,
+      SchemeNamespace.VIEWS,
+    ],
+    (namespace, data) => {
+      if (namespace === NS_TAGS) {
+        delete data.color;
+        delete data.workspace;
+        delete data.createdBy;
+      } else if (namespace === NS_USERS) {
+        delete data.lastLoggedIn;
+        delete data.workspaces;
+        delete data.workspaceColors;
+        delete data.hiddenWorkspaces;
+        delete data.pinnedWorkspaces;
+        delete data.onboardingStep;
+        delete data.seenTutorials;
+      } else if (namespace === NS_WORKSPACE) {
+        delete data.noteTags;
+        delete data.taskTags;
+        delete data.createdBy;
+      } else if (namespace === NS_NOTES) {
+        delete data.status;
+      }
+    }
   );
 
   //Next Version Here

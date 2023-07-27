@@ -16,6 +16,16 @@ export function intersection<T>(s1: Set<T>, s2: Set<T>): Set<T> {
   return result;
 }
 
+export function intersectionSize<T>(s1: Set<T>, s2: Iterable<T>): number {
+  let count = 0;
+  for (const v of s2) {
+    if (s1.has(v)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 export function intersects<T>(s1: Set<T>, s2: Set<T>): boolean {
   // Make sure s1 is the smaller of the two sets
   if (s1.size > s2.size) {
