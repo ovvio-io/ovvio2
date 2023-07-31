@@ -61,13 +61,13 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   private readonly _updateHeadStatement: Statement;
   private readonly _deleteRefStatement: Statement;
   private readonly _putRefStatement: Statement;
-  private readonly _putCommitTxn: Transaction<
-    [
-      commits: Iterable<Commit>,
-      repo: Repository<SQLiteRepoStorage>,
-      outCommits: Commit[]
-    ]
-  >;
+  // private readonly _putCommitTxn: Transaction<
+  //   [
+  //     commits: Iterable<Commit>,
+  //     repo: Repository<SQLiteRepoStorage>,
+  //     outCommits: Commit[]
+  //   ]
+  // >;
 
   constructor(path?: string) {
     if (path) {
@@ -121,32 +121,63 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     this._deleteRefStatement = db.prepare(
       `DELETE FROM refs WHERE src = :src AND dst = :dst`
     );
-    this._putCommitTxn = db.transaction(([commits, repo, outCommits]) => {
-      // First, check we haven't already persisted this commit
-      for (const newCommit of commits) {
-        if (this._getCommitStatement.values({ id: newCommit.id }).length > 0) {
-          continue;
-        }
-        const { key, session } = newCommit;
-        const headId = this.headIdForKey(key);
-        const head = headId ? this.getCommit(headId) : undefined;
-        const newHead = repo.headForKey(key, session, newCommit)!;
-        // Persist our commit to the commits table
-        this._putCommitStatement.run({
-          id: newCommit.id,
-          key: newCommit.key,
-          ts: newCommit.timestamp.getTime(),
-          json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
-        });
-        outCommits.push(newCommit);
-        // Skip aux tables update if our head hasn't changed (if this is an
-        // historic commit that was missed).
-        if (headId === newHead?.id) {
-          continue;
-        }
-        this.updateHead(repo, head, newHead);
+    // this._putCommitTxn = db.transaction(([commits, repo, outCommits]) => {
+    //   // First, check we haven't already persisted this commit
+    //   for (const newCommit of commits) {
+    //     if (this._getCommitStatement.values({ id: newCommit.id }).length > 0) {
+    //       continue;
+    //     }
+    //     const { key, session } = newCommit;
+    //     const headId = this.headIdForKey(key);
+    //     const head = headId ? this.getCommit(headId) : undefined;
+    //     const newHead = repo.headForKey(key, session, newCommit)!;
+    //     // Persist our commit to the commits table
+    //     this._putCommitStatement.run({
+    //       id: newCommit.id,
+    //       key: newCommit.key,
+    //       ts: newCommit.timestamp.getTime(),
+    //       json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
+    //     });
+    //     outCommits.push(newCommit);
+    //     // Skip aux tables update if our head hasn't changed (if this is an
+    //     // historic commit that was missed).
+    //     if (headId === newHead?.id) {
+    //       continue;
+    //     }
+    //     this.updateHead(repo, head, newHead);
+    //   }
+    // });
+  }
+
+  private putCommitInTxn(
+    commits: Iterable<Commit>,
+    repo: Repository<SQLiteRepoStorage>,
+    outCommits: Commit[]
+  ): void {
+    // First, check we haven't already persisted this commit
+    for (const newCommit of commits) {
+      if (this._getCommitStatement.values({ id: newCommit.id }).length > 0) {
+        continue;
       }
-    });
+      const { key, session } = newCommit;
+      const headId = this.headIdForKey(key);
+      const head = headId ? this.getCommit(headId) : undefined;
+      const newHead = repo.headForKey(key, session, newCommit)!;
+      // Persist our commit to the commits table
+      this._putCommitStatement.run({
+        id: newCommit.id,
+        key: newCommit.key,
+        ts: newCommit.timestamp.getTime(),
+        json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
+      });
+      outCommits.push(newCommit);
+      // Skip aux tables update if our head hasn't changed (if this is an
+      // historic commit that was missed).
+      if (headId === newHead?.id) {
+        continue;
+      }
+      this.updateHead(repo, head, newHead);
+    }
   }
 
   numberOfCommits(): number {
@@ -192,7 +223,11 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   ): Iterable<Commit> {
     const persistedCommits: Commit[] = [];
     for (const s of slices(commits, 100)) {
-      this._putCommitTxn([s, repo, persistedCommits]);
+      this.db
+        .transaction(() => {
+          this.putCommitInTxn(s, repo, persistedCommits);
+        })
+        .immediate(undefined);
     }
     return persistedCommits;
   }

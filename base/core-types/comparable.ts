@@ -1,3 +1,4 @@
+import { Vertex } from '../../cfds/client/graph/vertex.ts';
 import { notReached } from '../error.ts';
 import { CoreOptions, CoreType, CoreValue } from './base.ts';
 import { encodableValueHash } from './encoding/hash.ts';
@@ -105,15 +106,20 @@ export function coreValueCompare(
       }
       break;
     case CoreType.ClassObject: {
-      if (isComparable(v1)) {
+      if (
+        isComparable(v1) &&
+        isComparable(v2) &&
+        objectsShareAncestorClass(v1, v2)
+      ) {
         // if (v1.constructor === v2?.constructor) {
         //   return v1.compare(v2);
         // }
-        if (v2 instanceof v1.constructor) {
-          return v1.compare(v2);
-        } else if (v1 instanceof v2!.constructor) {
-          return -1 * (v2 as Comparable).compare(v1);
-        }
+        // if (v2 instanceof v1.constructor) {
+        //   return v1.compare(v2);
+        // } else if (v1 instanceof v2!.constructor) {
+        //   return -1 * (v2 as Comparable).compare(v1);
+        // }
+        return v1.compare(v2);
       }
 
       if (isEquatable(v1) && v1.constructor === v2?.constructor) {
@@ -194,4 +200,29 @@ function coreIterableCompare(
     val1 = iter1.next();
     val2 = iter2.next();
   }
+}
+
+export function objectsShareAncestorClass(obj1: any, obj2: any): boolean {
+  if (typeof obj1 !== 'object' && typeof obj2 !== 'object') {
+    return false;
+  }
+  const obj1Constructors = [];
+  for (
+    let parent = obj1.constructor;
+    parent.constructor !== Object;
+    parent = Object.getPrototypeOf(parent)
+  ) {
+    obj1Constructors.push(parent);
+  }
+
+  for (
+    let parent = obj2.constructor;
+    parent.constructor !== Object;
+    parent = Object.getPrototypeOf(parent)
+  ) {
+    if (obj1Constructors.includes(parent)) {
+      return true;
+    }
+  }
+  return false;
 }

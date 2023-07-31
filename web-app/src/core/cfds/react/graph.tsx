@@ -3,6 +3,7 @@ import {
   NS_ROLES,
   encodeTagId,
   SchemeNamespace,
+  NS_USERS,
 } from '../../../../../cfds/base/scheme-types.ts';
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -107,7 +108,20 @@ export function CfdsClientProvider({
   const device = useCurrentDevice();
 
   const graphManager = useMemo(() => {
-    const manager = new GraphManager(userKey, (key) => key !== sessionPtrKey);
+    const manager = new GraphManager(
+      userKey,
+      (key) => key !== sessionPtrKey,
+      'http://localhost:8080'
+    );
+
+    manager.createVertex(
+      NS_USERS,
+      {
+        email: 'ofri@ovvio.io',
+        name: 'Ofri',
+      },
+      manager.rootKey
+    );
 
     manager.createVertex(
       NS_ROLES,

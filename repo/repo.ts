@@ -335,13 +335,15 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
     assert(commitContentsIsRecord(fullCommit.contents));
+    return fullCommit;
     const key = fullCommit.key;
     const lastRecordCommit = this.lastRecordCommitForKey(key);
     let deltaCommit: Commit | undefined;
     if (lastRecordCommit) {
       const baseRecord = this.recordForCommit(lastRecordCommit);
+      const changes = baseRecord.diff(fullCommit.contents.record, false);
       const edit = new Edit({
-        changes: baseRecord.diff(fullCommit.contents.record, false),
+        changes: changes,
         srcChecksum: baseRecord.checksum,
         dstChecksum: fullCommit.contentsChecksum,
       });
@@ -397,7 +399,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   repositoryIdForCommit(c: Commit | string): string {
     const record = this.recordForCommit(c);
-    const repoFieldName = record.scheme.repositoryFieldName;
+    const repoFieldName = record.repositoryId;
     if (repoFieldName === kRecordIdField) {
       const commit = typeof c === 'string' ? this.getCommit(c) : c;
       assert(commit !== undefined && commit.key !== undefined);

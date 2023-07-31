@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase, { IconProps } from './IconBase.tsx';
 
 const IconDropDownArrow = ({ fill = '#11082B', className = '' }: IconProps) => (

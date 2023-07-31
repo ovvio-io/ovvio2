@@ -16,17 +16,20 @@ interface Arguments {
 
 enum Command {
   Exit = 1,
+  Q = Exit,
   Help,
   Sync,
   Get,
   Put,
   Putf,
   List,
+  Ls = List,
   Stats,
 }
 
 const kCliManual: Manual<keyof typeof Command> = {
   Exit: 'Terminate this CLI',
+  Q: 'Shorthand for Exit',
   Help: 'Print this help page',
   Sync: 'Sync with the remote server',
   Get: {
@@ -48,6 +51,7 @@ const kCliManual: Manual<keyof typeof Command> = {
     desc: 'Create/replace the record for a given key with a record encoded as JSON file',
   },
   List: 'List all keys in the repository',
+  Ls: 'Shorthand for list',
   Stats: 'Print statistics about the repository',
 };
 
@@ -185,14 +189,15 @@ const kExitKeywords = ['Q', 'Quit', 'Exit'];
 
 function readCommand(): [Command, string[]] {
   while (true) {
-    let input = (prompt('Enter command:') || '').trim().toLocaleLowerCase();
+    let input = (prompt('Enter command:') || '').trim();
     if (input.startsWith('"')) {
       input = input.substring(1, input.length - 1);
     }
     input = input.replaceAll('\\', '');
     const args = input.split(/\s+/);
     // Capitalize first letter
-    const cmd = args[0][0].toUpperCase() + args[0].substring(1);
+    const cmd =
+      args[0][0].toUpperCase() + args[0].substring(1).toLocaleLowerCase();
     if (kExitKeywords.indexOf(input) > -1) {
       return [Command.Exit, args];
     }

@@ -8,6 +8,7 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
 import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
+import { usePartialView } from '../../core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -57,16 +58,17 @@ export const CreateWorkspaceView = ({
 }: CreateWorkspaceViewProps) => {
   const styles = useStyles();
   const navigate = useNavigate();
+  const view = usePartialView('selectedWorkspaces');
 
-  // const onCreated = useCallback(
-  //   (result: VertexManager<Workspace>) => {
-  //     setWs(result);
-  //     if (onWorkspaceCreated) {
-  //       onWorkspaceCreated(result.key);
-  //     }
-  //   },
-  //   [setWs]
-  // );
+  const onCreated = useCallback(
+    (result: VertexId<Workspace>) => {
+      view.clearContentsDisplaySettings();
+      view.clearFilters();
+      view.selectedWorkspaces.add(view.graph.getVertex<Workspace>(result));
+      navigate('/');
+    },
+    [view, navigate]
+  );
 
   const closeView = useCallback(() => {
     navigate('/login');
@@ -82,7 +84,7 @@ export const CreateWorkspaceView = ({
           ) : ( */}
           <WorkspaceForm
             source={source}
-            onWorkspaceCreated={onWorkspaceCreated || ((_) => {})}
+            onWorkspaceCreated={onWorkspaceCreated || onCreated}
           />
           {/* )} */}
         </div>

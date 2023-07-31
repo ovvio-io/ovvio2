@@ -25,7 +25,7 @@ export class Role extends BaseVertex {
         }
       }
     }
-    return this.vertSetForField('assignees');
+    return result;
   }
 
   set assignees(assignees: Set<User>) {
@@ -54,7 +54,7 @@ export class Role extends BaseVertex {
         }
       }
     }
-    return this.vertSetForField('users');
+    return result;
   }
 
   set users(users: Set<User>) {

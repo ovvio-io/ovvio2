@@ -1,5 +1,3 @@
-import * as SetUtils from '../../../../base/set.ts';
-import { OnboardingStep } from '../../../base/scheme-versions.ts';
 import { Vertex } from '../vertex.ts';
 
 export class UserSettings extends Vertex {
@@ -31,25 +29,6 @@ export class UserSettings extends Vertex {
     }
   }
 
-  get seenTutorials(): Set<string> {
-    const seenTutorials = this.record.get('seenTutorials') as Set<string>;
-    if (seenTutorials === undefined || seenTutorials.size === 0) {
-      return new Set<string>();
-    }
-
-    const copy = SetUtils.map(seenTutorials, (v) => v);
-    return copy;
-  }
-
-  set seenTutorials(set: Set<string>) {
-    const copy = SetUtils.map(set, (v) => v);
-    this.record.set('seenTutorials', copy);
-  }
-
-  clearSeenTutorials(): void {
-    this.record.set('seenTutorials', new Set());
-  }
-
   get workspaceColors(): Map<string, number> {
     const workspaceColors = this.record.get('workspaceColors') as Map<
       string,
@@ -69,7 +48,7 @@ export class UserSettings extends Vertex {
   }
 
   get hiddenWorkspaces(): Set<string> {
-    return this.record.get('hiddenWorkspaces');
+    return this.record.get('hiddenWorkspaces') || new Set();
   }
 
   set hiddenWorkspaces(set: Set<string>) {
@@ -77,18 +56,10 @@ export class UserSettings extends Vertex {
   }
 
   get pinnedWorkspaces(): Set<string> {
-    return this.record.get('pinnedWorkspaces');
+    return this.record.get('pinnedWorkspaces') || new Set();
   }
 
   set pinnedWorkspaces(set: Set<string>) {
     this.record.set('pinnedWorkspaces', new Set(set));
-  }
-
-  get onboardingStep(): OnboardingStep {
-    return this.record.get('onboardingStep', OnboardingStep.Start);
-  }
-
-  set onboardingStep(step: OnboardingStep) {
-    this.record.set('onboardingStep', step);
   }
 }

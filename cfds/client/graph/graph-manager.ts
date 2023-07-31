@@ -164,7 +164,6 @@ export class GraphManager extends VertexSource {
 
     // Automatically init the directory as everything depends on its presence.
     this.repository('/sys/dir');
-    this._createVertIfNeeded(this._rootKey);
   }
 
   close(): void {
@@ -399,6 +398,7 @@ export class GraphManager extends VertexSource {
     this._processPendingMutationsTimer.schedule();
     // this.emit(EVENT_VERTEX_DID_CHANGE, key, pack, refsChange);
     this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
+    // this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
   }
 
   private _processPendingMutations(): void {

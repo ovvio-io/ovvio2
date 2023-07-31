@@ -1,26 +1,11 @@
-import * as SetUtils from '../../../../base/set.ts';
-import { Workspace } from './workspace.ts';
 import { BaseVertex } from './base.ts';
-import { VertexManager } from '../vertex-manager.ts';
-import { Vertex, VertexConfig } from '../vertex.ts';
-import { OnboardingStep } from '../../../base/scheme-versions.ts';
+import { Vertex } from '../vertex.ts';
 import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { UserSettings } from './user-settings.ts';
 import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
 
 export class User extends BaseVertex {
-  constructor(
-    mgr: VertexManager,
-    prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
-  ) {
-    super(mgr, prevVertex, config);
-    if (prevVertex && prevVertex instanceof User) {
-      this.selected = prevVertex.selected;
-    }
-  }
-
   compare(other: Vertex): number {
     if (other instanceof User) {
       if (this.isRoot) {
@@ -84,78 +69,28 @@ export class User extends BaseVertex {
     this.record.delete('name');
   }
 
-  selected: boolean = false;
-  clearSelected() {
-    this.selected = false;
-  }
-
-  get workspaces(): Set<Workspace> {
-    return this.vertSetForField('workspaces');
-  }
-
-  set workspaces(s: Set<Workspace>) {
-    this.record.set(
-      'workspaces',
-      SetUtils.map(s, (ws: Workspace) => ws.key)
-    );
-  }
-
-  clearWorkspaces(): void {
-    this.record.set('workspaces', new Set());
-  }
-
-  get seenTutorials(): Set<string> {
-    const seenTutorials = this.record.get('seenTutorials') as Set<string>;
-    if (seenTutorials === undefined || seenTutorials.size === 0) {
-      return new Set<string>();
-    }
-
-    const copy = SetUtils.map(seenTutorials, (v) => v);
-    return copy;
-  }
-
-  set seenTutorials(set: Set<string>) {
-    const copy = SetUtils.map(set, (v) => v);
-    this.record.set('seenTutorials', copy);
-  }
-
-  clearSeenTutorials(): void {
-    this.record.set('seenTutorials', new Set());
-  }
-
   get workspaceColors(): Map<string, number> {
-    const workspaceColors =
-      this.record.get<Map<string, number>>('workspaceColors');
-    return new Map(workspaceColors || []);
+    return this.settings.workspaceColors;
   }
 
   set workspaceColors(map: Map<string, number>) {
-    const copy = new Map(map.entries());
-    this.record.set('workspaceColors', copy);
+    this.settings.workspaceColors = map;
   }
 
   get hiddenWorkspaces(): Set<string> {
-    return this.record.get('hiddenWorkspaces') || new Set();
+    return this.settings.hiddenWorkspaces;
   }
 
   set hiddenWorkspaces(set: Set<string>) {
-    this.record.set('hiddenWorkspaces', new Set(set));
+    this.settings.hiddenWorkspaces = set;
   }
 
   get pinnedWorkspaces(): Set<string> {
-    return this.record.get('pinnedWorkspaces') || new Set();
+    return this.settings.pinnedWorkspaces;
   }
 
   set pinnedWorkspaces(set: Set<string>) {
-    this.record.set('pinnedWorkspaces', new Set(set));
-  }
-
-  get onboardingStep(): OnboardingStep {
-    return this.record.get('onboardingStep', OnboardingStep.Start);
-  }
-
-  set onboardingStep(step: OnboardingStep) {
-    this.record.set('onboardingStep', step);
+    this.settings.pinnedWorkspaces = set;
   }
 
   get settings(): UserSettings {

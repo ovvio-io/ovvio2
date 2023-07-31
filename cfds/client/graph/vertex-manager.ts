@@ -1,5 +1,5 @@
 import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
-import { Record } from '../../base/record.ts';
+import { Record, RecordValueWrapper } from '../../base/record.ts';
 import { Scheme } from '../../base/scheme.ts';
 import { GraphManager } from './graph-manager.ts';
 import {
@@ -14,11 +14,12 @@ import {
   Comparable,
   CoreObject,
   CoreValue,
-  coreValueCompare,
   coreValueEquals,
   coreValueClone,
   Equatable,
   ReadonlyCoreObject,
+  Clonable,
+  CoreValueCloneOpts,
 } from '../../../base/core-types/index.ts';
 import vertexBuilder from './vertices/vertex-builder.ts';
 import { SimpleTimer } from '../../../base/timer.ts';
@@ -32,11 +33,7 @@ import {
   VertexConfig,
 } from './vertex.ts';
 import * as SetUtils from '../../../base/set.ts';
-import {
-  DataType,
-  kRecordIdField,
-  NS_WORKSPACE,
-} from '../../base/scheme-types.ts';
+import { DataType, kRecordIdField } from '../../base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
 
@@ -624,7 +621,7 @@ function projectRichTextPointers(
 
 type DidMutateCallback<T> = (oldValue: T) => void;
 
-class SetProxy<T> {
+class SetProxy<T> implements Clonable, Equatable, RecordValueWrapper<Set<T>> {
   _target: Set<T>;
   private readonly _didMutateCallback: DidMutateCallback<Set<T>>;
 
@@ -633,12 +630,16 @@ class SetProxy<T> {
     this._didMutateCallback = didMutateCallback;
   }
 
+  clone(opts?: CoreValueCloneOpts | undefined): this {
+    return new Set(this._target) as unknown as this;
+  }
+
   get size() {
     return this._target.size;
   }
 
   [Symbol.iterator]() {
-    return this._target[Symbol.iterator];
+    return this._target[Symbol.iterator]();
   }
 
   add(v: T): Set<T> {
@@ -687,9 +688,19 @@ class SetProxy<T> {
   values() {
     return this._target.values();
   }
+
+  isEqual(other: any): boolean {
+    return other instanceof SetProxy && other._target === this._target;
+  }
+
+  __wrappedValueForRecord() {
+    return this._target;
+  }
 }
 
-class DictionaryProxy<K, V> {
+class DictionaryProxy<K, V>
+  implements Clonable, Equatable, RecordValueWrapper<Dictionary<K, V>>
+{
   readonly _target: Dictionary<K, V>;
   private readonly _didMutateCallback: DidMutateCallback<Dictionary<K, V>>;
 
@@ -699,6 +710,10 @@ class DictionaryProxy<K, V> {
   ) {
     this._target = target;
     this._didMutateCallback = callback;
+  }
+
+  clone(opts?: CoreValueCloneOpts | undefined): this {
+    return new Map(this._target) as unknown as this;
   }
 
   get size() {
@@ -727,7 +742,12 @@ class DictionaryProxy<K, V> {
 
   set(key: K, value: V): void {
     const target = this._target;
-    if (!coreValueEquals(target.get(key) as CoreValue, value as CoreValue)) {
+    if (
+      !coreValueEquals(
+        target.get(key) as unknown as CoreValue,
+        value as unknown as CoreValue
+      )
+    ) {
       const oldValue = new Map(target);
       target.set(key, value);
       this._didMutateCallback(oldValue);
@@ -750,5 +770,17 @@ class DictionaryProxy<K, V> {
       this._target.clear();
       this._didMutateCallback(oldValue);
     }
+  }
+
+  isEqual(other: any): boolean {
+    return other instanceof DictionaryProxy && other._target === this._target;
+  }
+
+  __wrappedValueForRecord() {
+    return this._target;
+  }
+
+  [Symbol.iterator]() {
+    return this._target[Symbol.iterator]();
   }
 }
