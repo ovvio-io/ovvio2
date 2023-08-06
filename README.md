@@ -27,7 +27,7 @@ Debug run:
 The admin CLI allows you to connect to a specific repository, replicate it
 locally, and perform manual manipulation of the repository data.
 
-`deno run -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>`
+`deno run -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>/sync`
 
 The CLI will immediately replicate the remote repository locally, then enter
 an interactive mode.
