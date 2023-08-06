@@ -462,7 +462,10 @@ export class Query<
   }
 
   onResultsChanged(handler: () => void): () => void {
-    this.on(EVENT_QUERY_RESULTS_CHANGED, handler);
+    this.on(EVENT_QUERY_RESULTS_CHANGED, () => {
+      if (this.name === 'WorkspaceBar') debugger;
+      handler();
+    });
     return () => {
       this.off(EVENT_QUERY_RESULTS_CHANGED, handler);
     };

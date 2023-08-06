@@ -314,13 +314,13 @@ function buildQuery<GT extends CoreValue>(
 
   for (const tagId of view.selectedTagIds) {
     const [parent, child] = decodeTagId(tagId);
-    const arr = tagNames.get(parent);
+    const arr = tagNames.get(parent!);
     if (arr) {
-      if (!arr.includes(child)) {
-        arr.push(child);
+      if (!arr.includes(child!)) {
+        arr.push(child!);
       }
     } else {
-      tagNames.set(parent, [child]);
+      tagNames.set(parent!, [child!]);
     }
   }
 

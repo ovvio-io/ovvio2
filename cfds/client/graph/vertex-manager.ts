@@ -1,4 +1,3 @@
-import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
 import { Record, RecordValueWrapper } from '../../base/record.ts';
 import { Scheme } from '../../base/scheme.ts';
 import { GraphManager } from './graph-manager.ts';
@@ -36,6 +35,7 @@ import * as SetUtils from '../../../base/set.ts';
 import { DataType, kRecordIdField } from '../../base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
+import { Emitter } from '../../../base/emitter.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -79,8 +79,12 @@ interface DynamicFieldsSnapshot {
 
 let gVertexBuilder: VertexBuilder = vertexBuilder;
 
+export type VertexManagerEvent =
+  | typeof EVENT_DID_CHANGE
+  | typeof EVENT_CRITICAL_ERROR;
+
 export class VertexManager<V extends Vertex = Vertex>
-  extends EventEmitter
+  extends Emitter<VertexManagerEvent>
   implements Comparable<VertexManager>, Equatable<VertexManager>
 {
   private readonly _graph: GraphManager;
@@ -118,7 +122,6 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     this._record = initialState || Record.nullRecord();
     this.rebuildVertex();
-    this.reportInitialFields(true);
     if (hasInitialState) {
       this.commit();
     }
@@ -251,9 +254,9 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   onVertexChanged(callback: (mutations: MutationPack) => void): () => void {
-    this.on(EVENT_DID_CHANGE, callback);
+    this.attach(EVENT_DID_CHANGE, callback);
     return () => {
-      this.off(EVENT_DID_CHANGE, callback);
+      this.detach(EVENT_DID_CHANGE, callback);
     };
   }
 

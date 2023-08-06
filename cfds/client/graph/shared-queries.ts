@@ -102,7 +102,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     ).lock();
     this.workspaces = new Query<Vertex, Workspace>(
       this.noNotes,
-      (vert) => vert.namespace === NS_WORKSPACE,
+      (vert) => vert instanceof Workspace,
       undefined,
       'SharedWorkspaces'
     ).lock();

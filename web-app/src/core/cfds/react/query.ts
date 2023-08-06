@@ -172,9 +172,7 @@ export function useIsGraphLoading() {
     }
   }, [graph]);
 
-  const rootUser = usePartialVertex(graph.getRootVertexManager(), [
-    'isLoading',
-  ]);
+  const rootUser = usePartialVertex(graph.getRootVertexManager(), []);
 
   const [notDeletedLoading, setNotDeletedLoading] = useState(
     graph.sharedQuery('notDeleted').isLoading
@@ -198,7 +196,7 @@ export function useIsGraphLoading() {
     };
   }, [graph]);
 
-  return loading || graph.isLoading || rootUser.isLoading || notDeletedLoading; // || query.count > 0;
+  return loading || graph.isLoading || rootUser.isNull || notDeletedLoading; // || query.count > 0;
 }
 
 type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =
@@ -239,35 +237,39 @@ export function useQuery2<
   queryOrName: Query<IT, OT, GT> | T | undefined,
   closeOnCleanup = true
 ): Query<IT, OT, GT> | SharedQueryResultType<T> | undefined {
-  const [_, setCounter] = useState(0);
   const graph = useGraphManager();
   if (typeof queryOrName === 'string') {
     queryOrName = graph.sharedQueriesManager[queryOrName] as unknown as T;
   }
   assert(queryOrName instanceof Query || typeof queryOrName === 'undefined');
   const query = queryOrName as Query<IT, OT, GT>;
+  // if (query.name === 'WorkspaceBar') debugger;
+  const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(undefined);
   useEffect(() => {
+    // if (query?.name === 'WorkspaceBar') debugger;
     if (!query) {
       return;
     }
-    // const startTime = Date.now();
+
     const cleanup = query.onResultsChanged(() => {
       // Wait a bit while queries are loading before showing intermediate
       // results. This prevents redundant UI refreshes and keeps everything
       // smooth.
       // if (!query.isLoading || Date.now() - startTime > 500) {
-      setCounter((x) => x + 1);
+      if (query.name === 'WorkspaceBar') debugger;
+      setProxy(new Proxy(query, {}));
       // }
     });
+    setProxy(new Proxy(query, {}));
+    // const startTime = Date.now();
     return () => {
       cleanup();
       if (closeOnCleanup && !query.isLocked) {
         query.close();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, closeOnCleanup]);
-  return query;
+  return proxy || query;
 }
 
 export function useSharedQuery<T extends SharedQueryName>(

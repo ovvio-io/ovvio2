@@ -385,6 +385,10 @@ export class GraphManager extends VertexSource {
         this._vertexDidChange(key, pack, refsChange)
     );
     mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
+    const session = this._session;
+    mgr.reportInitialFields(
+      mgr.repository?.headForKey(mgr.key, session)?.session === session
+    );
   }
 
   private _vertexDidChange(
@@ -397,7 +401,6 @@ export class GraphManager extends VertexSource {
     pendingMutations.set(key, pack);
     this._processPendingMutationsTimer.schedule();
     // this.emit(EVENT_VERTEX_DID_CHANGE, key, pack, refsChange);
-    this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
     // this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
   }
 
@@ -417,7 +420,6 @@ export class GraphManager extends VertexSource {
       this._undoManager.update(mutations);
 
       this._executedFieldTriggers.clear();
-
       for (const [key, pack] of pendingMutations) {
         this.emit(EVENT_VERTEX_CHANGED, key, pack);
       }

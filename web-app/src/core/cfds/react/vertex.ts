@@ -11,6 +11,7 @@ import {
 import { Vertex, VertexId } from '../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { useGraphManager } from './graph.tsx';
+import { EVENT_VERTEX_CHANGED } from '../../../../../cfds/client/graph/vertex-source.ts';
 
 interface OnChangeOpts {
   errorCallback?: () => void;
@@ -36,7 +37,7 @@ const EMPTY_OPTS: OnChangeOpts = {};
 function register(
   manager: VertexManager | undefined | null,
   onChange: VertexListenerCallback,
-  keys?: readonly string[],
+  vertexKeys?: readonly string[],
   opts: OnChangeOpts = EMPTY_OPTS
 ): void | (() => void | undefined) {
   if (manager === undefined || manager === null) {
@@ -49,8 +50,11 @@ function register(
   /***
    * mgr.on(EVENT_DID_CHANGE, (pack: MutationPack) =>
    */
-  const callback = (pack: MutationPack) => {
-    let didChange = !keys || keys.length <= 0;
+  const callback = (key: string, pack: MutationPack) => {
+    if (key !== manager.key) {
+      return;
+    }
+    let didChange = !vertexKeys || vertexKeys.length <= 0;
 
     // if (isRevokedProxy(vertex)) {
     if (mutationPackHasField(pack, '__vert')) {
@@ -64,7 +68,7 @@ function register(
 
     if (!didChange) {
       for (const [field] of mutationPackIter(pack)) {
-        if (!keys || keys.includes(field)) {
+        if (!vertexKeys || vertexKeys.includes(field)) {
           didChange = true;
           break;
         }
@@ -76,9 +80,12 @@ function register(
     }
   };
 
-  manager.on(EVENT_DID_CHANGE, callback);
+  // manager.on(EVENT_DID_CHANGE, callback);
+  const graph = manager.graph;
+  graph.on(EVENT_VERTEX_CHANGED, callback);
   return () => {
-    manager.removeListener(EVENT_DID_CHANGE, callback);
+    // manager.removeListener(EVENT_DID_CHANGE, callback);
+    graph.off(EVENT_VERTEX_CHANGED, callback);
   };
 }
 

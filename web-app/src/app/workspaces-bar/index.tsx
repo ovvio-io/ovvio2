@@ -492,7 +492,6 @@ function WorkspaceToggleView({
     'workspaceBarCollapsed',
     'selectedWorkspaces'
   );
-  query = useQuery2(query, false);
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
@@ -747,7 +746,8 @@ function WorkspacesList({ query }: WorkspaceListProps) {
     'workspaceBarCollapsed',
     'selectedWorkspaces'
   );
-  useQuery2(query);
+
+  console.log(`Workspace list query results: ${query.results}`);
 
   const toggleExpanded = useCallback(
     (gid: WorkspaceGID) => {
@@ -865,30 +865,32 @@ function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
     'pinnedWorkspaces'
   );
 
-  const query = useMemo(
-    () => {
-      return new Query<Workspace, Workspace, WorkspaceGID>(
-        graph.sharedQuery('workspaces'),
-        () => true,
-        {
-          groupBy: view.workspaceGrouping
-            ? GROUP_BY[view.workspaceGrouping]
-            : undefined,
-          groupComparator: compareWorkspaceGID,
-          name: 'WorkspaceBar',
-          contentSensitive: true,
-          contentFields: ['isTemplate'],
-        }
-      );
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      graph,
-      // view,
-      view.workspaceGrouping,
-      partialUser.hiddenWorkspaces,
-      partialUser.pinnedWorkspaces,
-    ]
+  const query = useQuery2(
+    useMemo(
+      () => {
+        return new Query<Workspace, Workspace, WorkspaceGID>(
+          graph.sharedQuery('workspaces'),
+          () => true,
+          {
+            groupBy: view.workspaceGrouping
+              ? GROUP_BY[view.workspaceGrouping]
+              : undefined,
+            groupComparator: compareWorkspaceGID,
+            name: 'WorkspaceBar',
+            contentSensitive: true,
+            contentFields: ['isTemplate'],
+          }
+        );
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [
+        graph,
+        // view,
+        view.workspaceGrouping,
+        partialUser.hiddenWorkspaces,
+        partialUser.pinnedWorkspaces,
+      ]
+    )
   );
   return <WorkspaceBarInternal className={className} query={query} />;
 }
