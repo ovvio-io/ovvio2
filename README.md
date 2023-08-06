@@ -7,9 +7,9 @@ First, install deno from here https://deno.com/manual/getting_started/installati
 ## WebApp
 
 1. Install packup - https://github.com/kt3k/packup
-2. Run `packup --import-map=./import-map.json serve web-app/src/index.html`
+2. Run `packup -s web-app/public --import-map=./import-map.json serve web-app/src/index.html`
 
-For debugging, use `packup --import-map=./import-map-dev.json serve web-app/src/index.html`
+For debugging, use `packup -s web-app/public --import-map=./import-map-dev.json serve web-app/src/index.html`
 
 Note: In the final version we'll have our server build and serve the app
 dynamically, thus skipping the need for packup.
