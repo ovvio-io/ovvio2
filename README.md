@@ -2,7 +2,7 @@
 
 We're using Deno as our server, and ES6 modules for package management.
 
-First, install deno from here https://deno.com/manual@v1.32.5/getting_started/installation
+First, install deno from here https://deno.com/manual/getting_started/installation
 
 ## WebApp
 
