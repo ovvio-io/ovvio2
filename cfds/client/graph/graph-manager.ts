@@ -10,7 +10,11 @@ import {
   Equatable,
 } from '../../../base/core-types/index.ts';
 import { UndoManager } from '../undo/manager.ts';
-import { MutationPack, mutationPackAppend } from './mutations.ts';
+import {
+  MutationPack,
+  mutationPackAppend,
+  mutationPackOptimize,
+} from './mutations.ts';
 import { Vertex, VertexId, VertexIdGetKey } from './vertex.ts';
 import {
   EVENT_DID_CHANGE,
@@ -413,7 +417,10 @@ export class GraphManager
       );
       let i = 0;
       for (const [key, mut] of this._pendingMutations) {
-        mutations[i++] = [this.getVertexManager(key), mut];
+        mutations[i++] = [
+          this.getVertexManager(key),
+          mutationPackOptimize(mut),
+        ];
       }
       const pendingMutations = Array.from(this._pendingMutations.entries());
       this._pendingMutations.clear();

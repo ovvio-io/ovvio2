@@ -57,7 +57,7 @@ export default function WorkspaceContentView({ className }: ContentProps) {
                 element={<NoteView />}
               />
               <Route
-                path="/"
+                path="*"
                 element={
                   view.selectedWorkspaces.size > 0 ? (
                     <CardsDisplay />

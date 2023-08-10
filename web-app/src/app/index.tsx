@@ -69,7 +69,7 @@ function Root({ style }: AppProps & { style?: any }) {
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '*',
     element: <Root style={lightTheme} />,
   },
   {

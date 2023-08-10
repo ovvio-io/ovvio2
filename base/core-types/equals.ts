@@ -253,9 +253,7 @@ export function coreValueEquals(
         return e1.compare(e2) === 0;
       }
 
-      throw new Error(
-        `${e1?.constructor} and ${e2?.constructor} must be Equatable or Comparable`
-      );
+      return e1 === e2;
     }
   }
 }

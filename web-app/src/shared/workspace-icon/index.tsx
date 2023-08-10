@@ -130,7 +130,7 @@ export function useWorkspaceColor(
   }
   // Prevent color tagging for demo workspaces
   for (const key of workspacesQuery.keys()) {
-    if (!graph.getVertex<Workspace>(key).isDemoData) {
+    if (graph.getVertex<Workspace>(key).isDemoData) {
       colorMap.delete(key);
     }
   }
