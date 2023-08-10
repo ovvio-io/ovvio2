@@ -24,11 +24,11 @@ const PAGE_SIZE = 10;
 export function NoteBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes;
+  filteredNotes: FilteredNotes<string>;
 }) {
   const toast = useToastController();
   const strings = useStrings();
-  const notesQuery = useQuery2((filteredNotes as FilteredNotes<string>)[0]);
+  const notesQuery = useQuery2(filteredNotes[0]);
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
 

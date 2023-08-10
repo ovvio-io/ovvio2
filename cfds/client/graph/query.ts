@@ -1,18 +1,11 @@
 import * as SetUtils from '../../../base/set.ts';
 import { GraphManager } from './graph-manager.ts';
-import {
-  EVENT_LOADING_FINISHED,
-  EVENT_VERTEX_CHANGED,
-  EVENT_VERTEX_DELETED,
-  EVENT_VERTEX_SOURCE_CLOSED,
-  GroupId,
-  VertexSource,
-} from './vertex-source.ts';
+import { GroupId, VertexSource, VertexSourceEvent } from './vertex-source.ts';
 import { Vertex } from './vertex.ts';
 import { VertexManager } from './vertex-manager.ts';
 import { MutationPack, mutationPackHasField } from './mutations.ts';
 import { QueryStorage } from './query-storage.ts';
-import { CoreValue } from '../../../base/core-types/base.ts';
+import { CoreValue, Equatable } from '../../../base/core-types/base.ts';
 import {
   CancellablePromise,
   CoroutineQueue,
@@ -24,6 +17,8 @@ import { SimpleTimer, Timer } from '../../../base/timer.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { unionIter } from '../../../base/common.ts';
+import { Encodable } from '../../../base/core-types/index.ts';
+import { Emitter } from '../../../base/emitter.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -44,7 +39,17 @@ export interface GroupIdComparator<GT extends CoreValue> {
   (gid1: GroupId<GT>, gid2: GroupId<GT>): number;
 }
 
-export interface QueryOptions<OT extends Vertex, GT extends CoreValue> {
+export interface QueryOptions<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue
+  // SRC extends VertexSource<VertexSourceEvent, GT> = VertexSource<
+  //   VertexSourceEvent,
+  //   GT
+  // >
+> {
+  source: VertexSource;
+  predicate: Predicate<IT, OT>;
   name?: string;
   groupBy?: GroupByFunction<OT, GT>;
   sortBy?: SortDescriptor<OT>;
@@ -55,7 +60,7 @@ export interface QueryOptions<OT extends Vertex, GT extends CoreValue> {
   contentFields?: (keyof OT)[];
 }
 
-export const EVENT_QUERY_RESULTS_CHANGED = 'QueryResultsChanged';
+// export const EVENT_QUERY_RESULTS_CHANGED = 'QueryResultsChanged';
 
 // const gDirtyQueries = new Set<Query<any>>();
 // const gQueryMicrotask = new SimpleTimer(50, false, () => {
@@ -70,11 +75,16 @@ const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
 export class Query<
-  IT extends Vertex = Vertex,
-  OT extends IT = IT,
-  GT extends CoreValue = CoreValue
-> extends VertexSource {
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue
+  >
+  extends Emitter<VertexSourceEvent>
+  implements VertexSource
+{
   readonly startTime: number;
+  readonly source: VertexSource;
+  readonly predicate: Predicate<IT, OT>;
   private readonly _id: number;
   private readonly _sourceGroupId?: GroupId<GT>;
   private readonly _vertexChangedListener: (
@@ -82,7 +92,6 @@ export class Query<
     mutations: MutationPack
   ) => void;
   private readonly _vertexDeletedListener: (key: string) => void;
-  private readonly _closeListener: () => void;
   private readonly _results: Map<GroupId<GT>, QueryStorage<OT>>;
   private readonly _clientsNotifyTimer: Timer;
   private readonly _sortDescriptor?: SortDescriptor<OT>;
@@ -91,12 +100,13 @@ export class Query<
   private readonly _groupComparator?: GroupIdComparator<GT>;
   private readonly _contentSensitive: boolean;
   private readonly _contentFields?: readonly string[];
-  private _isOpen: boolean;
+  private readonly _waitForSource: boolean = false;
   private _isLoading: boolean;
-  private _locked: boolean;
   private _scanSourcePromise: CancellablePromise<void> | undefined;
   private _groupsLimit: number = Number.MAX_SAFE_INTEGER;
   private _limit: number = Number.MAX_SAFE_INTEGER;
+  private _isLocked = false;
+  private _attached = false;
 
   /**
    * A single use async query for the times you only need a one-off and don't
@@ -110,23 +120,24 @@ export class Query<
    * @returns An array of VertexManager instances.
    */
   static async<IT extends Vertex = Vertex, OT extends IT = IT>(
-    source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
+    source: VertexSource,
     predicate: Predicate<IT, OT>,
-    sortDescriptor?: SortDescriptor<OT>,
+    sortBy?: SortDescriptor<OT>,
     name?: string
   ): Promise<QueryResults<OT>> {
     let resolve: (
       value: QueryResults<OT> | PromiseLike<QueryResults<OT>>
     ) => void;
     const promise = new Promise<QueryResults<OT>>((res) => (resolve = res));
-    const query = new this(source, predicate, sortDescriptor, name);
-    query.on(EVENT_QUERY_RESULTS_CHANGED, () => {
+    const query = new this({ source, predicate, sortBy, name });
+    const callback = () => {
       if (!query.isLoading) {
         const results = query.results;
-        query.close();
+        query.detach('results-changed', callback);
         resolve(results);
       }
-    });
+    };
+    query.attach('results-changed', callback);
     return promise;
   }
 
@@ -190,85 +201,60 @@ export class Query<
     return result;
   }
 
-  constructor(
-    readonly source: Query<any, IT, any> | UnionQuery<any, IT> | GraphManager,
-    readonly predicate: Predicate<IT, OT>,
-    sortDescriptorOrOpts?: SortDescriptor<OT> | QueryOptions<OT, GT>,
-    nameOrOpts?: string | QueryOptions<OT, GT>
-  ) {
+  constructor(opts: QueryOptions<IT, OT, GT>) {
     super();
     this.startTime = Date.now();
     this._id = ++gQueryId;
     this._vertexChangedListener = (key, mutations) =>
       this.vertexChanged(key, mutations);
     this._vertexDeletedListener = (key) => this.vertexDeleted(key);
-    this._closeListener = () => {
-      this.unlock();
-      this.close();
-    };
     // this._resultKeys = new Set();
     this._results = new Map();
     this._clientsNotifyTimer = new SimpleTimer(300, false, () =>
       this._notifyQueryChanged()
     );
-    this._isOpen = true;
     this._isLoading = true;
-    this._locked = false;
-
-    let opts: QueryOptions<OT, GT> | undefined;
-    if (typeof sortDescriptorOrOpts === 'function') {
-      opts = {
-        sortBy: sortDescriptorOrOpts,
-      };
-    } else if (typeof sortDescriptorOrOpts !== 'undefined') {
-      opts = sortDescriptorOrOpts;
+    this.source = opts.source;
+    this.predicate = opts.predicate;
+    if (opts.name) {
+      this._name = opts.name;
     }
-    if (typeof nameOrOpts === 'string') {
-      opts = {
-        name: nameOrOpts,
-      };
-    } else if (typeof nameOrOpts !== 'undefined') {
-      opts = nameOrOpts;
+    if (opts.groupBy) {
+      this._groupByFunc = opts.groupBy;
     }
-    if (opts) {
-      if (opts.name) {
-        this._name = opts.name;
-      }
-      if (opts.groupBy) {
-        this._groupByFunc = opts.groupBy;
-      }
-      if (opts.groupComparator) {
-        this._groupComparator = opts.groupComparator;
-      }
-      if (opts.sourceGroupId) {
-        this._sourceGroupId = opts.sourceGroupId;
-      }
-      if (opts.sortBy) {
-        this._sortDescriptor = opts.sortBy;
-      }
+    if (opts.groupComparator) {
+      this._groupComparator = opts.groupComparator;
+    }
+    if (opts.sourceGroupId) {
+      this._sourceGroupId = opts.sourceGroupId;
+    }
+    if (opts.sortBy) {
+      this._sortDescriptor = opts.sortBy;
     }
     this._contentSensitive = opts?.contentSensitive === true;
+    this._waitForSource = opts?.waitForSource === true;
+  }
 
-    if (source instanceof Query || source instanceof UnionQuery) {
-      assert(source.isOpen);
-      source.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
+  protected suspend(): void {
+    if (!this.isLocked && this._attached) {
+      this.detachFromSource();
+      console.log(`Query ${this.debugName} suspended`);
     }
+  }
 
-    if (opts?.waitForSource === true && source.isLoading) {
-      source.once(EVENT_LOADING_FINISHED, () =>
-        this.attachToSourceAfterLoading()
-      );
-    } else {
-      this.attachToSource();
+  protected resume(): void {
+    if (!this._attached) {
+      const source = this.source as VertexSource;
+      if (this._waitForSource === true && source.isLoading) {
+        source.once('loading-finished', () => this.attachToSource());
+      } else {
+        this.attachToSource();
+      }
     }
   }
 
   get name(): string | undefined {
     return this._name;
-  }
-
-  get isOpen(): boolean {
-    return this._isOpen;
   }
 
   get isLoading(): boolean {
@@ -280,7 +266,7 @@ export class Query<
     if (src instanceof GraphManager) {
       return src;
     }
-    return src.graph;
+    return src.graph as GraphManager;
   }
 
   get results(): QueryResults<OT> {
@@ -296,6 +282,20 @@ export class Query<
           mgr2.getVertexProxy()
         )
       );
+  }
+
+  get isLocked(): boolean {
+    return this._isLocked;
+  }
+
+  lock(): this {
+    this._isLocked = true;
+    return this;
+  }
+
+  unlock(): this {
+    this._isLocked = false;
+    return this;
   }
 
   vertices(gid?: GroupId<GT>): OT[] {
@@ -357,10 +357,6 @@ export class Query<
       this._groupsLimit = n;
       this._clientsNotifyTimer.schedule();
     }
-  }
-
-  get isLocked(): boolean {
-    return this._locked;
   }
 
   groups(): GroupId<GT>[] {
@@ -450,61 +446,26 @@ export class Query<
     return result;
   }
 
-  close(): void {
-    // TODO
-    if (this._isOpen) {
-      assert(!this._locked);
-      this.detachFromSource();
-      this._isOpen = false;
-      this.emit(EVENT_VERTEX_SOURCE_CLOSED);
-      console.log(`Query ${this.debugName} closed`);
-    }
-  }
-
   onResultsChanged(handler: () => void): () => void {
-    this.on(EVENT_QUERY_RESULTS_CHANGED, () => {
-      if (this.name === 'WorkspaceBar') debugger;
+    this.attach('results-changed', () => {
       handler();
     });
     return () => {
-      this.off(EVENT_QUERY_RESULTS_CHANGED, handler);
+      this.detach('results-changed', handler);
     };
   }
 
   private detachFromSource(): void {
-    if (this._scanSourcePromise) {
-      this._scanSourcePromise.cancelImmediately();
-      this._scanSourcePromise = undefined;
+    if (this._attached) {
+      if (this._scanSourcePromise) {
+        this._scanSourcePromise.cancelImmediately();
+        this._scanSourcePromise = undefined;
+      }
+      const source: VertexSource = this.source as VertexSource;
+      source.detach('vertex-changed', this._vertexChangedListener);
+      source.detach('vertex-deleted', this._vertexDeletedListener);
+      this._attached = false;
     }
-    this.source.off(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
-    this.source.off(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
-    this.source.off(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
-  }
-
-  private attachToSource(): void {
-    const source = this.source;
-    if (source instanceof Query || source instanceof UnionQuery) {
-      assert(source.isOpen);
-      source.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
-    }
-
-    // if (source.isLoading) {
-    //   source.once(EVENT_LOADING_FINISHED, () =>
-    //     this.attachToSourceAfterLoading()
-    //   );
-    // } else {
-    this.attachToSourceAfterLoading();
-    // }
-  }
-
-  lock(): this {
-    this._locked = true;
-    return this;
-  }
-
-  unlock(): this {
-    this._locked = false;
-    return this;
   }
 
   /*****************************************/
@@ -585,12 +546,12 @@ export class Query<
       // TODO: Wrap in a micro task timer to avoid timing issues around
       // coroutine cancellation. This is currently not an issue since we're
       // using cancelImmediately() rather than cancel().
-      this.emit(EVENT_VERTEX_CHANGED, key, pack);
+      this.emit('vertex-changed', key, pack);
     } else if (wasInSourceKeys) {
       // TODO: Wrap in a micro task timer to avoid timing issues around
       // coroutine cancellation. This is currently not an issue since we're
       // using cancelImmediately() rather than cancel().
-      this.emit(EVENT_VERTEX_DELETED, key, pack);
+      this.emit('vertex-deleted', key, pack);
     }
     // if (
     //   wasInSourceKeys !== this.hasVertex(key) &&
@@ -632,7 +593,7 @@ export class Query<
           results.delete(gid);
         }
       }
-      this.emit(EVENT_VERTEX_DELETED, key);
+      this.emit('vertex-deleted', key);
       if (shouldNotify) {
         this._clientsNotifyTimer.schedule();
       }
@@ -646,7 +607,7 @@ export class Query<
         this.debugName
       } starting source scan. Pending queries: ${kQueryQueue.size}`
     );
-    if (!this.isOpen) {
+    if (!this.isActive) {
       console.log(
         `${performance.now()} Query ${this.debugName} cancelled, took ${
           performance.now() - startTime
@@ -655,7 +616,7 @@ export class Query<
       return;
     }
     for (const key of this.source.keys(this._sourceGroupId)) {
-      if (!this.isOpen) {
+      if (!this.isActive) {
         console.log(
           `${performance.now()} Query ${this.debugName} cancelled, took ${
             performance.now() - startTime
@@ -675,7 +636,7 @@ export class Query<
       } results. Pending queries: ${kQueryQueue.size}`
     );
     this._isLoading = false;
-    this.emit(EVENT_LOADING_FINISHED);
+    this.emit('loading-finished');
     this._clientsNotifyTimer.schedule();
   }
 
@@ -687,12 +648,15 @@ export class Query<
     return res;
   }
 
-  private attachToSourceAfterLoading(): void {
-    const source = this.source;
-    // assert(!source.isLoading);
-    source.on(EVENT_VERTEX_CHANGED, this._vertexChangedListener);
-    source.on(EVENT_VERTEX_DELETED, this._vertexDeletedListener);
-    this.scheduleSourceScan();
+  private attachToSource(): void {
+    if (!this._attached) {
+      const source = this.source as VertexSource;
+      // assert(!source.isLoading);
+      source.attach('vertex-changed', this._vertexChangedListener);
+      source.attach('vertex-deleted', this._vertexDeletedListener);
+      this.scheduleSourceScan();
+      this._attached = true;
+    }
   }
 
   private scheduleSourceScan(): void {
@@ -713,14 +677,14 @@ export class Query<
   }
 
   _notifyQueryChanged(): void {
-    if (!this.isOpen /*|| this.isLoading*/) {
+    if (!this.isActive /*|| this.isLoading*/) {
       return;
     }
     // this._cachedSortedResults = undefined;
     console.log(
       `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`
     );
-    this.emit(EVENT_QUERY_RESULTS_CHANGED);
+    this.emit('results-changed');
   }
 }
 
@@ -734,16 +698,18 @@ export interface QueryInputDefinition<
 }
 
 export class UnionQuery<
-  IT extends Vertex = Vertex,
-  OT extends IT = IT,
-  GT extends CoreValue = CoreValue
-> extends VertexSource {
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue
+  >
+  extends Emitter<VertexSourceEvent>
+  implements VertexSource
+{
   readonly sources: QueryInputDefinition<IT, OT, GT>[];
   private readonly _changeListeners: Map<
     Query<IT, OT, GT>,
     (key: string, pack: MutationPack) => void
   >;
-  private readonly _closeListener: () => void;
   private _isLoading: boolean;
   private _isOpen: boolean;
 
@@ -754,7 +720,6 @@ export class UnionQuery<
   ) {
     super();
     this._changeListeners = new Map();
-    this._closeListener = () => this.close();
     let loadingCount = 0;
     this.sources = Array.from(sources).map((src) =>
       src instanceof Query ? { query: src } : src
@@ -764,7 +729,7 @@ export class UnionQuery<
       if (query.isLoading) {
         ++loadingCount;
         // eslint-disable-next-line no-loop-func
-        query.once(EVENT_LOADING_FINISHED, () => {
+        query.once('loading-finished', () => {
           if (!this.isOpen) {
             return;
           }
@@ -775,13 +740,12 @@ export class UnionQuery<
           assert(loadingCount > 0);
           if (--loadingCount === 0) {
             this._isLoading = false;
-            this.emit(EVENT_LOADING_FINISHED);
+            this.emit('loading-finished');
           }
         });
       } //else {
-      query.on(EVENT_VERTEX_CHANGED, this.changeListenerForQuery(query));
-      query.on(EVENT_VERTEX_DELETED, this.changeListenerForQuery(query));
-      query.once(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
+      query.attach('vertex-changed', this.changeListenerForQuery(query));
+      query.attach('vertex-deleted', this.changeListenerForQuery(query));
       // }
     }
     this._isLoading = loadingCount > 0;
@@ -838,15 +802,13 @@ export class UnionQuery<
     return this.hasVertex(key);
   }
 
-  close() {
+  protected suspend(): void {
     if (this._isOpen) {
       this._isOpen = false;
       for (const q of this.queries()) {
-        q.off(EVENT_VERTEX_CHANGED, this.changeListenerForQuery(q));
-        q.off(EVENT_VERTEX_DELETED, this.changeListenerForQuery(q));
-        q.off(EVENT_VERTEX_SOURCE_CLOSED, this._closeListener);
+        q.detach('vertex-changed', this.changeListenerForQuery(q));
+        q.detach('vertex-deleted', this.changeListenerForQuery(q));
       }
-      this.emit(EVENT_VERTEX_SOURCE_CLOSED);
     }
   }
 
@@ -857,7 +819,7 @@ export class UnionQuery<
     if (result === undefined) {
       result = (key, pack) => {
         this.emit(
-          this.hasVertex(key) ? EVENT_VERTEX_CHANGED : EVENT_VERTEX_DELETED,
+          this.hasVertex(key) ? 'vertex-changed' : 'vertex-deleted',
           key,
           pack
         );

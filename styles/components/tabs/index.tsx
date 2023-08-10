@@ -52,19 +52,17 @@ const useStyles = makeStyles(
   'tabs_3a7361'
 );
 
-export interface TabButtonProps {
-  children: any;
-  renderContent?: any;
+export type TabButtonProps = React.PropsWithChildren<{
   value: any;
   style?: any;
   isSelected?: boolean;
   setSelected?: any;
   className?: string;
   onSelected?: (value: any) => void;
-}
+}>;
+
 export function TabButton({
   children,
-  renderContent,
   value,
   style,
   isSelected,
@@ -81,15 +79,13 @@ export function TabButton({
     }
   };
 
-  const content = renderContent ? renderContent({ isSelected }) : children;
-
   return (
     <Button
       className={cn(styles.tab, isSelected && styles.selected, className)}
       style={style}
       onClick={onClick}
     >
-      {content}
+      {children}
     </Button>
   );
 }

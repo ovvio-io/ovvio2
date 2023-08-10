@@ -8,7 +8,12 @@ import {
   ReadonlyCoreArray,
   ReadonlyCoreObject,
 } from './base.ts';
-import { getCoreType, isComparable, isEquatable } from './utils.ts';
+import {
+  getCoreType,
+  getCoreTypeOrUndef,
+  isComparable,
+  isEquatable,
+} from './utils.ts';
 import { numbersEqual } from '../comparisons.ts';
 import * as SetUtils from '../set.ts';
 
@@ -96,16 +101,21 @@ function setLongMatch(
 export interface EqualOptions extends CoreOptions {}
 
 export function coreValueEquals(
-  e1: CoreValue,
-  e2: CoreValue,
+  e1: CoreValue | object,
+  e2: CoreValue | object,
   options?: EqualOptions
 ): boolean {
   if (e1 === e2) {
     return true;
   }
 
-  const t1 = getCoreType(e1);
-  const t2 = getCoreType(e2);
+  const t1 = getCoreTypeOrUndef(e1 as CoreValue);
+  const t2 = getCoreTypeOrUndef(e2 as CoreValue);
+
+  if (t1 === undefined || t2 === undefined) {
+    return t1 === t2;
+  }
+
   if (t1 !== t2) {
     return false;
   }

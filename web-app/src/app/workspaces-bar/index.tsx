@@ -8,7 +8,7 @@ import React, {
 import * as SetUtils from '../../../../base/set.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { WorkspaceGrouping } from '../../../../cfds/base/scheme-types.ts';
-import { Query } from '../../../../cfds/client/graph/query.ts';
+import { Query, QueryOptions } from '../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { GroupId } from '../../../../cfds/client/graph/vertex-source.ts';
 import { Role } from '../../../../cfds/client/graph/vertices/role.ts';
@@ -866,32 +866,26 @@ function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
   );
 
   const query = useQuery2(
-    useMemo(
-      () => {
-        return new Query<Workspace, Workspace, WorkspaceGID>(
-          graph.sharedQuery('workspaces'),
-          () => true,
-          {
-            groupBy: view.workspaceGrouping
-              ? GROUP_BY[view.workspaceGrouping]
-              : undefined,
-            groupComparator: compareWorkspaceGID,
-            name: 'WorkspaceBar',
-            contentSensitive: true,
-            contentFields: ['isTemplate'],
-          }
-        );
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [
-        graph,
-        // view,
-        view.workspaceGrouping,
-        partialUser.hiddenWorkspaces,
-        partialUser.pinnedWorkspaces,
-      ]
-    )
+    useMemo(() => {
+      return {
+        source: graph.sharedQuery('workspaces'),
+        predicate: (ws: Workspace) => true,
+        groupBy: view.workspaceGrouping
+          ? GROUP_BY[view.workspaceGrouping]
+          : undefined,
+        groupComparator: compareWorkspaceGID,
+        name: 'WorkspaceBar',
+        contentSensitive: true,
+        contentFields: ['isTemplate'],
+      } as QueryOptions<Workspace, Workspace, GroupId<WorkspaceGID>>;
+    }, [
+      graph,
+      view.workspaceGrouping,
+      partialUser.hiddenWorkspaces,
+      partialUser.pinnedWorkspaces,
+    ])
   );
+
   return <WorkspaceBarInternal className={className} query={query} />;
 }
 

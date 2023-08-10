@@ -422,7 +422,7 @@ export default function AssigneesView({
         reverse ? styles.reverse : styles.standard
       )}
     >
-      {assignees.map((user, index) => {
+      {...assignees.map((user, index) => {
         const style = calcStyle(isExpanded, reverse, index);
         return (
           <Assignee

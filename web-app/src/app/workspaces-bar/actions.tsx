@@ -165,15 +165,15 @@ function IconInvite() {
       />
       <path
         opacity="0.7"
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M9.12602 14H2C1.44772 14 1 14.4477 1 15C1 15.5523 1.44772 16 2 16H10.3542C9.76377 15.4789 9.32838 14.7862 9.12602 14Z"
         fill="#6C2C23"
       />
       <path
         opacity="0.7"
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M12.9002 9.00122C11.6376 7.76331 9.90793 7 8 7V9C8.97444 9 9.88377 9.27875 10.6526 9.76086C11.2868 9.30045 12.0615 9.02175 12.9002 9.00122Z"
         fill="#6C2C23"
       />

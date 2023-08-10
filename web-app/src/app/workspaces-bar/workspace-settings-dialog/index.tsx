@@ -58,7 +58,7 @@ import TagsSettings from './tags-settings';
 
 export { IconSettingsCog };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   tab: {
     height: styleguide.gridbase * 49,
     overflowY: 'auto',
@@ -328,7 +328,7 @@ function WorkspaceIconView({ icon }) {
 function UploadPhotoButton({ onImageSelected }) {
   const styles = useStyles();
   const fileInput = useRef();
-  const onFileSelected = async e => {
+  const onFileSelected = async (e) => {
     const file = e.target.files[0];
     if (!file) {
       return;
@@ -370,7 +370,7 @@ function WorkspaceImageView({
   const partial = usePartialVertex(workspaceManager, ['icon']);
   const eventLogger = useEventLogger();
 
-  const record = useChangeRecord(`${workspaceManager.key}-icon`, r => {
+  const record = useChangeRecord(`${workspaceManager.key}-icon`, (r) => {
     const newIcon = r.get('icon');
     if (newIcon) {
       partial.icon = newIcon;
@@ -380,7 +380,7 @@ function WorkspaceImageView({
     }
   });
   const icon = record.get('icon') || partial.icon;
-  const onImageSelected = img => {
+  const onImageSelected = (img) => {
     record.set('icon', img);
   };
   return (
@@ -402,7 +402,7 @@ function NameField({ workspaceManager }: NameFieldProps) {
   const styles = useStyles();
   const partial = usePartialVertex(workspaceManager, ['name']);
   const eventLogger = useEventLogger();
-  const record = useChangeRecord(`${workspaceManager.key}-name`, rec => {
+  const record = useChangeRecord(`${workspaceManager.key}-name`, (rec) => {
     const name = rec.get('name');
     if (name) {
       partial.name = name;
@@ -412,7 +412,7 @@ function NameField({ workspaceManager }: NameFieldProps) {
     }
   });
   const name = record.get('name') || partial.name;
-  const onNameChanged = e => {
+  const onNameChanged = (e) => {
     record.set('name', e.target.value);
   };
   return (
@@ -516,13 +516,13 @@ function UsersList({
   const [removeDisabled, setRemoveDisabled] = useState(false);
   const styles = useStyles();
   const { users } = usePartialVertex(workspaceManager, ['users']);
-  const { results: invitations } = useQuery<Invite>(
-    x =>
-      x instanceof Invite &&
-      x.status === InviteStatus.PENDING &&
-      x.workspaceKey === workspaceManager.key,
-    [workspaceManager?.key]
-  );
+  // const { results: invitations } = useQuery<Invite>(
+  //   x =>
+  //     x instanceof Invite &&
+  //     x.status === InviteStatus.PENDING &&
+  //     x.workspaceKey === workspaceManager.key,
+  //   [workspaceManager?.key]
+  // );
   const eventLogger = useEventLogger();
 
   const onRemoveStarting = (v: VertexManager<User | Invite>) => {
@@ -577,14 +577,14 @@ function UsersList({
           </RaisedButton>
         </DialogActions>
       </Dialog>
-      {Array.from(users).map(u => (
+      {Array.from(users).map((u) => (
         <UserItem
           userMng={u.manager as VertexManager<User>}
           key={u.key}
           removeUser={onRemoveStarting}
         />
       ))}
-      {invitations.map(i => (
+      {invitations.map((i) => (
         <InvitationItem
           invitationMng={i as VertexManager<Invite>}
           key={i.key}
@@ -640,7 +640,7 @@ function DeleteWorkspaceButton({
       {isDeleting && (
         <TextField
           value={name}
-          onChange={e => setName(e.currentTarget.value)}
+          onChange={(e) => setName(e.currentTarget.value)}
           className={cn(styles.deleteConfirmation)}
           placeholder="Type workspace name to confirm"
           ref={inputRef}
@@ -778,7 +778,7 @@ export function WorkspaceSettingsView({
   };
 
   return (
-    <div className={cn(styles.settings)} onClick={e => e.stopPropagation()}>
+    <div className={cn(styles.settings)} onClick={(e) => e.stopPropagation()}>
       <div className={cn(styles.column, styles.fields)}>
         <Text className={cn(styles.label)}>Workspace Icon:</Text>
         <WorkspaceImageView workspaceManager={workspaceManager} />
@@ -841,7 +841,7 @@ function SaveButton({ close }) {
   );
   useEffect(() => {
     if (recordStore) {
-      return recordStore.listen(store => {
+      return recordStore.listen((store) => {
         setIsDirty(store.hasChanges());
       });
     }

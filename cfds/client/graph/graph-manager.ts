@@ -3,21 +3,21 @@ import { SchemeManager } from '../../base/scheme.ts';
 import { assert } from '../../../base/error.ts';
 import { uniqueId } from '../../../base/common.ts';
 import { Dictionary } from '../../../base/collections/dict.ts';
-import { CoreObject } from '../../../base/core-types/index.ts';
-import { UndoManager } from '../undo/manager.ts';
 import {
-  MutationPack,
-  mutationPackAppend,
-  mutationPackToArr,
-} from './mutations.ts';
+  CoreObject,
+  CoreValue,
+  Encodable,
+  Equatable,
+} from '../../../base/core-types/index.ts';
+import { UndoManager } from '../undo/manager.ts';
+import { MutationPack, mutationPackAppend } from './mutations.ts';
 import { Vertex, VertexId, VertexIdGetKey } from './vertex.ts';
 import {
-  EVENT_CRITICAL_ERROR,
   EVENT_DID_CHANGE,
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import { DataType, NS_NOTES } from '../../base/scheme-types.ts';
+import { NS_NOTES } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
@@ -27,9 +27,9 @@ import {
   SharedQueryType,
 } from './shared-queries.ts';
 import {
-  EVENT_LOADING_FINISHED,
-  EVENT_VERTEX_CHANGED,
-  EVENT_VERTEX_SOURCE_CLOSED,
+  // EVENT_LOADING_FINISHED,
+  // EVENT_VERTEX_CHANGED,
+  VertexSourceEvent,
   VertexSource,
 } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
@@ -43,6 +43,12 @@ import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
 import { RepoClient } from '../../../net/repo-client.ts';
 import { kSyncConfigClient } from '../../../net/base-client.ts';
 import { appendPathComponent } from '../../../base/string.ts';
+import { Query, QueryOptions } from './query.ts';
+import { Encoder } from '../../../base/core-types/base.ts';
+import { HashMap } from '../../../base/collections/hash-map.ts';
+import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
+import { coreValueEquals } from '../../../base/core-types/equals.ts';
+import { Emitter } from '../../../base/emitter.ts';
 
 // We consider only commits from the last 30 days to be "hot", and load them
 // automatically
@@ -61,56 +67,10 @@ export interface CreateVertexInfo {
 /**
  * @deprecated
  */
-export const EVENT_VERTEX_DID_CHANGE = EVENT_VERTEX_CHANGED;
+// export const EVENT_VERTEX_DID_CHANGE = EVENT_VERTEX_CHANGED;
 /**
  * @deprecated
  */
-export const EVENT_CACHE_LOADED = 'cache-loaded';
-
-// export interface GraphLayerDef {
-//   name: string;
-//   filter: (mgr: VertexManager) => boolean;
-// }
-
-// function* graphLayersToAdjLayers(
-//   graph: GraphManager,
-//   graphDefs?: Iterable<GraphLayerDef>
-// ): Generator<LayerDef> {
-//   if (graphDefs === undefined) {
-//     return;
-//   }
-//   for (const def of graphDefs) {
-//     yield {
-//       name: def.name,
-//       filter: (src: string, dst: string, _fieldName: string) =>
-//         def.filter(graph.getVertexManager(src)) &&
-//         def.filter(graph.getVertexManager(dst)),
-//     };
-//   }
-// }
-
-// export enum GraphLayer {
-//   /**
-//    * An optimization layer for everything but notes. This graph is significantly
-//    * faster to traverse if all you need is the layout of workspaces.
-//    */
-//   NoNotes = 'NoNotes',
-//   /**
-//    * Optimization layer for everything that's not deleted.
-//    */
-//   NotDeleted = 'NotDeleted',
-// }
-
-// export const kBuiltinGraphLayers: GraphLayerDef[] = [
-//   {
-//     name: GraphLayer.NoNotes,
-//     filter: mgr => !mgr.isDeleted && mgr.namespace !== SchemeNamespace.NOTES,
-//   },
-//   {
-//     name: GraphLayer.NotDeleted,
-//     filter: mgr => !mgr.isDeleted,
-//   },
-// ];
 
 export enum CacheLoadingStatus {
   CriticalLoading,
@@ -119,7 +79,15 @@ export enum CacheLoadingStatus {
   NoCache,
 }
 
-export class GraphManager extends VertexSource {
+interface OpenQueryData {
+  query: Query;
+  opts: QueryOptions;
+}
+
+export class GraphManager
+  extends Emitter<VertexSourceEvent>
+  implements VertexSource
+{
   readonly sharedQueriesManager: SharedQueriesManager;
   private readonly _rootKey: string;
   private readonly _adjList: AdjacencyList;
@@ -131,9 +99,10 @@ export class GraphManager extends VertexSource {
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _session: string;
   private readonly _repoById: Dictionary<string, Repository<MemRepoStorage>>;
-  private readonly _backup: IDBRepositoryBackup;
+  private _backup: IDBRepositoryBackup | undefined;
   private readonly _repoClients: Dictionary<string, RepoClient<MemRepoStorage>>;
   private readonly _baseServerUrl: string | undefined;
+  private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
   private _loadContentsPromise: Promise<void> | undefined;
   private _isLoading = true;
 
@@ -159,6 +128,10 @@ export class GraphManager extends VertexSource {
     this.sharedQueriesManager = new SharedQueriesManager(this);
     this._repoById = new Map();
     this._backup = new IDBRepositoryBackup(rootKey);
+    this._openQueries = new HashMap<string, [QueryOptions, Query]>(
+      coreValueHash,
+      coreValueEquals
+    );
     this._repoClients = new Map();
     this._baseServerUrl = baseServerUrl;
 
@@ -166,10 +139,17 @@ export class GraphManager extends VertexSource {
     this.repository('/sys/dir');
   }
 
-  close(): void {
-    this.emit(EVENT_VERTEX_SOURCE_CLOSED);
+  protected suspend(): void {
     this._processPendingMutationsTimer.unschedule();
-    this._backup.close();
+    this._backup?.close();
+    this._backup = undefined;
+  }
+
+  protected resume(): void {
+    if (!this._backup) {
+      this._backup = new IDBRepositoryBackup(this.rootKey);
+    }
+    this._processPendingMutationsTimer.schedule();
   }
 
   get adjacencyList(): AdjacencyList {
@@ -196,19 +176,24 @@ export class GraphManager extends VertexSource {
     return this._isLoading;
   }
 
+  get graph(): VertexSource {
+    return this;
+  }
+
   loadLocalContents(): Promise<void> {
-    if (!this._loadContentsPromise) {
+    const backup = this._backup;
+    if (!this._loadContentsPromise && backup) {
       this._loadContentsPromise = (async () => {
         for (const [repoId, commits] of Object.entries(
-          await this._backup.loadCommits()
+          await backup.loadCommits()
         )) {
           this.repository(repoId).persistCommits(commits);
         }
         this._isLoading = false;
-        this.emit(EVENT_LOADING_FINISHED);
+        this.emit('loading-finished');
       })();
     }
-    return this._loadContentsPromise;
+    return this._loadContentsPromise || Promise.resolve();
   }
 
   repository(id: string): Repository<MemRepoStorage> {
@@ -353,6 +338,23 @@ export class GraphManager extends VertexSource {
     );
   }
 
+  query<
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue
+  >(options: QueryOptions<IT, OT, GT>): Query<IT, OT, GT> {
+    const name = options.name;
+    if (typeof name === 'undefined') {
+      return new Query(options);
+    }
+    let [prevOpts, query] = this._openQueries.get(name) || [];
+    if (!query || !coreValueEquals(options, prevOpts)) {
+      query = new Query(options) as unknown as Query;
+      this._openQueries.set(name, [options as unknown as QueryOptions, query]);
+    }
+    return query as unknown as Query<IT, OT, GT>;
+  }
+
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
     ns?: string,
@@ -379,12 +381,12 @@ export class GraphManager extends VertexSource {
 
   private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
-    mgr.on(
+    mgr.attach(
       EVENT_DID_CHANGE,
       (pack: MutationPack, refsChange: RefsChange, RefsChange: RefsChange) =>
         this._vertexDidChange(key, pack, refsChange)
     );
-    mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
+    // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this._session;
     mgr.reportInitialFields(
       mgr.repository?.headForKey(mgr.key, session)?.session === session
@@ -421,7 +423,7 @@ export class GraphManager extends VertexSource {
 
       this._executedFieldTriggers.clear();
       for (const [key, pack] of pendingMutations) {
-        this.emit(EVENT_VERTEX_CHANGED, key, pack);
+        this.emit('vertex-changed', key, pack);
       }
     }
   }

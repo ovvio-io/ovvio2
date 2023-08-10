@@ -23,7 +23,10 @@ import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { CoreValue } from '../../../../../../../base/core-types/base.ts';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import {
+  Query,
+  QueryOptions,
+} from '../../../../../../../cfds/client/graph/query.ts';
 import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
 import localization from './board.strings.json' assert { type: 'json' };
 
@@ -34,11 +37,9 @@ const PAGE_SIZE = 10;
 export function AssigneesBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes;
+  filteredNotes: FilteredNotes<VertexManager<User>>;
 }) {
-  const notesQuery = useQuery2(
-    filteredNotes[0] as unknown as Query<Vertex, Note, VertexManager<User>>
-  );
+  const notesQuery = useQuery2(filteredNotes[0]);
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);

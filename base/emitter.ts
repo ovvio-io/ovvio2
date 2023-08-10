@@ -1,6 +1,6 @@
 import { Timer, TimerCallback } from './timer.ts';
 
-export type EmitterEvent = 'EmitterSuspended' | 'EmitterResumed';
+export type EmitterEvent = 'suspended' | 'resumed';
 
 export type EmitterCallback = () => void;
 
@@ -57,12 +57,14 @@ export class Emitter<T> {
     if (!callbacks || !callbacks.length) {
       return;
     }
-    for (const f of callbacks) {
+    for (const f of Array.from(callbacks)) {
       (f as (...arg0: unknown[]) => void)(...args);
     }
   }
 
-  attach<E extends T | EmitterEvent>(e: E, callback: EmitterCallback): void {
+  // deno-lint-ignore ban-types
+  attach<C extends Function, E extends T | EmitterEvent>(e: E, c: C): void {
+    const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
       const arr =
         e === 'EmitterSuspended'
@@ -84,11 +86,13 @@ export class Emitter<T> {
     }
     if (!wasActive) {
       this.resume();
-      this.emit('EmitterResumed');
+      this.emit('resumed');
     }
   }
 
-  detach<E extends T | EmitterEvent>(e: E, callback: EmitterCallback): void {
+  // deno-lint-ignore ban-types
+  detach<C extends Function, E extends T | EmitterEvent>(e: E, c: C): void {
+    const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
       const arr =
         e === 'EmitterSuspended'
@@ -112,9 +116,19 @@ export class Emitter<T> {
       this._callbacks.delete(e as T);
       if (!this.isActive) {
         this.suspend();
-        this.emit('EmitterSuspended');
+        this.emit('suspended');
       }
     }
+  }
+
+  // deno-lint-ignore ban-types
+  once<C extends Function, E extends T | EmitterEvent>(e: E, c: C): () => void {
+    const callback = (...args: unknown[]) => {
+      (c as unknown as (...arg0: unknown[]) => void)(...args);
+      this.detach(e, callback);
+    };
+    this.attach(e, callback);
+    return () => this.detach(e, callback);
   }
 
   protected suspend(): void {}

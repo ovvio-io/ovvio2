@@ -4,14 +4,10 @@ import {
   mutationPackHasField,
   mutationPackIter,
 } from '../../../../../cfds/client/graph/mutations.ts';
-import {
-  VertexManager,
-  EVENT_DID_CHANGE,
-} from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { Vertex, VertexId } from '../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { useGraphManager } from './graph.tsx';
-import { EVENT_VERTEX_CHANGED } from '../../../../../cfds/client/graph/vertex-source.ts';
 
 interface OnChangeOpts {
   errorCallback?: () => void;
@@ -82,10 +78,10 @@ function register(
 
   // manager.on(EVENT_DID_CHANGE, callback);
   const graph = manager.graph;
-  graph.on(EVENT_VERTEX_CHANGED, callback);
+  graph.attach('vertex-changed', callback);
   return () => {
     // manager.removeListener(EVENT_DID_CHANGE, callback);
-    graph.off(EVENT_VERTEX_CHANGED, callback);
+    graph.detach('vertex-deleted', callback);
   };
 }
 

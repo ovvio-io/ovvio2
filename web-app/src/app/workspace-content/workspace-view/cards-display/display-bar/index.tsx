@@ -231,7 +231,7 @@ function ShowCheckedDropDown() {
       onOpen={onOpen}
     >
       {kShowChecked.map((x) => (
-        <DropDownItem value={x} key={x}>
+        <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
         </DropDownItem>
       ))}
@@ -390,7 +390,7 @@ function ExtraFilters() {
     items.push(<ShowPinnedButton />);
     items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
   }
-  return <>{items}</>;
+  return <>{...items}</>;
 }
 
 function FilterButton() {
@@ -461,7 +461,7 @@ function TabView() {
         showOverview ? styles.noteTypeToggleBig : styles.noteTypeToggleSmall
       )}
     >
-      {tabs}
+      {...tabs}
     </TabsHeader>
   );
 }
@@ -470,8 +470,8 @@ export type DisplayBarProps = {
   className?: string;
 };
 
-export function DisplayBar(props: DisplayBarProps) {
-  const { className, ...rest } = props;
+export function DisplayBar(props?: DisplayBarProps) {
+  const { className, ...rest } = props || {};
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);

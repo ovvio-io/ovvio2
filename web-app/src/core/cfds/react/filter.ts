@@ -19,7 +19,7 @@ import {
   GroupByFunction,
   GroupIdComparator,
   UnionQuery,
-  Query,
+  QueryOptions,
 } from '../../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { VertexSource } from '../../../../../cfds/client/graph/vertex-source.ts';
@@ -202,8 +202,8 @@ export function createUnionWorkspacesSource(
 }
 
 export type FilteredNotes<GT extends CoreValue = CoreValue> = readonly [
-  pinned: Query<Vertex, Note, GT>,
-  unpinned: Query<Vertex, Note, GT> | undefined
+  pinned: QueryOptions<Note, Note, GT>,
+  unpinned: QueryOptions<Note, Note, GT> | undefined
 ];
 
 export function useFilteredNotes<GT extends CoreValue>(
@@ -233,11 +233,6 @@ export function useFilteredNotes<GT extends CoreValue>(
       ),
     [graph, view.selectedWorkspaces, view.sortBy, name]
   );
-  useEffect(() => {
-    return () => {
-      unpinnedSource?.close();
-    };
-  }, [unpinnedSource]);
   // const unpinnedSource = useSharedQuery('notDeleted');
   const result: FilteredNotes<GT> = useMemo(
     () => {
@@ -246,22 +241,27 @@ export function useFilteredNotes<GT extends CoreValue>(
       switch (showPinned) {
         case 'pinned':
           res = [
-            buildQuery(view, unpinnedSource, true, name + '-Pinned'),
+            buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
             undefined,
           ];
           break;
 
         case 'all':
           res = [
-            buildQuery(view, unpinnedSource, undefined, name + '-Pinned'),
+            buildQueryOptions(
+              view,
+              unpinnedSource,
+              undefined,
+              name + '-Pinned'
+            ),
             undefined,
           ];
           break;
         case 'pinned-unpinned':
         default:
           res = [
-            buildQuery(view, unpinnedSource, true, name + '-Pinned'),
-            buildQuery(view, unpinnedSource, false, name + '-Unpinned'),
+            buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
+            buildQueryOptions(view, unpinnedSource, false, name + '-Unpinned'),
           ];
           break;
       }
@@ -287,7 +287,7 @@ export function useFilteredNotes<GT extends CoreValue>(
   return result;
 }
 
-function buildQuery<GT extends CoreValue>(
+function buildQueryOptions<GT extends CoreValue>(
   view: Pick<
     View,
     | 'groupBy'
@@ -303,7 +303,7 @@ function buildQuery<GT extends CoreValue>(
   src: VertexSource,
   pinned: boolean | undefined,
   name: string
-): Query<Vertex, Note, GT> {
+): QueryOptions<Note, Note, GT> {
   const groupBy =
     view.groupBy === 'tag'
       ? groupByForTag(view.pivot || '')
@@ -324,9 +324,9 @@ function buildQuery<GT extends CoreValue>(
     }
   }
 
-  return new Query<Vertex, Note, GT>(
-    src as UnionQuery<any, Note>,
-    (x: Note) =>
+  return {
+    source: src as UnionQuery<any, Note>,
+    predicate: (x: Note) =>
       !x.isLocal &&
       x.type === view.noteType &&
       x.parentType !== NoteType.Task &&
@@ -338,26 +338,24 @@ function buildQuery<GT extends CoreValue>(
         SetUtils.intersects(selectedAssignees, x.assignees)) &&
       (tagNames.size === 0 || noteMatchesTags(x, tagNames)) &&
       (!view.dateFilter || kDatePredicates[view.dateFilter](x)),
-    {
-      sortBy: NOTE_SORT_BY[view.sortBy || SortBy.Default],
-      name,
-      groupBy: groupBy as GroupByFunction<Note, GT>,
-      groupComparator: GROUP_COMPARATOR[view.groupBy],
-      contentSensitive: true,
-      contentFields: [
-        'isLocal',
-        'type',
-        'parentType',
-        'isPinned',
-        'isChecked',
-        'assignees',
-        'tags',
-        'childCards',
-        'title',
-        'dueDate',
-      ],
-    }
-  );
+    sortBy: NOTE_SORT_BY[view.sortBy || SortBy.Default],
+    name,
+    groupBy: groupBy as GroupByFunction<Note, GT>,
+    groupComparator: GROUP_COMPARATOR[view.groupBy],
+    contentSensitive: true,
+    contentFields: [
+      'isLocal',
+      'type',
+      'parentType',
+      'isPinned',
+      'isChecked',
+      'assignees',
+      'tags',
+      'childCards',
+      'title',
+      'dueDate',
+    ],
+  };
 }
 
 function noteMatchesTags(

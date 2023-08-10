@@ -16,11 +16,9 @@ const PAGE_SIZE = 10;
 export function TagBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes;
+  filteredNotes: FilteredNotes<string | null>;
 }) {
-  const notesQuery = useQuery2(
-    (filteredNotes as FilteredNotes<string | null>)[0]
-  );
+  const notesQuery = useQuery2(filteredNotes[0]);
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
