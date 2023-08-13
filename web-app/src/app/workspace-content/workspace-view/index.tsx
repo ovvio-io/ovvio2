@@ -45,28 +45,19 @@ export default function WorkspaceContentView({ className }: ContentProps) {
   const styles = useStyles();
   const view = usePartialView('selectedWorkspaces');
 
+  debugger;
+
   return (
     <div className={cn(styles.main, className)}>
       <Toolbar />
       <DueDateEditor>
         <div className={cn(styles.content)}>
           <div className={cn(styles.router)}>
-            <Routes>
-              <Route
-                path={`/:workspaceId/notes/:noteId`}
-                element={<NoteView />}
-              />
-              <Route
-                path="*"
-                element={
-                  view.selectedWorkspaces.size > 0 ? (
-                    <CardsDisplay />
-                  ) : (
-                    <EmptyState />
-                  )
-                }
-              />
-            </Routes>
+            {view.selectedWorkspaces.size > 0 ? (
+              <CardsDisplay />
+            ) : (
+              <EmptyState />
+            )}
           </div>
         </div>
       </DueDateEditor>

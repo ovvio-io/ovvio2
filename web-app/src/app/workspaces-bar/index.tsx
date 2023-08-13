@@ -52,6 +52,8 @@ import { WorkspaceBarActions } from './actions.tsx';
 import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
+import { LogoText } from '../../../../styles/components/logo.tsx';
+import { LogoIcon } from '../../../../styles/components/logo.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -1003,12 +1005,14 @@ function WorkspaceBarInternal({
         >
           <div className={cn(styles.header)}>
             <div className={cn(styles.logoContainer)}>
-              {/* <LogoIcon className={cn(styles.logoIcon)} /> */}
-              <img src="/Logo_precise_fold.png" alt="logo-small" />
-              {/* {expanded && <LogoText className={cn(styles.logoText)} />} */}
+              <LogoIcon className={cn(styles.logoIcon)} />
+              {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
               {!view.workspaceBarCollapsed && (
-                <img src="/Logo_precise_open.png" alt="logo-ful" />
+                <LogoText className={cn(styles.logoText)} />
               )}
+              {/* {!view.workspaceBarCollapsed && (
+                <img src="/Logo_precise_open.png" alt="logo-ful" />
+              )} */}
               <div className={cn(layout.flexSpacer)} />
               <Button
                 className={cn(styles.openBarButton)}
