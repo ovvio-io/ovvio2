@@ -16,7 +16,7 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <g id="color=Blue, Size=Default" clip-path="url(#clip0_1820_20679)">
+        <g id="color=Blue, Size=Default" clipPath="url(#clip0_1820_20679)">
           <rect
             id="Rectangle"
             opacity="0.6"
@@ -26,8 +26,8 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
             height="4"
             fill="#8BC5EE"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linejoin="round"
+            strokeWidth="2"
+            strokeLinejoin="round"
           />
           <rect
             id="Rectangle_2"
@@ -38,16 +38,16 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
             height="4"
             fill="#8BC5EE"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linejoin="round"
+            strokeWidth="2"
+            strokeLinejoin="round"
           />
           <path
             id="Vector 8"
             opacity="0.6"
             d="M3 5V11C3 12.1046 3.89543 13 5 13H11"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </g>
         <defs>
@@ -67,7 +67,7 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g id="color=Default, Size=Default" clip-path="url(#clip0_529_717)">
+      <g id="color=Default, Size=Default" clipPath="url(#clip0_529_717)">
         <rect
           id="Rectangle"
           opacity="0.6"
@@ -77,8 +77,8 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
           height="4"
           fill="#CCCCCC"
           stroke="#4D4D4D"
-          stroke-width="2"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinejoin="round"
         />
         <rect
           id="Rectangle_2"
@@ -89,16 +89,16 @@ export function IconCollapseExpand(props: IconCollapseExpandProps) {
           height="4"
           fill="#CCCCCC"
           stroke="#4D4D4D"
-          stroke-width="2"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinejoin="round"
         />
         <path
           id="Vector 8"
           opacity="0.6"
           d="M3 5V11C3 12.1046 3.89543 13 5 13H11"
           stroke="#4D4D4D"
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </g>
       <defs>

@@ -53,12 +53,10 @@ function Root({ style }: AppProps & { style?: any }) {
 
   return (
     <div className={cn(styles.root)} style={style}>
+      {loaded && <WorkspacesBar key={'wsbar'} />}
       {loaded ? (
-        <div>
-          <WorkspacesBar key={'wsbar'} />
-          <div className={cn(styles.content)}>
-            <WorkspaceContentView />
-          </div>
+        <div className={cn(styles.content)}>
+          <WorkspaceContentView key="contents" />
         </div>
       ) : (
         <LoadingView />

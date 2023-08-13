@@ -26,15 +26,13 @@ const PAGE_SIZE = 10;
 export function WorkspaceBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes;
+  filteredNotes: FilteredNotes<VertexManager<Workspace>>;
 }) {
   const view = usePartialView('selectedWorkspaces');
   const selectedWorkspaces = usePartialVertices(view.selectedWorkspaces, [
     'name',
   ]);
-  const notesQuery = useQuery2(
-    (filteredNotes as unknown as FilteredNotes<VertexManager<Workspace>>)[0]
-  );
+  const notesQuery = useQuery2(filteredNotes[0]);
   const toast = useToastController();
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);

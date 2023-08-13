@@ -26,7 +26,8 @@ import {
   SuggestionItem,
   SuggestionItemIcon,
 } from './mention-node.tsx';
-import { Query } from '../../../../../cfds/client/graph/query.ts';
+import { Query, QueryOptions } from '../../../../../cfds/client/graph/query.ts';
+import { VertexSource } from '../../../../../cfds/client/graph/vertex-source.ts';
 
 const useStyles = makeStyles((theme) => ({
   tagIndicator: {
@@ -94,15 +95,16 @@ function TagsSuggestionComponent({
   const card = useCurrentCard()!;
   const partial = usePartialVertex(card, ['tags']);
   const sharedTags = useSharedQuery('tags');
-  const childTagsQuery = useQuery2(
-    new Query(sharedTags, (tag) => {
+  const childTagsQuery = useQuery2({
+    source: sharedTags as VertexSource,
+    predicate: (tag: Tag) => {
       if (!tag.parentTag) {
         return false;
       }
       const cardTagChild = partial.tags.get(tag.parentTag);
       return !cardTagChild || tag !== cardTagChild;
-    })
-  );
+    },
+  });
 
   const filteredTags = filterSortMentions(
     childTagsQuery.results,

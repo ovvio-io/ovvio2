@@ -438,13 +438,11 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
   // Key -> Commit Id -> Commit
   private readonly _commitsByRecordKey: Dictionary<string | null, Set<string>>;
-  private readonly _commitsById: LRUCache<string, Commit>;
+  private readonly _commitsById: Map<string, Commit>;
 
-  constructor(commits?: Iterable<Commit>, maxCommits = 0) {
+  constructor(commits?: Iterable<Commit>) {
     this._commitsByRecordKey = new Map();
-    this._commitsById = new LRUCache(maxCommits, (_id, commit) => {
-      this._commitsByRecordKey.get(commit.key)?.delete(commit.id);
-    });
+    this._commitsById = new Map();
     if (commits) {
       for (const c of commits) {
         let keyMap = this._commitsByRecordKey.get(c.key);
@@ -456,14 +454,6 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
         this._commitsById.set(c.id, c);
       }
     }
-  }
-
-  get maxCommits(): number {
-    return this._commitsById.limit;
-  }
-
-  set maxCommits(limit: number) {
-    this._commitsById.limit = limit;
   }
 
   numberOfCommits(): number {

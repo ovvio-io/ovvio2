@@ -125,7 +125,11 @@ export function WorkspacesDropdown({
       renderSelected={renderSelected}
     >
       {allWorkspaces.map((ws) => (
-        <DropDownItem key={ws.key} value={ws} className={cn(styles.listItem)}>
+        <DropDownItem
+          key={`ws-dropdown/${ws.key}`}
+          value={ws}
+          className={cn(styles.listItem)}
+        >
           <WorkspaceItem workspace={ws} />
         </DropDownItem>
       ))}

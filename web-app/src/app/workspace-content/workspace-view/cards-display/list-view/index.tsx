@@ -76,9 +76,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
   const view = usePartialView('noteType');
 
   const pinnedQuery = useQuery2(filteredNotes[0]);
-  const unpinnedQuery: Query<Vertex, Note> | undefined = useQuery2(
-    filteredNotes[1]
-  );
+  const unpinnedQuery = useQuery2(filteredNotes[1]);
 
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {

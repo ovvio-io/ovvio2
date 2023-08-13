@@ -1,3 +1,4 @@
+import React from 'react';
 import { useTheme } from '../../theme.tsx';
 import IconBase, { IconProps } from './IconBase.tsx';
 

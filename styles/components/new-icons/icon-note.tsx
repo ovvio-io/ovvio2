@@ -35,7 +35,7 @@ export function IconNote({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_970_30419)">
+      <g clipPath="url(#clip0_970_30419)">
         <path
           opacity="0.7"
           d="M1 13V13.5C1 14.3284 1.67157 15 2.5 15V15C3.32843 15 4 14.3284 4 13.5V13"

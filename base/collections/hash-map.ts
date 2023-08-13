@@ -16,12 +16,30 @@ function _noClone<T>(v: T): T {
   return v;
 }
 
+/**
+ * A set implementation with a user-provided hash and equality functions.
+ *
+ * The API is consistent with Set so HashSet can be used as a drop-in
+ * replacement.
+ */
 export class HashSet<V> implements Iterable<V> {
   private readonly _map: Map<string, V[]>;
   private readonly _hashFunc: HashFunction<V>;
   private readonly _equalFunc: EqualFunction<V>;
   private readonly _cloneFunc: CloneFunction<V>;
 
+  /**
+   * Initializes a new HashSet instance.
+   *
+   * @param hash The hash function to use for set values.
+   *
+   * @param eq An equality check function. If two values are deemed equal by
+   *           this function, then they must also have an equal hash value.
+   *
+   * @param clone An optional clone function. If provided, values are first
+   *              cloned when added to the set, then the clone is added rather
+   *              than the original value.
+   */
   constructor(
     hash: HashFunction<V>,
     eq: EqualFunction<V>,
@@ -159,6 +177,13 @@ interface MapEntry<K, V> {
   value?: V;
 }
 
+/**
+ * A hash map implementation that allows user-provided hash and equality
+ * functions. It's built on top the HashSet above and supports similar features.
+ *
+ * The API is consistent with Map so HashMap can be used as a drop-in
+ * replacement.
+ */
 export class HashMap<K = any, V = any> implements Dictionary<K, V> {
   private _set: HashSet<MapEntry<K, V>>;
 

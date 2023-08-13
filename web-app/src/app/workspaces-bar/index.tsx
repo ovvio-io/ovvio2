@@ -8,7 +8,7 @@ import React, {
 import * as SetUtils from '../../../../base/set.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { WorkspaceGrouping } from '../../../../cfds/base/scheme-types.ts';
-import { Query } from '../../../../cfds/client/graph/query.ts';
+import { Query, QueryOptions } from '../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { GroupId } from '../../../../cfds/client/graph/vertex-source.ts';
 import { Role } from '../../../../cfds/client/graph/vertices/role.ts';
@@ -52,6 +52,8 @@ import { WorkspaceBarActions } from './actions.tsx';
 import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
+import { LogoText } from '../../../../styles/components/logo.tsx';
+import { LogoIcon } from '../../../../styles/components/logo.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -492,7 +494,6 @@ function WorkspaceToggleView({
     'workspaceBarCollapsed',
     'selectedWorkspaces'
   );
-  query = useQuery2(query, false);
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
@@ -747,7 +748,8 @@ function WorkspacesList({ query }: WorkspaceListProps) {
     'workspaceBarCollapsed',
     'selectedWorkspaces'
   );
-  useQuery2(query);
+
+  console.log(`Workspace list query results: ${query.results}`);
 
   const toggleExpanded = useCallback(
     (gid: WorkspaceGID) => {
@@ -865,31 +867,27 @@ function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
     'pinnedWorkspaces'
   );
 
-  const query = useMemo(
-    () => {
-      return new Query<Workspace, Workspace, WorkspaceGID>(
-        graph.sharedQuery('workspaces'),
-        () => true,
-        {
-          groupBy: view.workspaceGrouping
-            ? GROUP_BY[view.workspaceGrouping]
-            : undefined,
-          groupComparator: compareWorkspaceGID,
-          name: 'WorkspaceBar',
-          contentSensitive: true,
-          contentFields: ['isTemplate'],
-        }
-      );
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
+  const query = useQuery2(
+    useMemo(() => {
+      return {
+        source: graph.sharedQuery('workspaces'),
+        predicate: (ws: Workspace) => true,
+        groupBy: view.workspaceGrouping
+          ? GROUP_BY[view.workspaceGrouping]
+          : undefined,
+        groupComparator: compareWorkspaceGID,
+        name: 'WorkspaceBar',
+        contentSensitive: true,
+        contentFields: ['isTemplate'],
+      } as QueryOptions<Workspace, Workspace, GroupId<WorkspaceGID>>;
+    }, [
       graph,
-      // view,
       view.workspaceGrouping,
       partialUser.hiddenWorkspaces,
       partialUser.pinnedWorkspaces,
-    ]
+    ])
   );
+
   return <WorkspaceBarInternal className={className} query={query} />;
 }
 
@@ -1007,12 +1005,14 @@ function WorkspaceBarInternal({
         >
           <div className={cn(styles.header)}>
             <div className={cn(styles.logoContainer)}>
-              {/* <LogoIcon className={cn(styles.logoIcon)} /> */}
-              <img src="/Logo_precise_fold.png" alt="logo-small" />
-              {/* {expanded && <LogoText className={cn(styles.logoText)} />} */}
+              <LogoIcon className={cn(styles.logoIcon)} />
+              {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
               {!view.workspaceBarCollapsed && (
-                <img src="/Logo_precise_open.png" alt="logo-ful" />
+                <LogoText className={cn(styles.logoText)} />
               )}
+              {/* {!view.workspaceBarCollapsed && (
+                <img src="/Logo_precise_open.png" alt="logo-ful" />
+              )} */}
               <div className={cn(layout.flexSpacer)} />
               <Button
                 className={cn(styles.openBarButton)}

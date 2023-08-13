@@ -1,5 +1,5 @@
 import { randomInt } from '../../math.ts';
-import { newInstance } from '../../common.ts';
+import { newInstance, uniqueId } from '../../common.ts';
 import { MurmurHash3 } from '../../hash.ts';
 import { serializeDate } from '../../date.ts';
 import { BaseEncoder } from './base-encoder.ts';
@@ -11,7 +11,7 @@ import {
   ReadonlyCoreArray,
   ReadonlyCoreObject,
 } from '../base.ts';
-import { getCoreType } from '../utils.ts';
+import { getCoreType, getCoreTypeOrUndef } from '../utils.ts';
 import * as StreamMD5 from '../../../external/md5.ts';
 
 export interface ChecksumEncoderOpts extends CoreOptions {
@@ -19,6 +19,8 @@ export interface ChecksumEncoderOpts extends CoreOptions {
   flatRep?: boolean;
   local?: boolean;
 }
+
+const gUnknownValuesHashes = new WeakMap<object, string>();
 
 export abstract class ChecksumEncoder<
   ST,
@@ -65,13 +67,21 @@ export abstract class ChecksumEncoder<
     return typeSafe ? false : typeof value === 'string';
   }
 
-  checksumForValue(value: CoreValue, options?: OT): string {
+  checksumForValue(value: CoreValue | object, options?: OT): string {
     return this.checksumForString(this.convertValue(value, options));
   }
 
-  convertValue(value: CoreValue, options?: OT): string {
-    const type = getCoreType(value);
-    const converted = super.convertValue(value, options);
+  convertValue(value: CoreValue | object, options?: OT): string {
+    const type = getCoreTypeOrUndef(value);
+    if (type === undefined) {
+      let v = gUnknownValuesHashes.get(value as object);
+      if (!v) {
+        v = uniqueId();
+        gUnknownValuesHashes.set(value as object, v);
+      }
+      return v;
+    }
+    const converted = super.convertValue(value as CoreValue, options);
     const typeSafe =
       typeof options?.typeSafe === 'boolean' ? options.typeSafe : this.typeSafe;
     return typeSafe ? String(type) + converted : converted;

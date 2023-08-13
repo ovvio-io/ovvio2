@@ -7,9 +7,11 @@ import {
 
 const kMurmurEncoder = new Murmur3Checksum({ typeSafe: false });
 
-export function encodableValueHash(
-  v: CoreValue,
+export function coreValueHash(
+  v: CoreValue | object,
   options?: CoreOptions | ChecksumEncoderOpts
 ): string {
   return kMurmurEncoder.checksumForValue(v, options as Murmur3Opts);
 }
+
+export const encodableValueHash = coreValueHash;

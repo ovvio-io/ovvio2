@@ -111,10 +111,10 @@ const MenuContext = React.createContext({
 
 type DivProps = React.ComponentPropsWithoutRef<'div'>;
 
-export interface SecondaryMenuItemProps extends React.PropsWithChildren {
-  text: string;
+export type SecondaryMenuItemProps = React.PropsWithChildren<{
   className?: string;
-}
+  text: string;
+}>;
 
 export const SecondaryMenuItem: React.FC<SecondaryMenuItemProps> = ({
   children,
@@ -265,12 +265,12 @@ interface MenuProps {
   style?: {};
 }
 
-export function IconMenu({ popupClassName, ...props }: MenuProps) {
-  const styles = useStyles();
-  return (
-    <Menu {...props} popupClassName={cn(styles.iconMenu, popupClassName)} />
-  );
-}
+// export function IconMenu({ popupClassName, ...props }: MenuProps) {
+//   const styles = useStyles();
+//   return (
+//     <Menu {...props} popupClassName={cn(styles.iconMenu, popupClassName)} />
+//   );
+// }
 
 // export interface IconMenuItemProps {
 //   IconComponent: React.ComponentType;

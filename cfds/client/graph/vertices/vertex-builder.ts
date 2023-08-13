@@ -8,6 +8,7 @@ import { User } from './user.ts';
 import { Workspace } from './workspace.ts';
 import { Role } from './role.ts';
 import { View } from './view.ts';
+import { UserSettings } from './user-settings.ts';
 
 export default function vertexBuilder(
   manager: VertexManager,
@@ -21,6 +22,9 @@ export default function vertexBuilder(
 
     case SchemeNamespace.USERS:
       return new User(manager, prevVertex, config);
+
+    case SchemeNamespace.USER_SETTINGS:
+      return new UserSettings(manager, prevVertex, config);
 
     case SchemeNamespace.TAGS:
       return new Tag(manager, prevVertex, config);

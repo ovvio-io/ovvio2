@@ -16,14 +16,13 @@ import {
   Query,
   UnionQuery,
   Predicate,
-  EVENT_QUERY_RESULTS_CHANGED,
+  QueryOptions,
 } from '../../../../../cfds/client/graph/query.ts';
 import {
   SharedQueryName,
   SharedQueryType,
 } from '../../../../../cfds/client/graph/shared-queries.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import { EVENT_LOADING_FINISHED } from '../../../../../cfds/client/graph/vertex-source.ts';
 import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { Tag } from '../../../../../cfds/client/graph/vertices/tag.ts';
@@ -40,14 +39,6 @@ export interface IAsyncQuery {
 export type BaseResult<T> = {
   result: T;
 };
-
-export interface QueryOptions<IT extends Vertex = Vertex, OT extends IT = IT> {
-  sort?: SortDescriptor<OT>;
-  listenOn?: (keyof IT)[];
-  name?: string;
-  mapResult?: (results: VertexManager<OT>[]) => OT;
-  source?: Query<any, IT> | UnionQuery<any, IT> | GraphManager;
-}
 
 export function isWorkspace(v: Vertex): v is Workspace {
   return v.namespace === NS_WORKSPACE;
@@ -70,54 +61,31 @@ function defaultMap(x: any) {
   return x;
 }
 
-export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
-  predicate: Predicate<IT, OT>,
-  deps: DependencyList,
-  opts?: QueryOptions<IT, OT>
-): UseQueryResult<OT> {
-  const { sort, listenOn, mapResult = defaultMap } = opts || {};
-  const graph = useGraphManager();
-  const [result, setResult] = useState({
-    loading: true,
-    results: mapResult([]),
-  });
-
-  const listenOnDep = listenOn && JSON.stringify(listenOn);
-
-  const filter = useCallback(
-    (v: IT) => {
-      return !v.isDeleted && predicate(v);
-    },
-    deps // eslint-disable-line
-  );
-
-  useEffect(() => {
-    const query = new Query<IT, OT>(
-      opts?.source || graph,
-      filter,
-      sort,
-      opts?.name
-    );
-
-    query.on(
-      EVENT_QUERY_RESULTS_CHANGED,
-      () => {
-        console.log(`${opts?.name || 'Unknown query'} fired`);
-        setResult({
-          loading: query.isLoading,
-          results: mapResult(query.results),
-        });
-      },
-      true
-    );
-
-    return () => {
-      query.close();
-    };
-  }, [graph, filter, sort, listenOnDep]); // eslint-disable-line
-
-  return result;
-}
+// export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
+//   predicate: Predicate<IT, OT>,
+//   deps: DependencyList,
+//   opts?: QueryOptions<IT, OT>
+// ): UseQueryResult<OT> {
+//   const { sort, listenOn, mapResult = defaultMap } = opts || {};
+//   const graph = useGraphManager();
+//   const filter = useCallback(
+//     (v: IT) => {
+//       return !v.isDeleted && predicate(v);
+//     },
+//     deps // eslint-disable-line
+//   );
+//   const listenOnDep = listenOn && JSON.stringify(listenOn);
+//   const query = useQuery2(
+//     useMemo(
+//       () => new Query<IT, OT>(opts?.source || graph, filter, sort, opts?.name),
+//       [opts?.source, graph, filter, sort, opts?.name, listenOnDep]
+//     )
+//   );
+//   return {
+//     loading: query.isLoading,
+//     results: query.results,
+//   };
+// }
 
 export function useExistingQuery<
   IT extends Vertex = Vertex,
@@ -136,7 +104,7 @@ export function useExistingQuery<
         results: query.results,
       });
     };
-    query.on(EVENT_QUERY_RESULTS_CHANGED, listener);
+    query.attach('results-changed', listener);
 
     // if (!query.isLoading) {
     setResult({
@@ -146,7 +114,7 @@ export function useExistingQuery<
     // }
 
     return () => {
-      query.removeListener(EVENT_QUERY_RESULTS_CHANGED, listener);
+      query.detach('results-changed', listener);
     };
   }, [query]);
 
@@ -166,15 +134,13 @@ export function useIsGraphLoading() {
   const [loading, setLoading] = useState(graph.isLoading);
   useMemo(() => {
     if (graph.isLoading) {
-      graph.once(EVENT_LOADING_FINISHED, () => {
+      graph.once('loading-finished', () => {
         setLoading(graph.isLoading);
       });
     }
   }, [graph]);
 
-  const rootUser = usePartialVertex(graph.getRootVertexManager(), [
-    'isLoading',
-  ]);
+  const rootUser = usePartialVertex(graph.getRootVertexManager(), []);
 
   const [notDeletedLoading, setNotDeletedLoading] = useState(
     graph.sharedQuery('notDeleted').isLoading
@@ -198,37 +164,35 @@ export function useIsGraphLoading() {
     };
   }, [graph]);
 
-  return loading || graph.isLoading || rootUser.isLoading || notDeletedLoading; // || query.count > 0;
+  return loading || graph.isLoading || rootUser.isNull || notDeletedLoading; // || query.count > 0;
 }
 
 type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =
   T extends SharedQueryName ? SharedQueryType<T> : undefined;
 
+export function useQuery2<
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue
+>(queryOrName: QueryOptions<IT, OT, GT>): Query<IT, OT, GT>;
+
 export function useQuery2<T extends SharedQueryName | undefined = undefined>(
-  queryOrName: T,
-  closeOnCleanup?: boolean
+  queryOrName: T
 ): SharedQueryResultType<T>;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
   GT extends CoreValue = CoreValue
->(queryOrName: Query<IT, OT, GT>, closeOnCleanup?: boolean): Query<IT, OT, GT>;
-
-export function useQuery2<
-  IT extends Vertex = Vertex,
-  OT extends IT = IT,
-  GT extends CoreValue = CoreValue
 >(
-  queryOrName: Query<IT, OT, GT> | undefined,
-  closeOnCleanup?: boolean
+  queryOrName: QueryOptions<IT, OT, GT> | undefined
 ): Query<IT, OT, GT> | undefined;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
   GT extends CoreValue = CoreValue
->(queryOrName: undefined, closeOnCleanup: boolean): undefined;
+>(queryOrName: undefined): undefined;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
@@ -236,38 +200,37 @@ export function useQuery2<
   GT extends CoreValue = CoreValue,
   T extends SharedQueryName | undefined = undefined
 >(
-  queryOrName: Query<IT, OT, GT> | T | undefined,
-  closeOnCleanup = true
+  queryOrName: QueryOptions<IT, OT, GT> | T | undefined
 ): Query<IT, OT, GT> | SharedQueryResultType<T> | undefined {
-  const [_, setCounter] = useState(0);
   const graph = useGraphManager();
   if (typeof queryOrName === 'string') {
     queryOrName = graph.sharedQueriesManager[queryOrName] as unknown as T;
   }
-  assert(queryOrName instanceof Query || typeof queryOrName === 'undefined');
-  const query = queryOrName as Query<IT, OT, GT>;
+  const [query] = useState<Query<IT, OT, GT> | undefined>(() => {
+    if (queryOrName instanceof Query) {
+      return queryOrName;
+    }
+    if (typeof queryOrName === 'undefined') {
+      return undefined;
+    }
+    return graph.query(queryOrName as QueryOptions<IT, OT, GT>);
+  });
+  const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(query);
   useEffect(() => {
     if (!query) {
       return;
     }
-    // const startTime = Date.now();
-    const cleanup = query.onResultsChanged(() => {
-      // Wait a bit while queries are loading before showing intermediate
-      // results. This prevents redundant UI refreshes and keeps everything
-      // smooth.
-      // if (!query.isLoading || Date.now() - startTime > 500) {
-      setCounter((x) => x + 1);
-      // }
-    });
-    return () => {
-      cleanup();
-      if (closeOnCleanup && !query.isLocked) {
-        query.close();
-      }
+
+    setProxy(new Proxy(query, {}));
+    const callback = () => {
+      setProxy(new Proxy(query, {}));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, closeOnCleanup]);
-  return query;
+    query.attach('results-changed', callback);
+    return () => {
+      query.detach('results-changed', callback);
+    };
+  }, [query]);
+  return proxy || query;
 }
 
 export function useSharedQuery<T extends SharedQueryName>(

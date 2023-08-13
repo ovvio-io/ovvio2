@@ -1,6 +1,9 @@
 import { isNumber } from './comparisons.ts';
 
-export const kDayMs = 24 * 60 * 60 * 1000;
+export const kSecondMs = 1000;
+export const kMinuteMs = 60 * kSecondMs;
+export const kHourMs = 60 * kMinuteMs;
+export const kDayMs = 24 * kHourMs;
 export const kWeekMs = 7 * kDayMs;
 
 export function serializeDate(date: Date): number {
@@ -66,18 +69,38 @@ export function numberOfDaysLeftInCurrentMonth(): number {
   return Math.round((startOfNextMonth.getTime() - today.getTime()) / kDayMs);
 }
 
-export function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
+export function startOfDay(d: Date): Date {
+  d.setTime(
+    d.getTime() -
+      d.getUTCHours() * kHourMs -
+      d.getUTCMinutes() * kMinuteMs -
+      d.getUTCSeconds() * kSecondMs -
+      d.getUTCMilliseconds() +
+      d.getTimezoneOffset() * kMinuteMs
+  );
   return d;
+}
+
+export function startOfToday(): Date {
+  return startOfDay(new Date());
 }
 
 export function startOfThisMonth(): Date {
   const d = startOfToday();
-  d.setDate(0);
+  d.setTime(d.getTime() - (d.getUTCDate() - 1) * kDayMs);
+  return d;
+}
+
+export function startOfThisWeek(): Date {
+  const d = startOfToday();
+  d.setTime(d.getTime() - d.getDay() * kDayMs);
   return d;
 }
 
 export function numberOfWorkDaysLeftInWeek(): number {
   return Math.max(0, 6 - new Date().getDay() - 1);
+}
+
+export function numberOfWorkDaysLeftInMonth(): number {
+  return numberOfDaysInCurrentMonth() - (new Date().getDate() - 1);
 }

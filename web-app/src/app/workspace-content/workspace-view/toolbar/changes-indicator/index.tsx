@@ -9,7 +9,8 @@ import {
   typeFromCode,
   ErrorType,
 } from '../../../../../../../cfds/base/errors.ts';
-import { useQuery } from '../../../../../core/cfds/react/query.ts';
+import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   indicator: {
@@ -22,13 +23,12 @@ const useStyles = makeStyles((theme) => ({
 
 export default function ChangesIndicator() {
   const styles = useStyles();
-  const saving = useQuery(
-    (x) => !x.isLocal && !x.isDemoData && x.hasPendingChanges,
-    [],
-    {
-      name: 'ChangesIndicator',
-    }
-  );
+  const graph = useGraphManager();
+  const saving = useQuery2({
+    source: graph,
+    predicate: (x) => !x.isLocal && !x.isDemoData && x.hasPendingChanges,
+    name: 'ChangesIndicator',
+  });
   const hasPendingChanges = saving.results.length > 0;
   console.log(saving.results);
 

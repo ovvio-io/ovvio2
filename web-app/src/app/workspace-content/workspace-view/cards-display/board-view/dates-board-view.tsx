@@ -30,14 +30,12 @@ const PAGE_SIZE = 10;
 export function DueDateBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes;
+  filteredNotes: FilteredNotes<DueDateColumn>;
 }) {
   const toast = useToastController();
   const logger = useLogger();
   const strings = useStrings();
-  const notesQuery = useQuery2(
-    filteredNotes[0] as Query<Vertex, Note, DueDateColumn>
-  );
+  const notesQuery = useQuery2(filteredNotes[0]);
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
 

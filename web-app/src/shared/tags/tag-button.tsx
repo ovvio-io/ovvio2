@@ -164,7 +164,7 @@ function AddTagActionPopup({
     const filteredRes: (VertexManager<Tag> | string)[] = suggestResults(
       filter,
       childTagsQuery.results,
-      (tag) => tag.getVertexProxy().fullName
+      (tag) => tag.getVertexProxy().name
     );
 
     // const filteredRes = res
@@ -229,7 +229,7 @@ function AddTagActionPopup({
           />
         </div>
         <span className={cn(styles.tagName)}>
-          {(item as VertexManager<Tag>).getVertexProxy().fullName}
+          {(item as VertexManager<Tag>).getVertexProxy().name}
         </span>
       </MentionItem>
     );
