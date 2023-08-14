@@ -17,7 +17,7 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
 import Layer from '../../../../styles/components/layer.tsx';
-import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
+import Menu, { LineSeparator, MenuItem } from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
 import Tooltip from '../../../../styles/components/tooltip/index.tsx';
@@ -507,7 +507,9 @@ function WorkspaceToggleView({
             direction="out"
             position="right"
           >
-            <LabelSm>Group By</LabelSm>
+            <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
+            <LineSeparator/>
+
             <MenuItem
               onClick={() => {
                 view.workspaceGrouping = 'none';
@@ -515,6 +517,8 @@ function WorkspaceToggleView({
             >
               {strings.none}
             </MenuItem>
+            <LineSeparator/>
+
             <MenuItem
               onClick={() => {
                 view.workspaceGrouping = 'assignee';
@@ -522,6 +526,8 @@ function WorkspaceToggleView({
             >
               {strings.assignee}
             </MenuItem>
+            <LineSeparator/>
+
             <MenuItem
               onClick={() => {
                 view.workspaceGrouping = 'teamLeader';

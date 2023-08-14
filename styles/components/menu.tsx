@@ -30,22 +30,38 @@ import { IconExpander } from './icons/index.ts';
 //   },
 // });
 
+export const LineSeparator = () => (
+  <div style={{ height: "1px", backgroundColor: "#F5ECDC", width: "100%" }} />
+);
+
 const useStyles = makeStyles((theme) => ({
   item: {
     height: styleguide.gridbase * 6,
     flexShrink: 0,
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     minWidth: styleguide.gridbase * 20,
     padding: styleguide.gridbase,
     color: theme.background.text,
-    backgroundColor: 'transparent',
-    transition: 'background-color 0.15s linear',
-    cursor: 'pointer',
-    ':hover': {
+    transition: "background-color 0.15s linear",
+    cursor: "pointer",
+    ":hover": {
       backgroundColor: theme.background[100],
     },
-    alignItems: 'center',
+    alignItems: "center",
     basedOn: [layout.row],
+  },
+  dropDownItem: {
+    boxSizing: "border-box",
+    height: styleguide.gridbase * 4, // changed from 6
+    minWidth: styleguide.gridbase * 12, //changed from 20
+    maxWidth: styleguide.gridbase * 27, //added
+    padding: styleguide.gridbase,
+    color: theme.background.text,
+    cursor: "pointer",
+    ":hover": {
+      backgroundColor: theme.background[100],
+    },
+    fontSize: styleguide.gridbase * 1.5, // added
   },
   actionIcon: {
     marginRight: styleguide.gridbase,
@@ -54,20 +70,31 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   menuButton: {
-    userSelect: 'none',
+    userSelect: "none",
   },
   dropDown: {
-    alignItems: 'stretch',
-    padding: [styleguide.gridbase, 0],
-    backgroundColor: theme.background[0],
-    boxShadow: theme.shadows.z2,
+    // ------------------------ dropdown
+    // alignItems: "stretch",
+    // padding: [styleguide.gridbase, 0],
+    // backgroundColor: theme.background[0],
+    // boxShadow: theme.shadows.z2,
     basedOn: [layout.column],
-    transformOrigin: 'top',
-    whitespace: 'nowrap',
+    transformOrigin: "top",
+    whitespace: "nowrap",
+    display: "flex",
+    boxShadow: "0px 1px 3px 0px #00000040",
+    borderRadius: "2px", // Corner radius
+    justifyContent: "center",
+    border: "2px solid #F5ECDC",
+    font: "Poppins",
+    backgroundColor: "white",
+
+
     // animation: `${zoom} ${
     //   styleguide.transition.duration.short
     // }ms ${styleguide.transition.timing.standard} backwards`,
   },
+
   iconMenu: {
     ...layout.row.rules,
     boxSizing: 'border-box',
@@ -176,7 +203,7 @@ export const MenuItem = React.forwardRef<
   };
   return (
     <div
-      className={cn(className, styles.item)}
+      className={cn(className, styles.dropDownItem)} // modify (className, styles.item)
       {...props}
       onClick={invoke}
       ref={ref}
