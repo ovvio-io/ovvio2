@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'https://esm.sh/prop-types@15.8.1';
 import { styleguide } from '../styleguide.ts';
 import { useTransitionedOpen, TRANSITION_STATES } from './transition.tsx';
@@ -26,10 +25,19 @@ export const zIndex = 100;
 
 const useStyles = makeStyles(
   (theme) => ({
-    popper: {
+    // popper: {
+    //   position: 'absolute',
+    //   zIndex: zIndex,
+    // },
+    popper: {   // ADDED
       position: 'absolute',
       zIndex: zIndex,
+      // margin: '4px', // Add this line to apply margin all around
+      // // OR specify top and left margins separately
+      // marginTop: '60px', 
+      // marginLeft: '4px',
     },
+
     animator: {
       ...styleguide.transition.standard,
       transitionDuration: `${styleguide.transition.duration.short}ms`,
@@ -43,6 +51,7 @@ const useStyles = makeStyles(
     entering: {
       animation: `${popIn} ${styleguide.transition.duration.short}ms ${styleguide.transition.timing.standard} both`,
     },
+
     // visible: {
     //   opacity: 1,
     //   transform: 'translateY(0px)',
@@ -87,7 +96,7 @@ function isOverflowing(
     return [];
   }
 
-  const boundingRect = popper.getBoundingClientRect();
+  const boundingRect = popper.getBoundingClientRect();  //this method is on the DOM element and it triggered the popper to appear. This method returns the size of an element and its position relative to the viewport.
   const { x = 0, y = 0 } = style.transform || {};
   let offsetX =
     typeof style.left === 'number'
@@ -103,7 +112,7 @@ function isOverflowing(
         style.bottom -
         (boundingRect.height + boundingRect.height * y);
 
-  const points = [
+  const points = [ 
     {
       x: offsetX,
       y: offsetY,
@@ -176,14 +185,15 @@ type PositionCalculator = {
     };
   };
 };
+
 const positionCalculator: PositionCalculator = {
   top: {
     start: {
       in: calcFn((el, rect, points) => {
         return {
           transformOrigin: 'top left',
-          top: points.top,
-          left: points.left,
+          top: points.top , 
+          left: points.left ,
         };
       }),
       out: calcFn((el, rect) => {

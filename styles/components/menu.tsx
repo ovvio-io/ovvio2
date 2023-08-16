@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, cn } from '../css-objects/index.ts';
-
 import { styleguide } from '../styleguide.ts';
 import { layout } from '../layout.ts';
 import { Button } from './buttons.tsx';
@@ -35,6 +34,74 @@ export const LineSeparator = () => (
 );
 
 const useStyles = makeStyles((theme) => ({
+
+  arrowContainer: {
+    position: 'relative',
+    display: 'inline-block',
+  },
+
+  arrow: {
+    position: 'absolute',
+    top: '8px', // Adjust as needed
+    transform: 'translateX(-55%) rotate(45deg)', // Rotate the square
+    width: '8px', // Adjust size as needed
+    height: '8px', // Adjust size as needed
+    backgroundColor: 'white', // Adjust color as needed
+    // boxShadow: `
+    //   2px 0 3px rgba(0, 0, 0, 0.2), /* Left shadow */
+    //   0 2px 3px rgba(0, 0, 0, 0.2) /* Bottom shadow */
+    // `,
+    borderRight: "2px solid transparent",
+    borderTop: "2x solid transparent",
+    borderLeft: "2px solid #F5ECDC",
+    borderBottom: "2px solid #F5ECDC",
+  },
+
+
+
+  // arrowContainer: {
+  //   display: 'flex',
+  //   alignItems: 'inline-block',
+  // },
+
+  // arrow: {
+  //   position: 'absolute',
+  //   top: '4px',
+  //   left: '-10%', // Adjust as needed
+  //   transform: 'translateX(-50%)',
+  //   borderTop: '4px solid black',
+  //   borderRight: '4px solid transparent',
+  //   borderBottom: '4px solid black',
+  //   borderLeft: '4px solid transparent',
+  // },
+
+  //  arrowContainer: {
+  //   display: 'flex',
+  //   alignItems: 'center', // if you want to align them vertically
+  // },
+
+  // arrow: {
+
+  //   position: "absolute",
+  //   top: "4px",
+  //   left: "-10%",
+  //   backgroundColor: "white",
+  //   display: "inline-block",
+  //   borderTop: "4px solid black",
+  //   borderRight: "4px solid transparent",
+  //   borderBottom: "4px solid black",
+  //   borderLeft: "4px solid transparent",
+
+  //   // boxShadow: "0px -1px 3px 0px #00000040",
+
+  //   // borderTop: "8px solid transparent",
+  //   // borderBottom: "0px solid transparent",
+  //   // borderLeft: "4px solid #F5ECDC",
+  //   // borderRight: "4px solid #F5ECDC",
+  // },
+  
+  
+  
   item: {
     height: styleguide.gridbase * 6,
     flexShrink: 0,
@@ -50,6 +117,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     basedOn: [layout.row],
   },
+
   dropDownItem: {
     boxSizing: "border-box",
     height: styleguide.gridbase * 4, // changed from 6
@@ -72,23 +140,37 @@ const useStyles = makeStyles((theme) => ({
   menuButton: {
     userSelect: "none",
   },
+
+
+  
   dropDown: {
-    // ------------------------ dropdown
-    // alignItems: "stretch",
-    // padding: [styleguide.gridbase, 0],
-    // backgroundColor: theme.background[0],
-    // boxShadow: theme.shadows.z2,
     basedOn: [layout.column],
     transformOrigin: "top",
     whitespace: "nowrap",
     display: "flex",
-    boxShadow: "0px 1px 3px 0px #00000040",
+    boxShadow: "0px -1px 3px 0px #00000040",
     borderRadius: "2px", // Corner radius
     justifyContent: "center",
     border: "2px solid #F5ECDC",
     font: "Poppins",
     backgroundColor: "white",
+    position: "relative",
+    // basedOn: [layout.column],
+    // transformOrigin: "top",
+    // whitespace: "nowrap",
+    // display: "flex",
+    // boxShadow: "0px -1px 3px 0px #00000040",
+    // borderRadius: "2px", // Corner radius
+    // justifyContent: "center",
+    // border: "2px solid #F5ECDC",
+    // font: "Poppins",
+    // backgroundColor: "white",
 
+    // ------------------------ dropdown
+    // alignItems: "stretch",
+    // padding: [styleguide.gridbase, 0],
+    // backgroundColor: theme.background[0],
+    // boxShadow: theme.shadows.z2,
 
     // animation: `${zoom} ${
     //   styleguide.transition.duration.short
@@ -344,6 +426,7 @@ export default function Menu({
   const [minWidthStyle, setMinWidthStyle] = useState({});
   const menuCtx = useContext(MenuContext);
 
+
   const close = useCallback(
     (e?: MouseEvent) => {
       setOpen(false);
@@ -383,22 +466,45 @@ export default function Menu({
 
   const content = (
     <Popper
-      className={undefined}
-      anchor={anchor.current!}
-      open={open}
-      position={position}
-      align={align}
-      direction={direction}
-    >
-      <div
-        className={cn(styles.dropDown, popupClassName)}
-        style={minWidthStyle}
-      >
+    className={undefined}
+    anchor={anchor.current!}
+    open={open}
+    position={position}     
+    align={align}
+    direction={direction}
+  >
+    {/* <div className={styles.arrowContainer}> */}
+      <div className={cn(styles.dropDown, popupClassName)} style={minWidthStyle}>
         {children}
+      < div className={styles.arrow} />
       </div>
-    </Popper>
+    {/* </div> */}
+  </Popper>
+
+    
+    // <Popper
+    //   className={undefined}
+    //   anchor={anchor.current!}
+    //   open={open}
+    //   position={position}
+    //   align={align}
+    //   direction={direction}
+    // >
+    //     <div className={styles.arrowContainer}>
+
+    //   <div className={styles.arrow}/>
+    //   <div
+    //     className={cn(styles.dropDown, popupClassName)}
+    //     style={minWidthStyle}
+    //   >
+    //     {children}
+    //   </div>      
+    //   </div>
+    // </Popper>
   );
+
   return (
+
     <Button
       className={cn(styles.menuButton, className)}
       ref={anchor}

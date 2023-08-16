@@ -497,17 +497,30 @@ function WorkspaceToggleView({
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
+    const moreButtonRef = useRef(null); //ADDED
+
   return (
+    
     <div className={cn(styles.toggleView)}>
+      
       {!view.workspaceBarCollapsed && (
         <div className={cn(styles.workspacesHeader)}>
           <LabelSm>{strings.myWorkspaces}</LabelSm>
           <Menu
-            renderButton={() => <IconMore className={cn(styles.moreButton)} />}
+            renderButton={() => (
+              <div ref={moreButtonRef}>
+                <IconMore className={cn(styles.moreButton)} />
+              </div>
+            )}
+            anchor={moreButtonRef.current}
             direction="out"
-            position="right"
+            placement="auto-end"
+            // renderButton={() => <IconMore className={cn(styles.moreButton)} />}
+            // direction="out"
+            // position="right"
           >
             <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
+
             <LineSeparator/>
 
             <MenuItem
@@ -517,6 +530,7 @@ function WorkspaceToggleView({
             >
               {strings.none}
             </MenuItem>
+
             <LineSeparator/>
 
             <MenuItem
@@ -526,6 +540,7 @@ function WorkspaceToggleView({
             >
               {strings.assignee}
             </MenuItem>
+
             <LineSeparator/>
 
             <MenuItem
