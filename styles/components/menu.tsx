@@ -6,17 +6,17 @@ import React, {
   useCallback,
   useContext,
   MouseEvent,
-} from 'react';
-import ReactDOM from 'react-dom';
-import { makeStyles, cn } from '../css-objects/index.ts';
-import { styleguide } from '../styleguide.ts';
-import { layout } from '../layout.ts';
-import { Button } from './buttons.tsx';
-import Popper from './popper.tsx';
-import { Text } from './typography.tsx';
-import { Tooltip } from './tooltip/index.tsx';
-import Layer from './layer.tsx';
-import { IconExpander } from './icons/index.ts';
+} from "react";
+import ReactDOM from "react-dom";
+import { makeStyles, cn } from "../css-objects/index.ts";
+import { styleguide } from "../styleguide.ts";
+import { layout } from "../layout.ts";
+import { Button } from "./buttons.tsx";
+import Popper from "./popper.tsx";
+import { Text } from "./typography.tsx";
+import { Tooltip } from "./tooltip/index.tsx";
+import Layer from "./layer.tsx";
+import { IconExpander } from "./icons/index.ts";
 
 // const zoom = keyframes({
 //   from: {
@@ -34,74 +34,43 @@ export const LineSeparator = () => (
 );
 
 const useStyles = makeStyles((theme) => ({
-
   arrowContainer: {
-    position: 'relative',
-    display: 'inline-block',
+    display: "flex",
+    alignItems: "center",
+    position: "relative", 
+    zIndex: -1,
+
   },
 
   arrow: {
-    position: 'absolute',
-    top: '8px', // Adjust as needed
-    transform: 'translateX(-55%) rotate(45deg)', // Rotate the square
-    width: '8px', // Adjust size as needed
-    height: '8px', // Adjust size as needed
-    backgroundColor: 'white', // Adjust color as needed
-    // boxShadow: `
-    //   2px 0 3px rgba(0, 0, 0, 0.2), /* Left shadow */
-    //   0 2px 3px rgba(0, 0, 0, 0.2) /* Bottom shadow */
-    // `,
+    position: "absolute",
+    content: "''",
+    width: "8px",
+    height: "8px",
+    backgroundColor: "white",
+    transform: "rotate(45deg)",
+    top: "4px",
+    left: "-7px", 
     borderRight: "2px solid transparent",
     borderTop: "2x solid transparent",
     borderLeft: "2px solid #F5ECDC",
     borderBottom: "2px solid #F5ECDC",
   },
 
+  arrowShadow: {
+    content: "''",
+    position: "absolute",
+    width: "8px",
+    height: "8px",
+    backgroundColor: "rgba(0, 0, 0, 0.3)", 
+    transform: "rotate(45deg)",
+    top: "4px", 
+    left: "-7px",
+    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.3)", 
+    zIndex: -2,
 
+  },
 
-  // arrowContainer: {
-  //   display: 'flex',
-  //   alignItems: 'inline-block',
-  // },
-
-  // arrow: {
-  //   position: 'absolute',
-  //   top: '4px',
-  //   left: '-10%', // Adjust as needed
-  //   transform: 'translateX(-50%)',
-  //   borderTop: '4px solid black',
-  //   borderRight: '4px solid transparent',
-  //   borderBottom: '4px solid black',
-  //   borderLeft: '4px solid transparent',
-  // },
-
-  //  arrowContainer: {
-  //   display: 'flex',
-  //   alignItems: 'center', // if you want to align them vertically
-  // },
-
-  // arrow: {
-
-  //   position: "absolute",
-  //   top: "4px",
-  //   left: "-10%",
-  //   backgroundColor: "white",
-  //   display: "inline-block",
-  //   borderTop: "4px solid black",
-  //   borderRight: "4px solid transparent",
-  //   borderBottom: "4px solid black",
-  //   borderLeft: "4px solid transparent",
-
-  //   // boxShadow: "0px -1px 3px 0px #00000040",
-
-  //   // borderTop: "8px solid transparent",
-  //   // borderBottom: "0px solid transparent",
-  //   // borderLeft: "4px solid #F5ECDC",
-  //   // borderRight: "4px solid #F5ECDC",
-  // },
-  
-  
-  
   item: {
     height: styleguide.gridbase * 6,
     flexShrink: 0,
@@ -141,8 +110,6 @@ const useStyles = makeStyles((theme) => ({
     userSelect: "none",
   },
 
-
-  
   dropDown: {
     basedOn: [layout.column],
     transformOrigin: "top",
@@ -179,9 +146,9 @@ const useStyles = makeStyles((theme) => ({
 
   iconMenu: {
     ...layout.row.rules,
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     padding: [styleguide.gridbase * 2, styleguide.gridbase * 1.5],
-    alignItems: 'center',
+    alignItems: "center",
   },
   iconItem: {
     padding: 0,
@@ -192,15 +159,15 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row, layout.centerCenter],
   },
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    display: 'none',
-    userSelect: 'none',
-    '&backdropVisible': {
-      display: 'block',
+    display: "none",
+    userSelect: "none",
+    "&backdropVisible": {
+      display: "block",
     },
   },
   tooltip: {
@@ -208,8 +175,8 @@ const useStyles = makeStyles((theme) => ({
   },
   backdropVisible: {},
   secondaryIcon: {
-    transform: 'rotate(270deg)',
-    transformOrigin: 'center center',
+    transform: "rotate(270deg)",
+    transformOrigin: "center center",
   },
 }));
 
@@ -218,7 +185,7 @@ const MenuContext = React.createContext({
   hasParent: false,
 });
 
-type DivProps = React.ComponentPropsWithoutRef<'div'>;
+type DivProps = React.ComponentPropsWithoutRef<"div">;
 
 export type SecondaryMenuItemProps = React.PropsWithChildren<{
   className?: string;
@@ -278,7 +245,7 @@ export const MenuItem = React.forwardRef<
   const invoke = (e: MouseEvent) => {
     e.stopPropagation();
     Promise.resolve(onClick()).then((r) => {
-      if (typeof r === 'undefined' || r) {
+      if (typeof r === "undefined" || r) {
         ctx.close();
       }
     });
@@ -351,7 +318,7 @@ export const Backdrop = React.forwardRef<
         </div>
       )}
     </Layer>,
-    document.getElementById('root')!
+    document.getElementById("root")!
   );
 });
 
@@ -366,9 +333,9 @@ interface MenuProps {
   popupClassName?: string;
   backdropClassName?: string;
   className?: string;
-  align?: 'start' | 'center' | 'end';
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  direction?: 'in' | 'out';
+  align?: "start" | "center" | "end";
+  position?: "top" | "bottom" | "left" | "right";
+  direction?: "in" | "out";
   onClick?: () => void;
   sizeByButton?: boolean;
   style?: {};
@@ -412,9 +379,9 @@ export default function Menu({
   popupClassName,
   backdropClassName,
   className,
-  align = 'center',
-  position = 'top',
-  direction = 'in',
+  align = "center",
+  position = "top",
+  direction = "in",
   onClick = () => {},
   sizeByButton = false,
   style = {},
@@ -425,7 +392,6 @@ export default function Menu({
   const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
   const menuCtx = useContext(MenuContext);
-
 
   const close = useCallback(
     (e?: MouseEvent) => {
@@ -466,45 +432,27 @@ export default function Menu({
 
   const content = (
     <Popper
-    className={undefined}
-    anchor={anchor.current!}
-    open={open}
-    position={position}     
-    align={align}
-    direction={direction}
-  >
-    {/* <div className={styles.arrowContainer}> */}
-      <div className={cn(styles.dropDown, popupClassName)} style={minWidthStyle}>
-        {children}
-      < div className={styles.arrow} />
+      className={undefined}
+      anchor={anchor.current!}
+      open={open}
+      position={position}
+      align={align}
+      direction={direction}
+    >
+      <div className={styles.arrowContainer}>
+        <div
+          className={cn(styles.dropDown, popupClassName)}
+          style={minWidthStyle}
+        >
+          {children}
+          <div className={styles.arrow} />
+          <div className={styles.arrowShadow} />
+        </div>
       </div>
-    {/* </div> */}
-  </Popper>
-
-    
-    // <Popper
-    //   className={undefined}
-    //   anchor={anchor.current!}
-    //   open={open}
-    //   position={position}
-    //   align={align}
-    //   direction={direction}
-    // >
-    //     <div className={styles.arrowContainer}>
-
-    //   <div className={styles.arrow}/>
-    //   <div
-    //     className={cn(styles.dropDown, popupClassName)}
-    //     style={minWidthStyle}
-    //   >
-    //     {children}
-    //   </div>      
-    //   </div>
-    // </Popper>
+    </Popper>
   );
 
   return (
-
     <Button
       className={cn(styles.menuButton, className)}
       ref={anchor}

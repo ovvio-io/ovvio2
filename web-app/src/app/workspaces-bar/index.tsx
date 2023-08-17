@@ -513,8 +513,9 @@ function WorkspaceToggleView({
               </div>
             )}
             anchor={moreButtonRef.current}
-            direction="out"
+            direction="in" // amit changed from "out".
             placement="auto-end"
+            position='left'
             // renderButton={() => <IconMore className={cn(styles.moreButton)} />}
             // direction="out"
             // position="right"
