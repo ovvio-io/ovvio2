@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useContext,
   MouseEvent,
+  Children,
 } from "react";
 import ReactDOM from "react-dom";
 import { makeStyles, cn } from "../css-objects/index.ts";
@@ -36,36 +37,9 @@ export const LineSeparator = () => (
 
 const useStyles = makeStyles((theme) => ({
   arrowContainer: {
-    display: "flex",
     alignItems: "center",
     position: "relative",
-    top: "60px",
-  },
-
-  arrow: {
-    position: "absolute",
-    width: "8px",
-    height: "8px",
-    backgroundColor: "white",
-    transform: "rotate(45deg)",
-    top: "4px",
-    left: "-7px",
-    borderRight: "2px solid transparent",
-    borderTop: "2x solid transparent",
-    borderLeft: "2px solid #F5ECDC",
-    borderBottom: "2px solid #F5ECDC",
-  },
-
-  arrowShadow: {
-    position: "absolute",
-    width: "8px",
-    height: "8px",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    transform: "rotate(45deg)",
-    top: "4px",
-    left: "-7px",
-    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.3)",
-    zIndex: -2,
+    top: "57px",
   },
 
   item: {
@@ -113,13 +87,14 @@ const useStyles = makeStyles((theme) => ({
     transformOrigin: "top",
     whitespace: "nowrap",
     display: "flex",
-    boxShadow: "0px -1px 3px 0px #00000040",
+    boxShadow: "0px -1px 3px 0px #00000040", // TODO: need to do 2 dropDown one for left and one for right because of the shadows.
     borderRadius: "2px", // Corner radius
     justifyContent: "center",
     border: "2px solid #F5ECDC",
     font: "Poppins",
     backgroundColor: "white",
-    position: "relative",
+    position: "static",
+
     // basedOn: [layout.column],
     // transformOrigin: "top",
     // whitespace: "nowrap",
@@ -376,7 +351,7 @@ function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
 export default function Menu({
   children,
   renderButton,
-  popupClassName,
+  popupClassName, // TODO - maybe redundant (i saw always undefined).
   backdropClassName,
   className,
   align = "center",
@@ -432,29 +407,28 @@ export default function Menu({
 
   const content = (
     <Popper
-    className={undefined}
-    anchor={anchor.current!}
-    open={open}
-    position={position}
-    align={align}
-    direction={direction}
-  >
-    {/* <div className={styles.arrowContainer}> */}
-      <div className={cn(styles.dropDown, popupClassName)} style={minWidthStyle}>
-        {children}
-        {console.log ("PopUpClassName : " ,popupClassName)}
-
-        {console.log ("align : " ,align,  align === 'left')}
-        {console.log ("Position : " ,position)}
-        {console.log ("Direction  : " ,direction)}
-
-        <Arrow position = {position} shadowPosition="leftShadow" />
-
-        {/* <Arrow direction={align === 'left' ? 'right' : 'left'} 
-        shadowDirection={align === 'left' ? 'rightShadow' : 'leftShadow'} /> */}
+      className={undefined}
+      anchor={anchor.current!}
+      open={open}
+      position={position}
+      align={align}
+      direction={direction}
+    >
+      <div className={styles.arrowContainer}>
+        <div
+          className={cn(styles.dropDown, popupClassName)}
+          style={minWidthStyle}
+        >
+          {Children.toArray(children).map((child, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && <LineSeparator />}
+              {child}
+            </React.Fragment>
+          ))}
+          <Arrow position={position} shadowPosition="leftShadow" />
+        </div>
       </div>
-    {/* </div> */}
-  </Popper>
+    </Popper>
   );
 
   return (

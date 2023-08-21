@@ -29,8 +29,6 @@ const useStyles = makeStyles(
       position: 'absolute',
       zIndex: zIndex,
     },
-
-
     animator: {
       ...styleguide.transition.standard,
       transitionDuration: `${styleguide.transition.duration.short}ms`,
