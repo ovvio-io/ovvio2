@@ -17,6 +17,7 @@ import { Text } from "./typography.tsx";
 import { Tooltip } from "./tooltip/index.tsx";
 import Layer from "./layer.tsx";
 import { IconExpander } from "./icons/index.ts";
+import Arrow from "./menus/arrow.tsx";
 
 // const zoom = keyframes({
 //   from: {
@@ -431,24 +432,29 @@ export default function Menu({
 
   const content = (
     <Popper
-      className={undefined}
-      anchor={anchor.current!}
-      open={open}
-      position={position}
-      align={align}
-      direction={direction}
-    >
-      <div className={styles.arrowContainer}>
-        <div
-          className={cn(styles.dropDown, popupClassName)}
-          style={minWidthStyle}
-        >
-          {children}
-          <div className={styles.arrow} />
-          <div className={styles.arrowShadow} />
-        </div>
+    className={undefined}
+    anchor={anchor.current!}
+    open={open}
+    position={position}
+    align={align}
+    direction={direction}
+  >
+    {/* <div className={styles.arrowContainer}> */}
+      <div className={cn(styles.dropDown, popupClassName)} style={minWidthStyle}>
+        {children}
+        {console.log ("PopUpClassName : " ,popupClassName)}
+
+        {console.log ("align : " ,align,  align === 'left')}
+        {console.log ("Position : " ,position)}
+        {console.log ("Direction  : " ,direction)}
+
+        <Arrow position = {position} shadowPosition="leftShadow" />
+
+        {/* <Arrow direction={align === 'left' ? 'right' : 'left'} 
+        shadowDirection={align === 'left' ? 'rightShadow' : 'leftShadow'} /> */}
       </div>
-    </Popper>
+    {/* </div> */}
+  </Popper>
   );
 
   return (
