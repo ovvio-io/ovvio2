@@ -507,18 +507,17 @@ function WorkspaceToggleView({
         <div className={cn(styles.workspacesHeader)}>
           <LabelSm>{strings.myWorkspaces}</LabelSm>
           <Menu
-            renderButton={() => (
-              <div ref={moreButtonRef}>
-                <IconMore className={cn(styles.moreButton)} />
-              </div>
-            )}
-            anchor={moreButtonRef.current}
-            direction="in" // amit changed from "out".
-            placement="auto-end"
-            position='left'
-            // renderButton={() => <IconMore className={cn(styles.moreButton)} />}
-            // direction="out"
-            // position="right"
+            // renderButton={() => (
+            //   <div ref={moreButtonRef}>
+            //     <IconMore className={cn(styles.moreButton)} />
+            //   </div>
+            // )}
+            // anchor={moreButtonRef.current}
+            // direction="out" // Amit changed from "out".
+            // placement="auto-end"
+            renderButton={() => <IconMore className={cn(styles.moreButton)} />}
+            direction="out"
+            position="right"
           >
             <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
 

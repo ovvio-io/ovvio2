@@ -50,13 +50,20 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const logger = useLogger();
 
   return (
+    <>
     <Menu
       className={className}
       popupClassName={cn(styles.menu)}
       renderButton={() => <IconOverflow />}
     >
+
+      
       <MenuItem>Sign out of Ovvio</MenuItem>
     </Menu>
+    
+      {console.log("className: ", className)}
+      {console.log("style: ", styles.menu)}
+      </>
   );
 }
 

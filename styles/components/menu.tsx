@@ -37,20 +37,18 @@ const useStyles = makeStyles((theme) => ({
   arrowContainer: {
     display: "flex",
     alignItems: "center",
-    position: "relative", 
-    zIndex: -1,
-
+    position: "relative",
+    top: "60px",
   },
 
   arrow: {
     position: "absolute",
-    content: "''",
     width: "8px",
     height: "8px",
     backgroundColor: "white",
     transform: "rotate(45deg)",
     top: "4px",
-    left: "-7px", 
+    left: "-7px",
     borderRight: "2px solid transparent",
     borderTop: "2x solid transparent",
     borderLeft: "2px solid #F5ECDC",
@@ -58,17 +56,15 @@ const useStyles = makeStyles((theme) => ({
   },
 
   arrowShadow: {
-    content: "''",
     position: "absolute",
     width: "8px",
     height: "8px",
-    backgroundColor: "rgba(0, 0, 0, 0.3)", 
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     transform: "rotate(45deg)",
-    top: "4px", 
+    top: "4px",
     left: "-7px",
-    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.3)", 
+    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.3)",
     zIndex: -2,
-
   },
 
   item: {
@@ -100,6 +96,7 @@ const useStyles = makeStyles((theme) => ({
     },
     fontSize: styleguide.gridbase * 1.5, // added
   },
+
   actionIcon: {
     marginRight: styleguide.gridbase,
   },
@@ -181,7 +178,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MenuContext = React.createContext({
-  close() {},
+  Baclose() {},
   hasParent: false,
 });
 
@@ -233,6 +230,7 @@ export function useMenuClose() {
 }
 
 export const MenuItem = React.forwardRef<
+  //React.forwardRef is used when you want to access the ref passed to the component.
   HTMLDivElement,
   DivProps & MenuItemProps
 >(function MenuItem(
@@ -301,6 +299,7 @@ export const Backdrop = React.forwardRef<
   BackdropProps & DivProps
 >(({ visible, children, className, ...rest }, ref) => {
   const styles = useStyles();
+
   return ReactDOM.createPortal(
     <Layer>
       {({ zIndex }) => (
@@ -388,9 +387,9 @@ export default function Menu({
 }: MenuProps) {
   const styles = useStyles();
   const [open, setOpen] = useState(false);
-  const anchor = useRef(null);
-  const backdrop = useRef(null);
-  const [minWidthStyle, setMinWidthStyle] = useState({});
+  const anchor = useRef(null); // This creates a reference to the element that triggers the menu.
+  const backdrop = useRef(null); //This creates a reference to the backdrop element that appears behind the menu.
+  const [minWidthStyle, setMinWidthStyle] = useState({}); //This state is used to set the minimum width of the menu based on the triggering element's width.
   const menuCtx = useContext(MenuContext);
 
   const close = useCallback(
@@ -464,7 +463,7 @@ export default function Menu({
       {open && (
         <MenuContext.Provider value={newContext}>
           {menuCtx.hasParent ? (
-            content
+            <>{content}</>
           ) : (
             <Backdrop
               visible={open}
