@@ -388,7 +388,7 @@ export default function Menu({
           {console.log("align: ", align)}
           {console.log("direction: ", direction)}
           
-          <Arrow position={position} shadowPosition="leftShadow" />
+          <Arrow position={position} shadowPosition={position + "Shadow"} />
         </div>
       </div>
     </Popper>

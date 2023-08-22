@@ -11,12 +11,12 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "white",
     transform: "rotate(45deg)",
     top: "7px",
-    borderWidth: "2px",
+    borderWidth: "2.2px",
     borderStyle: "solid",
   },
 
   right: {
-    left: "-6px",
+    left: "-6px", 
     borderRightColor: "transparent",
     borderTopColor: "transparent",
     borderLeftColor: "#F5ECDC",
@@ -24,15 +24,15 @@ const useStyles = makeStyles((theme) => ({
   },
 
   left: {
-    right: "-6px",
+    right: "6px", // TODO: need to modify to -6px but first to fix zIndex to signOut.
     borderLeftColor: "transparent",
     borderBottomColor: "transparent",
     borderRightColor: "#F5ECDC",
     borderTopColor: "#F5ECDC",
   },
 
-  top: {
-    left: "-6px",
+  bottom: {
+    right: "6px",
     top: "-6px",
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
@@ -40,19 +40,8 @@ const useStyles = makeStyles((theme) => ({
     borderTopColor: "#F5ECDC",
   },
 
-  leftTop: {
-    right: "-6px",
-    top: "-6px",
-    borderLeftColor: "transparent",
-    borderBottomColor: "transparent",
-    borderRightColor: "#F5ECDC",
-    borderTopColor: "#F5ECDC",
-  },
-
-  arrowShadow: {
+  arrowShadow: { //TODO: need to set the shadow only to the arrow's direction.
     position: "absolute",
-    width: "10px",
-    height: "11px",
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     transform: "rotate(45deg)",
     top: "7px",
@@ -60,14 +49,26 @@ const useStyles = makeStyles((theme) => ({
   },
 
   leftShadow: {
-    left: "-6px",
+    width: "10px",
+    height: "11px",
+    right: "-6px",
     boxShadow: "-1px 0px 3px 0px rgba(0, 0, 0, 0.25)",
   },
 
   rightShadow: {
-    right: "-6px",
+    width: "10px",
+    height: "11px",
+    left: "-6px",
     boxShadow: "-1px 0px 3px 0px rgba(0, 0, 0, 0.25)",
   },
+
+  bottomShadow:{
+    width: "11px",
+    height: "14px",
+    right: "7px",
+    top: "-6px",
+    boxShadow: "-1px 0px 3px 0px rgba(0, 0, 0, 0.25)",
+  }
 }));
 
 const Arrow = ({ position, shadowPosition }) => {

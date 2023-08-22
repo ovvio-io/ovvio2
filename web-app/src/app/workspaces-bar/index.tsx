@@ -517,7 +517,7 @@ function WorkspaceToggleView({
             placement="auto-end"
             direction="out"
             position="right"
-            align = "center"
+            align = "end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
           >
             <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
 
