@@ -2,10 +2,7 @@ import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../../../../../styles/components/buttons.tsx';
 import IconOverflow from '../../../../../../styles/components/icons/IconOverflow.tsx';
-import Menu, {
-  MenuItemStyle,
-  MenuItem,
-} from '../../../../../../styles/components/menu.tsx';
+import Menu ,{MenuItemStyle, MenuItem} from '../../../../../../styles/components/menu.tsx';
 import { useTypographyStyles } from '../../../../../../styles/components/typography.tsx';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
@@ -55,6 +52,9 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
       className={className}
       popupClassName={cn(styles.menu)}
       renderButton={() => <IconOverflow />}
+      position = "left"
+      direction = "out"
+      align='center'
     >
 
       

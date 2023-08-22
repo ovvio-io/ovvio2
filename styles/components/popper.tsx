@@ -26,7 +26,7 @@ export const zIndex = 100;
 const useStyles = makeStyles(
   (theme) => ({
     popper: {
-      position: 'absolute',
+      position: "absolute",
       zIndex: zIndex,
     },
     animator: {
@@ -155,8 +155,9 @@ type CalcFunction = (
   rect: DOMRect,
   points: Points
 ) => Record<string, any>;
-type GetPositionFn = (anchor: HTMLElement) => Record<string, any>;
 
+
+//TODO: ask Ofri about direction(in/out), as i see it the logic now is not good. 
 function calcFn(fn: CalcFunction): GetPositionFn {
   return (anchor: HTMLElement) => {
     const el = anchor;
@@ -480,6 +481,7 @@ const PopperElement: React.FC<PopperElementProps> = ({
     setStyle(newStyle);
   }, [align, position, direction, anchor, recalc, offset]);
 
+
   useEffect(() => {
     const handler = () => {
       setRecalc((x) => x + 1);
@@ -492,6 +494,7 @@ const PopperElement: React.FC<PopperElementProps> = ({
       window.removeEventListener("scroll", handler);
     };
   }, []);
+  
   return (
     <Layer>
       {({ zIndex }) => (

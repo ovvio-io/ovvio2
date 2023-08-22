@@ -39,26 +39,10 @@ const useStyles = makeStyles((theme) => ({
   arrowContainer: {
     alignItems: "center",
     position: "relative",
-    top: "57px",
+    // top: "57px",
   },
 
   item: {
-    height: styleguide.gridbase * 6,
-    flexShrink: 0,
-    boxSizing: "border-box",
-    minWidth: styleguide.gridbase * 20,
-    padding: styleguide.gridbase,
-    color: theme.background.text,
-    transition: "background-color 0.15s linear",
-    cursor: "pointer",
-    ":hover": {
-      backgroundColor: theme.background[100],
-    },
-    alignItems: "center",
-    basedOn: [layout.row],
-  },
-
-  dropDownItem: {
     boxSizing: "border-box",
     height: styleguide.gridbase * 4, // changed from 6
     minWidth: styleguide.gridbase * 12, //changed from 20
@@ -70,7 +54,25 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: theme.background[100],
     },
     fontSize: styleguide.gridbase * 1.5, // added
+    flexShrink: 0,
+    transition: "background-color 0.15s linear",
+    alignItems: "center",
+    basedOn: [layout.row],
   },
+
+  // dropDownItem: {
+  //   boxSizing: "border-box",
+  //   height: styleguide.gridbase * 4, // changed from 6
+  //   minWidth: styleguide.gridbase * 12, //changed from 20
+  //   maxWidth: styleguide.gridbase * 27, //added
+  //   padding: styleguide.gridbase,
+  //   color: theme.background.text,
+  //   cursor: "pointer",
+  //   ":hover": {
+  //     backgroundColor: theme.background[100],
+  //   },
+  //   fontSize: styleguide.gridbase * 1.5, // added
+  // },
 
   actionIcon: {
     marginRight: styleguide.gridbase,
@@ -83,6 +85,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   dropDown: {
+    position: "relative",
     basedOn: [layout.column],
     transformOrigin: "top",
     whitespace: "nowrap",
@@ -93,28 +96,6 @@ const useStyles = makeStyles((theme) => ({
     border: "2px solid #F5ECDC",
     font: "Poppins",
     backgroundColor: "white",
-    position: "static",
-
-    // basedOn: [layout.column],
-    // transformOrigin: "top",
-    // whitespace: "nowrap",
-    // display: "flex",
-    // boxShadow: "0px -1px 3px 0px #00000040",
-    // borderRadius: "2px", // Corner radius
-    // justifyContent: "center",
-    // border: "2px solid #F5ECDC",
-    // font: "Poppins",
-    // backgroundColor: "white",
-
-    // ------------------------ dropdown
-    // alignItems: "stretch",
-    // padding: [styleguide.gridbase, 0],
-    // backgroundColor: theme.background[0],
-    // boxShadow: theme.shadows.z2,
-
-    // animation: `${zoom} ${
-    //   styleguide.transition.duration.short
-    // }ms ${styleguide.transition.timing.standard} backwards`,
   },
 
   iconMenu: {
@@ -226,7 +207,7 @@ export const MenuItem = React.forwardRef<
   };
   return (
     <div
-      className={cn(className, styles.dropDownItem)} // modify (className, styles.item)
+      className={cn(className, styles.item)} 
       {...props}
       onClick={invoke}
       ref={ref}
@@ -277,6 +258,7 @@ export const Backdrop = React.forwardRef<
   const styles = useStyles();
 
   return ReactDOM.createPortal(
+    //ReactDOM.createPortal is used to create a portal for rendering content outside the normal React component tree. Portals are often used for modal dialogs or overlays.
     <Layer>
       {({ zIndex }) => (
         <div
@@ -316,34 +298,6 @@ interface MenuProps {
   style?: {};
 }
 
-// export function IconMenu({ popupClassName, ...props }: MenuProps) {
-//   const styles = useStyles();
-//   return (
-//     <Menu {...props} popupClassName={cn(styles.iconMenu, popupClassName)} />
-//   );
-// }
-
-// export interface IconMenuItemProps {
-//   IconComponent: React.ComponentType;
-// }
-
-// export function IconMenuItem({
-//   IconComponent,
-//   className,
-//   tooltip,
-//   fill,
-//   ...props
-// }: IconMenuItemProps) {
-//   const styles = useStyles();
-//   return (
-//     <Tooltip className={cn(styles.tooltip)} text={tooltip} position="top">
-//       <MenuItem {...props} className={cn(styles.iconItem, className)}>
-//         <IconComponent fill={fill} />
-//       </MenuItem>
-//     </Tooltip>
-//   );
-// }
-
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
   return !!x;
 }
@@ -354,9 +308,12 @@ export default function Menu({
   popupClassName, // TODO - maybe redundant (i saw always undefined).
   backdropClassName,
   className,
-  align = "center",
-  position = "top",
-  direction = "in",
+  // align = "center",
+  // position = "top",
+  // direction = "in",
+  align,
+  position,
+  direction,
   onClick = () => {},
   sizeByButton = false,
   style = {},
@@ -396,7 +353,9 @@ export default function Menu({
     setOpen((x) => !x);
     onClick();
   };
+
   useLayoutEffect(() => {
+    //TODO do we need minimum size of the menu to be set by the button that triggered it??
     if (isElement(anchor.current) && sizeByButton) {
       const width = (anchor.current as any).getBoundingClientRect().width;
       setMinWidthStyle({ width: `${width}px` });
@@ -425,6 +384,10 @@ export default function Menu({
               {child}
             </React.Fragment>
           ))}
+          {console.log("position: ", position)}
+          {console.log("align: ", align)}
+          {console.log("direction: ", direction)}
+          
           <Arrow position={position} shadowPosition="leftShadow" />
         </div>
       </div>

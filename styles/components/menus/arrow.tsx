@@ -1,6 +1,8 @@
 import React from "react";
 import { makeStyles } from "../../css-objects/index.ts";
 
+
+//left means that the Arrow is on the left side of the button (so the Arrow should point to the right).
 const useStyles = makeStyles((theme) => ({
   arrow: {
     position: "absolute",
@@ -14,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   right: {
-    left: "-4px",
+    left: "-6px",
     borderRightColor: "transparent",
     borderTopColor: "transparent",
     borderLeftColor: "#F5ECDC",
@@ -22,16 +24,16 @@ const useStyles = makeStyles((theme) => ({
   },
 
   left: {
-    right: "-4px",
+    right: "-6px",
     borderLeftColor: "transparent",
-    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
     borderRightColor: "#F5ECDC",
-    borderBottomColor: "#F5ECDC",
+    borderTopColor: "#F5ECDC",
   },
 
-  rightTop: {
-    left: "-4px",
-    top: "-4px",
+  top: {
+    left: "-6px",
+    top: "-6px",
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "#F5ECDC",
@@ -39,8 +41,8 @@ const useStyles = makeStyles((theme) => ({
   },
 
   leftTop: {
-    right: "-4px",
-    top: "-4px",
+    right: "-6px",
+    top: "-6px",
     borderLeftColor: "transparent",
     borderBottomColor: "transparent",
     borderRightColor: "#F5ECDC",
@@ -58,13 +60,13 @@ const useStyles = makeStyles((theme) => ({
   },
 
   leftShadow: {
-    left: "-4px",
+    left: "-6px",
     boxShadow: "-1px 0px 3px 0px rgba(0, 0, 0, 0.25)",
   },
 
   rightShadow: {
-    right: "-4px",
-    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.3)",
+    right: "-6px",
+    boxShadow: "-1px 0px 3px 0px rgba(0, 0, 0, 0.25)",
   },
 }));
 
