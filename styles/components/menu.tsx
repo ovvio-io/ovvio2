@@ -57,22 +57,18 @@ const useStyles = makeStyles((theme) => ({
     transition: "background-color 0.15s linear",
     alignItems: "center",
     basedOn: [layout.row],
+    display: "flex",
+    width: "auto",
   },
-
-  // dropDownItem: {
-  //   boxSizing: "border-box",
-  //   height: styleguide.gridbase * 4, // changed from 6
-  //   minWidth: styleguide.gridbase * 12, //changed from 20
-  //   maxWidth: styleguide.gridbase * 27, //added
-  //   padding: styleguide.gridbase,
-  //   color: theme.background.text,
-  //   cursor: "pointer",
-  //   ":hover": {
-  //     backgroundColor: theme.background[100],
-  //   },
-  //   fontSize: styleguide.gridbase * 1.5, // added
-  // },
-
+  blueIcon: {
+    fill: "blue",
+  },
+  icon: {
+    marginRight: "8px",
+    width: "16px",
+    height: "16px",
+    fill: "blue",
+  },
   actionIcon: {
     marginRight: styleguide.gridbase,
   },
@@ -89,7 +85,7 @@ const useStyles = makeStyles((theme) => ({
     transformOrigin: "top",
     whitespace: "nowrap",
     display: "flex",
-    boxShadow: "0px -1px 3px rgba(0, 0, 0, 0.25)", // TODO: need to do 2 dropDown one for left and one for right because of the shadows.
+    boxShadow: "0px -1px 3px rgba(0, 0, 0, 0.25)",
     borderRadius: "2px", // Corner radius
     justifyContent: "center",
     border: "2px solid #F5ECDC",
@@ -134,7 +130,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const MenuContext = React.createContext({
-  Baclose() {},
+  close() {},
   hasParent: false,
 });
 
@@ -178,7 +174,9 @@ interface MenuItemProps {
   className?: string;
   children?: React.ReactNode;
   selected?: boolean;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
 }
+
 
 export function useMenuClose() {
   const ctx = useContext(MenuContext);
@@ -186,11 +184,17 @@ export function useMenuClose() {
 }
 
 export const MenuItem = React.forwardRef<
-  //React.forwardRef is used when you want to access the ref passed to the component.
   HTMLDivElement,
   DivProps & MenuItemProps
 >(function MenuItem(
-  { selected, children, className, onClick = () => true, ...props },
+  {
+    selected,
+    children,
+    className,
+    onClick = () => true,
+    icon: IconItem = null,
+    ...props
+  },
   ref
 ) {
   const styles = useStyles();
@@ -204,6 +208,7 @@ export const MenuItem = React.forwardRef<
       }
     });
   };
+
   return (
     <div
       className={cn(className, styles.item)}
@@ -211,6 +216,7 @@ export const MenuItem = React.forwardRef<
       onClick={invoke}
       ref={ref}
     >
+      {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)}/>}
       {children}
     </div>
   );
@@ -382,11 +388,12 @@ export default function Menu({
               {child}
             </React.Fragment>
           ))}
-          {console.log("position: ", position)}
-          {console.log("align: ", align)}
-          {console.log("direction: ", direction)}
 
-          <Arrow position={position} shadowPosition={position + "Shadow"} oneCellMenu={oneCellMenu} />
+          <Arrow
+            position={position}
+            shadowPosition={position + "Shadow"}
+            oneCellMenu={oneCellMenu}
+          />
         </div>
       </div>
     </Popper>

@@ -57,6 +57,7 @@ import { useLogger } from "../../core/cfds/react/logger.tsx";
 import localization from "./workspace-bar.strings.json" assert { type: "json" };
 import { LogoText } from "../../../../styles/components/logo.tsx";
 import { LogoIcon } from "../../../../styles/components/logo.tsx";
+import { IconDelete } from "../../../../styles/components/new-icons/icon-delete.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -530,6 +531,7 @@ function WorkspaceToggleView({
               onClick={() => {
                 view.workspaceGrouping = "none";
               }}
+              icon={IconDelete}
             >
               {strings.none}
             </MenuItem>
