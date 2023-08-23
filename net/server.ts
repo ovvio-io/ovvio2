@@ -245,7 +245,7 @@ export class Server {
         break;
 
       default:
-        debugger;
+        // debugger;
         log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
         resp = new Response(null, { status: 400 });
         break;
@@ -374,7 +374,7 @@ export class Server {
       includeMissing && msg.buildVersion >= VersionNumber.Current
     );
 
-    debugger;
+    // debugger;
     return new Response(
       JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
       {

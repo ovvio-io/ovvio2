@@ -126,7 +126,7 @@ export function coreValueCompare(
         if (v1.isEqual(v2)) return 0;
       }
 
-      debugger;
+      // debugger;
       notReached(
         `Incomparable classes ${v1?.constructor.name} and ${v2?.constructor.name}`
       );

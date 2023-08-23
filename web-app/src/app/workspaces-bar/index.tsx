@@ -305,6 +305,10 @@ const useStyles = makeStyles(
     pinButtonPinned: {
       opacity: 1,
     },
+
+    workSpaceMenu: {
+      top: "-7px",
+    },
   }),
   "workspaces-bar_881015"
 );
@@ -513,11 +517,12 @@ function WorkspaceToggleView({
                 <IconMore className={cn(styles.moreButton)} />
               </div>
             )}
+            popupClassName={cn(styles.workSpaceMenu)}
             anchor={moreButtonRef.current}
             placement="auto-end"
             direction="out"
             position="right"
-            align = "end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
+            align="end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
           >
             <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
 

@@ -39,7 +39,6 @@ const useStyles = makeStyles((theme) => ({
   arrowContainer: {
     alignItems: "center",
     position: "relative",
-    // top: "57px",
   },
 
   item: {
@@ -90,7 +89,7 @@ const useStyles = makeStyles((theme) => ({
     transformOrigin: "top",
     whitespace: "nowrap",
     display: "flex",
-    boxShadow: "0px -1px 3px 0px #00000040", // TODO: need to do 2 dropDown one for left and one for right because of the shadows.
+    boxShadow: "0px -1px 3px rgba(0, 0, 0, 0.25)", // TODO: need to do 2 dropDown one for left and one for right because of the shadows.
     borderRadius: "2px", // Corner radius
     justifyContent: "center",
     border: "2px solid #F5ECDC",
@@ -207,7 +206,7 @@ export const MenuItem = React.forwardRef<
   };
   return (
     <div
-      className={cn(className, styles.item)} 
+      className={cn(className, styles.item)}
       {...props}
       onClick={invoke}
       ref={ref}
@@ -288,6 +287,7 @@ interface MenuProps {
   children: React.ReactNode;
   renderButton: MenuRenderButton;
   popupClassName?: string;
+  oneCellMenu?: boolean;
   backdropClassName?: string;
   className?: string;
   align?: "start" | "center" | "end";
@@ -308,9 +308,7 @@ export default function Menu({
   popupClassName, // TODO - maybe redundant (i saw always undefined).
   backdropClassName,
   className,
-  // align = "center",
-  // position = "top",
-  // direction = "in",
+  oneCellMenu,
   align,
   position,
   direction,
@@ -387,8 +385,8 @@ export default function Menu({
           {console.log("position: ", position)}
           {console.log("align: ", align)}
           {console.log("direction: ", direction)}
-          
-          <Arrow position={position} shadowPosition={position + "Shadow"} />
+
+          <Arrow position={position} shadowPosition={position + "Shadow"} oneCellMenu={oneCellMenu} />
         </div>
       </div>
     </Popper>

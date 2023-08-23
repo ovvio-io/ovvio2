@@ -23,7 +23,7 @@ export function toggleSelectionItem(
 ): SelectionResult {
   const toggledIndex = items.findIndex(x => x === toggled);
   if (toggledIndex === -1) {
-    debugger;
+    // debugger;
     return;
   }
 
