@@ -18,7 +18,8 @@ import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { IconExpander } from '../../../../../../../styles/components/icons/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
+// import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
+import { Text } from '../../../../../../../styles/components/typography.tsx';
 import {
   makeStyles,
   cn,

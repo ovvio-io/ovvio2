@@ -58,6 +58,10 @@ import localization from "./workspace-bar.strings.json" assert { type: "json" };
 import { LogoText } from "../../../../styles/components/logo.tsx";
 import { LogoIcon } from "../../../../styles/components/logo.tsx";
 import { IconDelete } from "../../../../styles/components/new-icons/icon-delete.tsx";
+import IconSettings from "../../../../styles/components/icons/IconSettings.tsx";
+import IconAdd from "../../../../styles/components/icons/IconAdd.tsx";
+import { IconAttachment } from "../../../../styles/components/new-icons/icon-attachment.tsx";
+import { IconGroup } from "../../../../styles/components/new-icons/icon-group.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -306,7 +310,6 @@ const useStyles = makeStyles(
     pinButtonPinned: {
       opacity: 1,
     },
-
     workSpaceMenu: {
       top: "-7px",
     },
@@ -525,15 +528,29 @@ function WorkspaceToggleView({
             position="right"
             align="end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
           >
-            <LabelSm style={{ padding: styleguide.gridbase }}>Group By</LabelSm>
+            <div>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "0 4px" }}>
+                  {/* Empty div with 8px padding */}
+                </div>
+                <IconGroup style={{ marginRight: "8px" }} />
+                <LabelSm
+                  style={{
+                    padding: styleguide.gridbase,
+                    backgroundColor: theme.secondary.s0,
+                  }}
+                >
+                  Group By
+                </LabelSm>
+              </div>
+            </div>
 
             <MenuItem
               onClick={() => {
                 view.workspaceGrouping = "none";
               }}
-              icon={IconDelete}
             >
-              {strings.none}
+              {"Team"}
             </MenuItem>
 
             <MenuItem
@@ -541,15 +558,17 @@ function WorkspaceToggleView({
                 view.workspaceGrouping = "assignee";
               }}
             >
-              {strings.assignee}
+              {"Employee"}
             </MenuItem>
+            <div style={{ padding: "8px" }} />
 
             <MenuItem
               onClick={() => {
                 view.workspaceGrouping = "teamLeader";
               }}
+              icon={IconGroup}
             >
-              {strings.teamLeader}
+              {"Ungroup"}
             </MenuItem>
           </Menu>
         </div>
@@ -691,7 +710,10 @@ function WorkspaceListItem({
             align="start"
             className={cn(styles.itemMenu)}
           >
-            <MenuItem onClick={() => setIsSettingsOpen(true)}>
+            <MenuItem
+              onClick={() => setIsSettingsOpen(true)}
+              icon={IconSettings}
+            >
               {strings.workspaceSettings}
             </MenuItem>
             {!isTemplate && (
@@ -699,6 +721,7 @@ function WorkspaceListItem({
                 onClick={() =>
                   setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
                 }
+                icon={IconAdd}
               >
                 {groupId === "hidden"
                   ? strings.showWorkspace
@@ -712,6 +735,7 @@ function WorkspaceListItem({
                     groupId === "templates" ? "none" : "template"
                   )
                 }
+                icon={IconAttachment}
               >
                 {groupId === "templates"
                   ? strings.unsetTemplate

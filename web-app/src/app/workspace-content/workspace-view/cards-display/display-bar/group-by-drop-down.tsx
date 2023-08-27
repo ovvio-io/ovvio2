@@ -12,7 +12,8 @@ import {
 } from '../../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
+// import { Text } from '../../../../../../../styles/components/texts.tsx';
+import { Text } from '../../../../../../../styles/components/typography.tsx';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';

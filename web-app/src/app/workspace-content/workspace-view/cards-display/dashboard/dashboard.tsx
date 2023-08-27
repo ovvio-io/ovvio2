@@ -22,11 +22,12 @@ import {
   Note,
   NoteType,
 } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
+import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts'
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
-import { H1, H4, Text } from '../../../../../../../styles/components/texts.tsx';
+// import { H1, H4, Text  } from '../../../../../../../styles/components/texts.tsx';
+import { H1, H4, Text } from '../../../../../../../styles/components/typography.tsx'; //TODO: changed
 import {
   makeStyles,
   cn,

@@ -73,7 +73,7 @@ const router = createBrowserRouter([
   {
     path: '/new',
     element: (
-      <CreateWorkspaceView
+      <CreateWorkspaceView //TODO: CHECK linr 78-88 in comment
         source="bar:workspace"
         // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
 

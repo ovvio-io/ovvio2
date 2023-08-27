@@ -85,7 +85,7 @@ export interface NewTheme {
   };
 }
 
-const lightColorWheel = {
+export const lightColorWheel = {
   primary: {
     p1: '#f5f9fb',
     p2: '#e0eef4',

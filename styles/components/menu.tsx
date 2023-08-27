@@ -32,16 +32,18 @@ import Arrow from "./menus/arrow.tsx";
 // });
 
 export const LineSeparator = () => (
-  <div style={{ height: "1px", backgroundColor: "#F5ECDC", width: "100%" }} />
+  <div style={{ height: "1px", backgroundColor: "#F5ECDC", width: "100%" }} /> //TODO: apply color for theme.background
 );
 
 const useStyles = makeStyles((theme) => ({
   arrowContainer: {
     alignItems: "center",
     position: "relative",
+    paddingLeft: "4px",
   },
 
   item: {
+    ...styleguide.textStyles.text,
     boxSizing: "border-box",
     height: styleguide.gridbase * 4, // changed from 6
     minWidth: styleguide.gridbase * 12, //changed from 20
@@ -50,9 +52,8 @@ const useStyles = makeStyles((theme) => ({
     color: theme.background.text,
     cursor: "pointer",
     ":hover": {
-      backgroundColor: theme.background[100],
+      backgroundColor: "#FBEAC8", //TODO: change to theme.background..
     },
-    fontSize: styleguide.gridbase * 1.5, // added
     flexShrink: 0,
     transition: "background-color 0.15s linear",
     alignItems: "center",
@@ -60,14 +61,18 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     width: "auto",
   },
+
   blueIcon: {
-    fill: "blue",
+    fill: "white",
+    stroke: "blue",
   },
+
   icon: {
     marginRight: "8px",
     width: "16px",
     height: "16px",
-    fill: "blue",
+    // fill: "blue",
+    stroke: "blue",
   },
   actionIcon: {
     marginRight: styleguide.gridbase,
@@ -174,9 +179,8 @@ interface MenuItemProps {
   className?: string;
   children?: React.ReactNode;
   selected?: boolean;
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
-
 
 export function useMenuClose() {
   const ctx = useContext(MenuContext);
@@ -216,7 +220,7 @@ export const MenuItem = React.forwardRef<
       onClick={invoke}
       ref={ref}
     >
-      {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)}/>}
+      {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)} />}
       {children}
     </div>
   );

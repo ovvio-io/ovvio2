@@ -1,6 +1,12 @@
 import React from "react";
 import { makeStyles } from "../../css-objects/index.ts";
 
+interface ArrowProps {
+  position: "left" | "right" | "bottom";
+  shadowPosition: "leftShadow" | "rightShadow" | "bottomShadow";
+  oneCellMenu?: boolean;
+}
+
 const useStyles = makeStyles((theme) => {
   const styles = {
     arrow: {
@@ -29,7 +35,7 @@ const useStyles = makeStyles((theme) => {
       borderRightColor: "#F5ECDC",
       borderTopColor: "#F5ECDC",
     },
-    
+
     bottom: {
       right: "6px",
       top: "-6px",
@@ -78,8 +84,11 @@ const useStyles = makeStyles((theme) => {
   return styles;
 });
 
-
-const Arrow = ({ position, shadowPosition, oneCellMenu }) => {
+const Arrow: React.FC<ArrowProps> = ({
+  position,
+  shadowPosition,
+  oneCellMenu,
+}) => {
   const styles = useStyles();
 
   return (

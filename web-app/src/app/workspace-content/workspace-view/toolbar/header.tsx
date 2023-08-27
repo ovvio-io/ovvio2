@@ -48,12 +48,8 @@ export interface ToolbarMenuProps {
 export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const styles = useStyles();
   const logger = useLogger();
-  {
-    console.log("className: ", className);
-  }
-  {
-    console.log("style: ", styles.menu);
-  }
+  {console.log("className: ", className)}
+  {console.log("style: ", styles.menu)}
 
   return (
     <>
@@ -88,7 +84,7 @@ export default function OvvioHeader({ className }: OvvioHeaderProps) {
   const title = (function () {
     switch (selected.length) {
       case workspaces.length: {
-        return "All Workspaces";
+        return "AlWWWWl Workspaces";
       }
       case 0: {
         return "";
