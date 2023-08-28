@@ -5,10 +5,20 @@ interface ArrowProps {
   position: "left" | "right" | "bottom";
   shadowPosition: "leftShadow" | "rightShadow" | "bottomShadow";
   oneCellMenu?: boolean;
+  backdropHovered?: boolean; // Add this prop
 }
 
 const useStyles = makeStyles((theme) => {
   const styles = {
+    backdropHovered: {
+      backgroundColor: "#FBEAC8", // Change this to your theme's color
+    },
+
+    /* Apply the hover effect to the Arrow directly inside the hovered Backdrop */
+    backdropHoveredArrow: {
+      backgroundColor: "#FBEAC8", // Change this to your theme's color
+    },
+
     arrow: {
       position: "absolute",
       width: "8px",
@@ -88,6 +98,8 @@ const Arrow: React.FC<ArrowProps> = ({
   position,
   shadowPosition,
   oneCellMenu,
+  isItemHovered,
+
 }) => {
   const styles = useStyles();
 
@@ -96,8 +108,9 @@ const Arrow: React.FC<ArrowProps> = ({
       <div
         className={`${styles.arrow} ${styles[position]} ${
           oneCellMenu ? styles.oneCellMenu : ""
-        }`}
-      />
+        } ${isItemHovered ? styles.backdropHoveredArrow : ""}`} 
+        />
+
       <div
         className={`${styles.arrowShadow} ${styles[shadowPosition]} ${
           oneCellMenu ? styles.oneCellMenu : ""

@@ -20,22 +20,22 @@ import Layer from "./layer.tsx";
 import { IconExpander } from "./icons/index.ts";
 import Arrow from "./menus/arrow.tsx";
 
-// const zoom = keyframes({
-//   from: {
-//     transform: 'scaleY(0)',
-//     opacity: 0,
-//   },
-//   to: {
-//     transform: 'scaleY(1)',
-//     opacity: 1,
-//   },
-// });
+
 
 export const LineSeparator = () => (
   <div style={{ height: "1px", backgroundColor: "#F5ECDC", width: "100%" }} /> //TODO: apply color for theme.background
 );
 
 const useStyles = makeStyles((theme) => ({
+  backdropHovered: {
+    backgroundColor: "#FBEAC8", // Change this to your theme's color
+  },
+
+  /* Apply the hover effect to the Arrow directly inside the hovered Backdrop */
+  backdropHoveredArrow: {
+    backgroundColor: "#FBEAC8", // Change this to your theme's color
+  },
+
   arrowContainer: {
     alignItems: "center",
     position: "relative",
@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
     height: styleguide.gridbase * 4, // changed from 6
     minWidth: styleguide.gridbase * 12, //changed from 20
     maxWidth: styleguide.gridbase * 27, //added
-    padding: styleguide.gridbase,
+    padding: "8px 16px 8px 8px",
     color: theme.background.text,
     cursor: "pointer",
     ":hover": {
@@ -203,6 +203,7 @@ export const MenuItem = React.forwardRef<
 ) {
   const styles = useStyles();
   const ctx = useContext(MenuContext);
+  const [isHovered, setIsHovered] = useState(false);
 
   const invoke = (e: MouseEvent) => {
     e.stopPropagation();
@@ -219,6 +220,8 @@ export const MenuItem = React.forwardRef<
       {...props}
       onClick={invoke}
       ref={ref}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)} />}
       {children}
@@ -306,6 +309,7 @@ interface MenuProps {
   onClick?: () => void;
   sizeByButton?: boolean;
   style?: {};
+  isItemHovered?: boolean;
 }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
@@ -315,7 +319,7 @@ function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
 export default function Menu({
   children,
   renderButton,
-  popupClassName, // TODO - maybe redundant (i saw always undefined).
+  popupClassName, // TODO: - maybe redundant (i saw always undefined).
   backdropClassName,
   className,
   oneCellMenu,
@@ -325,6 +329,7 @@ export default function Menu({
   onClick = () => {},
   sizeByButton = false,
   style = {},
+  isItemHovered,
 }: MenuProps) {
   const styles = useStyles();
   const [open, setOpen] = useState(false);
@@ -372,6 +377,7 @@ export default function Menu({
     }
   }, [children, sizeByButton]);
 
+
   const content = (
     <Popper
       className={undefined}
@@ -395,8 +401,9 @@ export default function Menu({
 
           <Arrow
             position={position}
-            shadowPosition={position + "Shadow"}
+            shadowPosition={position+ "shadow"}
             oneCellMenu={oneCellMenu}
+            backdropHovered={isItemHovered} 
           />
         </div>
       </div>
@@ -420,8 +427,9 @@ export default function Menu({
             <Backdrop
               visible={open}
               ref={backdrop}
-              className={cn(backdropClassName)}
+              className={cn(backdropClassName)} 
               onClick={close}
+
             >
               {content}
             </Backdrop>

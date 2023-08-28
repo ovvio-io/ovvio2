@@ -88,6 +88,17 @@ const useStyles = makeStyles(
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
     },
+    groupBy: {
+      color: theme.colors["monochrom-m-10"] || "#262626",
+      fontFeatureSettings: "'clig' off, 'liga' off",
+      padding: "8px 16px 8px 8px",
+      backgroundColor: theme.secondary.s0,
+      fontFamily: "Poppins",
+      fontSize: "14px",
+      fontStyle: "normal",
+      fontWeight: "500",
+      lineHeight: "normal",
+    },
 
     collapsed: {
       [MediaQueries.Tablet]: {
@@ -529,19 +540,15 @@ function WorkspaceToggleView({
             align="end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
           >
             <div>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <div style={{ padding: "0 4px" }}>
-                  {/* Empty div with 8px padding */}
-                </div>
-                <IconGroup style={{ marginRight: "8px" }} />
-                <LabelSm
+              <div style={{ display: "flex", alignItems: "center" ,backgroundColor: theme.secondary.s0,}}>
+                <div
                   style={{
-                    padding: styleguide.gridbase,
-                    backgroundColor: theme.secondary.s0,
+                    padding: "0 4px",
+                    
                   }}
-                >
-                  Group By
-                </LabelSm>
+                ></div>
+                <IconGroup style={{ marginRight: "8px" }} />
+                <LabelSm className={styles.groupBy}>Group By:</LabelSm>
               </div>
             </div>
 
@@ -560,7 +567,7 @@ function WorkspaceToggleView({
             >
               {"Employee"}
             </MenuItem>
-            <div style={{ padding: "8px" }} />
+            <div style={{ marginTop: "8px" }} />
 
             <MenuItem
               onClick={() => {

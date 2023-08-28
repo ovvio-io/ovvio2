@@ -78,6 +78,7 @@ export function GroupByDropDown() {
           {strings.groupBy}:&nbsp;
         </Text>
         {content}
+
         <IconDropDownArrow />
       </div>
     );
