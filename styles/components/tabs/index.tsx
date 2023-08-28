@@ -181,7 +181,9 @@ export function Tabs({ children, selectedTab, className }: TabsProps) {
     <div className={cn(styles.tabsRoot, className)}>
       <div className={cn(styles.tabsFlipper)} style={style}>
         {mappedChildren}
+        "AAAAAAAA"
       </div>
+      "BBBBBB"
     </div>
   );
 }
@@ -196,6 +198,7 @@ export function Tab<TV>({ children, style, className }: TabProps<TV>) {
   return (
     <div style={style} className={className}>
       {children}
+      "CCCCC"
     </div>
   );
 }

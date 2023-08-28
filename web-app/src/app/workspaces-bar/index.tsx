@@ -62,6 +62,7 @@ import IconSettings from "../../../../styles/components/icons/IconSettings.tsx";
 import IconAdd from "../../../../styles/components/icons/IconAdd.tsx";
 import { IconAttachment } from "../../../../styles/components/new-icons/icon-attachment.tsx";
 import { IconGroup } from "../../../../styles/components/new-icons/icon-group.tsx";
+import { IconCheck } from "../../../../styles/components/new-icons/icon-check.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -537,14 +538,19 @@ function WorkspaceToggleView({
             placement="auto-end"
             direction="out"
             position="right"
-            align="end" // TODO: need to fix it so the arrow of the menu will point to the middle dot.
+            align="end" 
           >
             <div>
-              <div style={{ display: "flex", alignItems: "center" ,backgroundColor: theme.secondary.s0,}}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  backgroundColor: theme.secondary.s0,
+                }}
+              >
                 <div
                   style={{
                     padding: "0 4px",
-                    
                   }}
                 ></div>
                 <IconGroup style={{ marginRight: "8px" }} />
@@ -554,28 +560,32 @@ function WorkspaceToggleView({
 
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = "none";
+                view.workspaceGrouping = "Team";
               }}
             >
               {"Team"}
+              {view.workspaceGrouping === "Team" && <IconCheck />}
+
             </MenuItem>
 
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = "assignee";
+                view.workspaceGrouping = "Employee";
               }}
             >
               {"Employee"}
+              {view.workspaceGrouping === "Employee" && <IconCheck />} 
             </MenuItem>
             <div style={{ marginTop: "8px" }} />
 
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = "teamLeader";
+                view.workspaceGrouping = "none";
               }}
               icon={IconGroup}
             >
               {"Ungroup"}
+              {view.workspaceGrouping === "none" && <IconCheck />} 
             </MenuItem>
           </Menu>
         </div>

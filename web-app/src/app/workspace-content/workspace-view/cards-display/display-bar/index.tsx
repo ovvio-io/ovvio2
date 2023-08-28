@@ -50,6 +50,7 @@ import { GroupByDropDown } from "./group-by-drop-down.tsx";
 import { ViewToggle } from "./view-toggle.tsx";
 import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
 import localization from "../cards-display.strings.json" assert { type: "json" };
+import { IconCheck } from "../../../../../../../styles/components/new-icons/icon-check.tsx";
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -150,7 +151,7 @@ function SortByDropDown() {
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconSort />
+        <IconSort /> 
         <Text className={cn(styles.dropDownButtonText)}>
           {strings.sortBy}:&nbsp;{strings[view.sortBy]}
         </Text>
@@ -182,6 +183,8 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
+          {view.sortBy === x && <IconCheck />} 
+
         </DropDownItem>
       ))}
     </DropDown>
@@ -234,6 +237,7 @@ function ShowCheckedDropDown() {
       {kShowChecked.map((x) => (
         <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
+          {view.showChecked === x && <IconCheck />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -293,6 +297,8 @@ function DateFilterDropdown() {
     >
       <DropDownItem value={undefined} key={"clearDueDateFilter"}>
         <Text>{strings.all}</Text>
+        {view.dateFilter === undefined && <IconCheck />} 
+
       </DropDownItem>
       {kDateFilters.map((x) => (
         <DropDownItem value={x} key={x}>
@@ -301,6 +307,8 @@ function DateFilterDropdown() {
               ? ""
               : strings.thisPrefix + " ") + strings[x]}
           </Text>
+          {view.dateFilter === x && <IconCheck />} 
+
         </DropDownItem>
       ))}
     </DropDown>
@@ -452,8 +460,12 @@ function TabView() {
     if (tabId === "overview" && !showOverview) {
       continue;
     }
-    tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
-  }
+    tabs.push(
+      <TabButton value={tabId} >
+        {strings[tabId]}
+        {view.selectedTabId === tabId && <IconCheck />} 
+      </TabButton>
+    );  }
   return (
     <TabsHeader
       selected={view.selectedTabId}
@@ -463,6 +475,7 @@ function TabView() {
       )}
     >
       {...tabs}
+
     </TabsHeader>
   );
 }
@@ -482,14 +495,14 @@ export function DisplayBar(props?: DisplayBarProps) {
       <FilterButton />
       <div className={cn(styles.separator)} />
       <ViewToggle className={cn(styles.viewToggle)} />
-    </>
+]    </>
   );
 
   return (
     <div className={cn(styles.bar, className)}>
       <div className={cn(styles.barRow, styles.viewRow)}>
         <TabView />
-      </div>
+]      </div>
       <div className={cn(styles.barRow)}>
         {view.selectedTabId !== "overview" ? leftHand : null}
         <div className={cn(layout.flexSpacer)} />
