@@ -151,7 +151,7 @@ function SortByDropDown() {
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconSort /> 
+        <IconSort />
         <Text className={cn(styles.dropDownButtonText)}>
           {strings.sortBy}:&nbsp;{strings[view.sortBy]}
         </Text>
@@ -183,8 +183,7 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
-          {view.sortBy === x && <IconCheck />} 
-
+          {view.sortBy === x && <IconCheck color ={'blue'} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -237,7 +236,7 @@ function ShowCheckedDropDown() {
       {kShowChecked.map((x) => (
         <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
-          {view.showChecked === x && <IconCheck />}
+          {view.showChecked === x && <IconCheck color={"blue"} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -297,8 +296,7 @@ function DateFilterDropdown() {
     >
       <DropDownItem value={undefined} key={"clearDueDateFilter"}>
         <Text>{strings.all}</Text>
-        {view.dateFilter === undefined && <IconCheck />} 
-
+        {view.dateFilter === undefined && <IconCheck color={"blue"} />}
       </DropDownItem>
       {kDateFilters.map((x) => (
         <DropDownItem value={x} key={x}>
@@ -307,8 +305,7 @@ function DateFilterDropdown() {
               ? ""
               : strings.thisPrefix + " ") + strings[x]}
           </Text>
-          {view.dateFilter === x && <IconCheck />} 
-
+          {view.dateFilter === x && <IconCheck color={"blue"} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -461,11 +458,12 @@ function TabView() {
       continue;
     }
     tabs.push(
-      <TabButton value={tabId} >
+      <TabButton value={tabId}>
         {strings[tabId]}
-        {view.selectedTabId === tabId && <IconCheck />} 
+        {view.selectedTabId === tabId && <IconCheck color={"blue"} />}
       </TabButton>
-    );  }
+    );
+  }
   return (
     <TabsHeader
       selected={view.selectedTabId}
@@ -475,7 +473,6 @@ function TabView() {
       )}
     >
       {...tabs}
-
     </TabsHeader>
   );
 }
@@ -495,14 +492,14 @@ export function DisplayBar(props?: DisplayBarProps) {
       <FilterButton />
       <div className={cn(styles.separator)} />
       <ViewToggle className={cn(styles.viewToggle)} />
-]    </>
+    </>
   );
 
   return (
     <div className={cn(styles.bar, className)}>
       <div className={cn(styles.barRow, styles.viewRow)}>
         <TabView />
-]      </div>
+      </div>
       <div className={cn(styles.barRow)}>
         {view.selectedTabId !== "overview" ? leftHand : null}
         <div className={cn(layout.flexSpacer)} />

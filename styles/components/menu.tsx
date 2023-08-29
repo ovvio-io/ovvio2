@@ -19,7 +19,7 @@ import { Tooltip } from "./tooltip/index.tsx";
 import Layer from "./layer.tsx";
 import { IconExpander } from "./icons/index.ts";
 import Arrow from "./menus/arrow.tsx";
-
+import { brandLightTheme as theme1 } from "../theme.tsx"
 
 
 export const LineSeparator = () => (
@@ -45,9 +45,9 @@ const useStyles = makeStyles((theme) => ({
   item: {
     ...styleguide.textStyles.text,
     boxSizing: "border-box",
-    height: styleguide.gridbase * 4, // changed from 6
-    minWidth: styleguide.gridbase * 12, //changed from 20
-    maxWidth: styleguide.gridbase * 27, //added
+    height: styleguide.gridbase * 4, 
+    minWidth: styleguide.gridbase * 12, 
+    maxWidth: styleguide.gridbase * 27, 
     padding: "8px 16px 8px 8px",
     color: theme.background.text,
     cursor: "pointer",
@@ -63,16 +63,14 @@ const useStyles = makeStyles((theme) => ({
   },
 
   blueIcon: {
-    fill: "white",
-    stroke: "blue",
+    // fill: theme1.colors.primaryButton,
+    stroke: theme1.colors.primaryButtonStroke,
   },
 
   icon: {
     marginRight: "8px",
     width: "16px",
     height: "16px",
-    // fill: "blue",
-    stroke: "blue",
   },
   actionIcon: {
     marginRight: styleguide.gridbase,
@@ -230,6 +228,7 @@ export const MenuItem = React.forwardRef<
 });
 
 export const MenuItemStyle = useStyles.item;
+
 interface MenuActionProps {
   IconComponent: any;
   text: string;
@@ -248,7 +247,7 @@ export const MenuAction = React.forwardRef<
   return (
     <MenuItem {...props} ref={ref}>
       <IconComponent
-        className={cn(styles.actionIcon)}
+        className={cn(styles.actionIcon, styles.blueIcon)} // Added styles.blueIcon class
         width={iconWidth}
         height={iconHeight}
       />
@@ -377,7 +376,6 @@ export default function Menu({
     }
   }, [children, sizeByButton]);
 
-
   const content = (
     <Popper
       className={undefined}
@@ -401,9 +399,9 @@ export default function Menu({
 
           <Arrow
             position={position}
-            shadowPosition={position+ "shadow"}
+            shadowPosition={position + "shadow"}
             oneCellMenu={oneCellMenu}
-            backdropHovered={isItemHovered} 
+            backdropHovered={isItemHovered}
           />
         </div>
       </div>
@@ -427,9 +425,8 @@ export default function Menu({
             <Backdrop
               visible={open}
               ref={backdrop}
-              className={cn(backdropClassName)} 
+              className={cn(backdropClassName)}
               onClick={close}
-
             >
               {content}
             </Backdrop>

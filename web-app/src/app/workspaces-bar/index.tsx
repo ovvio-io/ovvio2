@@ -20,6 +20,7 @@ import Layer from "../../../../styles/components/layer.tsx";
 import Menu, {
   LineSeparator,
   MenuItem,
+  MenuAction,
 } from "../../../../styles/components/menu.tsx";
 import { IconPinOff } from "../../../../styles/components/new-icons/icon-pin-off.tsx";
 import { IconPinOn } from "../../../../styles/components/new-icons/icon-pin-on.tsx";
@@ -63,6 +64,7 @@ import IconAdd from "../../../../styles/components/icons/IconAdd.tsx";
 import { IconAttachment } from "../../../../styles/components/new-icons/icon-attachment.tsx";
 import { IconGroup } from "../../../../styles/components/new-icons/icon-group.tsx";
 import { IconCheck } from "../../../../styles/components/new-icons/icon-check.tsx";
+import { IconUngroup } from "../../../../styles/components/new-icons/icon-ungroup.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -499,6 +501,11 @@ function CollapseIcon({ className }: { className?: string }) {
   );
 }
 
+function IconUngroupWithColor(props) {
+  const { color, ...otherProps } = props;
+  return <IconUngroup color={color} {...otherProps} />;
+}
+
 interface WorkspaceToggleViewProps {
   onSelectAll: () => void;
   onUnselectAll: () => void;
@@ -538,7 +545,7 @@ function WorkspaceToggleView({
             placement="auto-end"
             direction="out"
             position="right"
-            align="end" 
+            align="end"
           >
             <div>
               <div
@@ -553,7 +560,7 @@ function WorkspaceToggleView({
                     padding: "0 4px",
                   }}
                 ></div>
-                <IconGroup style={{ marginRight: "8px" }} />
+                <IconGroup style={{ marginRight: "8px" }} color="blue" />
                 <LabelSm className={styles.groupBy}>Group By:</LabelSm>
               </div>
             </div>
@@ -564,8 +571,9 @@ function WorkspaceToggleView({
               }}
             >
               {"Team"}
-              {view.workspaceGrouping === "Team" && <IconCheck />}
-
+              {view.workspaceGrouping === "Team" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
 
             <MenuItem
@@ -574,7 +582,9 @@ function WorkspaceToggleView({
               }}
             >
               {"Employee"}
-              {view.workspaceGrouping === "Employee" && <IconCheck />} 
+              {view.workspaceGrouping === "Employee" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
             <div style={{ marginTop: "8px" }} />
 
@@ -582,10 +592,14 @@ function WorkspaceToggleView({
               onClick={() => {
                 view.workspaceGrouping = "none";
               }}
-              icon={IconGroup}
+              icon={(iconProps) => (
+                <IconUngroupWithColor color="blue" {...iconProps} />
+              )}
             >
               {"Ungroup"}
-              {view.workspaceGrouping === "none" && <IconCheck />} 
+              {view.workspaceGrouping === "none" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
           </Menu>
         </div>
@@ -683,7 +697,6 @@ function WorkspaceListItem({
   }, [view, workspace]);
 
   const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
-
   return (
     <div
       className={cn(
@@ -727,37 +740,38 @@ function WorkspaceListItem({
             align="start"
             className={cn(styles.itemMenu)}
           >
-            <MenuItem
+            <MenuAction
+              IconComponent={IconSettings}
+              text={strings.workspaceSettings}
               onClick={() => setIsSettingsOpen(true)}
-              icon={IconSettings}
-            >
-              {strings.workspaceSettings}
-            </MenuItem>
+            />
             {!isTemplate && (
-              <MenuItem
+              <MenuAction
+                IconComponent={IconAdd}
+                text={
+                  groupId === "hidden"
+                    ? strings.showWorkspace
+                    : strings.hideWorkspace
+                }
                 onClick={() =>
                   setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
                 }
-                icon={IconAdd}
-              >
-                {groupId === "hidden"
-                  ? strings.showWorkspace
-                  : strings.hideWorkspace}
-              </MenuItem>
+              />
             )}
             {groupId !== "hidden" && (
-              <MenuItem
+              <MenuAction
+                IconComponent={IconAttachment}
+                text={
+                  groupId === "templates"
+                    ? strings.unsetTemplate
+                    : strings.setTemplate
+                }
                 onClick={() =>
                   setWorkspaceState(
                     groupId === "templates" ? "none" : "template"
                   )
                 }
-                icon={IconAttachment}
-              >
-                {groupId === "templates"
-                  ? strings.unsetTemplate
-                  : strings.setTemplate}
-              </MenuItem>
+              />
             )}
           </Menu>
         </React.Fragment>
@@ -770,6 +784,92 @@ function WorkspaceListItem({
     </div>
   );
 }
+//   return (
+//     <div
+//       className={cn(
+//         styles.listItem,
+//         !view.workspaceBarCollapsed && styles.listItemExpanded,
+//         isSelected && styles.listItemSelected
+//       )}
+//       style={style}
+//     >
+//       <Tooltip text={name} disabled={!isOverflowing} position="right">
+//         <div
+//           className={cn(styles.itemTab)}
+//           onClick={toggleSelected}
+//           // onContextMenu={toggleSelected}
+//         >
+//           <div ref={textRef} className={cn(styles.itemText)}>
+//             {name}
+//           </div>
+
+//           <WorkspaceCheckbox toggled={isSelected} />
+//         </div>
+//       </Tooltip>
+//       <div /*className={cn(layout.flexSpacer)}*/ />
+//       {!view.workspaceBarCollapsed && (
+//         <React.Fragment>
+//           <Button
+//             className={cn(
+//               styles.pinButton,
+//               groupId === "pinned" && styles.pinButtonPinned
+//             )}
+//             onClick={() =>
+//               setWorkspaceState(groupId === "pinned" ? "none" : "pinned")
+//             }
+//           >
+//             {groupId === "pinned" ? <IconPinOn /> : <IconPinOff />}
+//           </Button>
+//           <Menu
+//             renderButton={renderButton}
+//             direction="out"
+//             position="right"
+//             align="start"
+//             className={cn(styles.itemMenu)}
+//           >
+//             <MenuItem
+//               onClick={() => setIsSettingsOpen(true)}
+//               icon={IconSettings}
+//             >
+//               {strings.workspaceSettings}
+//             </MenuItem>
+//             {!isTemplate && (
+//               <MenuItem
+//                 onClick={() =>
+//                   setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
+//                 }
+//                 icon={IconAdd}
+//               >
+//                 {groupId === "hidden"
+//                   ? strings.showWorkspace
+//                   : strings.hideWorkspace}
+//               </MenuItem>
+//             )}
+//             {groupId !== "hidden" && (
+//               <MenuItem
+//                 onClick={() =>
+//                   setWorkspaceState(
+//                     groupId === "templates" ? "none" : "template"
+//                   )
+//                 }
+//                 icon={IconAttachment}
+//               >
+//                 {groupId === "templates"
+//                   ? strings.unsetTemplate
+//                   : strings.setTemplate}
+//               </MenuItem>
+//             )}
+//           </Menu>
+//         </React.Fragment>
+//       )}
+//       {/* <WorkspaceSettingsDialog
+//         workspaceManager={workspace}
+//         isOpen={isSettingsOpen}
+//         hide={() => setIsSettingsOpen(false)}
+//       /> */}
+//     </div>
+//   );
+// }
 
 function ExpanderIcon({ className }: { className?: string }) {
   return (
