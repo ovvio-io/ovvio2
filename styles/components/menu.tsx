@@ -7,6 +7,7 @@ import React, {
   useContext,
   MouseEvent,
   Children,
+  createContext,
 } from "react";
 import ReactDOM from "react-dom";
 import { makeStyles, cn } from "../css-objects/index.ts";
@@ -15,25 +16,25 @@ import { layout } from "../layout.ts";
 import { Button } from "./buttons.tsx";
 import Popper from "./popper.tsx";
 import { Text } from "./typography.tsx";
-import { Tooltip } from "./tooltip/index.tsx";
 import Layer from "./layer.tsx";
 import { IconExpander } from "./icons/index.ts";
 import Arrow from "./menus/arrow.tsx";
-import { brandLightTheme as theme1 } from "../theme.tsx"
+import { brandLightTheme as theme1 } from "../theme.tsx";
+import { HoverProvider, useHoverContext } from "./menu-context.tsx";
 
-
-export const LineSeparator = () => (
-  <div style={{ height: "1px", backgroundColor: "#F5ECDC", width: "100%" }} /> //TODO: apply color for theme.background
+export const LineSeparator = (theme) => (
+  <div
+    style={{
+      height: "1px",
+      backgroundColor: theme1.secondary.s2,
+      width: "100%",
+    }}
+  /> 
 );
 
 const useStyles = makeStyles((theme) => ({
   backdropHovered: {
-    backgroundColor: "#FBEAC8", // Change this to your theme's color
-  },
-
-  /* Apply the hover effect to the Arrow directly inside the hovered Backdrop */
-  backdropHoveredArrow: {
-    backgroundColor: "#FBEAC8", // Change this to your theme's color
+    backgroundColor: theme1.secondary.s3,
   },
 
   arrowContainer: {
@@ -45,14 +46,14 @@ const useStyles = makeStyles((theme) => ({
   item: {
     ...styleguide.textStyles.text,
     boxSizing: "border-box",
-    height: styleguide.gridbase * 4, 
-    minWidth: styleguide.gridbase * 12, 
-    maxWidth: styleguide.gridbase * 27, 
+    height: styleguide.gridbase * 4,
+    minWidth: styleguide.gridbase * 12,
+    maxWidth: styleguide.gridbase * 27,
     padding: "8px 16px 8px 8px",
     color: theme.background.text,
     cursor: "pointer",
     ":hover": {
-      backgroundColor: "#FBEAC8", //TODO: change to theme.background..
+      backgroundColor: theme1.secondary.s3,
     },
     flexShrink: 0,
     transition: "background-color 0.15s linear",
@@ -89,7 +90,7 @@ const useStyles = makeStyles((theme) => ({
     whitespace: "nowrap",
     display: "flex",
     boxShadow: "0px -1px 3px rgba(0, 0, 0, 0.25)",
-    borderRadius: "2px", // Corner radius
+    borderRadius: "2px",
     justifyContent: "center",
     border: "2px solid #F5ECDC",
     font: "Poppins",
@@ -318,7 +319,7 @@ function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
 export default function Menu({
   children,
   renderButton,
-  popupClassName, // TODO: - maybe redundant (i saw always undefined).
+  popupClassName,
   backdropClassName,
   className,
   oneCellMenu,
@@ -401,7 +402,7 @@ export default function Menu({
             position={position}
             shadowPosition={position + "shadow"}
             oneCellMenu={oneCellMenu}
-            backdropHovered={isItemHovered}
+            // backdropHovered={isItemHovered}
           />
         </div>
       </div>
@@ -436,3 +437,286 @@ export default function Menu({
     </Button>
   );
 }
+// interface MenuItemProps {
+//   onClick?: () => any;
+//   className?: string;
+//   children?: React.ReactNode;
+//   selected?: boolean;
+//   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+//   isFirstInstance: boolean;
+// }
+
+// export function useMenuClose() {
+//   const ctx = useContext(MenuContext);
+//   return ctx.close;
+// }
+
+// export const MenuItem = React.forwardRef<
+//   HTMLDivElement,
+//   DivProps & MenuItemProps
+// >(function MenuItem(
+//   {
+//     selected,
+//     children,
+//     className,
+//     onClick = () => true,
+//     icon: IconItem = null,
+//     isFirstInstance,
+//     setIsFirstInstanceHovered,
+//     ...props
+//   },
+//   ref
+// ) {
+//   const styles = useStyles();
+//   const ctx = useContext(MenuContext);
+//   const [isHovered, setIsHovered] = useState(false);
+
+//   const invoke = (e: MouseEvent) => {
+//     e.stopPropagation();
+//     Promise.resolve(onClick()).then((r) => {
+//       if (typeof r === "undefined" || r) {
+//         ctx.close();
+//       }
+//     });
+//   };
+
+//   const handleHover = () => {
+//     if (isFirstInstance) {
+//       setIsFirstInstanceHovered(true);
+//     }
+//     setIsHovered(true);
+//   };
+
+//   const handleLeave = () => {
+//     if (isFirstInstance) {
+//       setIsFirstInstanceHovered(false);
+//     }
+//     setIsHovered(false);
+//   };
+//   return (
+//     <div
+//       className={cn(className, styles.item)}
+//       {...props}
+//       onClick={invoke}
+//       ref={ref}
+//       onMouseEnter={handleHover}
+//       onMouseLeave={handleHover}
+//     >
+//       {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)} />}
+//       {children}
+//     </div>
+//   );
+// });
+
+// export const MenuItemStyle = useStyles.item;
+
+// interface MenuActionProps {
+//   IconComponent: any;
+//   text: string;
+//   iconWidth?: string;
+//   iconHeight?: string;
+// }
+
+// export const MenuAction = React.forwardRef<
+//   HTMLDivElement,
+//   MenuActionProps & DivProps & MenuItemProps
+// >(function MenuAction(
+//   { IconComponent, text, iconWidth, iconHeight, ...props },
+//   ref
+// ) {
+//   const styles = useStyles();
+//   return (
+//     <MenuItem {...props} ref={ref}>
+//       <IconComponent
+//         className={cn(styles.actionIcon, styles.blueIcon)} // Added styles.blueIcon class
+//         width={iconWidth}
+//         height={iconHeight}
+//       />
+//       <Text className={cn(styles.actionText)}>{text}</Text>
+//     </MenuItem>
+//   );
+// });
+
+// interface BackdropProps {
+//   className?: string;
+//   visible: boolean;
+//   children: React.ReactNode;
+// }
+
+// export const Backdrop = React.forwardRef<
+//   HTMLDivElement,
+//   BackdropProps & DivProps
+// >(({ visible, children, className, ...rest }, ref) => {
+//   const styles = useStyles();
+
+//   return ReactDOM.createPortal(
+//     //ReactDOM.createPortal is used to create a portal for rendering content outside the normal React component tree. Portals are often used for modal dialogs or overlays.
+//     <Layer>
+//       {({ zIndex }) => (
+//         <div
+//           ref={ref}
+//           className={cn(
+//             className,
+//             styles.backdrop,
+//             visible && styles.backdropVisible
+//           )}
+//           style={{ zIndex }}
+//           {...rest}
+//         >
+//           {children}
+//         </div>
+//       )}
+//     </Layer>,
+//     document.getElementById("root")!
+//   );
+// });
+
+// export type MenuRenderButton = (props: {
+//   close: (e: React.MouseEvent) => void;
+//   isOpen: boolean;
+// }) => React.ReactNode;
+
+// interface MenuProps {
+//   children: React.ReactNode;
+//   renderButton: MenuRenderButton;
+//   popupClassName?: string;
+//   oneCellMenu?: boolean;
+//   backdropClassName?: string;
+//   className?: string;
+//   align?: "start" | "center" | "end";
+//   position?: "top" | "bottom" | "left" | "right";
+//   direction?: "in" | "out";
+//   onClick?: () => void;
+//   sizeByButton?: boolean;
+//   style?: {};
+//   isItemHovered?: boolean;
+// }
+
+// function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
+//   return !!x;
+// }
+
+// export default function Menu({
+//   children,
+//   renderButton,
+//   popupClassName, // TODO: - maybe redundant (i saw always undefined).
+//   backdropClassName,
+//   className,
+//   oneCellMenu,
+//   align,
+//   position,
+//   direction,
+//   onClick = () => {},
+//   sizeByButton = false,
+//   style = {},
+//   isItemHovered,
+// }: MenuProps) {
+//   const styles = useStyles();
+//   const [open, setOpen] = useState(false);
+//   const anchor = useRef(null); // This creates a reference to the element that triggers the menu.
+//   const backdrop = useRef(null); //This creates a reference to the backdrop element that appears behind the menu.
+//   const [minWidthStyle, setMinWidthStyle] = useState({}); //This state is used to set the minimum width of the menu based on the triggering element's width.
+
+//   const menuCtx = useContext(MenuContext);
+//   const [isFirstInstanceHovered, setIsFirstInstanceHovered] = useState(false); // Manage the hover state
+
+//   const close = useCallback(
+//     (e?: MouseEvent) => {
+//       setOpen(false);
+//       if (e) {
+//         e.preventDefault();
+//         e.stopPropagation();
+//       }
+//       menuCtx.close();
+//     },
+//     [menuCtx]
+//   );
+
+//   const newContext = useMemo(
+//     () => ({
+//       close() {
+//         close();
+//       },
+//       hasParent: true,
+//     }),
+//     [close]
+//   );
+
+//   const openMenu = (e: React.MouseEvent) => {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     setOpen((x) => !x);
+//     onClick();
+//   };
+
+//   useLayoutEffect(() => {
+//     //TODO do we need minimum size of the menu to be set by the button that triggered it??
+//     if (isElement(anchor.current) && sizeByButton) {
+//       const width = (anchor.current as any).getBoundingClientRect().width;
+//       setMinWidthStyle({ width: `${width}px` });
+//     } else {
+//       setMinWidthStyle({});
+//     }
+//   }, [children, sizeByButton]);
+
+//   const content = (
+//     <Popper
+//       className={undefined}
+//       anchor={anchor.current!}
+//       open={open}
+//       position={position}
+//       align={align}
+//       direction={direction}
+//     >
+//       <div className={styles.arrowContainer}>
+//         <div
+//           className={cn(styles.dropDown, popupClassName)}
+//           style={minWidthStyle}
+//         >
+//            {Children.toArray(children).map((child, index) => (
+//           <React.Fragment key={index}>
+//             {index > 0 && <LineSeparator />}
+//             {React.cloneElement(child, { isFirstInstance: index === 0 })}
+//           </React.Fragment>
+//         ))}
+
+
+//           <Arrow
+//             position={position}
+//             shadowPosition={position + "shadow"}
+//             oneCellMenu={oneCellMenu}
+//             backdropHovered={isItemHovered}
+//           />
+//         </div>
+//       </div>
+//     </Popper>
+//   );
+
+//   return (
+//     <Button
+//       className={cn(styles.menuButton, className)}
+//       ref={anchor}
+//       onClick={openMenu}
+//       contentEditable={false}
+//       style={style}
+//     >
+//       {renderButton({ close, isOpen: open })}
+//       {open && (
+//         <MenuContext.Provider value={newContext}>
+//           {menuCtx.hasParent ? (
+//             <>{content}</>
+//           ) : (
+//             <Backdrop
+//               visible={open}
+//               ref={backdrop}
+//               className={cn(backdropClassName)}
+//               onClick={close}
+//             >
+//               {content}
+//             </Backdrop>
+//           )}
+//         </MenuContext.Provider>
+//       )}
+//     </Button>
+//   );
+// }

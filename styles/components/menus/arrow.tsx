@@ -1,22 +1,20 @@
 import React from "react";
 import { makeStyles } from "../../css-objects/index.ts";
+import { brandLightTheme as theme1 } from "../../theme.tsx";
+import { useHoverContext } from "../menu-context.tsx";
+import { cn } from "../../css-objects/index.ts";
 
 interface ArrowProps {
   position: "left" | "right" | "bottom";
   shadowPosition: "leftShadow" | "rightShadow" | "bottomShadow";
   oneCellMenu?: boolean;
-  backdropHovered?: boolean; // Add this prop
+  backdropHovered?: boolean;
 }
 
 const useStyles = makeStyles((theme) => {
   const styles = {
-    backdropHovered: {
-      backgroundColor: "#FBEAC8", // Change this to your theme's color
-    },
-
-    /* Apply the hover effect to the Arrow directly inside the hovered Backdrop */
     backdropHoveredArrow: {
-      backgroundColor: "#FBEAC8", // Change this to your theme's color
+      backgroundColor: theme1.secondary.s3,
     },
 
     arrow: {
@@ -34,16 +32,16 @@ const useStyles = makeStyles((theme) => {
       left: "-6px",
       borderRightColor: "transparent",
       borderTopColor: "transparent",
-      borderLeftColor: "#F5ECDC",
-      borderBottomColor: "#F5ECDC",
+      borderLeftColor: theme1.secondary.s2,
+      borderBottomColor: theme1.secondary.s2,
     },
 
     left: {
       right: "-6px",
       borderLeftColor: "transparent",
       borderBottomColor: "transparent",
-      borderRightColor: "#F5ECDC",
-      borderTopColor: "#F5ECDC",
+      borderRightColor: theme1.secondary.s2,
+      borderTopColor: theme1.secondary.s2,
     },
 
     bottom: {
@@ -51,12 +49,11 @@ const useStyles = makeStyles((theme) => {
       top: "-6px",
       borderRightColor: "transparent",
       borderBottomColor: "transparent",
-      borderLeftColor: "#F5ECDC",
-      borderTopColor: "#F5ECDC",
+      borderLeftColor: theme1.secondary.s2,
+      borderTopColor: theme1.secondary.s2,
     },
 
     arrowShadow: {
-      //TODO: need to set the shadow only to the arrow's direction.
       position: "absolute",
       backgroundColor: "rgba(0, 0, 0, 0.3)",
       transform: "rotate(45deg)",
@@ -98,26 +95,46 @@ const Arrow: React.FC<ArrowProps> = ({
   position,
   shadowPosition,
   oneCellMenu,
-  isItemHovered,
-
 }) => {
   const styles = useStyles();
 
   return (
     <div>
       <div
-        className={`${styles.arrow} ${styles[position]} ${
-          oneCellMenu ? styles.oneCellMenu : ""
-        } ${isItemHovered ? styles.backdropHoveredArrow : ""}`} 
-        />
-
+        className={cn(
+          styles.arrow,
+          styles[position],
+          oneCellMenu && styles.oneCellMenu
+        )}
+      />
       <div
-        className={`${styles.arrowShadow} ${styles[shadowPosition]} ${
-          oneCellMenu ? styles.oneCellMenu : ""
-        }`}
+        className={cn(
+          styles.arrowShadow,
+          styles[shadowPosition],
+          oneCellMenu && styles.oneCellMenu
+        )}
       />
     </div>
   );
 };
+
+// const { firstInstanceUpdated } = useHoverContext();
+
+//   return (
+//     <div className={firstInstanceUpdated != undefined ? styles.backdropHoveredArrow : ""}>
+//       <div
+//         className={`${styles.arrow} ${styles[position]} ${
+//           oneCellMenu ? styles.oneCellMenu : ""
+//         } `}
+//       />
+
+//       <div
+//         className={`${styles.arrowShadow} ${styles[shadowPosition]} ${
+//           oneCellMenu ? styles.oneCellMenu : ""
+//         }`}
+//       />
+//     </div>
+//   );
+// };
 
 export default Arrow;
