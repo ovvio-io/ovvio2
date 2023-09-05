@@ -157,7 +157,6 @@ type CalcFunction = (
 ) => Record<string, any>;
 
 
-//TODO: ask Ofri about direction(in/out), as i see it the logic now is not good. 
 function calcFn(fn: CalcFunction): GetPositionFn {
   return (anchor: HTMLElement) => {
     const el = anchor;

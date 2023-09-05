@@ -18,9 +18,8 @@ import Popper from "./popper.tsx";
 import { Text } from "./typography.tsx";
 import Layer from "./layer.tsx";
 import { IconExpander } from "./icons/index.ts";
-import Arrow from "./menus/arrow.tsx";
+import Arrow from "./arrow.tsx";
 import { brandLightTheme as theme1 } from "../theme.tsx";
-import { HoverProvider, useHoverContext } from "./menu-context.tsx";
 
 export const LineSeparator = (theme) => (
   <div

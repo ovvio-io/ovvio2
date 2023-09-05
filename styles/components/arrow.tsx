@@ -1,7 +1,7 @@
 import React from "react";
-import { makeStyles } from "../../css-objects/index.ts";
-import { brandLightTheme as theme1 } from "../../theme.tsx";
-import { cn } from "../../css-objects/index.ts";
+import { makeStyles } from "../css-objects/index.ts";
+import { brandLightTheme as theme1} from "../theme.tsx"
+import { cn } from "../css-objects/index.ts";
 
 interface ArrowProps {
   position: "left" | "right" | "bottom";
