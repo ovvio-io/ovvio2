@@ -259,6 +259,8 @@
     "https://esm.sh/elen@1.0.10": "0b121b986e9389950ae067ee2496741e9a92e92a249d17c02e7022ac98935e08",
     "https://esm.sh/eventemitter3@4.0.7": "aba71098fb58a8cec4209fae47b92bfcbb011080e0fa13003cd20f4a3817c4e0",
     "https://esm.sh/idb@7.1.1": "9a77ff83d1706925f50e1c9f1dc1ce697bce1a3889fe358eae7052653fe3ee91",
+    "https://esm.sh/react@18.2.0": "8950a34a030620fce8349d6bd3913b3bdb186c5ec7968fa5ba4d054e22d78e6c",
+    "https://esm.sh/stable/react@18.2.0/denonext/react.mjs": "3c4f23bcfc53b256fcfaf6f834fa9f584c3bb7be667b2682c6cb6ba8ef88f8e6",
     "https://esm.sh/v117/elen@1.0.10/deno/elen.mjs": "3ef86cd692881b60cb4a20d3ad3e14efd9bdf0154c2b1e027af32cae289b0e1f",
     "https://esm.sh/v117/eventemitter3@4.0.7/deno/eventemitter3.mjs": "332e98481bc309a87960bb0231fec62013c31c8e8dc8655b2ae5924f2022b893",
     "https://esm.sh/v117/idb@7.1.1/deno/idb.mjs": "e5ae6501b09675a741b57d4809494834284492d19f61090ac02b491dc743f6d5",

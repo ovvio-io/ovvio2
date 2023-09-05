@@ -1,15 +1,11 @@
 {
   "imports": {
     "global.d.ts": "./global.d.ts",
-    "prop-types": "https://unpkg.com/prop-types@15.8.1",
-    "scheduler/tracing": "https://unpkg.com/@types/scheduler@0.16.3/tracing.d.ts",
-    "csstype": "https://unpkg.com/csstype@3.1.2/index.d.ts",
-    "react": "https://unpkg.com/react@18.2.0/index.js",
-    "react-dom": "https://unpkg.com/react-dom@18.2.0/index.js",
-    "react-dom/client": "https://unpkg.com/react-dom@18.2.0/client.js",
-    "react-router": "https://unpkg.com/react-router@6.15.0/dist/umd/react-router.production.min.js",
-    "react-router-dom": "https://unpkg.com/react-router-dom@6.15.0/dist/umd/react-router-dom.production.min.js",
-    "@remix-run/router": "https://cdn.jsdelivr.net/npm/@remix-run/router@1.4.0/+esm",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-router": "https://esm.sh/react-router@6.15.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.15.0",
     "slate": "https://unpkg.com/slate@0.94.1/dist/index.js",
     "slate-react": "https://unpkg.com/slate-react@0.98.3/dist/index.js"
   }

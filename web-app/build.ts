@@ -4,6 +4,8 @@ import * as path from 'https://deno.land/std@0.201.0/path/mod.ts';
 import { assert, notReached } from '../base/error.ts';
 import { retry } from '../base/time.ts';
 
+const CDN_URL = 'https://esm.sh/';
+
 export function getIndexFilePath(ext = '.tsx'): string {
   const buildFile = path.fromFileUrl(import.meta.url);
   const rootDir = path.dirname(buildFile);
@@ -83,7 +85,7 @@ function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
         } else if (importedValue.startsWith('https://')) {
           url = importedValue;
         } else if (!isPath(importedValue)) {
-          url = `https://unpkg.com/${importedValue}`;
+          url = `${CDN_URL}${importedValue}`;
         }
 
         if (typeof url === 'string') {
@@ -153,7 +155,7 @@ export async function bundle(path?: string): Promise<BundleResult> {
     bundle: true,
     write: false,
     outfile: 'webapp.js',
-    sourcemap: 'external',
+    sourcemap: 'linked',
   });
   let source, sourceMap: string;
   for (const file of result.outputFiles) {
