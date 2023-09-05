@@ -1,13 +1,6 @@
 import React, { ReactNode, useContext } from 'react';
-import {
-  Editor,
-  Element,
-  Node,
-  NodeEntry,
-  Path,
-  Transforms,
-} from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
+import { RenderElementProps } from 'slate-react';
 import { NS_NOTES } from '../../../../../../cfds/base/scheme-types.ts';
 import {
   Note,

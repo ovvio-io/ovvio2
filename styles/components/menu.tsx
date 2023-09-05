@@ -116,11 +116,11 @@ export type SecondaryMenuItemProps = React.PropsWithChildren<{
   text: string;
 }>;
 
-export const SecondaryMenuItem: React.FC<SecondaryMenuItemProps> = ({
+export function SecondaryMenuItem({
   children,
   text,
   className,
-}) => {
+}: SecondaryMenuItemProps) {
   const styles = useStyles();
   const renderButton = useCallback(() => {
     return (
@@ -142,7 +142,7 @@ export const SecondaryMenuItem: React.FC<SecondaryMenuItemProps> = ({
       {children}
     </Menu>
   );
-};
+}
 
 interface MenuItemProps {
   onClick?: () => any;

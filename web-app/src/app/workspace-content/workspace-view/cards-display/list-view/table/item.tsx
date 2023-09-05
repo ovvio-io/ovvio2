@@ -6,11 +6,7 @@ import React, {
   MouseEventHandler,
   KeyboardEventHandler,
 } from 'react';
-import {
-  ReactEditor,
-  Slate,
-  Editable,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { ReactEditor, Slate, Editable } from 'slate-react';
 import { formatTimeDiff } from '../../../../../../../../base/date.ts';
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {

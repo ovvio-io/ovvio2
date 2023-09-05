@@ -1,4 +1,4 @@
-import { Editor } from 'https://esm.sh/slate@0.87.0';
+import { Editor } from 'slate';
 
 // function AssigneesComponent({ filter, selectedIndex, setLength }: MentionSuggestionsProps) {
 //   return null

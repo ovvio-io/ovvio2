@@ -8,12 +8,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Node, Transforms } from 'https://esm.sh/slate@0.87.0';
-import {
-  RenderElementProps,
-  useSelected,
-  useSlateStatic,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { Node, Transforms } from 'slate';
+import { RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
 import { Scroller, useScrollParent } from '../../react-utils/scrolling.tsx';
 import { layout, styleguide } from '../../../../../styles/index.ts';
 

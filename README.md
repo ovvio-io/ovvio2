@@ -7,9 +7,9 @@ First, install deno from here https://deno.com/manual@v1.32.5/getting_started/in
 ## WebApp
 
 1. Install packup - https://github.com/kt3k/packup
-2. Run `packup --import-map=./import-map.json serve web-app/src/index.html`
+2. Run `packup --import-map=./import-map.json -s ./web-app/src/public serve web-app/src/index.html`
 
-For debugging, use `packup --import-map=./import-map-dev.json serve web-app/src/index.html`
+For debugging, use `packup --import-map=./import-map-dev.json -s ./web-app/src/public serve web-app/src/index.html`
 
 Note: In the final version we'll have our server build and serve the app
 dynamically, thus skipping the need for packup.
@@ -17,17 +17,17 @@ dynamically, thus skipping the need for packup.
 ## Server
 
 Normal run:
-`deno run --unstable -A server/run-server.ts`
+`deno run --no-lock --unstable -A server/run-server.ts`
 
 Debug run:
-`deno run --unstable -A --inspect-brk server/run-server.ts`
+`deno run --no-lock --unstable -A --inspect-brk server/run-server.ts`
 
 ## Admin CLI
 
 The admin CLI allows you to connect to a specific repository, replicate it
 locally, and perform manual manipulation of the repository data.
 
-`deno run -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>`
+`deno run --no-lock -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>`
 
 The CLI will immediately replicate the remote repository locally, then enter
 an interactive mode.

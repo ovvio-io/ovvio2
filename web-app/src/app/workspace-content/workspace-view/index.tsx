@@ -45,8 +45,6 @@ export default function WorkspaceContentView({ className }: ContentProps) {
   const styles = useStyles();
   const view = usePartialView('selectedWorkspaces');
 
-  debugger;
-
   return (
     <div className={cn(styles.main, className)}>
       <Toolbar />

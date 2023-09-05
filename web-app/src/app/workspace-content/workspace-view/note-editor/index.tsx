@@ -79,13 +79,17 @@ export default function NoteView({ noteId }: NotesViewProps) {
 }
 
 interface InnerNotesViewProps {
-  noteId: string;
+  noteId?: string;
 }
 
 export function InnerNoteView({ noteId }: InnerNotesViewProps) {
   const styles = useStyles();
+  const params = useParams<Required<InnerNotesViewProps>>();
+  if (!noteId) {
+    noteId = params.noteId;
+  }
   const graph = useGraphManager();
-  const cardManager = graph.getVertexManager<Note>(noteId);
+  const cardManager = graph.getVertexManager<Note>(noteId!);
   const card = useVertex(cardManager);
 
   let content = null;
@@ -102,13 +106,13 @@ export function InnerNoteView({ noteId }: InnerNotesViewProps) {
   }
 
   return (
-    <ErrorBoundary>
-      <div className={cn(styles.root)}>
-        <div className={cn(styles.relative)}>
-          <FloatingBackButton />
-          {content}
-        </div>
+    // <ErrorBoundary>
+    <div className={cn(styles.root)}>
+      <div className={cn(styles.relative)}>
+        <FloatingBackButton />
+        {content}
       </div>
-    </ErrorBoundary>
+    </div>
+    // </ErrorBoundary>
   );
 }

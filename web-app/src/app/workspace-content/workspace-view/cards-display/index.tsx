@@ -87,8 +87,6 @@ export function CardsDisplay() {
   const view = usePartialView('viewType', 'selectedTabId');
   const strings = useStrings();
 
-  debugger;
-
   let content = null;
   const isInSearch = false;
   if (isInSearch) {

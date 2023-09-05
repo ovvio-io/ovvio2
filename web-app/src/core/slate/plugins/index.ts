@@ -1,9 +1,6 @@
 import { KeyboardEventHandler } from 'react';
-import { NodeEntry, Range } from 'https://esm.sh/slate@0.87.0';
-import {
-  RenderElementProps,
-  RenderLeafProps,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { NodeEntry, Range } from 'slate';
+import { RenderElementProps, RenderLeafProps } from 'slate-react';
 import { coreValueEquals } from '../../../../../base/core-types/equals.ts';
 
 type PropType<T, K extends keyof T> = T[K];

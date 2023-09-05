@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
-import { Editor, NodeEntry } from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, NodeEntry } from 'slate';
+import { RenderElementProps } from 'slate-react';
 import { ElementNode } from '../../../../../cfds/richtext/tree.ts';
 import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import { mergePlugins } from '../plugins/index.ts';

@@ -1,5 +1,5 @@
-import { BaseEditor } from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
+import { BaseEditor } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { BulletListElement } from './elements/bullet-list.element.tsx';
 import { NumberedListElement } from './elements/numbered-list.element.tsx';
 import { HeaderElement } from './elements/header.element.tsx';
@@ -45,7 +45,7 @@ export type ElementNodeType =
 
 export type TextType = FormattedText | MentionElement;
 
-declare module 'https://esm.sh/slate@0.87.0' {
+declare module 'slate' {
   interface CustomTypes {
     Editor: OvvioEditor;
     Element: ElementNodeType;

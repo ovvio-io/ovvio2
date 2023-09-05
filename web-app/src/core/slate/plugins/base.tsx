@@ -1,9 +1,6 @@
 import React from 'react';
-import { Editor } from 'https://esm.sh/slate@0.87.0';
-import {
-  ReactEditor,
-  RenderElementProps,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { Editor } from 'slate';
+import { ReactEditor, RenderElementProps } from 'slate-react';
 import { useStyles as typography } from '../../../../../styles/components/texts.tsx';
 import { cn } from '../../../../../styles/css-objects/index.ts';
 import {

@@ -6,8 +6,8 @@ import {
   Node,
   Operation,
   Path,
-} from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
+} from 'slate';
+import { ReactEditor } from 'slate-react';
 import { uniqueId } from '../../../../../base/common.ts';
 import { Range } from '../../../../../cfds/richtext/doc-state.ts';
 import { TextNode } from '../../../../../cfds/richtext/tree.ts';

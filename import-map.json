@@ -1,11 +1,16 @@
 {
   "imports": {
-    "react": "https://cdn.skypack.dev/react@17.0.2?dts",
-    "react-dom": "https://cdn.skypack.dev/react-dom@17.0.2?dts",
-    "@types/react": "https://cdn.skypack.dev/@types/react@17.0.2",
-    "@types/react-dom": "https://cdn.skypack.dev/@types/react-dom@17.0.2",
-    "react-dom/client": "https://cdn.skypack.dev/react-dom@17.0.2/client?dts",
-    "react-router": "https://cdn.skypack.dev/react-router@6.7.0?dts",
-    "react-router-dom": "https://cdn.skypack.dev/react-router-dom@6.7.0?dts"
+    "global.d.ts": "./global.d.ts",
+    "prop-types": "https://unpkg.com/prop-types@15.8.1",
+    "scheduler/tracing": "https://unpkg.com/@types/scheduler@0.16.3/tracing.d.ts",
+    "csstype": "https://unpkg.com/csstype@3.1.2/index.d.ts",
+    "react": "https://unpkg.com/react@18.2.0/index.js",
+    "react-dom": "https://unpkg.com/react-dom@18.2.0/index.js",
+    "react-dom/client": "https://unpkg.com/react-dom@18.2.0/client.js",
+    "react-router": "https://unpkg.com/react-router@6.15.0/dist/umd/react-router.production.min.js",
+    "react-router-dom": "https://unpkg.com/react-router-dom@6.15.0/dist/umd/react-router-dom.production.min.js",
+    "@remix-run/router": "https://cdn.jsdelivr.net/npm/@remix-run/router@1.4.0/+esm",
+    "slate": "https://unpkg.com/slate@0.94.1/dist/index.js",
+    "slate-react": "https://unpkg.com/slate-react@0.98.3/dist/index.js"
   }
 }
