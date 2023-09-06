@@ -151,7 +151,7 @@ export default function TitleEditorView({
 
   return (
     <div className={cn(className, styles.header, isRtl && styles.rtl)}>
-      <Slate editor={editor} initialValue={editor.children} {...handlers}>
+      <Slate editor={editor} {...handlers}>
         <CardHeader
           size={CardSize.Regular}
           card={cardManager}

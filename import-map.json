@@ -6,7 +6,7 @@
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "react-router": "https://esm.sh/react-router@6.15.0",
     "react-router-dom": "https://esm.sh/react-router-dom@6.15.0",
-    "slate": "https://unpkg.com/slate@0.94.1/dist/index.js",
-    "slate-react": "https://unpkg.com/slate-react@0.98.3/dist/index.js"
+    "slate": "https://esm.sh/slate@0.81.1",
+    "slate-react": "https://esm.sh/slate-react@0.81.0"
   }
 }
