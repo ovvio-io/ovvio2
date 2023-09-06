@@ -1,9 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Editable,
-  RenderElementProps,
-  Slate,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { Editable, RenderElementProps, Slate } from 'slate-react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,

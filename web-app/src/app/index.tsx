@@ -16,6 +16,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { uniqueId } from '../../../base/common.ts';
 import { StyleProvider } from '../../../styles/css-objects/context.tsx';
 import { CfdsClientProvider } from '../core/cfds/react/graph.tsx';
+import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
         // }}
       />
     ),
+  },
+  {
+    path: `/:workspaceId/notes/:noteId`,
+    element: <NoteView />,
   },
 ]);
 

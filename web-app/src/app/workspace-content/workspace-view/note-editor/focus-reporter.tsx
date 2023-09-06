@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useFocused } from 'https://esm.sh/slate-react@0.87.1';
+import { useFocused } from 'slate-react';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
 import { UISource } from '../../../../../../logging/client-events.ts';

@@ -5,14 +5,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Node } from 'https://esm.sh/slate@0.87.0';
+import { Node } from 'slate';
 import {
   ReactEditor,
   RenderElementProps,
   useFocused,
   useSelected,
   useSlateStatic,
-} from 'https://esm.sh/slate-react@0.87.1';
+} from 'slate-react';
 import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {

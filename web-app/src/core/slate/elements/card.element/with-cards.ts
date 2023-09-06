@@ -1,4 +1,4 @@
-import { Editor, Node, Path, Transforms } from 'https://esm.sh/slate@0.87.0';
+import { Editor, Node, Path, Transforms } from 'slate';
 import { duplicateCard } from '../../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';

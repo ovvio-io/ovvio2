@@ -7,8 +7,8 @@ import {
   Path,
   Point,
   Range,
-} from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
+} from 'slate';
+import { ReactEditor } from 'slate-react';
 import { CfdsEditor } from '../cfds/with-cfds.tsx';
 import { ElementUtils } from './element-utils.ts';
 import { TreeNode } from '../../../../../cfds/richtext/tree.ts';

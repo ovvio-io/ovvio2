@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-  Editor,
-  Element,
-  NodeEntry,
-  Point,
-  Transforms,
-  Range,
-} from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, Element, NodeEntry, Point, Transforms, Range } from 'slate';
+import { RenderElementProps } from 'slate-react';
 import { ElementNode, TextNode } from '../../../../../cfds/richtext/tree.ts';
 import { styleguide } from '../../../../../styles/index.ts';
 import { H2 } from '../../../../../styles/components/texts.tsx';

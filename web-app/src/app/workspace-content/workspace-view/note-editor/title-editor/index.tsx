@@ -1,9 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import {
-  Editable,
-  RenderElementProps,
-  Slate,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { Editable, RenderElementProps, Slate } from 'slate-react';
 import {
   makeStyles,
   cn,
@@ -123,7 +119,7 @@ const useStyles = makeStyles((theme) => ({
 //   );
 // }
 
-function Title({ children, attributes }: RenderElementProps): JSX.Element {
+function Title({ children, attributes }: RenderElementProps): React.ReactNode {
   return <H1 {...attributes}>{children}</H1>;
 }
 

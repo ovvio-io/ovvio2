@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useSlateStatic } from 'https://esm.sh/slate-react@0.87.1';
+import { useSlateStatic } from 'slate-react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';

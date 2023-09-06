@@ -1,5 +1,5 @@
 import React from 'react';
-import { BaseRange, Text } from 'https://esm.sh/slate@0.87.0';
+import { BaseRange, Text } from 'slate';
 import { isMention } from '../../mentions/index.tsx';
 import { DecorateHandler, RenderLeafHandler } from '../index.ts';
 import { isLinkLeafProps, LinkLeaf } from './link-leaf.tsx';
