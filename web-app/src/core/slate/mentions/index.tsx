@@ -1,10 +1,5 @@
 import React, { KeyboardEventHandler } from 'react';
-import {
-  BaseEditor,
-  Editor,
-  Element,
-  Transforms,
-} from 'https://esm.sh/slate@0.87.0';
+import { BaseEditor, Editor, Element, Transforms } from 'slate';
 
 import { FormattedText, OvvioEditor } from '../types.ts';
 import { Plugin } from '../plugins/index.ts';

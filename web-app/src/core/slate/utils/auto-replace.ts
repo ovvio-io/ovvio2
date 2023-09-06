@@ -5,7 +5,7 @@ import {
   NodeEntry,
   Transforms,
   Node,
-} from 'https://esm.sh/slate@0.87.0';
+} from 'slate';
 import { KeyDownHandler } from '../plugins/index.ts';
 import { ElementUtils } from './element-utils.ts';
 import { getPlatformHotkey, isHotkeyActive, Shortcut } from './hotkeys.ts';

@@ -70,7 +70,7 @@ const useStyles = makeStyles(
 
 export { useStyles as useBackdropStyles };
 
-export interface BackdropProps {
+export type BackdropProps = React.PropsWithChildren<{
   open: boolean;
   onClickOutside?: any;
   className?: string;
@@ -78,8 +78,8 @@ export interface BackdropProps {
   onOpen?: () => void;
   rootId?: string;
   highContrast?: boolean;
-}
-export const Backdrop: React.FC<BackdropProps> = ({
+}>;
+export function Backdrop({
   open,
   children,
   onClickOutside,
@@ -87,7 +87,7 @@ export const Backdrop: React.FC<BackdropProps> = ({
   className,
   rootId,
   highContrast,
-}) => {
+}: BackdropProps) {
   const styles = useStyles();
   // const domState = useScopedObservable(DomState);
   const timeout = useRef<number>();
@@ -161,4 +161,4 @@ export const Backdrop: React.FC<BackdropProps> = ({
     </Layer>,
     root
   );
-};
+}

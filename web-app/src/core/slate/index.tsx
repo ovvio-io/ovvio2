@@ -1,11 +1,8 @@
 import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
 import { useCfdsContext } from '../cfds/react/graph.tsx';
 import { useEffect, useMemo, useRef } from 'react';
-import { createEditor, Editor } from 'https://esm.sh/slate@0.87.0';
-import {
-  RenderElementProps,
-  withReact,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { createEditor, Editor } from 'slate';
+import { RenderElementProps, withReact } from 'slate-react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { useCfdsEditor, EditorHandler } from './cfds/use-cfds-editor.ts';
 import withCfds from './cfds/with-cfds.tsx';

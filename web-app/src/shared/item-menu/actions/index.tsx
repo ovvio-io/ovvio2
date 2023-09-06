@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Path } from 'https://esm.sh/slate@0.87.0';
+import { Path } from 'slate';
 import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {

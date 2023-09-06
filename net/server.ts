@@ -24,11 +24,18 @@ import {
 } from '../base/core-types/encoding/json.ts';
 import { VersionNumber } from '../defs.ts';
 import { VersionInfoCurrent } from './version-info.ts';
+import {
+  bundle,
+  getIndexFilePath,
+  stopBackgroundCompiler,
+} from '../web-app/build.ts';
 
 interface Arguments {
   port: number;
   replicas: string[];
   dir: string;
+  app: string;
+  importMap?: string;
 }
 
 export class Server {
@@ -43,6 +50,10 @@ export class Server {
   >;
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
+  private _appSource: string | undefined;
+  private _appSourceMap: string | undefined;
+  private _indexSource: string | undefined;
+  private _indexCss: string | undefined;
 
   constructor(args?: Arguments) {
     if (!args) {
@@ -66,9 +77,10 @@ export class Server {
             'A full path to a local directory which will host all repositories managed by this server',
         })
         .demandOption(
-          ['dir'],
-          'Please provide a local directory for this server'
+          ['dir']
+          // 'Please provide a local directory for this server'
         )
+        // .demandOption(['app'], 'Please provide')
         .parse();
     }
     this._args = args!;
@@ -78,8 +90,16 @@ export class Server {
     this._clientsForLog = new Map();
   }
 
-  run(): Promise<void> {
+  async run(): Promise<void> {
     // TODO: Scan path for existing contents and set up replication
+    console.log('Starting web-app bundling...');
+    const { source, map } = await bundle();
+    this._appSource = source;
+    this._appSourceMap = map;
+    this._indexSource = await Deno.readTextFile(getIndexFilePath('.html'));
+    this._indexCss = await Deno.readTextFile(getIndexFilePath('.css'));
+    stopBackgroundCompiler();
+    console.log('Web-app bundling finished. Server is listening...');
     log({
       severity: 'INFO',
       name: 'ServerStarted',
@@ -259,9 +279,10 @@ export class Server {
 
   private handleGETRequest(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname;
+    debugger;
     switch (path.toLocaleLowerCase()) {
       // Version check
-      case 'version': {
+      case '/version': {
         return Promise.resolve(
           new Response(
             JSON.stringify({
@@ -277,7 +298,7 @@ export class Server {
       }
 
       // Health check
-      case 'healthy': {
+      case '/healthy': {
         return Promise.resolve(
           new Response('OK', {
             status: 200,
@@ -285,19 +306,42 @@ export class Server {
         );
       }
 
-      default: {
-        log({
-          severity: 'INFO',
-          error: 'BadRequest',
-          url: req.url,
-          value: {
-            method: req.method,
-            hasBody: Boolean(req.body),
-          },
-        });
+      case '/app.js': {
         return Promise.resolve(
-          new Response(null, {
-            status: 400,
+          new Response(this._appSource, {
+            headers: {
+              'content-type': 'text/javascript; charset=utf-8',
+            },
+          })
+        );
+      }
+
+      case '/app.js.map': {
+        return Promise.resolve(
+          new Response(this._appSourceMap, {
+            headers: {
+              'content-type': 'application/json; charset=utf-8',
+            },
+          })
+        );
+      }
+
+      case '/index.css': {
+        return Promise.resolve(
+          new Response(this._indexCss, {
+            headers: {
+              'content-type': 'text/css; charset=utf-8',
+            },
+          })
+        );
+      }
+
+      default: {
+        return Promise.resolve(
+          new Response(this._indexSource, {
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+            },
           })
         );
       }

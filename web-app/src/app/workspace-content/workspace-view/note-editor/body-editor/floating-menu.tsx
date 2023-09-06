@@ -5,12 +5,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { Editor, Element, Path } from 'https://esm.sh/slate@0.87.0';
-import {
-  ReactEditor,
-  useSlate,
-  useSlateStatic,
-} from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, Element, Path } from 'slate';
+import { ReactEditor, useSlate, useSlateStatic } from 'slate-react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';

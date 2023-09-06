@@ -10,7 +10,7 @@ import {
   BaseRange,
   Transforms,
   Descendant,
-} from 'https://esm.sh/slate@0.87.0';
+} from 'slate';
 import { notReached } from '../../../../../base/error.ts';
 
 type ElementMatch<T extends Element> =

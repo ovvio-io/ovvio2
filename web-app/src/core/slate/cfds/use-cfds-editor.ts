@@ -1,10 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import {
-  Descendant,
-  Editor,
-  Range as SlateRange,
-} from 'https://esm.sh/slate@0.87.0';
-import { ReactEditor } from 'https://esm.sh/slate-react@0.87.1';
+import { Descendant, Editor, Range as SlateRange } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
 import {
   Document,

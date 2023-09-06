@@ -1,11 +1,4 @@
-import {
-  Editor,
-  Element,
-  Node,
-  NodeEntry,
-  Path,
-  Transforms,
-} from 'https://esm.sh/slate@0.87.0';
+import { Editor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
 import { BulletListElement } from '../elements/bullet-list.element.tsx';
 import { ListItemElement } from '../elements/list-item.element.tsx';
 import { NumberedListElement } from '../elements/numbered-list.element.tsx';

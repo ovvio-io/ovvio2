@@ -1,6 +1,6 @@
 import React from 'react';
-import { BaseRange, Editor, Node } from 'https://esm.sh/slate@0.87.0';
-import { RenderLeafProps } from 'https://esm.sh/slate-react@0.87.1';
+import { BaseRange, Editor, Node } from 'slate';
+import { RenderLeafProps } from 'slate-react';
 import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import { KeyDownHandler, Plugin } from './index.ts';
 import { FormattedText } from '../types.ts';

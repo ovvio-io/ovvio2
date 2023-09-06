@@ -1,6 +1,6 @@
 import React from 'react';
-import { Editor, Node } from 'https://esm.sh/slate@0.87.0';
-import { useSlate } from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, Node } from 'slate';
+import { useSlate } from 'slate-react';
 import {
   makeStyles,
   cn,

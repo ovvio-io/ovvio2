@@ -116,7 +116,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns, ts = :ts, json = :json`
     );
     this._putRefStatement = db.prepare(
-      `INSERT INTO refs (src, dst) VALUES (:src, :dst);`
+      `INSERT OR IGNORE INTO refs (src, dst) VALUES (:src, :dst);`
     );
     this._deleteRefStatement = db.prepare(
       `DELETE FROM refs WHERE src = :src AND dst = :dst`

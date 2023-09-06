@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
-import { Editor, Element } from 'https://esm.sh/slate@0.87.0';
-import { RenderElementProps } from 'https://esm.sh/slate-react@0.87.1';
+import { Editor, Element } from 'slate';
+import { RenderElementProps } from 'slate-react';
 import { Plugin } from '../plugins/index.ts';
 import { TextType } from '../types.ts';
 import { ElementUtils } from '../utils/element-utils.ts';

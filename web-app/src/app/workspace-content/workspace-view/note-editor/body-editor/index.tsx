@@ -1,6 +1,6 @@
 import React, { MouseEvent, useImperativeHandle } from 'react';
-import { Node } from 'https://esm.sh/slate@0.87.0';
-import { Editable, Slate } from 'https://esm.sh/slate-react@0.87.1';
+import { Node } from 'slate';
+import { Editable, Slate } from 'slate-react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
@@ -123,7 +123,7 @@ export default React.forwardRef<EditorHandle, BodyProps>(function BodyView(
     >
       <React.StrictMode>
         <EditableCardContext cardManager={cardManager}>
-          <Slate editor={editor} {...handlers}>
+          <Slate editor={editor} initialValue={editor.children} {...handlers}>
             <FocusReporter cardManager={cardManager} source="editor:body" />
             <Editable
               {...plugins}
