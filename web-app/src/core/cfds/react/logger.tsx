@@ -44,8 +44,7 @@ export function LoggerProvider({
       return;
     }
 
-    const storage = new LogClientIDBStorage('/logs/' + sessionInfo.user.key);
-
+    const storage = new LogClientIDBStorage('/logs/' + sessionInfo.userId);
     const client = baseServerUrl
       ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
       : undefined;
