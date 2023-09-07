@@ -59,17 +59,13 @@ export function SeverityFromCode(code: number): Severity {
       return 'DEFAULT';
   }
 }
+
 export interface BaseLogEntry extends CoreObject {
   severity: Severity;
   message?: string;
 }
 
-export interface GenericLogEntry extends BaseLogEntry {
-  severity: 'INFO' | 'DEBUG' | 'DEFAULT';
-  message: string;
-}
-
-export interface NormalizedLogEntry extends BaseLogEntry {
+export interface TechnicalLogData extends CoreObject {
   severityCode: number;
   timestamp: Date; // ISO 8601 string
   logId: string;
@@ -89,23 +85,31 @@ export interface NormalizedLogEntry extends BaseLogEntry {
   t_execPath: string;
 }
 
+export interface GenericLogEntry extends BaseLogEntry {
+  severity: 'INFO' | 'DEBUG' | 'DEFAULT';
+  message: string;
+}
+
+export type NormalizedLogEntry<T extends BaseLogEntry = BaseLogEntry> = T &
+  TechnicalLogData;
+
 export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
   e: T
-): NormalizedLogEntry {
-  const res: NormalizedLogEntry = e as unknown as NormalizedLogEntry;
+): NormalizedLogEntry<T> {
+  const res: NormalizedLogEntry<T> = e as unknown as NormalizedLogEntry<T>;
   res.severityCode = SeverityCodes[e.severity];
   res.timestamp = new Date();
   res.logId = uniqueId();
   if (typeof Deno !== 'undefined') {
     try {
-      res.d_denoVersion = Deno.version.deno;
-      res.d_v8Version = Deno.version.v8;
-      res.d_tsVersion = Deno.version.typescript;
-      res.d_hostname = Deno.hostname();
-      res.d_pid = Deno.pid;
-      res.d_osBuild = Deno.build;
-      res.d_mainUrl = Deno.mainModule;
-      res.d_execPath = Deno.execPath();
+      res.t_denoVersion = Deno.version.deno;
+      res.t_v8Version = Deno.version.v8;
+      res.t_tsVersion = Deno.version.typescript;
+      res.t_hostname = Deno.hostname();
+      res.t_pid = Deno.pid;
+      res.t_osBuild = Deno.build;
+      res.t_mainUrl = Deno.mainModule;
+      res.t_execPath = Deno.execPath();
     } catch (_e: unknown) {
       // Ignore any errors here
     }
@@ -115,7 +119,7 @@ export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
       delete res[field];
     }
   }
-  return res as NormalizedLogEntry;
+  return res;
 }
 
 function uniqueId(length = 20): string {
