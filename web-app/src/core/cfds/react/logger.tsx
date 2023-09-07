@@ -17,7 +17,8 @@ import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
 import { SessionInfo } from '../../../app/login/index.tsx';
 import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
 import { kSyncConfigClient } from '../../../../../net/base-client.ts';
-import { ConsoleLogStream, LogStream } from '../../../../../logging/stream.ts';
+import { LogStream } from '../../../../../logging/log.ts';
+import { ConsoleLogStream } from '../../../../../logging/console-stream.ts';
 
 interface LoggerContext {
   logger: Logger;

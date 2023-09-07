@@ -177,7 +177,7 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
 
   const slateValue = useMemo(() => {
     if (SET_EXTERNAL_SELECTION) {
-      editor.children = value;
+      // editor.children = value;
       handleSelection(editor, selection);
     }
     return value;

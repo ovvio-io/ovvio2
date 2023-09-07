@@ -4,15 +4,20 @@ import {
   SystemErrorLogEntry,
 } from './errors.ts';
 import {
+  BaseLogEntry,
   GenericLogEntry,
+  NormalizedLogEntry,
   normalizeLogEntry,
   Severity,
   SeverityCodes,
 } from './entry.ts';
-import { ConsoleLogStream, LogStream } from './stream.ts';
 import { MetricLogEntry } from './metrics.ts';
 import { ClientEventEntry } from './client-events.ts';
+import { ConsoleLogStream } from './console-stream.ts';
 
+/**
+ * A union type of all possible log entries.
+ */
 export type LogEntry =
   | GenericLogEntry
   | LogEntryDeveloperError
@@ -20,6 +25,10 @@ export type LogEntry =
   | SystemErrorLogEntry
   | MetricLogEntry
   | ClientEventEntry;
+
+export interface LogStream {
+  appendEntry(e: NormalizedLogEntry<LogEntry>): void;
+}
 
 // TODO: Capture anonymous logs on client and sync them with the server
 const kDefaultLoggerStreams = [new ConsoleLogStream()];

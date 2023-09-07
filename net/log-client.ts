@@ -1,6 +1,6 @@
 import { Dictionary } from '../base/collections/dict.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
-import { LogStream } from '../logging/stream.ts';
+import { LogStream } from '../logging/log.ts';
 import { BaseClient, BaseClientStorage, SyncConfig } from './base-client.ts';
 import { SyncMessage } from './message.ts';
 
