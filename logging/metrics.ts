@@ -1,4 +1,4 @@
-import { BaseLogEntry } from './entry.ts';
+import { BaseLogEntry, NormalizedLogEntry } from './entry.ts';
 
 export const kServerMetricNames = [
   'PeerResponseTime',
@@ -10,7 +10,7 @@ export const kServerMetricNames = [
   'IncompatibleProtocolVersion',
 ] as const;
 
-export type ServerMetricName = typeof kServerMetricNames[number];
+export type ServerMetricName = (typeof kServerMetricNames)[number];
 
 export const kClientMetricNames = [
   'QueryFired',
@@ -19,7 +19,9 @@ export const kClientMetricNames = [
   'FullTextIndexingTime',
 ] as const;
 
-export type ClientMetricName = typeof kClientMetricNames[number];
+export const kMetricNames = [...kServerMetricNames, ...kClientMetricNames];
+
+export type ClientMetricName = (typeof kClientMetricNames)[number];
 
 export type MetricName = ServerMetricName | ClientMetricName;
 
@@ -39,6 +41,15 @@ export interface MetricLogEntry extends BaseLogEntry {
   itemCount?: number;
   peerVersion?: number;
   localVersion?: number;
+}
+
+export function logEntryIsMetric(
+  entry: NormalizedLogEntry<BaseLogEntry>
+): entry is NormalizedLogEntry<MetricLogEntry> {
+  if (entry.severity !== 'INFO' || typeof entry.name !== 'string') {
+    return false;
+  }
+  return (kMetricNames as readonly string[]).includes(entry.name);
 }
 
 export function isClientMetric(m: MetricLogEntry): boolean {

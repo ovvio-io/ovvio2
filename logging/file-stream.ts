@@ -2,57 +2,11 @@ import {
   join as joinPath,
   resolve as resolvePath,
 } from 'https://deno.land/std@0.183.0/path/mod.ts';
-import {
-  NormalizedLogEntry,
-  Severity,
-  SeverityCodes,
-  SeverityFromCode,
-} from './entry.ts';
+import { NormalizedLogEntry } from './entry.ts';
+import { LogStream } from './log.ts';
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB
-
-export interface LogStream {
-  appendEntry(e: NormalizedLogEntry): void;
-}
-
-export class ConsoleLogStream implements LogStream {
-  severity: Severity;
-  constructor(severity: Severity | number = 'DEFAULT') {
-    this.severity =
-      typeof severity === 'number' ? SeverityFromCode(severity) : severity;
-  }
-
-  appendEntry(e: NormalizedLogEntry): void {
-    let textLog = `[${e.timestamp.toISOString()}] `;
-    if (typeof e.message === 'string') {
-      textLog += e.message + ': ';
-    }
-    textLog += JSON.stringify(e, null, 2);
-    switch (e.severity as Severity) {
-      case 'EMERGENCY':
-      case 'ALERT':
-      case 'CRITICAL':
-      case 'ERROR':
-        console.error(textLog);
-        throw new Error(textLog);
-
-      case 'WARNING':
-      case 'NOTICE':
-        console.warn(textLog);
-        break;
-
-      case 'INFO':
-      case 'DEFAULT':
-        console.log(textLog);
-        break;
-
-      case 'DEBUG':
-        console.debug(textLog);
-        break;
-    }
-  }
-}
 
 export class FileLogStream implements LogStream {
   private readonly _dirPath: string;
