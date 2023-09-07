@@ -13,123 +13,12 @@ import {
   MetricUnit,
   MetricType,
   MetricLogEntry,
-  MetricTypes,
 } from "./metrics.ts";
 import * as promClient from "https://deno.land/x/ts_prometheus@v0.3.0/mod.ts";
-import { kServerMetricNames } from "./metrics.ts";
+import { LogEntry, LogStream } from "./log.ts";
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB
-
-export class PrometheusLogStream implements LogStream {
-  private registry = new promClient.Registry();
-  private metrics: Record<MetricName, promClient.Metric>;
-
-  constructor() {
-    this.metrics = {} as Record<MetricName, promClient.Metric>;
-
-    const serverMetricNames = kServerMetricNames;
-
-    for (const metricName of serverMetricNames) {
-      switch (metricName) {
-        case "PeerResponseTime":
-          for (const MetricType of MetricTypes[metricName]) {
-            this.metrics[metricName] = promClient.Histogram.with({
-              name: `myapp_server_${metricName.toLowerCase()}_seconds`,
-              help: `${metricName} metric in seconds`,
-              buckets: [0.1, 0.5, 1, 2, 5],
-            });
-          }
-          break;
-        case "CommitsPersistTime":
-          this.metrics[metricName] = promClient.Histogram.with({
-            name: `myapp_server_${metricName.toLowerCase()}_seconds`,
-            help: `${metricName} metric in seconds`,
-            buckets: [0.1, 0.5, 1, 2, 5],
-          });
-          break;
-        case "CommitsPersistCount":
-          this.metrics[metricName] = promClient.Gauge.with({
-            name: `myapp_server_${metricName.toLowerCase()}_total`,
-            help: `Total count of ${metricName} metric`,
-          });
-          break;
-        case "DeltaFormatSavings":
-          this.metrics[metricName] = promClient.Summary.with({
-            name: `myapp_server_${metricName.toLowerCase()}_savings`,
-            help: `Summary of ${metricName} metric for savings`,
-            percentiles: [0.5, 0.9, 0.99],
-            labels: { unit: "savings" },
-          });
-          break;
-        default:
-          this.metrics[metricName] = promClient.Counter.with({
-            name: `myapp_server_${metricName.toLowerCase()}_total`,
-            help: `Total count of ${metricName} metric`,
-          });
-          break;
-      }
-    }
-
-    for (const metric of Object.values(metrics)) {
-      this.registry.registerMetric(metric);
-    }
-  }
-  appendEntry(entry: NormalizedLogEntry | MetricLogEntry): void {
-    if (entry instanceof MetricLogEntry && entry.name in this.metrics) {
-      const metric = this.metrics[entry.name];
-      if (metric) {
-        const labels: Record<string, string> = { unit: entry.unit };
-        if (entry.labels) {
-          Object.assign(labels, entry.labels);
-        }
-        metric.labels(labels).observe(entry.value);
-      }
-    }
-  }
-}
-
-export interface LogStream {
-  appendEntry(e: NormalizedLogEntry): void;
-}
-
-export class ConsoleLogStream implements LogStream {
-  severity: Severity;
-  constructor(severity: Severity | number = "DEFAULT") {
-    this.severity =
-      typeof severity === "number" ? SeverityFromCode(severity) : severity;
-  }
-
-  appendEntry(e: NormalizedLogEntry): void {
-    let textLog = `[${e.timestamp.toISOString()}] `;
-    if (typeof e.message === "string") {
-      textLog += e.message + ": ";
-    }
-    textLog += JSON.stringify(e, null, 2);
-    switch (e.severity as Severity) {
-      case "EMERGENCY":
-      case "ALERT":
-      case "CRITICAL":
-      case "ERROR":
-        console.error(textLog);
-        throw new Error(textLog);
-
-      case "WARNING":
-      case "NOTICE":
-        console.warn(textLog);
-        break;
-
-      case "INFO":
-      case "DEFAULT":
-        console.log(textLog);
-        break;
-
-      case "DEBUG":
-        console.debug(textLog);
-        break;
-    }
-  }
-}
 
 export class FileLogStream implements LogStream {
   private readonly _dirPath: string;
@@ -144,7 +33,7 @@ export class FileLogStream implements LogStream {
     this._pendingWritePromise = Promise.resolve();
   }
 
-  appendEntry(e: NormalizedLogEntry): void {
+  appendEntry(e: NormalizedLogEntry<LogEntry>): void {
     this.scheduleWriteJob(() => this.writeLogEntry(e));
   }
 
