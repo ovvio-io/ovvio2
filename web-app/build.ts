@@ -4,7 +4,10 @@ import * as path from 'https://deno.land/std@0.201.0/path/mod.ts';
 import { assert, notReached } from '../base/error.ts';
 import { retry } from '../base/time.ts';
 
-const CDN_URL = 'https://esm.sh/';
+function getCDNURLForDependency(dep: string): string {
+  // return `https://cdn.skypack.dev/${dep}?dts`;
+  return `https://esm.sh/${dep}`;
+}
 
 export function getIndexFilePath(ext = '.tsx'): string {
   const buildFile = path.fromFileUrl(import.meta.url);
@@ -85,10 +88,11 @@ function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
         } else if (importedValue.startsWith('https://')) {
           url = importedValue;
         } else if (!isPath(importedValue)) {
-          url = `${CDN_URL}${importedValue}`;
+          url = getCDNURLForDependency(importedValue);
         }
 
         if (typeof url === 'string') {
+          if (url.includes('is-hotkey')) debugger;
           const resp = await retry(async () => {
             const r = await fetch(url!);
             assert(r.status === 200, `Failed downloading ${url}`);
@@ -154,7 +158,7 @@ export async function bundle(path?: string): Promise<BundleResult> {
     plugins: [createOvvioImportPlugin(true)],
     bundle: true,
     write: false,
-    outfile: 'webapp.js',
+    outfile: 'app.js',
     sourcemap: 'linked',
   });
   let source, sourceMap: string;
