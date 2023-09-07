@@ -119,10 +119,14 @@ export const ToolbarLeftItem: React.FC<{ className?: string }> = ({
   );
 };
 
-export const ToolbarCenterItem: React.FC<{ className?: string }> = ({
+export type ToolbarCenterItemProps = React.PropsWithChildren<{
+  className?: string
+}>;
+
+export function ToolbarCenterItem({
   children,
   className,
-}) => {
+}: ToolbarCenterItemProps) {
   return (
     <ExternalToolbarItem
       children={children}

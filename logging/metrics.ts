@@ -1,39 +1,55 @@
+<<<<<<< Updated upstream
 import { BaseLogEntry, NormalizedLogEntry } from './entry.ts';
+=======
+import { NormalizedLogEntry, BaseLogEntry } from "./entry.ts";
+>>>>>>> Stashed changes
 
 export const kServerMetricNames = [
-  'PeerResponseTime',
-  'CommitsPersistTime',
-  'CommitsPersistCount',
-  'DeltaFormatSavings',
-  'ServerStarted',
-  'HttpStatusCode',
-  'IncompatibleProtocolVersion',
+  "PeerResponseTime",
+  "CommitsPersistTime",
+  "CommitsPersistCount",
+  "DeltaFormatSavings",
+  "ServerStarted",
+  "HttpStatusCode",
+  "IncompatibleProtocolVersion",
 ] as const;
 
 export type ServerMetricName = (typeof kServerMetricNames)[number];
 
 export const kClientMetricNames = [
-  'QueryFired',
-  'QueryCancelled',
-  'QueryCompleted',
-  'FullTextIndexingTime',
+  "QueryFired",
+  "QueryCancelled",
+  "QueryCompleted",
+  "FullTextIndexingTime",
 ] as const;
 
+<<<<<<< Updated upstream
 export const kMetricNames = [...kServerMetricNames, ...kClientMetricNames];
 
+=======
+>>>>>>> Stashed changes
 export type ClientMetricName = (typeof kClientMetricNames)[number];
 
 export type MetricName = ServerMetricName | ClientMetricName;
 
-export type MetricUnit = 'Count' | 'Bytes' | 'Milliseconds' | 'Percent';
-export type MetricType = 'Count' | 'Gauge' | 'Histogram' | 'Summary';
+export type MetricUnit = "Count" | "Bytes" | "Milliseconds" | "Percent";
+export type MetricType = "Count" | "Gauge" | "Histogram" | "Summary";
+
+export const MetricTypes: Record<ServerMetricName, MetricType> = {
+  PeerResponseTime: "Count",
+  CommitsPersistTime: "Count",
+  CommitsPersistCount: "Count",
+  DeltaFormatSavings: "Count",
+  ServerStarted: "Count",
+  HttpStatusCode: "Count",
+  IncompatibleProtocolVersion: "Count",
+};
 
 export interface MetricLogEntry extends BaseLogEntry {
-  severity: 'INFO';
+  severity: "INFO";
   name: MetricName;
   value: number;
   unit: MetricUnit;
-  type?: MetricType;
   help?: string; // Help message for users of this metric
   url?: string;
   urls?: string[];

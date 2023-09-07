@@ -1,30 +1,30 @@
-import React from 'react';
-import { NS_NOTES } from '../../../../../../../cfds/base/scheme-types.ts';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import React from "react";
+import { NS_NOTES } from "../../../../../../../cfds/base/scheme-types.ts";
+import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
 import {
   Note,
   NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+} from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { Workspace } from "../../../../../../../cfds/client/graph/vertices/workspace.ts";
 import {
   useButtonStyles,
   Button,
-} from '../../../../../../../styles/components/buttons.tsx';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
-import { IconNewTask } from '../../../../../../../styles/components/new-icons/icon-new-task.tsx';
+} from "../../../../../../../styles/components/buttons.tsx";
+import { Text } from "../../../../../../../styles/components/texts.tsx";
+import { IconNewTask } from "../../../../../../../styles/components/new-icons/icon-new-task.tsx";
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { styleguide } from "../../../../../../../styles/styleguide.ts";
+import { brandLightTheme as theme } from "../../../../../../../styles/theme.tsx";
 import {
   useGraphManager,
   useRootUser,
-} from '../../../../../core/cfds/react/graph.tsx';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import { ROW_HEIGHT, Row, DraftItemRow } from './table/item.tsx';
-import localization from './list.strings.json' assert { type: 'json' };
+} from "../../../../../core/cfds/react/graph.tsx";
+import { createUseStrings } from "../../../../../core/localization/index.tsx";
+import { ROW_HEIGHT, Row, DraftItemRow } from "./table/item.tsx";
+import localization from "./list.strings.json" assert { type: "json" };
 
 const useStyles = makeStyles(
   () => ({
@@ -37,13 +37,13 @@ const useStyles = makeStyles(
     button: {
       height: ROW_HEIGHT,
       boxShadow: theme.shadows.z2,
-      boxSizing: 'border-box',
+      boxSizing: "border-box",
       padding: [0, styleguide.gridbase],
       backgroundColor: theme.colors.background,
       basedOn: [useButtonStyles.button],
     },
   }),
-  'inline-task-button_8162e3'
+  "inline-task-button_8162e3"
 );
 
 const useStrings = createUseStrings(localization);
@@ -69,10 +69,10 @@ export function InlineTaskButton({ draft, setDraft }: InlineTaskButtonProps) {
       {
         createdBy: rootUser.key,
         body: {
-          root: { children: [{ tagName: 'p', children: [{ text: '' }] }] },
+          root: { children: [{ tagName: "p", children: [{ text: "" }] }] },
         },
         title: {
-          root: { children: [{ tagName: 'p', children: [{ text: '' }] }] },
+          root: { children: [{ tagName: "p", children: [{ text: "" }] }] },
         },
         type: NoteType.Task,
         assignees: new Set([rootUser.key]),
