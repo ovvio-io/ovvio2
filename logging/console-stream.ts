@@ -1,43 +1,38 @@
-import {
-  Severity,
-  SeverityFromCode,
-  NormalizedLogEntry,
-  BaseLogEntry,
-} from './entry.ts';
-import { LogStream } from './log.ts';
+import { Severity, SeverityFromCode, NormalizedLogEntry } from "./entry.ts";
+import { LogEntry, LogStream } from "./log.ts";
 
 export class ConsoleLogStream implements LogStream {
   severity: Severity;
-  constructor(severity: Severity | number = 'DEFAULT') {
+  constructor(severity: Severity | number = "DEFAULT") {
     this.severity =
-      typeof severity === 'number' ? SeverityFromCode(severity) : severity;
+      typeof severity === "number" ? SeverityFromCode(severity) : severity;
   }
 
-  appendEntry<T extends BaseLogEntry>(e: NormalizedLogEntry<T>): void {
+  appendEntry(e: NormalizedLogEntry<LogEntry>): void {
     let textLog = `[${e.timestamp.toISOString()}] `;
-    if (typeof e.message === 'string') {
-      textLog += e.message + ': ';
+    if (typeof e.message === "string") {
+      textLog += e.message + ": ";
     }
     textLog += JSON.stringify(e, null, 2);
     switch (e.severity as Severity) {
-      case 'EMERGENCY':
-      case 'ALERT':
-      case 'CRITICAL':
-      case 'ERROR':
+      case "EMERGENCY":
+      case "ALERT":
+      case "CRITICAL":
+      case "ERROR":
         console.error(textLog);
         throw new Error(textLog);
 
-      case 'WARNING':
-      case 'NOTICE':
+      case "WARNING":
+      case "NOTICE":
         console.warn(textLog);
         break;
 
-      case 'INFO':
-      case 'DEFAULT':
+      case "INFO":
+      case "DEFAULT":
         console.log(textLog);
         break;
 
-      case 'DEBUG':
+      case "DEBUG":
         console.debug(textLog);
         break;
     }

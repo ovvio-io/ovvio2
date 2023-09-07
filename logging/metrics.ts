@@ -10,6 +10,8 @@ export const kServerMetricNames = [
   "IncompatibleProtocolVersion",
 ] as const;
 
+export type ServerMetricName = (typeof kServerMetricNames)[number];
+
 export const kClientMetricNames = [
   "QueryFired",
   "QueryCancelled",

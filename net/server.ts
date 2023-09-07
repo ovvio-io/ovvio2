@@ -279,7 +279,6 @@ export class Server {
 
   private handleGETRequest(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname;
-    debugger;
     switch (path.toLocaleLowerCase()) {
       // Version check
       case '/version': {
