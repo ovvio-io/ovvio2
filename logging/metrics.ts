@@ -28,20 +28,25 @@ export type MetricName = ServerMetricName | ClientMetricName;
 export type MetricUnit = 'Count' | 'Bytes' | 'Milliseconds' | 'Percent';
 export type MetricType = 'Count' | 'Gauge' | 'Histogram' | 'Summary';
 
-export interface MetricLogEntry extends BaseLogEntry {
+export interface BaseMetricLogEntry extends BaseLogEntry {
   severity: 'INFO';
   name: MetricName;
   value: number;
   unit: MetricUnit;
-  type?: MetricType;
   help?: string; // Help message for users of this metric
+}
+
+export type MetricLogWithURL<
+  T extends BaseMetricLogEntry = BaseMetricLogEntry
+> = T & {
   url?: string;
   urls?: string[];
-  queryName?: string;
-  itemCount?: number;
-  peerVersion?: number;
-  localVersion?: number;
-}
+};
+
+export type MetricLogEntryType<N extends MetricName> =
+  N extends 'PeerResponseTime' ? MetricLogWithURL : BaseMetricLogEntry;
+
+export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 
 export function logEntryIsMetric(
   entry: NormalizedLogEntry<BaseLogEntry>
@@ -58,4 +63,13 @@ export function isClientMetric(m: MetricLogEntry): boolean {
 
 export function isServerMetric(m: MetricLogEntry): boolean {
   return (kServerMetricNames as readonly string[]).includes(m.name);
+}
+
+export function isMetricWithURL(m: MetricLogEntry): m is MetricLogWithURL {
+  return (
+    typeof m.url === 'string' ||
+    (m.urls instanceof Array &&
+      m.urls.length > 0 &&
+      typeof m.urls[0] === 'string')
+  );
 }
