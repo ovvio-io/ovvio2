@@ -3,7 +3,7 @@ import {
   resolve as resolvePath,
 } from 'https://deno.land/std@0.183.0/path/mod.ts';
 import { NormalizedLogEntry } from './entry.ts';
-import { LogStream } from './log.ts';
+import { LogEntry, LogStream } from './log.ts';
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB
@@ -21,7 +21,7 @@ export class FileLogStream implements LogStream {
     this._pendingWritePromise = Promise.resolve();
   }
 
-  appendEntry(e: NormalizedLogEntry): void {
+  appendEntry(e: NormalizedLogEntry<LogEntry>): void {
     this.scheduleWriteJob(() => this.writeLogEntry(e));
   }
 
