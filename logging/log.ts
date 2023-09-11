@@ -4,7 +4,6 @@ import {
   SystemErrorLogEntry,
 } from "./errors.ts";
 import {
-  BaseLogEntry,
   GenericLogEntry,
   NormalizedLogEntry,
   normalizeLogEntry,

@@ -1,15 +1,15 @@
-import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
-import { EaseInOutSineTimer } from '../base/timer.ts';
-import { BloomFilter } from '../base/bloom.ts';
-import { SyncMessage, SyncValueType } from './message.ts';
-import { retry } from '../base/time.ts';
-import { log } from '../logging/log.ts';
+import EventEmitter from "https://esm.sh/eventemitter3@4.0.7";
+import { EaseInOutSineTimer } from "../base/timer.ts";
+import { BloomFilter } from "../base/bloom.ts";
+import { SyncMessage, SyncValueType } from "./message.ts";
+import { retry } from "../base/time.ts";
+import { log } from "../logging/log.ts";
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
-} from '../base/core-types/encoding/json.ts';
-import { MovingAverage } from '../base/math.ts';
-import { VersionNumber } from '../defs.ts';
+} from "../base/core-types/encoding/json.ts";
+import { MovingAverage } from "../base/math.ts";
+import { VersionNumber } from "../defs.ts";
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -38,8 +38,8 @@ export function syncConfigGetCycles(
   );
 }
 
-export const EVENT_ONLINE_STATUS_CHANGED = 'online_changed';
-export const EVENT_PROTOCOL_VERSION_CHANGED = 'protocol_version_changed';
+export const EVENT_ONLINE_STATUS_CHANGED = "online_changed";
+export const EVENT_PROTOCOL_VERSION_CHANGED = "protocol_version_changed";
 
 export interface BaseClientStorage {
   close(): void;
@@ -80,15 +80,15 @@ export abstract class BaseClient<
           await this.sendSyncMessage();
         } catch (e) {
           log({
-            severity: 'INFO',
-            error: 'UnknownSyncError',
+            severity: "INFO",
+            error: "UnknownSyncError",
             message: e.message,
             trace: e.stack,
           });
         }
       },
       true,
-      'Sync timer'
+      "Sync timer"
     );
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(this.syncConfig) * 2
@@ -194,9 +194,9 @@ export abstract class BaseClient<
       const start = performance.now();
       respText = await retry(async () => {
         const resp = await fetch(this._serverUrl, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(msg),
         });
@@ -210,21 +210,22 @@ export abstract class BaseClient<
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
       log({
-        severity: 'INFO',
-        name: 'PeerResponseTime',
+        severity: "INFO",
+        name: "PeerResponseTime",
         value: syncDurationMs,
-        unit: 'Milliseconds',
+        unit: "Milliseconds",
         url: this._serverUrl,
       });
     } catch (e) {
       log({
-        severity: 'INFO',
-        error: 'FetchError',
+        severity: "INFO",
+        error: "FetchError",
         message: e.message,
         trace: e.stack,
         url: this._serverUrl,
       });
     }
+    //TODO: Prom instance
 
     if (!respText) {
       this._setIsOnline(false);
@@ -236,8 +237,8 @@ export abstract class BaseClient<
       syncResp = new SyncMessage({ decoder: new JSONCyclicalDecoder(json) });
     } catch (e) {
       log({
-        severity: 'INFO',
-        error: 'SerializeError',
+        severity: "INFO",
+        error: "SerializeError",
         value: respText,
         message: e.message,
         trace: e.stack,
@@ -258,16 +259,16 @@ export abstract class BaseClient<
       // persistedCount = repo.persistCommits(syncResp.commits).length;
       persistedCount = await this.persistPeerValues(syncResp.values);
       log({
-        severity: 'INFO',
-        name: 'CommitsPersistTime',
+        severity: "INFO",
+        name: "CommitsPersistTime",
         value: performance.now() - start,
-        unit: 'Milliseconds',
+        unit: "Milliseconds",
       });
       log({
-        severity: 'INFO',
-        name: 'CommitsPersistCount',
+        severity: "INFO",
+        name: "CommitsPersistCount",
         value: persistedCount,
-        unit: 'Count',
+        unit: "Count",
       });
     }
     if (this.closed) {

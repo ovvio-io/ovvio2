@@ -1,27 +1,9 @@
 import {
   join as joinPath,
   resolve as resolvePath,
-<<<<<<< HEAD
 } from "https://deno.land/std@0.183.0/path/mod.ts";
-import {
-  NormalizedLogEntry,
-  Severity,
-  SeverityCodes,
-  SeverityFromCode,
-} from "./entry.ts";
-import {
-  MetricName,
-  MetricUnit,
-  MetricType,
-  MetricLogEntry,
-} from "./metrics.ts";
-import * as promClient from "https://deno.land/x/ts_prometheus@v0.3.0/mod.ts";
+import { NormalizedLogEntry } from "./entry.ts";
 import { LogEntry, LogStream } from "./log.ts";
-=======
-} from 'https://deno.land/std@0.183.0/path/mod.ts';
-import { NormalizedLogEntry } from './entry.ts';
-import { LogEntry, LogStream } from './log.ts';
->>>>>>> master
 
 const kLogFileExpirationMs = 60 * 60 * 1000; // 1 hr
 const kLogFileMaxSizeBytes = 1024 * 1024 * 100; // 1MB

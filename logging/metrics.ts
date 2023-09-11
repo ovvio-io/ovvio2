@@ -10,8 +10,6 @@ export const kServerMetricNames = [
   "IncompatibleProtocolVersion",
 ] as const;
 
-export type ServerMetricName = (typeof kServerMetricNames)[number];
-
 export const kClientMetricNames = [
   "QueryFired",
   "QueryCancelled",
@@ -21,12 +19,9 @@ export const kClientMetricNames = [
 
 export const kMetricNames = [...kServerMetricNames, ...kClientMetricNames];
 
-export type ClientMetricName = (typeof kClientMetricNames)[number];
-
-export type MetricName = ServerMetricName | ClientMetricName;
-
 export type ServerMetricName = (typeof kServerMetricNames)[number];
-
+export type ClientMetricName = (typeof kClientMetricNames)[number];
+export type MetricName = ServerMetricName | ClientMetricName;
 export type MetricUnit = "Count" | "Bytes" | "Milliseconds" | "Percent";
 export type MetricType = "Count" | "Gauge" | "Histogram" | "Summary";
 
