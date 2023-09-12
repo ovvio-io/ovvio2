@@ -31,7 +31,7 @@ export interface LogStream {
 }
 
 // TODO: Capture anonymous logs on client and sync them with the server
-const kDefaultLoggerStreams = [new ConsoleLogStream()];
+const kDefaultLoggerStreams: LogStream[] = [new ConsoleLogStream()];
 
 let gLogStreams: LogStream[] = kDefaultLoggerStreams;
 
