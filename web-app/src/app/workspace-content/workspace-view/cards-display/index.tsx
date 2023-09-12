@@ -8,7 +8,6 @@ import { usePartialView } from '../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../core/localization/index.tsx';
 import { ToolbarCenterItem } from '../toolbar/index.tsx';
 import { BoardView } from './board-view/index.tsx';
-import { Dashboard } from './dashboard/dashboard.tsx';
 import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
 import { FiltersView } from './display-bar/filters/index.tsx';
 import {
@@ -97,7 +96,7 @@ export function CardsDisplay() {
     //   />
     // );
   } else if (view.selectedTabId === 'overview') {
-    content = <Dashboard />;
+    // content = <Dashboard />;
   } else {
     if (view.viewType === 'list') {
       content = <ListView key={'list'} className={cn(styles.contentView)} />;

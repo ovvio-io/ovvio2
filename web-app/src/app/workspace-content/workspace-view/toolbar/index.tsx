@@ -57,9 +57,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface ToolbarProps {
-  children?: any;
-}
+type ToolbarProps = React.PropsWithChildren<{ className?: string }>;
 
 const TOOLBAR_RIGHT_ID = 'toolbar_00827f';
 const TOOLBAR_LEFT_ID = 'toolbar_fe702c';
@@ -93,10 +91,7 @@ export default function Toolbar({ children }: ToolbarProps) {
   );
 }
 
-export const ToolbarRightItem: React.FC<{ className?: string }> = ({
-  children,
-  className,
-}) => {
+export function ToolbarRightItem({ className, children }: ToolbarProps) {
   return (
     <ExternalToolbarItem
       children={children}
@@ -104,12 +99,9 @@ export const ToolbarRightItem: React.FC<{ className?: string }> = ({
       side="right"
     />
   );
-};
+}
 
-export const ToolbarLeftItem: React.FC<{ className?: string }> = ({
-  children,
-  className,
-}) => {
+export function ToolbarLeftItem({ className, children }: ToolbarProps) {
   return (
     <ExternalToolbarItem
       children={children}
@@ -117,12 +109,9 @@ export const ToolbarLeftItem: React.FC<{ className?: string }> = ({
       side="left"
     />
   );
-};
+}
 
-export const ToolbarCenterItem: React.FC<{ className?: string }> = ({
-  children,
-  className,
-}) => {
+export function ToolbarCenterItem({ className, children }: ToolbarProps) {
   return (
     <ExternalToolbarItem
       children={children}
@@ -130,7 +119,7 @@ export const ToolbarCenterItem: React.FC<{ className?: string }> = ({
       side="center"
     />
   );
-};
+}
 
 type Side = 'left' | 'right' | 'center';
 const SIDE_TO_ID: Record<Side, string> = {
@@ -139,10 +128,14 @@ const SIDE_TO_ID: Record<Side, string> = {
   center: TOOLBAR_CENTER_ID,
 };
 
-const ExternalToolbarItem: React.FC<{
+function ExternalToolbarItem({
+  className,
+  side,
+  children,
+}: React.PropsWithChildren<{
   className?: string;
   side: Side;
-}> = ({ children, side, className }) => {
+}>) {
   const styles = useStyles();
   if (isServerSide) {
     return null;
@@ -156,7 +149,7 @@ const ExternalToolbarItem: React.FC<{
     <div className={cn(className, styles.item)}>{children}</div>,
     el
   );
-};
+}
 
 export const ToolbarItem = ({ children }: React.PropsWithChildren<{}>) => {
   const styles = useStyles();

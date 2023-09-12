@@ -9,7 +9,6 @@ import {
   kTabIds,
 } from '../../../../../../../cfds/base/scheme-types.ts';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
   useButtonStyles,
@@ -349,9 +348,8 @@ function CollapseExpandeToggle() {
 function ExtraFilters() {
   const styles = useStyles();
   const graph = useGraphManager();
-  const unassignableRole = graph.getVertex<Role>('Unassignable').users;
   const items: JSX.Element[] = [];
-  const rootUser = graph.getRootVertex<User>();
+  // const rootUser = graph.getRootVertex<User>();
   const view = usePartialView('noteType', 'viewType');
   // if (unassignableRole.has(rootUser) || rootUser.email.endsWith('@ovvio.io')) {
   //   if (items.length > 0) {
@@ -431,10 +429,6 @@ function TabView() {
   const styles = useStyles();
   const view = usePartialView('noteType', 'selectedTabId');
   const graph = useGraphManager();
-  const unassignable = graph.getVertex<Role>('Unassignable');
-  const rootUser = graph.getRootVertex<User>();
-  const showOverview =
-    unassignable.users.has(rootUser) || rootUser.email.endsWith('@ovvio.io');
 
   const setSelected = useCallback(
     (tabId: TabId) => {
@@ -447,19 +441,14 @@ function TabView() {
     [view]
   );
   const tabs: React.ReactElement[] = [];
-  for (const tabId of kTabIds) {
-    if (tabId === 'overview' && !showOverview) {
-      continue;
-    }
+  for (const tabId of ['tasks', 'notes'] as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
   return (
     <TabsHeader
       selected={view.selectedTabId}
       setSelected={setSelected}
-      className={cn(
-        showOverview ? styles.noteTypeToggleBig : styles.noteTypeToggleSmall
-      )}
+      className={cn(styles.noteTypeToggleSmall)}
     >
       {...tabs}
     </TabsHeader>

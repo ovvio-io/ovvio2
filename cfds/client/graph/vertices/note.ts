@@ -53,11 +53,7 @@ import { VertexManager } from '../vertex-manager.ts';
 import { SortDescriptor } from '../query.ts';
 import { coreObjectClone } from '../../../../base/core-types/clone.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
-import { Role } from './role.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
-
-const kRuleApplicationBackoffDurationMs = 10 * 1000;
-const kRuleApplicationBackoffCreationMs = 10 * 1000;
 
 export enum NoteType {
   Task = 'task',
@@ -694,56 +690,22 @@ export class Note extends ContentVertex {
     }
   }
 
-  tagsDidMutate(
-    source: MutationOrigin,
-    oldValue: Dictionary<Tag, Tag> | undefined
-  ): MutationPack {
-    let result: MutationPack;
-    if (mutationSourceIsUser(source)) {
-      const now = Date.now();
-      this._lastManualTagChange = now;
-      if (
-        now - this._lastManualAssigneeChange >
-          kRuleApplicationBackoffDurationMs &&
-        now - this.creationDate.getTime() > kRuleApplicationBackoffCreationMs
-      ) {
-        const roles = this.graph.sharedQueriesManager.roles.results.map(
-          (mgr: VertexManager<Role>) => mgr.getVertexProxy()
-        );
-        for (const r of roles) {
-          const hasTags = SetUtils.intersects(
-            r.resolveTagsForWorkspace(this.workspace),
-            new Set(this.tags.values())
-          );
-          const effectiveAssignees = SetUtils.intersection(
-            r.assignees,
-            this.workspace.users
-          );
-
-          if (effectiveAssignees.size > 0 && hasTags) {
-            const oldAssignees = this.assignees;
-            this.assignees = effectiveAssignees;
-            result = mutationPackAppend(result, [
-              'assignees',
-              'rule',
-              oldAssignees,
-            ]);
-            break;
-          }
-        }
-      }
-    }
-    const oldChecked = computeCheckedForNote(
-      this.type,
-      this.status,
-      oldValue,
-      this.childCards
-    );
-    if (oldChecked !== this.isChecked) {
-      result = mutationPackAppend(result, ['isChecked', source, oldChecked]);
-    }
-    return result;
-  }
+  // tagsDidMutate(
+  //   source: MutationOrigin,
+  //   oldValue: Dictionary<Tag, Tag> | undefined
+  // ): MutationPack {
+  //   let result: MutationPack;
+  //   const oldChecked = computeCheckedForNote(
+  //     this.type,
+  //     this.status,
+  //     oldValue,
+  //     this.childCards
+  //   );
+  //   if (oldChecked !== this.isChecked) {
+  //     result = mutationPackAppend(result, ['isChecked', source, oldChecked]);
+  //   }
+  //   return result;
+  // }
 
   childCardsDidMutate(
     local: boolean,
@@ -901,11 +863,6 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   ),
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
-  isLoading: triggerParent(
-    'childIsLoadingDidMutate',
-    'Note_isLoading',
-    SchemeNamespace.NOTES
-  ),
   isDeleted: triggerParent(
     'childNoteIsDeletedDidMutate',
     'Note_isDeleted',
