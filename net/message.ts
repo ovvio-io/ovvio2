@@ -17,6 +17,7 @@ import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { VersionNumber } from '../defs.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
 import { Commit } from '../repo/commit.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 export const K_DEFAULT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -132,11 +133,11 @@ export class SyncMessage<T extends SyncValueType>
       if (config.accessDenied) {
         this._accessDenied = Array.from(config.accessDenied);
       }
-      this._buildVersion = config.buildVersion || VersionNumber.Current;
+      this._buildVersion = config.buildVersion || getOvvioConfig().version;
     }
   }
 
-  get buildVersion(): number {
+  get buildVersion(): VersionNumber {
     return this._buildVersion;
   }
 

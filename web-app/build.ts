@@ -9,6 +9,11 @@ function getCDNURLForDependency(dep: string): string {
   return `https://esm.sh/${dep}`;
 }
 
+export function getRepositoryPath(): string {
+  const buildFile = path.fromFileUrl(import.meta.url);
+  return path.dirname(path.dirname(buildFile));
+}
+
 export function getIndexFilePath(ext = '.tsx'): string {
   const buildFile = path.fromFileUrl(import.meta.url);
   const rootDir = path.dirname(buildFile);
@@ -64,14 +69,13 @@ function baseUrlFromUrl(url: string): string {
   return url;
 }
 
-function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
+export function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
   const map = JSON.parse(Deno.readTextFileSync(getImportMapPath())).imports;
   const filter = /.*?/;
   return {
     name: 'ovvio',
     setup(build) {
       build.onResolve({ filter }, async (args) => {
-        // if (baseUrl && args.path[0] === '/') debugger;
         const importedValue = args.path;
         let url: string | undefined;
         if (map[importedValue]) {
@@ -92,7 +96,6 @@ function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
         }
 
         if (typeof url === 'string') {
-          if (url.includes('is-hotkey')) debugger;
           const resp = await retry(async () => {
             const r = await fetch(url!);
             assert(r.status === 200, `Failed downloading ${url}`);
@@ -117,28 +120,6 @@ function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
           contents: text,
           loader: loaderForFile(url),
         };
-        // try {
-        //   const result = await esbuild.build({
-        //     stdin: {
-        //       contents: text,
-        //       loader: loaderForFile(value),
-        //     },
-        //     plugins: [createOvvioImportPlugin(true, baseUrlFromUrl(resp.url))],
-        //     bundle: true,
-        //     write: false,
-        //     sourcemap: 'inline',
-        //   });
-        //   return {
-        //     contents: result.outputFiles.at(0)!.text,
-        //     loader: 'js',
-        //   };
-        // } catch (e) {
-        //   // if (args.path === '/v132/prop-types@15.8.1/denonext/prop-types.mjs') {
-        //   //   debugger;
-        //   // }
-        //   debugger;
-        //   throw e;
-        // }
       });
     },
   };
@@ -161,8 +142,14 @@ export async function bundle(path?: string): Promise<BundleResult> {
     outfile: 'app.js',
     sourcemap: 'linked',
   });
+  return bundleResultFromBuildResult(result);
+}
+
+function bundleResultFromBuildResult(
+  result: esbuild.BuildResult
+): BundleResult {
   let source, sourceMap: string;
-  for (const file of result.outputFiles) {
+  for (const file of result.outputFiles!) {
     if (file.path.endsWith('.js')) {
       source = file.text;
     } else if (file.path.endsWith('.js.map')) {
@@ -179,6 +166,29 @@ export function stopBackgroundCompiler(): void {
   esbuild.stop();
 }
 
+export interface BuildContext {
+  rebuild(): Promise<BundleResult>;
+  close(): void;
+}
+
+export async function createBuildContext(path?: string): Promise<BuildContext> {
+  if (!path) {
+    path = getIndexFilePath();
+  }
+  const ctx = await esbuild.context({
+    entryPoints: [path],
+    plugins: [createOvvioImportPlugin(true)],
+    bundle: true,
+    write: false,
+    outfile: 'app.js',
+    sourcemap: 'linked',
+  });
+  return {
+    rebuild: async () => bundleResultFromBuildResult(await ctx.rebuild()),
+    close: () => ctx.dispose(),
+  };
+}
+//
 // async function main(): Promise<void> {
 //   console.log(await bundle(getIndexFilePath()));
 //   esbuild.stop();

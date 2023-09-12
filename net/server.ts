@@ -24,11 +24,6 @@ import {
 } from '../base/core-types/encoding/json.ts';
 import { VersionNumber } from '../defs.ts';
 import { VersionInfoCurrent } from './version-info.ts';
-import {
-  bundle,
-  getIndexFilePath,
-  stopBackgroundCompiler,
-} from '../web-app/build.ts';
 
 interface Arguments {
   port: number;
@@ -36,6 +31,13 @@ interface Arguments {
   dir: string;
   app: string;
   importMap?: string;
+}
+
+export interface StaticAssets {
+  readonly html: string;
+  readonly css: string;
+  readonly js: string;
+  readonly sourceMap?: string;
 }
 
 export class Server {
@@ -50,12 +52,9 @@ export class Server {
   >;
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
-  private _appSource: string | undefined;
-  private _appSourceMap: string | undefined;
-  private _indexSource: string | undefined;
-  private _indexCss: string | undefined;
+  staticAssets?: StaticAssets;
 
-  constructor(args?: Arguments) {
+  constructor(args?: Arguments, assets?: StaticAssets) {
     if (!args) {
       args = yargs(Deno.args)
         .option('port', {
@@ -84,21 +83,15 @@ export class Server {
         .parse();
     }
     this._args = args!;
+    this.staticAssets = assets;
     this._repositories = new Map();
     this._clientsForRepo = new Map();
     this._logs = new Map();
     this._clientsForLog = new Map();
   }
 
-  async run(): Promise<void> {
+  run(): Promise<void> {
     // TODO: Scan path for existing contents and set up replication
-    console.log('Starting web-app bundling...');
-    const { source, map } = await bundle();
-    this._appSource = source;
-    this._appSourceMap = map;
-    this._indexSource = await Deno.readTextFile(getIndexFilePath('.html'));
-    this._indexCss = await Deno.readTextFile(getIndexFilePath('.css'));
-    stopBackgroundCompiler();
     console.log('Web-app bundling finished. Server is listening...');
     log({
       severity: 'INFO',
@@ -307,40 +300,44 @@ export class Server {
 
       case '/app.js': {
         return Promise.resolve(
-          new Response(this._appSource, {
+          new Response(this.staticAssets?.js, {
             headers: {
               'content-type': 'text/javascript; charset=utf-8',
             },
+            status: this.staticAssets?.js ? 200 : 404,
           })
         );
       }
 
       case '/app.js.map': {
         return Promise.resolve(
-          new Response(this._appSourceMap, {
+          new Response(this.staticAssets?.sourceMap, {
             headers: {
               'content-type': 'application/json; charset=utf-8',
             },
+            status: this.staticAssets?.sourceMap ? 200 : 404,
           })
         );
       }
 
       case '/index.css': {
         return Promise.resolve(
-          new Response(this._indexCss, {
+          new Response(this.staticAssets?.css, {
             headers: {
               'content-type': 'text/css; charset=utf-8',
             },
+            status: this.staticAssets?.css ? 200 : 404,
           })
         );
       }
 
       default: {
         return Promise.resolve(
-          new Response(this._indexSource, {
+          new Response(this.staticAssets?.html, {
             headers: {
               'content-type': 'text/html; charset=utf-8',
             },
+            status: this.staticAssets?.html ? 200 : 404,
           })
         );
       }
@@ -417,7 +414,6 @@ export class Server {
       includeMissing && msg.buildVersion >= VersionNumber.Current
     );
 
-    debugger;
     return new Response(
       JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
       {

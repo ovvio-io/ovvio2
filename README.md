@@ -15,16 +15,23 @@ Normal run:
 `deno run --unstable -A server/run-server.ts -d <path to data dir>`
 
 Debug run:
-`deno run -unstable -A --inspect-brk server/run-server.ts  -d <path to data dir>`
+`deno run --unstable -A --inspect-brk server/run-server.ts -d <path to data dir>`
 
 NOTE: You might need to delete deno.lock if you encounter errors.
+
+### Live Reload
+
+When working on the web-app, and especially when working on CSS, it's useful to
+have live reload functionality. For live reload, simply run `debug-server.ts`
+instead of `run-server.ts`. If follows an identical arguments pattern except it
+also has live reload built in.
 
 ## Admin CLI
 
 The admin CLI allows you to connect to a specific repository, replicate it
 locally, and perform manual manipulation of the repository data.
 
-`deno run --no-lock -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>`
+`deno run -A --unstable cli/admin.ts -s <http(s)://server.url/data/wsId>`
 
 The CLI will immediately replicate the remote repository locally, then enter
 an interactive mode.

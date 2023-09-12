@@ -10,6 +10,7 @@ import {
 } from '../base/core-types/encoding/json.ts';
 import { MovingAverage } from '../base/math.ts';
 import { VersionNumber } from '../defs.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -248,12 +249,21 @@ export abstract class BaseClient<
 
     this._previousServerFilter = syncResp.filter;
     this._previousServerSize = syncResp.size;
+    const config = getOvvioConfig();
+
+    if (syncResp.buildVersion !== config.version) {
+      // TODO: Save uncomitted changes
+      if (config.debug) {
+        debugger;
+        location.reload();
+      } else {
+        this._setIsOnline(false);
+      }
+      //
+    }
+
     let persistedCount = 0;
-    if (
-      // We only write to newer versions and ignore new values
-      syncResp.buildVersion <= VersionNumber.Current &&
-      syncResp.values.length
-    ) {
+    if (syncResp.values.length) {
       const start = performance.now();
       // persistedCount = repo.persistCommits(syncResp.commits).length;
       persistedCount = await this.persistPeerValues(syncResp.values);
