@@ -3,12 +3,7 @@ import { SchemeManager } from '../../base/scheme.ts';
 import { assert } from '../../../base/error.ts';
 import { uniqueId } from '../../../base/common.ts';
 import { Dictionary } from '../../../base/collections/dict.ts';
-import {
-  CoreObject,
-  CoreValue,
-  Encodable,
-  Equatable,
-} from '../../../base/core-types/index.ts';
+import { CoreObject, CoreValue } from '../../../base/core-types/index.ts';
 import { UndoManager } from '../undo/manager.ts';
 import {
   MutationPack,
@@ -21,7 +16,7 @@ import {
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import { NS_NOTES } from '../../base/scheme-types.ts';
+import { NS_NOTES, SchemeNamespace } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
@@ -30,12 +25,7 @@ import {
   SharedQueryName,
   SharedQueryType,
 } from './shared-queries.ts';
-import {
-  // EVENT_LOADING_FINISHED,
-  // EVENT_VERTEX_CHANGED,
-  VertexSourceEvent,
-  VertexSource,
-} from './vertex-source.ts';
+import { VertexSourceEvent, VertexSource } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
 import {
   EVENT_NEW_COMMIT,
@@ -48,7 +38,6 @@ import { RepoClient } from '../../../net/repo-client.ts';
 import { kSyncConfigClient } from '../../../net/base-client.ts';
 import { appendPathComponent } from '../../../base/string.ts';
 import { Query, QueryOptions } from './query.ts';
-import { Encoder } from '../../../base/core-types/base.ts';
 import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
@@ -63,7 +52,7 @@ export interface PointerFilterFunc {
 }
 
 export interface CreateVertexInfo {
-  namespace: string;
+  namespace: SchemeNamespace;
   initialData?: CoreObject;
   key?: string;
 }
@@ -293,7 +282,7 @@ export class GraphManager
   }
 
   createVertex<T extends Vertex>(
-    namespace: string,
+    namespace: SchemeNamespace,
     initialData: CoreObject,
     key?: string,
     local = false
@@ -336,10 +325,7 @@ export class GraphManager
     key: VertexId<V>,
     discoveredBy?: string
   ): VertexManager<V> {
-    return this._createVertIfNeeded<V>(
-      VertexIdGetKey(key),
-      discoveredBy || this.rootKey
-    );
+    return this._createVertIfNeeded<V>(VertexIdGetKey(key));
   }
 
   query<
@@ -361,7 +347,7 @@ export class GraphManager
 
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
-    ns?: string,
+    ns?: SchemeNamespace,
     initialData?: CoreObject,
     local = false
   ): VertexManager<V> {
