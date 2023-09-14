@@ -77,25 +77,33 @@ export function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
     setup(build) {
       build.onResolve({ filter }, async (args) => {
         const importedValue = args.path;
-        let url: string | undefined;
-        if (map[importedValue]) {
-          url = map[importedValue];
-        } else if (
-          args.importer.startsWith('https://') &&
-          isPath(importedValue)
-        ) {
-          if (importedValue.startsWith('/')) {
-            url = `https://${new URL(args.importer).host}${importedValue}`;
-          } else {
-            url = `${baseUrlFromUrl(args.importer)}/${importedValue}`;
+        let url: string = importedValue;
+
+        if (importedValue.includes('base64')) debugger;
+
+        for (const [prefix, replacement] of Object.entries(map)) {
+          if (
+            importedValue.startsWith(prefix) &&
+            typeof replacement === 'string'
+          ) {
+            url = replacement + importedValue.substring(prefix.length);
+            break;
           }
-        } else if (importedValue.startsWith('https://')) {
-          url = importedValue;
-        } else if (!isPath(importedValue)) {
+        }
+
+        if (map[url]) {
+          url = map[url];
+        } else if (args.importer.startsWith('https://') && isPath(url)) {
+          if (url.startsWith('/')) {
+            url = `https://${new URL(args.importer).host}${url}`;
+          } else {
+            url = `${baseUrlFromUrl(args.importer)}/${url}`;
+          }
+        } else if (!url.startsWith('https://') && !isPath(importedValue)) {
           url = getCDNURLForDependency(importedValue);
         }
 
-        if (typeof url === 'string') {
+        if (url.startsWith('https://')) {
           const resp = await retry(async () => {
             const r = await fetch(url!);
             assert(r.status === 200, `Failed downloading ${url}`);

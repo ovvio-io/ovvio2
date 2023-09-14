@@ -1,13 +1,13 @@
 {
   "imports": {
     "global.d.ts": "./global.d.ts",
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react-router": "https://esm.sh/react-router@6.15.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
     "react-router-dom": "https://esm.sh/react-router-dom@6.15.0",
-    "slate": "https://esm.sh/slate@0.81.1",
+    "react-router": "https://esm.sh/react-router@6.15.0",
+    "react": "https://esm.sh/react@18.2.0",
     "slate-react": "https://esm.sh/slate-react@0.81.0",
+    "slate": "https://esm.sh/slate@0.81.1",
     "std/": "https://deno.land/std@0.201.0/"
   }
 }

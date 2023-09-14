@@ -17,6 +17,7 @@ import { uniqueId } from '../../../base/common.ts';
 import { StyleProvider } from '../../../styles/css-objects/context.tsx';
 import { CfdsClientProvider } from '../core/cfds/react/graph.tsx';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
+import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -90,6 +91,14 @@ const router = createBrowserRouter([
   {
     path: `/:workspaceId/notes/:noteId`,
     element: <NoteView />,
+  },
+  {
+    path: `/:repoId/_explorer`,
+    element: <RepoExplorer />,
+  },
+  {
+    path: `/_explorer`,
+    element: <RepoExplorer />,
   },
 ]);
 
