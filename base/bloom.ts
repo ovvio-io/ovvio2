@@ -1,7 +1,7 @@
 import {
   encode as b64Encode,
   decode as b64Decode,
-} from 'https://deno.land/std@0.159.0/encoding/base64.ts';
+} from 'std/encoding/base64.ts';
 import { assert } from './error.ts';
 import { MurmurHash3 } from './hash.ts';
 import { CoreValue, Encodable, Encoder } from './core-types/base.ts';

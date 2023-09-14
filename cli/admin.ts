@@ -1,6 +1,6 @@
-import { join as joinPath } from 'https://deno.land/std@0.183.0/path/mod.ts';
+import { join as joinPath } from 'std/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.6.0-deno/deno.ts';
-import * as path from 'https://deno.land/std@0.183.0/path/mod.ts';
+import * as path from 'std/path/mod.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
 import { MemRepoStorage, Repository } from '../repo/repo.ts';

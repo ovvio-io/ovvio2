@@ -1,6 +1,6 @@
-import { join as joinPath } from 'https://deno.land/std@0.183.0/path/mod.ts';
+import { join as joinPath } from 'std/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.7.1-deno/deno.ts';
-import { serve } from 'https://deno.land/std@0.183.0/http/server.ts';
+import { serve } from 'std/http/server.ts';
 import { Repository } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { RepoClient } from './repo-client.ts';

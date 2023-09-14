@@ -1,6 +1,6 @@
 // @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
 import * as esbuild from 'https://deno.land/x/esbuild@v0.19.2/mod.js';
-import * as path from 'https://deno.land/std@0.201.0/path/mod.ts';
+import * as path from 'std/path/mod.ts';
 import { assert, notReached } from '../base/error.ts';
 import { retry } from '../base/time.ts';
 

@@ -1,7 +1,4 @@
-import {
-  join as joinPath,
-  resolve as resolvePath,
-} from 'https://deno.land/std@0.183.0/path/mod.ts';
+import { join as joinPath, resolve as resolvePath } from 'std/path/mod.ts';
 import { NormalizedLogEntry } from './entry.ts';
 import { LogEntry, LogStream } from './log.ts';
 

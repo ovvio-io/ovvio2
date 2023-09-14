@@ -3,10 +3,7 @@ import {
   Statement,
   Transaction,
 } from 'https://deno.land/x/sqlite3@0.9.1/mod.ts';
-import {
-  resolve as resolvePath,
-  dirname,
-} from 'https://deno.land/std@0.183.0/path/mod.ts';
+import { resolve as resolvePath, dirname } from 'std/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {
   JSONCyclicalDecoder,
