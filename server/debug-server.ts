@@ -1,10 +1,7 @@
+import * as path from 'std/path/mod.ts';
 import { SimpleTimer } from '../base/timer.ts';
-import {
-  VersionNumber,
-  versionNumberDeleteBuild,
-  versionNumberGetBuild,
-  versionNumberSetBuild,
-} from '../defs.ts';
+import { tuple4Get, tuple4Set } from '../base/tuple.ts';
+import { VersionNumber } from '../base/version-number.ts';
 import { Server, StaticAssets } from '../net/server.ts';
 import {
   BuildContext,
@@ -38,10 +35,15 @@ async function rebuildAssets(
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {
-  return versionNumberSetBuild(
-    versionNumberDeleteBuild(version),
-    versionNumberGetBuild(version) + 1
-  );
+  return tuple4Set(version, 0, tuple4Get(version, 0) + 1);
+}
+
+function shouldRebuildAfterPathChange(p: string): boolean {
+  const name = path.basename(p);
+  if (name.startsWith('.')) {
+    return false;
+  }
+  return true;
 }
 
 async function main(): Promise<void> {
@@ -66,7 +68,11 @@ async function main(): Promise<void> {
     }
   });
   for await (const event of watcher) {
-    rebuildTimer.schedule();
+    for (const p of event.paths) {
+      if (shouldRebuildAfterPathChange(p)) {
+        rebuildTimer.schedule();
+      }
+    }
   }
   ctx.close();
 }

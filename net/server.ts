@@ -22,8 +22,7 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
-import { VersionNumber } from '../defs.ts';
-import { VersionInfoCurrent } from './version-info.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 interface Arguments {
   port: number;
@@ -278,7 +277,7 @@ export class Server {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              VersionInfoCurrent,
+              version: getOvvioConfig().version,
             }),
             {
               headers: {
@@ -411,7 +410,7 @@ export class Server {
       msg.size,
       syncConfigGetCycles(kSyncConfigClient),
       // Don't return new commits to old clients
-      includeMissing && msg.buildVersion >= VersionNumber.Current
+      includeMissing && msg.buildVersion >= getOvvioConfig().version
     );
 
     return new Response(

@@ -14,7 +14,7 @@ import {
 } from '../base/core-types/encoding/types.ts';
 import { isDecoderConfig } from '../base/core-types/encoding/utils.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
-import { VersionNumber } from '../defs.ts';
+import { VersionNumber } from '../base/version-number.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
 import { Commit } from '../repo/commit.ts';
 import { getOvvioConfig } from '../server/config.ts';

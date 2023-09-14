@@ -9,8 +9,8 @@ import {
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
 import { MovingAverage } from '../base/math.ts';
-import { VersionNumber } from '../defs.ts';
 import { getOvvioConfig } from '../server/config.ts';
+import { VersionNumber } from '../base/version-number.ts';
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -63,7 +63,7 @@ export abstract class BaseClient<
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
   private _connectionOnline = false;
-  private _serverVersionNumber: VersionNumber = VersionNumber.Unknown;
+  private _serverVersionNumber: VersionNumber | undefined;
   private _ready: boolean;
   private _scheduled: boolean;
   private _closed = false;
@@ -124,7 +124,7 @@ export abstract class BaseClient<
   }
 
   get serverVersion(): VersionNumber {
-    return this._serverVersionNumber;
+    return this._serverVersionNumber || getOvvioConfig().version;
   }
 
   private set serverVersion(v: VersionNumber) {

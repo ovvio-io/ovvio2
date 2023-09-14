@@ -15,8 +15,9 @@ import { isDecoderConfig } from '../base/core-types/encoding/utils.ts';
 import { uniqueId } from '../base/common.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
-import { VersionNumber } from '../defs.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
+import { VersionNumber } from '../base/version-number.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -42,7 +43,7 @@ export interface CommitConfig {
 }
 
 export class Commit implements Encodable, Decodable, Equatable {
-  private _buildVersion: VersionNumber = VersionNumber.Current;
+  private _buildVersion!: VersionNumber;
   private _id!: string;
   private _session!: string;
   private _key: string | undefined;
@@ -74,7 +75,7 @@ export class Commit implements Encodable, Decodable, Equatable {
       this._parents = parents as string[];
       this._timestamp = config.timestamp || new Date();
       this._contents = contents;
-      this._buildVersion = config.buildVersion || VersionNumber.Current;
+      this._buildVersion = config.buildVersion || getOvvioConfig().version;
     }
   }
 

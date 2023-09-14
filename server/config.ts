@@ -1,9 +1,4 @@
-import {
-  VersionNumber,
-  versionNumberDeleteBuild,
-  versionNumberGetBuild,
-  versionNumberSetBuild,
-} from '../defs.ts';
+import { VCurrent, VersionNumber } from '../base/version-number.ts';
 
 export interface OvvioConfig {
   version: VersionNumber;
@@ -14,7 +9,7 @@ export function getOvvioConfig(): OvvioConfig {
   let config = (window as any).OvvioConfig as OvvioConfig | undefined;
   if (!config) {
     config = config || {
-      version: VersionNumber.Current,
+      version: VCurrent,
       debug: false,
     };
     (window as any).OvvioConfig = config;
