@@ -264,7 +264,6 @@ export abstract class BaseClient<
     if (syncResp.buildVersion !== config.version) {
       // TODO: Save uncomitted changes
       if (config.debug) {
-        debugger;
         location.reload();
       } else {
         this._setIsOnline(false);

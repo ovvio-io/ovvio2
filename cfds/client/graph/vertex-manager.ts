@@ -506,7 +506,6 @@ export class VertexManager<V extends Vertex = Vertex>
    * Never call this directly. Reserved for GraphManager.
    */
   reportInitialFields(local: boolean): void {
-    debugger;
     this.vertexDidMutate(this.getCurrentStateMutations(local));
   }
 

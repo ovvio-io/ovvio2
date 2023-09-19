@@ -86,6 +86,7 @@ interface RepositoryPlumbing {
   client?: RepoClient<MemRepoStorage>;
   backup?: IDBRepositoryBackup;
   loadingPromise?: Promise<void>;
+  active: boolean;
 }
 
 export class GraphManager
@@ -226,29 +227,21 @@ export class GraphManager
   }
 
   private plumbingForRepository(id: string): RepositoryPlumbing {
-    if (!id.startsWith('/')) {
-      id = '/' + id;
-    }
-    if (id.endsWith('/')) {
-      id = id.substring(0, id.length - 1);
-    }
+    id = Repository.normalizeId(id);
     let plumbing = this._repoById.get(id);
     if (!plumbing) {
       const repo = new Repository(new MemRepoStorage());
-      plumbing = { repo, backup: new IDBRepositoryBackup(id) };
+      plumbing = {
+        repo,
+        backup: new IDBRepositoryBackup(id),
+        // Data repo starts inactive. Everything else starts active.
+        active: !id.startsWith('/data/'),
+      };
       repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
         plumbing!.backup?.persistCommits(id, [c]);
         if (!c.key) {
           return;
         }
-        // const record = repo.recordForCommit(c);
-        // const ns = record.scheme.namespace;
-        // if (
-        //   ns === NS_NOTES &&
-        //   c.timestamp.getTime() < Date.now() - K_HOT_COMMITS_WINDOW_MS
-        // ) {
-        //   return;
-        // }
         // The following line does two major things:
         //
         // 1. It creates the vertex manager if it doesn't already exist.
@@ -283,6 +276,8 @@ export class GraphManager
         });
         client.startSyncing();
       }
+      // Start loading this repository to memory
+      this.loadRepository(id);
     }
     return plumbing;
   }
@@ -302,10 +297,24 @@ export class GraphManager
     return [undefined, undefined];
   }
 
+  repositoryIsActive(id: string): boolean {
+    return this._repoById.get(id)?.active === true;
+  }
+
+  setRepositoryIsActive(id: string, flag: boolean): void {
+    id = Repository.normalizeId(id);
+    if (flag) {
+      this.plumbingForRepository(id).active = true;
+    } else {
+      if (this._repoById.has(id)) {
+        this._repoById.get(id)!.active = false;
+      }
+    }
+  }
+
   *keys(): Generator<string> {
     for (const { repo } of this._repoById.values()) {
       for (const k of repo.keys()) {
-        debugger;
         yield k;
       }
     }

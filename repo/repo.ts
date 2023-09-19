@@ -41,6 +41,16 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return `${type}/${id}`;
   }
 
+  static normalizeId(id: string): string {
+    if (!id.startsWith('/')) {
+      id = '/' + id;
+    }
+    if (id.endsWith('/')) {
+      id = id.substring(0, id.length - 1);
+    }
+    return id;
+  }
+
   get numberOfCommits(): number {
     return this.storage.numberOfCommits();
   }
