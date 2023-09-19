@@ -95,7 +95,7 @@ const router = createBrowserRouter([
     element: <NoteView />,
   },
   {
-    path: `/:repoId/_explorer`,
+    path: `/:repoType/:repoId/_explorer`,
     element: <RepoExplorer />,
   },
   {

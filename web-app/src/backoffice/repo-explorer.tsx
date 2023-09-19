@@ -3,13 +3,20 @@ import { useParams } from 'react-router-dom';
 import { useGraphManager } from '../core/cfds/react/graph.tsx';
 import { mapIterable } from '../../../base/common.ts';
 import { H1 } from '../../../styles/components/texts.tsx';
+import { Repository, RepositoryType } from '../../../repo/repo.ts';
 
-type URLParams = Record<'repoId', string>;
+interface URLParams extends Record<string, string> {
+  repoType: RepositoryType;
+  repoId: string;
+}
 
 export function RepoExplorer() {
   const graph = useGraphManager();
-  const repoId = useParams<URLParams>().repoId || '/sys/dir';
-  const repo = graph.repository(repoId);
+  const { repoId, repoType } = (useParams<URLParams>() || {
+    repoType: 'sys',
+    repoId: 'dir',
+  }) as URLParams;
+  const repo = graph.repository(Repository.id(repoType, repoId));
   const keys = Array.from(repo.keys()).sort();
   return (
     <div>
