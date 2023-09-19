@@ -35,7 +35,11 @@ import {
 import { Commit } from '../../../repo/commit.ts';
 import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
 import { RepoClient } from '../../../net/repo-client.ts';
-import { kSyncConfigClient } from '../../../net/base-client.ts';
+import {
+  ClientStatus,
+  EVENT_STATUS_CHANGED,
+  kSyncConfigClient,
+} from '../../../net/base-client.ts';
 import { appendPathComponent } from '../../../base/string.ts';
 import { Query, QueryOptions } from './query.ts';
 import { HashMap } from '../../../base/collections/hash-map.ts';
@@ -72,13 +76,20 @@ export enum CacheLoadingStatus {
   NoCache,
 }
 
-interface OpenQueryData {
-  query: Query;
-  opts: QueryOptions;
+export type StatusChangedCallback = (
+  status: ClientStatus,
+  graph: GraphManager
+) => void;
+
+interface RepositoryPlumbing {
+  repo: Repository<MemRepoStorage>;
+  client?: RepoClient<MemRepoStorage>;
+  backup?: IDBRepositoryBackup;
+  loadingPromise?: Promise<void>;
 }
 
 export class GraphManager
-  extends Emitter<VertexSourceEvent>
+  extends Emitter<VertexSourceEvent | 'status-changed'>
   implements VertexSource
 {
   readonly sharedQueriesManager: SharedQueriesManager;
@@ -91,13 +102,10 @@ export class GraphManager
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _session: string;
-  private readonly _repoById: Dictionary<string, Repository<MemRepoStorage>>;
-  private _backup: IDBRepositoryBackup | undefined;
-  private readonly _repoClients: Dictionary<string, RepoClient<MemRepoStorage>>;
+  private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _baseServerUrl: string | undefined;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
-  private _loadContentsPromise: Promise<void> | undefined;
-  private _isLoading = true;
+  private _prevClientStatus: ClientStatus = 'offline';
 
   constructor(
     rootKey: string,
@@ -120,12 +128,10 @@ export class GraphManager
 
     this.sharedQueriesManager = new SharedQueriesManager(this);
     this._repoById = new Map();
-    this._backup = new IDBRepositoryBackup(rootKey);
     this._openQueries = new HashMap<string, [QueryOptions, Query]>(
       coreValueHash,
       coreValueEquals
     );
-    this._repoClients = new Map();
     this._baseServerUrl = baseServerUrl;
 
     // Automatically init the directory as everything depends on its presence.
@@ -134,14 +140,9 @@ export class GraphManager
 
   protected suspend(): void {
     this._processPendingMutationsTimer.unschedule();
-    this._backup?.close();
-    this._backup = undefined;
   }
 
   protected resume(): void {
-    if (!this._backup) {
-      this._backup = new IDBRepositoryBackup(this.rootKey);
-    }
     this._processPendingMutationsTimer.schedule();
   }
 
@@ -166,45 +167,88 @@ export class GraphManager
   }
 
   get isLoading(): boolean {
-    return this._isLoading;
+    return false;
   }
 
   get graph(): VertexSource {
     return this;
   }
 
-  loadLocalContents(): Promise<void> {
-    const backup = this._backup;
-    if (!this._loadContentsPromise && backup) {
-      this._loadContentsPromise = (async () => {
-        for (const [repoId, commits] of Object.entries(
-          await backup.loadCommits()
-        )) {
-          this.repository(repoId).persistCommits(commits);
-        }
-        this._isLoading = false;
-        this.emit('loading-finished');
-      })();
+  get status(): ClientStatus {
+    let offlineCount = 0,
+      syncingCount = 0;
+    for (const { client } of this._repoById.values()) {
+      if (!client) {
+        ++offlineCount;
+        continue;
+      }
+      switch (client.status) {
+        case 'offline':
+          ++offlineCount;
+          break;
+
+        case 'sync':
+          ++syncingCount;
+          break;
+
+        case 'idle':
+          break;
+      }
     }
-    return this._loadContentsPromise || Promise.resolve();
+    if (syncingCount > 0) {
+      return 'sync';
+    }
+    return offlineCount === this._repoById.size ? 'offline' : 'idle';
   }
 
-  repository(id: string): Repository<MemRepoStorage> {
-    let repo = this._repoById.get(id);
-    if (!repo) {
-      repo = new Repository(new MemRepoStorage());
+  loadRepository(id: string): Promise<void> {
+    const plumbing = this.plumbingForRepository(id);
+    if (plumbing.loadingPromise) {
+      return plumbing.loadingPromise;
+    }
+
+    const backup = plumbing.backup;
+
+    if (typeof backup === 'undefined') {
+      return Promise.resolve();
+    }
+
+    const repo = plumbing.repo;
+    plumbing.loadingPromise = (async () => {
+      repo.persistCommits(await backup.loadCommits());
+    })();
+    return plumbing.loadingPromise;
+  }
+
+  syncRepository(id: string): Promise<void> {
+    const { client } = this.plumbingForRepository(id);
+    return client && client.isOnline ? client.sync() : Promise.resolve();
+  }
+
+  private plumbingForRepository(id: string): RepositoryPlumbing {
+    if (!id.startsWith('/')) {
+      id = '/' + id;
+    }
+    if (id.endsWith('/')) {
+      id = id.substring(0, id.length - 1);
+    }
+    let plumbing = this._repoById.get(id);
+    if (!plumbing) {
+      const repo = new Repository(new MemRepoStorage());
+      plumbing = { repo, backup: new IDBRepositoryBackup(id) };
       repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+        plumbing!.backup?.persistCommits(id, [c]);
         if (!c.key) {
           return;
         }
-        const record = repo!.recordForCommit(c);
-        const ns = record.scheme.namespace;
-        if (
-          ns === NS_NOTES &&
-          c.timestamp.getTime() < Date.now() - K_HOT_COMMITS_WINDOW_MS
-        ) {
-          return;
-        }
+        // const record = repo.recordForCommit(c);
+        // const ns = record.scheme.namespace;
+        // if (
+        //   ns === NS_NOTES &&
+        //   c.timestamp.getTime() < Date.now() - K_HOT_COMMITS_WINDOW_MS
+        // ) {
+        //   return;
+        // }
         // The following line does two major things:
         //
         // 1. It creates the vertex manager if it doesn't already exist.
@@ -218,9 +262,9 @@ export class GraphManager
         // Any kind of activity needs to reset the sync timer. This causes
         // the initial sync to run at full speed, which is a desired side
         // effect.
-        this._repoClients.get(id)?.touch();
+        plumbing?.client?.touch();
       });
-      this._repoById.set(id, repo);
+      this._repoById.set(id, plumbing);
 
       if (this._baseServerUrl) {
         const client = new RepoClient(
@@ -229,17 +273,28 @@ export class GraphManager
           appendPathComponent(this._baseServerUrl, id, 'sync'),
           kSyncConfigClient
         );
-        this._repoClients.set(id, client);
+        plumbing.client = client;
+        client.on(EVENT_STATUS_CHANGED, () => {
+          const status = this.status;
+          if (this._prevClientStatus !== status) {
+            this._prevClientStatus = status;
+            this.emit('status-changed');
+          }
+        });
         client.startSyncing();
       }
     }
-    return repo;
+    return plumbing;
+  }
+
+  repository(id: string): Repository<MemRepoStorage> {
+    return this.plumbingForRepository(id).repo;
   }
 
   repositoryForKey(
     key: string
   ): [string | undefined, Repository<MemRepoStorage> | undefined] {
-    for (const [id, repo] of this._repoById) {
+    for (const [id, { repo }] of this._repoById) {
       if (repo.hasKey(key)) {
         return [id, repo];
       }
@@ -247,8 +302,13 @@ export class GraphManager
     return [undefined, undefined];
   }
 
-  keys(): Iterable<string> {
-    return this._vertManagers.keys();
+  *keys(): Generator<string> {
+    for (const { repo } of this._repoById.values()) {
+      for (const k of repo.keys()) {
+        debugger;
+        yield k;
+      }
+    }
   }
 
   keyInGroup(key: string): boolean {

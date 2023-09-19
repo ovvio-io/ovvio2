@@ -69,7 +69,24 @@ function baseUrlFromUrl(url: string): string {
   return url;
 }
 
-export function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
+/**
+ * This function create and returns an ESBuild plugin that implements Ovvio's
+ * build requirements. These include:
+ *
+ * - Respect our import-map.json.
+ *
+ * - Match deno's resolving logic for code sharing.
+ *
+ * - Use fetch() for downloading dependencies, which utilizes the built in HTTP
+ *   cache.
+ *
+ * - Automatically try to resolve unspecific dependencies against
+ *   https://esm.sh. This allows us to compile against some old npm-native
+ *   packages that have yet to be properly upgraded.
+ *
+ * @returns An ESBuild plugin.
+ */
+export function createOvvioImportPlugin(): esbuild.Plugin {
   const map = JSON.parse(Deno.readTextFileSync(getImportMapPath())).imports;
   const filter = /.*?/;
   return {
@@ -79,12 +96,11 @@ export function createOvvioImportPlugin(dev: boolean): esbuild.Plugin {
         const importedValue = args.path;
         let url: string = importedValue;
 
-        if (importedValue.includes('base64')) debugger;
-
         for (const [prefix, replacement] of Object.entries(map)) {
           if (
-            importedValue.startsWith(prefix) &&
-            typeof replacement === 'string'
+            prefix.endsWith('/') && // This is a prefix mapping,
+            importedValue.startsWith(prefix) && // and a match,
+            typeof replacement === 'string' // and we have a replacement
           ) {
             url = replacement + importedValue.substring(prefix.length);
             break;
@@ -144,7 +160,7 @@ export async function bundle(path?: string): Promise<BundleResult> {
   }
   const result = await esbuild.build({
     entryPoints: [path],
-    plugins: [createOvvioImportPlugin(true)],
+    plugins: [createOvvioImportPlugin()],
     bundle: true,
     write: false,
     outfile: 'app.js',
@@ -185,7 +201,7 @@ export async function createBuildContext(path?: string): Promise<BuildContext> {
   }
   const ctx = await esbuild.context({
     entryPoints: [path],
-    plugins: [createOvvioImportPlugin(true)],
+    plugins: [createOvvioImportPlugin()],
     bundle: true,
     write: false,
     outfile: 'app.js',

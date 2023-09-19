@@ -4,12 +4,12 @@ export type EmitterEvent = 'suspended' | 'resumed';
 
 export type EmitterCallback = () => void;
 
-export class Emitter<T> {
+export class Emitter<T extends string> {
   private readonly _suspendCallbacks: EmitterCallback[];
   private readonly _resumeCallbacks: EmitterCallback[];
-  private readonly _callbacks: Map<T, EmitterCallback[]>;
+  private readonly _callbacks: Map<string, EmitterCallback[]>;
   private readonly _delayedEmissionTimer?: Timer;
-  private _pendingEmissions: [event: T | EmitterEvent, args: unknown[]][];
+  private _pendingEmissions: [event: string, args: unknown[]][];
 
   constructor(
     delayedEmissionTimerConstructor?: (callback: TimerCallback) => Timer
@@ -22,7 +22,7 @@ export class Emitter<T> {
         const emissions = this._pendingEmissions;
         this._pendingEmissions = [];
         for (const [e, args] of emissions) {
-          this.emitInPlace(e, ...args);
+          this.emitInPlace(e as T, ...args);
         }
       });
     }
@@ -63,7 +63,10 @@ export class Emitter<T> {
   }
 
   // deno-lint-ignore ban-types
-  attach<C extends Function, E extends T | EmitterEvent>(e: E, c: C): void {
+  attach<C extends Function, E extends T | EmitterEvent>(
+    e: E,
+    c: C
+  ): () => void {
     const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
       const arr =
@@ -73,7 +76,7 @@ export class Emitter<T> {
       if (!arr.includes(callback)) {
         arr.push(callback);
       }
-      return;
+      return () => this.detach(e, c);
     }
     const wasActive = this.isActive;
     let arr = this._callbacks.get(e as T);
@@ -88,6 +91,7 @@ export class Emitter<T> {
       this.resume();
       this.emit('resumed');
     }
+    return () => this.detach(e, c);
   }
 
   // deno-lint-ignore ban-types

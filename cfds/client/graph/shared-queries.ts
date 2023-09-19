@@ -1,6 +1,5 @@
 import {
   NS_NOTES,
-  NS_ROLES,
   NS_TAGS,
   NS_USERS,
   NS_WORKSPACE,
@@ -23,7 +22,6 @@ import {
   User,
   Workspace,
 } from './vertices/index.ts';
-import { Role } from './vertices/role.ts';
 import { NOTE_SORT_BY, NoteType } from './vertices/note.ts';
 import { CoreValue } from '../../../base/core-types/base.ts';
 import { assert, notReached } from '../../../base/error.ts';
@@ -79,7 +77,6 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly workspaces: Query<Vertex, Workspace>;
   readonly tags: Query<Vertex, Tag, string>;
   readonly childTags: Query<Tag, Tag, string>;
-  readonly roles: Query<Vertex, Role>;
   readonly parentTagsByName: Query<Tag, Tag, string>;
   readonly childTagsByParentName: Query<Tag, Tag, string>;
   readonly users: Query<Vertex, User>;
@@ -128,11 +125,6 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       predicate: (tag) => tag.parentTag !== undefined,
       name: 'SharedChildTags',
       groupBy: (tag) => tag.parentTag!.name,
-    }).lock();
-    this.roles = new Query<Vertex, Role>({
-      source: this.noNotes,
-      predicate: (vert) => vert.namespace === NS_ROLES,
-      name: 'SharedRoles',
     }).lock();
     this.users = new Query<Vertex, User>({
       source: this.noNotes,

@@ -10,11 +10,11 @@ export enum SchemeNamespace {
   TAGS = 'tags',
   USERS = 'users',
   USER_SETTINGS = 'user-settings',
-  INVITES = 'invites',
-  ROLES = 'roles',
   VIEWS = 'views',
   Null = '',
 }
+
+export const KEY_SUFFIX_SETTINGS = '_settings';
 
 const namespaces: SchemeNamespace[] = [];
 for (const key in SchemeNamespace) {
@@ -30,8 +30,6 @@ export const NS_NOTES = SchemeNamespace.NOTES;
 export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
 export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
-export const NS_INVITES = SchemeNamespace.INVITES;
-export const NS_ROLES = SchemeNamespace.ROLES;
 export const NS_VIEWS = SchemeNamespace.VIEWS;
 
 export const TYPE_STR = ValueType.STRING;
@@ -96,12 +94,12 @@ type Override<T1, T2> = Omit<T1, keyof T2> & T2;
 export const kRecordIdField = '<id>';
 
 export class SchemeDef<T extends SchemeObject> {
-  namespace: string;
+  namespace: SchemeNamespace;
   fieldDescriptors: T;
   repositoryFieldName?: string;
 
   constructor(
-    namespace: string,
+    namespace: SchemeNamespace,
     fieldDescriptors: T,
     repositoryFieldName?: string
   ) {
@@ -111,7 +109,7 @@ export class SchemeDef<T extends SchemeObject> {
   }
 
   derive<B extends SchemeObject>(
-    namespace: string,
+    namespace: SchemeNamespace,
     fields: B,
     removeFields?: (keyof Omit<T, keyof B>)[],
     repositoryFieldName?: keyof B

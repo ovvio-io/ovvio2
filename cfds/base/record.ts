@@ -150,21 +150,6 @@ export class Record implements ReadonlyRecord, Encodable {
     return Object.keys(this._data);
   }
 
-  get repositoryId(): '<id>' | string {
-    const fieldName = this.scheme.repositoryFieldName;
-    if (fieldName) {
-      if (fieldName === kRecordIdField) {
-        return kRecordIdField;
-      }
-      const repoId = this.get<string>(fieldName);
-      if (repoId === kRecordIdField) {
-        return repoId;
-      }
-      return '/data/' + repoId;
-    }
-    return '/sys/dir';
-  }
-
   get<T = any>(key: string, defaultValue?: T): T {
     assert(
       this.scheme.hasField(key),

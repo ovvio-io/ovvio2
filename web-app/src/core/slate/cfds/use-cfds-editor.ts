@@ -16,7 +16,6 @@ import { usePartialVertex } from '../../cfds/react/vertex.ts';
 import { CfdsEditor, isCfdsInternal } from './with-cfds.tsx';
 import { useGraphManager } from '../../cfds/react/graph.tsx';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
-import { useOnCriticalError } from '../../cfds/react/graph-use.ts';
 
 export type RichtextKeys<T> = {
   [K in keyof T]: T[K] extends UnkeyedDocument ? K : never;
@@ -145,10 +144,6 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
     undoAddBodyRefs = DEFAULT_OPTS.undoAddBodyRefs,
     expirationInMs = DEFAULT_OPTS.expirationInMs,
   } = opts;
-
-  useOnCriticalError(() => {
-    ReactEditor.blur(editor);
-  });
 
   useUndoContext(editor, vertexMng as any, field as string, undoAddBodyRefs);
   const richtext = vertex[field] as unknown as Document;

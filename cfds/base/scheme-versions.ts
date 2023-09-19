@@ -5,7 +5,6 @@ import {
   NS_TAGS,
   NS_USERS,
   NS_WORKSPACE,
-  NS_ROLES,
   TYPE_DATE,
   TYPE_MAP,
   TYPE_NUMBER,
@@ -15,7 +14,6 @@ import {
   TYPE_SET,
   TYPE_STR,
   TYPE_STR_SET,
-  NS_INVITES,
   InviteStatus,
   AttachmentData,
   DataType,
@@ -29,7 +27,7 @@ import { initRichText } from '../richtext/tree.ts';
 import { isString } from '../../base/comparisons.ts';
 
 //BASE SCHEMES
-const SCHEME_BASE_1 = new SchemeDef('', {
+const SCHEME_BASE_1 = new SchemeDef(SchemeNamespace.Null, {
   creationDate: {
     type: TYPE_DATE,
     required: true,
@@ -46,7 +44,7 @@ const SCHEME_BASE_1 = new SchemeDef('', {
   sortStamp: TYPE_STR,
 });
 
-const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive('', {
+const SCHEME_CONTENT_BASE_1 = SCHEME_BASE_1.derive(SchemeNamespace.Null, {
   createdBy: {
     type: TYPE_STR,
   },
@@ -236,30 +234,6 @@ const SCHEME_TAG_1 = SCHEME_CONTENT_BASE_1.derive(NS_TAGS, {
   parentTag: TYPE_REF,
 });
 
-const SCHEME_INVITE_1 = SCHEME_CONTENT_BASE_1.derive(NS_INVITES, {
-  status: {
-    type: TYPE_STR, //InviteStatus values
-    init: () => InviteStatus.PENDING,
-  },
-  email: {
-    type: TYPE_STR,
-    required: true,
-  },
-  emailSent: {
-    type: TYPE_NUMBER, //0 - not sent, 1 - sent
-    init: () => 0,
-  },
-  invitee: TYPE_STR, //The invited name
-  inviteeUser: TYPE_REF, //The invites user id
-});
-
-const SCHEME_ROLE_1 = SCHEME_BASE_1.derive(NS_ROLES, {
-  name: TYPE_STR,
-  assignees: TYPE_REF_SET,
-  tags: TYPE_STR_SET,
-  users: TYPE_REF_SET,
-});
-
 const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
   owner: {
     type: TYPE_STR,
@@ -295,9 +269,7 @@ export {
   SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
   SCHEME_NOTE_4 as NOTE_SCHEME,
   SCHEME_TAG_1 as TAG_SCHEME,
-  SCHEME_INVITE_1 as INVITE_SCHEME,
   SCHEME_USER_1 as USER_SCHEME,
-  SCHEME_ROLE_1 as ROLE_SCHEME,
   SCHEME_VIEW_1 as VIEW_SCHEME,
 };
 
@@ -305,13 +277,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V1
   manager.register(
     1,
-    [
-      SCHEME_WORKSPACE_1,
-      SCHEME_USER_1,
-      SCHEME_NOTE_1,
-      SCHEME_TAG_1,
-      SCHEME_INVITE_1,
-    ],
+    [SCHEME_WORKSPACE_1, SCHEME_USER_1, SCHEME_NOTE_1, SCHEME_TAG_1],
     []
   );
 
@@ -319,12 +285,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     2,
     [SCHEME_NOTE_2],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.WORKSPACE,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
     (namespace, data) => {
       if (namespace === NS_NOTES) {
         if (data.attachments) {
@@ -349,12 +310,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     3,
     [SCHEME_NOTE_3],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.WORKSPACE,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.WORKSPACE],
     (namespace, data) => {
       //   if (namespace === NS_NOTES) {
       //     if (data.title) {
@@ -371,12 +327,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     4,
     [SCHEME_WORKSPACE_2],
-    [
-      SchemeNamespace.INVITES,
-      SchemeNamespace.TAGS,
-      SchemeNamespace.USERS,
-      SchemeNamespace.NOTES,
-    ],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS, SchemeNamespace.NOTES],
     (namespace, data) => {
       if (namespace === NS_WORKSPACE) {
         data.createdBy = data.owner;
@@ -388,8 +339,8 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V5
   manager.register(
     5,
-    [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_ROLE_1, SCHEME_VIEW_1],
-    [SchemeNamespace.INVITES, SchemeNamespace.TAGS, SchemeNamespace.USERS],
+    [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_VIEW_1],
+    [SchemeNamespace.TAGS, SchemeNamespace.USERS],
     (namespace, data) => {}
   );
 

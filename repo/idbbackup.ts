@@ -8,7 +8,6 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
-import { serializeDate } from '../base/date.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { log } from '../logging/log.ts';
 import { Commit } from './commit.ts';
@@ -17,13 +16,29 @@ import { assert } from '../base/error.ts';
 
 const K_DB_VERSION = 1;
 
+interface EncodedCommitContents extends ReadonlyJSONObject {
+  r: ReadonlyJSONObject; // Serialized Record instance
+}
+
+interface EncodedDeltaCommitContents extends ReadonlyJSONObject {
+  b: string; // Base commit id
+  e: ReadonlyJSONObject; // Serialized Edit instance
+}
+
+interface EncodedCommit extends ReadonlyJSONObject {
+  ver: number; // Build number
+  id: string;
+  k?: string; // key
+  s: string; // session
+  ts: number; // timestamp
+  p?: string[]; // parents
+  c: EncodedCommitContents | EncodedDeltaCommitContents;
+}
+
 interface RepoBackupSchema extends DBSchema {
   commits: {
-    key: string;
-    value: {
-      json: ReadonlyJSONObject;
-      ts: number;
-    };
+    key: 'id';
+    value: EncodedCommit;
   };
 }
 
@@ -37,7 +52,7 @@ export class IDBRepositoryBackup {
     if (this._dbPromise === undefined) {
       this._dbPromise = openDB<RepoBackupSchema>(this.dbName, K_DB_VERSION, {
         upgrade(db) {
-          db.createObjectStore('commits');
+          db.createObjectStore('commits', { keyPath: 'id' });
         },
       });
     }
@@ -73,13 +88,7 @@ export class IDBRepositoryBackup {
       promises.push(
         (async () => {
           try {
-            await store.put(
-              {
-                json: JSONCyclicalEncoder.serialize(c),
-                ts: serializeDate(c.timestamp),
-              },
-              `${repoId}/${c.id}`
-            );
+            await store.put(JSONCyclicalEncoder.serialize(c) as EncodedCommit);
           } catch (e) {
             log({
               severity: 'ERROR',
@@ -100,39 +109,15 @@ export class IDBRepositoryBackup {
     await txn.done;
   }
 
-  async loadCommits(repoId?: string): Promise<{ [repoId: string]: Commit[] }> {
+  async loadCommits(): Promise<Commit[]> {
     const db = await this.getDB();
     const txn = db.transaction('commits', 'readonly');
-    const result: { [repoId: string]: Commit[] } = {};
-    let cursor;
-    if (repoId) {
-      const prefix = repoId + '/';
-      cursor = await txn.store.openCursor(
-        IDBKeyRange.bound(prefix, StringUtils.increment(prefix), false, true)
-      );
-    } else {
-      cursor = await txn.store.openCursor();
-    }
-    while (cursor) {
-      const repoId = repoIdFromKey(cursor.key);
-      let arr = result[repoId];
-      if (!arr) {
-        arr = [];
-        result[repoId] = arr;
-      }
-      arr.push(
+    const cursor = await txn.store.openCursor();
+    return (await txn.store.getAll()).map(
+      (json) =>
         new Commit({
-          decoder: new JSONCyclicalDecoder(cursor.value.json),
+          decoder: new JSONCyclicalDecoder(json),
         })
-      );
-      await cursor.continue();
-    }
-    return result;
+    );
   }
-}
-
-function repoIdFromKey(key: string): string {
-  const sepIdx = key.indexOf('/');
-  assert(sepIdx > 0);
-  return key.substring(0, sepIdx);
 }

@@ -363,9 +363,9 @@ export class Vertex implements Comparable {
   // WARNING: Never change a vertex manager's scheme inside this callback.
   didMutate(pack: MutationPack): MutationPack {
     const result = this._dispatchMutationCallback(pack);
-    if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
-      this._runFieldTriggers(pack);
-    }
+    // if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
+    this._runFieldTriggers(pack);
+    // }
     return result;
   }
 

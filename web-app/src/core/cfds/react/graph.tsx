@@ -1,6 +1,5 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
 import {
-  NS_ROLES,
   encodeTagId,
   SchemeNamespace,
   NS_USERS,
@@ -25,16 +24,24 @@ import {
   VertexId,
   VertexIdGetKey,
 } from '../../../../../cfds/client/graph/vertex.ts';
+import { Repository } from '../../../../../repo/repo.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
   sessionId?: string;
+  loadingFinished: boolean;
 };
 
-export const CFDSContext = React.createContext<ContextProps>({});
+export const CFDSContext = React.createContext<ContextProps>({
+  loadingFinished: false,
+});
 
 export function useGraphManager(): GraphManager {
   return useContext(CFDSContext).graphManager!;
+}
+
+export function useIsGraphLoading(): boolean {
+  return !useContext(CFDSContext).loadingFinished;
 }
 export function useRootUser(): VertexManager<User> {
   const graph = useGraphManager();
@@ -106,6 +113,7 @@ export function CfdsClientProvider({
   const userKey = VertexIdGetKey(user);
   const sessionPtrKey = `${userKey}/${sessionId}`;
   const device = useCurrentDevice();
+  const [loaded, setLoaded] = useState(false);
 
   const graphManager = useMemo(() => {
     const manager = new GraphManager(
@@ -114,16 +122,26 @@ export function CfdsClientProvider({
       'http://localhost:8080'
     );
 
-    manager.createVertex(
-      NS_USERS,
-      {
-        email: 'ofri@ovvio.io',
-        name: 'Ofri',
-      },
-      manager.rootKey
-    );
-
-    manager.loadLocalContents().then(() => {
+    Promise.all([
+      manager
+        .loadRepository(Repository.id('sys', 'dir'))
+        .then(() => manager.syncRepository(Repository.id('sys', 'dir'))),
+      manager
+        .loadRepository(Repository.id('user', manager.rootKey))
+        .then(() =>
+          manager.syncRepository(Repository.id('user', manager.rootKey))
+        ),
+    ]).then(() => {
+      if (!manager.hasVertex(manager.rootKey)) {
+        manager.createVertex(
+          NS_USERS,
+          {
+            email: 'ofri@ovvio.io',
+            name: 'Ofri',
+          },
+          manager.rootKey
+        );
+      }
       const lastUsedKey = getLastUsedViewKey(manager);
       if (!manager.hasVertex(lastUsedKey)) {
         manager.createVertex(
@@ -191,6 +209,7 @@ export function CfdsClientProvider({
       notesView.onVertexChanged(callback);
       tasksView.onVertexChanged(callback);
       overviewView.onVertexChanged(callback);
+      setLoaded(true);
     });
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
@@ -216,8 +235,9 @@ export function CfdsClientProvider({
       graphManager: graphManager,
       sessionId,
       userKey,
+      loadingFinished: loaded,
     }),
-    [graphManager, sessionId, userKey]
+    [graphManager, sessionId, userKey, loaded]
   );
 
   if (versionMismatchFound) {

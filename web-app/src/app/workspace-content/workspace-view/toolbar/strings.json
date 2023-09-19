@@ -1,6 +1,9 @@
 {
   "en": {
     "invite": "Invite",
-    "clear": "Clear"
+    "clear": "Clear",
+    "offline": "Offline",
+    "idle": "Up to Date",
+    "sync": "Syncing..."
   }
 }

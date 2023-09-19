@@ -1,4 +1,4 @@
-import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
+import EventEmitter from 'eventemitter3';
 import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
 import * as SetUtils from '../base/set.ts';
 import { Dictionary } from '../base/collections/dict.ts';
@@ -11,10 +11,13 @@ import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
 import { kRecordIdField } from '../cfds/base/scheme-types.ts';
-import { LRUCache } from '../base/collections/lru-cache.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
+import { repositoryForRecord } from './resolver.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
+
+export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
+export type RepositoryType = (typeof kRepositoryTypes)[number];
 
 export interface RepoStorage<T extends RepoStorage<T>> {
   numberOfCommits(): number;
@@ -32,6 +35,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   constructor(storage: ST) {
     super();
     this.storage = storage;
+  }
+
+  static id(type: RepositoryType, id: string): string {
+    return `${type}/${id}`;
   }
 
   get numberOfCommits(): number {
@@ -326,7 +333,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     const fullCommit = new Commit({
       session,
       key,
-      contents: value,
+      contents: value.clone(),
       parents: head?.id,
     });
     this.persistCommits([this.deltaCompressIfNeeded(fullCommit)]);
@@ -398,8 +405,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   repositoryIdForCommit(c: Commit | string): string {
+    if (typeof c === 'string') {
+      c = this.getCommit(c);
+    }
     const record = this.recordForCommit(c);
-    const repoFieldName = record.repositoryId;
+    const repoFieldName = repositoryForRecord(c.key, record);
     if (repoFieldName === kRecordIdField) {
       const commit = typeof c === 'string' ? this.getCommit(c) : c;
       assert(commit !== undefined && commit.key !== undefined);

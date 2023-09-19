@@ -36,6 +36,7 @@ import { DataType, kRecordIdField } from '../../base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
 import { Emitter } from '../../../base/emitter.ts';
+import { repositoryForRecord } from '../../../repo/resolver.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -150,18 +151,8 @@ export class VertexManager<V extends Vertex = Vertex>
   }
 
   get repositoryId(): string | undefined {
-    if (this.key === this.graph.rootKey || this.key.endsWith('_settings')) {
-      return '/sys/dir';
-    }
-    if (!this.record) {
-      return undefined;
-    }
-    const id = this.record.repositoryId;
-    assert(
-      typeof id !== undefined,
-      `Failed inferring repository id for ${this._key}`
-    );
-    return id === kRecordIdField ? '/data/' + this.key : id;
+    const rec = this.record;
+    return rec.isNull ? undefined : repositoryForRecord(this.key, this.record);
   }
 
   get repository(): Repository<MemRepoStorage> | undefined {
@@ -181,7 +172,10 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    return this.record.isEqual(repo.valueForKey(this.key, this.graph.session));
+    const res = !this.record.isEqual(
+      repo.valueForKey(this.key, this.graph.session)
+    );
+    return res;
   }
 
   get isRoot(): boolean {
@@ -512,6 +506,7 @@ export class VertexManager<V extends Vertex = Vertex>
    * Never call this directly. Reserved for GraphManager.
    */
   reportInitialFields(local: boolean): void {
+    debugger;
     this.vertexDidMutate(this.getCurrentStateMutations(local));
   }
 

@@ -1,7 +1,7 @@
 import { join as joinPath } from 'std/path/mod.ts';
 import yargs from 'https://deno.land/x/yargs@v17.7.1-deno/deno.ts';
 import { serve } from 'std/http/server.ts';
-import { Repository } from '../repo/repo.ts';
+import { Repository, RepositoryType, kRepositoryTypes } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { RepoClient } from './repo-client.ts';
 import {
@@ -107,13 +107,14 @@ export class Server {
     );
   }
 
-  getRepository(id: string): Repository<SQLiteRepoStorage> {
+  getRepository(
+    type: RepositoryType,
+    id: string
+  ): Repository<SQLiteRepoStorage> {
     let repo = this._repositories.get(id);
     if (!repo) {
       repo = new Repository(
-        new SQLiteRepoStorage(
-          joinPath(this._args.dir, id === 'dir' ? 'sys' : 'repos', id + '.repo')
-        )
+        new SQLiteRepoStorage(joinPath(this._args.dir, type, id + '.repo'))
       );
       this._repositories.set(id, repo);
       const replicas = this._args.replicas;
@@ -122,7 +123,7 @@ export class Server {
         const clients = this._args.replicas.map((baseServerUrl) =>
           new RepoClient(
             repo!,
-            new URL('/repo/' + id, baseServerUrl).toString(),
+            new URL(`/${type}/` + id, baseServerUrl).toString(),
             kSyncConfigServer
           ).startSyncing()
         );
@@ -199,7 +200,7 @@ export class Server {
       req.method !== 'POST' ||
       !req.body ||
       path.length !== 4 ||
-      !['data', 'sys', 'log'].includes(path[1])
+      ![...kRepositoryTypes, 'log'].includes(path[1])
     ) {
       log({
         severity: 'INFO',
@@ -215,25 +216,31 @@ export class Server {
       });
     }
 
-    const storageType = path[1];
+    const storageType = path[1] as RepositoryType;
     const resourceId = path[2];
     const cmd = path[3];
     let resp: Response;
     switch (cmd) {
       case 'sync':
-        if (storageType === 'data' || storageType === 'sys') {
+        if (
+          storageType === 'data' ||
+          storageType === 'sys' ||
+          storageType === 'user'
+        ) {
           resp = await this.handleSyncRequest(
             req,
             (values) =>
               Promise.resolve(
-                this.getRepository(resourceId).persistCommits(values).length
+                this.getRepository(storageType, resourceId).persistCommits(
+                  values
+                ).length
               ),
             () =>
-              mapIterable(this.getRepository(resourceId).commits(), (c) => [
-                c.id,
-                c,
-              ]),
-            () => this.getRepository(resourceId).numberOfCommits,
+              mapIterable(
+                this.getRepository(storageType, resourceId).commits(),
+                (c) => [c.id, c]
+              ),
+            () => this.getRepository(storageType, resourceId).numberOfCommits,
             this._clientsForRepo.get(resourceId),
             true
           );

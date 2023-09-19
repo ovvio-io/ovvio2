@@ -7,7 +7,6 @@ import {
   lightTheme,
   ThemeProvider,
 } from '../../../styles/theme.tsx';
-import { useIsGraphLoading } from '../core/cfds/react/query.ts';
 import LoadingView from './loading-view.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
@@ -15,7 +14,10 @@ import { WorkspacesBar } from './workspaces-bar/index.tsx';
 import { createBrowserRouter } from 'react-router-dom';
 import { uniqueId } from '../../../base/common.ts';
 import { StyleProvider } from '../../../styles/css-objects/context.tsx';
-import { CfdsClientProvider } from '../core/cfds/react/graph.tsx';
+import {
+  CfdsClientProvider,
+  useIsGraphLoading,
+} from '../core/cfds/react/graph.tsx';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 

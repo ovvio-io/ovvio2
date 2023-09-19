@@ -1,4 +1,4 @@
-import EventEmitter from 'https://esm.sh/eventemitter3@4.0.7';
+import EventEmitter from 'eventemitter3';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
@@ -39,7 +39,9 @@ export function syncConfigGetCycles(
   );
 }
 
-export const EVENT_ONLINE_STATUS_CHANGED = 'online_changed';
+export type ClientStatus = 'idle' | 'sync' | 'offline';
+
+export const EVENT_STATUS_CHANGED = 'status_changed';
 export const EVENT_PROTOCOL_VERSION_CHANGED = 'protocol_version_changed';
 
 export interface BaseClientStorage {
@@ -107,6 +109,13 @@ export abstract class BaseClient<
     return this._connectionOnline;
   }
 
+  get status(): ClientStatus {
+    if (!this.isOnline) {
+      return 'offline';
+    }
+    return this.needsReplication() ? 'sync' : 'idle';
+  }
+
   get previousServerFilter(): BloomFilter | undefined {
     return this._previousServerFilter;
   }
@@ -162,7 +171,7 @@ export abstract class BaseClient<
   private _setIsOnline(value: boolean): void {
     if (value !== this._connectionOnline) {
       this._connectionOnline = value;
-      this.emit(EVENT_ONLINE_STATUS_CHANGED);
+      this.emit(EVENT_STATUS_CHANGED);
     }
   }
 
@@ -187,6 +196,7 @@ export abstract class BaseClient<
     if (this.closed) {
       return;
     }
+    const startingStatus = this.status;
     const syncConfig = this._syncConfig;
     const reqMsg = this.buildSyncMessage();
     const msg = JSONCyclicalEncoder.serialize(reqMsg);
@@ -287,6 +297,9 @@ export abstract class BaseClient<
       this.touch();
     }
     this._setIsOnline(true);
+    if (this.status !== startingStatus) {
+      this.emit(EVENT_STATUS_CHANGED);
+    }
   }
 
   /**

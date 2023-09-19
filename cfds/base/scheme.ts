@@ -26,7 +26,7 @@ import {
   SchemeFields,
   DataType,
   kRecordIdField,
-  NS_ROLES,
+  SchemeNamespace,
 } from './scheme-types.ts';
 import { runRegister } from './scheme-versions.ts';
 import { isRefValueType, ValueType } from './types/index.ts';
@@ -50,10 +50,9 @@ function normalizeFieldDescriptors(descriptors: any) {
 }
 
 export interface SchemeConfig {
-  namespace: string;
+  namespace: SchemeNamespace;
   version?: number;
   fieldDescriptors: any;
-  repositoryFieldName?: string;
 }
 
 export interface EncodedScheme {
@@ -62,12 +61,11 @@ export interface EncodedScheme {
 }
 
 export class Scheme implements Encodable {
-  private _namespace!: string;
+  private _namespace!: SchemeNamespace;
   private _version!: number;
   private _fieldDescriptors: any;
   private _fields!: SchemeFields;
   private _requiredFields: string[] | undefined;
-  private _repoFieldName?: string;
 
   constructor(config: SchemeConfig | ConstructorDecoderConfig<EncodedScheme>) {
     if (isDecoderConfig(config)) {
@@ -90,7 +88,6 @@ export class Scheme implements Encodable {
       this._version = config.version || 0;
       [this._fieldDescriptors, this._fields, this._requiredFields] =
         normalizeFieldDescriptors(config.fieldDescriptors);
-      this._repoFieldName = config.repositoryFieldName;
     }
   }
 
@@ -108,10 +105,6 @@ export class Scheme implements Encodable {
 
   get fields() {
     return this._fields;
-  }
-
-  get repositoryFieldName(): string | undefined {
-    return this._repoFieldName;
   }
 
   fieldNames(): Iterable<string> {
@@ -179,7 +172,6 @@ export class Scheme implements Encodable {
       namespace: this._namespace,
       version: version || this._version,
       fieldDescriptors: Object.assign({}, this._fieldDescriptors),
-      repositoryFieldName: this._repoFieldName,
     });
   }
 
@@ -277,7 +269,6 @@ export class Scheme implements Encodable {
     this._requiredFields = other._requiredFields;
     this._version = other._version;
     this._fields = other._fields;
-    this._repoFieldName = other._repoFieldName;
   }
 
   toJS(): JSONValue {
@@ -295,10 +286,9 @@ export class Scheme implements Encodable {
 
   static nullScheme() {
     return new this({
-      namespace: '',
+      namespace: SchemeNamespace.Null,
       version: 0,
       fieldDescriptors: {},
-      repositoryFieldName: kRecordIdField,
     });
   }
 
@@ -326,9 +316,9 @@ export class Scheme implements Encodable {
     return scheme;
   }
 
-  static role(): Scheme {
-    const scheme = SchemeManager.instance.getScheme(NS_ROLES);
-    if (!scheme) throw new Error('Role scheme not found');
+  static view(): Scheme {
+    const scheme = SchemeManager.instance.getScheme(SchemeNamespace.VIEWS);
+    if (!scheme) throw new Error('View scheme not found');
     return scheme;
   }
 
@@ -363,8 +353,8 @@ export class Scheme implements Encodable {
       case NS_USERS:
         return this.user();
 
-      case NS_ROLES:
-        return this.role();
+      case SchemeNamespace.VIEWS:
+        return this.view();
 
       default:
         break;
@@ -403,7 +393,6 @@ class SchemeVersion {
       namespace: def.namespace,
       version: this._version,
       fieldDescriptors: def.fieldDescriptors,
-      repositoryFieldName: def.repositoryFieldName,
     });
 
     this._namespaces.set(scheme.namespace, scheme);

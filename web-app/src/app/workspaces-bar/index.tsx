@@ -387,8 +387,9 @@ const GROUP_BY: GroupByMapping = {
       return sysGID;
     }
     const res: WorkspaceGID[] = [];
-    const role = ws.graph.getVertex<Role>('RoleTeamLeader');
-    const teamLeaders = role.assignees;
+    // const role = ws.graph.getVertex<Role>('RoleTeamLeader');
+    // const teamLeaders = role.assignees;
+    const teamLeaders = new Set<User>();
     for (const u of ws.assignees) {
       if (teamLeaders.has(u) && !u.isRoot) {
         res.push(u.manager);

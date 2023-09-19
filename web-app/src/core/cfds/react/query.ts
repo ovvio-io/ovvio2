@@ -31,6 +31,7 @@ import { useGraphManager } from './graph.tsx';
 import { usePartialVertex } from './vertex.ts';
 import { assert } from '../../../../../base/error.ts';
 import { CoreValue } from '../../../../../base/core-types/base.ts';
+import { Repository } from '../../../../../repo/repo.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -119,52 +120,6 @@ export function useExistingQuery<
   }, [query]);
 
   return result;
-}
-
-export function useIsGraphLoading() {
-  const graph = useGraphManager();
-  // const query = useMemo(
-  //   () => new Query(graph, x => x.isLoading, { name: 'isGraphLoading' }),
-  //   [graph]
-  // );
-  // useQuery2(query);
-  // if (graph.cacheStatus !== CacheStatus.Loading) {
-  //   debugger;
-  // }
-  const [loading, setLoading] = useState(graph.isLoading);
-  useMemo(() => {
-    if (graph.isLoading) {
-      graph.once('loading-finished', () => {
-        setLoading(graph.isLoading);
-      });
-    }
-  }, [graph]);
-
-  const rootUser = usePartialVertex(graph.getRootVertexManager(), []);
-
-  const [notDeletedLoading, setNotDeletedLoading] = useState(
-    graph.sharedQuery('notDeleted').isLoading
-  );
-
-  useEffect(() => {
-    const notDeleted = graph.sharedQuery('notDeleted');
-    let cleanup: undefined | (() => void) = notDeleted.onResultsChanged(() => {
-      if (!graph.sharedQuery('notDeleted').isLoading) {
-        setNotDeletedLoading(false);
-        if (cleanup) {
-          cleanup();
-        }
-        cleanup = undefined;
-      }
-    });
-    return () => {
-      if (cleanup) {
-        cleanup();
-      }
-    };
-  }, [graph]);
-
-  return loading || graph.isLoading || rootUser.isNull || notDeletedLoading; // || query.count > 0;
 }
 
 type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =

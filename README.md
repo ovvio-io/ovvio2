@@ -67,7 +67,7 @@ _Note: Everything is relative to a base data directory._
 - `/data/<workspace_id>`
   Stores a single workspace's contents.
 
-- `/data/<user_id>`
+- `/user/<user_id>`
   Stores a single users's private contents. This is really a personal workspace
   and holds the same type of records like a workspace.
 
@@ -94,7 +94,7 @@ A personal place designed to hold private items. This repository stores the
 following schemes:
 
 - Notes (drafts)
-- Filters
+- Views
 
 Typically only the owner will access this repository. External access will
 typically be limited to specific items.
@@ -112,8 +112,6 @@ In this repository you'll find the following schemes:
 
 - Workspaces
 - Users
-- User Settings
-- Tags
 
 ### Logs Repository
 
