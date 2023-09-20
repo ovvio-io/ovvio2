@@ -27,9 +27,8 @@ export class Workspace extends BaseVertex {
     config: VertexConfig | undefined
   ) {
     super(mgr, prevVertex, config);
-    if (prevVertex && prevVertex instanceof Workspace) {
-      this.selected = prevVertex.selected;
-    }
+    // if (prevVertex && prevVertex instanceof Workspace) {
+    // }
     this.initHelperQueries();
   }
 

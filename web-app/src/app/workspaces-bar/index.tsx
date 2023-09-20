@@ -54,6 +54,8 @@ import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
 import { LogoText } from '../../../../styles/components/logo.tsx';
 import { LogoIcon } from '../../../../styles/components/logo.tsx';
+import { IndeterminateProgressIndicator } from '../../../../styles/components/progress-indicator.tsx';
+import { Repository } from '../../../../repo/repo.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -301,6 +303,18 @@ const useStyles = makeStyles(
     },
     pinButtonPinned: {
       opacity: 1,
+    },
+    loadingIndicator: {
+      marginLeft: styleguide.gridbase,
+      marginRight: styleguide.gridbase,
+    },
+    loadingIndicatorContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    },
+    hidden: {
+      display: 'none',
     },
   }),
   'workspaces-bar_881015'
@@ -589,6 +603,16 @@ function WorkspaceListItem({
     }),
     [color]
   );
+  const graph = useGraphManager();
+  const repoId = Repository.id('data', workspace.key);
+  const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
+  const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
+
+  useEffect(() => {
+    if (isSelected) {
+      graph.loadRepository(repoId).then(() => setLoaded(true));
+    }
+  }, [graph, repoId, isSelected]);
 
   const textRef = useRef<HTMLDivElement>(null);
   const isOverflowing =
@@ -625,8 +649,6 @@ function WorkspaceListItem({
     }
   }, [view, workspace]);
 
-  const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
-
   return (
     <div
       className={cn(
@@ -650,56 +672,67 @@ function WorkspaceListItem({
         </div>
       </Tooltip>
       <div /*className={cn(layout.flexSpacer)}*/ />
-      {!view.workspaceBarCollapsed && (
-        <React.Fragment>
-          <Button
+      {!view.workspaceBarCollapsed &&
+        (!loaded ? (
+          <div
             className={cn(
-              styles.pinButton,
-              groupId === 'pinned' && styles.pinButtonPinned
+              isSelected ? styles.loadingIndicatorContainer : styles.hidden
             )}
-            onClick={() =>
-              setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-            }
           >
-            {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-          </Button>
-          <Menu
-            renderButton={renderButton}
-            direction="out"
-            position="right"
-            align="start"
-            className={cn(styles.itemMenu)}
-          >
-            <MenuItem onClick={() => setIsSettingsOpen(true)}>
-              {strings.workspaceSettings}
-            </MenuItem>
-            {!isTemplate && (
-              <MenuItem
-                onClick={() =>
-                  setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
-                }
-              >
-                {groupId === 'hidden'
-                  ? strings.showWorkspace
-                  : strings.hideWorkspace}
+            <IndeterminateProgressIndicator
+              className={cn(styles.loadingIndicator)}
+            />
+          </div>
+        ) : (
+          <React.Fragment>
+            <Button
+              className={cn(
+                styles.pinButton,
+                groupId === 'pinned' && styles.pinButtonPinned
+              )}
+              onClick={() =>
+                setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+              }
+            >
+              {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+            </Button>
+            <Menu
+              renderButton={renderButton}
+              direction="out"
+              position="right"
+              align="start"
+              className={cn(styles.itemMenu)}
+            >
+              <MenuItem onClick={() => setIsSettingsOpen(true)}>
+                {strings.workspaceSettings}
               </MenuItem>
-            )}
-            {groupId !== 'hidden' && (
-              <MenuItem
-                onClick={() =>
-                  setWorkspaceState(
-                    groupId === 'templates' ? 'none' : 'template'
-                  )
-                }
-              >
-                {groupId === 'templates'
-                  ? strings.unsetTemplate
-                  : strings.setTemplate}
-              </MenuItem>
-            )}
-          </Menu>
-        </React.Fragment>
-      )}
+              {!isTemplate && (
+                <MenuItem
+                  onClick={() =>
+                    setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
+                  }
+                >
+                  {groupId === 'hidden'
+                    ? strings.showWorkspace
+                    : strings.hideWorkspace}
+                </MenuItem>
+              )}
+              {groupId !== 'hidden' && (
+                <MenuItem
+                  onClick={() =>
+                    setWorkspaceState(
+                      groupId === 'templates' ? 'none' : 'template'
+                    )
+                  }
+                >
+                  {groupId === 'templates'
+                    ? strings.unsetTemplate
+                    : strings.setTemplate}
+                </MenuItem>
+              )}
+            </Menu>
+          </React.Fragment>
+        ))}
       {/* <WorkspaceSettingsDialog
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
