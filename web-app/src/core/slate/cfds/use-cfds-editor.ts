@@ -130,7 +130,7 @@ function handleSelection(editor: Editor, selection: Range | undefined) {
 }
 
 // Set this to false to disable updating of selection on external change
-const SET_EXTERNAL_SELECTION = true;
+const SET_EXTERNAL_SELECTION = false;
 
 export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   vertexMng: VertexManager<T>,

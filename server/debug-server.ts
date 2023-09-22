@@ -43,6 +43,9 @@ function shouldRebuildAfterPathChange(p: string): boolean {
   if (name.startsWith('.')) {
     return false;
   }
+  if (p.startsWith('node_modules/')) {
+    return false;
+  }
   return true;
 }
 

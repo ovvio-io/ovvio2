@@ -4,6 +4,8 @@ import * as path from 'std/path/mod.ts';
 import { assert, notReached } from '../base/error.ts';
 import { retry } from '../base/time.ts';
 
+const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
+
 function getCDNURLForDependency(dep: string): string {
   // return `https://cdn.skypack.dev/${dep}?dts`;
   return `https://esm.sh/${dep}`;
@@ -96,6 +98,20 @@ export function createOvvioImportPlugin(): esbuild.Plugin {
         const importedValue = args.path;
         let url: string = importedValue;
 
+        if (importedValue.startsWith('@') || args.importer.startsWith('@')) {
+          return;
+        }
+
+        for (const excluded of EXCLUDED_IMPORTS) {
+          if (
+            importedValue.startsWith(excluded) ||
+            args.importer.startsWith(excluded)
+          ) {
+            debugger;
+            return;
+          }
+        }
+
         for (const [prefix, replacement] of Object.entries(map)) {
           if (
             prefix.endsWith('/') && // This is a prefix mapping,
@@ -116,7 +132,7 @@ export function createOvvioImportPlugin(): esbuild.Plugin {
             url = `${baseUrlFromUrl(args.importer)}/${url}`;
           }
         } else if (!url.startsWith('https://') && !isPath(importedValue)) {
-          url = getCDNURLForDependency(importedValue);
+          // url = getCDNURLForDependency(importedValue);
         }
 
         if (url.startsWith('https://')) {
@@ -148,6 +164,68 @@ export function createOvvioImportPlugin(): esbuild.Plugin {
     },
   };
 }
+
+// export function createNPMPlugin(): esbuild.Plugin {
+//   const filter = /.*?/;
+//   return {
+//     name: 'npm',
+//     setup(build) {
+//       build.onResolve({ filter }, async (args) => {
+//         const importedValue = args.path;
+//         let url: string = importedValue;
+
+//         for (const [prefix, replacement] of Object.entries(map)) {
+//           if (
+//             prefix.endsWith('/') && // This is a prefix mapping,
+//             importedValue.startsWith(prefix) && // and a match,
+//             typeof replacement === 'string' // and we have a replacement
+//           ) {
+//             url = replacement + importedValue.substring(prefix.length);
+//             break;
+//           }
+//         }
+
+//         if (map[url]) {
+//           url = map[url];
+//         } else if (args.importer.startsWith('https://') && isPath(url)) {
+//           if (url.startsWith('/')) {
+//             url = `https://${new URL(args.importer).host}${url}`;
+//           } else {
+//             url = `${baseUrlFromUrl(args.importer)}/${url}`;
+//           }
+//         } else if (!url.startsWith('https://') && !isPath(importedValue)) {
+//           url = getCDNURLForDependency(importedValue);
+//         }
+
+//         if (url.startsWith('https://')) {
+//           const resp = await retry(async () => {
+//             const r = await fetch(url!);
+//             assert(r.status === 200, `Failed downloading ${url}`);
+//             return r;
+//           }, 5 * 1000);
+//           return {
+//             path: resp.url,
+//             namespace: 'ovvio',
+//           };
+//         }
+//       });
+//       build.onLoad({ filter, namespace: 'ovvio' }, async (args) => {
+//         const url = args.path;
+//         assert(url.startsWith('https://'), 'Unsupported URL');
+//         const resp = await retry(async () => {
+//           const r = await fetch(url);
+//           assert(r.status === 200, `Failed downloading ${url}`);
+//           return r;
+//         }, 5 * 1000);
+//         const text = await resp.text();
+//         return {
+//           contents: text,
+//           loader: loaderForFile(url),
+//         };
+//       });
+//     },
+//   };
+// }
 
 export interface BundleResult {
   source: string;
