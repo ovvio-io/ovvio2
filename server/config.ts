@@ -3,6 +3,7 @@ import { VCurrent, VersionNumber } from '../base/version-number.ts';
 export interface OvvioConfig {
   version: VersionNumber;
   debug: boolean;
+  clientData?: unknown;
 }
 
 export function getOvvioConfig(): OvvioConfig {
@@ -15,4 +16,12 @@ export function getOvvioConfig(): OvvioConfig {
     (window as any).OvvioConfig = config;
   }
   return config;
+}
+
+export function getClientData<T>(): T | undefined {
+  return getOvvioConfig().clientData as T;
+}
+
+export function setClientData<T>(data: T | undefined): void {
+  getOvvioConfig().clientData = data;
 }

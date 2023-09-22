@@ -25,6 +25,7 @@ import {
   VertexIdGetKey,
 } from '../../../../../cfds/client/graph/vertex.ts';
 import { Repository } from '../../../../../repo/repo.ts';
+import { getClientData, setClientData } from '../../../../../server/config.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -102,6 +103,10 @@ function getLastUsedViewKey(graph: GraphManager): string {
   return graph.rootKey + '-ViewLastUsed';
 }
 
+export interface ClientData {
+  graphManager?: GraphManager;
+}
+
 export function CfdsClientProvider({
   user,
   sessionId,
@@ -123,14 +128,14 @@ export function CfdsClientProvider({
     );
 
     Promise.all([
-      manager
-        .loadRepository(Repository.id('sys', 'dir'))
-        .then(() => manager.syncRepository(Repository.id('sys', 'dir'))),
+      manager.loadRepository(Repository.id('sys', 'dir')).then(() => {
+        return manager.syncRepository(Repository.id('sys', 'dir'));
+      }),
       manager
         .loadRepository(Repository.id('user', manager.rootKey))
-        .then(() =>
-          manager.syncRepository(Repository.id('user', manager.rootKey))
-        ),
+        .then(() => {
+          return manager.syncRepository(Repository.id('user', manager.rootKey));
+        }),
     ]).then(() => {
       if (!manager.hasVertex(manager.rootKey)) {
         manager.createVertex(
@@ -225,8 +230,14 @@ export function CfdsClientProvider({
       });
     }, 10 * 1000);
 
+    const clientData: ClientData = getClientData() || {
+      graphManager,
+    };
+    setClientData(clientData);
+
     return () => {
       clearInterval(sessionIntervalId);
+      setClientData(undefined);
     };
   }, [logger, graphManager]);
 

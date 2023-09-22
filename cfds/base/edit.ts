@@ -14,7 +14,13 @@ import {
   Decoder,
   isDecoderConfig,
 } from '../../base/core-types/encoding/index.ts';
-import { Encodable, Encoder, Equatable } from '../../base/core-types/index.ts';
+import {
+  Clonable,
+  Encodable,
+  Encoder,
+  Equatable,
+} from '../../base/core-types/index.ts';
+import { coreValueClone } from '../../base/core-types/clone.ts';
 
 /**
  * A single set of changes that should be applied to a specific record.
@@ -40,7 +46,7 @@ export interface EncodedEdit {
   s?: ReadonlyJSONObject;
 }
 
-export class Edit implements Encodable, Equatable {
+export class Edit implements Encodable, Equatable, Clonable {
   readonly changes: DataChanges;
   readonly srcChecksum: string;
   readonly dstChecksum: string;
@@ -62,6 +68,15 @@ export class Edit implements Encodable, Equatable {
       this.dstChecksum = config.dstChecksum;
       this.scheme = config.scheme;
     }
+  }
+
+  clone(): Edit {
+    return new Edit({
+      srcChecksum: this.srcChecksum,
+      dstChecksum: this.dstChecksum,
+      scheme: this.scheme,
+      changes: coreValueClone(this.changes),
+    });
   }
 
   get affectedKeys() {

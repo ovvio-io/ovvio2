@@ -87,6 +87,7 @@ export class Record implements ReadonlyRecord, Encodable {
   private _checksum: string | undefined;
   private _cachedRefs: Set<string> | undefined;
   private _normalized = false;
+  private _locked = false;
 
   constructor(config: RecordConfig | ConstructorDecoderConfig<EncodedRecord>) {
     if (isDecoderConfig(config)) {
@@ -172,6 +173,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   set(key: string, value: any) {
+    assert(!this._locked);
     assert(
       this.scheme.hasField(key),
       `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
@@ -189,12 +191,14 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   setMultiple(data: { [K in string]: any }) {
+    assert(!this._locked);
     for (const [key, value] of Object.entries(data)) {
       this.set(key, value);
     }
   }
 
   delete(key: string): boolean {
+    assert(!this._locked);
     assert(
       this.scheme.hasField(key),
       `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
@@ -239,6 +243,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   copyFrom(record: ReadonlyRecord | Record) {
+    assert(!this._locked);
     this._scheme = record.scheme;
     this._data = record.cloneData();
     this._invalidateCaches();
@@ -257,6 +262,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   patch(changes: DataChanges) {
+    assert(!this._locked);
     const scheme = this.scheme;
     this._data = objectPatch(scheme.getFields(), this._data, changes);
     this._invalidateCaches();
@@ -272,6 +278,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   upgradeScheme(newScheme: Scheme) {
+    assert(!this._locked);
     assert(newScheme.allowsAutoUpgradeFrom(this.scheme));
     this._data = newScheme.upgradeData(this.scheme, this._data);
     this._scheme = newScheme;
@@ -280,6 +287,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   upgradeSchemeToLatest() {
+    assert(!this._locked);
     if (!this._scheme.upgradeAvailable()) {
       return false; //No need to update
     }
@@ -319,6 +327,7 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   deserialize(decoder: Decoder): void {
+    assert(!this._locked);
     this._scheme = new Scheme({ decoder: decoder.getDecoder('s') });
     this._data = deserialize(decoder.getDecoder('d'), this.scheme.fields);
 
@@ -353,8 +362,17 @@ export class Record implements ReadonlyRecord, Encodable {
   }
 
   rewriteRefs(keyMapping: Map<string, string>, deleteRefs?: Set<string>): void {
+    assert(!this._locked);
     rewriteRefs(this.scheme, this._data, keyMapping, deleteRefs);
     this._invalidateCaches();
     this.normalize();
+  }
+
+  lock(): void {
+    this._locked = true;
+  }
+
+  unlock(): void {
+    this._locked = false;
   }
 }

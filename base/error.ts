@@ -22,6 +22,7 @@ export function assert(
   msg = 'Failed assertion'
 ): asserts condition {
   if (!condition) {
+    debugger;
     const error = new Error('Failed Assertion');
     log({
       severity: 'ERROR',

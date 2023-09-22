@@ -4,7 +4,7 @@ import {
   KEY_SUFFIX_SETTINGS,
   SchemeNamespace,
 } from '../cfds/base/scheme-types.ts';
-import { RepositoryType } from './repo.ts';
+import { Repository, RepositoryType } from './repo.ts';
 
 export function repositoryForRecord(key: string | null, rec: Record): string {
   let storage: RepositoryType;
@@ -27,7 +27,7 @@ export function repositoryForRecord(key: string | null, rec: Record): string {
         typeof key === 'string' && key.endsWith(KEY_SUFFIX_SETTINGS),
         'Invalid key for settings record'
       );
-      storage = 'data';
+      storage = 'user';
       id = key.substring(0, key.length - KEY_SUFFIX_SETTINGS.length);
       break;
 
@@ -39,5 +39,5 @@ export function repositoryForRecord(key: string | null, rec: Record): string {
     case SchemeNamespace.Null:
       notReached("Null records can't be persisted to a repository");
   }
-  return `${storage}/${id}`;
+  return Repository.id(storage, id);
 }

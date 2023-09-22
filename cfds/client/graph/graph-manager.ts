@@ -224,6 +224,7 @@ export class GraphManager
 
   syncRepository(id: string): Promise<void> {
     const { client } = this.plumbingForRepository(id);
+    this.loadRepository(id);
     return client && client.isOnline ? client.sync() : Promise.resolve();
   }
 
@@ -284,6 +285,7 @@ export class GraphManager
   }
 
   repository(id: string): Repository<MemRepoStorage> {
+    this.loadRepository(id);
     return this.plumbingForRepository(id).repo;
   }
 
@@ -306,6 +308,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     if (flag) {
       this.plumbingForRepository(id).active = true;
+      this.loadRepository(id);
     } else {
       if (this._repoById.has(id)) {
         this._repoById.get(id)!.active = false;

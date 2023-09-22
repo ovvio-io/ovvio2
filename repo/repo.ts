@@ -211,10 +211,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (typeof c === 'string') {
       c = this.getCommit(c);
     }
-    if (c.contents.record) {
-      return c.contents.record as Record;
-    }
-    if (c.contents.base) {
+    if (commitContentsIsRecord(c.contents)) {
+      return c.contents.record.clone();
+    } else {
       const contents: DeltaContents = c.contents as DeltaContents;
       const result = this.recordForCommit(contents.base).clone();
       assert(result.checksum === contents.edit.srcChecksum);
@@ -222,7 +221,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       assert(result.checksum === contents.edit.dstChecksum);
       return result;
     }
-    notReached();
   }
 
   headForKey(

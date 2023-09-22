@@ -72,9 +72,12 @@ export class Commit implements Encodable, Decodable, Equatable {
       this._id = config.id || uniqueId();
       this._session = config.session;
       this._key = config.key || undefined;
-      this._parents = parents as string[];
+      this._parents = Array.from(parents);
       this._timestamp = config.timestamp || new Date();
-      this._contents = contents;
+      this._contents = commitContentsClone(contents);
+      if (commitContentsIsRecord(this._contents)) {
+        this._contents.record.lock();
+      }
       this._buildVersion = config.buildVersion || getOvvioConfig().version;
     }
   }
@@ -201,4 +204,16 @@ function compareCommitsByValue(c1: Commit, c2: Commit): boolean {
     coreValueEquals(c1.parents, c2.parents) &&
     coreValueEquals(c1.contents, c2.contents)
   );
+}
+
+function commitContentsClone(contents: CommitContents): CommitContents {
+  if (commitContentsIsDelta(contents)) {
+    return {
+      base: contents.base,
+      edit: contents.edit.clone(),
+    };
+  }
+  return {
+    record: contents.record.clone(),
+  };
 }

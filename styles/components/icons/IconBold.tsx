@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase, { IconProps } from './IconBase.tsx';
 
 const IconBold = ({ fill = '#FFF', className = '' }: IconProps) => (

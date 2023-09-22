@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase from './IconBase.tsx';
 
 const IconNote = ({ fill = '#CAC9D2', className = '' }) => (
