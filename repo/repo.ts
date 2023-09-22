@@ -211,8 +211,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (typeof c === 'string') {
       c = this.getCommit(c);
     }
-    if (c.contents.record) {
-      return c.contents.record as Record;
+    if (commitContentsIsRecord(c.contents)) {
+      return c.contents.record;
     }
     if (c.contents.base) {
       const contents: DeltaContents = c.contents as DeltaContents;

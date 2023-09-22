@@ -171,7 +171,7 @@ export function commitContentsSerialize(
   encoder: Encoder
 ): void {
   if (commitContentsIsRecord(c)) {
-    encoder.set('r', c.record);
+    encoder.set('r', c.record.toJS());
   } else {
     encoder.set('b', c.base);
     encoder.set('e', c.edit.toJS());

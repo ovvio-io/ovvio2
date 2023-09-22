@@ -157,11 +157,12 @@ export function CardFooter({
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
+  const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
     <div className={cn(styles.footer, className)}>
       {size === CardSize.Small && <ContentIndicator card={card} />}
       <div className={cn(layout.flexSpacer)} />
-      <DueDateIndicator card={card} source={source} />
+      {dueDate && <DueDateIndicator card={card} source={source} />}
     </div>
   );
 }
