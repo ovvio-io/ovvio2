@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase from './IconBase.tsx';
 
 const IconTask = ({ fill = '#CFCED5', className = '' }) => {

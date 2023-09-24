@@ -107,6 +107,15 @@ export interface ClientData {
   graphManager?: GraphManager;
 }
 
+export async function loadEssentialRepositories(
+  graph: GraphManager
+): Promise<void> {
+  await graph.loadRepository(Repository.id('sys', 'dir'));
+  await graph.syncRepository(Repository.id('sys', 'dir'));
+  await graph.loadRepository(Repository.id('user', graph.rootKey));
+  await graph.syncRepository(Repository.id('user', graph.rootKey));
+}
+
 export function CfdsClientProvider({
   user,
   sessionId,
@@ -127,16 +136,7 @@ export function CfdsClientProvider({
       'http://localhost:8080'
     );
 
-    Promise.all([
-      manager.loadRepository(Repository.id('sys', 'dir')).then(() => {
-        return manager.syncRepository(Repository.id('sys', 'dir'));
-      }),
-      manager
-        .loadRepository(Repository.id('user', manager.rootKey))
-        .then(() => {
-          return manager.syncRepository(Repository.id('user', manager.rootKey));
-        }),
-    ]).then(() => {
+    loadEssentialRepositories(manager).then(() => {
       if (!manager.hasVertex(manager.rootKey)) {
         manager.createVertex(
           NS_USERS,

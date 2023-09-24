@@ -219,7 +219,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       assert(result.checksum === contents.edit.srcChecksum);
       result.patch(contents.edit.changes);
       assert(result.checksum === contents.edit.dstChecksum);
-      return result;
+      return result.clone();
     }
   }
 
@@ -331,11 +331,14 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   setValueForKey(key: string | null, session: string, value: Record): boolean {
-    const head = this.headForKey(key, session);
-    if (head && this.recordForCommit(head).isEqual(value)) {
+    // All keys start with null records implicitly, so need need to persist
+    // them. Also, we forbid downgrading a record back to null once initialized.
+    if (value.isNull) {
       return false;
     }
-    if (!head && value.isNull) {
+    const head = this.headForKey(key, session);
+    const headRecord = head ? this.recordForCommit(head) : undefined;
+    if (headRecord?.isEqual(value)) {
       return false;
     }
     const fullCommit = new Commit({

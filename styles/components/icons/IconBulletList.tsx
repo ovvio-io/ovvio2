@@ -1,3 +1,4 @@
+import React from 'react';
 import IconBase, { IconProps } from './IconBase.tsx';
 
 const IconBulletList = ({ fill = '#FFF', className }: IconProps) => (

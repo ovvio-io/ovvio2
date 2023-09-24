@@ -216,7 +216,8 @@ export class GraphManager
 
     const repo = plumbing.repo;
     plumbing.loadingPromise = (async () => {
-      repo.persistCommits(await backup.loadCommits());
+      const commits = await backup.loadCommits();
+      repo.persistCommits(commits);
       plumbing.active = true;
     })();
     return plumbing.loadingPromise;
@@ -252,7 +253,10 @@ export class GraphManager
         //
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
-        this.getVertexManager(c.key).scheduleCommitIfNeeded();
+        const mgr = this.getVertexManager(c.key);
+        if (!mgr.commit()) {
+          mgr.touch();
+        }
 
         // Any kind of activity needs to reset the sync timer. This causes
         // the initial sync to run at full speed, which is a desired side
