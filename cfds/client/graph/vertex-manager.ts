@@ -121,7 +121,7 @@ export class VertexManager<V extends Vertex = Vertex>
         initialState = repo.valueForKey(key, graph.session);
       }
     }
-    this._record = initialState || Record.nullRecord();
+    this._record = initialState?.clone() || Record.nullRecord();
     this.rebuildVertex();
     if (hasInitialState) {
       this.commit();
@@ -258,7 +258,22 @@ export class VertexManager<V extends Vertex = Vertex>
    * This method commits any pending local edits, and merges any pending remote
    * edits. NOP if nothing needs to be done.
    */
-  commit(): void {
+  commit(): boolean {
+    if (this.isLocal) {
+      return false;
+    }
+    const repo = this.repository;
+    if (!repo) {
+      return false;
+    }
+    const res = repo.setValueForKey(this.key, this.graph.session, this.record);
+    if (res) {
+      this.touch();
+    }
+    return res;
+  }
+
+  touch(): void {
     if (this.isLocal) {
       return;
     }
@@ -268,23 +283,24 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const graph = this.graph;
     const prevRecord = this.record;
-    if (repo.setValueForKey(this.key, graph.session, this.record)) {
-      const newRecord = repo.valueForKey(this.key, graph.session);
-      const vert = this.getVertexProxy();
-      let pack: MutationPack;
-      for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
-        pack = mutationPackAppend(pack, [
-          fieldName,
-          (vert as any)[fieldName],
-          false,
-        ]);
-      }
-      const dynamicFields = this.captureDynamicFields();
-      this._record = newRecord;
-      this.rebuildVertex();
-      if (!mutationPackIsEmpty(pack)) {
-        this.vertexDidMutate(pack, dynamicFields);
-      }
+    const newRecord = repo.valueForKey(this.key, graph.session);
+    if (prevRecord.isEqual(newRecord)) {
+      return;
+    }
+    const vert = this.getVertexProxy();
+    let pack: MutationPack;
+    for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
+      pack = mutationPackAppend(pack, [
+        fieldName,
+        (vert as any)[fieldName],
+        false,
+      ]);
+    }
+    const dynamicFields = this.captureDynamicFields();
+    this._record = newRecord;
+    this.rebuildVertex();
+    if (!mutationPackIsEmpty(pack)) {
+      this.vertexDidMutate(pack, dynamicFields);
     }
   }
 
@@ -449,9 +465,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
-    if (this.hasPendingChanges) {
-      this.scheduleCommitIfNeeded();
-    }
+    this.scheduleCommitIfNeeded();
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {

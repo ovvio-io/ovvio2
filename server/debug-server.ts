@@ -50,7 +50,6 @@ function shouldRebuildAfterPathChange(p: string): boolean {
 }
 
 async function openBrowser(): Promise<void> {
-  debugger;
   if (Deno.build.os !== 'darwin') {
     return Promise.resolve();
   }
