@@ -1,35 +1,32 @@
-import { BaseLogEntry, NormalizedLogEntry } from './entry.ts';
+import { BaseLogEntry, NormalizedLogEntry } from "./entry.ts";
 
 export const kServerMetricNames = [
-  'PeerResponseTime',
-  'CommitsPersistTime',
-  'CommitsPersistCount',
-  'DeltaFormatSavings',
-  'ServerStarted',
-  'HttpStatusCode',
-  'IncompatibleProtocolVersion',
+  "PeerResponseTime",
+  "CommitsPersistTime",
+  "CommitsPersistCount",
+  "DeltaFormatSavings",
+  "ServerStarted",
+  "HttpStatusCode",
+  "IncompatibleProtocolVersion",
 ] as const;
 
-export type ServerMetricName = (typeof kServerMetricNames)[number];
-
 export const kClientMetricNames = [
-  'QueryFired',
-  'QueryCancelled',
-  'QueryCompleted',
-  'FullTextIndexingTime',
+  "QueryFired",
+  "QueryCancelled",
+  "QueryCompleted",
+  "FullTextIndexingTime",
 ] as const;
 
 export const kMetricNames = [...kServerMetricNames, ...kClientMetricNames];
 
+export type ServerMetricName = (typeof kServerMetricNames)[number];
 export type ClientMetricName = (typeof kClientMetricNames)[number];
-
 export type MetricName = ServerMetricName | ClientMetricName;
-
-export type MetricUnit = 'Count' | 'Bytes' | 'Milliseconds' | 'Percent';
-export type MetricType = 'Count' | 'Gauge' | 'Histogram' | 'Summary';
+export type MetricUnit = "Count" | "Bytes" | "Milliseconds" | "Percent";
+export type MetricType = "Count" | "Gauge" | "Histogram" | "Summary";
 
 export interface BaseMetricLogEntry extends BaseLogEntry {
-  severity: 'INFO';
+  severity: "INFO";
   name: MetricName;
   value: number;
   unit: MetricUnit;
@@ -44,14 +41,14 @@ export type MetricLogWithURL<
 };
 
 export type MetricLogEntryType<N extends MetricName> =
-  N extends 'PeerResponseTime' ? MetricLogWithURL : BaseMetricLogEntry;
+  N extends "PeerResponseTime" ? MetricLogWithURL : BaseMetricLogEntry;
 
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 
 export function logEntryIsMetric(
   entry: NormalizedLogEntry<BaseLogEntry>
 ): entry is NormalizedLogEntry<MetricLogEntry> {
-  if (entry.severity !== 'INFO' || typeof entry.name !== 'string') {
+  if (entry.severity !== "INFO" || typeof entry.name !== "string") {
     return false;
   }
   return (kMetricNames as readonly string[]).includes(entry.name);
@@ -67,9 +64,9 @@ export function isServerMetric(m: MetricLogEntry): boolean {
 
 export function isMetricWithURL(m: MetricLogEntry): m is MetricLogWithURL {
   return (
-    typeof m.url === 'string' ||
+    typeof m.url === "string" ||
     (m.urls instanceof Array &&
       m.urls.length > 0 &&
-      typeof m.urls[0] === 'string')
+      typeof m.urls[0] === "string")
   );
 }

@@ -1,9 +1,9 @@
-import React from 'react';
-import { brandLightTheme as theme } from '../../theme.tsx';
-import { IconSize, IconProps, IconColor } from './types.ts';
+import React from "react";
+import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconSize, IconProps, IconColor } from "./types.ts";
 
 export interface IconCheckProps extends IconProps {
-  color?: IconColor.Primary | IconColor.Mono;
+  color?: IconColor.Primary | IconColor.Mono | String;
 }
 
 const COLOR_MAP = {
@@ -22,7 +22,9 @@ export function IconCheck({
   className,
   color = IconColor.Mono,
 }: IconCheckProps) {
-  const colorMap = COLOR_MAP[color];
+  const checkColor = color === "blue" ? IconColor.Primary : IconColor.Mono;
+  const colorMap = COLOR_MAP[checkColor];
+
   return (
     <svg
       className={className}

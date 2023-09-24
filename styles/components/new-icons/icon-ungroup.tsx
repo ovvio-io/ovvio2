@@ -1,13 +1,16 @@
-import React from 'react';
-import { IconProps, IconSize ,IconColor} from './types.ts';
+import React from "react";
+import { IconProps, IconSize, IconColor } from "./types.ts";
 import { brandLightTheme as theme } from "../../theme.tsx";
 
-export interface IconCheckProps extends IconProps {
+export interface IconUngroupProps extends IconProps {
   color?: IconColor.Primary | IconColor.Mono | String;
-
 }
 
-export function IconGroup({ size = IconSize.Small, color , className }: IconProps) {
+export function IconUngroup({
+  size = IconSize.Small,
+  color,
+  className,
+}: IconUngroupProps) {
   const checkColor = color === "blue" ? theme.primary.p9 : theme.mono.m5;
 
   return (
@@ -87,6 +90,20 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         stroke-width="2"
         stroke-linejoin="round"
       />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path
+          d="M15 1L1.00005 14.8764"
+          stroke={checkColor}
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
     </svg>
   );
 }

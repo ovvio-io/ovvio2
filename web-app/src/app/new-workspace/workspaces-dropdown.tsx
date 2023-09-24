@@ -10,7 +10,8 @@ import { IconDropDownArrow } from '../../../../styles/components/icons/index.ts'
 import DropDown, {
   DropDownItem,
 } from '../../../../styles/components/inputs/drop-down.tsx';
-import { Text } from '../../../../styles/components/texts.tsx';
+// import { Text } from '../../../../styles/components/texts.tsx';  
+import { Text } from '../../../../styles/components/typography.tsx';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import localization from './new-workspace.strings.json' assert { type: 'json' };
 import { useSharedQuery } from '../../core/cfds/react/query.ts';
@@ -68,7 +69,7 @@ export function WorkspaceItem({
         className={cn(styles.workspaceIcon)}
         size={styleguide.gridbase * 3}
       />
-      <Text>{name}</Text>
+      <Text>{name} AMITTTT </Text>
     </div>
   );
 }

@@ -236,6 +236,7 @@ export abstract class BaseClient<
         url: this._serverUrl,
       });
     }
+    //TODO: Prom instance
 
     if (!respText) {
       this._setIsOnline(false);

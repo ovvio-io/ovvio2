@@ -9,6 +9,7 @@ import {
   kTabIds,
 } from '../../../../../../../cfds/base/scheme-types.ts';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
   useButtonStyles,
@@ -32,7 +33,8 @@ import {
 import { layout } from '../../../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
+// import { Text } from '../../../../../../../styles/components/texts.tsx';
+import { Text } from '../../../../../../../styles/components/typography.tsx';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
 import { IconShow } from '../../../../../../../styles/components/new-icons/icon-show.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
@@ -48,6 +50,7 @@ import { GroupByDropDown } from './group-by-drop-down.tsx';
 import { ViewToggle } from './view-toggle.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -180,6 +183,7 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
+          {view.sortBy === x && <IconCheck color={'blue'} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -232,6 +236,7 @@ function ShowCheckedDropDown() {
       {kShowChecked.map((x) => (
         <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
+          {view.showChecked === x && <IconCheck color={'blue'} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -291,6 +296,7 @@ function DateFilterDropdown() {
     >
       <DropDownItem value={undefined} key={'clearDueDateFilter'}>
         <Text>{strings.all}</Text>
+        {view.dateFilter === undefined && <IconCheck color={'blue'} />}
       </DropDownItem>
       {kDateFilters.map((x) => (
         <DropDownItem value={x} key={x}>
@@ -299,6 +305,7 @@ function DateFilterDropdown() {
               ? ''
               : strings.thisPrefix + ' ') + strings[x]}
           </Text>
+          {view.dateFilter === x && <IconCheck color={'blue'} />}
         </DropDownItem>
       ))}
     </DropDown>

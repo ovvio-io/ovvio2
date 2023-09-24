@@ -4,58 +4,68 @@ import React, {
   useRef,
   useCallback,
   useEffect,
-} from 'react';
-import * as SetUtils from '../../../../base/set.ts';
-import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
-import { WorkspaceGrouping } from '../../../../cfds/base/scheme-types.ts';
-import { Query, QueryOptions } from '../../../../cfds/client/graph/query.ts';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { GroupId } from '../../../../cfds/client/graph/vertex-source.ts';
-import { Role } from '../../../../cfds/client/graph/vertices/role.ts';
-import { User } from '../../../../cfds/client/graph/vertices/user.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
-import { Button } from '../../../../styles/components/buttons.tsx';
-import Layer from '../../../../styles/components/layer.tsx';
-import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
-import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
-import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
-import Tooltip from '../../../../styles/components/tooltip/index.tsx';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+} from "react";
+import * as SetUtils from "../../../../base/set.ts";
+import { coreValueCompare } from "../../../../base/core-types/comparable.ts";
+import { WorkspaceGrouping } from "../../../../cfds/base/scheme-types.ts";
+import { Query, QueryOptions } from "../../../../cfds/client/graph/query.ts";
+import { VertexManager } from "../../../../cfds/client/graph/vertex-manager.ts";
+import { GroupId } from "../../../../cfds/client/graph/vertex-source.ts";
+import { Role } from "../../../../cfds/client/graph/vertices/role.ts";
+import { User } from "../../../../cfds/client/graph/vertices/user.ts";
+import { Workspace } from "../../../../cfds/client/graph/vertices/workspace.ts";
+import { useBackdropStyles } from "../../../../styles/components/backdrop.tsx";
+import { Button } from "../../../../styles/components/buttons.tsx";
+import Layer from "../../../../styles/components/layer.tsx";
+import Menu, {
+  LineSeparator,
+  MenuItem,
+  MenuAction,
+} from "../../../../styles/components/menu.tsx";
+import { IconPinOff } from "../../../../styles/components/new-icons/icon-pin-off.tsx";
+import { IconPinOn } from "../../../../styles/components/new-icons/icon-pin-on.tsx";
+import Tooltip from "../../../../styles/components/tooltip/index.tsx";
+import { brandLightTheme as theme } from "../../../../styles/theme.tsx";
 import {
   useTypographyStyles,
   LabelSm,
   TextSm,
-} from '../../../../styles/components/typography.tsx';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { layout } from '../../../../styles/layout.ts';
+} from "../../../../styles/components/typography.tsx";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import { layout } from "../../../../styles/layout.ts";
 import {
   MediaQueries,
   useCurrentDevice,
   Devices,
-} from '../../../../styles/responsive.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { createUniversalPortal } from '../../../../styles/utils/ssr.ts';
+} from "../../../../styles/responsive.ts";
+import { styleguide } from "../../../../styles/styleguide.ts";
+import { createUniversalPortal } from "../../../../styles/utils/ssr.ts";
 import {
   usePartialGlobalView,
   useRootUser,
   useGraphManager,
   usePartialRootUser,
   useActiveViewManager,
-} from '../../core/cfds/react/graph.tsx';
-import { useQuery2 } from '../../core/cfds/react/query.ts';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { createUseStrings } from '../../core/localization/index.tsx';
-import { Scroller } from '../../core/react-utils/scrolling.tsx';
-import { useWorkspaceColor } from '../../shared/workspace-icon/index.tsx';
-import { WorkspaceBarActions } from './actions.tsx';
-import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import localization from './workspace-bar.strings.json' assert { type: 'json' };
-import { LogoText } from '../../../../styles/components/logo.tsx';
-import { LogoIcon } from '../../../../styles/components/logo.tsx';
-import { IndeterminateProgressIndicator } from '../../../../styles/components/progress-indicator.tsx';
-import { Repository } from '../../../../repo/repo.ts';
+} from "../../core/cfds/react/graph.tsx";
+import { useQuery2 } from "../../core/cfds/react/query.ts";
+import { usePartialVertex } from "../../core/cfds/react/vertex.ts";
+import { createUseStrings } from "../../core/localization/index.tsx";
+import { Scroller } from "../../core/react-utils/scrolling.tsx";
+import { useWorkspaceColor } from "../../shared/workspace-icon/index.tsx";
+import { WorkspaceBarActions } from "./actions.tsx";
+import { IconMore } from "../../../../styles/components/new-icons/icon-more.tsx";
+import { useLogger } from "../../core/cfds/react/logger.tsx";
+import localization from "./workspace-bar.strings.json" assert { type: "json" };
+import { LogoText } from "../../../../styles/components/logo.tsx";
+import { LogoIcon } from "../../../../styles/components/logo.tsx";
+import { IconDelete } from "../../../../styles/components/new-icons/icon-delete.tsx";
+import IconSettings from "../../../../styles/components/icons/IconSettings.tsx";
+import IconAdd from "../../../../styles/components/icons/IconAdd.tsx";
+import { IconAttachment } from "../../../../styles/components/new-icons/icon-attachment.tsx";
+import { IconGroup } from "../../../../styles/components/new-icons/icon-group.tsx";
+import { IconCheck } from "../../../../styles/components/new-icons/icon-check.tsx";
+import { IconUngroup } from "../../../../styles/components/new-icons/icon-ungroup.tsx";
+import { IndeterminateProgressIndicator } from "../../../../styles/components/progress-indicator.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -64,23 +74,34 @@ const useStyles = makeStyles(
   () => ({
     root: {
       flexShrink: 0,
-      width: '90vw',
+      width: "90vw",
       maxWidth: EXPANDED_WIDTH,
       // overflowY: 'hidden',
       // overflowX: 'visible',
-      height: '100%',
+      height: "100%",
       ...styleguide.transition.standard,
-      transitionProperty: 'width',
+      transitionProperty: "width",
       [MediaQueries.Mobile]: {
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
-        transitionProperty: 'transform',
-        transform: 'translateX(0)',
+        transitionProperty: "transform",
+        transform: "translateX(0)",
       },
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
+    },
+    groupBy: {
+      color: theme.colors["monochrom-m-10"] || "#262626",
+      fontFeatureSettings: "'clig' off, 'liga' off",
+      padding: "8px 16px 8px 8px",
+      backgroundColor: theme.secondary.s0,
+      fontFamily: "Poppins",
+      fontSize: "14px",
+      fontStyle: "normal",
+      fontWeight: "500",
+      lineHeight: "normal",
     },
 
     collapsed: {
@@ -88,8 +109,8 @@ const useStyles = makeStyles(
         width: COLLAPSED_WIDTH,
       },
       [MediaQueries.Mobile]: {
-        transform: 'translateX(-100%)',
-        boxShadow: 'none',
+        transform: "translateX(-100%)",
+        boxShadow: "none",
         openBarButton: {
           boxShadow: theme.shadows.z4,
         },
@@ -100,37 +121,37 @@ const useStyles = makeStyles(
     },
     mobileTabButton: {
       [MediaQueries.Tablet]: {
-        display: 'none !important',
+        display: "none !important",
       },
-      position: 'absolute',
+      position: "absolute",
       top: styleguide.gridbase,
       left: 0,
       width: styleguide.gridbase * 6,
       height: styleguide.gridbase * 5,
       backgroundColor: theme.colors.background,
       ...styleguide.transition.standard,
-      transitionProperty: 'transform',
+      transitionProperty: "transform",
     },
     separator: {
-      height: '1px',
-      width: '100%',
+      height: "1px",
+      width: "100%",
       backgroundColor: theme.mono.m1,
       marginBottom: styleguide.gridbase * 0.5,
     },
     header: {
-      width: '100%',
+      width: "100%",
       flexShrink: 0,
       height: styleguide.gridbase * 17,
-      justifyContent: 'space-between',
+      justifyContent: "space-between",
       basedOn: [layout.column],
     },
     logoContainer: {
-      boxSizing: 'border-box',
-      width: '100%',
+      boxSizing: "border-box",
+      width: "100%",
       marginTop: styleguide.gridbase * 3,
       paddingLeft: styleguide.gridbase * 2,
       paddingRight: styleguide.gridbase * 1,
-      alignItems: 'center',
+      alignItems: "center",
       basedOn: [layout.row],
     },
     logoIcon: {
@@ -139,9 +160,9 @@ const useStyles = makeStyles(
     logoText: {},
     openBarButton: {
       [MediaQueries.Mobile]: {
-        position: 'absolute',
-        left: '100%',
-        transform: 'translateX(-16px)',
+        position: "absolute",
+        left: "100%",
+        transform: "translateX(-16px)",
         backgroundColor: theme.colors.background,
         width: styleguide.gridbase * 6,
         height: styleguide.gridbase * 5,
@@ -151,22 +172,22 @@ const useStyles = makeStyles(
       },
     },
     rotated: {
-      transform: 'rotate(180deg)',
+      transform: "rotate(180deg)",
     },
     workspacesHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
+      display: "flex",
+      justifyContent: "space-between",
       // marginRight: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
     },
     toggleView: {
       padding: [0, styleguide.gridbase * 1],
-      boxSizing: 'border-box',
+      boxSizing: "border-box",
       marginBottom: styleguide.gridbase * 0.5,
-      width: '100%',
+      width: "100%",
       // alignItems: 'center',
       // justifyContent: 'space-between',
-      whiteSpace: 'nowrap',
+      whiteSpace: "nowrap",
       basedOn: [layout.column],
     },
     moreButton: {
@@ -177,31 +198,31 @@ const useStyles = makeStyles(
       marginTop: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
       marginRight: styleguide.gridbase * 3.5,
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
+      justifyContent: "space-between",
+      flexWrap: "wrap",
       basedOn: [layout.row],
     },
     toggleViewButton: {
-      cursor: 'pointer',
-      textDecoration: 'underline',
+      cursor: "pointer",
+      textDecoration: "underline",
       basedOn: [useTypographyStyles.text],
     },
     toggleViewButtonDisabled: {
-      cursor: 'not-allowed',
+      cursor: "not-allowed",
       color: theme.colors.placeholderText,
     },
     list: {
-      overflowY: 'auto',
-      overflowX: 'hidden',
+      overflowY: "auto",
+      overflowX: "hidden",
       flexGrow: 1,
       flexShrink: 1,
-      flexBasis: '100%',
+      flexBasis: "100%",
     },
     listItem: {
       height: styleguide.gridbase * 4,
       flexShrink: 0,
       marginBottom: styleguide.gridbase * 0.5,
-      ':hover': {
+      ":hover": {
         itemMenu: {
           opacity: 1,
         },
@@ -212,10 +233,10 @@ const useStyles = makeStyles(
       basedOn: [layout.row],
     },
     itemTab: {
-      cursor: 'pointer',
-      userSelect: 'none',
-      height: '100%',
-      width: '100%',
+      cursor: "pointer",
+      userSelect: "none",
+      height: "100%",
+      width: "100%",
       minWidth: COLLAPSED_WIDTH + styleguide.gridbase * 3,
       borderBottomRightRadius: styleguide.gridbase * 2,
       borderTopRightRadius: styleguide.gridbase * 2,
@@ -223,13 +244,13 @@ const useStyles = makeStyles(
       paddingLeft: styleguide.gridbase * 2,
       paddingRight: styleguide.gridbase * 0.5,
 
-      boxSizing: 'border-box',
-      alignItems: 'center',
-      whiteSpace: 'nowrap',
+      boxSizing: "border-box",
+      alignItems: "center",
+      whiteSpace: "nowrap",
       basedOn: [layout.row],
-      ':hover': {
+      ":hover": {
         border: `2px solid ${theme.mono.m6}`,
-        borderLeft: 'none',
+        borderLeft: "none",
         paddingRight: styleguide.gridbase - 2,
       },
     },
@@ -241,14 +262,14 @@ const useStyles = makeStyles(
     },
     listItemSelected: {
       itemTab: {
-        backgroundColor: 'var(--ws-background)',
+        backgroundColor: "var(--ws-background)",
       },
     },
     itemText: {
-      overflowX: 'hidden',
+      overflowX: "hidden",
       flexGrow: 1,
       flexShrink: 1,
-      textOverflow: 'ellipsis',
+      textOverflow: "ellipsis",
       basedOn: [useTypographyStyles.text],
     },
     itemToggle: {
@@ -257,47 +278,47 @@ const useStyles = makeStyles(
       width: styleguide.gridbase * 2,
       borderRadius: styleguide.gridbase,
       flexShrink: 0,
-      background: 'var(--ws-inactive)',
+      background: "var(--ws-inactive)",
       basedOn: [layout.column, layout.centerCenter],
     },
     itemToggleChecked: {
-      background: 'var(--ws-active)',
+      background: "var(--ws-active)",
     },
     itemMenu: {
       opacity: 0,
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: "opacity",
       marginRight: styleguide.gridbase,
     },
     expander: {
       height: styleguide.gridbase * 4,
       padding: [0, styleguide.gridbase * 2],
-      boxSizing: 'border-box',
-      alignItems: 'left',
-      width: '100%',
+      boxSizing: "border-box",
+      alignItems: "left",
+      width: "100%",
       basedOn: [layout.row],
       color: theme.colors.text,
-      ':disabled': {
+      ":disabled": {
         color: theme.colors.grayedText,
       },
     },
     expanderText: {
-      color: 'inherit',
+      color: "inherit",
       basedOn: [layout.flexSpacer, useTypographyStyles.bold],
-      textAlign: 'left',
+      textAlign: "left",
     },
     expanderIcon: {
-      color: 'inherit',
+      color: "inherit",
       marginRight: styleguide.gridbase,
-      transform: 'rotate(90deg)',
+      transform: "rotate(90deg)",
     },
     expanderIconOpen: {
-      transform: 'rotate(270deg)',
+      transform: "rotate(270deg)",
     },
     pinButton: {
       opacity: 0,
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: "opacity",
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
     },
@@ -315,14 +336,16 @@ const useStyles = makeStyles(
     },
     hidden: {
       display: 'none',
+    workSpaceMenu: {
+      top: "-7px",
     },
   }),
-  'workspaces-bar_881015'
+  "workspaces-bar_881015"
 );
 
 const useStrings = createUseStrings(localization);
 
-type WorkspaceSystemGID = 'pinned' | 'hidden' | 'templates';
+type WorkspaceSystemGID = "pinned" | "hidden" | "templates";
 
 type WorkspaceGID = GroupId<VertexManager<User> | WorkspaceSystemGID>;
 
@@ -332,31 +355,31 @@ type GroupByMapping = {
 
 function WorkspaceGIDToString(gid: WorkspaceGID): string {
   if (gid === null) {
-    return 'null';
+    return "null";
   }
-  return typeof gid === 'string' ? gid : gid.key;
+  return typeof gid === "string" ? gid : gid.key;
 }
 
 function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | null {
   const user = ws.graph.getRootVertex<User>();
   if (user.hiddenWorkspaces.has(ws.key)) {
-    return 'hidden';
+    return "hidden";
   }
   if (user.pinnedWorkspaces.has(ws.key)) {
-    return 'pinned';
+    return "pinned";
   }
   if (ws.isTemplate) {
-    return 'templates';
+    return "templates";
   }
   return null;
 }
 
-const kWorkspaceGIDOrder: readonly (WorkspaceGID | 'groups')[] = [
-  'pinned',
+const kWorkspaceGIDOrder: readonly (WorkspaceGID | "groups")[] = [
+  "pinned",
   null,
-  'groups',
-  'hidden',
-  'templates',
+  "groups",
+  "hidden",
+  "templates",
 ];
 
 function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
@@ -366,13 +389,13 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   if (gid1 instanceof VertexManager && gid2 instanceof VertexManager) {
     return coreValueCompare(gid1, gid2);
   }
-  const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
-  const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
+  const marker1 = gid1 instanceof VertexManager ? "groups" : gid1;
+  const marker2 = gid2 instanceof VertexManager ? "groups" : gid2;
   const idx1 = kWorkspaceGIDOrder.indexOf(
-    typeof marker1 === 'string' ? marker1 : null
+    typeof marker1 === "string" ? marker1 : null
   );
   const idx2 = kWorkspaceGIDOrder.indexOf(
-    typeof marker2 === 'string' ? marker2 : null
+    typeof marker2 === "string" ? marker2 : null
   );
   return idx1 - idx2;
 }
@@ -491,6 +514,11 @@ function CollapseIcon({ className }: { className?: string }) {
   );
 }
 
+function IconUngroupWithColor(props) {
+  const { color, ...otherProps } = props;
+  return <IconUngroup color={color} {...otherProps} />;
+}
+
 interface WorkspaceToggleViewProps {
   onSelectAll: () => void;
   onUnselectAll: () => void;
@@ -505,12 +533,14 @@ function WorkspaceToggleView({
   const strings = useStrings();
   const styles = useStyles();
   const view = usePartialGlobalView(
-    'workspaceGrouping',
-    'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    "workspaceGrouping",
+    "workspaceBarCollapsed",
+    "selectedWorkspaces"
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
+
+  const moreButtonRef = useRef(null); //ADDED
 
   return (
     <div className={cn(styles.toggleView)}>
@@ -518,31 +548,71 @@ function WorkspaceToggleView({
         <div className={cn(styles.workspacesHeader)}>
           <LabelSm>{strings.myWorkspaces}</LabelSm>
           <Menu
-            renderButton={() => <IconMore className={cn(styles.moreButton)} />}
+            renderButton={() => (
+              <div ref={moreButtonRef}>
+                <IconMore className={cn(styles.moreButton)} />
+              </div>
+            )}
+            popupClassName={cn(styles.workSpaceMenu)}
+            anchor={moreButtonRef.current}
+            placement="auto-end"
             direction="out"
             position="right"
+            align="end"
           >
-            <LabelSm>Group By</LabelSm>
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  backgroundColor: theme.secondary.s0,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "0 4px",
+                  }}
+                ></div>
+                <IconGroup style={{ marginRight: "8px" }} color="blue" />
+                <LabelSm className={styles.groupBy}>Group By:</LabelSm>
+              </div>
+            </div>
+
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = 'none';
+                view.workspaceGrouping = "Team";
               }}
             >
-              {strings.none}
+              {"Team"}
+              {view.workspaceGrouping === "Team" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
+
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = 'assignee';
+                view.workspaceGrouping = "Employee";
               }}
             >
-              {strings.assignee}
+              {"Employee"}
+              {view.workspaceGrouping === "Employee" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
+            <div style={{ marginTop: "8px" }} />
+
             <MenuItem
               onClick={() => {
-                view.workspaceGrouping = 'teamLeader';
+                view.workspaceGrouping = "none";
               }}
+              icon={(iconProps) => (
+                <IconUngroupWithColor color="blue" {...iconProps} />
+              )}
             >
-              {strings.teamLeader}
+              {"Ungroup"}
+              {view.workspaceGrouping === "none" && (
+                <IconCheck color={"blue"} />
+              )}
             </MenuItem>
           </Menu>
         </div>
@@ -580,26 +650,26 @@ function WorkspaceListItem({
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
-    'name',
-    'isTemplate',
+    "name",
+    "isTemplate",
   ]);
   const styles = useStyles();
   const strings = useStrings();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const view = usePartialGlobalView(
-    'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    "workspaceBarCollapsed",
+    "selectedWorkspaces"
   );
   const user = usePartialVertex(useRootUser(), [
-    'hiddenWorkspaces',
-    'pinnedWorkspaces',
+    "hiddenWorkspaces",
+    "pinnedWorkspaces",
   ]);
 
   const style = useMemo<any>(
     () => ({
-      '--ws-background': color.background,
-      '--ws-inactive': color.inactive,
-      '--ws-active': color.active,
+      "--ws-background": color.background,
+      "--ws-inactive": color.inactive,
+      "--ws-active": color.active,
     }),
     [color]
   );
@@ -622,12 +692,12 @@ function WorkspaceListItem({
   const renderButton = useCallback(() => <IconMore />, []);
 
   const setWorkspaceState = useCallback(
-    (state: 'template' | 'hidden' | 'pinned' | 'none') => {
+    (state: "template" | "hidden" | "pinned" | "none") => {
       const vert = workspace.getVertexProxy();
-      vert.isTemplate = state === 'template';
-      user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
-      user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
-      if (state === 'template' || state === 'hidden') {
+      vert.isTemplate = state === "template";
+      user.hiddenWorkspaces[state === "hidden" ? "add" : "delete"](vert.key);
+      user.pinnedWorkspaces[state === "pinned" ? "add" : "delete"](vert.key);
+      if (state === "template" || state === "hidden") {
         view.selectedWorkspaces.delete(vert);
       }
     },
@@ -741,6 +811,92 @@ function WorkspaceListItem({
     </div>
   );
 }
+//   return (
+//     <div
+//       className={cn(
+//         styles.listItem,
+//         !view.workspaceBarCollapsed && styles.listItemExpanded,
+//         isSelected && styles.listItemSelected
+//       )}
+//       style={style}
+//     >
+//       <Tooltip text={name} disabled={!isOverflowing} position="right">
+//         <div
+//           className={cn(styles.itemTab)}
+//           onClick={toggleSelected}
+//           // onContextMenu={toggleSelected}
+//         >
+//           <div ref={textRef} className={cn(styles.itemText)}>
+//             {name}
+//           </div>
+
+//           <WorkspaceCheckbox toggled={isSelected} />
+//         </div>
+//       </Tooltip>
+//       <div /*className={cn(layout.flexSpacer)}*/ />
+//       {!view.workspaceBarCollapsed && (
+//         <React.Fragment>
+//           <Button
+//             className={cn(
+//               styles.pinButton,
+//               groupId === "pinned" && styles.pinButtonPinned
+//             )}
+//             onClick={() =>
+//               setWorkspaceState(groupId === "pinned" ? "none" : "pinned")
+//             }
+//           >
+//             {groupId === "pinned" ? <IconPinOn /> : <IconPinOff />}
+//           </Button>
+//           <Menu
+//             renderButton={renderButton}
+//             direction="out"
+//             position="right"
+//             align="start"
+//             className={cn(styles.itemMenu)}
+//           >
+//             <MenuItem
+//               onClick={() => setIsSettingsOpen(true)}
+//               icon={IconSettings}
+//             >
+//               {strings.workspaceSettings}
+//             </MenuItem>
+//             {!isTemplate && (
+//               <MenuItem
+//                 onClick={() =>
+//                   setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
+//                 }
+//                 icon={IconAdd}
+//               >
+//                 {groupId === "hidden"
+//                   ? strings.showWorkspace
+//                   : strings.hideWorkspace}
+//               </MenuItem>
+//             )}
+//             {groupId !== "hidden" && (
+//               <MenuItem
+//                 onClick={() =>
+//                   setWorkspaceState(
+//                     groupId === "templates" ? "none" : "template"
+//                   )
+//                 }
+//                 icon={IconAttachment}
+//               >
+//                 {groupId === "templates"
+//                   ? strings.unsetTemplate
+//                   : strings.setTemplate}
+//               </MenuItem>
+//             )}
+//           </Menu>
+//         </React.Fragment>
+//       )}
+//       {/* <WorkspaceSettingsDialog
+//         workspaceManager={workspace}
+//         isOpen={isSettingsOpen}
+//         hide={() => setIsSettingsOpen(false)}
+//       /> */}
+//     </div>
+//   );
+// }
 
 function ExpanderIcon({ className }: { className?: string }) {
   return (
@@ -778,9 +934,9 @@ function WorkspacesList({ query }: WorkspaceListProps) {
   const styles = useStyles();
   const strings = useStrings();
   const view = usePartialGlobalView(
-    'expandedWorkspaceGroups',
-    'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    "expandedWorkspaceGroups",
+    "workspaceBarCollapsed",
+    "selectedWorkspaces"
   );
 
   console.log(`Workspace list query results: ${query.results}`);
@@ -800,8 +956,8 @@ function WorkspacesList({ query }: WorkspaceListProps) {
 
   const contents: JSX.Element[] = [];
   const groups = query.groups();
-  if (!groups.includes('hidden')) {
-    groups.push('hidden');
+  if (!groups.includes("hidden")) {
+    groups.push("hidden");
   }
   for (const gid of query.groups()) {
     if (contents.length > 0) {
@@ -811,7 +967,7 @@ function WorkspacesList({ query }: WorkspaceListProps) {
     const expanded = view.expandedWorkspaceGroups.has(
       WorkspaceGIDToString(gid)
     );
-    if (gid !== 'pinned' && gid !== null) {
+    if (gid !== "pinned" && gid !== null) {
       const selectedCount = SetUtils.intersectionSize(
         view.selectedWorkspaces,
         query.vertices(gid)
@@ -824,12 +980,12 @@ function WorkspacesList({ query }: WorkspaceListProps) {
           onClick={() => toggleExpanded(gid)}
         >
           <div className={cn(styles.expanderText)}>
-            {typeof gid === 'string'
+            {typeof gid === "string"
               ? expanded
                 ? strings[gid]
                 : strings[`${gid}Short`]
               : gid.getVertexProxy().name}
-            {selectedCount > 0 ? ` [${selectedCount}]` : ''}
+            {selectedCount > 0 ? ` [${selectedCount}]` : ""}
           </div>
           <ExpanderIcon
             className={cn(
@@ -840,7 +996,7 @@ function WorkspacesList({ query }: WorkspaceListProps) {
         </Button>
       );
     }
-    if (gid === 'pinned' || gid === null || expanded) {
+    if (gid === "pinned" || gid === null || expanded) {
       for (const ws of rows) {
         contents.push(
           <WorkspaceListItem
@@ -895,24 +1051,24 @@ function shouldAutoSelectWorkspace(
 
 function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
   const graph = useGraphManager();
-  const view = usePartialGlobalView('workspaceGrouping');
+  const view = usePartialGlobalView("workspaceGrouping");
   const partialUser = usePartialRootUser(
-    'hiddenWorkspaces',
-    'pinnedWorkspaces'
+    "hiddenWorkspaces",
+    "pinnedWorkspaces"
   );
 
   const query = useQuery2(
     useMemo(() => {
       return {
-        source: graph.sharedQuery('workspaces'),
+        source: graph.sharedQuery("workspaces"),
         predicate: (ws: Workspace) => true,
         groupBy: view.workspaceGrouping
           ? GROUP_BY[view.workspaceGrouping]
           : undefined,
         groupComparator: compareWorkspaceGID,
-        name: 'WorkspaceBar',
+        name: "WorkspaceBar",
         contentSensitive: true,
-        contentFields: ['isTemplate'],
+        contentFields: ["isTemplate"],
       } as QueryOptions<Workspace, Workspace, GroupId<WorkspaceGID>>;
     }, [
       graph,
@@ -936,10 +1092,10 @@ function WorkspaceBarInternal({
   const logger = useLogger();
   const activeViewMgr = useActiveViewManager();
   const view = usePartialGlobalView(
-    'selectedWorkspaces',
-    'expandedWorkspaceGroups',
-    'workspaceBarCollapsed',
-    'noteType'
+    "selectedWorkspaces",
+    "expandedWorkspaceGroups",
+    "workspaceBarCollapsed",
+    "noteType"
   );
 
   const selectAll = useCallback(() => {
@@ -955,11 +1111,11 @@ function WorkspaceBarInternal({
       )
     );
     logger.log({
-      severity: 'INFO',
-      event: 'FilterChange',
-      type: 'workspace',
-      source: 'bar:workspace',
-      added: 'ALL',
+      severity: "INFO",
+      event: "FilterChange",
+      type: "workspace",
+      source: "bar:workspace",
+      added: "ALL",
     });
   }, [view, logger, query]);
 
@@ -975,11 +1131,11 @@ function WorkspaceBarInternal({
   const unselectAll = useCallback(() => {
     view.selectedWorkspaces.clear();
     logger.log({
-      severity: 'INFO',
-      event: 'FilterChange',
-      type: 'workspace',
-      source: 'bar:workspace',
-      removed: 'ALL',
+      severity: "INFO",
+      event: "FilterChange",
+      type: "workspace",
+      source: "bar:workspace",
+      removed: "ALL",
     });
   }, [logger, view]);
 
@@ -1080,7 +1236,7 @@ function WorkspaceBarInternal({
 
 function MobileBar({ ...rest }: WorkspacesBarProps) {
   const styles = useStyles();
-  const view = usePartialGlobalView('workspaceBarCollapsed');
+  const view = usePartialGlobalView("workspaceBarCollapsed");
 
   return createUniversalPortal(
     <Layer priority={3}>

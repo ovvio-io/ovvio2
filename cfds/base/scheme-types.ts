@@ -176,7 +176,8 @@ export enum NoteStatus {
   Checked = 1,
 }
 
-export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
+// export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
+export type WorkspaceGrouping = 'none' | 'Employee' | 'Team'; //TODO: replaced 
 
 export const kShowChecked = [
   'checked-unchecked',

@@ -193,17 +193,17 @@ export class Scheme implements Encodable {
     }
 
     if (oldVersion > this.getVersion()) {
-      debugger;
+      // debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, oldVersion + 1)) {
-      debugger;
+      // debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, this.getVersion())) {
-      debugger;
+      // debugger;
       return false;
     }
 

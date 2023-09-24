@@ -111,7 +111,14 @@ export function ToolbarLeftItem({ className, children }: ToolbarProps) {
   );
 }
 
-export function ToolbarCenterItem({ className, children }: ToolbarProps) {
+export type ToolbarCenterItemProps = React.PropsWithChildren<{
+  className?: string;
+}>;
+
+export function ToolbarCenterItem({
+  children,
+  className,
+}: ToolbarCenterItemProps) {
   return (
     <ExternalToolbarItem
       children={children}

@@ -82,10 +82,11 @@ export interface NewTheme {
     placeholderText: string;
     toggleButtonActiveIcon: string;
     toggleButtonInactiveIcon: string;
+    primaryButtonStroke: string;
   };
 }
 
-const lightColorWheel = {
+export const lightColorWheel = {
   primary: {
     p1: '#f5f9fb',
     p2: '#e0eef4',
@@ -164,6 +165,7 @@ export const brandLightTheme: NewTheme = {
     background: lightColorWheel.mono.m0,
     main: lightColorWheel.primary.p6,
     primaryButton: lightColorWheel.primary.p9,
+    primaryButtonStroke: lightColorWheel.primary.p10, //amit added (temp)
     primaryButtonText: lightColorWheel.mono.m0,
     secondaryButton: lightColorWheel.secondary.s2,
     secondaryButtonActive: lightColorWheel.secondary.s7,

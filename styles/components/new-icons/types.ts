@@ -1,3 +1,5 @@
+import React from 'react';
+
 export enum IconSize {
   XSmall = 4,
   Small = 16,
@@ -13,4 +15,5 @@ export enum IconColor {
 export interface IconProps {
   size?: IconSize;
   className?: string;
+  style?: React.CSSProperties;  
 }

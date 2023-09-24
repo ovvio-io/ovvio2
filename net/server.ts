@@ -13,7 +13,7 @@ import {
 import { assert } from '../base/error.ts';
 import { SQLiteRepoStorage } from '../server/sqlite3-repo-storage.ts';
 import { Dictionary } from '../base/collections/dict.ts';
-import { log } from '../logging/log.ts';
+import { log, setGlobalLoggerStreams } from '../logging/log.ts';
 import { mapIterable } from '../base/common.ts';
 import { SQLiteLogStorage } from '../server/sqlite3-log-storage.ts';
 import { LogClient } from './log-client.ts';
@@ -22,6 +22,8 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
+import { PrometheusLogStream } from '../server/prometeus-stream.ts';
+import { ConsoleLogStream } from '../logging/console-stream.ts';
 import { getOvvioConfig } from '../server/config.ts';
 
 interface Arguments {
@@ -41,6 +43,8 @@ export interface StaticAssets {
 
 export class Server {
   private readonly _args: Arguments;
+  private prometheusLogStream: PrometheusLogStream;
+
   private readonly _repositories: Dictionary<
     string,
     Repository<SQLiteRepoStorage>
@@ -83,10 +87,12 @@ export class Server {
     }
     this._args = args!;
     this.staticAssets = assets;
+    this.prometheusLogStream = new PrometheusLogStream();
     this._repositories = new Map();
     this._clientsForRepo = new Map();
     this._logs = new Map();
     this._clientsForLog = new Map();
+    setGlobalLoggerStreams([this.prometheusLogStream, new ConsoleLogStream()]);
   }
 
   run(): Promise<void> {
@@ -264,7 +270,7 @@ export class Server {
         break;
 
       default:
-        debugger;
+        // debugger;
         log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
         resp = new Response(null, { status: 400 });
         break;
@@ -278,6 +284,7 @@ export class Server {
 
   private handleGETRequest(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname;
+
     switch (path.toLocaleLowerCase()) {
       // Version check
       case '/version': {
@@ -333,6 +340,19 @@ export class Server {
               'content-type': 'text/css; charset=utf-8',
             },
             status: this.staticAssets?.css ? 200 : 404,
+          })
+        );
+      }
+
+      case '/metrics': {
+        const metrics = this.prometheusLogStream.getMetrics();
+        // debugger;
+        console.log(metrics);
+        return Promise.resolve(
+          new Response(metrics, {
+            headers: {
+              'content-type': 'text/plain; version=0.0.4; charset=utf-8',
+            },
           })
         );
       }
