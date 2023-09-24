@@ -49,6 +49,26 @@ function shouldRebuildAfterPathChange(p: string): boolean {
   return true;
 }
 
+async function openBrowser(): Promise<void> {
+  debugger;
+  if (Deno.build.os !== 'darwin') {
+    return Promise.resolve();
+  }
+  const cmd = new Deno.Command('open', {
+    args: [
+      '-na',
+      'Google Chrome',
+      '--args',
+      '--incognito',
+      'http://localhost:8080',
+    ],
+  });
+  const { success, code } = await cmd.output();
+  if (!success) {
+    console.error(`Failed opening google chrome. Code: ${code}`);
+  }
+}
+
 async function main(): Promise<void> {
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
@@ -58,6 +78,7 @@ async function main(): Promise<void> {
     await rebuildAssets(ctx, getOvvioConfig().version)
   );
   server.run();
+  openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
     console.log('Changes detected. Rebuilding static assets...');
     try {

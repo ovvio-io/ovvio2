@@ -107,7 +107,6 @@ export function createOvvioImportPlugin(): esbuild.Plugin {
             importedValue.startsWith(excluded) ||
             args.importer.startsWith(excluded)
           ) {
-            debugger;
             return;
           }
         }
