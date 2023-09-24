@@ -64,7 +64,7 @@ export abstract class BaseClient<
   private readonly _syncFreqAvg: MovingAverage;
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
-  private _connectionOnline = false;
+  private _connectionOnline = true;
   private _serverVersionNumber: VersionNumber | undefined;
   private _ready: boolean;
   private _scheduled: boolean;
