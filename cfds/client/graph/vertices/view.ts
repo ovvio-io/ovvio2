@@ -169,6 +169,8 @@ export class View extends BaseVertex {
   clearSelectedWorkspaces(): void {
     if (this.parentView) {
       this.parentView.proxy.selectedWorkspaces.clear();
+    } else {
+      this.selectedWorkspaces = new Set();
     }
   }
 
@@ -202,7 +204,7 @@ export class View extends BaseVertex {
     if (this.parentView) {
       this.parentView.proxy.expandedWorkspaceGroups.clear();
     } else {
-      this.expandedWorkspaceGroups.clear();
+      this.expandedWorkspaceGroups = new Set();
     }
   }
 
@@ -431,7 +433,6 @@ export class View extends BaseVertex {
   }
 
   clear(): void {
-    const record = this.record;
     for (const fieldName of kViewPropsAll) {
       delete this.proxy[fieldName as keyof this];
     }
