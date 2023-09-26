@@ -18,6 +18,7 @@ import { assert } from '../base/error.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 import { VersionNumber } from '../base/version-number.ts';
 import { getOvvioConfig } from '../server/config.ts';
+import { Comparable, coreValueCompare } from '../base/core-types/index.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -42,7 +43,7 @@ export interface CommitConfig {
   buildVersion?: VersionNumber;
 }
 
-export class Commit implements Encodable, Decodable, Equatable {
+export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _buildVersion!: VersionNumber;
   private _id!: string;
   private _session!: string;
@@ -158,6 +159,14 @@ export class Commit implements Encodable, Decodable, Equatable {
     }
     assert(compareCommitsByValue(this, other));
     return true;
+  }
+
+  compare(other: Commit): number {
+    const dt = this.timestamp.getTime() - other.timestamp.getTime();
+    if (dt !== 0) {
+      return dt;
+    }
+    return coreValueCompare(this.key, other.key);
   }
 }
 

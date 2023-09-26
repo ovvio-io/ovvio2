@@ -9,6 +9,12 @@ import { SQLiteRepoStorage } from '../server/sqlite3-repo-storage.ts';
 import { buildHelpMessage, Manual } from './help.ts';
 import { kSyncConfigClient } from '../net/base-client.ts';
 import { setGlobalLoggerSeverity } from '../logging/log.ts';
+import { coreValueCompare } from '../base/core-types/comparable.ts';
+import {
+  JSONCyclicalEncoder,
+  JSONEncoder,
+} from '../base/core-types/encoding/json.ts';
+import { Code, ServerError } from '../cfds/base/errors.ts';
 
 interface Arguments {
   server: string;
@@ -33,8 +39,8 @@ const kCliManual: Manual<keyof typeof Command> = {
   Help: 'Print this help page',
   Sync: 'Sync with the remote server',
   Get: {
-    params: ['key', 'The key to read'],
-    desc: 'Read the record of a given key',
+    params: ['key or commit id', 'The key or commit to read'],
+    desc: 'Read the head of a specific record or the value of a specific commit',
   },
   Put: {
     params: [
@@ -50,7 +56,13 @@ const kCliManual: Manual<keyof typeof Command> = {
     ],
     desc: 'Create/replace the record for a given key with a record encoded as JSON file',
   },
-  List: 'List all keys in the repository',
+  List: {
+    params: [
+      'key',
+      'An optional key. If provided, will return all commits for this key.',
+    ],
+    desc: 'List all keys in the repository',
+  },
   Ls: 'Shorthand for list',
   Stats: 'Print statistics about the repository',
 };
@@ -106,9 +118,35 @@ async function main(): Promise<void> {
         console.log(`Done. ${repo.numberOfCommits} in repo`);
         break;
 
-      case Command.Get:
-        console.log(prettyJSON(repo.valueForKey(cmdArgs[1], sessionId).toJS()));
+      case Command.Get: {
+        const key = cmdArgs[1];
+        if (repo.hasKey(key)) {
+          console.log(prettyJSON(repo.valueForKey(key, sessionId).toJS()));
+        } else {
+          try {
+            console.log(
+              `Commit:\n${prettyJSON(
+                JSONCyclicalEncoder.serialize(repo.getCommit(key))
+              )}`
+            );
+            console.log(
+              `Record:\n${prettyJSON(
+                JSONEncoder.toJS(repo.recordForCommit(key))
+              )}`
+            );
+          } catch (e: any) {
+            if (
+              e instanceof ServerError &&
+              e.code === Code.ServiceUnavailable
+            ) {
+              console.log('Not Found');
+            } else {
+              throw e;
+            }
+          }
+        }
         break;
+      }
 
       case Command.Put: {
         const input = prompt('Enter record JSON:')!;
@@ -139,15 +177,25 @@ async function main(): Promise<void> {
         break;
       }
 
-      case Command.List:
-        Array.from(repo.keys())
-          .sort()
-          .forEach((key) =>
-            console.log(
-              `${key} => ${repo.valueForKey(key, sessionId).scheme.namespace}`
-            )
-          );
+      case Command.List: {
+        const key = cmdArgs[1];
+        if (typeof key !== 'undefined') {
+          Array.from(repo.commitsForKey(key))
+            .sort(coreValueCompare)
+            .forEach((c) => {
+              console.log(`${c.timestamp.toISOString()}: ${c.id}`);
+            });
+        } else {
+          Array.from(repo.keys())
+            .sort()
+            .forEach((key) =>
+              console.log(
+                `${key} => ${repo.valueForKey(key, sessionId).scheme.namespace}`
+              )
+            );
+        }
         break;
+      }
 
       case Command.Stats: {
         let totalKeys = 0;

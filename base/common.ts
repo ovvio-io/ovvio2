@@ -1,4 +1,4 @@
-import { ReadonlyJSONObject } from './interfaces.ts';
+import { ReadonlyJSONObject, ReadonlyJSONValue } from './interfaces.ts';
 
 export function cartesianProduct<T>(...allEntries: T[][]): T[][] {
   return allEntries.reduce<T[][]>(
@@ -29,9 +29,9 @@ export function uniqueId(length = 20): string {
   return autoId;
 }
 
-export function prettyJSON(o: ReadonlyJSONObject): string {
-  if (o.toJSON instanceof Function) {
-    o = (o.toJSON as unknown as () => ReadonlyJSONObject)();
+export function prettyJSON(o: ReadonlyJSONValue): string {
+  if ((o as any).toJSON instanceof Function) {
+    o = ((o as any).toJSON as () => ReadonlyJSONObject)();
   }
   return JSON.stringify(o, null, 2);
 }
