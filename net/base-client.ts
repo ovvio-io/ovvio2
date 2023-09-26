@@ -221,7 +221,7 @@ export abstract class BaseClient<
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
       log({
-        severity: 'INFO',
+        severity: 'DEBUG',
         name: 'PeerResponseTime',
         value: syncDurationMs,
         unit: 'Milliseconds',
