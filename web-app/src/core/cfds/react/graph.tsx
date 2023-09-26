@@ -133,7 +133,7 @@ export function CfdsClientProvider({
     const manager = new GraphManager(
       userKey,
       (key) => key !== sessionPtrKey,
-      'http://localhost:8080'
+      `${location.protocol}//${location.host}`
     );
 
     loadEssentialRepositories(manager).then(() => {
