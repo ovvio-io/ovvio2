@@ -30,7 +30,7 @@ const useStyles = makeStyles(
       position: 'absolute',
       bottom: 0,
       left: 0,
-      height: 2,
+      height: 6,
       transform: 'translateX(0)',
       backgroundColor: brandLightTheme.supporting.O2,
       ...styleguide.transition.standard,
