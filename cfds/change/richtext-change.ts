@@ -12,6 +12,7 @@ import {
 } from '../../base/core-types/encoding/index.ts';
 import { Operation } from '../richtext/merge-context.ts';
 import { TreeNode } from '../richtext/tree.ts';
+import { CoreValueCloneOpts } from '../../base/core-types/base.ts';
 
 export interface EncodedRTChange extends EncodedChange {
   readonly changeType: 'rt';
@@ -54,9 +55,20 @@ export class RichTextChange extends Change<EncodedRTChange> {
         this.end = config.end;
       }
       if (config.values !== undefined) {
-        this.values = config.values;
+        this.values = coreValueClone(config.values);
       }
     }
+  }
+
+  clone<T extends Change<EncodedRTChange>>(
+    _opts?: CoreValueCloneOpts | undefined
+  ): T {
+    return new RichTextChange({
+      op: this.op,
+      start: this.start,
+      end: this.end,
+      values: this.values,
+    }) as unknown as T;
   }
 
   getType(): ChangeType {

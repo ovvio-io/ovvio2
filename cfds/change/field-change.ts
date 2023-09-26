@@ -15,7 +15,11 @@ import {
   ChangeValueConfig,
   EncodedChange,
 } from './index.ts';
-import { CoreValue, Encoder } from '../../base/core-types/index.ts';
+import {
+  CoreValue,
+  coreValueClone,
+  Encoder,
+} from '../../base/core-types/index.ts';
 
 export enum FieldOperation {
   Insert = 1,
@@ -23,18 +27,21 @@ export enum FieldOperation {
 }
 
 interface EncodedFieldChange extends EncodedChange {
-  operation: number;
+  operation: FieldOperation;
   value: JSONValue;
-  vType: string;
+  vType: ValueType;
 }
 
-export interface FieldChangeConfig<TValue> extends ChangeValueConfig {
+export interface FieldChangeConfig<TValue extends CoreValue>
+  extends ChangeValueConfig {
   operation: FieldOperation;
   value: TValue;
   valueType: ValueType;
 }
 
-export class FieldChange<TValue> extends Change<EncodedFieldChange> {
+export class FieldChange<
+  TValue extends CoreValue
+> extends Change<EncodedFieldChange> {
   readonly operation: FieldOperation;
   readonly value: TValue;
   readonly valueType: ValueType;
@@ -56,7 +63,7 @@ export class FieldChange<TValue> extends Change<EncodedFieldChange> {
       this.value = typeOP.deserialize(decoder.get('value'));
     } else {
       this.operation = config.operation;
-      this.valueType = config.valueType;
+      this.valueType = coreValueClone(config.valueType);
 
       const typeOP = getTypeOperations(this.valueType);
       assert(
@@ -65,6 +72,14 @@ export class FieldChange<TValue> extends Change<EncodedFieldChange> {
       );
       this.value = config.value;
     }
+  }
+
+  clone<T extends Change<EncodedFieldChange>>(): T {
+    return new FieldChange<TValue>({
+      operation: this.operation,
+      value: this.value,
+      valueType: this.valueType,
+    }) as unknown as T;
   }
 
   getType(): ChangeType {
@@ -97,7 +112,7 @@ export class FieldChange<TValue> extends Change<EncodedFieldChange> {
     typeOP.serialize('value', this.value, encoder);
   }
 
-  static insert<TValue>(value: TValue, valueType: ValueType) {
+  static insert<TValue extends CoreValue>(value: TValue, valueType: ValueType) {
     return new FieldChange<TValue>({
       operation: FieldOperation.Insert,
       value,
@@ -105,7 +120,7 @@ export class FieldChange<TValue> extends Change<EncodedFieldChange> {
     });
   }
 
-  static delete<TValue>(value: TValue, valueType: ValueType) {
+  static delete<TValue extends CoreValue>(value: TValue, valueType: ValueType) {
     return new FieldChange<TValue>({
       operation: FieldOperation.Delete,
       value,

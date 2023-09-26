@@ -4,12 +4,14 @@ import {
   isDecoderConfig,
 } from '../../base/core-types/encoding/index.ts';
 import {
+  Clonable,
   CoreValue,
   Encodable,
   Encoder,
   Equatable,
   ReadonlyCoreObject,
 } from '../../base/core-types/index.ts';
+import { CoreValueCloneOpts } from '../../base/core-types/base.ts';
 
 export type ChangeType = 'fd' | 'rt' | 'rt-2';
 
@@ -20,7 +22,7 @@ export interface EncodedChange extends ReadonlyCoreObject {
 export interface ChangeValueConfig {}
 
 export abstract class Change<EC extends EncodedChange>
-  implements Encodable<keyof EC, CoreValue>, Equatable
+  implements Encodable<keyof EC, CoreValue>, Equatable, Clonable
 {
   constructor(config?: ChangeValueConfig | ConstructorDecoderConfig<EC>) {
     if (isDecoderConfig(config)) {
@@ -35,4 +37,6 @@ export abstract class Change<EC extends EncodedChange>
   }
 
   abstract isEqual(other: Change<EC>): boolean;
+
+  abstract clone<T extends Change<EC>>(opts?: CoreValueCloneOpts): T;
 }
