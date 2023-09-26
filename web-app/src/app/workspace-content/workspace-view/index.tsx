@@ -37,11 +37,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface ContentProps {
+type ContentProps = React.PropsWithChildren<{
   className?: string;
-}
+}>;
 
-export default function WorkspaceContentView({ className }: ContentProps) {
+export default function WorkspaceContentView({
+  className,
+  children,
+}: ContentProps) {
   const styles = useStyles();
   const view = usePartialView('selectedWorkspaces');
 
@@ -53,11 +56,7 @@ export default function WorkspaceContentView({ className }: ContentProps) {
       <DueDateEditor>
         <div className={cn(styles.content)}>
           <div className={cn(styles.router)}>
-            {view.selectedWorkspaces.size > 0 ? (
-              <CardsDisplay />
-            ) : (
-              <EmptyState />
-            )}
+            {view.selectedWorkspaces.size > 0 ? children : <EmptyState />}
           </div>
         </div>
       </DueDateEditor>

@@ -20,6 +20,7 @@ import {
 } from '../core/cfds/react/graph.tsx';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
+import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -38,15 +39,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface AppProps {}
-
 // const isDarkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
 const isDarkTheme = false;
 
 // May 24, 2022
 const CUTOFF_DATE = new Date(1653393858426);
 
-function Root({ style }: AppProps & { style?: any }) {
+type RootProps = React.PropsWithChildren<{
+  style?: any;
+}>;
+
+function Root({ style, children }: RootProps) {
   const styles = useStyles();
   const isLoading = useIsGraphLoading();
   const [loaded, setLoaded] = useState(!isLoading);
@@ -60,7 +63,7 @@ function Root({ style }: AppProps & { style?: any }) {
       {loaded && <WorkspacesBar key={'wsbar'} />}
       {loaded ? (
         <div className={cn(styles.content)}>
-          <WorkspaceContentView key="contents" />
+          <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
         </div>
       ) : (
         <LoadingView />
@@ -72,7 +75,11 @@ function Root({ style }: AppProps & { style?: any }) {
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Root style={lightTheme} />,
+    element: (
+      <Root style={lightTheme}>
+        <CardsDisplay />
+      </Root>
+    ),
   },
   {
     path: '/new',
@@ -92,7 +99,12 @@ const router = createBrowserRouter([
   },
   {
     path: `/:workspaceId/notes/:noteId`,
-    element: <NoteView />,
+    // element: <NoteView />,
+    element: (
+      <Root style={lightTheme}>
+        <NoteView />
+      </Root>
+    ),
   },
   {
     path: `/:repoType/:repoId/_explorer`,
