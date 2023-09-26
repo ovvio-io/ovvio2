@@ -435,7 +435,6 @@ function TabView() {
   const strings = useStrings();
   const styles = useStyles();
   const view = usePartialView('noteType', 'selectedTabId');
-  const graph = useGraphManager();
 
   const setSelected = useCallback(
     (tabId: TabId) => {
