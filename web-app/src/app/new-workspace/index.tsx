@@ -62,8 +62,7 @@ export const CreateWorkspaceView = ({
 
   const onCreated = useCallback(
     (result: VertexId<Workspace>) => {
-      view.clearContentsDisplaySettings();
-      view.clearFilters();
+      view.clear();
       view.selectedWorkspaces.add(view.graph.getVertex<Workspace>(result));
       navigate('/');
     },

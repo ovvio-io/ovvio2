@@ -57,6 +57,11 @@ export const kViewTransientProps: readonly (keyof View)[] = [
   'showFilters',
 ] as const;
 
+export const kViewPropsAll: readonly (keyof View)[] = [
+  ...kViewPersistentProps,
+  ...kViewTransientProps,
+] as const;
+
 export type ViewProp = Extract<
   keyof View,
   (typeof kViewPersistentProps)[number]
@@ -427,7 +432,7 @@ export class View extends BaseVertex {
 
   clear(): void {
     const record = this.record;
-    for (const fieldName of record.scheme.fieldNames()) {
+    for (const fieldName of kViewPropsAll) {
       delete this.proxy[fieldName as keyof this];
     }
   }
