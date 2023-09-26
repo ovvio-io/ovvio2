@@ -67,7 +67,7 @@ const useStyles = makeStyles(() => ({
   },
   barRow: {
     padding: [0, SIDES_PADDING],
-    height: styleguide.gridbase * 4,
+    height: styleguide.gridbase * 5,
     basedOn: [layout.row, layout.centerCenter],
   },
   viewRow: {
