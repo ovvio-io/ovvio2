@@ -64,6 +64,8 @@ export const EVENT_DID_CHANGE = 'did-change';
  */
 export const EVENT_CRITICAL_ERROR = 'critical-error';
 
+export const VERT_PROXY_CHANGE_FIELD = '__vert';
+
 export interface VertexBuilder {
   (
     manager: VertexManager,
@@ -194,14 +196,14 @@ export class VertexManager<V extends Vertex = Vertex>
     return this.record.scheme;
   }
 
-  set scheme(scheme: Scheme) {
-    const record = this.record;
-    if (scheme.isEqual(record.scheme)) {
-      return;
-    }
-    record.upgradeScheme(scheme);
-    this.rebuildVertex();
-  }
+  // set scheme(scheme: Scheme) {
+  //   const record = this.record;
+  //   if (scheme.isEqual(record.scheme)) {
+  //     return;
+  //   }
+  //   record.upgradeScheme(scheme);
+  //   this.rebuildVertex();
+  // }
 
   get displayName(): string {
     return (this.namespace ? this.namespace + '/' : '') + this.key;
@@ -299,6 +301,7 @@ export class VertexManager<V extends Vertex = Vertex>
     const dynamicFields = this.captureDynamicFields();
     this._record = newRecord;
     this.rebuildVertex();
+    pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
     if (!mutationPackIsEmpty(pack)) {
       this.vertexDidMutate(pack, dynamicFields);
     }
@@ -425,6 +428,9 @@ export class VertexManager<V extends Vertex = Vertex>
     const removedEdges: Edge[] = [];
     // Update our graph on ref changes
     for (const [prop, local, oldValue] of mutationPackIter(mutations)) {
+      if (prop === VERT_PROXY_CHANGE_FIELD) {
+        continue;
+      }
       const newValue = vertex.valueForRefCalc(prop as keyof Vertex);
       if (newValue === kNoRefsValue) {
         continue;
@@ -564,6 +570,11 @@ export class VertexManager<V extends Vertex = Vertex>
 
     if (changed) {
       this.rebuildVertex();
+      pack = mutationPackAppend(pack, [
+        VERT_PROXY_CHANGE_FIELD,
+        true,
+        undefined,
+      ]);
       this.vertexDidMutate(pack, dynamicFields);
     }
   }

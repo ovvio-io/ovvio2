@@ -4,7 +4,10 @@ import {
   mutationPackHasField,
   mutationPackIter,
 } from '../../../../../cfds/client/graph/mutations.ts';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import {
+  VERT_PROXY_CHANGE_FIELD,
+  VertexManager,
+} from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { Vertex, VertexId } from '../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { useGraphManager } from './graph.tsx';
@@ -96,44 +99,94 @@ export function useVertexByKey<V extends Vertex>(key: string): V {
   return useVertex(vertexMng);
 }
 
-export function usePartialVertex<V extends Vertex, K extends keyof V = keyof V>(
-  vertexId: VertexId<V> | undefined | null,
-  keys: readonly K[],
-  opts: OnChangeOpts = EMPTY_OPTS
-): Pick<V, K> & Vertex {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setReload] = useState(0);
-  const graph = useGraphManager();
-  const vertexMng = vertexId && graph.getVertexManager<V>(vertexId);
-  const keysStr = keys.join('-');
-  useEffect(() => {
-    if (vertexMng) {
-      return register(
-        vertexMng,
-        () => setReload((x) => x + 1),
-        keys as readonly string[],
-        opts
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vertexMng, opts, keysStr]);
+type StringKeys<T> = string & keyof T;
 
-  return vertexMng
-    ? (vertexMng.getVertexProxy() as unknown as Pick<V, K> & Vertex)
-    : ({} as unknown as Pick<V, K> & Vertex);
+export function usePartialVertex<
+  V extends Vertex,
+  K extends StringKeys<V> = StringKeys<V>
+>(
+  vertexId: VertexId<V>,
+  keys?: readonly K[],
+  opts?: OnChangeOpts
+): Pick<V, K> & Vertex;
+
+export function usePartialVertex(
+  vertexId: null,
+  keys?: readonly string[],
+  opts?: OnChangeOpts
+): null;
+
+export function usePartialVertex(
+  vertexId: undefined,
+  keys?: readonly string[],
+  opts?: OnChangeOpts
+): undefined;
+
+export function usePartialVertex<
+  V extends Vertex,
+  K extends StringKeys<V> = StringKeys<V>
+>(
+  vertexId: VertexId<V> | undefined | null,
+  keys?: readonly K[],
+  opts: OnChangeOpts = EMPTY_OPTS
+): undefined | null | (Pick<V, K> & Vertex) {
+  const graph = useGraphManager();
+  const vertexMng =
+    vertexId === null || vertexId === undefined
+      ? vertexId
+      : graph.getVertexManager<V>(vertexId);
+  const [result, setResult] = useState<
+    (Pick<V, K> & Vertex) | undefined | null
+  >(vertexMng ? new Proxy(vertexMng.getVertexProxy(), {}) : vertexMng);
+
+  useEffect(() => {
+    if (!vertexMng) {
+      return;
+    }
+    return vertexMng.onVertexChanged((mutations: MutationPack) => {
+      // Skip any changes that are safe to ignore for this specific observer
+      if (
+        keys &&
+        keys.length > 0 &&
+        !mutationPackHasField(mutations, ...keys) &&
+        !mutationPackHasField(mutations, VERT_PROXY_CHANGE_FIELD)
+      ) {
+        return;
+      }
+      setResult(new Proxy(vertexMng.getVertexProxy(), {}));
+    });
+  }, [vertexMng, setResult, keys]);
+
+  return result;
 }
 
 export function useVertex<V extends Vertex>(
-  vertexMng: VertexManager<V>,
-  opts: OnChangeOpts = EMPTY_OPTS
-) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setReload] = useState(0);
-  useEffect(() => {
-    return register(vertexMng, () => setReload((x) => x + 1), [], opts);
-  }, [vertexMng, opts]);
+  vertexMng: VertexId<V>,
+  opts?: OnChangeOpts
+): V;
 
-  return vertexMng?.getVertexProxy();
+export function useVertex<V extends Vertex>(
+  vertexMng: null,
+  opts?: OnChangeOpts
+): null;
+
+export function useVertex<V extends Vertex>(
+  vertexMng: undefined,
+  opts?: OnChangeOpts
+): undefined;
+
+export function useVertex<V extends Vertex>(
+  vertexMng: VertexId<V> | undefined | null,
+  opts: OnChangeOpts = EMPTY_OPTS
+): undefined | null | V {
+  // This stupid repeat typing lets the TypeScript compiler understand
+  if (vertexMng === null) {
+    return usePartialVertex(vertexMng, [], opts);
+  }
+  if (vertexMng === undefined) {
+    return usePartialVertex(vertexMng, [], opts);
+  }
+  return usePartialVertex(vertexMng, [], opts) as V;
 }
 
 export function useVertices<V extends Vertex>(

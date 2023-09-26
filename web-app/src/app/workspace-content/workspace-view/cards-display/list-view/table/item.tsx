@@ -282,10 +282,11 @@ export { useStyles as useRowStyles };
 
 const useStrings = createUseStrings(localization);
 
-export const Row: React.FC<{ className?: string }> = ({
-  children,
-  className,
-}) => {
+export type RowProps = React.PropsWithChildren<{
+  className?: string;
+}>;
+
+export function Row({ children, className }: RowProps) {
   const styles = useStyles();
 
   return (
@@ -293,7 +294,7 @@ export const Row: React.FC<{ className?: string }> = ({
       <Cell colSpan={100}>{children}</Cell>
     </tr>
   );
-};
+}
 
 export interface ItemRowProps extends Partial<RenderDraggableProps> {
   note: VertexManager<Note>;
@@ -303,19 +304,19 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   onWorkspaceMoved?: (note: VertexManager<Note>) => void;
 }
 
-interface CellProps {
+type CellProps = React.PropsWithChildren<{
   className?: string;
   innerClassName?: string;
   colSpan?: number;
   onClick?: MouseEventHandler;
-}
+}>;
 
-export const Cell: React.FC<CellProps> = ({
+export function Cell({
   children,
   className,
   innerClassName,
   ...rest
-}) => {
+}: CellProps) {
   const styles = useStyles();
 
   return (
@@ -323,7 +324,7 @@ export const Cell: React.FC<CellProps> = ({
       <div className={cn(styles.cellInner, innerClassName)}>{children}</div>
     </td>
   );
-};
+}
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
   function (
@@ -728,10 +729,7 @@ function TitleCell({
   isDraft?: boolean;
 }) {
   const styles = useStyles();
-  const { editor, plugins, handlers } = useTitleEditor(
-    note,
-    isDraft ? DraftTitleNode : TitleNode
-  );
+  const { editor, plugins, handlers } = useTitleEditor(note, TitleNode);
   useEffect(() => {
     if (!isDraft) {
       return;

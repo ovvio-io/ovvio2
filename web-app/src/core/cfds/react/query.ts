@@ -161,7 +161,7 @@ export function useQuery2<
   if (typeof queryOrName === 'string') {
     queryOrName = graph.sharedQueriesManager[queryOrName] as unknown as T;
   }
-  const [query] = useState<Query<IT, OT, GT> | undefined>(() => {
+  const query = useMemo(() => {
     if (queryOrName instanceof Query) {
       return queryOrName;
     }
@@ -169,14 +169,16 @@ export function useQuery2<
       return undefined;
     }
     return graph.query(queryOrName as QueryOptions<IT, OT, GT>);
-  });
-  const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(query);
+  }, [queryOrName]);
+  const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(
+    query ? new Proxy(query, {}) : query
+  );
   useEffect(() => {
     if (!query) {
       return;
     }
 
-    setProxy(new Proxy(query, {}));
+    // setProxy(new Proxy(query, {}));
     const callback = () => {
       setProxy(new Proxy(query, {}));
     };

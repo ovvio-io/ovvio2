@@ -234,56 +234,33 @@ export function useFilteredNotes<GT extends CoreValue>(
     [graph, view.selectedWorkspaces, view.sortBy, name]
   );
   // const unpinnedSource = useSharedQuery('notDeleted');
-  const result: FilteredNotes<GT> = useMemo(
-    () => {
-      let res: FilteredNotes<GT>;
-      const showPinned = view.viewType === 'board' ? 'all' : view.showPinned;
-      switch (showPinned) {
-        case 'pinned':
-          res = [
-            buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
-            undefined,
-          ];
-          break;
+  const result: FilteredNotes<GT> = useMemo(() => {
+    let res: FilteredNotes<GT>;
+    const showPinned = view.viewType === 'board' ? 'all' : view.showPinned;
+    switch (showPinned) {
+      case 'pinned':
+        res = [
+          buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
+          undefined,
+        ];
+        break;
 
-        case 'all':
-          res = [
-            buildQueryOptions(
-              view,
-              unpinnedSource,
-              undefined,
-              name + '-Pinned'
-            ),
-            undefined,
-          ];
-          break;
-        case 'pinned-unpinned':
-        default:
-          res = [
-            buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
-            buildQueryOptions(view, unpinnedSource, false, name + '-Unpinned'),
-          ];
-          break;
-      }
-      return res;
-    },
-    // WARNING: The list of dependencies must match the fields used internally
-    // by buildQuery().
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      view,
-      view.groupBy,
-      view.noteType,
-      view.selectedAssignees,
-      view.showChecked,
-      view.selectedTagIds,
-      view.pivot,
-      view.sortBy,
-      view.selectedWorkspaces,
-      unpinnedSource,
-      name,
-    ]
-  );
+      case 'all':
+        res = [
+          buildQueryOptions(view, unpinnedSource, undefined, name + '-All'),
+          undefined,
+        ];
+        break;
+      case 'pinned-unpinned':
+      default:
+        res = [
+          buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
+          buildQueryOptions(view, unpinnedSource, false, name + '-Unpinned'),
+        ];
+        break;
+    }
+    return res;
+  }, [view, unpinnedSource, name]);
   return result;
 }
 

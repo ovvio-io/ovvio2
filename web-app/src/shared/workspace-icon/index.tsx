@@ -1,26 +1,19 @@
 import React from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  User,
-  Workspace,
-} from '../../../../cfds/client/graph/vertices/index.ts';
+import { Workspace } from '../../../../cfds/client/graph/vertices/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { brandLightTheme } from '../../../../styles/theme.tsx';
 import {
   useGraphManager,
   usePartialUserSettings,
-  useRootUser,
-  useUserSettings,
 } from '../../core/cfds/react/graph.tsx';
-import { usePartialVertex, useVertex } from '../../core/cfds/react/vertex.ts';
-import { UserSettings } from '../../../../cfds/client/graph/vertices/user-settings.ts';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { useSharedQuery } from '../../core/cfds/react/query.ts';
 import {
   VertexId,
   VertexIdGetKey,
 } from '../../../../cfds/client/graph/vertex.ts';
-import { randomInt } from '../../../../logging/stream.ts';
 import { assert } from '../../../../base/error.ts';
 
 const useStyles = makeStyles((theme) => ({
@@ -116,12 +109,17 @@ const COLOR_MAP: WorkspaceColor[] = [
 ];
 
 export function useWorkspaceColor(
-  workspaceId: VertexId<Workspace>
+  workspaceId: VertexId<Workspace> | null
 ): WorkspaceColor {
   const graph = useGraphManager();
-  const workspaceKey = VertexIdGetKey(workspaceId);
   const colorMap = usePartialUserSettings(['workspaceColors']).workspaceColors;
   const workspacesQuery = useSharedQuery('workspaces');
+
+  if (!workspaceId) {
+    return COLOR_MAP[0];
+  }
+
+  const workspaceKey = VertexIdGetKey(workspaceId);
 
   // Return the saved color only if it's valid within the current theme
   const existingColor = colorMap.get(workspaceKey);

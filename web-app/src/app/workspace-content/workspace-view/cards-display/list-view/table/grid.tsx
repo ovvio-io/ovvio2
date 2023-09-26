@@ -51,26 +51,20 @@ export const useGridStyles = makeStyles(
   'table_01387e'
 );
 
-export interface ItemsTableProps {
+export type ItemsTableProps = React.PropsWithChildren<{
   className?: string;
-}
+}>;
 
-export const _ItemsTable: React.FC<ItemsTableProps> = ({
-  children,
-  className,
-}) => {
+export function _ItemsTable({ children, className }: ItemsTableProps) {
   const styles = useGridStyles();
   return <div className={cn(styles.container)}>{children}</div>;
-};
+}
 
-export const ItemsTable: React.FC<ItemsTableProps> = ({
-  children,
-  className,
-}) => {
+export function ItemsTable({ children, className }: ItemsTableProps) {
   const styles = useGridStyles();
   return (
     <table className={cn(styles.table)}>
       <tbody>{children}</tbody>
     </table>
   );
-};
+}

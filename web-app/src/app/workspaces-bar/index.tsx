@@ -941,8 +941,6 @@ function WorkspacesList({ query }: WorkspaceListProps) {
     'selectedWorkspaces'
   );
 
-  console.log(`Workspace list query results: ${query.results}`);
-
   const toggleExpanded = useCallback(
     (gid: WorkspaceGID) => {
       const expandedWorkspaceGroups = view.expandedWorkspaceGroups;
