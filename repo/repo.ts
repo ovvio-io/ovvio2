@@ -353,7 +353,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
     assert(commitContentsIsRecord(fullCommit.contents));
-    return fullCommit;
+    // return fullCommit;
     const key = fullCommit.key;
     const lastRecordCommit = this.lastRecordCommitForKey(key);
     let deltaCommit: Commit | undefined;
