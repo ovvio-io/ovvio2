@@ -1,20 +1,20 @@
-import { assert } from '../../base/error.ts';
-import { isString, isNoValue } from '../../base/comparisons.ts';
-import { JSONValue, ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { assert } from "../../base/error.ts";
+import { isString, isNoValue } from "../../base/comparisons.ts";
+import { JSONValue, ReadonlyJSONObject } from "../../base/interfaces.ts";
 import {
   Encodable,
   Encoder,
   coreValueEquals,
-} from '../../base/core-types/index.ts';
+} from "../../base/core-types/index.ts";
 import {
   ConstructorDecoderConfig,
   isDecoderConfig,
-} from '../../base/core-types/encoding/index.ts';
+} from "../../base/core-types/encoding/index.ts";
 import {
   JSONDecoder,
   JSONEncoder,
-} from '../../base/core-types/encoding/json.ts';
-import { clone } from './object.ts';
+} from "../../base/core-types/encoding/json.ts";
+import { clone } from "./object.ts";
 import {
   SchemeDef,
   ISchemeManagerRegister,
@@ -27,11 +27,12 @@ import {
   DataType,
   kRecordIdField,
   SchemeNamespace,
-} from './scheme-types.ts';
-import { runRegister } from './scheme-versions.ts';
-import { isRefValueType, ValueType } from './types/index.ts';
+} from "./scheme-types.ts";
+import { runRegister } from "./scheme-versions.ts";
+import { isRefValueType, ValueType } from "./types/index.ts";
 
-function normalizeFieldDescriptors(descriptors: any) {
+export function normalizeFieldDescriptors(descriptors: any) {
+  //TODO: changed to export
   const types: SchemeFields = {};
   const requiredFields: string[] = [];
   for (let [k, desc] of Object.entries<any>(descriptors)) {
@@ -70,10 +71,10 @@ export class Scheme implements Encodable {
   constructor(config: SchemeConfig | ConstructorDecoderConfig<EncodedScheme>) {
     if (isDecoderConfig(config)) {
       const decoder = config.decoder;
-      const namespace: string = decoder.get<string>('ns')!;
-      const version: number = decoder.get<number>('version')!;
+      const namespace: string = decoder.get<string>("ns")!;
+      const version: number = decoder.get<number>("version")!;
 
-      if (namespace === '' && version === 0) {
+      if (namespace === "" && version === 0) {
         this.copyFrom(Scheme.nullScheme());
         return;
       }
@@ -193,17 +194,17 @@ export class Scheme implements Encodable {
     }
 
     if (oldVersion > this.getVersion()) {
-      // debugger;
+      debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, oldVersion + 1)) {
-      // debugger;
+      debugger;
       return false;
     }
 
     if (!SchemeManager.instance.schemeExists(oldNS, this.getVersion())) {
-      // debugger;
+      debugger;
       return false;
     }
 
@@ -259,8 +260,8 @@ export class Scheme implements Encodable {
   }
 
   serialize(encoder: Encoder): void {
-    encoder.set('ns', this.getNamespace());
-    encoder.set('version', this.getVersion());
+    encoder.set("ns", this.getNamespace());
+    encoder.set("version", this.getVersion());
   }
 
   private copyFrom(other: Scheme) {
@@ -294,31 +295,31 @@ export class Scheme implements Encodable {
 
   static workspace(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_WORKSPACE);
-    if (!scheme) throw new Error('Workspace scheme not found');
+    if (!scheme) throw new Error("Workspace scheme not found");
     return scheme;
   }
 
   static note(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_NOTES);
-    if (!scheme) throw new Error('Note scheme not found');
+    if (!scheme) throw new Error("Note scheme not found");
     return scheme;
   }
 
   static tag(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_TAGS);
-    if (!scheme) throw new Error('Tag scheme not found');
+    if (!scheme) throw new Error("Tag scheme not found");
     return scheme;
   }
 
   static user(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_USERS);
-    if (!scheme) throw new Error('User scheme not found');
+    if (!scheme) throw new Error("User scheme not found");
     return scheme;
   }
 
   static view(): Scheme {
     const scheme = SchemeManager.instance.getScheme(SchemeNamespace.VIEWS);
-    if (!scheme) throw new Error('View scheme not found');
+    if (!scheme) throw new Error("View scheme not found");
     return scheme;
   }
 
@@ -332,13 +333,13 @@ export class Scheme implements Encodable {
     const keyLen = key.length;
     let start = 0;
     let end;
-    for (start = 0; start < keyLen && key[start] === '/'; ++start) {
+    for (start = 0; start < keyLen && key[start] === "/"; ++start) {
       // Skip leading slashes
     }
-    for (end = start; end < keyLen && key[end] !== '/'; ++end) {
+    for (end = start; end < keyLen && key[end] !== "/"; ++end) {
       // Find the end of the type part
     }
-    assert(start <= end || start >= keyLen, 'Unsupported key format');
+    assert(start <= end || start >= keyLen, "Unsupported key format");
     const type = key.substring(start, end);
     switch (type) {
       case NS_WORKSPACE:

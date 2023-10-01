@@ -1,22 +1,22 @@
-import EventEmitter from 'eventemitter3';
-import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
-import * as SetUtils from '../base/set.ts';
-import { Dictionary } from '../base/collections/dict.ts';
-import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
-import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
-import { concatChanges, DataChanges } from '../cfds/base/object.ts';
-import { Record } from '../cfds/base/record.ts';
-import { assert, notReached } from '../base/error.ts';
-import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
-import { Edit } from '../cfds/base/edit.ts';
-import { log } from '../logging/log.ts';
-import { kRecordIdField } from '../cfds/base/scheme-types.ts';
-import { Scheme } from '../cfds/base/scheme.ts';
-import { repositoryForRecord } from './resolver.ts';
+import EventEmitter from "eventemitter3";
+import { coreValueCompare, coreValueEquals } from "../base/core-types/index.ts";
+import * as SetUtils from "../base/set.ts";
+import { Dictionary } from "../base/collections/dict.ts";
+import { Code, ServerError, serviceUnavailable } from "../cfds/base/errors.ts";
+import { Commit, commitContentsIsRecord, DeltaContents } from "./commit.ts";
+import { concatChanges, DataChanges } from "../cfds/base/object.ts";
+import { Record } from "../cfds/base/record.ts";
+import { assert, notReached } from "../base/error.ts";
+import { JSONCyclicalEncoder } from "../base/core-types/encoding/json.ts";
+import { Edit } from "../cfds/base/edit.ts";
+import { log } from "../logging/log.ts";
+import { kRecordIdField } from "../cfds/base/scheme-types.ts";
+import { Scheme } from "../cfds/base/scheme.ts";
+import { repositoryForRecord } from "./resolver.ts";
 
-export const EVENT_NEW_COMMIT = 'NewCommit';
+export const EVENT_NEW_COMMIT = "NewCommit";
 
-export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
+export const kRepositoryTypes = ["sys", "data", "user"] as const;
 export type RepositoryType = (typeof kRepositoryTypes)[number];
 
 export interface RepoStorage<T extends RepoStorage<T>> {
@@ -42,10 +42,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   static normalizeId(id: string): string {
-    if (!id.startsWith('/')) {
-      id = '/' + id;
+    if (!id.startsWith("/")) {
+      id = "/" + id;
     }
-    if (id.endsWith('/')) {
+    if (id.endsWith("/")) {
       id = id.substring(0, id.length - 1);
     }
     return id;
@@ -208,7 +208,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   recordForCommit(c: Commit | string): Record {
-    if (typeof c === 'string') {
+    if (typeof c === "string") {
       c = this.getCommit(c);
     }
     if (commitContentsIsRecord(c.contents)) {
@@ -262,7 +262,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         }
         assert(
           scheme.isNull || commitScheme.namespace === scheme.namespace,
-          'Commits with conflicting scheme detected'
+          "Commits with conflicting scheme detected"
         );
 
         if (
@@ -366,7 +366,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         dstChecksum: fullCommit.contentsChecksum,
       });
       const commitEncoder = new JSONCyclicalEncoder();
-      commitEncoder.set('c', [fullCommit]);
+      commitEncoder.set("c", [fullCommit]);
       const deltaLength = JSON.stringify(edit.toJS()).length;
       const fullLength = JSON.stringify(commitEncoder.getOutput()).length;
       // Only if our delta format is small enough relative to the full format,
@@ -380,10 +380,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
           parents: fullCommit.parents,
         });
         log({
-          severity: 'INFO',
-          name: 'DeltaFormatSavings',
+          severity: "INFO",
+          name: "DeltaFormatSavings",
           value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
-          unit: 'Percent',
+          unit: "Percent",
         });
       }
     }
@@ -404,11 +404,12 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   hasKey(key: string | null): boolean {
-    return this.headForKey(key, '') !== undefined;
+    return this.headForKey(key, "") !== undefined;
   }
 
   persistCommits(commits: Iterable<Commit>): Commit[] {
     const result = Array.from(this.storage.persistCommits(commits, this));
+    console.log("debug commit - ", result);
     for (const c of result) {
       this.emit(EVENT_NEW_COMMIT, c);
     }
@@ -416,13 +417,13 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   repositoryIdForCommit(c: Commit | string): string {
-    if (typeof c === 'string') {
+    if (typeof c === "string") {
       c = this.getCommit(c);
     }
     const record = this.recordForCommit(c);
     const repoFieldName = repositoryForRecord(c.key, record);
     if (repoFieldName === kRecordIdField) {
-      const commit = typeof c === 'string' ? this.getCommit(c) : c;
+      const commit = typeof c === "string" ? this.getCommit(c) : c;
       assert(commit !== undefined && commit.key !== undefined);
       return commit.key!;
     }
@@ -499,7 +500,7 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
 
   *allKeys(): Generator<string> {
     for (const k of this._commitsByRecordKey.keys()) {
-      if (typeof k === 'string') {
+      if (typeof k === "string") {
         yield k;
       }
     }
