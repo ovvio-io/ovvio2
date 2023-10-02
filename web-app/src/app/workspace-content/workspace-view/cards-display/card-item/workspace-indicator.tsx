@@ -1,80 +1,80 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import React, { useCallback, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
 import {
   Note,
   User,
   Workspace,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
+} from "../../../../../../../cfds/client/graph/vertices/index.ts";
+import { layout, styleguide } from "../../../../../../../styles/index.ts";
 import {
   Button,
   RaisedButton,
-} from '../../../../../../../styles/components/buttons.tsx';
+} from "../../../../../../../styles/components/buttons.tsx";
 import {
   Dialog,
   DialogActions,
   DialogContent,
-} from '../../../../../../../styles/components/dialog/index.tsx';
-import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
+} from "../../../../../../../styles/components/dialog/index.tsx";
+import { IconDropDownArrow } from "../../../../../../../styles/components/icons/index.ts";
 import Menu, {
   MenuItem,
-} from '../../../../../../../styles/components/menu.tsx';
-import { H2, Text } from '../../../../../../../styles/components/texts.tsx';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+} from "../../../../../../../styles/components/menu.tsx";
+import { H2, Text } from "../../../../../../../styles/components/texts.tsx";
+import { useToastController } from "../../../../../../../styles/components/toast/index.tsx";
 import {
   cn,
   keyframes,
   makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { useTheme } from "../../../../../../../styles/theme.tsx";
 import {
   useGraphManager,
   useRootUser,
-} from '../../../../../core/cfds/react/graph.tsx';
+} from "../../../../../core/cfds/react/graph.tsx";
 import {
   useCurrentUser,
   usePartialVertex,
   useVertices,
-} from '../../../../../core/cfds/react/vertex.ts';
-import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
-import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import { moveCard } from '../../../../../shared/utils/move.ts';
-import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
-import { UISource } from '../../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
+} from "../../../../../core/cfds/react/vertex.ts";
+import { useAnimateWidth } from "../../../../../core/react-utils/animate.ts";
+import { Scroller } from "../../../../../core/react-utils/scrolling.tsx";
+import { moveCard } from "../../../../../shared/utils/move.ts";
+import WorkspaceIcon from "../../../../../shared/workspace-icon/index.tsx";
+import { UISource } from "../../../../../../../logging/client-events.ts";
+import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
+import { coreValueCompare } from "../../../../../../../base/core-types/comparable.ts";
+import { useSharedQuery } from "../../../../../core/cfds/react/query.ts";
 
 const showAnim = keyframes({
-  '0%': {
+  "0%": {
     opacity: 0,
   },
-  '99%': {
+  "99%": {
     opacity: 0,
   },
-  '100%': {
+  "100%": {
     opacity: 1,
   },
 });
 
 const useStyles = makeStyles((theme) => ({
   workspaceItem: {
-    alignItems: 'center',
+    alignItems: "center",
     basedOn: [layout.row],
   },
   indicatorButton: {
     ...styleguide.transition.short,
-    transitionProperty: 'all',
+    transitionProperty: "all",
   },
   wsName: {
     marginLeft: styleguide.gridbase,
     marginRight: styleguide.gridbase * 0.5,
-    whiteSpace: 'nowrap',
+    whiteSpace: "nowrap",
     color: theme.background.placeholderText,
   },
   wsSeparator: {
-    alignSelf: 'center',
+    alignSelf: "center",
     height: styleguide.gridbase * 2,
     width: 1,
     backgroundColor: theme.background.placeholderText,
@@ -83,25 +83,25 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: styleguide.gridbase * 0.5,
   },
   wsArrow: {
-    position: 'relative',
+    position: "relative",
     top: 1,
     animation: `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
-    cursor: 'pointer',
+    cursor: "pointer",
   },
   hide: {
-    display: 'none',
+    display: "none",
   },
   dialogTitle: {
     marginBottom: styleguide.gridbase * 2,
   },
   move: {
-    overflowY: 'auto',
+    overflowY: "auto",
     maxHeight: styleguide.gridbase * 32,
   },
   moveWsItem: {
     backgroundColor: theme.background[0],
     transition: `opacity linear ${styleguide.transition.duration.short}ms`,
-    ':hover': {
+    ":hover": {
       backgroundColor: theme.background[300],
     },
   },
@@ -112,7 +112,7 @@ const useStyles = makeStyles((theme) => ({
 
 export type WorkspaceIndicatorButtonProps = Omit<
   WorkspaceIndicatorProps,
-  'setWorkspace'
+  "setWorkspace"
 >;
 
 function WorkspaceIndicatorButton({
@@ -122,7 +122,7 @@ function WorkspaceIndicatorButton({
   readOnly,
 }: WorkspaceIndicatorButtonProps) {
   const styles = useStyles();
-  const { name } = usePartialVertex(workspace, ['name']);
+  const { name } = usePartialVertex(workspace, ["name"]);
   const ref = useRef(null);
   const style = useAnimateWidth(ref, isExpanded);
   const theme = useTheme();
@@ -163,7 +163,7 @@ export function CardWorkspaceIndicator({
   source,
   className,
 }: CardWorkspaceIndicatorProps) {
-  const { workspace } = usePartialVertex(card, ['workspace']);
+  const { workspace } = usePartialVertex(card, ["workspace"]);
   const workspaceManager = workspace?.manager as VertexManager<Workspace>;
   const graph = useGraphManager();
   const toastController = useToastController();
@@ -188,7 +188,7 @@ export function CardWorkspaceIndicator({
       duration: 1500,
     });
 
-    if (source === 'title') {
+    if (source === "title") {
       navigate(`/${newCard.workspace.key}/${newCard.key}`);
     }
   };
@@ -263,7 +263,7 @@ export function WorkspaceIndicator({
         className={menuClassName}
         renderButton={renderButton}
         align="start"
-        position="top"
+        position="bottom"
       >
         <SelectWorkspaceMenu value={workspace} onChange={onWsChanged} />
       </Menu>
@@ -312,9 +312,9 @@ export function SelectWorkspaceMenu({
   const user = useCurrentUser();
   const { hiddenWorkspaces, pinnedWorkspaces } = usePartialVertex(
     user.settings,
-    ['hiddenWorkspaces', 'pinnedWorkspaces']
+    ["hiddenWorkspaces", "pinnedWorkspaces"]
   );
-  const workspacesQuery = useSharedQuery('workspaces');
+  const workspacesQuery = useSharedQuery("workspaces");
   const workspaces = useVertices(workspacesQuery.results);
   const sortedWorkspaces = Array.from(workspaces)
     .filter((x) => !!x.name)

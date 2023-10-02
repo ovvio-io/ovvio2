@@ -1,10 +1,10 @@
-import React from 'react';
-import { wordDist } from '../../../../cfds/client/suggestions.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import Menu, { MenuRenderButton } from '../../../../styles/components/menu.tsx';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { MentionPopup, MentionPopupRenderItemOpts } from '../card/mention.tsx';
-import { CoreObject } from '../../../../base/core-types/base.ts';
+import React from "react";
+import { wordDist } from "../../../../cfds/client/suggestions.ts";
+import { styleguide } from "../../../../styles/styleguide.ts";
+import Menu, { MenuRenderButton } from "../../../../styles/components/menu.tsx";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import { MentionPopup, MentionPopupRenderItemOpts } from "../card/mention.tsx";
+import { CoreObject } from "../../../../base/core-types/base.ts";
 
 const useStyles = makeStyles((theme) => ({
   popup: {
@@ -14,8 +14,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 export enum SORT_VALUES {
-  TOP = 'TOP',
-  BOTTOM = 'BOTTOM',
+  TOP = "TOP",
+  BOTTOM = "BOTTOM",
 }
 function calculateDist(sortValue: string | SORT_VALUES, filter: string) {
   switch (sortValue) {
@@ -92,7 +92,7 @@ function SelectionPopup<T>({
   return (
     <MentionPopup
       getItems={getItemsImpl}
-      trigger={trigger || ''}
+      trigger={trigger || ""}
       onSelected={onSelectedImpl}
       renderItem={renderItemImpl}
     />
@@ -120,16 +120,16 @@ export default function SelectionButton<T>({
   onSelected,
   renderItem,
   getItems,
-  trigger = '',
+  trigger = "",
   style = {},
 }: SelectionButtonProps<T>) {
   const styles = useStyles();
   return (
     <Menu
       renderButton={children}
-      position="top"
-      align="center"
-      direction="in"
+      position="bottom"
+      align="end"
+      direction="out"
       className={className}
       style={style}
       popupClassName={cn(styles.popup)}

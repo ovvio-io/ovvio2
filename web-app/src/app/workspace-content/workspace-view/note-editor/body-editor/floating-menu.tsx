@@ -4,13 +4,13 @@ import React, {
   useEffect,
   useMemo,
   useState,
-} from 'react';
-import { Editor, Element, Path } from 'slate';
-import { ReactEditor, useSlate, useSlateStatic } from 'slate-react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
+} from "react";
+import { Editor, Element, Path } from "slate";
+import { ReactEditor, useSlate, useSlateStatic } from "slate-react";
+import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
+import { Note } from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { layout, styleguide } from "../../../../../../../styles/index.ts";
+import { Button } from "../../../../../../../styles/components/buttons.tsx";
 import {
   IconBold,
   IconBulletList,
@@ -19,35 +19,35 @@ import {
   IconStrikethrough,
   IconTask,
   IconUnderline,
-} from '../../../../../../../styles/components/icons/index.ts';
-import { Tooltip } from '../../../../../../../styles/components/tooltip/index.tsx';
+} from "../../../../../../../styles/components/icons/index.ts";
+import { Tooltip } from "../../../../../../../styles/components/tooltip/index.tsx";
 import {
   cn,
   makeStyles,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useCurrentUser } from '../../../../../core/cfds/react/vertex.ts';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { useCurrentUser } from "../../../../../core/cfds/react/vertex.ts";
 import {
   AllowedElementType,
   ALLOWED_ELEMENTS,
   CardElement,
-} from '../../../../../core/slate/elements/card.element/index.tsx';
-import { LeafUtils } from '../../../../../core/slate/plugins/leaves.tsx';
-import { FormattedText } from '../../../../../core/slate/types.ts';
+} from "../../../../../core/slate/elements/card.element/index.tsx";
+import { LeafUtils } from "../../../../../core/slate/plugins/leaves.tsx";
+import { FormattedText } from "../../../../../core/slate/types.ts";
 import {
   ElementUtils,
   NodeToggleStatus,
-} from '../../../../../core/slate/utils/element-utils.ts';
-import { ListUtils } from '../../../../../core/slate/utils/list-utils.ts';
-import { SelectionUtils } from '../../../../../core/slate/utils/selection-utils.ts';
-import { TreeNode } from '../../../../../../../cfds/richtext/tree.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+} from "../../../../../core/slate/utils/element-utils.ts";
+import { ListUtils } from "../../../../../core/slate/utils/list-utils.ts";
+import { SelectionUtils } from "../../../../../core/slate/utils/selection-utils.ts";
+import { TreeNode } from "../../../../../../../cfds/richtext/tree.ts";
+import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
 
 const useStyles = makeStyles((theme) => ({
   menu: {
-    position: 'absolute',
+    position: "absolute",
     bottom: styleguide.gridbase * 3,
     height: styleguide.gridbase * 5,
-    left: '50%',
+    left: "50%",
     transform: `translate(-50%, ${styleguide.gridbase * 3}px)`,
     backgroundColor: theme.background[800],
     color: theme.background[0],
@@ -56,23 +56,23 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: 6,
     opacity: 0,
     ...styleguide.transition.short,
-    transitionProperty: 'opacity transform',
-    alignItems: 'center',
-    userSelect: 'none',
+    transitionProperty: "opacity transform",
+    alignItems: "center",
+    userSelect: "none",
     basedOn: [layout.row],
   },
   visible: {
     opacity: 1,
-    transform: 'translateX(-50%)',
+    transform: "translateX(-50%)",
   },
   menuButton: {
     color: theme.background[0],
-    width: styleguide.gridbase * 4,
-    height: '100%',
-    userSelect: 'none',
+    width: styleguide.gridbase * 10,
+    height: "100%",
+    userSelect: "none",
   },
   icon: {
-    userSelect: 'none',
+    userSelect: "none",
   },
   separator: {
     height: `calc(100% - ${styleguide.gridbase * 2}px)`,
@@ -86,12 +86,12 @@ const useStyles = makeStyles((theme) => ({
 
 const HEADER_MAP = {
   h1: {
-    button: 'H1',
-    tooltip: 'Heading 1',
+    button: "H1",
+    tooltip: "Heading 1",
   },
   h2: {
-    button: 'H2',
-    tooltip: 'Heading 2',
+    button: "H2",
+    tooltip: "Heading 2",
   },
 };
 
@@ -100,7 +100,7 @@ function HeaderButton({
   headerType,
 }: {
   editor: Editor;
-  headerType: 'h1' | 'h2';
+  headerType: "h1" | "h2";
 }) {
   const styles = useStyles();
   const { selection } = editor;
@@ -152,7 +152,7 @@ function makeMarkButton(
   tooltip: string,
   IconComponent: React.ElementType<{ fill: string; className?: string }>
 ) {
-  return ({ marks }: { marks: Omit<FormattedText, 'text'> }) => {
+  return ({ marks }: { marks: Omit<FormattedText, "text"> }) => {
     const styles = useStyles();
     const isActive = marks && marks[mark];
     const editor = useSlateStatic();
@@ -180,14 +180,14 @@ function makeMarkButton(
   };
 }
 
-const BoldButton = makeMarkButton('bold', 'Bold', IconBold);
-const ItalicButton = makeMarkButton('italic', 'Italic', IconItalic);
+const BoldButton = makeMarkButton("bold", "Bold", IconBold);
+const ItalicButton = makeMarkButton("italic", "Italic", IconItalic);
 const StrikethroughButton = makeMarkButton(
-  'strikethrough',
-  'Strikethrough',
+  "strikethrough",
+  "Strikethrough",
   IconStrikethrough
 );
-const UnderlineButton = makeMarkButton('underline', 'Underline', IconUnderline);
+const UnderlineButton = makeMarkButton("underline", "Underline", IconUnderline);
 
 enum TaskButtonState {
   Hidden,
@@ -265,11 +265,11 @@ function TaskButton({
 const LIST_MAP = {
   ol: {
     Icon: IconNumberList,
-    tooltip: 'Numbered List',
+    tooltip: "Numbered List",
   },
   ul: {
     Icon: IconBulletList,
-    tooltip: 'Bullet List',
+    tooltip: "Bullet List",
   },
 };
 
@@ -279,7 +279,7 @@ function ListButton({
   setVisible,
 }: {
   editor: Editor;
-  listType: 'ul' | 'ol';
+  listType: "ul" | "ol";
   setVisible: (visible: boolean) => void;
 }) {
   const styles = useStyles();
@@ -288,7 +288,7 @@ function ListButton({
   const [el, path] = SelectionUtils.extractSingleElement(editor, selection);
 
   const isParagraph =
-    path && Path.isChild(path, []) && el && el.tagName === 'p';
+    path && Path.isChild(path, []) && el && el.tagName === "p";
   const onClick = (e: MouseEvent) => {
     e.preventDefault();
     // const nodes = Editor.nodes(editor, {

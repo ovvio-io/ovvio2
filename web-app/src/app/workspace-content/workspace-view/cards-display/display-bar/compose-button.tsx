@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import Menu from '../../../../../../../styles/components/menu.tsx';
-import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
-import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
+import React, { useState } from "react";
+import { NoteType } from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { Workspace } from "../../../../../../../cfds/client/graph/vertices/workspace.ts";
+import { Button } from "../../../../../../../styles/components/buttons.tsx";
+import Menu from "../../../../../../../styles/components/menu.tsx";
+import { IconCompose } from "../../../../../../../styles/components/new-icons/icon-compose.tsx";
+import { useTypographyStyles } from "../../../../../../../styles/components/typography.tsx";
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { layout } from '../../../../../../../styles/layout.ts';
-import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
-import { MediaQueries } from '../../../../../../../styles/responsive.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { createNewNote } from '../../../../../shared/card/create.ts';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
+} from "../../../../../../../styles/css-objects/index.ts";
+import { layout } from "../../../../../../../styles/layout.ts";
+import { brandLightTheme as theme } from "../../../../../../../styles/theme.tsx";
+import { MediaQueries } from "../../../../../../../styles/responsive.ts";
+import { styleguide } from "../../../../../../../styles/styleguide.ts";
+import { usePartialView } from "../../../../../core/cfds/react/graph.tsx";
+import { useVertices } from "../../../../../core/cfds/react/vertex.ts";
+import { createUseStrings } from "../../../../../core/localization/index.tsx";
+import { useDocumentRouter } from "../../../../../core/react-utils/index.ts";
+import { SelectWorkspaceMenu } from "../card-item/workspace-indicator.tsx";
+import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
+import { createNewNote } from "../../../../../shared/card/create.ts";
+import localization from "../cards-display.strings.json" assert { type: "json" };
 
 const useStyles = makeStyles(() => ({
   compose: {
     background: theme.colors.primaryButton,
     height: styleguide.gridbase * 4,
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     padding: [0, styleguide.gridbase],
     borderRadius: styleguide.gridbase * 2,
     ...styleguide.transition.short,
-    transitionProperty: 'box-shadow',
-    ':hover': {
+    transitionProperty: "box-shadow",
+    ":hover": {
       boxShadow: theme.shadows.z2,
     },
-    alignItems: 'center',
+    alignItems: "center",
     basedOn: [layout.row],
   },
   text: {
@@ -42,12 +42,12 @@ const useStyles = makeStyles(() => ({
     padding: [0, styleguide.gridbase],
     basedOn: [useTypographyStyles.button],
     [MediaQueries.TabletAndMobile]: {
-      display: 'none',
+      display: "none",
     },
   },
   workspacesList: {
     maxHeight: styleguide.gridbase * 30,
-    overflowY: 'auto',
+    overflowY: "auto",
   },
 }));
 
@@ -74,7 +74,7 @@ export function ComposeButton() {
   const styles = useStyles();
   const logger = useLogger();
   const docRouter = useDocumentRouter();
-  const view = usePartialView('selectedWorkspaces');
+  const view = usePartialView("selectedWorkspaces");
   const workspaces = useVertices(view.selectedWorkspaces);
   const [container, setContainer] = useState<HTMLDivElement | null>();
 
@@ -84,10 +84,10 @@ export function ComposeButton() {
     });
 
     logger.log({
-      severity: 'INFO',
-      event: 'Create',
-      type: 'note',
-      source: 'toolbar',
+      severity: "INFO",
+      event: "Create",
+      type: "note",
+      source: "toolbar",
     });
 
     docRouter.goTo(note);
