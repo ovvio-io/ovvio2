@@ -156,7 +156,6 @@ type CalcFunction = (
   points: Points
 ) => Record<string, any>;
 
-
 function calcFn(fn: CalcFunction): GetPositionFn {
   return (anchor: HTMLElement) => {
     const el = anchor;
@@ -192,7 +191,7 @@ const positionCalculator: PositionCalculator = {
         return {
           transformOrigin: "bottom left",
           bottom: window.innerHeight - rect.top,
-          left: rect.left,
+          left: rect.left - 8,
         };
       }),
     },
@@ -239,8 +238,8 @@ const positionCalculator: PositionCalculator = {
       out: calcFn((el, rect) => {
         return {
           transformOrigin: "top right",
-          top: rect.top,
-          right: window.innerWidth - rect.left,
+          top: rect.top - 8,
+          right: window.innerWidth - rect.left + 10,
         };
       }),
     },
@@ -314,7 +313,7 @@ const positionCalculator: PositionCalculator = {
       in: calcFn((el, rect, points) => {
         return {
           transformOrigin: "left top",
-          right: points.right,
+          right: points.right + 10,
           bottom: points.bottom,
         };
       }),
@@ -339,8 +338,8 @@ const positionCalculator: PositionCalculator = {
       out: calcFn((el, rect, points) => {
         return {
           transformOrigin: "left top",
-          left: points.left,
-          top: points.top + rect.height,
+          left: points.left - 7,
+          top: points.top + rect.height + 1,
         };
       }),
     },
@@ -373,8 +372,8 @@ const positionCalculator: PositionCalculator = {
       out: calcFn((el, rect, points) => {
         return {
           transformOrigin: "left top",
-          right: points.right,
-          top: points.top + rect.height,
+          right: points.right - 6,
+          top: points.top + rect.height + 6,
         };
       }),
     },
@@ -480,7 +479,6 @@ const PopperElement: React.FC<PopperElementProps> = ({
     setStyle(newStyle);
   }, [align, position, direction, anchor, recalc, offset]);
 
-
   useEffect(() => {
     const handler = () => {
       setRecalc((x) => x + 1);
@@ -493,7 +491,7 @@ const PopperElement: React.FC<PopperElementProps> = ({
       window.removeEventListener("scroll", handler);
     };
   }, []);
-  
+
   return (
     <Layer>
       {({ zIndex }) => (

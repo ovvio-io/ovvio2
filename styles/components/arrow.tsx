@@ -1,12 +1,12 @@
 import React from "react";
 import { makeStyles } from "../css-objects/index.ts";
-import { brandLightTheme as theme1} from "../theme.tsx"
+import { brandLightTheme as theme1 } from "../theme.tsx";
 import { cn } from "../css-objects/index.ts";
 
 interface ArrowProps {
   position: "left" | "right" | "bottom";
   shadowPosition: "leftShadow" | "rightShadow" | "bottomShadow";
-  containerPosition: "leftArrowContainer" | "bottomArrowContainer"| "right"
+  containerPosition: "leftArrowContainer" | "bottomArrowContainer" | "right";
   oneCellMenu?: boolean;
 }
 
@@ -29,10 +29,18 @@ const useStyles = makeStyles((theme) => {
       right: "20px",
     },
 
+    topArrowContainer: {
+      overflow: "visible",
+      position: "absolute",
+      bottom: "6px",
+      right: "20px",
+    },
+
     leftArrowContainer: {
       overflow: "visible",
       position: "absolute",
-      right: "-6px",
+      right: "6px",
+      top: "7px",
     },
 
     rightArrowContainer: {
@@ -63,6 +71,13 @@ const useStyles = makeStyles((theme) => {
       borderTopColor: theme1.secondary.s2,
     },
 
+    top: {
+      borderLeftColor: "transparent",
+      borderTopColor: "transparent",
+      borderRightColor: theme1.secondary.s2,
+      borderBottomColor: theme1.secondary.s2,
+    },
+
     arrowShadow: {
       width: "11px",
       height: "11px",
@@ -78,9 +93,16 @@ const useStyles = makeStyles((theme) => {
       boxShadow: "0px 0px 3px 1px rgba(0, 0, 0, 0.25)",
     },
 
+    topShadow: {
+      position: "absolute",
+      width: "11px",
+      height: "11px",
+      boxShadow: "0px 0px 3px 1px rgba(0, 0, 0, 0.25)",
+    },
+
     leftShadow: {
       position: "absolute",
-      right: "-6px",
+      right: "-11px",
       width: "11px",
       height: "13px",
       boxShadow: "0px 0px 3px 1px rgba(0, 0, 0, 0.25)",
@@ -95,14 +117,12 @@ const useStyles = makeStyles((theme) => {
     },
 
     oneCellMenu: {
-      top: "-6px",
-      left: "-12px",
+      top: "3px",
     },
   };
 
   return styles;
 });
-
 
 const Arrow: React.FC<ArrowProps> = ({
   position,

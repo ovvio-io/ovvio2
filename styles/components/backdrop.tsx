@@ -1,22 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { styleguide } from '../styleguide.ts';
-import { layout } from '../layout.ts';
-import Layer from './layer.tsx';
-import { makeStyles, cn, keyframes } from '../css-objects/index.ts';
-import { createUniversalPortal } from '../utils/ssr.ts';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { styleguide } from "../styleguide.ts";
+import { layout } from "../layout.ts";
+import Layer from "./layer.tsx";
+import { makeStyles, cn, keyframes } from "../css-objects/index.ts";
+import { createUniversalPortal } from "../utils/ssr.ts";
 
 const hideAnim = keyframes(
   {
     from: {
       opacity: 1,
-      transform: 'translateY(0)',
+      transform: "translateY(0)",
     },
     to: {
       opacity: 0,
-      transform: 'translateY(-50%)',
+      transform: "translateY(-50%)",
     },
   },
-  'backdrop_dd7122'
+  "backdrop_dd7122"
 );
 
 const backdropShow = keyframes(
@@ -28,7 +28,7 @@ const backdropShow = keyframes(
       opacity: 1,
     },
   },
-  'backdrop_e31823'
+  "backdrop_e31823"
 );
 
 const backdropHide = keyframes(
@@ -40,14 +40,14 @@ const backdropHide = keyframes(
       opacity: 0,
     },
   },
-  'backdrop_fa2a0d'
+  "backdrop_fa2a0d"
 );
 
 const useStyles = makeStyles(
   (theme) => ({
     backdrop: {
-      backgroundColor: 'rgba(8, 25, 43, 0.2)',
-      position: 'absolute',
+      backgroundColor: "rgba(8, 25, 43, 0.2)",
+      position: "absolute",
       top: 0,
       left: 0,
       right: 0,
@@ -56,7 +56,7 @@ const useStyles = makeStyles(
       animation: `${backdropShow} 0.15s linear backwards`,
     },
     highContrast: {
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
     },
     backdropHide: {
       animation: `${backdropHide} 0.15s linear both`,
@@ -65,7 +65,7 @@ const useStyles = makeStyles(
       animation: `${hideAnim} 0.15s ${styleguide.transition.timing.standard} both`,
     },
   }),
-  'backdrop_2fa637'
+  "backdrop_2fa637"
 );
 
 export { useStyles as useBackdropStyles };
@@ -119,7 +119,7 @@ export function Backdrop({
       }, 200);
       setCss(styles.hide);
     } else {
-      setCss('');
+      setCss("");
       setVisible(true);
       onOpenRef.current?.();
     }
@@ -155,8 +155,7 @@ export function Backdrop({
           style={{ zIndex }}
           onClick={backgroundClick}
         >
-          {children}
-          "BBBBBBAAACCK"
+          {children}{" "}
         </div>
       )}
     </Layer>,
