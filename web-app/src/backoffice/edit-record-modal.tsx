@@ -73,7 +73,7 @@ export function Modal(props: ModalProps) {
           <button
             style={removeButtonStyle}
             onClick={() => {
-              // Handle delete action here
+              // Handle delete action here TODO: ask if it is needed..
             }}
           >
             Remove

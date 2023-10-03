@@ -21,7 +21,6 @@ import {
 } from "./backoffice-styles.ts";
 import { AddRecordModal } from "./add-record-type-modal.tsx";
 import { AddRecordPage } from "./add-record-page.tsx";
-import vertexBuilder from "../../../cfds/client/graph/vertices/vertex-builder.ts";
 import { Vertex } from "../../../cfds/client/graph/vertex.ts";
 import { VertexManager } from "../../../cfds/client/graph/vertex-manager.ts";
 
@@ -126,33 +125,19 @@ export function RepoExplorer() {
   };
 
   function submitAddModal(newRecord: Record) {
-    // 1. Get or create a VertexManager for the record's key.
-    let vertexManager = graphManager.getVertexManager(newRecord.key);
-    if (!vertexManager) {
-      vertexManager = new VertexManager(graphManager, newRecord.key);
-    }
-
-    // 2. Modify the record.
-    vertexManager.record = newRecord;
-
-    // 3. Commit changes.
-    if (!vertexManager.commit()) {
-      console.error("Failed to commit the new record");
-      // Handle the error accordingly, perhaps by displaying a user-friendly message.
-    }
+    //TODO:
+    // let vertexManager = graphManager.getVertexManager(newRecord.key);
+    // if (!vertexManager) {
+    //   vertexManager = new VertexManager(graphManager, newRecord.key);
+    // }
+    // vertexManager.record = newRecord;
+    // if (!vertexManager.commit()) {
+    //   console.error("Failed to commit the new record");
+    // }
   }
 
   function saveVertexToRepo(vertex: Vertex) {
-    // Placeholder logic to save the vertex.
-    // The real implementation will depend on how you've set up your backend and data persistence logic.
-
-    // For example, if saving involves pushing to an array:
-    repository.push(vertex);
-
-    // If it involves making an API call:
-    // fetch("/api/save", { method: "POST", body: JSON.stringify(vertex) });
-
-    // And so on...
+    //TODO:
   }
 
   const deleteRecord = (key: string, recordToDelete: Record) => {

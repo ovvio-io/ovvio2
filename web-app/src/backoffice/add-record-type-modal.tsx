@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Record } from "../../../cfds/base/record.ts";
 import {
   modalStyles,
   saveButtonStyle,
@@ -8,8 +7,6 @@ import {
   inputStyle,
 } from "./backoffice-styles.ts";
 import { SchemeNamespace } from "../../../cfds/base/scheme-types.ts";
-import { GraphManager } from "../../../cfds/client/graph/graph-manager.ts";
-import { VertexManager } from "../../../cfds/client/graph/vertex-manager.ts";
 
 interface AddRecordModalProps {
   closeAddModal: () => void;

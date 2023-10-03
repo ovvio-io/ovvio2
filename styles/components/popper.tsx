@@ -232,7 +232,7 @@ const positionCalculator: PositionCalculator = {
   },
   left: {
     start: {
-      in: (...args) => {
+      in: (...args: any) => {
         return positionCalculator.top.start.in(...args);
       },
       out: calcFn((el, rect) => {
@@ -280,7 +280,7 @@ const positionCalculator: PositionCalculator = {
   },
   right: {
     start: {
-      in: (...args) => {
+      in: (...args: any) => {
         return positionCalculator.top.end.in(...args);
       },
       out: calcFn((el, rect) => {
@@ -372,7 +372,7 @@ const positionCalculator: PositionCalculator = {
       out: calcFn((el, rect, points) => {
         return {
           transformOrigin: "left top",
-          right: points.right - 6,
+          right: points.right - 7,
           top: points.top + rect.height + 6,
         };
       }),

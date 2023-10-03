@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Scheme, SchemeManager } from "../../../cfds/base/scheme.ts";
 import { Record } from "../../../cfds/base/record.ts";
 import {
@@ -50,7 +50,8 @@ export function AddRecordPage(props: AddRecordPageProps) {
     const fields = scheme.getFields();
 
     return Object.entries(fields).map(([fieldName, fieldType]) => {
-      let inputType: string = "text"; // default to text input
+      // deno-lint-ignore no-inferrable-types
+      let inputType: string = "text";
 
       switch (fieldType) {
         case TYPE_STR:
@@ -60,7 +61,7 @@ export function AddRecordPage(props: AddRecordPageProps) {
           inputType = "number";
           break;
         case TYPE_DATE:
-          inputType = "date";
+          inputType = "date"; //TODO: might changed to text
           break;
       }
 
@@ -85,6 +86,7 @@ export function AddRecordPage(props: AddRecordPageProps) {
       );
     });
   };
+
   const submitRecord = () => {
     //TODO:
     createNewRecord(name, graphManager);
@@ -95,16 +97,11 @@ export function AddRecordPage(props: AddRecordPageProps) {
     graphManager: GraphManager,
     opts: CreateRecordOptions = {}
   ): VertexManager<RecordType> {
-    // Adjust the return type if needed
-    // Here, handle the logic to save the generic record.
-    // This might involve different logic paths based on record details.
-
-    // Using the workspace creation as an example:
-    return graphManager.createVertex<RecordType>(Record.namespace, {
-      name,
-      // ... other attributes specific to the record type
-    }).manager;
-    closeAddModalAndOpenExplorer();
+    //TODO:
+    // return graphManager.createVertex<RecordType>(Record.namespace, {
+    //   name,
+    // }).manager;
+    // closeAddModalAndOpenExplorer();
   }
 
   return (
