@@ -1,20 +1,20 @@
-import React from 'react';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { createUseStrings } from '../../core/localization/index.tsx';
-import WorkspaceIcon from '../../shared/workspace-icon/index.tsx';
+import React from "react";
+import { VertexManager } from "../../../../cfds/client/graph/vertex-manager.ts";
+import { Workspace } from "../../../../cfds/client/graph/vertices/workspace.ts";
+import { usePartialVertex } from "../../core/cfds/react/vertex.ts";
+import { createUseStrings } from "../../core/localization/index.tsx";
+import WorkspaceIcon from "../../shared/workspace-icon/index.tsx";
 
-import { layout, styleguide } from '../../../../styles/index.ts';
-import { IconDropDownArrow } from '../../../../styles/components/icons/index.ts';
+import { layout, styleguide } from "../../../../styles/index.ts";
+import { IconDropDownArrow } from "../../../../styles/components/icons/index.ts";
 import DropDown, {
   DropDownItem,
-} from '../../../../styles/components/inputs/drop-down.tsx';
-// import { Text } from '../../../../styles/components/texts.tsx';  
-import { Text } from '../../../../styles/components/typography.tsx';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import localization from './new-workspace.strings.json' assert { type: 'json' };
-import { useSharedQuery } from '../../core/cfds/react/query.ts';
+} from "../../../../styles/components/inputs/drop-down.tsx";
+// import { Text } from '../../../../styles/components/texts.tsx';
+import { Text } from "../../../../styles/components/typography.tsx";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import localization from "./new-workspace.strings.json" assert { type: "json" };
+import { useSharedQuery } from "../../core/cfds/react/query.ts";
 
 const useStyles = makeStyles((theme) => ({
   workspaces: {
@@ -24,19 +24,19 @@ const useStyles = makeStyles((theme) => ({
   },
   workspacesList: {
     maxHeight: styleguide.gridbase * 30,
-    overflowY: 'auto',
+    overflowY: "auto",
   },
   iconClosed: {
-    transform: 'rotate(180deg)',
+    transform: "rotate(180deg)",
   },
   listItem: {
     borderBottom: `1px solid ${theme.background[300]}`,
-    ':first-child': {
+    ":first-child": {
       borderTop: `1px solid ${theme.background[300]}`,
     },
   },
   workspaceItem: {
-    alignItems: 'center',
+    alignItems: "center",
     basedOn: [layout.row],
   },
   workspaceIcon: {
@@ -45,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
   selectedWorkspace: {
     height: styleguide.gridbase * 4,
     padding: styleguide.gridbase * 0.5,
-    width: '100%',
+    width: "100%",
     basedOn: [layout.row, layout.centerCenter],
   },
 }));
@@ -60,7 +60,7 @@ export function WorkspaceItem({
   className?: string;
 }) {
   const styles = useStyles();
-  const { name } = usePartialVertex(workspace, ['name']);
+  const { name } = usePartialVertex(workspace, ["name"]);
 
   return (
     <div className={cn(styles.workspaceItem, className)}>
@@ -69,7 +69,7 @@ export function WorkspaceItem({
         className={cn(styles.workspaceIcon)}
         size={styleguide.gridbase * 3}
       />
-      <Text>{name} AMITTTT </Text>
+      <Text>{name} </Text>
     </div>
   );
 }

@@ -1,17 +1,21 @@
 import React from "react";
 import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconSize, IconProps, IconColor } from "./types.ts";
+import { IconSize, IconProps } from "./types.ts";
 
+export enum IconCheckState {
+  None = "none",
+  Blue = "blue",
+}
 export interface IconCheckProps extends IconProps {
-  color?: IconColor.Primary | IconColor.Mono | String;
+  state?: IconCheckState;
 }
 
 const COLOR_MAP = {
-  [IconColor.Primary]: {
+  [IconCheckState.Blue]: {
     var1: theme.primary.p9,
     var2: theme.primary.p10,
   },
-  [IconColor.Mono]: {
+  [IconCheckState.None]: {
     var1: theme.mono.m5,
     var2: theme.mono.m4,
   },
@@ -20,14 +24,15 @@ const COLOR_MAP = {
 export function IconCheck({
   size = IconSize.Small,
   className,
-  color = IconColor.Mono,
+  state = IconCheckState.Blue,
+  style = {},
 }: IconCheckProps) {
-  const checkColor = color === "blue" ? IconColor.Primary : IconColor.Mono;
-  const colorMap = COLOR_MAP[checkColor];
+  const colors = COLOR_MAP[state];
 
   return (
     <svg
       className={className}
+      style={{ padding: "8px", ...style }}
       width={size}
       height={size}
       viewBox="0 0 16 16"
@@ -37,14 +42,14 @@ export function IconCheck({
       <path
         opacity="0.6"
         d="M6.3335 11.3333L11.6668 4"
-        stroke={colorMap.var1}
+        stroke={colors.var1}
         strokeWidth="2"
         strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M4 8L6.33333 11.3333"
-        stroke={colorMap.var2}
+        stroke={colors.var2}
         strokeWidth="2"
         strokeLinecap="round"
       />

@@ -1,10 +1,11 @@
-import React from 'react';
-import { brandLightTheme as theme } from '../../theme.tsx';
-import { IconProps, IconSize } from './types.ts';
+import React from "react";
+import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconProps, IconSize } from "./types.ts";
 
 export enum DueDateState {
-  None = 'none',
-  Late = 'late',
+  None = "none",
+  Late = "late",
+  Blue = "blue",
 }
 
 const COLOR_MAP = {
@@ -18,6 +19,11 @@ const COLOR_MAP = {
     var2: theme.supporting.O4,
     var3: theme.supporting.O2,
   },
+  [DueDateState.Blue]: {
+    var1: theme.primary.p10,
+    var2: theme.primary.p9,
+    var3: theme.primary.p8,
+  },
 };
 
 export interface IconDueDateProps extends IconProps {
@@ -27,7 +33,8 @@ export interface IconDueDateProps extends IconProps {
 export function IconDueDate({
   size = IconSize.Small,
   className,
-  state = DueDateState.None,
+  state = DueDateState.Blue,
+  style = {},
 }: IconDueDateProps) {
   const colors = COLOR_MAP[state];
 
@@ -36,6 +43,7 @@ export function IconDueDate({
       className={className}
       width={size}
       height={size}
+      style={{ ...style, paddingRight: "8px" }}
       viewBox="0 0 16 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

@@ -306,7 +306,7 @@ export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
   const logger = useLogger();
   const toastController = useToastController();
   const { type } = usePartialVertex(cardManager, ["type"]);
-  const text = type === NoteType.Note ? "Convert To Task!" : "Convert To Note";
+  const text = type === NoteType.Note ? "Convert To Task" : "Convert To Note";
   const onClick = () => {
     const p = cardManager.getVertexProxy();
     const newType = type === NoteType.Note ? NoteType.Task : NoteType.Note;
@@ -335,7 +335,6 @@ export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
       IconComponent={type === NoteType.Note ? IconTask : IconNote}
       text={text}
       onClick={onClick}
-      color={IconColor.Mono}
     />
   );
 }
