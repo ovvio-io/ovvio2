@@ -9,8 +9,8 @@ const COLOR_MAP = {
     var3: theme.mono.m4,
   },
   [IconColor.Primary]: {
-    var2: theme.primary.p9,
     var1: theme.primary.p8,
+    var2: theme.primary.p9,
     var3: theme.primary.p10,
   },
 };

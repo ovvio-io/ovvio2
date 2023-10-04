@@ -68,6 +68,9 @@ import { IndeterminateProgressIndicator } from "../../../../styles/components/pr
 import { Repository } from "../../../../repo/repo.ts";
 import { IconShow } from "../../../../styles/components/new-icons/icon-show.tsx";
 import { IconSettings } from "../../../../styles/components/new-icons/icon-settings.tsx";
+import { IconHide } from "../../../../styles/components/new-icons/icon-hide.tsx";
+import { IconTemplateSet } from "../../../../styles/components/new-icons/icon-template-set.tsx";
+import { IconTemplateUnset } from "../../../../styles/components/new-icons/icon-template-unset.tsx";
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -776,17 +779,13 @@ function WorkspaceListItem({
               align="start"
               className={cn(styles.itemMenu)}
             >
-              <MenuItem onClick={() => setIsSettingsOpen(true)}>
-                <IconSettings />
-                {strings.workspaceSettings}
-              </MenuItem>
               {!isTemplate && (
                 <MenuItem
                   onClick={() =>
                     setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
                   }
                 >
-                  <IconShow />
+                  {groupId === "hidden" ? <IconShow /> : <IconHide />}
                   {groupId === "hidden"
                     ? strings.showWorkspace
                     : strings.hideWorkspace}
@@ -800,11 +799,21 @@ function WorkspaceListItem({
                     )
                   }
                 >
+                  {groupId === "templates" ? (
+                    <IconTemplateUnset />
+                  ) : (
+                    <IconTemplateSet />
+                  )}
+
                   {groupId === "templates"
                     ? strings.unsetTemplate
                     : strings.setTemplate}
                 </MenuItem>
               )}
+              <MenuItem onClick={() => setIsSettingsOpen(true)}>
+                <IconSettings />
+                {strings.workspaceSettings}
+              </MenuItem>
             </Menu>
           </React.Fragment>
         ))}
@@ -816,6 +825,7 @@ function WorkspaceListItem({
     </div>
   );
 }
+
 //   return (
 //     <div
 //       className={cn(

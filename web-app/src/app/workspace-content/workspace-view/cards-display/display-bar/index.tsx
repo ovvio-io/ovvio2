@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback } from "react";
 import {
   SortBy,
   ShowChecked,
@@ -7,50 +7,53 @@ import {
   kDateFilters,
   TabId,
   kTabIds,
-} from '../../../../../../../cfds/base/scheme-types.ts';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+} from "../../../../../../../cfds/base/scheme-types.ts";
+import { NoteType } from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { Role } from "../../../../../../../cfds/client/graph/vertices/role.ts";
+import { User } from "../../../../../../../cfds/client/graph/vertices/user.ts";
 import {
   useButtonStyles,
   Button,
-} from '../../../../../../../styles/components/buttons.tsx';
-import IconDropDownArrow from '../../../../../../../styles/components/icons/IconDropDownArrow.tsx';
-import IconDueDate from '../../../../../../../styles/components/icons/IconDueDate.tsx';
-import IconFilter from '../../../../../../../styles/components/icons/IconFilter.tsx';
+} from "../../../../../../../styles/components/buttons.tsx";
+import IconDropDownArrow from "../../../../../../../styles/components/icons/IconDropDownArrow.tsx";
+import IconFilter from "../../../../../../../styles/components/icons/IconFilter.tsx";
 import DropDown, {
   DropDownItem,
-} from '../../../../../../../styles/components/inputs/drop-down.tsx';
-import { IconSort } from '../../../../../../../styles/components/new-icons/icon-sort.tsx';
+} from "../../../../../../../styles/components/inputs/drop-down.tsx";
+import { IconSort } from "../../../../../../../styles/components/new-icons/icon-sort.tsx";
 import {
   TabButton,
   TabsHeader,
-} from '../../../../../../../styles/components/tabs/index.tsx';
+} from "../../../../../../../styles/components/tabs/index.tsx";
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { layout } from '../../../../../../../styles/layout.ts';
-import { MediaQueries } from '../../../../../../../styles/responsive.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { layout } from "../../../../../../../styles/layout.ts";
+import { MediaQueries } from "../../../../../../../styles/responsive.ts";
+import { styleguide } from "../../../../../../../styles/styleguide.ts";
 // import { Text } from '../../../../../../../styles/components/texts.tsx';
-import { Text } from '../../../../../../../styles/components/typography.tsx';
-import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
-import { IconShow } from '../../../../../../../styles/components/new-icons/icon-show.tsx';
-import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
-import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
+import { Text } from "../../../../../../../styles/components/typography.tsx";
+import { brandLightTheme as theme } from "../../../../../../../styles/theme.tsx";
+import { IconShow } from "../../../../../../../styles/components/new-icons/icon-show.tsx";
+import { IconPin } from "../../../../../../../styles/components/new-icons/icon-pin.tsx";
+import { IconCollapseExpand } from "../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx";
 import {
   usePartialView,
   useGraphManager,
-} from '../../../../../core/cfds/react/graph.tsx';
-import { createUseStrings } from '../../../../../core/localization/index.tsx';
-import { ToolbarRightItem } from '../../toolbar/index.tsx';
-import { ComposeButton } from './compose-button.tsx';
-import { GroupByDropDown } from './group-by-drop-down.tsx';
-import { ViewToggle } from './view-toggle.tsx';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
-import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
+} from "../../../../../core/cfds/react/graph.tsx";
+import { createUseStrings } from "../../../../../core/localization/index.tsx";
+import { ToolbarRightItem } from "../../toolbar/index.tsx";
+import { ComposeButton } from "./compose-button.tsx";
+import { GroupByDropDown } from "./group-by-drop-down.tsx";
+import { ViewToggle } from "./view-toggle.tsx";
+import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
+import localization from "../cards-display.strings.json" assert { type: "json" };
+import { IconCheck } from "../../../../../../../styles/components/new-icons/icon-check.tsx";
+import {
+  DueDateState,
+  IconDueDate,
+} from "../../../../../../../styles/components/new-icons/icon-due-date.tsx";
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -59,10 +62,10 @@ export const TABLET_PADDING = styleguide.gridbase;
 
 const useStyles = makeStyles(() => ({
   bar: {
-    justifyContent: 'flex-end',
-    alignItems: 'stretch',
+    justifyContent: "flex-end",
+    alignItems: "stretch",
     marginTop: styleguide.gridbase * 4,
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     basedOn: [layout.column],
   },
   barRow: {
@@ -121,11 +124,11 @@ const useStyles = makeStyles(() => ({
     padding: styleguide.gridbase,
   },
   extraFiltersSeparator: {
-    display: 'inline-block',
-    width: '2px',
-    height: '24px',
+    display: "inline-block",
+    width: "2px",
+    height: "24px",
     backgroundColor: theme.secondary.s5,
-    borderRadius: '2px',
+    borderRadius: "2px",
     // margin: [0, styleguide.gridbase * 2],
   },
 }));
@@ -146,7 +149,7 @@ function SortByDropDown() {
   const styles = useStyles();
   const strings = useStrings();
   const logger = useLogger();
-  const view = usePartialView('sortBy');
+  const view = usePartialView("sortBy");
 
   const renderSelected = useCallback(
     () => (
@@ -164,10 +167,10 @@ function SortByDropDown() {
   const onChange = useCallback(
     (val: SortBy) => {
       logger.log({
-        severity: 'INFO',
-        event: 'FilterChange',
+        severity: "INFO",
+        event: "FilterChange",
         type: `sortBy:${val}`,
-        source: 'toolbar:sortBy',
+        source: "toolbar:sortBy",
       });
       view.sortBy = val;
     },
@@ -183,7 +186,7 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
-          {view.sortBy === x && <IconCheck color={'blue'} />}
+          {view.sortBy === x && <IconCheck color={"blue"} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -193,7 +196,7 @@ function SortByDropDown() {
 function ShowCheckedDropDown() {
   const styles = useStyles();
   const strings = useStrings();
-  const view = usePartialView('showChecked');
+  const view = usePartialView("showChecked");
   // const eventLogger = useEventLogger();
 
   const renderSelected = useCallback(
@@ -236,7 +239,7 @@ function ShowCheckedDropDown() {
       {kShowChecked.map((x) => (
         <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
-          {view.showChecked === x && <IconCheck color={'blue'} />}
+          {view.showChecked === x && <IconCheck color={"blue"} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -246,23 +249,24 @@ function ShowCheckedDropDown() {
 function DateFilterDropdown() {
   const styles = useStyles();
   const strings = useStrings();
-  const view = usePartialView('dateFilter', 'selectedTabId');
+  const view = usePartialView("dateFilter", "selectedTabId");
 
   const text = view.dateFilter
     ? `${
-        view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
+        view.selectedTabId === "overview" ? strings.timeFrame : strings.dueBy
       } ${
-        (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
+        (view.selectedTabId === "overview" ? "" : strings.thisPrefix + " ") +
         strings[view.dateFilter]
       }`
-    : view.selectedTabId === 'overview'
+    : view.selectedTabId === "overview"
     ? strings.noTimeFrame
     : strings.noDateFilter;
 
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconDueDate />
+        <IconDueDate state={DueDateState.Default} />
+
         <Text className={cn(styles.dropDownButtonText)}>{text}</Text>
         <IconDropDownArrow />
       </div>
@@ -294,18 +298,18 @@ function DateFilterDropdown() {
       renderSelected={renderSelected}
       onOpen={onOpen}
     >
-      <DropDownItem value={undefined} key={'clearDueDateFilter'}>
+      <DropDownItem value={undefined} key={"clearDueDateFilter"}>
         <Text>{strings.all}</Text>
-        {view.dateFilter === undefined && <IconCheck color={'blue'} />}
+        {view.dateFilter === undefined && <IconCheck color={"blue"} />}
       </DropDownItem>
       {kDateFilters.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>
-            {(view.selectedTabId === 'overview'
-              ? ''
-              : strings.thisPrefix + ' ') + strings[x]}
+            {(view.selectedTabId === "overview"
+              ? ""
+              : strings.thisPrefix + " ") + strings[x]}
           </Text>
-          {view.dateFilter === x && <IconCheck color={'blue'} />}
+          {view.dateFilter === x && <IconCheck color={"blue"} />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -313,12 +317,12 @@ function DateFilterDropdown() {
 }
 
 function ShowPinnedButton() {
-  const view = usePartialView('showPinned');
+  const view = usePartialView("showPinned");
   const styles = useStyles();
 
   const togglePinned = useCallback(() => {
     view.showPinned =
-      view.showPinned === 'pinned' ? 'pinned-unpinned' : 'pinned';
+      view.showPinned === "pinned" ? "pinned-unpinned" : "pinned";
   }, [view, view.showPinned]);
 
   return (
@@ -327,13 +331,13 @@ function ShowPinnedButton() {
       className={cn(styles.iconItem)}
       // className={cn(styles.filterButton, styles.hasFilters)}
     >
-      <IconPin on={view.showPinned === 'pinned'} />
+      <IconPin on={view.showPinned === "pinned"} />
     </Button>
   );
 }
 
 function CollapseExpandeToggle() {
-  const view = usePartialView('notesExpandBase');
+  const view = usePartialView("notesExpandBase");
   const styles = useStyles();
 
   const togglePinned = useCallback(() => {
@@ -357,7 +361,7 @@ function ExtraFilters() {
   const graph = useGraphManager();
   const items: JSX.Element[] = [];
   // const rootUser = graph.getRootVertex<User>();
-  const view = usePartialView('noteType', 'viewType');
+  const view = usePartialView("noteType", "viewType");
   // if (unassignableRole.has(rootUser) || rootUser.email.endsWith('@ovvio.io')) {
   //   if (items.length > 0) {
   //     items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
@@ -368,25 +372,25 @@ function ExtraFilters() {
     items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
   }
   items.push(<DateFilterDropdown />);
-  if (view.selectedTabId !== 'overview' && view.noteType === NoteType.Task) {
+  if (view.selectedTabId !== "overview" && view.noteType === NoteType.Task) {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
     items.push(<ShowCheckedDropDown />);
   }
-  if (view.selectedTabId !== 'overview') {
+  if (view.selectedTabId !== "overview") {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
     items.push(<SortByDropDown />);
   }
-  if (view.selectedTabId !== 'overview' && view.viewType === 'board') {
+  if (view.selectedTabId !== "overview" && view.viewType === "board") {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
     items.push(<GroupByDropDown />);
   }
-  if (view.selectedTabId !== 'overview' && view.viewType === 'list') {
+  if (view.selectedTabId !== "overview" && view.viewType === "list") {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
@@ -402,13 +406,13 @@ function FilterButton() {
   const styles = useStyles();
   const strings = useStrings();
   const logger = useLogger();
-  const view = usePartialView('showFilters');
+  const view = usePartialView("showFilters");
 
   const filterButtonClicked = useCallback(() => {
     logger.log({
-      severity: 'INFO',
-      event: view.showFilters ? 'Show' : 'Hide',
-      source: 'toolbar:filterMenu',
+      severity: "INFO",
+      event: view.showFilters ? "Show" : "Hide",
+      source: "toolbar:filterMenu",
     });
     view.showFilters = !view.showFilters;
   }, [logger, view]);
@@ -434,20 +438,20 @@ function parseNoteType(val: string): NoteType {
 function TabView() {
   const strings = useStrings();
   const styles = useStyles();
-  const view = usePartialView('noteType', 'selectedTabId');
+  const view = usePartialView("noteType", "selectedTabId");
 
   const setSelected = useCallback(
     (tabId: TabId) => {
       view.selectedTabId = tabId;
-      if (tabId !== 'overview') {
-        view.noteType = tabId === 'tasks' ? NoteType.Task : NoteType.Note;
+      if (tabId !== "overview") {
+        view.noteType = tabId === "tasks" ? NoteType.Task : NoteType.Note;
       }
       view.closeFiltersDrawer();
     },
     [view]
   );
   const tabs: React.ReactElement[] = [];
-  for (const tabId of ['tasks', 'notes'] as TabId[]) {
+  for (const tabId of ["tasks", "notes"] as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
   return (
@@ -468,7 +472,7 @@ export type DisplayBarProps = {
 export function DisplayBar(props?: DisplayBarProps) {
   const { className, ...rest } = props || {};
   const styles = useStyles();
-  const view = usePartialView('selectedTabId');
+  const view = usePartialView("selectedTabId");
   // useSyncedFilter(props);
 
   const leftHand = (
@@ -485,7 +489,7 @@ export function DisplayBar(props?: DisplayBarProps) {
         <TabView />
       </div>
       <div className={cn(styles.barRow)}>
-        {view.selectedTabId !== 'overview' ? leftHand : null}
+        {view.selectedTabId !== "overview" ? leftHand : null}
         <div className={cn(layout.flexSpacer)} />
         <ExtraFilters {...rest} />
         <ToolbarRightItem>

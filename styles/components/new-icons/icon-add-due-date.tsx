@@ -2,39 +2,34 @@ import React from "react";
 import { brandLightTheme as theme } from "../../theme.tsx";
 import { IconProps, IconSize } from "./types.ts";
 
-export enum DueDateState {
+export enum AddDueDateState {
   Default = "default",
-  Today = "today",
-  OverDue = "overdue",
-  Done = "done",
-  Clear = "clear",
+  Primary = "primary",
 }
 
 const COLOR_MAP = {
-  [DueDateState.Default]: {
-    var1: theme.mono.m4,
-    var2: theme.mono.m10,
+  [AddDueDateState.Default]: {
+    var1: theme.mono.m10,
+    var2: theme.mono.m6,
+    var3: theme.mono.m4,
   },
-  [DueDateState.Today]: {
-    var1: theme.secondary.s5,
-    var2: theme.secondary.s6,
-  },
-  [DueDateState.OverDue]: {
-    var1: theme.supporting.O3,
-    var2: theme.supporting.O4,
+  [AddDueDateState.Primary]: {
+    var1: theme.primary.p10,
+    var2: theme.primary.p9,
+    var3: theme.primary.p7,
   },
 };
 
-export interface IconDueDateProps extends IconProps {
-  state?: DueDateState;
+export interface IconAddDueDateProps extends IconProps {
+  state?: AddDueDateState;
 }
 
-export function IconDueDate({
+export function IconAddDueDate({
   size = IconSize.Small,
   className,
-  state = DueDateState.Default,
+  state = AddDueDateState.Primary, // Set default state if not provided
   style = {},
-}: IconDueDateProps) {
+}: IconAddDueDateProps) {
   const colors = COLOR_MAP[state];
 
   return (
@@ -42,55 +37,69 @@ export function IconDueDate({
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
+      viewBox="0 0 16 16"
       style={{ paddingRight: "8px", ...style }}
-      viewBox="0 0 15 15"
       fill="none"
     >
       <path
         opacity="0.6"
-        d="M14 14H1"
-        stroke={colors.var2}
+        d="M8 13H1"
+        stroke={colors.var1}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
-        d="M14 2H1"
-        stroke={colors.var2}
+        d="M13 2H1"
+        stroke={colors.var1}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
-        d="M1 2L1 14"
-        stroke={colors.var2}
+        d="M13 6H1"
+        stroke={colors.var3}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
-        d="M14 2L14 14"
-        stroke={colors.var2}
+        d="M1 2L1 13"
+        stroke={colors.var1}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
-        d="M10 1L10 3"
-        stroke={colors.var2}
+        d="M13 2L13 8"
+        stroke={colors.var1}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <path
+        opacity="0.6"
+        d="M9 1L9 3"
+        stroke={colors.var1}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
         d="M5 1L5 3"
+        stroke={colors.var1}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <path
+        opacity="0.6"
+        d="M13 15L13 11"
         stroke={colors.var2}
         stroke-width="2"
         stroke-linecap="round"
       />
       <path
         opacity="0.6"
-        d="M14 6H1"
+        d="M15 13L11 13"
         stroke={colors.var1}
         stroke-width="2"
         stroke-linecap="round"

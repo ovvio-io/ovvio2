@@ -1,13 +1,16 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
-import { TextField } from '../../../../styles/components/inputs/index.ts';
-import { useMenuClose } from '../../../../styles/components/menu.tsx';
-import { useFocusOnMount } from '../../core/react-utils/index.ts';
+import React, { useState, useRef, useLayoutEffect } from "react";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import { styleguide, layout } from "../../../../styles/index.ts";
+import { TextField } from "../../../../styles/components/inputs/index.ts";
+import {
+  LineSeparator,
+  useMenuClose,
+} from "../../../../styles/components/menu.tsx";
+import { useFocusOnMount } from "../../core/react-utils/index.ts";
 import {
   Scroller,
   useScrollParent,
-} from '../../core/react-utils/scrolling.tsx';
+} from "../../core/react-utils/scrolling.tsx";
 
 const useStyles = makeStyles((theme) => ({
   popup: {
@@ -17,35 +20,35 @@ const useStyles = makeStyles((theme) => ({
   },
   popupContent: {
     backgroundColor: theme.background[0],
-    width: '100%',
-    boxSizing: 'border-box',
+    width: "100%",
+    boxSizing: "border-box",
     basedOn: [layout.column],
   },
   list: {
-    width: '100%',
+    width: "100%",
     maxHeight: styleguide.gridbase * 6 * 5,
-    overflowY: 'auto',
+    overflowY: "auto",
     basedOn: [layout.column],
   },
   input: {
-    border: 'none',
-    width: '100%',
-    borderBottom: '1px solid rgba(156, 178, 205, 0.6)',
+    border: "none",
+    width: "100%",
+    borderBottom: "1px solid rgba(156, 178, 205, 0.6)",
     borderRadius: 0,
   },
   mention: {
     flexShrink: 0,
-    width: '100%',
+    width: "100%",
     height: styleguide.gridbase * 6,
     padding: [0, styleguide.gridbase],
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     backgroundColor: theme.background[0],
-    alignItems: 'center',
-    cursor: 'pointer',
+    alignItems: "center",
+    cursor: "pointer",
     basedOn: [layout.row],
   },
   selected: {
-    backgroundColor: '#f0f3fa',
+    backgroundColor: "#f0f3fa",
   },
 }));
 
@@ -141,29 +144,29 @@ export function MentionPopup<T>({
   const items = getItems(filter.substring(trigger.length));
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((x) => (x - 1 < 0 ? items.length - 1 : x - 1));
         break;
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((x) => (x + 1) % items.length);
         break;
-      case 'Backspace':
+      case "Backspace":
         if (!filter) {
           e.preventDefault();
           e.stopPropagation();
           close();
         }
         break;
-      case 'Escape':
+      case "Escape":
         e.preventDefault();
         e.stopPropagation();
         close();
         break;
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         e.stopPropagation();
         select(items[selectedIndex]);
@@ -185,12 +188,16 @@ export function MentionPopup<T>({
       <Scroller>
         {(ref) => (
           <div className={cn(styles.list)} ref={ref}>
-            {items.map((item, i) =>
-              renderItem(item, {
-                isSelected: i === selectedIndex,
-                onClick: () => select(item),
-              })
-            )}
+            {items.map((item, i) => (
+              <>
+                {renderItem(item, {
+                  isSelected: i === selectedIndex,
+                  onClick: () => select(item),
+                })}
+
+                {i !== items.length - 1 && <LineSeparator />}
+              </>
+            ))}
           </div>
         )}
       </Scroller>

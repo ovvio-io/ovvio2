@@ -3,6 +3,7 @@ import { FontFamily } from "../typography.tsx";
 import { makeStyles, cn } from "../../css-objects/index.ts";
 import { styleguide } from "../../styleguide.ts";
 import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconSearch } from "../new-icons/icon-search.tsx";
 
 const useStyles = makeStyles(
   () => ({
@@ -10,18 +11,34 @@ const useStyles = makeStyles(
       height: styleguide.gridbase * 5,
       boxSizing: "border-box",
       borderRadius: 4,
-      fontSize: 14,
-      lineHeight: 16,
-      border: ` solid 1px rgba(156, 178, 205, 0.6)`,
+      padding: "6px 8px 6px 10px",
+      // lineHeight: "16px",
       outline: "none",
-      fontFamily: FontFamily,
-      padding: [styleguide.gridbase, styleguide.gridbase * 2],
-      backgroundColor: theme.colors.background,
+      // fontFamily: FontFamily,
       color: theme.colors.text,
       "::placeholder": {
         color: theme.colors.placeholderText,
         opacity: 1,
       },
+      alignItems: "center",
+      gap: "8px",
+      flexShrink: 0,
+      border: "1px solid #F5ECDC",
+      background: "#FFFBF5",
+      width: "88px",
+      flexDirection: "column",
+      justifyContent: "center",
+
+      overflow: "hidden",
+      fontFeatureSettings: "'clig' off, 'liga' off",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      fontFamily: "Poppins",
+      fontSize: "13px",
+      fontStyle: "normal",
+      fontWeight: 400,
+      lineHeight: "normal",
+      letterSpacing: "0.075px",
     },
   }),
   "TextField_9e7133"
@@ -36,6 +53,9 @@ export default React.forwardRef(function TextField(
   const styles = useStyles();
   const { className, ...rest } = props;
   return (
-    <input ref={ref} className={cn(styles.textField, className)} {...rest} />
+    <div>
+      <IconSearch className={cn(styles.textField, className)} />
+      <input ref={ref} {...rest} />
+    </div>
   );
 });

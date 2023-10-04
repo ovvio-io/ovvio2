@@ -21,7 +21,7 @@ import { IconExpander } from "./icons/index.ts";
 import Arrow from "./arrow.tsx";
 import { brandLightTheme as theme1 } from "../theme.tsx";
 
-export const LineSeparator = (theme) => (
+export const LineSeparator = () => (
   <div
     style={{
       height: "1px",
@@ -273,7 +273,7 @@ export const Backdrop = React.forwardRef<
             styles.backdrop,
             visible && styles.backdropVisible
           )}
-          style={{ zIndex }}
+          style={{ zIndex, marginBottom: "8px" }}
           {...rest}
         >
           {children}

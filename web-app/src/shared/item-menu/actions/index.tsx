@@ -45,6 +45,10 @@ import {
 } from "../../../core/cfds/react/vertex.ts";
 import { useLogger } from "../../../core/cfds/react/logger.tsx";
 import { UISource } from "../../../../../logging/client-events.ts";
+import {
+  IconAddDueDate,
+  IconAddDueDateState,
+} from "../../../../../styles/components/new-icons/icon-add-due-date.tsx";
 
 interface CardActionProps {
   cardManager: VertexManager<Note>;
@@ -103,7 +107,7 @@ export function EditDueDateAction({
     <MenuAction
       {...props}
       onClick={onClick}
-      IconComponent={IconDueDate}
+      IconComponent={IconAddDueDate}
       text="Add Due Date"
     />
   );

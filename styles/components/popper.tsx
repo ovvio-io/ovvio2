@@ -63,6 +63,7 @@ export const Popper: React.FC<PopperViewProps> = ({
   animationDuration = styleguide.transition.duration.short,
   className = "",
   anchor,
+  position,
   ...rest
 }) => {
   const [visibility] = useTransitionedOpen(open && !!anchor, animationDuration);
@@ -75,6 +76,7 @@ export const Popper: React.FC<PopperViewProps> = ({
       className={cn(className)}
       anchor={anchor}
       visibility={visibility}
+      position={position}
       {...rest}
     />
   );
@@ -416,11 +418,52 @@ const PopperElement: React.FC<PopperElementProps> = ({
   const [style, setStyle] = useState({});
   const offset = useScrollingRerendering();
 
+  function getMarginStyles(position: string) {
+    switch (position) {
+      case "left":
+        return {
+          marginLeft: "0px",
+          marginRight: "4px",
+          marginTop: "0px",
+          marginBottom: "0px",
+        };
+      case "bottom":
+        return {
+          marginBottom: "0px",
+          marginTop: "4px",
+          marginLeft: "0px",
+          marginRight: "0px",
+        };
+      case "right":
+        return {
+          marginBottom: "0px",
+          marginTop: "0px",
+          marginLeft: "4px",
+          marginRight: "0px",
+        };
+      case "top":
+        return {
+          marginBottom: "4px",
+          marginTop: "0px",
+          marginLeft: "px",
+          marginRight: "0px",
+        };
+      default:
+        return {
+          marginTop: "0px",
+          marginBottom: "0px",
+          marginLeft: "0px",
+          marginRight: "0px",
+        };
+    }
+  }
   useLayoutEffect(() => {
     let p = position;
     let a = align;
-    let newStyle = positionCalculator[p][a][direction](anchor);
-
+    let newStyle = {
+      ...positionCalculator[p][a][direction](anchor),
+      ...getMarginStyles(p),
+    };
     const overflow = isOverflowing(newStyle, el.current);
     if (overflow.length) {
       if (p === "right") {
@@ -461,7 +504,10 @@ const PopperElement: React.FC<PopperElementProps> = ({
         }
       }
 
-      newStyle = positionCalculator[p][a][direction](anchor);
+      newStyle = {
+        ...positionCalculator[p][a][direction](anchor),
+        ...getMarginStyles(p),
+      };
     }
 
     for (let [key, val] of Object.entries(newStyle)) {
