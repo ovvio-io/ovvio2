@@ -11,16 +11,16 @@ import {
   Scroller,
   useScrollParent,
 } from "../../core/react-utils/scrolling.tsx";
+import { IconSearch } from "../../../../styles/components/new-icons/icon-search.tsx";
 
 const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: theme.background[0],
-    width: styleguide.gridbase * 32,
+    // width: styleguide.gridbase * 16.5,
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
     backgroundColor: theme.background[0],
-    width: "100%",
     boxSizing: "border-box",
     basedOn: [layout.column],
   },
@@ -30,16 +30,47 @@ const useStyles = makeStyles((theme) => ({
     overflowY: "auto",
     basedOn: [layout.column],
   },
+
+  searchContainer: {
+    display: "flex",
+    padding: "6px 8px 6px 10px",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
+    background: "var(--secondary-secondary-s-0, #FFFBF5)",
+  },
+
+  iconContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   input: {
+    display: "flex",
+    height: "20px",
+    flexDirection: "column",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+    background: "var(--secondary-secondary-s-0, #FFFBF5)",
+    color: "var(--monochrom-m-10, #262626)",
+    fontFeatureSettings: "'clig' off, 'liga' off",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontFamily: "Poppins",
+    fontSize: "13px",
+    fontStyle: "normal",
+    fontWeight: 400,
+    lineHeight: "normal",
+    letterSpacing: "0.075px",
     border: "none",
-    width: "100%",
-    borderBottom: "1px solid rgba(156, 178, 205, 0.6)",
     borderRadius: 0,
   },
   mention: {
     flexShrink: 0,
     width: "100%",
-    height: styleguide.gridbase * 6,
+    height: styleguide.gridbase * 4,
     padding: [0, styleguide.gridbase],
     boxSizing: "border-box",
     backgroundColor: theme.background[0],
@@ -48,7 +79,7 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row],
   },
   selected: {
-    backgroundColor: "#f0f3fa",
+    // backgroundColor: "#f0f3fa",
   },
 }));
 
@@ -177,14 +208,20 @@ export function MentionPopup<T>({
   };
   return (
     <div className={cn(styles.popupContent)}>
-      <TextField
-        className={cn(styles.input)}
-        type="text"
-        value={filter}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        ref={ref}
-      />
+      <div className={cn(styles.searchContainer)}>
+        <div className={cn(styles.iconContainer)}>
+          <IconSearch />
+        </div>
+        <TextField
+          className={cn(styles.input)}
+          type="text"
+          value={filter}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          ref={ref}
+        />
+      </div>
+
       <Scroller>
         {(ref) => (
           <div className={cn(styles.list)} ref={ref}>

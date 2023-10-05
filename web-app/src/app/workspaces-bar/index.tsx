@@ -345,7 +345,12 @@ const useStyles = makeStyles(
     workSpaceMenu: {
       top: "-7px",
     },
+    itemMenuOpen: {
+      opacity: 1,
+      padding: "0px 6px 0px 0px",
+    },
   }),
+
   "workspaces-bar_881015"
 );
 
@@ -695,7 +700,15 @@ function WorkspaceListItem({
     textRef.current &&
     textRef.current.offsetWidth < textRef.current.scrollWidth;
 
-  const renderButton = useCallback(() => <IconMore />, []);
+  // const renderButton = useCallback(() => <IconMore />, []);
+  const renderButton = useCallback(
+    ({ isOpen }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <IconMore />
+      </div>
+    ),
+    []
+  );
 
   const setWorkspaceState = useCallback(
     (state: "template" | "hidden" | "pinned" | "none") => {
@@ -777,7 +790,7 @@ function WorkspaceListItem({
               direction="out"
               position="right"
               align="start"
-              className={cn(styles.itemMenu)}
+              // className={cn(styles.itemMenu)}
             >
               {!isTemplate && (
                 <MenuItem

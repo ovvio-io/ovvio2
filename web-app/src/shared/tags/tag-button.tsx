@@ -60,7 +60,8 @@ const useStyles = makeStyles((theme) => ({
   },
   popup: {
     backgroundColor: theme.background[0],
-    width: styleguide.gridbase * 32,
+    // width: styleguide.gridbase * 32,
+    width: "100%",
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {

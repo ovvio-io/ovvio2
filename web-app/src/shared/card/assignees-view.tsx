@@ -64,7 +64,7 @@ const useStyles = makeStyles(() => ({
   },
   popup: {
     backgroundColor: theme.colors.background,
-    width: styleguide.gridbase * 32,
+    width: styleguide.gridbase * 16.5,
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
@@ -84,6 +84,7 @@ const useStyles = makeStyles(() => ({
     whiteSpace: "nowrap",
     marginLeft: styleguide.gridbase,
     color: theme.colors.text,
+    fontSize: "13px",
   },
   inviteIcon: {
     marginRight: styleguide.gridbase * 2,

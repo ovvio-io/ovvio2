@@ -58,7 +58,7 @@ export default function CardMenuView({
     //   </div>
     // )} >
     <Menu
-      renderButton={() => <IconMore />}
+      renderButton={() => <IconMore className={className} />}
       direction="out"
       position="left"
       align="start"
