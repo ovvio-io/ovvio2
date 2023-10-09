@@ -263,6 +263,21 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
   dateFilter: TYPE_STR,
 });
 
+const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
+  publicKey: {
+    type: TYPE_STR,
+    required: true,
+  },
+  expiration: {
+    type: TYPE_DATE,
+    required: true,
+  },
+  owner: {
+    type: TYPE_REF,
+    required: true,
+  },
+});
+
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
@@ -271,6 +286,7 @@ export {
   SCHEME_TAG_1 as TAG_SCHEME,
   SCHEME_USER_1 as USER_SCHEME,
   SCHEME_VIEW_1 as VIEW_SCHEME,
+  SCHEME_SESSION_1 as SESSION_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -347,7 +363,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1],
+    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_SESSION_1],
     [
       SchemeNamespace.NOTES,
       SchemeNamespace.TAGS,

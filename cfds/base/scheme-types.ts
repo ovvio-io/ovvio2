@@ -11,6 +11,7 @@ export enum SchemeNamespace {
   USERS = 'users',
   USER_SETTINGS = 'user-settings',
   VIEWS = 'views',
+  SESSIONS = 'sessions',
   Null = '',
 }
 
@@ -31,6 +32,7 @@ export const NS_TAGS = SchemeNamespace.TAGS;
 export const NS_USERS = SchemeNamespace.USERS;
 export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
 export const NS_VIEWS = SchemeNamespace.VIEWS;
+export const NS_SESSIONS = SchemeNamespace.SESSIONS;
 
 export const TYPE_STR = ValueType.STRING;
 export const TYPE_NUMBER = ValueType.NUMBER;
@@ -177,7 +179,7 @@ export enum NoteStatus {
 }
 
 // export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
-export type WorkspaceGrouping = 'none' | 'Employee' | 'Team'; //TODO: replaced 
+export type WorkspaceGrouping = 'none' | 'Employee' | 'Team'; //TODO: replaced
 
 export const kShowChecked = [
   'checked-unchecked',

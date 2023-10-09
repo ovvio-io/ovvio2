@@ -6,6 +6,19 @@ import {
 } from '../cfds/base/scheme-types.ts';
 import { Repository, RepositoryType } from './repo.ts';
 
+/**
+ * This function defines the mapping between records and their corresponding
+ * repositories. Whenever a new namespace is added, this function must be
+ * updated.
+ *
+ * This is a central point through which the entire system goes, both the client
+ * and the server code.
+ *
+ * @param key The key of the record.
+ * @param rec The latest value of the record.
+ *
+ * @returns A repository id.
+ */
 export function repositoryForRecord(key: string | null, rec: Record): string {
   let storage: RepositoryType;
   let id: string;
@@ -18,6 +31,7 @@ export function repositoryForRecord(key: string | null, rec: Record): string {
 
     case SchemeNamespace.USERS:
     case SchemeNamespace.WORKSPACE:
+    case SchemeNamespace.SESSIONS:
       storage = 'sys';
       id = 'dir';
       break;
