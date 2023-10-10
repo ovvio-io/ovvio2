@@ -8,6 +8,7 @@ export const kServerMetricNames = [
   'ServerStarted',
   'HttpStatusCode',
   'IncompatibleProtocolVersion',
+  'InternalServerError',
 ] as const;
 
 export const kClientMetricNames = [
@@ -24,9 +25,22 @@ export type ClientMetricName = (typeof kClientMetricNames)[number];
 export type MetricName = ServerMetricName | ClientMetricName;
 export type MetricUnit = 'Count' | 'Bytes' | 'Milliseconds' | 'Percent';
 export type MetricType = 'Count' | 'Gauge' | 'Histogram' | 'Summary';
+export type HTTPMethod =
+  | 'OPTIONS'
+  | 'GET'
+  | 'HEAD'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'TRACE'
+  | 'CONNECT'
+  | 'PATCH';
 
-export interface BaseMetricLogEntry extends BaseLogEntry {
-  severity: Severity & ('INFO' | 'DEBUG');
+export type MetricSeverity = Extract<Severity, 'INFO' | 'DEBUG' | 'ERROR'>;
+
+export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
+  extends BaseLogEntry {
+  severity: T;
   name: MetricName;
   value: number;
   unit: MetricUnit;
@@ -40,8 +54,26 @@ export type MetricLogWithURL<
   urls?: string[];
 };
 
+export type MetricLogWithHTTP<T extends MetricLogWithURL = MetricLogWithURL> =
+  T & {
+    method?: HTTPMethod;
+  };
+
+export type MetricLogWithError<
+  T extends BaseMetricLogEntry = BaseMetricLogEntry
+> = T & {
+  error?: string;
+};
+
 export type MetricLogEntryType<N extends MetricName> =
-  N extends 'PeerResponseTime' ? MetricLogWithURL : BaseMetricLogEntry;
+  N extends 'PeerResponseTime'
+    ? MetricLogWithURL
+    : N extends 'HttpStatusCode'
+    ? MetricLogWithHTTP
+    : N extends 'InternalServerError'
+    ? Required<MetricLogWithError<BaseMetricLogEntry<'ERROR'>>> &
+        MetricLogWithHTTP<BaseMetricLogEntry<'ERROR'>>
+    : BaseMetricLogEntry;
 
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 

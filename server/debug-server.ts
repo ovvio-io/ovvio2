@@ -10,6 +10,7 @@ import {
   getRepositoryPath,
 } from '../web-app/build.ts';
 import { getOvvioConfig } from './config.ts';
+import { OvvioServer } from '../net/server/ovvio-server.ts';
 
 function generateConfigSnippet(version: VersionNumber): string {
   const config = getOvvioConfig();
@@ -72,11 +73,8 @@ async function main(): Promise<void> {
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
   const watcher = Deno.watchFs(getRepositoryPath());
-  const server = new Server(
-    undefined,
-    await rebuildAssets(ctx, getOvvioConfig().version)
-  );
-  server.run();
+  const server = new OvvioServer();
+  server.run(await rebuildAssets(ctx, getOvvioConfig().version));
   openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
     console.log('Changes detected. Rebuilding static assets...');
@@ -97,6 +95,7 @@ async function main(): Promise<void> {
       }
     }
   }
+  await server.shutdown();
   ctx.close();
 }
 

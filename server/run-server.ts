@@ -1,3 +1,3 @@
-import { Server } from '../net/server.ts';
+import { OvvioServer } from '../net/server/ovvio-server.ts';
 
-new Server().run();
+new OvvioServer().run();

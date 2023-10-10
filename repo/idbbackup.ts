@@ -37,7 +37,7 @@ interface EncodedCommit extends ReadonlyJSONObject {
 
 interface RepoBackupSchema extends DBSchema {
   commits: {
-    key: 'id';
+    key: string;
     value: EncodedCommit;
   };
 }
