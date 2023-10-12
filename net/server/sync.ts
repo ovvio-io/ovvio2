@@ -26,9 +26,11 @@ import { LogClient } from '../log-client.ts';
 import { SyncMessage } from '../message.ts';
 import { SyncValueType } from '../message.ts';
 import { RepoClient } from '../repo-client.ts';
-import { Endpoint } from './base-server.ts';
+import { Endpoint, Server } from './server.ts';
+import { getRequestPath } from './utils.ts';
+import { BaseService } from './service.ts';
 
-export class SyncEndpoint implements Endpoint {
+export class SyncService extends BaseService {
   private readonly _repositories: Dictionary<
     string,
     Repository<SQLiteRepoStorage>
@@ -37,21 +39,113 @@ export class SyncEndpoint implements Endpoint {
     string,
     RepoClient<SQLiteRepoStorage>[]
   >;
+  readonly name = 'sync';
+
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
-
-  constructor(readonly dataDir: string, readonly replicas: string[] = []) {
+  constructor(
+    readonly server: Server,
+    readonly dataDir: string,
+    readonly replicas: string[] = []
+  ) {
+    super(server);
     this._repositories = new Map();
     this._clientsForRepo = new Map();
     this._logs = new Map();
     this._clientsForLog = new Map();
   }
 
-  filter(req: Request, info: Deno.ServeHandlerInfo): boolean {
+  getRepository(
+    type: RepositoryType,
+    id: string
+  ): Repository<SQLiteRepoStorage> {
+    let repo = this._repositories.get(id);
+    if (!repo) {
+      repo = new Repository(
+        new SQLiteRepoStorage(joinPath(this.dataDir, type, id + '.repo')),
+        this.server.service('session').value
+      );
+      this._repositories.set(id, repo);
+      const replicas = this.replicas;
+      if (replicas.length > 0) {
+        assert(!this._clientsForRepo.has(id)); // Sanity check
+        const clients = this.replicas.map((baseServerUrl) =>
+          new RepoClient(
+            repo!,
+            new URL(`/${type}/` + id, baseServerUrl).toString(),
+            kSyncConfigServer
+          ).startSyncing()
+        );
+        this._clientsForRepo.set(id, clients);
+      }
+    }
+    return repo;
+  }
+
+  getLog(id: string): SQLiteLogStorage {
+    let storage = this._logs.get(id);
+    if (!storage) {
+      storage = new SQLiteLogStorage(
+        joinPath(this.dataDir, 'logs', id + '.logs')
+      );
+      this._logs.set(id, storage);
+      const replicas = this.replicas;
+      if (replicas.length > 0) {
+        assert(!this._clientsForLog.has(id)); // Sanity check
+        const clients = this.replicas.map((baseServerUrl) =>
+          new LogClient(
+            storage!,
+            new URL('/logs/' + id, baseServerUrl).toString(),
+            kSyncConfigServer
+          ).startSyncing()
+        );
+        this._clientsForLog.set(id, clients);
+      }
+    }
+    return storage;
+  }
+
+  clientsForLog(id: string): LogClient[] {
+    return this._clientsForLog.get(id)!;
+  }
+
+  clientsForRepo(id: string): RepoClient<SQLiteRepoStorage>[] {
+    return this._clientsForRepo.get(id)!;
+  }
+
+  start(): void {
+    for (const clients of this._clientsForRepo.values()) {
+      for (const c of clients) {
+        c.startSyncing();
+      }
+    }
+    for (const clients of this._clientsForLog.values()) {
+      for (const c of clients) {
+        c.startSyncing();
+      }
+    }
+  }
+
+  stop(): void {
+    for (const clients of this._clientsForRepo.values()) {
+      for (const c of clients) {
+        c.stopSyncing();
+      }
+    }
+    for (const clients of this._clientsForLog.values()) {
+      for (const c of clients) {
+        c.stopSyncing();
+      }
+    }
+  }
+}
+
+export class SyncEndpoint implements Endpoint {
+  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
     if (req.method !== 'POST') {
       return false;
     }
-    const path = new URL(req.url).pathname.split('/');
+    const path = getRequestPath(req).split('/');
     if (path.length !== 4 || ![...kRepositoryTypes, 'log'].includes(path[1])) {
       return false;
     }
@@ -59,6 +153,7 @@ export class SyncEndpoint implements Endpoint {
   }
 
   async processRequest(
+    server: Server,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
@@ -69,10 +164,11 @@ export class SyncEndpoint implements Endpoint {
         })
       );
     }
-    const path = new URL(req.url).pathname.split('/');
+    const path = getRequestPath(req).split('/');
     const storageType = path[1] as RepositoryType;
     const resourceId = path[2];
     const cmd = path[3];
+    const syncService = server.service('sync');
     let resp: Response;
     switch (cmd) {
       case 'sync':
@@ -85,30 +181,32 @@ export class SyncEndpoint implements Endpoint {
             req,
             (values) =>
               Promise.resolve(
-                this.getRepository(storageType, resourceId).persistCommits(
-                  values
-                ).length
+                syncService
+                  .getRepository(storageType, resourceId)
+                  .persistCommits(values).length
               ),
             () =>
               mapIterable(
-                this.getRepository(storageType, resourceId).commits(),
+                syncService.getRepository(storageType, resourceId).commits(),
                 (c) => [c.id, c]
               ),
-            () => this.getRepository(storageType, resourceId).numberOfCommits,
-            this._clientsForRepo.get(resourceId),
+            () =>
+              syncService.getRepository(storageType, resourceId)
+                .numberOfCommits,
+            syncService.clientsForRepo(resourceId),
             true
           );
         } else if (storageType === 'log') {
           resp = await this.handleSyncRequest<NormalizedLogEntry>(
             req,
-            (entries) => this.getLog(resourceId).persistEntries(entries),
+            (entries) => syncService.getLog(resourceId).persistEntries(entries),
             () =>
-              mapIterable(this.getLog(resourceId).entriesSync(), (e) => [
+              mapIterable(syncService.getLog(resourceId).entriesSync(), (e) => [
                 e.logId,
                 e,
               ]),
-            () => this.getLog(resourceId).numberOfEntries(),
-            this._clientsForLog.get(resourceId),
+            () => syncService.getLog(resourceId).numberOfEntries(),
+            syncService.clientsForLog(resourceId),
             // TODO: Only include results when talking to other, trusted,
             // servers. Clients should never receive log entries from the
             // server.
@@ -164,54 +262,5 @@ export class SyncEndpoint implements Endpoint {
         },
       }
     );
-  }
-
-  private getRepository(
-    type: RepositoryType,
-    id: string
-  ): Repository<SQLiteRepoStorage> {
-    let repo = this._repositories.get(id);
-    if (!repo) {
-      repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this.dataDir, type, id + '.repo'))
-      );
-      this._repositories.set(id, repo);
-      const replicas = this.replicas;
-      if (replicas.length > 0) {
-        assert(!this._clientsForRepo.has(id)); // Sanity check
-        const clients = this.replicas.map((baseServerUrl) =>
-          new RepoClient(
-            repo!,
-            new URL(`/${type}/` + id, baseServerUrl).toString(),
-            kSyncConfigServer
-          ).startSyncing()
-        );
-        this._clientsForRepo.set(id, clients);
-      }
-    }
-    return repo;
-  }
-
-  private getLog(id: string): SQLiteLogStorage {
-    let storage = this._logs.get(id);
-    if (!storage) {
-      storage = new SQLiteLogStorage(
-        joinPath(this.dataDir, 'logs', id + '.logs')
-      );
-      this._logs.set(id, storage);
-      const replicas = this.replicas;
-      if (replicas.length > 0) {
-        assert(!this._clientsForLog.has(id)); // Sanity check
-        const clients = this.replicas.map((baseServerUrl) =>
-          new LogClient(
-            storage!,
-            new URL('/logs/' + id, baseServerUrl).toString(),
-            kSyncConfigServer
-          ).startSyncing()
-        );
-        this._clientsForLog.set(id, clients);
-      }
-    }
-    return storage;
   }
 }

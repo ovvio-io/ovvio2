@@ -322,6 +322,12 @@ export class Scheme implements Encodable {
     return scheme;
   }
 
+  static session(): Scheme {
+    const scheme = SchemeManager.instance.getScheme(SchemeNamespace.SESSIONS);
+    if (!scheme) throw new Error('Session scheme not found');
+    return scheme;
+  }
+
   static getLatestVersion(ns: string) {
     const scheme = SchemeManager.instance.getScheme(ns);
     if (!scheme) throw new Error(`Scheme namespace: ${ns} not found`);

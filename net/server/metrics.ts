@@ -1,11 +1,12 @@
 import { LogStream, log } from '../../logging/log.ts';
-import { PrometheusLogStream } from '../../server/prometeus-stream.ts';
-import { Endpoint, Middleware } from './base-server.ts';
+import { Server, Endpoint, Middleware } from './server.ts';
+import { getRequestPath } from './utils.ts';
 
 export class MetricsMiddleware implements Middleware {
   constructor(readonly outputStreams?: readonly LogStream[]) {}
 
   didProcess(
+    server: Server,
     req: Request,
     info: Deno.ServeHandlerInfo,
     resp: Response
@@ -26,17 +27,20 @@ export class MetricsMiddleware implements Middleware {
 }
 
 export class PrometheusMetricsEndpoint implements Endpoint {
-  constructor(readonly logStream: PrometheusLogStream) {}
-
-  filter(req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
     if (req.method !== 'GET') {
       return false;
     }
-    return new URL(req.url).pathname.toLowerCase() === '/metrics';
+    return getRequestPath(req) === '/metrics';
   }
 
-  processRequest(req: Request, info: Deno.ServeHandlerInfo): Promise<Response> {
-    const metrics = this.logStream.getMetrics();
+  processRequest(
+    server: Server,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): Promise<Response> {
+    const logStream = server.service('prometheus').value;
+    const metrics = logStream.getMetrics();
     return Promise.resolve(
       new Response(metrics, {
         headers: {

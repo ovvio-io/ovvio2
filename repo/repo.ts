@@ -13,6 +13,7 @@ import { log } from '../logging/log.ts';
 import { kRecordIdField } from '../cfds/base/scheme-types.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 import { repositoryForRecord } from './resolver.ts';
+import { OwnedSession, Session, sign } from '../auth/session.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -31,10 +32,12 @@ export interface RepoStorage<T extends RepoStorage<T>> {
 
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly storage: ST;
+  readonly session: OwnedSession;
 
-  constructor(storage: ST) {
+  constructor(storage: ST, session: OwnedSession) {
     super();
     this.storage = storage;
+    this.session = session;
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -225,10 +228,13 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   headForKey(
     key: string | null,
-    session: string,
+    session?: string,
     pendingCommit?: Commit
   ): Commit | undefined {
     assert(!pendingCommit || pendingCommit.key === key);
+    if (!session) {
+      session = this.session.id;
+    }
     const leaves = this.leavesForKey(key, pendingCommit);
     if (leaves.length < 1) {
       // No commit history found. Return the null record as a starting point
@@ -323,31 +329,35 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   valueForKey(
     key: string | null,
-    session: string,
+    session?: string,
     pendingCommit?: Commit
   ): Record {
     const head = this.headForKey(key, session, pendingCommit);
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
-  setValueForKey(key: string | null, session: string, value: Record): boolean {
+  setValueForKey(key: string | null, value: Record): boolean {
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
     if (value.isNull) {
       return false;
     }
-    const head = this.headForKey(key, session);
+    const session = this.session;
+    const head = this.headForKey(key, session.id);
     const headRecord = head ? this.recordForCommit(head) : undefined;
     if (headRecord?.isEqual(value)) {
       return false;
     }
-    const fullCommit = new Commit({
-      session,
+    let commit = new Commit({
+      session: session.id,
       key,
       contents: value.clone(),
       parents: head?.id,
     });
-    this.persistCommits([this.deltaCompressIfNeeded(fullCommit)]);
+    commit = this.deltaCompressIfNeeded(commit);
+    sign(session, commit).then((signedCommit) => {
+      this.persistCommits([signedCommit]);
+    });
     return true;
   }
 

@@ -276,6 +276,10 @@ const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
     type: TYPE_REF,
     required: true,
   },
+  id: {
+    type: TYPE_STR,
+    required: true,
+  },
 });
 
 export {

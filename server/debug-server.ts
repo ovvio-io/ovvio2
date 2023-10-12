@@ -2,7 +2,6 @@ import * as path from 'std/path/mod.ts';
 import { SimpleTimer } from '../base/timer.ts';
 import { tuple4Get, tuple4Set } from '../base/tuple.ts';
 import { VersionNumber } from '../base/version-number.ts';
-import { Server, StaticAssets } from '../net/server.ts';
 import {
   BuildContext,
   createBuildContext,
@@ -10,7 +9,8 @@ import {
   getRepositoryPath,
 } from '../web-app/build.ts';
 import { getOvvioConfig } from './config.ts';
-import { OvvioServer } from '../net/server/ovvio-server.ts';
+import { Server } from '../net/server/server.ts';
+import { StaticAssets } from '../net/server/static-assets.ts';
 
 function generateConfigSnippet(version: VersionNumber): string {
   const config = getOvvioConfig();
@@ -73,15 +73,20 @@ async function main(): Promise<void> {
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
   const watcher = Deno.watchFs(getRepositoryPath());
-  const server = new OvvioServer();
-  server.run(await rebuildAssets(ctx, getOvvioConfig().version));
+  const server = new Server();
+  await server.setupServer();
+  server.service('staticAssets').value = await rebuildAssets(
+    ctx,
+    getOvvioConfig().version
+  );
+  await server.start();
   openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
     console.log('Changes detected. Rebuilding static assets...');
     try {
       const config = getOvvioConfig();
       const version = incrementBuildNumber(config.version);
-      server.staticAssets = await rebuildAssets(ctx, version);
+      server.service('staticAssets').value = await rebuildAssets(ctx, version);
       config.version = version;
       console.log('Static assets updated.');
     } catch (e) {
@@ -95,7 +100,7 @@ async function main(): Promise<void> {
       }
     }
   }
-  await server.shutdown();
+  await server.stop();
   ctx.close();
 }
 

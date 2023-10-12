@@ -1,4 +1,5 @@
-import { Endpoint } from './base-server.ts';
+import { Server, Endpoint } from './server.ts';
+import { getRequestPath } from './utils.ts';
 
 export interface StaticAssets {
   readonly html: string;
@@ -17,47 +18,47 @@ export const kStaticPaths = [
 export type StaticPath = (typeof kStaticPaths)[number];
 
 export class StaticAssetsEndpoint implements Endpoint {
-  staticAssets?: StaticAssets;
-  constructor(assets?: StaticAssets) {
-    this.staticAssets = assets;
+  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+    return req.method === 'GET';
   }
 
-  filter(req: Request, info: Deno.ServeHandlerInfo): boolean {
-    return req.method === 'GET' && this.staticAssets !== undefined;
-  }
-
-  processRequest(req: Request, info: Deno.ServeHandlerInfo): Promise<Response> {
-    const path = new URL(req.url).pathname.toLowerCase() as StaticPath;
+  processRequest(
+    server: Server,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): Promise<Response> {
+    const path = getRequestPath<StaticPath>(req);
+    const staticAssets = server.service('staticAssets').value;
     switch (path) {
       case '/app.js': {
         return Promise.resolve(
-          new Response(this.staticAssets?.js, {
+          new Response(staticAssets?.js, {
             headers: {
               'content-type': 'text/javascript; charset=utf-8',
             },
-            status: this.staticAssets?.js ? 200 : 404,
+            status: staticAssets?.js ? 200 : 404,
           })
         );
       }
 
       case '/app.js.map': {
         return Promise.resolve(
-          new Response(this.staticAssets?.sourceMap, {
+          new Response(staticAssets?.sourceMap, {
             headers: {
               'content-type': 'application/json; charset=utf-8',
             },
-            status: this.staticAssets?.sourceMap ? 200 : 404,
+            status: staticAssets?.sourceMap ? 200 : 404,
           })
         );
       }
 
       case '/index.css': {
         return Promise.resolve(
-          new Response(this.staticAssets?.css, {
+          new Response(staticAssets?.css, {
             headers: {
               'content-type': 'text/css; charset=utf-8',
             },
-            status: this.staticAssets?.css ? 200 : 404,
+            status: staticAssets?.css ? 200 : 404,
           })
         );
       }
@@ -65,11 +66,11 @@ export class StaticAssetsEndpoint implements Endpoint {
       case '/index.html':
       default: {
         return Promise.resolve(
-          new Response(this.staticAssets?.html, {
+          new Response(staticAssets?.html, {
             headers: {
               'content-type': 'text/html; charset=utf-8',
             },
-            status: this.staticAssets?.html ? 200 : 404,
+            status: staticAssets?.html ? 200 : 404,
           })
         );
       }
