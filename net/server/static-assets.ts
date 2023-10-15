@@ -1,4 +1,4 @@
-import { Server, Endpoint } from './server.ts';
+import { ServerServices, Endpoint } from './server.ts';
 import { getRequestPath } from './utils.ts';
 
 export interface StaticAssets {
@@ -18,17 +18,21 @@ export const kStaticPaths = [
 export type StaticPath = (typeof kStaticPaths)[number];
 
 export class StaticAssetsEndpoint implements Endpoint {
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean {
     return req.method === 'GET';
   }
 
   processRequest(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
     const path = getRequestPath<StaticPath>(req);
-    const staticAssets = server.service('staticAssets').value;
+    const staticAssets = services.staticAssets;
     switch (path) {
       case '/app.js': {
         return Promise.resolve(

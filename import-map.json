@@ -10,6 +10,7 @@
     "slate": "https://esm.sh/slate@0.81.1",
     "std/": "https://deno.land/std@0.201.0/",
     "eventemitter3": "https://esm.sh/eventemitter3@5.0.1",
-    "direction": "https://unpkg.com/direction@1.0.3"
+    "direction": "https://unpkg.com/direction@1.0.3",
+    "yargs": "https://deno.land/x/yargs@v17.7.1-deno/deno.ts"
   }
 }

@@ -1,8 +1,8 @@
-import { Endpoint, Middleware, Server } from './server.ts';
+import { Endpoint, Middleware, ServerServices } from './server.ts';
 
 export class CORSMiddleware implements Middleware {
   didProcess(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
     resp: Response
@@ -18,12 +18,16 @@ export class CORSMiddleware implements Middleware {
 }
 
 export class CORSEndpoint implements Endpoint {
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean {
     return req.method === 'OPTIONS';
   }
 
   processRequest(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {

@@ -1,7 +1,11 @@
-import { Server, Endpoint } from './server.ts';
+import { ServerServices, Endpoint } from './server.ts';
 
 export class HealthCheckEndpoint implements Endpoint {
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(
+    server: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean {
     if (req.method !== 'GET') {
       return false;
     }
@@ -10,7 +14,7 @@ export class HealthCheckEndpoint implements Endpoint {
   }
 
   processRequest(
-    server: Server,
+    server: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {

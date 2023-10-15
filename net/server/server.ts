@@ -1,8 +1,7 @@
-import yargs from 'https://deno.land/x/yargs@v17.7.1-deno/deno.ts';
-import { OwnedSession, generateSession } from '../../auth/session.ts';
+import yargs from 'yargs';
+import * as path from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
-import { assert } from '../../base/error.ts';
-import { LogStream, log, setGlobalLoggerStreams } from '../../logging/log.ts';
+import { log, setGlobalLoggerStreams } from '../../logging/log.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { PrometheusLogStream } from '../../server/prometeus-stream.ts';
 import { SyncEndpoint, SyncService } from './sync.ts';
@@ -11,7 +10,31 @@ import { ConsoleLogStream } from '../../logging/console-stream.ts';
 import { persistSession } from './auth.ts';
 import { HealthCheckEndpoint } from './health.ts';
 import { MetricsMiddleware, PrometheusMetricsEndpoint } from './metrics.ts';
-import { ValueService, BaseService } from './service.ts';
+import { SettingsService } from './settings.ts';
+import { BaseService } from './service.ts';
+
+/**
+ * CLI arguments consumed by our server.
+ */
+interface Arguments {
+  // Full path to data directory
+  readonly dir: string;
+  readonly replicas: string[];
+  readonly port: number;
+}
+
+// Stuff that's shared to all organizations served by this server
+export interface ServerContext extends Arguments {
+  readonly settings: SettingsService;
+  readonly prometheus: PrometheusLogStream;
+}
+
+// Stuff specific to an organization
+export interface ServerServices extends ServerContext {
+  readonly organizationId: string;
+  readonly sync: SyncService;
+  staticAssets: StaticAssets | undefined;
+}
 
 /**
  * An Endpoint catches a request using its filter, and generates an appropriate
@@ -23,9 +46,13 @@ import { ValueService, BaseService } from './service.ts';
  * server. See `BaseService` below.
  */
 export interface Endpoint {
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean;
+  filter(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean;
   processRequest(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response>;
@@ -41,39 +68,16 @@ export interface Endpoint {
  */
 export interface Middleware {
   shouldProcess?: (
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ) => Promise<Response | undefined>;
   didProcess?: (
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
     resp: Response
   ) => Promise<Response>;
-}
-
-export type ServiceName = 'sync' | 'prometheus' | 'session' | 'staticAssets';
-
-type ServiceType<T extends ServiceName> = T extends 'sync'
-  ? SyncService
-  : T extends 'prometheus'
-  ? ValueService<'prometheus', PrometheusLogStream>
-  : T extends 'session'
-  ? ValueService<'session', OwnedSession>
-  : T extends 'staticAssets'
-  ? ValueService<'staticAssets', StaticAssets | undefined>
-  : BaseService;
-
-/**
- * CLI arguments consumed by our server.
- */
-interface Arguments {
-  port: number;
-  replicas: string[];
-  dir: string;
-  app: string;
-  importMap?: string;
 }
 
 /**
@@ -101,73 +105,96 @@ interface Arguments {
 export class Server {
   private readonly _endpoints: Endpoint[];
   private readonly _middlewares: Middleware[];
-  private readonly _services: Dictionary<string, BaseService>;
-  private readonly logStreams: readonly LogStream[];
-  private port = 8080;
-  private replicas: string[] | undefined;
-
+  private readonly _baseContext: ServerContext;
+  private readonly _servicesByOrg: Dictionary<string, ServerServices>;
   private _abortController: AbortController | undefined;
 
-  constructor() {
+  constructor(args?: Arguments) {
     this._endpoints = [];
     this._middlewares = [];
-    this._services = new Map();
-    const prometheusLogStream = new PrometheusLogStream();
-    this.logStreams = [new ConsoleLogStream(), prometheusLogStream];
-    this.registerService(
-      new ValueService(this, 'prometheus', prometheusLogStream)
-    );
-    setGlobalLoggerStreams(this.logStreams);
-  }
+    if (args === undefined) {
+      args = yargs(Deno.args)
+        .option('port', {
+          alias: 'p',
+          type: 'number',
+          description: 'The port on which the server accepts incoming requests',
+          default: 8080,
+        })
+        .option('replicas', {
+          alias: 'r',
+          type: 'array',
+          default: [],
+          description:
+            'A list of replica URLs which this server will sync with',
+        })
+        .option('dir', {
+          alias: 'd',
+          description:
+            'A full path to a local directory which will host all repositories managed by this server',
+        })
+        .demandOption(
+          ['dir']
+          // 'Please provide a local directory for this server'
+        )
+        // .demandOption(['app'], 'Please provide')
+        .parse();
+    }
 
-  async setupServer(): Promise<void> {
-    const args: Arguments = yargs(Deno.args)
-      .option('port', {
-        alias: 'p',
-        type: 'number',
-        description: 'The port on which the server accepts incoming requests',
-        default: 8080,
-      })
-      .option('replicas', {
-        alias: 'r',
-        type: 'array',
-        default: [],
-        description: 'A list of replica URLs which this server will sync with',
-      })
-      .option('dir', {
-        alias: 'd',
-        description:
-          'A full path to a local directory which will host all repositories managed by this server',
-      })
-      .demandOption(
-        ['dir']
-        // 'Please provide a local directory for this server'
-      )
-      // .demandOption(['app'], 'Please provide')
-      .parse();
-    this.port = args.port;
-    this.replicas = args.replicas;
+    this._servicesByOrg = new Map();
+    const settingsService = new SettingsService();
+    const prometeusLogStream = new PrometheusLogStream();
+    this._baseContext = {
+      settings: settingsService,
+      prometheus: prometeusLogStream,
+      dir: args!.dir,
+      replicas: args?.replicas || [],
+      port: args?.port || 8080,
+    };
+    const logStreams = [new ConsoleLogStream(), prometeusLogStream];
+    setGlobalLoggerStreams(logStreams);
     // Monitoring
-    this.registerMiddleware(new MetricsMiddleware(this.logStreams));
+    this.registerMiddleware(new MetricsMiddleware(logStreams));
     this.registerEndpoint(new PrometheusMetricsEndpoint());
-
-    // Generate a new root session
-    const session = await generateSession('root');
-    this.registerService(new ValueService(this, 'session', session));
-
-    // Sync
-    this.registerService(new SyncService(this, args.dir, args.replicas));
-    this.registerEndpoint(new SyncEndpoint());
-
-    // Publish our root session
-    await persistSession(this, session);
-
     // Health check
     this.registerEndpoint(new HealthCheckEndpoint());
-
     // Static Assets
-    this.registerService(new ValueService(this, 'staticAssets', undefined));
     this.registerEndpoint(new StaticAssetsEndpoint());
+    // Sync
+    this.registerEndpoint(new SyncEndpoint());
+  }
+
+  async setup(): Promise<void> {
+    const services: ServerServices = {
+      ...this._baseContext,
+      sync: new SyncService(),
+      staticAssets: undefined,
+      organizationId: '<global>',
+    };
+    // Setup Settings service
+    await this._baseContext.settings.setup(services);
+  }
+
+  async servicesForOrganization(orgId: string): Promise<ServerServices> {
+    let services = this._servicesByOrg.get(orgId);
+    if (!services) {
+      // Monitoring
+      services = {
+        ...this._baseContext,
+        dir: path.join(this._baseContext.dir, orgId),
+        sync: new SyncService(),
+        staticAssets: undefined,
+        organizationId: orgId,
+      };
+
+      // Setup all services in the correct order of dependencies
+      services.sync.setup(services);
+      // <<< Add any new service.setup() calls here >>>
+
+      // Publish our root session to clients so we claim our authority
+      await persistSession(services, services.settings.session);
+      this._servicesByOrg.set(orgId, services);
+    }
+    return services;
   }
 
   registerEndpoint(ep: Endpoint): void {
@@ -178,42 +205,44 @@ export class Server {
     this._middlewares.push(mid as Middleware);
   }
 
-  registerService(service: BaseService): void {
-    this._services.set(service.name, service);
-  }
-
-  service<T extends ServiceName>(name: T): ServiceType<T> {
-    const service = this._services.get(name);
-    assert(
-      service !== undefined,
-      `Unknown service '${name}'. Did you remember to register it?`
-    );
-    return service as ServiceType<T>;
-  }
-
   async processRequest(
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
+    const orgId = organizationIdFromURL(req.url);
+    if (!orgId) {
+      log({
+        severity: 'INFO',
+        name: 'HttpStatusCode',
+        unit: 'Count',
+        value: 404,
+        url: req.url,
+        method: req.method as HTTPMethod,
+      });
+      return new Response(null, {
+        status: 404,
+      });
+    }
+    const services = await this.servicesForOrganization(orgId);
     const middlewares = this._middlewares;
     for (const endpoint of this._endpoints) {
-      if (endpoint.filter(this, req, info)) {
+      if (endpoint.filter(services, req, info)) {
         try {
           let resp: Response | undefined;
           for (const m of middlewares) {
             if (m.shouldProcess) {
-              resp = await m.shouldProcess(this, req, info);
+              resp = await m.shouldProcess(services, req, info);
               if (resp) {
                 break;
               }
             }
           }
           if (!resp) {
-            resp = await endpoint.processRequest(this, req, info);
+            resp = await endpoint.processRequest(services, req, info);
           }
           for (const m of middlewares) {
             if (m.didProcess) {
-              resp = await m.didProcess(this, req, info, resp);
+              resp = await m.didProcess(services, req, info, resp);
             }
           }
           return resp;
@@ -238,7 +267,7 @@ export class Server {
     });
     for (const m of middlewares) {
       if (m.didProcess) {
-        resp = await m.didProcess(this, req, info, resp);
+        resp = await m.didProcess(services, req, info, resp);
       }
     }
     return resp;
@@ -248,9 +277,11 @@ export class Server {
     if (this._abortController) {
       return Promise.resolve();
     }
-    for (const service of this._services.values()) {
-      if (service.start) {
-        service.start();
+    for (const services of this._servicesByOrg.values()) {
+      for (const v of Object.values(services)) {
+        if (v instanceof BaseService) {
+          v.start();
+        }
       }
     }
     log({
@@ -258,7 +289,7 @@ export class Server {
       name: 'ServerStarted',
       value: 1,
       unit: 'Count',
-      urls: this.replicas,
+      urls: this._baseContext.replicas,
     });
     let resolve: () => void;
     const result = new Promise<void>((res) => {
@@ -267,7 +298,7 @@ export class Server {
     this._abortController = new AbortController();
     const server = Deno.serve(
       {
-        port: this.port || 8080,
+        port: this._baseContext.port,
         onListen() {
           resolve();
         },
@@ -283,12 +314,69 @@ export class Server {
       return Promise.resolve();
     }
     this._abortController.abort();
-    for (const service of this._services.values()) {
-      if (service.stop) {
-        service.stop();
+    for (const services of this._servicesByOrg.values()) {
+      for (const v of Object.values(services)) {
+        if (v instanceof BaseService) {
+          v.stop();
+        }
       }
     }
     this._abortController = undefined;
     return Promise.resolve();
   }
+}
+
+const RESERVED_ORG_IDS = ['ovvio', 'debug', 'localhost'];
+
+function isValidOrgId(id: string): boolean {
+  const len = id.length;
+  if (len < 4 || len > 32) {
+    return false;
+  }
+  if (RESERVED_ORG_IDS.includes(id)) {
+    return false;
+  }
+  for (let i = 0; i < len; ++i) {
+    const code = id.charCodeAt(i);
+    // [0 -
+    if (code < 48) {
+      return false;
+    }
+    // 9], [A -
+    if (code > 57 && code < 65) {
+      return false;
+    }
+    // Z], [a -
+    if (code > 90 && code < 97) {
+      return false;
+    }
+    // z]
+    if (code > 122) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * WARNING: This seemingly trivial function deals with data that arrives from
+ * anywhere in the internet. We must treat it as potentially hostile.
+ */
+function organizationIdFromURL(url: string | URL): string | undefined {
+  if (typeof url === 'string') {
+    url = new URL(url);
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'localhost';
+  }
+  const comps = url.hostname.split('.');
+  if (comps.length !== 3) {
+    return undefined;
+  }
+  const maybeId = comps[0];
+  if (isValidOrgId(maybeId)) {
+    return maybeId;
+  }
+  return undefined;
 }

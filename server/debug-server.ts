@@ -74,11 +74,9 @@ async function main(): Promise<void> {
   const ctx = await createBuildContext();
   const watcher = Deno.watchFs(getRepositoryPath());
   const server = new Server();
-  await server.setupServer();
-  server.service('staticAssets').value = await rebuildAssets(
-    ctx,
-    getOvvioConfig().version
-  );
+  await server.setup();
+  (await server.servicesForOrganization('localhost')).staticAssets =
+    await rebuildAssets(ctx, getOvvioConfig().version);
   await server.start();
   openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
@@ -86,7 +84,8 @@ async function main(): Promise<void> {
     try {
       const config = getOvvioConfig();
       const version = incrementBuildNumber(config.version);
-      server.service('staticAssets').value = await rebuildAssets(ctx, version);
+      (await server.servicesForOrganization('localhost')).staticAssets =
+        await rebuildAssets(ctx, version);
       config.version = version;
       console.log('Static assets updated.');
     } catch (e) {

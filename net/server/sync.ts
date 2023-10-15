@@ -26,11 +26,11 @@ import { LogClient } from '../log-client.ts';
 import { SyncMessage } from '../message.ts';
 import { SyncValueType } from '../message.ts';
 import { RepoClient } from '../repo-client.ts';
-import { Endpoint, Server } from './server.ts';
+import { Endpoint, Server, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 
-export class SyncService extends BaseService {
+export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
     string,
     Repository<SQLiteRepoStorage>
@@ -43,12 +43,8 @@ export class SyncService extends BaseService {
 
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
-  constructor(
-    readonly server: Server,
-    readonly dataDir: string,
-    readonly replicas: string[] = []
-  ) {
-    super(server);
+  constructor() {
+    super();
     this._repositories = new Map();
     this._clientsForRepo = new Map();
     this._logs = new Map();
@@ -62,14 +58,14 @@ export class SyncService extends BaseService {
     let repo = this._repositories.get(id);
     if (!repo) {
       repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this.dataDir, type, id + '.repo')),
-        this.server.service('session').value
+        new SQLiteRepoStorage(joinPath(this.services.dir, type, id + '.repo')),
+        this.services.settings.session
       );
       this._repositories.set(id, repo);
-      const replicas = this.replicas;
+      const replicas = this.services.replicas;
       if (replicas.length > 0) {
         assert(!this._clientsForRepo.has(id)); // Sanity check
-        const clients = this.replicas.map((baseServerUrl) =>
+        const clients = this.services.replicas.map((baseServerUrl) =>
           new RepoClient(
             repo!,
             new URL(`/${type}/` + id, baseServerUrl).toString(),
@@ -86,13 +82,13 @@ export class SyncService extends BaseService {
     let storage = this._logs.get(id);
     if (!storage) {
       storage = new SQLiteLogStorage(
-        joinPath(this.dataDir, 'logs', id + '.logs')
+        joinPath(this.services.dir, 'logs', id + '.logs')
       );
       this._logs.set(id, storage);
-      const replicas = this.replicas;
+      const replicas = this.services.replicas;
       if (replicas.length > 0) {
         assert(!this._clientsForLog.has(id)); // Sanity check
-        const clients = this.replicas.map((baseServerUrl) =>
+        const clients = replicas.map((baseServerUrl) =>
           new LogClient(
             storage!,
             new URL('/logs/' + id, baseServerUrl).toString(),
@@ -141,7 +137,11 @@ export class SyncService extends BaseService {
 }
 
 export class SyncEndpoint implements Endpoint {
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean {
     if (req.method !== 'POST') {
       return false;
     }
@@ -153,7 +153,7 @@ export class SyncEndpoint implements Endpoint {
   }
 
   async processRequest(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
@@ -168,7 +168,7 @@ export class SyncEndpoint implements Endpoint {
     const storageType = path[1] as RepositoryType;
     const resourceId = path[2];
     const cmd = path[3];
-    const syncService = server.service('sync');
+    const syncService = services.sync;
     let resp: Response;
     switch (cmd) {
       case 'sync':

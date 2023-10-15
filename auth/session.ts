@@ -135,17 +135,15 @@ export async function encodeSession(session: Session): Promise<EncodedSession> {
   )) as ReadonlyJSONObject;
 
   const res: EncodedSession = {
-    id: session.id,
+    ...session,
     publicKey: JSON.stringify(publicKey),
-    expiration: session.expiration,
   };
-  if (session.owner) {
-    res.owner = session.owner;
-  }
   return res;
 }
 
-export async function decodeSession(session: EncodedSession): Promise<Session> {
+export async function decodeSession(
+  session: EncodedSession
+): Promise<Session | OwnedSession> {
   const publicKey = await crypto.subtle.importKey(
     'jwk',
     JSON.parse(session.publicKey),

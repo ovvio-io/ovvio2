@@ -10,7 +10,7 @@ import { kDayMs } from '../../base/date.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
-import { Endpoint, Server } from './server.ts';
+import { Endpoint, Server, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 
 export const kAuthEndpointPaths = ['/auth/session'] as const;
@@ -23,7 +23,11 @@ export type AuthError = CreateSessionError;
 export class AuthEndpoint implements Endpoint {
   constructor(readonly serverSessionId: string) {}
 
-  filter(server: Server, req: Request, info: Deno.ServeHandlerInfo): boolean {
+  filter(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo
+  ): boolean {
     const path = getRequestPath<AuthEndpointPath>(req);
     if (!kAuthEndpointPaths.includes(path)) {
       return false;
@@ -36,7 +40,7 @@ export class AuthEndpoint implements Endpoint {
   }
 
   async processRequest(
-    server: Server,
+    services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
@@ -45,7 +49,7 @@ export class AuthEndpoint implements Endpoint {
     switch (path) {
       case '/auth/session':
         if (method === 'POST') {
-          return this.createNewSession(server, req);
+          return this.createNewSession(services, req);
         }
     }
 
@@ -55,7 +59,7 @@ export class AuthEndpoint implements Endpoint {
   }
 
   private async createNewSession(
-    server: Server,
+    services: ServerServices,
     req: Request
   ): Promise<Response> {
     let publicKey: CryptoKey | undefined;
@@ -85,19 +89,22 @@ export class AuthEndpoint implements Endpoint {
       expiration: new Date(Date.now() + 30 * kDayMs),
     };
     // const session = await createNewSession(server.service('sync'), publicKey);
-    await persistSession(server, session);
+    await persistSession(services, session);
     return new Response(JSON.stringify({ session: encodeSession(session) }));
   }
 }
 
 export async function persistSession(
-  server: Server,
+  services: ServerServices,
   session: Session | OwnedSession
 ): Promise<void> {
-  const repo = server.service('sync').getRepository('sys', 'dir');
+  const repo = services.sync.getRepository('sys', 'dir');
+  // Make sure no private key accidentally gets persisted
+  const publicSession = { ...session };
+  delete (publicSession as any).privateKey;
   const record = new Record({
     scheme: Scheme.session(),
-    data: await encodeSession(session),
+    data: await encodeSession(publicSession),
   });
   repo.setValueForKey(session.id, record);
 }
