@@ -1,39 +1,39 @@
-import React, { useState, useMemo } from 'react';
-import { Route, RouterProvider } from 'react-router';
-import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
-import { layout } from '../../../styles/layout.ts';
+import React, { useState, useMemo } from "react";
+import { Route, RouterProvider } from "react-router";
+import { makeStyles, cn } from "../../../styles/css-objects/index.ts";
+import { layout } from "../../../styles/layout.ts";
 import {
   darkTheme,
   lightTheme,
   ThemeProvider,
-} from '../../../styles/theme.tsx';
-import LoadingView from './loading-view.tsx';
-import { CreateWorkspaceView } from './new-workspace/index.tsx';
-import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
-import { WorkspacesBar } from './workspaces-bar/index.tsx';
-import { createBrowserRouter } from 'react-router-dom';
-import { uniqueId } from '../../../base/common.ts';
-import { StyleProvider } from '../../../styles/css-objects/context.tsx';
+} from "../../../styles/theme.tsx";
+import LoadingView from "./loading-view.tsx";
+import { CreateWorkspaceView } from "./new-workspace/index.tsx";
+import WorkspaceContentView from "./workspace-content/workspace-view/index.tsx";
+import { WorkspacesBar } from "./workspaces-bar/index.tsx";
+import { createBrowserRouter } from "react-router-dom";
+import { uniqueId } from "../../../base/common.ts";
+import { StyleProvider } from "../../../styles/css-objects/context.tsx";
 import {
   CfdsClientProvider,
   useIsGraphLoading,
-} from '../core/cfds/react/graph.tsx';
-import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
-import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
-import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
+} from "../core/cfds/react/graph.tsx";
+import NoteView from "./workspace-content/workspace-view/note-editor/index.tsx";
+import { RepoExplorer } from "../backoffice/repo-explorer.tsx";
+import { CardsDisplay } from "./workspace-content/workspace-view/cards-display/index.tsx";
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
-    filter: 'blur(2px)',
+    filter: "blur(2px)",
   },
   root: {
-    height: '100vh',
-    width: '100vw',
+    height: "100vh",
+    width: "100vw",
     basedOn: [layout.row],
   },
   content: {
-    height: '100%',
-    overflow: 'hidden',
+    height: "100%",
+    overflow: "hidden",
     // width: `calc(100% - ${WORKSPACE_BAR_WIDTH}px)`,
     basedOn: [layout.column, layout.flexSpacer],
   },
@@ -60,7 +60,7 @@ function Root({ style, children }: RootProps) {
 
   return (
     <div className={cn(styles.root)} style={style}>
-      {loaded && <WorkspacesBar key={'wsbar'} />}
+      {loaded && <WorkspacesBar key={"wsbar"} />}
       {loaded ? (
         <div className={cn(styles.content)}>
           <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
@@ -74,7 +74,7 @@ function Root({ style, children }: RootProps) {
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: (
       <Root style={lightTheme}>
         <CardsDisplay />
@@ -82,7 +82,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/new',
+    path: "/new",
     element: (
       <CreateWorkspaceView //TODO: CHECK linr 78-88 in comment
         source="bar:workspace"

@@ -1,12 +1,12 @@
-import React, { useContext, useMemo, useState, useEffect } from 'react';
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import {
   encodeTagId,
   SchemeNamespace,
   NS_USERS,
-} from '../../../../../cfds/base/scheme-types.ts';
-import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
+} from "../../../../../cfds/base/scheme-types.ts";
+import { GraphManager } from "../../../../../cfds/client/graph/graph-manager.ts";
+import { VertexManager } from "../../../../../cfds/client/graph/vertex-manager.ts";
+import { User } from "../../../../../cfds/client/graph/vertices/user.ts";
 import {
   View,
   kViewPropsGlobal,
@@ -14,18 +14,18 @@ import {
   kViewPersistentProps,
   ViewPropGlobal,
   ViewProp,
-} from '../../../../../cfds/client/graph/vertices/view.ts';
-import { useCurrentDevice, Devices } from '../../../../../styles/responsive.ts';
-import VersionMismatchView from '../../../app/version-mismatch/index.tsx';
-import { usePartialVertex, useVertex } from './vertex.ts';
-import { useLogger } from './logger.tsx';
-import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
+} from "../../../../../cfds/client/graph/vertices/view.ts";
+import { useCurrentDevice, Devices } from "../../../../../styles/responsive.ts";
+import VersionMismatchView from "../../../app/version-mismatch/index.tsx";
+import { usePartialVertex, useVertex } from "./vertex.ts";
+import { useLogger } from "./logger.tsx";
+import { UserSettings } from "../../../../../cfds/client/graph/vertices/user-settings.ts";
 import {
   VertexId,
   VertexIdGetKey,
-} from '../../../../../cfds/client/graph/vertex.ts';
-import { Repository } from '../../../../../repo/repo.ts';
-import { getClientData, setClientData } from '../../../../../server/config.ts';
+} from "../../../../../cfds/client/graph/vertex.ts";
+import { Repository } from "../../../../../repo/repo.ts";
+import { getClientData, setClientData } from "../../../../../server/config.ts";
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -71,14 +71,14 @@ export function useCurrentUser(): User {
 }
 
 export function useUserSettings(): UserSettings {
-  const u = usePartialCurrentUser(['settings']);
+  const u = usePartialCurrentUser(["settings"]);
   return useVertex(u.settings.manager as VertexManager<UserSettings>);
 }
 
 export function usePartialUserSettings<K extends keyof UserSettings>(
   keys?: K[]
 ) {
-  const u = usePartialCurrentUser(['settings']);
+  const u = usePartialCurrentUser(["settings"]);
   return usePartialVertex(
     u.settings.manager as VertexManager<UserSettings>,
     keys || []
@@ -100,7 +100,7 @@ interface CfdsClientProviderProps {
 // );
 
 function getLastUsedViewKey(graph: GraphManager): string {
-  return graph.rootKey + '-ViewLastUsed';
+  return graph.rootKey + "-ViewLastUsed";
 }
 
 export interface ClientData {
@@ -110,10 +110,10 @@ export interface ClientData {
 export async function loadEssentialRepositories(
   graph: GraphManager
 ): Promise<void> {
-  await graph.loadRepository(Repository.id('sys', 'dir'));
-  await graph.syncRepository(Repository.id('sys', 'dir'));
-  await graph.loadRepository(Repository.id('user', graph.rootKey));
-  await graph.syncRepository(Repository.id('user', graph.rootKey));
+  await graph.loadRepository(Repository.id("sys", "dir"));
+  await graph.syncRepository(Repository.id("sys", "dir"));
+  await graph.loadRepository(Repository.id("user", graph.rootKey));
+  await graph.syncRepository(Repository.id("user", graph.rootKey));
 }
 
 export function CfdsClientProvider({
@@ -141,8 +141,8 @@ export function CfdsClientProvider({
         manager.createVertex(
           NS_USERS,
           {
-            email: 'ofri@ovvio.io',
-            name: 'Ofri',
+            email: "ofri@ovvio.io",
+            name: "Ofri",
           },
           manager.rootKey
         );
@@ -161,45 +161,45 @@ export function CfdsClientProvider({
       const globalView = manager.createVertex<View>(
         SchemeNamespace.VIEWS,
         { owner: manager.rootKey },
-        'ViewGlobal',
+        "ViewGlobal",
         true
       );
       const tasksView = manager.createVertex<View>(
         SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewTasks',
+        { owner: manager.rootKey, parentView: "ViewGlobal" },
+        "ViewTasks",
         true
       ).manager;
       const notesView = manager.createVertex<View>(
         SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewNotes',
+        { owner: manager.rootKey, parentView: "ViewGlobal" },
+        "ViewNotes",
         true
       ).manager;
       const overviewView = manager.createVertex<View>(
         SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewOverview',
+        { owner: manager.rootKey, parentView: "ViewGlobal" },
+        "ViewOverview",
         true
       ).manager;
       const lastUsed = manager.getVertex<View>(lastUsedKey);
-      if (!lastUsed.record.has('workspaceBarCollapsed')) {
+      if (!lastUsed.record.has("workspaceBarCollapsed")) {
         lastUsed.workspaceBarCollapsed = device <= Devices.Tablet;
       }
       globalView.update(kViewPropsGlobal, lastUsed);
-      if (globalView.selectedTabId === 'overview') {
+      if (globalView.selectedTabId === "overview") {
         overviewView.getVertexProxy().update(kViewPropsTab, lastUsed);
-      } else if (globalView.selectedTabId === 'notes') {
+      } else if (globalView.selectedTabId === "notes") {
         notesView.getVertexProxy().update(kViewPropsTab, lastUsed);
       } else {
         tasksView.getVertexProxy().update(kViewPropsTab, lastUsed);
       }
       const callback = () => {
-        const globalView = manager.getVertex<View>('ViewGlobal');
+        const globalView = manager.getVertex<View>("ViewGlobal");
         const activeView =
-          globalView.selectedTabId === 'notes'
+          globalView.selectedTabId === "notes"
             ? notesView
-            : globalView.selectedTabId === 'overview'
+            : globalView.selectedTabId === "overview"
             ? overviewView
             : tasksView;
         manager
@@ -224,9 +224,9 @@ export function CfdsClientProvider({
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
       logger.log({
-        severity: 'INFO',
-        event: 'SessionAlive',
-        foreground: document.visibilityState === 'visible',
+        severity: "INFO",
+        event: "SessionAlive",
+        foreground: document.visibilityState === "visible",
       });
     }, 10 * 1000);
 
@@ -259,7 +259,7 @@ export function CfdsClientProvider({
 }
 
 export function usePartialGlobalView<K extends ViewPropGlobal>(...fields: K[]) {
-  return usePartialVertex<View>('ViewGlobal', fields);
+  return usePartialVertex<View>("ViewGlobal", fields);
 }
 
 export function usePartialView<K extends ViewProp>(
@@ -272,12 +272,12 @@ export function usePartialView<K extends ViewProp>(
 
 export function useActiveViewManager(): VertexManager<View> {
   const graph = useGraphManager();
-  const { selectedTabId } = usePartialGlobalView('selectedTabId');
+  const { selectedTabId } = usePartialGlobalView("selectedTabId");
   return graph.getVertexManager<View>(
-    selectedTabId === 'notes'
-      ? 'ViewNotes'
-      : selectedTabId === 'overview'
-      ? 'ViewOverview'
-      : 'ViewTasks'
+    selectedTabId === "notes"
+      ? "ViewNotes"
+      : selectedTabId === "overview"
+      ? "ViewOverview"
+      : "ViewTasks"
   );
 }
