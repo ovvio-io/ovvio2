@@ -26,10 +26,12 @@ import {
 } from '../../../../../cfds/client/graph/vertex.ts';
 import { Repository } from '../../../../../repo/repo.ts';
 import { getClientData, setClientData } from '../../../../../server/config.ts';
+import { OwnedSession } from '../../../../../auth/session.ts';
+import { getBaseURL } from '../../../../../net/rest-api.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
-  sessionId?: string;
+  session?: OwnedSession;
   loadingFinished: boolean;
 };
 
@@ -90,8 +92,7 @@ export function useCfdsContext(): ContextProps {
 }
 
 interface CfdsClientProviderProps {
-  user: VertexId<User>;
-  sessionId: string;
+  session: OwnedSession;
   children: React.ReactNode;
 }
 
@@ -117,24 +118,17 @@ export async function loadEssentialRepositories(
 }
 
 export function CfdsClientProvider({
-  user,
-  sessionId,
+  session,
   children,
 }: CfdsClientProviderProps) {
   const logger = useLogger();
   const [versionMismatchFound, setVersionMismatchFound] = useState(false);
   const [sendSessionAlive, setSendSessionAlive] = useState(true);
-  const userKey = VertexIdGetKey(user);
-  const sessionPtrKey = `${userKey}/${sessionId}`;
   const device = useCurrentDevice();
   const [loaded, setLoaded] = useState(false);
 
   const graphManager = useMemo(() => {
-    const manager = new GraphManager(
-      userKey,
-      (key) => key !== sessionPtrKey,
-      `${location.protocol}//${location.host}`
-    );
+    const manager = new GraphManager(session, getBaseURL());
 
     loadEssentialRepositories(manager).then(() => {
       if (!manager.hasVertex(manager.rootKey)) {
@@ -219,7 +213,7 @@ export function CfdsClientProvider({
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
     return manager;
-  }, [userKey, sessionId, sessionPtrKey, device]);
+  }, [session, device]);
 
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
@@ -244,11 +238,10 @@ export function CfdsClientProvider({
   const ctx = useMemo<ContextProps>(
     () => ({
       graphManager: graphManager,
-      sessionId,
-      userKey,
+      session,
       loadingFinished: loaded,
     }),
-    [graphManager, sessionId, userKey, loaded]
+    [graphManager, session, loaded]
   );
 
   if (versionMismatchFound) {

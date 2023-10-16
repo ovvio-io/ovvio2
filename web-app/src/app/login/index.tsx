@@ -7,10 +7,22 @@ import { MediaQueries } from '../../../../styles/responsive.ts';
 import { CfdsClientProvider } from '../../core/cfds/react/graph.tsx';
 import { LoginIllustration } from './illustrations.tsx';
 import AuthForm from './AuthForm.tsx';
-import { GlobalLogger, newLogger } from '../../../../logging/log.ts';
-import { LoggerProvider } from '../../core/cfds/react/logger.tsx';
+import { GlobalLogger, Logger, newLogger } from '../../../../logging/log.ts';
+import { LoggerProvider, useLogger } from '../../core/cfds/react/logger.tsx';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { User } from '../../../../cfds/client/graph/vertices/user.ts';
+import {
+  OwnedSession,
+  generateKeyPair,
+  generateSession,
+} from '../../../../auth/session.ts';
+import {
+  loadAllSessions,
+  loadSession,
+  storeSession,
+} from '../../../../auth/idb.ts';
+import { createNewSession } from '../../../../net/rest-api.ts';
+import { retry } from '../../../../base/time.ts';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -70,25 +82,15 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   );
 };
 
-export interface SessionInfo {
-  userId: string;
-  sessionId: string;
-  // searchParams?: MarketingParams;
-}
-
 interface LoginViewProps {
+  session: OwnedSession;
   children: React.ReactNode;
 }
-export default function LoginView({ children }: LoginViewProps) {
+export default function LoginView({ session, children }: LoginViewProps) {
   // const isLoading = useRef(true);
   // const history = useHistory();
 
-  const [sessionInfo, setSessionInfo] = useState<SessionInfo>({
-    userId: 'ofri',
-    sessionId: uniqueId(),
-  });
-
-  const [processing, setProcessing] = useState(false);
+  const [processing, setProcessing] = useState(true);
 
   // const auth = getAuth();
 
@@ -166,15 +168,10 @@ export default function LoginView({ children }: LoginViewProps) {
     return null;
   }
 
-  if (sessionInfo) {
+  if (session) {
     return (
-      <LoggerProvider sessionInfo={sessionInfo}>
-        <CfdsClientProvider
-          userId={sessionInfo.userId}
-          sessionId={sessionInfo.sessionId}
-        >
-          {children}
-        </CfdsClientProvider>
+      <LoggerProvider session={session}>
+        <CfdsClientProvider session={session}>{children}</CfdsClientProvider>
       </LoggerProvider>
     );
   }

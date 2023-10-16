@@ -46,6 +46,7 @@ import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
+import { OwnedSession } from '../../../auth/session.ts';
 
 // We consider only commits from the last 30 days to be "hot", and load them
 // automatically
@@ -94,7 +95,7 @@ export class GraphManager
   implements VertexSource
 {
   readonly sharedQueriesManager: SharedQueriesManager;
-  private readonly _rootKey: string;
+  private readonly _session: OwnedSession;
   private readonly _adjList: AdjacencyList;
   private readonly _vertManagers: Dictionary<string, VertexManager>;
   private readonly _pendingMutations: Dictionary<string, MutationPack>;
@@ -102,25 +103,19 @@ export class GraphManager
   private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
-  private readonly _session: string;
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _baseServerUrl: string | undefined;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
   private _prevClientStatus: ClientStatus = 'offline';
 
-  constructor(
-    rootKey: string,
-    ptrFilterFunc: PointerFilterFunc,
-    baseServerUrl?: string
-  ) {
+  constructor(session: OwnedSession, baseServerUrl?: string) {
     super();
-    this._rootKey = rootKey;
+    this._session = session;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    this._session = rootKey + '/' + uniqueId();
-    this._ptrFilterFunc = ptrFilterFunc;
+    const ptrKey = `${session.owner}/${session.id}`;
+    this._ptrFilterFunc = (key: string) => key !== ptrKey;
     this._pendingMutations = new Map();
-    this._ptrFilterFunc = ptrFilterFunc;
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
       this._processPendingMutations()
     );
@@ -155,12 +150,12 @@ export class GraphManager
     return this._undoManager;
   }
 
-  get session(): string {
+  get session(): OwnedSession {
     return this._session;
   }
 
   get rootKey(): string {
-    return this._rootKey;
+    return this.session.owner!;
   }
 
   get ptrFilterFunc(): PointerFilterFunc {
@@ -233,7 +228,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     let plumbing = this._repoById.get(id);
     if (!plumbing) {
-      const repo = new Repository(new MemRepoStorage());
+      const repo = new Repository(new MemRepoStorage(), this.session);
       plumbing = {
         repo,
         backup: new IDBRepositoryBackup(id),
@@ -456,7 +451,7 @@ export class GraphManager
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this._session;
     mgr.reportInitialFields(
-      mgr.repository?.headForKey(mgr.key, session)?.session === session
+      mgr.repository?.headForKey(mgr.key, session.id)?.session === session.id
     );
   }
 

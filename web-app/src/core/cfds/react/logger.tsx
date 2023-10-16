@@ -14,11 +14,11 @@ import {
   setGlobalLoggerStreams,
 } from '../../../../../logging/log.ts';
 import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
-import { SessionInfo } from '../../../app/login/index.tsx';
 import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
 import { kSyncConfigClient } from '../../../../../net/base-client.ts';
 import { LogStream } from '../../../../../logging/log.ts';
 import { ConsoleLogStream } from '../../../../../logging/console-stream.ts';
+import { OwnedSession } from '../../../../../auth/session.ts';
 
 interface LoggerContext {
   logger: Logger;
@@ -29,23 +29,25 @@ const loggerContext = React.createContext<LoggerContext>({
 });
 
 interface LoggerProviderProps {
-  sessionInfo?: SessionInfo;
+  session?: OwnedSession;
   baseServerUrl?: string;
   children: React.ReactNode;
 }
 export function LoggerProvider({
-  sessionInfo,
+  session,
   children,
   baseServerUrl,
 }: LoggerProviderProps) {
   const [ctx, setCtx] = useState<LoggerContext>({ logger: GlobalLogger });
   useEffect(() => {
-    if (!sessionInfo) {
+    if (!session) {
       setCtx({ logger: GlobalLogger });
       return;
     }
 
-    const storage = new LogClientIDBStorage('/logs/' + sessionInfo.userId);
+    const storage = new LogClientIDBStorage(
+      '/logs/' + session.owner || 'anonymous'
+    );
     const client = baseServerUrl
       ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
       : undefined;
@@ -84,7 +86,7 @@ export function LoggerProvider({
         storage.close();
       }
     };
-  }, [sessionInfo]);
+  }, [session]);
   return (
     <loggerContext.Provider value={ctx}>{children}</loggerContext.Provider>
   );

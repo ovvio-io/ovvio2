@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Route, RouterProvider } from 'react-router';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
 import { layout } from '../../../styles/layout.ts';
@@ -21,6 +21,12 @@ import {
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
+import { OwnedSession, generateKeyPair } from '../../../auth/session.ts';
+import { useLogger } from '../core/cfds/react/logger.tsx';
+import { loadAllSessions, storeSession } from '../../../auth/idb.ts';
+import { retry } from '../../../base/time.ts';
+import { Logger } from '../../../logging/log.ts';
+import { createNewSession } from '../../../net/rest-api.ts';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -116,12 +122,72 @@ const router = createBrowserRouter([
   },
 ]);
 
+interface CancelHandle {
+  cancelled?: true;
+}
+
+async function setupSession(
+  logger: Logger,
+  callback: (session: OwnedSession) => void,
+  cancelHandle: CancelHandle
+): Promise<void> {
+  while (cancelHandle.cancelled !== true) {
+    try {
+      const session = await retry(
+        async () => {
+          let s = (await loadAllSessions())[0];
+          if (!s) {
+            const keys = await generateKeyPair();
+            const publicSession = await createNewSession(keys.publicKey);
+            if (publicSession) {
+              s = {
+                ...publicSession,
+                privateKey: keys.privateKey,
+              };
+              await storeSession(s);
+            }
+          }
+          return s;
+        },
+        30000,
+        5000
+      );
+      if (session) {
+        callback(session);
+        break;
+      }
+    } catch (err: any) {
+      logger.log({
+        severity: 'INFO',
+        error: 'SessionError',
+        type: 'AnonCreationFailed',
+      });
+    }
+  }
+}
+
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
+  const [session, setSession] = useState<OwnedSession | undefined>();
+  const logger = useLogger();
+
+  useEffect(() => {
+    const handle: CancelHandle = {};
+    setupSession(
+      logger,
+      (s) => {
+        setSession(s);
+      },
+      handle
+    );
+    return () => {
+      handle.cancelled = true;
+    };
+  }, [logger, setSession]);
 
   return (
-    <CfdsClientProvider user="ofri" sessionId={`ofri/${uniqueId()}`}>
+    <CfdsClientProvider session={session}>
       <StyleProvider dev={false}>
         <ThemeProvider theme={theme} isRoot={true}>
           {({ style }) => (

@@ -44,7 +44,7 @@ export async function generateKeyPair(): Promise<CryptoKeyPair> {
 }
 
 export async function generateSession(
-  owner: string | undefined,
+  owner?: string,
   ttlMs = 30 * kDayMs
 ): Promise<OwnedSession> {
   const keyPair = await generateKeyPair();

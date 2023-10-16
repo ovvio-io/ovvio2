@@ -26,6 +26,13 @@ export async function loadSession(
   return res;
 }
 
+export async function loadAllSessions(): Promise<OwnedSession[]> {
+  const db = await openDB(K_DB_NAME, K_DB_VERSION, kOpenDBOpts);
+  const res = await db.getAll('session');
+  db.close();
+  return res;
+}
+
 export async function storeSession(session: OwnedSession): Promise<void> {
   const db = await openDB(K_DB_NAME, K_DB_VERSION, kOpenDBOpts);
   await db.put('session', session);
