@@ -1,14 +1,12 @@
 import {
   OwnedSession,
   SESSION_CRYPTO_KEY_GEN_PARAMS,
-  SESSION_CRYPTO_KEY_USAGES,
   Session,
   encodeSession,
+  sessionToRecord,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
 import { kDayMs } from '../../base/date.ts';
-import { Record } from '../../cfds/base/record.ts';
-import { Scheme } from '../../cfds/base/scheme.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { Endpoint, Server, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
@@ -21,8 +19,6 @@ export type CreateSessionError = 'MissingPublicKey' | 'InvalidPublicKey';
 export type AuthError = CreateSessionError;
 
 export class AuthEndpoint implements Endpoint {
-  constructor(readonly serverSessionId: string) {}
-
   filter(
     services: ServerServices,
     req: Request,
@@ -66,15 +62,15 @@ export class AuthEndpoint implements Endpoint {
     try {
       const body = await req.json();
       const jwk = body.publicKey;
-      if (typeof jwk !== 'string' || jwk.length > 0) {
+      if (typeof jwk !== 'object') {
         return responseForError('MissingPublicKey');
       }
       publicKey = await crypto.subtle.importKey(
         'jwk',
-        JSON.parse(jwk),
+        jwk,
         SESSION_CRYPTO_KEY_GEN_PARAMS,
         true,
-        SESSION_CRYPTO_KEY_USAGES
+        ['verify']
       );
     } catch (e: any) {
       return responseForError('InvalidPublicKey');
@@ -90,7 +86,10 @@ export class AuthEndpoint implements Endpoint {
     };
     // const session = await createNewSession(server.service('sync'), publicKey);
     await persistSession(services, session);
-    return new Response(JSON.stringify({ session: encodeSession(session) }));
+    const encodedSession = await encodeSession(session);
+    const resp = new Response(JSON.stringify({ session: encodedSession }));
+    resp.headers.set('Content-Type', 'application/json');
+    return resp;
   }
 }
 
@@ -99,13 +98,7 @@ export async function persistSession(
   session: Session | OwnedSession
 ): Promise<void> {
   const repo = services.sync.getRepository('sys', 'dir');
-  // Make sure no private key accidentally gets persisted
-  const publicSession = { ...session };
-  delete (publicSession as any).privateKey;
-  const record = new Record({
-    scheme: Scheme.session(),
-    data: await encodeSession(publicSession),
-  });
+  const record = await sessionToRecord(session);
   repo.setValueForKey(session.id, record);
 }
 

@@ -264,6 +264,10 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
 });
 
 const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
+  id: {
+    type: TYPE_STR,
+    required: true,
+  },
   publicKey: {
     type: TYPE_STR,
     required: true,
@@ -272,14 +276,7 @@ const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
     type: TYPE_DATE,
     required: true,
   },
-  owner: {
-    type: TYPE_REF,
-    required: true,
-  },
-  id: {
-    type: TYPE_STR,
-    required: true,
-  },
+  owner: TYPE_REF, // NOTE: Anonymous sessions don't have an owner
 });
 
 export {

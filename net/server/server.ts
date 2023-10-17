@@ -7,7 +7,7 @@ import { PrometheusLogStream } from '../../server/prometeus-stream.ts';
 import { SyncEndpoint, SyncService } from './sync.ts';
 import { StaticAssets, StaticAssetsEndpoint } from './static-assets.ts';
 import { ConsoleLogStream } from '../../logging/console-stream.ts';
-import { persistSession } from './auth.ts';
+import { AuthEndpoint, persistSession } from './auth.ts';
 import { HealthCheckEndpoint } from './health.ts';
 import { MetricsMiddleware, PrometheusMetricsEndpoint } from './metrics.ts';
 import { SettingsService } from './settings.ts';
@@ -157,6 +157,8 @@ export class Server {
     this.registerEndpoint(new PrometheusMetricsEndpoint());
     // Health check
     this.registerEndpoint(new HealthCheckEndpoint());
+    // Auth
+    this.registerEndpoint(new AuthEndpoint());
     // Static Assets
     this.registerEndpoint(new StaticAssetsEndpoint());
     // Sync

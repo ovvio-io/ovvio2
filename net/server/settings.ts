@@ -53,13 +53,11 @@ export class SettingsService extends BaseService<ServerServices> {
     this._settings = {
       session: session,
     };
-    debugger;
     await this.persistSettings();
   }
 
   private async persistSettings(): Promise<void> {
     const settings = this._settings;
-    debugger;
     assert(settings !== undefined);
     const encodedSettings = {
       ...settings,

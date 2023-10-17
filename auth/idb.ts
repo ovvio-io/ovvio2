@@ -13,18 +13,9 @@ interface SessionDBSchema extends DBSchema {
 
 const kOpenDBOpts: OpenDBCallbacks<SessionDBSchema> = {
   upgrade(db, oldVersion, newVersion, txn, event) {
-    db.createObjectStore('session', { keyPath: 'owner' });
+    db.createObjectStore('session', { keyPath: 'id' });
   },
 };
-
-export async function loadSession(
-  userId: string
-): Promise<OwnedSession | undefined> {
-  const db = await openDB(K_DB_NAME, K_DB_VERSION, kOpenDBOpts);
-  const res = await db.get('session', userId);
-  db.close();
-  return res;
-}
 
 export async function loadAllSessions(): Promise<OwnedSession[]> {
   const db = await openDB(K_DB_NAME, K_DB_VERSION, kOpenDBOpts);

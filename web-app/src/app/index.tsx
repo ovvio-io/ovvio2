@@ -171,6 +171,7 @@ export default function AppView() {
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
   const [session, setSession] = useState<OwnedSession | undefined>();
   const logger = useLogger();
+  const styles = useStyles();
 
   useEffect(() => {
     const handle: CancelHandle = {};
@@ -186,17 +187,25 @@ export default function AppView() {
     };
   }, [logger, setSession]);
 
-  return (
-    <CfdsClientProvider session={session}>
-      <StyleProvider dev={false}>
-        <ThemeProvider theme={theme} isRoot={true}>
-          {({ style }) => (
-            <React.StrictMode>
-              <RouterProvider router={router} />
-            </React.StrictMode>
-          )}
-        </ThemeProvider>
-      </StyleProvider>
-    </CfdsClientProvider>
-  );
+  if (!session) {
+    return (
+      <div className={cn(styles.root)}>
+        <LoadingView />;
+      </div>
+    );
+  }
+
+  // return (
+  //   <CfdsClientProvider session={session}>
+  //     <StyleProvider dev={false}>
+  //       <ThemeProvider theme={theme} isRoot={true}>
+  //         {({ style }) => (
+  //           <React.StrictMode>
+  //             <RouterProvider router={router} />
+  //           </React.StrictMode>
+  //         )}
+  //       </ThemeProvider>
+  //     </StyleProvider>
+  //   </CfdsClientProvider>
+  // );
 }

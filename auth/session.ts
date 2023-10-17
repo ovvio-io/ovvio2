@@ -9,8 +9,8 @@ import { stableStringify } from '../base/json.ts';
 import { Commit } from '../repo/commit.ts';
 import { uniqueId } from '../base/common.ts';
 import { CoreObject } from '../base/core-types/index.ts';
-
-export const SESSION_CRYPTO_KEY_USAGES: KeyUsage[] = ['sign', 'verify'];
+import { Record } from '../cfds/base/record.ts';
+import { Scheme } from '../cfds/base/scheme.ts';
 
 export const SESSION_CRYPTO_KEY_GEN_PARAMS: EcKeyGenParams = {
   name: 'ECDSA',
@@ -24,23 +24,30 @@ export interface Session {
   expiration: Date;
 }
 
-export interface EncodedSession extends CoreObject {
-  id: string;
-  publicKey: string;
-  owner?: string;
-  expiration: Date;
-}
-
 export interface OwnedSession extends Session {
   privateKey: CryptoKey;
 }
 
+export interface EncodedSession extends CoreObject {
+  id: string;
+  publicKey: ReadonlyJSONObject;
+  owner?: string;
+  expiration: Date;
+}
+
+export interface EncodedOwnedSession extends EncodedSession {
+  privateKey: ReadonlyJSONObject;
+}
+
+export function isOwnedSession(session: Session): session is OwnedSession {
+  return (session as OwnedSession).privateKey !== undefined;
+}
+
 export async function generateKeyPair(): Promise<CryptoKeyPair> {
-  return await crypto.subtle.generateKey(
-    SESSION_CRYPTO_KEY_GEN_PARAMS,
-    true,
-    SESSION_CRYPTO_KEY_USAGES
-  );
+  return await crypto.subtle.generateKey(SESSION_CRYPTO_KEY_GEN_PARAMS, true, [
+    'sign',
+    'verify',
+  ]);
 }
 
 export async function generateSession(
@@ -48,6 +55,7 @@ export async function generateSession(
   ttlMs = 30 * kDayMs
 ): Promise<OwnedSession> {
   const keyPair = await generateKeyPair();
+  debugger;
   const expiration = new Date();
   expiration.setTime(expiration.getTime() + ttlMs);
   return {
@@ -128,31 +136,76 @@ export function signerIdFromCommit(commit: Commit): string | undefined {
   return comps && comps[0];
 }
 
-export async function encodeSession(session: Session): Promise<EncodedSession> {
+export async function encodeSession(
+  session: OwnedSession
+): Promise<EncodedOwnedSession>;
+
+export async function encodeSession(session: Session): Promise<EncodedSession>;
+
+export async function encodeSession(
+  session: Session | OwnedSession
+): Promise<EncodedSession | EncodedOwnedSession> {
   const publicKey = (await crypto.subtle.exportKey(
     'jwk',
     session.publicKey
   )) as ReadonlyJSONObject;
 
-  const res: EncodedSession = {
-    ...session,
-    publicKey: JSON.stringify(publicKey),
-  };
-  return res;
-}
-
-export async function decodeSession(
-  session: EncodedSession
-): Promise<Session | OwnedSession> {
-  const publicKey = await crypto.subtle.importKey(
-    'jwk',
-    JSON.parse(session.publicKey),
-    SESSION_CRYPTO_KEY_GEN_PARAMS,
-    true,
-    SESSION_CRYPTO_KEY_USAGES
-  );
+  if (isOwnedSession(session)) {
+    return {
+      ...session,
+      publicKey,
+      privateKey: (await crypto.subtle.exportKey(
+        'jwk',
+        session.privateKey
+      )) as ReadonlyJSONObject,
+    };
+  }
   return {
     ...session,
     publicKey,
   };
+}
+
+export async function decodeSession(
+  session: EncodedSession | EncodedOwnedSession
+): Promise<Session | OwnedSession> {
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    session.publicKey as JsonWebKey,
+    SESSION_CRYPTO_KEY_GEN_PARAMS,
+    true,
+    ['verify']
+  );
+  if (session.privateKey) {
+    const privateKey = await crypto.subtle.importKey(
+      'jwk',
+      session.privateKey as JsonWebKey,
+      SESSION_CRYPTO_KEY_GEN_PARAMS,
+      true,
+      ['sign']
+    );
+    return {
+      ...session,
+      publicKey,
+      privateKey,
+    };
+  }
+  return {
+    ...session,
+    publicKey,
+  };
+}
+
+export async function sessionToRecord(session: Session): Promise<Record> {
+  const encodedSession = await encodeSession(session);
+  // Private keys don't exist in the Session scheme, but just to be extra
+  // cautious, we delete the field here as well.
+  delete encodedSession.privateKey;
+  return new Record({
+    scheme: Scheme.session(),
+    data: {
+      ...encodedSession,
+      publicKey: JSON.stringify(encodedSession),
+    },
+  });
 }

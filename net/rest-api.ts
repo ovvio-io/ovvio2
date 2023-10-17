@@ -14,9 +14,10 @@ export async function createNewSession(
     if (resp.status !== 200) {
       return undefined;
     }
-    const encodedSession = await resp.json();
-    return await decodeSession(encodedSession);
-  } catch (_: unknown) {
+    const body = await resp.json();
+    return await decodeSession(body.session);
+  } catch (_err: unknown) {
+    debugger;
     return undefined;
   }
 }
