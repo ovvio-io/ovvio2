@@ -27,6 +27,7 @@ import { loadAllSessions, storeSession } from '../../../auth/idb.ts';
 import { retry } from '../../../base/time.ts';
 import { Logger } from '../../../logging/log.ts';
 import { createNewSession } from '../../../net/rest-api.ts';
+import { LoginView } from './login/login.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -194,6 +195,22 @@ export default function AppView() {
       </div>
     );
   }
+
+  const contents = !session.owner ? (
+    <LoginView session={session} />
+  ) : (
+    <CfdsClientProvider session={session}>
+      <RouterProvider router={router} />
+    </CfdsClientProvider>
+  );
+
+  return (
+    <StyleProvider dev={false}>
+      <ThemeProvider theme={theme} isRoot={true}>
+        {({ style }) => <React.StrictMode>{contents}</React.StrictMode>}
+      </ThemeProvider>
+    </StyleProvider>
+  );
 
   // return (
   //   <CfdsClientProvider session={session}>
