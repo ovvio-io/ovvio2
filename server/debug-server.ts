@@ -2,15 +2,11 @@ import * as path from 'std/path/mod.ts';
 import { SimpleTimer } from '../base/timer.ts';
 import { tuple4Get, tuple4Set } from '../base/tuple.ts';
 import { VersionNumber } from '../base/version-number.ts';
-import {
-  BuildContext,
-  createBuildContext,
-  getIndexFilePath,
-  getRepositoryPath,
-} from '../web-app/build.ts';
+import { BuildContext, createBuildContext } from '../build.ts';
 import { getOvvioConfig } from './config.ts';
 import { Server } from '../net/server/server.ts';
 import { StaticAssets } from '../net/server/static-assets.ts';
+import { getIndexFilePath, getRepositoryPath } from '../base/development.ts';
 
 function generateConfigSnippet(version: VersionNumber): string {
   const config = getOvvioConfig();
@@ -26,7 +22,9 @@ async function rebuildAssets(
   ctx: BuildContext,
   version: VersionNumber
 ): Promise<StaticAssets> {
-  const { source, map } = await ctx.rebuild();
+  const buildResults = await ctx.rebuild();
+  debugger;
+  const { source, map } = buildResults;
   return {
     js: generateConfigSnippet(version) + source,
     sourceMap: map,
@@ -72,7 +70,7 @@ async function openBrowser(): Promise<void> {
 async function main(): Promise<void> {
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
-  const watcher = Deno.watchFs(getRepositoryPath());
+  const watcher = Deno.watchFs(await getRepositoryPath());
   const server = new Server();
   await server.setup();
   (await server.servicesForOrganization('localhost')).staticAssets =

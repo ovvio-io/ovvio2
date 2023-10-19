@@ -26,7 +26,7 @@ import { LogClient } from '../log-client.ts';
 import { SyncMessage } from '../message.ts';
 import { SyncValueType } from '../message.ts';
 import { RepoClient } from '../repo-client.ts';
-import { Endpoint, Server, ServerServices } from './server.ts';
+import { Endpoint, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 

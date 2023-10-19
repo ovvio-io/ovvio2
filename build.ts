@@ -1,15 +1,30 @@
 // @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
 import * as esbuild from 'https://deno.land/x/esbuild@v0.19.2/mod.js';
-import { assert, notReached } from '../base/error.ts';
-import { retry } from '../base/time.ts';
-import { getImportMapPath, getIndexFilePath } from '../base/development.ts';
+import * as path from 'std/path/mod.ts';
+import { assert, notReached } from './base/error.ts';
+import { retry } from './base/time.ts';
+import { getImportMapPath, getRepositoryPath } from './base/development.ts';
 
 const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
 
-function getCDNURLForDependency(dep: string): string {
-  // return `https://cdn.skypack.dev/${dep}?dts`;
-  return `https://esm.sh/${dep}`;
+export const kEntryPoints = ['app', 'tenent-admin'] as const;
+export type EntryPoint = (typeof kEntryPoints)[number];
+
+async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
+  const repoPath = await getRepositoryPath();
+  return [
+    {
+      in: path.join(repoPath, 'web-app', 'src', 'index.tsx'),
+      out: 'app',
+    },
+    {
+      in: path.join(repoPath, 'tenant-admin', 'index.tsx'),
+      out: 'tenant-admin.js',
+    },
+  ];
 }
+
+const ENTRY_POINTS = await getEntryPoints();
 
 function isPath(str: string): boolean {
   return str.startsWith('/') || str.startsWith('./') || str.startsWith('../');
@@ -152,16 +167,12 @@ export interface BundleResult {
   map: string;
 }
 
-export async function bundle(path?: string): Promise<BundleResult> {
-  if (!path) {
-    path = getIndexFilePath();
-  }
+export async function bundle(): Promise<BundleResult> {
   const result = await esbuild.build({
-    entryPoints: [path],
+    entryPoints: ENTRY_POINTS,
     plugins: [createOvvioImportPlugin()],
     bundle: true,
     write: false,
-    outfile: 'app.js',
     sourcemap: 'linked',
   });
   return bundleResultFromBuildResult(result);
@@ -169,7 +180,10 @@ export async function bundle(path?: string): Promise<BundleResult> {
 
 function bundleResultFromBuildResult(
   result: esbuild.BuildResult
-): BundleResult {
+): Record<EntryPoint, BundleResult> {
+  const result: Record<EntryPoint, BundleResult> = {};
+  for (const name of kEntryPoints) {
+  }
   let source, sourceMap: string;
   for (const file of result.outputFiles!) {
     if (file.path.endsWith('.js')) {
@@ -193,17 +207,14 @@ export interface BuildContext {
   close(): void;
 }
 
-export async function createBuildContext(path?: string): Promise<BuildContext> {
-  if (!path) {
-    path = getIndexFilePath();
-  }
+export async function createBuildContext(): Promise<BuildContext> {
   const ctx = await esbuild.context({
-    entryPoints: [path],
+    entryPoints: ENTRY_POINTS,
     plugins: [createOvvioImportPlugin()],
     bundle: true,
     write: false,
-    outfile: 'app.js',
     sourcemap: 'linked',
+    outdir: 'output',
   });
   return {
     rebuild: async () => bundleResultFromBuildResult(await ctx.rebuild()),
