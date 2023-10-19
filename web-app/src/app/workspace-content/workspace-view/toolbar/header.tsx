@@ -285,6 +285,18 @@ export interface ToolbarMenuProps {
 export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const styles = useStyles();
   const logger = useLogger();
+  const navigate = useNavigate();
+
+  const openSettings = useCallback(() => {
+    logger.log({
+      severity: "INFO",
+      event: "Start",
+      flow: "create",
+      type: "workspace", //TODO: need to ask Ofri.
+      source: "bar:workspace",
+    });
+    navigate("/settings");
+  }, [logger, navigate]);
 
   return (
     <>
@@ -294,7 +306,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
         renderButton={() => <IconAvatar />}
         position="bottom"
       >
-        <MenuItem>Settings</MenuItem>
+        <MenuItem onClick={openSettings}>Settings</MenuItem>
         <MenuItem>Sign out of Ovvio</MenuItem>
       </Menu>
     </>

@@ -21,6 +21,7 @@ import {
 import NoteView from "./workspace-content/workspace-view/note-editor/index.tsx";
 import { RepoExplorer } from "../backoffice/repo-explorer.tsx";
 import { CardsDisplay } from "./workspace-content/workspace-view/cards-display/index.tsx";
+import { PersonalSettings } from "./workspace-content/workspace-view/toolbar/user-settings/personal-information.tsx";
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -84,7 +85,7 @@ const router = createBrowserRouter([
   {
     path: "/new",
     element: (
-      <CreateWorkspaceView //TODO: CHECK linr 78-88 in comment
+      <CreateWorkspaceView //TODO: CHECK line 78-88 in comment
         source="bar:workspace"
         // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
 
@@ -113,6 +114,10 @@ const router = createBrowserRouter([
   {
     path: `/_explorer`,
     element: <RepoExplorer />,
+  },
+  {
+    path: "/settings",
+    element: <PersonalSettings />,
   },
 ]);
 

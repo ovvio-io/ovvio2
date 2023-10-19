@@ -1,14 +1,14 @@
-import { Record, RecordValueWrapper } from '../../base/record.ts';
-import { Scheme } from '../../base/scheme.ts';
-import { GraphManager } from './graph-manager.ts';
+import { Record, RecordValueWrapper } from "../../base/record.ts";
+import { Scheme } from "../../base/scheme.ts";
+import { GraphManager } from "./graph-manager.ts";
 import {
   MutationPack,
   mutationPackIter,
   mutationPackAppend,
   mutationPackIsEmpty,
   mutationPackOptimize,
-} from './mutations.ts';
-import { RichText } from '../../richtext/tree.ts';
+} from "./mutations.ts";
+import { RichText } from "../../richtext/tree.ts";
 import {
   Comparable,
   CoreObject,
@@ -19,26 +19,26 @@ import {
   ReadonlyCoreObject,
   Clonable,
   CoreValueCloneOpts,
-} from '../../../base/core-types/index.ts';
-import vertexBuilder from './vertices/vertex-builder.ts';
-import { SimpleTimer } from '../../../base/timer.ts';
-import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
-import { ValueType } from '../../base/types/index.ts';
-import { assert } from '../../../base/error.ts';
+} from "../../../base/core-types/index.ts";
+import vertexBuilder from "./vertices/vertex-builder.ts";
+import { SimpleTimer } from "../../../base/timer.ts";
+import { PointerValue, projectPointers } from "../../richtext/flat-rep.ts";
+import { ValueType } from "../../base/types/index.ts";
+import { assert } from "../../../base/error.ts";
 import {
   extractFieldRefs,
   kNoRefsValue,
   Vertex,
   VertexConfig,
-} from './vertex.ts';
-import * as SetUtils from '../../../base/set.ts';
-import { DataType, kRecordIdField } from '../../base/scheme-types.ts';
-import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
-import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
-import { Emitter } from '../../../base/emitter.ts';
-import { repositoryForRecord } from '../../../repo/resolver.ts';
+} from "./vertex.ts";
+import * as SetUtils from "../../../base/set.ts";
+import { DataType, kRecordIdField } from "../../base/scheme-types.ts";
+import { MemRepoStorage, Repository } from "../../../repo/repo.ts";
+import { Dictionary, isDictionary } from "../../../base/collections/dict.ts";
+import { Emitter } from "../../../base/emitter.ts";
+import { repositoryForRecord } from "../../../repo/resolver.ts";
 
-export const K_VERT_DEPTH = 'depth';
+export const K_VERT_DEPTH = "depth";
 
 export type Edge = [key: string, fieldName: string];
 
@@ -57,14 +57,14 @@ export interface VertexSnapshot {
  *
  * @param changes (MutationPack): The list of mutations that'd been applied.
  */
-export const EVENT_DID_CHANGE = 'did-change';
+export const EVENT_DID_CHANGE = "did-change";
 
 /**
  * Fired after a vertex receives a critical error, like bad request error response
  */
-export const EVENT_CRITICAL_ERROR = 'critical-error';
+export const EVENT_CRITICAL_ERROR = "critical-error";
 
-export const VERT_PROXY_CHANGE_FIELD = '__vert';
+export const VERT_PROXY_CHANGE_FIELD = "__vert";
 
 export interface VertexBuilder {
   (
@@ -206,13 +206,13 @@ export class VertexManager<V extends Vertex = Vertex>
   // }
 
   get displayName(): string {
-    return (this.namespace ? this.namespace + '/' : '') + this.key;
+    return (this.namespace ? this.namespace + "/" : "") + this.key;
   }
 
   get isDeleted(): boolean {
     return (
-      this.scheme.hasField('isDeleted') &&
-      this.record.get('isDeleted', 0) !== 0 &&
+      this.scheme.hasField("isDeleted") &&
+      this.record.get("isDeleted", 0) !== 0 &&
       this.getVertexProxy().isDeleted !== 0
     );
   }
@@ -324,7 +324,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private rebuildVertexProxy<T extends Vertex>(): T {
     const handler: ProxyHandler<T> = {
       deleteProperty: (target: T, prop: string): boolean => {
-        if (prop.startsWith('_')) {
+        if (prop.startsWith("_")) {
           delete target[prop as keyof T];
           return true;
         }
@@ -334,7 +334,7 @@ export class VertexManager<V extends Vertex = Vertex>
         let success: boolean;
         const deleteMethodName = getDeleteMethodName(prop);
         // deno-lint-ignore no-explicit-any
-        if (typeof (target as any)[deleteMethodName] === 'function') {
+        if (typeof (target as any)[deleteMethodName] === "function") {
           // deno-lint-ignore no-explicit-any
           success = (target as any)[deleteMethodName]() !== false;
         } else if (this.scheme.hasField(prop)) {
@@ -358,7 +358,7 @@ export class VertexManager<V extends Vertex = Vertex>
       },
 
       set: (target: T, prop: string, value: any): boolean => {
-        if (prop.startsWith('_')) {
+        if (prop.startsWith("_")) {
           target[prop as keyof T] = value;
           return true;
         }
@@ -487,14 +487,14 @@ export class VertexManager<V extends Vertex = Vertex>
   ): MutationPack {
     if (snapshot.hasPendingChanges !== this.hasPendingChanges) {
       outMutations = mutationPackAppend(outMutations, [
-        'hasPendingChanges',
+        "hasPendingChanges",
         true,
         snapshot.hasPendingChanges,
       ]);
     }
     if (snapshot.isLocal !== this.isLocal) {
       outMutations = mutationPackAppend(outMutations, [
-        'isLocal',
+        "isLocal",
         true,
         snapshot.isLocal,
       ]);
@@ -512,10 +512,10 @@ export class VertexManager<V extends Vertex = Vertex>
       pack = mutationPackAppend(pack, [fieldName, local, undefined]);
     }
 
-    pack = mutationPackAppend(pack, ['isLoading', true, undefined]);
-    pack = mutationPackAppend(pack, ['hasPendingChanges', true, undefined]);
-    pack = mutationPackAppend(pack, ['errorCode', true, undefined]);
-    pack = mutationPackAppend(pack, ['isLocal', true, this.isLocal]);
+    pack = mutationPackAppend(pack, ["isLoading", true, undefined]);
+    pack = mutationPackAppend(pack, ["hasPendingChanges", true, undefined]);
+    pack = mutationPackAppend(pack, ["errorCode", true, undefined]);
+    pack = mutationPackAppend(pack, ["isLocal", true, this.isLocal]);
     return pack;
   }
 
@@ -617,7 +617,7 @@ export class VertexManager<V extends Vertex = Vertex>
 }
 
 function getDeleteMethodName(prop: string): string {
-  return 'clear' + prop[0].toUpperCase() + prop.substring(1);
+  return "clear" + prop[0].toUpperCase() + prop.substring(1);
 }
 
 function projectRichTextPointers(

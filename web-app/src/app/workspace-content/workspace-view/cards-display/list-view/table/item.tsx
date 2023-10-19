@@ -275,6 +275,7 @@ const useStyles = makeStyles(
       bottom: 0,
     },
   }),
+
   "item_1cda8c"
 );
 
@@ -907,7 +908,13 @@ const PinCell = ({
   );
 };
 
-const MenuCell = ({ note }: { note: VertexManager<Note> }) => {
+const MenuCell = ({
+  note,
+  isMouseOver,
+}: {
+  note: VertexManager<Note>;
+  isMouseOver: boolean;
+}) => {
   const styles = useStyles();
 
   return (
@@ -918,7 +925,7 @@ const MenuCell = ({ note }: { note: VertexManager<Note> }) => {
         styles[GridColumns.Menu]
       )}
     >
-      <CardMenuView cardManager={note} source="list" />
+      <CardMenuView visible={isMouseOver} cardManager={note} source="list" />
     </Cell>
   );
 };

@@ -487,7 +487,6 @@ export function DisplayBar(props?: DisplayBarProps) {
     <div className={cn(styles.bar, className)}>
       <div className={cn(styles.barRow, styles.viewRow)}>
         <TabView />
-        blblblb
       </div>
       <div className={cn(styles.barRow)}>
         {view.selectedTabId !== "overview" ? leftHand : null}

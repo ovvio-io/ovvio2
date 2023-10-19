@@ -409,7 +409,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   persistCommits(commits: Iterable<Commit>): Commit[] {
     const result = Array.from(this.storage.persistCommits(commits, this));
-    console.log("debug commit - ", result);
     for (const c of result) {
       this.emit(EVENT_NEW_COMMIT, c);
     }
