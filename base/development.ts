@@ -21,14 +21,6 @@ export async function getRepositoryPath(): Promise<string> {
   return candidate;
 }
 
-export function getIndexFilePath(ext = '.tsx'): string {
-  const buildFile = getEntryFilePath();
-  const rootDir = path.dirname(buildFile);
-  return path.join(rootDir, 'src', 'index' + ext);
-}
-
-export function getImportMapPath(): string {
-  const buildFile = getEntryFilePath();
-  const rootDir = path.dirname(path.dirname(buildFile));
-  return path.join(rootDir, 'import-map.json');
+export async function getImportMapPath(): Promise<string> {
+  return path.join(await getRepositoryPath(), 'import-map.json');
 }

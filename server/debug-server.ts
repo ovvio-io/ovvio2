@@ -2,11 +2,15 @@ import * as path from 'std/path/mod.ts';
 import { SimpleTimer } from '../base/timer.ts';
 import { tuple4Get, tuple4Set } from '../base/tuple.ts';
 import { VersionNumber } from '../base/version-number.ts';
-import { BuildContext, createBuildContext } from '../build.ts';
+import {
+  BuildContext,
+  createBuildContext,
+  kEntryPointsNames,
+} from '../build.ts';
 import { getOvvioConfig } from './config.ts';
 import { Server } from '../net/server/server.ts';
 import { StaticAssets } from '../net/server/static-assets.ts';
-import { getIndexFilePath, getRepositoryPath } from '../base/development.ts';
+import { getRepositoryPath } from '../base/development.ts';
 
 function generateConfigSnippet(version: VersionNumber): string {
   const config = getOvvioConfig();
@@ -23,14 +27,20 @@ async function rebuildAssets(
   version: VersionNumber
 ): Promise<StaticAssets> {
   const buildResults = await ctx.rebuild();
-  debugger;
-  const { source, map } = buildResults;
-  return {
-    js: generateConfigSnippet(version) + source,
-    sourceMap: map,
-    html: await Deno.readTextFile(getIndexFilePath('.html')),
-    css: await Deno.readTextFile(getIndexFilePath('.css')),
-  };
+  const repoPath = await getRepositoryPath();
+  const result = {} as StaticAssets;
+  for (const ep of kEntryPointsNames) {
+    const { source, map } = buildResults[ep];
+    result[ep] = {
+      js: generateConfigSnippet(version) + source,
+      sourceMap: map,
+      html: await Deno.readTextFile(
+        path.join(repoPath, ep, 'src', 'index.html')
+      ),
+      css: await Deno.readTextFile(path.join(repoPath, ep, 'src', 'index.css')),
+    };
+  }
+  return result;
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {

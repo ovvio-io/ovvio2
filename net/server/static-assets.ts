@@ -1,12 +1,15 @@
+import { EntryPointName, kEntryPointsNames } from '../../build.ts';
 import { ServerServices, Endpoint } from './server.ts';
 import { getRequestPath } from './utils.ts';
 
-export interface StaticAssets {
+export interface StaticEntryPoint {
   readonly html: string;
   readonly css: string;
   readonly js: string;
   readonly sourceMap?: string;
 }
+
+export type StaticAssets = Required<Record<EntryPointName, StaticEntryPoint>>;
 
 export const kStaticPaths = [
   '/index.html',
@@ -32,49 +35,61 @@ export class StaticAssetsEndpoint implements Endpoint {
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
     const path = getRequestPath<StaticPath>(req);
-    const staticAssets = services.staticAssets;
-    switch (path) {
-      case '/app.js': {
+    const pathComps = path.split('/');
+
+    let ep: EntryPointName = 'web-app';
+    if (
+      // pathComps.length === 3 &&
+      kEntryPointsNames.includes(pathComps[1] as EntryPointName)
+    ) {
+      if (ep !== (pathComps[1] as EntryPointName)) {
+        ep = pathComps[1] as EntryPointName;
+      }
+    }
+    const staticEP = services.staticAssets && services.staticAssets[ep];
+    const filename = ep === 'web-app' ? path.substring(1) : pathComps[2];
+    switch (filename) {
+      case 'app.js': {
         return Promise.resolve(
-          new Response(staticAssets?.js, {
+          new Response(staticEP?.js, {
             headers: {
               'content-type': 'text/javascript; charset=utf-8',
             },
-            status: staticAssets?.js ? 200 : 404,
+            status: staticEP?.js ? 200 : 404,
           })
         );
       }
 
-      case '/app.js.map': {
+      case 'app.js.map': {
         return Promise.resolve(
-          new Response(staticAssets?.sourceMap, {
+          new Response(staticEP?.sourceMap, {
             headers: {
               'content-type': 'application/json; charset=utf-8',
             },
-            status: staticAssets?.sourceMap ? 200 : 404,
+            status: staticEP?.sourceMap ? 200 : 404,
           })
         );
       }
 
-      case '/index.css': {
+      case 'index.css': {
         return Promise.resolve(
-          new Response(staticAssets?.css, {
+          new Response(staticEP?.css, {
             headers: {
               'content-type': 'text/css; charset=utf-8',
             },
-            status: staticAssets?.css ? 200 : 404,
+            status: staticEP?.css ? 200 : 404,
           })
         );
       }
 
-      case '/index.html':
+      case 'index.html':
       default: {
         return Promise.resolve(
-          new Response(staticAssets?.html, {
+          new Response(staticEP?.html, {
             headers: {
               'content-type': 'text/html; charset=utf-8',
             },
-            status: staticAssets?.html ? 200 : 404,
+            status: staticEP?.html ? 200 : 404,
           })
         );
       }

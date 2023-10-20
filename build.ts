@@ -7,21 +7,17 @@ import { getImportMapPath, getRepositoryPath } from './base/development.ts';
 
 const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
 
-export const kEntryPoints = ['app', 'tenent-admin'] as const;
-export type EntryPoint = (typeof kEntryPoints)[number];
+export const kEntryPointsNames = ['web-app', 'tenant-admin'] as const;
+export type EntryPointName = (typeof kEntryPointsNames)[number];
 
 async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
   const repoPath = await getRepositoryPath();
-  return [
-    {
-      in: path.join(repoPath, 'web-app', 'src', 'index.tsx'),
-      out: 'app',
-    },
-    {
-      in: path.join(repoPath, 'tenant-admin', 'index.tsx'),
-      out: 'tenant-admin.js',
-    },
-  ];
+  return kEntryPointsNames.map((name) => {
+    return {
+      in: path.join(repoPath, name, 'src', 'index.tsx'),
+      out: name,
+    };
+  });
 }
 
 const ENTRY_POINTS = await getEntryPoints();
@@ -86,8 +82,10 @@ function baseUrlFromUrl(url: string): string {
  *
  * @returns An ESBuild plugin.
  */
-export function createOvvioImportPlugin(): esbuild.Plugin {
-  const map = JSON.parse(Deno.readTextFileSync(getImportMapPath())).imports;
+export async function createOvvioImportPlugin(): Promise<esbuild.Plugin> {
+  const map = JSON.parse(
+    await Deno.readTextFile(await getImportMapPath())
+  ).imports;
   const filter = /.*?/;
   return {
     name: 'ovvio',
@@ -167,10 +165,10 @@ export interface BundleResult {
   map: string;
 }
 
-export async function bundle(): Promise<BundleResult> {
+export async function bundle(): Promise<Record<EntryPointName, BundleResult>> {
   const result = await esbuild.build({
     entryPoints: ENTRY_POINTS,
-    plugins: [createOvvioImportPlugin()],
+    plugins: [await createOvvioImportPlugin()],
     bundle: true,
     write: false,
     sourcemap: 'linked',
@@ -179,23 +177,24 @@ export async function bundle(): Promise<BundleResult> {
 }
 
 function bundleResultFromBuildResult(
-  result: esbuild.BuildResult
-): Record<EntryPoint, BundleResult> {
-  const result: Record<EntryPoint, BundleResult> = {};
-  for (const name of kEntryPoints) {
-  }
-  let source, sourceMap: string;
-  for (const file of result.outputFiles!) {
+  buildResult: esbuild.BuildResult
+): Record<EntryPointName, BundleResult> {
+  const result = {} as Record<EntryPointName, BundleResult>;
+  for (const file of buildResult.outputFiles!) {
+    const entryPoint = path.basename(file.path).split('.')[0] as EntryPointName;
+    assert(kEntryPointsNames.includes(entryPoint)); // Sanity check
+    let bundleResult: BundleResult | undefined = result[entryPoint];
+    if (!bundleResult) {
+      bundleResult = {} as BundleResult;
+      result[entryPoint] = bundleResult;
+    }
     if (file.path.endsWith('.js')) {
-      source = file.text;
+      bundleResult.source = file.text;
     } else if (file.path.endsWith('.js.map')) {
-      sourceMap = file.text;
+      bundleResult.map = file.text;
     }
   }
-  return {
-    source: source!,
-    map: sourceMap!,
-  };
+  return result;
 }
 
 export function stopBackgroundCompiler(): void {
@@ -203,14 +202,14 @@ export function stopBackgroundCompiler(): void {
 }
 
 export interface BuildContext {
-  rebuild(): Promise<BundleResult>;
+  rebuild(): Promise<Record<EntryPointName, BundleResult>>;
   close(): void;
 }
 
 export async function createBuildContext(): Promise<BuildContext> {
   const ctx = await esbuild.context({
     entryPoints: ENTRY_POINTS,
-    plugins: [createOvvioImportPlugin()],
+    plugins: [await createOvvioImportPlugin()],
     bundle: true,
     write: false,
     sourcemap: 'linked',
