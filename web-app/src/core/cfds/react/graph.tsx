@@ -61,6 +61,7 @@ export function usePartialRootUser<K extends keyof User = keyof User>(
 }
 
 export function usePartialCurrentUser<K extends keyof User>(keys?: K[]) {
+  //not in use anymore
   const graph = useGraphManager();
   return usePartialVertex(graph.getRootVertexManager<User>(), keys || []);
 }
@@ -79,6 +80,7 @@ export function usePartialUserSettings<K extends keyof UserSettings>(
   keys?: K[]
 ) {
   const u = usePartialCurrentUser(["settings"]);
+
   return usePartialVertex(
     u.settings.manager as VertexManager<UserSettings>,
     keys || []
@@ -180,6 +182,12 @@ export function CfdsClientProvider({
         SchemeNamespace.VIEWS,
         { owner: manager.rootKey, parentView: "ViewGlobal" },
         "ViewOverview",
+        true
+      ).manager;
+      const personalSettingsView = manager.createVertex<View>(
+        SchemeNamespace.VIEWS,
+        { owner: manager.rootKey, parentView: "ViewGlobal" },
+        "ViewPersonalSettings",
         true
       ).manager;
       const lastUsed = manager.getVertex<View>(lastUsedKey);

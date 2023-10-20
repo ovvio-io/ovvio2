@@ -1,5 +1,5 @@
-import React from 'react';
-import { IconProps, IconSize } from './types.ts';
+import React from "react";
+import { IconProps, IconSize } from "./types.ts";
 
 export function IconCompose({ size = IconSize.Small, className }: IconProps) {
   return (

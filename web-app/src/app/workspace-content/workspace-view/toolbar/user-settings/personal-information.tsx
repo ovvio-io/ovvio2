@@ -13,14 +13,14 @@ import {
   usePartialView,
 } from "../../../../../core/cfds/react/graph.tsx";
 import {
-  Tab,
   TabButton,
   TabsHeader,
 } from "../../../../../../../styles/components/tabs/index.tsx";
 import { createUseStrings } from "../../../../../core/localization/index.tsx";
 import localization from "../user-settings/settings.strings.json" assert { type: "json" };
-
-import { usePartialVertex } from "../../../../../core/cfds/react/vertex.ts";
+import { IconCompose } from "../../../../../../../styles/components/new-icons/icon-compose.tsx";
+import { IconDuplicate } from "../../../../../../../styles/components/new-icons/icon-duplicate.tsx";
+import { IconCompose2 } from "../../../../../../../styles/components/new-icons/icon-compose2.tsx";
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -28,6 +28,12 @@ export const MOBILE_PADDING = styleguide.gridbase;
 export const TABLET_PADDING = styleguide.gridbase;
 
 const useStyles = makeStyles(() => ({
+  root: {
+    height: "100vh", // 100% of the viewport height
+    background: "var(--secondary-secondary-s-0, #FFFBF5)",
+    overflow: "auto", // In case the content is taller than the viewport
+  },
+
   bar: {
     justifyContent: "flex-end",
     alignItems: "stretch",
@@ -35,7 +41,7 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.column],
   },
   barRow: {
-    padding: ["40px", SIDES_PADDING],
+    padding: ["40px", 0],
     height: styleguide.gridbase * 5,
     basedOn: [layout.column],
   },
@@ -62,14 +68,6 @@ const useStyles = makeStyles(() => ({
   iconItem: {
     padding: styleguide.gridbase,
   },
-  extraFiltersSeparator: {
-    display: "inline-block",
-    width: "2px",
-    height: "24px",
-    backgroundColor: theme.secondary.s5,
-    borderRadius: "2px",
-    // margin: [0, styleguide.gridbase * 2],
-  },
   dialogHeader: {
     width: "100%",
     height: styleguide.gridbase * 14,
@@ -91,7 +89,13 @@ const useStyles = makeStyles(() => ({
     fontStyle: "normal",
     fontWeight: "400",
     lineHeight: "normal",
-    letterSpacing: " 0.075px",
+  },
+  infoLight: {
+    color: "var(--monochrom-m-3, #B3B3B3)",
+    fontSize: "13px",
+    fontStyle: "normal",
+    fontWeight: "400",
+    lineHeight: "normal",
   },
 }));
 const useStrings = createUseStrings(localization);
@@ -105,10 +109,6 @@ function TabView() {
   const setSelected = useCallback(
     (tabId: TabId) => {
       view.selectedTabId = tabId;
-      if (tabId !== "overview") {
-        console.log("BABA");
-      }
-      view.closeFiltersDrawer();
     },
     [view]
   );
@@ -116,10 +116,6 @@ function TabView() {
   for (const tabId of ["general", "details"] as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
-  // const [tab, setTab] = useState(tabs["general"]);
-  // useEffect(() => {
-  //   setTab(tabs["general"]);
-  // }, []);
 
   return (
     <TabsHeader
@@ -141,19 +137,16 @@ export function PersonalSettings(props?: PersonalSettingsProps) {
   const styles = useStyles();
   const view = usePartialView("selectedTabId");
 
-  const userData = usePartialRootUser("name", "email");
-
-  return (
-    <div className={cn(styles.bar, className)}>
-      <div className={cn(styles.dialogHeader)}>Personal Information</div>
-      <div className={cn(styles.barRow, styles.viewRow)}>
-        <TabView />
-      </div>
-
+  function GeneralTabContent() {
+    const styles = useStyles();
+    const userData = usePartialRootUser("name", "email");
+    return (
       <div className={cn(styles.barRow)}>
         <div className={cn(styles.title)}>
           Full Name
-          <div className={cn(styles.info)}>{userData.name}</div>
+          <div className={cn(styles.info)}>
+            {userData.name} <IconCompose2 style={{ paddingLeft: "8px" }} />
+          </div>
         </div>
         <div className={cn(styles.title)}>
           Email Address
@@ -161,6 +154,49 @@ export function PersonalSettings(props?: PersonalSettingsProps) {
         </div>
         <div className={cn(styles.title)}>
           <div className={cn(styles.info)}>Forgot your password?</div>
+        </div>
+      </div>
+    );
+  }
+
+  function DetailsTabContent() {
+    const styles = useStyles();
+    const userData = usePartialRootUser("name", "email");
+    return (
+      <div className={cn(styles.barRow)}>
+        <div className={cn(styles.title)}>
+          Team
+          <div className={cn(styles.infoLight)}>
+            Add team's name
+            <IconCompose2 style={{ paddingLeft: "8px" }} />
+          </div>
+        </div>
+        <div className={cn(styles.title)}>
+          Company Roles
+          <div className={cn(styles.infoLight)}>
+            Add member’s role/s in the company. Separate between roles by “;”
+            <IconCompose2 style={{ paddingLeft: "8px" }} />
+          </div>
+        </div>
+        <div className={cn(styles.title)}>
+          Comments
+          <div className={cn(styles.infoLight)}>
+            Add free text
+            <IconCompose2 style={{ paddingLeft: "8px" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.root}>
+      {" "}
+      <div className={cn(styles.bar, className)}>
+        <div className={cn(styles.dialogHeader)}>Personal Information</div>
+        <div className={cn(styles.barRow, styles.viewRow)}>
+          <TabView />
+          {view.selectedTabId === "general" && <GeneralTabContent />}
+          {view.selectedTabId === "details" && <DetailsTabContent />}
         </div>
       </div>
     </div>
