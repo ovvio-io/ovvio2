@@ -1,6 +1,6 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconColor, IconProps, IconSize } from "./types.ts";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconColor, IconProps, IconSize } from './types.ts';
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -20,17 +20,19 @@ export interface IconShowProps extends IconProps {
 }
 
 export function IconShow({
-  color = IconColor.Primary,
+  color,
   size = IconSize.Small,
   style = {},
   className,
 }: IconShowProps) {
+  color = color === undefined ? IconColor.Mono : color;
+
   const colors = COLOR_MAP[color];
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       width="16"
       height="11"
       viewBox="0 0 16 11"
