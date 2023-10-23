@@ -254,8 +254,10 @@ export class GraphManager
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
         const mgr = this.getVertexManager(c.key);
-        if (!mgr.commit()) {
+        if (c.session === this.session) {
           mgr.touch();
+        } else {
+          mgr.commit();
         }
 
         // Any kind of activity needs to reset the sync timer. This causes
