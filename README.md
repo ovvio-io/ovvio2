@@ -21,7 +21,8 @@ Normal run:
 Debug run:
 `deno run --unstable -A --inspect-brk server/run-server.ts -d <path to data dir>`
 
-NOTE: You might need to delete deno.lock if you encounter errors.
+NOTE: If you're having problems with deno.lock getting out of sync, add the
+`--lock-write` flag to deno run which will force update the lock file.
 
 ### Live Reload
 
@@ -29,6 +30,22 @@ When working on the web-app, and especially when working on CSS, it's useful to
 have live reload functionality. For live reload, simply run `debug-server.ts`
 instead of `run-server.ts`. If follows an identical arguments pattern except it
 also has live reload built in.
+
+### Starting Fresh
+
+Since Ovvio is designed to resist data loss using automatic replication, it's
+a bit tricky to clean all data and start fresh. To do so, perform the following
+steps:
+
+1. Stop the server. Also stop all running replicas if you have any.
+
+2. In any non-incognito window you have open, open the developer tools, go to
+   the _Application_ tab > _Storage_ and click the _Clear site data_ button.
+
+3. Close all browser windows including incognito tabs.
+
+4. Clear all contents in the data directories of any servers/replicas you have
+   running (the -d flag to the server).
 
 ## Admin CLI
 
