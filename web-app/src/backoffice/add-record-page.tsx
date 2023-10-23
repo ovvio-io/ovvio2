@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { Scheme, SchemeManager } from "../../../cfds/base/scheme.ts";
-import { Record } from "../../../cfds/base/record.ts";
+import React, { useState } from 'react';
+import { Scheme, SchemeManager } from '../../../cfds/base/scheme.ts';
+import { Record } from '../../../cfds/base/record.ts';
 import {
   saveButtonStyle,
   cancelButtonStyle,
@@ -10,16 +10,16 @@ import {
   tdStyle,
   modalStyles,
   modalContentStyles,
-} from "./backoffice-styles.ts";
-import { ReadonlyJSONObject } from "../../../base/interfaces.ts";
+} from './backoffice-styles.ts';
+import { ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import {
   SchemeNamespace,
   TYPE_DATE,
   TYPE_NUMBER,
   TYPE_STR,
-} from "../../../cfds/base/scheme-types.ts";
-import { GraphManager } from "../../../cfds/client/graph/graph-manager.ts";
-import { VertexManager } from "../../../cfds/client/graph/vertex-manager.ts";
+} from '../../../cfds/base/scheme-types.ts';
+import { GraphManager } from '../../../cfds/client/graph/graph-manager.ts';
+import { VertexManager } from '../../../cfds/client/graph/vertex-manager.ts';
 
 interface AddRecordPageProps {
   selectedRecordType: SchemeNamespace;
@@ -51,17 +51,17 @@ export function AddRecordPage(props: AddRecordPageProps) {
 
     return Object.entries(fields).map(([fieldName, fieldType]) => {
       // deno-lint-ignore no-inferrable-types
-      let inputType: string = "text";
+      let inputType: string = 'text';
 
       switch (fieldType) {
         case TYPE_STR:
-          inputType = "text";
+          inputType = 'text';
           break;
         case TYPE_NUMBER:
-          inputType = "number";
+          inputType = 'number';
           break;
         case TYPE_DATE:
-          inputType = "date"; //TODO: might changed to text
+          inputType = 'date'; //TODO: might changed to text
           break;
       }
 
@@ -70,14 +70,14 @@ export function AddRecordPage(props: AddRecordPageProps) {
           <td style={tdStyle}>
             {fieldName}
             {scheme.isRequiredField(fieldName) && (
-              <span style={{ color: "red" }}>*</span>
+              <span style={{ color: 'red' }}>*</span>
             )}
           </td>
           <td style={tdStyle}>
             <input
               style={inputStyle}
               type={inputType}
-              value={recordData[fieldName] || ""}
+              value={recordData[fieldName] || ''}
               onChange={(e) => handleInputChange(fieldName, e.target.value)}
             />
           </td>
@@ -107,7 +107,7 @@ export function AddRecordPage(props: AddRecordPageProps) {
   return (
     <div style={modalStyles}>
       <div style={modalContentStyles} onClick={(e) => e.stopPropagation()}>
-        <h1 style={{ textAlign: "center", textDecoration: "underline" }}>
+        <h1 style={{ textAlign: 'center', textDecoration: 'underline' }}>
           Add New Record:
         </h1>
         <h3>TYPE: {selectedRecordType}</h3>

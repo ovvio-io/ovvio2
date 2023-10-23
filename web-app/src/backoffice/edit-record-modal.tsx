@@ -60,10 +60,17 @@ export function Modal(props: ModalProps) {
     }));
   };
 
-  const renderTableRow = (fieldName: string, fieldType: string) => {
+  const renderTableRow = (
+    fieldName: string,
+    fieldType: string,
+    isRequiredField: boolean
+  ) => {
     return (
       <tr key={fieldName}>
-        <td style={tdStyle}>{fieldName}</td>
+        <td style={tdStyle}>
+          {fieldName}
+          {isRequiredField && <span style={{ color: 'red' }}>*</span>}
+        </td>
         <td style={tdStyle}>
           <textarea
             value={
@@ -92,7 +99,11 @@ export function Modal(props: ModalProps) {
     if (!record) return [];
     return Object.keys(record).map((fieldName) => {
       const fieldType = scheme?.getFieldType(fieldName);
-      return renderTableRow(fieldName, fieldType);
+      return renderTableRow(
+        fieldName,
+        fieldType,
+        scheme?.isRequiredField(fieldName)
+      );
     });
   };
 
