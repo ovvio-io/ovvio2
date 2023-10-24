@@ -249,7 +249,7 @@ export class GraphManager
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
         const mgr = this.getVertexManager(c.key);
-        if (c.session === this.session) {
+        if (c.session === this.session.id) {
           mgr.touch();
         } else {
           mgr.commit();

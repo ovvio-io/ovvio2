@@ -116,22 +116,36 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
    * belong to disconnected histories).
    *
    * @param commits An iterable of commits.
+   *
    * @returns The LCA commit or undefined if no common ancestor exists.
+   *          Also returns the scheme to be used for this merge.
+   *
    * @throws ServiceUnavailable if the commit graph is incomplete.
    */
-  findMergeBase(commits: Iterable<Commit>): Commit | undefined {
+  findMergeBase(commits: Iterable<Commit>): [Commit | undefined, Scheme] {
     let result: Commit | undefined;
+    let scheme = Scheme.nullScheme();
+    let noCommonAncestor = false;
     for (const c of commits) {
       if (!result) {
         result = c;
+        scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      result = this._findMergeBase(result, c);
-      if (!result) {
-        break;
+      if (!noCommonAncestor) {
+        result = this._findMergeBase(result, c);
+        // Can't find a common ancestor
+        if (!result) {
+          noCommonAncestor = true;
+        }
+      }
+      const s = this.recordForCommit(c).scheme;
+      assert(scheme.isNull || scheme.namespace === s.namespace); // Sanity check
+      if (s.version > (scheme?.version || 0)) {
+        scheme = s;
       }
     }
-    return result;
+    return [result, scheme];
   }
 
   /**
@@ -252,7 +266,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     // do a recursive 3-way merge like git does.
     try {
       // Find the base for our N-way merge
-      const lca = this.findMergeBase(commitsToMerge);
+      const [lca, scheme] = this.findMergeBase(commitsToMerge);
       // If no LCA is found then we're dealing with concurrent writers who all
       // created of the same key unaware of each other.
       // Use the null record as a base in this case.
@@ -260,33 +274,36 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         ? this.recordForCommit(lca).clone()
         : Record.nullRecord();
       // Find the newest scheme in this merge
-      let scheme: Scheme = base.scheme;
-      for (const c of commitsToMerge) {
-        const commitScheme = c.scheme;
-        if (!commitScheme || commitScheme.isNull) {
-          continue;
-        }
-        assert(
-          scheme.isNull || commitScheme.namespace === scheme.namespace,
-          'Commits with conflicting scheme detected'
-        );
+      // for (const c of commitsToMerge) {
+      //   const commitScheme = c.scheme;
+      //   if (!commitScheme || commitScheme.isNull) {
+      //     continue;
+      //   }
+      //   assert(
+      //     scheme.isNull || commitScheme.namespace === scheme.namespace,
+      //     'Commits with conflicting scheme detected'
+      //   );
 
-        if (
-          commitScheme.version > scheme.version &&
-          commitScheme.allowsAutoUpgradeFrom(scheme)
-        ) {
-          scheme = commitScheme;
-        }
-      }
+      //   if (
+      //     commitScheme.version > scheme.version &&
+      //     commitScheme.allowsAutoUpgradeFrom(scheme)
+      //   ) {
+      //     scheme = commitScheme;
+      //   }
+      // }
       // Upgrade base to merge scheme
-      base.upgradeScheme(scheme);
+      if (!scheme.isNull) {
+        base.upgradeScheme(scheme);
+      }
       // Compute a compound diff from our base to all unique records
       let changes: DataChanges = {};
       for (const c of commitsToMerge) {
         const record = this.recordForCommit(c).clone();
         // Before computing the diff, upgrade the record to the scheme decided
         // for this merge.
-        record.upgradeScheme(scheme);
+        if (!scheme.isNull) {
+          record.upgradeScheme(scheme);
+        }
         changes = concatChanges(
           changes,
           base.diff(record, c.session === session)

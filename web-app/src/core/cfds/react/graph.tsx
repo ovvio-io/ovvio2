@@ -28,6 +28,7 @@ import { Repository } from '../../../../../repo/repo.ts';
 import { getClientData, setClientData } from '../../../../../server/config.ts';
 import { OwnedSession } from '../../../../../auth/session.ts';
 import { getBaseURL } from '../../../../../net/rest-api.ts';
+import { useSession } from '../../../../../auth/react.tsx';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -91,10 +92,9 @@ export function useCfdsContext(): ContextProps {
   return useContext(CFDSContext);
 }
 
-interface CfdsClientProviderProps {
-  session: OwnedSession;
-  children: React.ReactNode;
-}
+export type CfdsClientProviderProps = React.PropsWithChildren<
+  Record<string, unknown>
+>;
 
 // const kDemoDataPromise: Promise<ReadonlyJSONObject> = fetch('/demo.json').then(
 //   response => response.json()
@@ -117,13 +117,9 @@ export async function loadEssentialRepositories(
   await graph.syncRepository(Repository.id('user', graph.rootKey));
 }
 
-export function CfdsClientProvider({
-  session,
-  children,
-}: CfdsClientProviderProps) {
+export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   const logger = useLogger();
-  const [versionMismatchFound, setVersionMismatchFound] = useState(false);
-  const [sendSessionAlive, setSendSessionAlive] = useState(true);
+  const session = useSession();
   const device = useCurrentDevice();
   const [loaded, setLoaded] = useState(false);
 
@@ -243,10 +239,6 @@ export function CfdsClientProvider({
     }),
     [graphManager, session, loaded]
   );
-
-  if (versionMismatchFound) {
-    return <VersionMismatchView />;
-  }
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;
 }

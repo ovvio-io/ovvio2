@@ -55,7 +55,6 @@ export async function generateSession(
   ttlMs = 30 * kDayMs
 ): Promise<OwnedSession> {
   const keyPair = await generateKeyPair();
-  debugger;
   const expiration = new Date();
   expiration.setTime(expiration.getTime() + ttlMs);
   return {
@@ -205,7 +204,7 @@ export async function sessionToRecord(session: Session): Promise<Record> {
     scheme: Scheme.session(),
     data: {
       ...encodedSession,
-      publicKey: JSON.stringify(encodedSession),
+      publicKey: JSON.stringify(encodedSession.publicKey),
     },
   });
 }

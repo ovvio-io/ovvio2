@@ -1,16 +1,13 @@
 import React from 'react';
 import { LoginIllustration } from './illustrations.tsx';
-import { OwnedSession } from '../../../../auth/session.ts';
-import {
-  LogoIcon,
-  LogoFullBlack,
-} from '../../../../styles/components/logo.tsx';
-import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { H2 } from '../../../../styles/components/typography.tsx';
-import TextField from '../../../../styles/components/inputs/TextField.tsx';
-import { Button } from '../../../../styles/components/buttons.tsx';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { brandLightTheme as theme } from '../../styles/theme.tsx';
+import { Button } from '../../styles/components/buttons.tsx';
+import TextField from '../../styles/components/inputs/TextField.tsx';
+import { LogoFullBlack } from '../../styles/components/logo.tsx';
+import { H2 } from '../../styles/components/texts.tsx';
+import { makeStyles, cn } from '../../styles/css-objects/index.ts';
+import { styleguide } from '../../styles/styleguide.ts';
+import { OwnedSession } from '../session.ts';
 
 const useStyles = makeStyles(() => ({
   centeredHeader: {

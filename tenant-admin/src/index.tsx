@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { StyleProvider } from '../../styles/css-objects/context.tsx';
 import { lightTheme as theme, ThemeProvider } from '../../styles/theme.tsx';
+import { SessionProvider } from '../../auth/react.tsx';
 
 const domNode = document.getElementById('root')!;
 const root = createRoot(domNode);
@@ -19,7 +20,9 @@ function App({ children }: AppProps) {
 }
 
 root.render(
-  <App>
-    <div>Hello World</div>
-  </App>
+  <SessionProvider>
+    <App>
+      <div>Hello World</div>
+    </App>
+  </SessionProvider>
 );

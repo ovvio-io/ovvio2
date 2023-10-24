@@ -3,6 +3,7 @@ import { VCurrent, VersionNumber } from '../base/version-number.ts';
 export interface OvvioConfig {
   version: VersionNumber;
   debug: boolean;
+  tenantSetup?: boolean;
   clientData?: unknown;
 }
 

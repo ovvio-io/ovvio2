@@ -8,6 +8,7 @@ import {
 import { uniqueId } from '../../base/common.ts';
 import { kDayMs } from '../../base/date.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
+import { SQLiteRepoStorage } from '../../server/sqlite3-repo-storage.ts';
 import { Endpoint, Server, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 
@@ -84,7 +85,10 @@ export class AuthEndpoint implements Endpoint {
       id: sessionId,
       expiration: new Date(Date.now() + 30 * kDayMs),
     };
-    // const session = await createNewSession(server.service('sync'), publicKey);
+    // All sessions are root sessions until setup is complete
+    if (!services.settings.setupCompleted) {
+      session.owner = 'root';
+    }
     await persistSession(services, session);
     const encodedSession = await encodeSession(session);
     const resp = new Response(JSON.stringify({ session: encodedSession }));

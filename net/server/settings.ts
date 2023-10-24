@@ -17,19 +17,11 @@ import {
 
 export interface ServerSettings {
   session: OwnedSession;
+  setupCompleted: boolean;
 }
 
 export class SettingsService extends BaseService<ServerServices> {
   private _settings?: ServerSettings;
-
-  get jsonFilePath(): string {
-    return path.join(this.services.dir, 'settings.json');
-  }
-
-  get session(): OwnedSession {
-    assert(this._settings !== undefined);
-    return this._settings.session;
-  }
 
   async setup(ctx: ServerServices): Promise<void> {
     await super.setup(ctx);
@@ -41,6 +33,7 @@ export class SettingsService extends BaseService<ServerServices> {
       assert(session.privateKey !== undefined);
       this._settings = {
         session: (await decodeSession(session)) as OwnedSession,
+        setupCompleted: decoder.get<boolean>('setupCompleted') || false,
       };
     } catch (_e: unknown) {
       //
@@ -52,11 +45,29 @@ export class SettingsService extends BaseService<ServerServices> {
     const session = await generateSession('root');
     this._settings = {
       session: session,
+      setupCompleted: false,
     };
     await this.persistSettings();
   }
 
-  private async persistSettings(): Promise<void> {
+  get jsonFilePath(): string {
+    return path.join(this.services.dir, 'settings.json');
+  }
+
+  get session(): OwnedSession {
+    assert(this._settings !== undefined);
+    return this._settings.session;
+  }
+
+  get setupCompleted(): boolean {
+    return this._settings?.setupCompleted || false;
+  }
+
+  set setupCompleted(flag: boolean) {
+    this._settings!.setupCompleted = flag;
+  }
+
+  async persistSettings(): Promise<void> {
     const settings = this._settings;
     assert(settings !== undefined);
     const encodedSettings = {

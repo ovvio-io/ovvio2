@@ -120,7 +120,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!hasInitialState) {
       const [_id, repo] = graph.repositoryForKey(key);
       if (repo) {
-        initialState = repo.valueForKey(key, graph.session);
+        initialState = repo.valueForKey(key);
       }
     }
     this._record = initialState?.clone() || Record.nullRecord();
@@ -174,9 +174,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    const res = !this.record.isEqual(
-      repo.valueForKey(this.key, this.graph.session)
-    );
+    const res = !this.record.isEqual(repo.valueForKey(this.key));
     return res;
   }
 
@@ -268,7 +266,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    const res = repo.setValueForKey(this.key, this.graph.session, this.record);
+    const res = repo.setValueForKey(this.key, this.record);
     if (res) {
       this.touch();
     }
@@ -285,7 +283,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const graph = this.graph;
     const prevRecord = this.record;
-    const newRecord = repo.valueForKey(this.key, graph.session);
+    const newRecord = repo.valueForKey(this.key);
     if (prevRecord.isEqual(newRecord)) {
       return;
     }

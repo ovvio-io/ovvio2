@@ -21,21 +21,14 @@ import {
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
-import { OwnedSession, generateKeyPair } from '../../../auth/session.ts';
-import { useLogger } from '../core/cfds/react/logger.tsx';
-import { loadAllSessions, storeSession } from '../../../auth/idb.ts';
-import { retry } from '../../../base/time.ts';
-import { Logger } from '../../../logging/log.ts';
-import { createNewSession } from '../../../net/rest-api.ts';
-import { LoginView } from './login/login.tsx';
+import { SessionProvider } from '../../../auth/react.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
     filter: 'blur(2px)',
   },
   root: {
-    height: '100vh',
-    width: '100vw',
+    height: '100%',
     basedOn: [layout.row],
   },
   content: {
@@ -123,106 +116,23 @@ const router = createBrowserRouter([
   },
 ]);
 
-interface CancelHandle {
-  cancelled?: true;
-}
-
-async function setupSession(
-  logger: Logger,
-  callback: (session: OwnedSession) => void,
-  cancelHandle: CancelHandle
-): Promise<void> {
-  while (cancelHandle.cancelled !== true) {
-    try {
-      const session = await retry(
-        async () => {
-          let s = (await loadAllSessions())[0];
-          if (!s) {
-            const keys = await generateKeyPair();
-            const publicSession = await createNewSession(keys.publicKey);
-            if (publicSession) {
-              s = {
-                ...publicSession,
-                privateKey: keys.privateKey,
-              };
-              await storeSession(s);
-            }
-          }
-          return s;
-        },
-        30000,
-        5000
-      );
-      if (session) {
-        callback(session);
-        break;
-      }
-    } catch (err: any) {
-      logger.log({
-        severity: 'INFO',
-        error: 'SessionError',
-        type: 'AnonCreationFailed',
-      });
-    }
-  }
-}
-
 export default function AppView() {
   //const wsLoadedRef = useRef(false);
   const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
-  const [session, setSession] = useState<OwnedSession | undefined>();
-  const logger = useLogger();
-  const styles = useStyles();
-
-  useEffect(() => {
-    const handle: CancelHandle = {};
-    setupSession(
-      logger,
-      (s) => {
-        setSession(s);
-      },
-      handle
-    );
-    return () => {
-      handle.cancelled = true;
-    };
-  }, [logger, setSession]);
-
-  if (!session) {
-    return (
-      <div className={cn(styles.root)}>
-        <LoadingView />;
-      </div>
-    );
-  }
-
-  const contents = !session.owner ? (
-    <LoginView session={session} />
-  ) : (
-    <CfdsClientProvider session={session}>
-      <RouterProvider router={router} />
-    </CfdsClientProvider>
-  );
 
   return (
-    <StyleProvider dev={false}>
-      <ThemeProvider theme={theme} isRoot={true}>
-        {({ style }) => <React.StrictMode>{contents}</React.StrictMode>}
-      </ThemeProvider>
-    </StyleProvider>
+    <SessionProvider>
+      <StyleProvider dev={false}>
+        <ThemeProvider theme={theme} isRoot={true}>
+          {({ style }) => (
+            <React.StrictMode>
+              <CfdsClientProvider>
+                <RouterProvider router={router} />
+              </CfdsClientProvider>
+            </React.StrictMode>
+          )}
+        </ThemeProvider>
+      </StyleProvider>
+    </SessionProvider>
   );
-
-  // return (
-  //   <CfdsClientProvider session={session}>
-  //     <StyleProvider dev={false}>
-  //       <ThemeProvider theme={theme} isRoot={true}>
-  //         {({ style }) => (
-  //           <React.StrictMode>
-  //             <RouterProvider router={router} />
-  //           </React.StrictMode>
-  //         )}
-  //       </ThemeProvider>
-  //     </StyleProvider>
-  //   </CfdsClientProvider>
-  // );
 }
