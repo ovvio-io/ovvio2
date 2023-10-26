@@ -97,13 +97,13 @@ export async function sign(
 
 function parseSignature(
   sig: string | undefined
-): [sessionId: string, encodedSig: string] | undefined {
+): [sessionId: string | undefined, encodedSig: string | undefined] {
   if (!sig) {
-    return undefined;
+    return [undefined, undefined];
   }
   const comps = sig.split('/');
   if (comps.length !== 2) {
-    return undefined;
+    return [undefined, undefined];
   }
   return comps as [string, string];
 }
@@ -112,11 +112,15 @@ export async function verify(
   expectedSigner: Session,
   commit: Commit
 ): Promise<boolean> {
-  const comps = parseSignature(commit.signature);
-  if (!comps) {
+  const [sessionId, sig] = parseSignature(commit.signature);
+  if (
+    sessionId === undefined ||
+    sig === undefined ||
+    sessionId !== expectedSigner.id
+  ) {
     return false;
   }
-  if (comps[0] !== expectedSigner.id) {
+  if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
     return false;
   }
   return await crypto.subtle.verify(
@@ -125,9 +129,21 @@ export async function verify(
       hash: { name: 'SHA-384' },
     },
     expectedSigner.publicKey,
-    b64Decode(comps[1]),
+    b64Decode(sig),
     serializeCommitForSigning(commit)
   );
+}
+
+export function signerIdForCommit(commit: Commit): string | undefined {
+  const sig = commit.signature;
+  if (sig === undefined) {
+    return undefined;
+  }
+  const sepIdx = sig.indexOf('/');
+  if (sepIdx <= 0) {
+    return undefined;
+  }
+  return sig.substring(0, sepIdx);
 }
 
 export function signerIdFromCommit(commit: Commit): string | undefined {
@@ -197,14 +213,148 @@ export async function decodeSession(
 
 export async function sessionToRecord(session: Session): Promise<Record> {
   const encodedSession = await encodeSession(session);
+  return encodedSessionToRecord(encodedSession);
+}
+
+export async function sessionFromRecord(record: Record): Promise<Session> {
+  return await decodeSession(encodedSessionFromRecord(record));
+}
+
+export function encodedSessionToRecord(encodedSession: EncodedSession): Record {
+  const data = {
+    ...encodedSession,
+    publicKey: JSON.stringify(encodedSession.publicKey),
+  };
   // Private keys don't exist in the Session scheme, but just to be extra
   // cautious, we delete the field here as well.
-  delete encodedSession.privateKey;
+  delete (data as any).privateKey;
   return new Record({
     scheme: Scheme.session(),
-    data: {
-      ...encodedSession,
-      publicKey: JSON.stringify(encodedSession.publicKey),
-    },
+    data,
   });
+}
+
+export function encodedSessionFromRecord(record: Record): EncodedSession {
+  const data = record.cloneData(['id', 'owner', 'publicKey', 'expiration']);
+  data.publicKey = JSON.parse(data.publicKey);
+  return data;
+}
+
+/**
+ * The trust pool manages a set of trusted sessions that we can securely
+ * respect as signers of commits.
+ */
+export class TrustPool {
+  readonly currentSession: OwnedSession;
+  readonly roots: Session[];
+  private readonly _sessions: Map<string, Session>;
+
+  constructor(
+    currentSession: OwnedSession,
+    roots?: Session[],
+    trustedSessions?: Session[]
+  ) {
+    this.currentSession = currentSession;
+    this.roots = roots || [];
+    const sessions = new Map<string, Session>();
+    this._sessions = sessions;
+
+    if (trustedSessions) {
+      trustedSessions.forEach((s) => sessions.set(s.id, s));
+    }
+
+    for (const s of this.roots) {
+      sessions.set(s.id, s);
+    }
+    sessions.set(currentSession.id, currentSession);
+  }
+
+  get trustedSessions(): Session[] {
+    return Array.from(this._sessions.values());
+  }
+
+  /**
+   * Commits containing sessions follow stricter verification rules than all
+   * other commits. Session commits MUST be signed by a root (server) session
+   * or else we can't trust them.
+   *
+   * @param commit The commit to verify.
+   */
+  private async verifySession(commit: Commit): Promise<boolean> {
+    if (!commit.signature) {
+      return false;
+    }
+    const signerId = signerIdForCommit(commit);
+    if (
+      this.currentSession.owner === 'root' &&
+      signerId === this.currentSession.id
+    ) {
+      return await verify(this.currentSession, commit);
+    }
+    for (const rootSession of this.roots) {
+      if (signerId === rootSession.id) {
+        return await verify(rootSession, commit);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * When a commit containing a session is discovered, use this method to add
+   * it to the trust pool. This method does the necessary checks to ensure the
+   * integrity of this commit, then if all checks pass it adds the session to
+   * the trust pool.
+   *
+   * @param s
+   * @param commit
+   * @returns
+   */
+  async addSession(s: Session, commit: Commit): Promise<boolean> {
+    let updated = false;
+    if (await this.verifySession(commit)) {
+      const newExpiration = s.expiration.getTime();
+      const existingSession = this._sessions.get(s.id);
+      if (
+        !existingSession ||
+        existingSession.expiration.getTime() < newExpiration
+      ) {
+        this._sessions.set(s.id, s);
+        updated = true;
+      }
+      if (s.owner === 'root') {
+        const roots = this.roots;
+        let updated = false;
+        for (let i = 0; i < roots.length; ++i) {
+          if (
+            roots[i].id === s.id &&
+            roots[i].expiration.getTime() < newExpiration
+          ) {
+            roots[i] = s;
+            updated = true;
+            break;
+          }
+        }
+        if (!updated) {
+          roots.push(s);
+        }
+      }
+    }
+    return updated;
+  }
+
+  getSession(id: string): Session | undefined {
+    return this._sessions.get(id);
+  }
+
+  async verify(commit: Commit): Promise<boolean> {
+    const signerId = signerIdForCommit(commit);
+    if (!signerId) {
+      return false;
+    }
+    const session = this.getSession(signerId);
+    if (!session) {
+      return false;
+    }
+    return await verify(session, commit);
+  }
 }

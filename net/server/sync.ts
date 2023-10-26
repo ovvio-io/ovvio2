@@ -9,6 +9,7 @@ import { assert } from '../../base/error.ts';
 import { NormalizedLogEntry } from '../../logging/entry.ts';
 import { log } from '../../logging/log.ts';
 import {
+  EVENT_NEW_COMMIT,
   Repository,
   RepositoryType,
   kRepositoryTypes,
@@ -29,6 +30,9 @@ import { RepoClient } from '../repo-client.ts';
 import { Endpoint, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
+import { Commit } from '../../repo/commit.ts';
+import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
+import { sessionFromRecord } from '../../auth/session.ts';
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
@@ -59,8 +63,17 @@ export class SyncService extends BaseService<ServerServices> {
     if (!repo) {
       repo = new Repository(
         new SQLiteRepoStorage(joinPath(this.services.dir, type, id + '.repo')),
-        this.services.settings.session
+        this.services.trustPool
       );
+      repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+        const record = repo!.valueForKey(c.key);
+        // Auto add newly discovered sessions to our trust pool
+        if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+          sessionFromRecord(record).then((session) => {
+            this.services.trustPool.addSession(session, c);
+          });
+        }
+      });
       this._repositories.set(id, repo);
       const replicas = this.services.replicas;
       if (replicas.length > 0) {
@@ -179,12 +192,12 @@ export class SyncEndpoint implements Endpoint {
         ) {
           resp = await this.handleSyncRequest(
             req,
-            (values) =>
-              Promise.resolve(
-                syncService
+            async (values) =>
+              (
+                await syncService
                   .getRepository(storageType, resourceId)
-                  .persistCommits(values).length
-              ),
+                  .persistCommits(values)
+              ).length,
             () =>
               mapIterable(
                 syncService.getRepository(storageType, resourceId).commits(),

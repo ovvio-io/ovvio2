@@ -28,7 +28,7 @@ import { Repository } from '../../../../../repo/repo.ts';
 import { getClientData, setClientData } from '../../../../../server/config.ts';
 import { OwnedSession } from '../../../../../auth/session.ts';
 import { getBaseURL } from '../../../../../net/rest-api.ts';
-import { useSession } from '../../../../../auth/react.tsx';
+import { useTrustPool } from '../../../../../auth/react.tsx';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -119,7 +119,7 @@ export async function loadEssentialRepositories(
 
 export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   const logger = useLogger();
-  const session = useSession();
+  const session = useTrustPool();
   const device = useCurrentDevice();
   const [loaded, setLoaded] = useState(false);
 

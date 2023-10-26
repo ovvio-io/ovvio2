@@ -22,6 +22,7 @@ import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 import { SessionProvider } from '../../../auth/react.tsx';
+import { App } from '../../../styles/components/app.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -116,23 +117,12 @@ const router = createBrowserRouter([
   },
 ]);
 
-export default function AppView() {
-  //const wsLoadedRef = useRef(false);
-  const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
-
+export function AppView() {
   return (
-    <SessionProvider>
-      <StyleProvider dev={false}>
-        <ThemeProvider theme={theme} isRoot={true}>
-          {({ style }) => (
-            <React.StrictMode>
-              <CfdsClientProvider>
-                <RouterProvider router={router} />
-              </CfdsClientProvider>
-            </React.StrictMode>
-          )}
-        </ThemeProvider>
-      </StyleProvider>
-    </SessionProvider>
+    <App>
+      <CfdsClientProvider>
+        <RouterProvider router={router} />
+      </CfdsClientProvider>
+    </App>
   );
 }

@@ -6,14 +6,20 @@ import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
 import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
 import { concatChanges, DataChanges } from '../cfds/base/object.ts';
 import { Record } from '../cfds/base/record.ts';
-import { assert, notReached } from '../base/error.ts';
+import { assert } from '../base/error.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
 import { kRecordIdField } from '../cfds/base/scheme-types.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 import { repositoryForRecord } from './resolver.ts';
-import { OwnedSession, Session, sign } from '../auth/session.ts';
+import {
+  TrustPool,
+  sessionFromRecord,
+  sign,
+  signerIdForCommit,
+  verify,
+} from '../auth/session.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -32,12 +38,12 @@ export interface RepoStorage<T extends RepoStorage<T>> {
 
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly storage: ST;
-  readonly session: OwnedSession;
+  readonly trustPool: TrustPool;
 
-  constructor(storage: ST, session: OwnedSession) {
+  constructor(storage: ST, trustPool: TrustPool) {
     super();
     this.storage = storage;
-    this.session = session;
+    this.trustPool = trustPool;
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -247,7 +253,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   ): Commit | undefined {
     assert(!pendingCommit || pendingCommit.key === key);
     if (!session) {
-      session = this.session.id;
+      session = this.trustPool.currentSession.id;
     }
     const leaves = this.leavesForKey(key, pendingCommit);
     if (leaves.length < 1) {
@@ -353,13 +359,23 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
-  setValueForKey(key: string | null, value: Record): boolean {
+  /**
+   * Updates the head record for a given key.
+   *
+   * @param key The key who's head to update.
+   * @param value The value to write.
+   *
+   * @returns Whether or not a new commit had been generated. Regardless of the
+   * returned value, future calls to `valueForKey` will return the updated
+   * record.
+   */
+  async setValueForKey(key: string | null, value: Record): Promise<boolean> {
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
     if (value.isNull) {
       return false;
     }
-    const session = this.session;
+    const session = this.trustPool.currentSession;
     const head = this.headForKey(key, session.id);
     const headRecord = head ? this.recordForCommit(head) : undefined;
     if (headRecord?.isEqual(value)) {
@@ -372,9 +388,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       parents: head?.id,
     });
     commit = this.deltaCompressIfNeeded(commit);
-    sign(session, commit).then((signedCommit) => {
-      this.persistCommits([signedCommit]);
-    });
+    const signedCommit = await sign(session, commit);
+    await this.persistCommits([signedCommit]);
     return true;
   }
 
@@ -434,10 +449,28 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return this.headForKey(key, '') !== undefined;
   }
 
-  persistCommits(commits: Iterable<Commit>): Commit[] {
-    const result = Array.from(this.storage.persistCommits(commits, this));
-    for (const c of result) {
-      this.emit(EVENT_NEW_COMMIT, c);
+  async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
+    for (const c of commits) {
+      if (await this.trustPool.verify(c)) {
+        yield c;
+      }
+    }
+  }
+
+  async persistCommits(commits: Iterable<Commit>): Promise<Commit[]> {
+    const batchSize = 5;
+    const storage = this.storage;
+    const result: Commit[] = [];
+    let batch: Commit[] = [];
+    for await (const verifiedCommit of this.verifyCommits(commits)) {
+      batch.push(verifiedCommit);
+      if (batch.length >= batchSize) {
+        for (const persistedCommit of storage.persistCommits(batch, this)) {
+          result.push(persistedCommit);
+          this.emit(EVENT_NEW_COMMIT, persistedCommit);
+          batch = [];
+        }
+      }
     }
     return result;
   }

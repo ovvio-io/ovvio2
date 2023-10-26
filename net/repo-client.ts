@@ -34,7 +34,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     }
   }
 
-  protected persistPeerValues(values: Commit[]): Promise<number> {
-    return Promise.resolve(this.repo.persistCommits(values).length);
+  protected async persistPeerValues(values: Commit[]): Promise<number> {
+    return (await this.repo.persistCommits(values)).length;
   }
 }

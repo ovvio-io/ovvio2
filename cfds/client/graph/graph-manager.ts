@@ -212,7 +212,7 @@ export class GraphManager
     const repo = plumbing.repo;
     plumbing.loadingPromise = (async () => {
       const commits = await backup.loadCommits();
-      repo.persistCommits(commits);
+      await repo.persistCommits(commits);
       plumbing.active = true;
     })();
     return plumbing.loadingPromise;

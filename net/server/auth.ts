@@ -1,12 +1,17 @@
 import {
+  EncodedSession,
   OwnedSession,
   SESSION_CRYPTO_KEY_GEN_PARAMS,
   Session,
   encodeSession,
+  encodedSessionFromRecord,
+  sessionFromRecord,
   sessionToRecord,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
 import { kDayMs } from '../../base/date.ts';
+import { assert } from '../../base/error.ts';
+import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { SQLiteRepoStorage } from '../../server/sqlite3-repo-storage.ts';
 import { Endpoint, Server, ServerServices } from './server.ts';
@@ -91,7 +96,12 @@ export class AuthEndpoint implements Endpoint {
     }
     await persistSession(services, session);
     const encodedSession = await encodeSession(session);
-    const resp = new Response(JSON.stringify({ session: encodedSession }));
+    const resp = new Response(
+      JSON.stringify({
+        session: encodedSession,
+        roots: fetchEncodedRootSessions(services),
+      })
+    );
     resp.headers.set('Content-Type', 'application/json');
     return resp;
   }
@@ -104,6 +114,22 @@ export async function persistSession(
   const repo = services.sync.getRepository('sys', 'dir');
   const record = await sessionToRecord(session);
   repo.setValueForKey(session.id, record);
+}
+
+function fetchEncodedRootSessions(services: ServerServices): EncodedSession[] {
+  const repo = services.sync.getRepository('sys', 'dir');
+  const db = repo.storage.db;
+  const statement = db.prepare(
+    `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`
+  );
+  const encodedRecord = statement.all();
+  const result: EncodedSession[] = [];
+  for (const r of encodedRecord) {
+    const record = Record.fromJS(JSON.parse(r.json));
+    assert(record.get('owner') === 'root');
+    result.push(encodedSessionFromRecord(record));
+  }
+  return result;
 }
 
 function responseForError(err: AuthError): Response {

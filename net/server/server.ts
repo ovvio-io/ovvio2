@@ -12,6 +12,7 @@ import { HealthCheckEndpoint } from './health.ts';
 import { MetricsMiddleware, PrometheusMetricsEndpoint } from './metrics.ts';
 import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
+import { TrustPool } from '../../auth/session.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -27,6 +28,7 @@ interface Arguments {
 export interface ServerContext extends Arguments {
   readonly settings: SettingsService;
   readonly prometheus: PrometheusLogStream;
+  readonly trustPool: TrustPool;
 }
 
 // Stuff specific to an organization
@@ -145,11 +147,12 @@ export class Server {
     const prometeusLogStream = new PrometheusLogStream();
     this._baseContext = {
       settings: settingsService,
+      // trustPool: new TrustPool(settingsService.session, []),
       prometheus: prometeusLogStream,
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
-    };
+    } as ServerContext;
     const logStreams = [new ConsoleLogStream(), prometeusLogStream];
     setGlobalLoggerStreams(logStreams);
     // Monitoring
@@ -168,24 +171,33 @@ export class Server {
   async setup(): Promise<void> {
     const services: ServerServices = {
       ...this._baseContext,
+      organizationId: '<global>',
       sync: new SyncService(),
       staticAssets: undefined,
-      organizationId: '<global>',
     };
     // Setup Settings service
     await this._baseContext.settings.setup(services);
+    (this._baseContext as any).trustPool = new TrustPool(
+      this._baseContext.settings.session,
+      []
+    );
   }
 
   async servicesForOrganization(orgId: string): Promise<ServerServices> {
     let services = this._servicesByOrg.get(orgId);
     if (!services) {
+      const baseTrustPool = this._baseContext.trustPool;
       // Monitoring
       services = {
         ...this._baseContext,
         dir: path.join(this._baseContext.dir, orgId),
-        sync: new SyncService(),
-        staticAssets: undefined,
         organizationId: orgId,
+        sync: new SyncService(),
+        trustPool: new TrustPool(
+          baseTrustPool.currentSession,
+          baseTrustPool.roots
+        ),
+        staticAssets: undefined,
       };
 
       // Setup all services in the correct order of dependencies

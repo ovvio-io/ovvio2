@@ -1,9 +1,10 @@
-import { Session, decodeSession } from '../auth/session.ts';
+import { EncodedSession, Session, decodeSession } from '../auth/session.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { Record } from '../cfds/base/record.ts';
 
 export async function createNewSession(
   publicKey: CryptoKey
-): Promise<Session | undefined> {
+): Promise<[Session | undefined, Session[] | undefined]> {
   try {
     const resp = await sendJSONToEndpoint('/auth/session', {
       publicKey: (await crypto.subtle.exportKey(
@@ -12,13 +13,18 @@ export async function createNewSession(
       )) as ReadonlyJSONObject,
     });
     if (resp.status !== 200) {
-      return undefined;
+      return [undefined, undefined];
     }
     const body = await resp.json();
-    return await decodeSession(body.session);
+    const encodedRoots = body.roots as EncodedSession[];
+    const roots: Session[] = [];
+    for (const e of encodedRoots) {
+      roots.push(await decodeSession(e));
+    }
+    return [await decodeSession(body.session), roots];
   } catch (_err: unknown) {
     debugger;
-    return undefined;
+    return [undefined, undefined];
   }
 }
 

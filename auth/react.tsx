@@ -2,14 +2,13 @@ import React, { useState, useEffect, useContext } from 'react';
 import { retry } from '../base/time.ts';
 import { Logger } from '../logging/log.ts';
 import { createNewSession } from '../net/rest-api.ts';
-import { loadAllSessions, storeSession } from './idb.ts';
-import { OwnedSession, generateKeyPair } from './session.ts';
+import { loadAllSessions, storeSessionData } from './idb.ts';
+import { OwnedSession, TrustPool, generateKeyPair } from './session.ts';
 import { useLogger } from '../web-app/src/core/cfds/react/logger.tsx';
 import LoadingView from '../web-app/src/app/loading-view.tsx';
 import { LoginView } from './login/login.tsx';
 import { assert } from '../base/error.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
-import { layout } from '../styles/layout.ts';
 import { styleguide } from '../styles/styleguide.ts';
 
 const kRootBannerHeight = styleguide.gridbase * 6;
@@ -34,7 +33,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export interface SessionContext {
-  session?: OwnedSession;
+  trustPool?: TrustPool;
 }
 
 const sessionContext = React.createContext({} as SessionContext);
@@ -45,26 +44,29 @@ interface CancelHandle {
 
 async function setupSession(
   logger: Logger,
-  callback: (session: OwnedSession) => void,
+  callback: (trustPool: TrustPool) => void,
   cancelHandle: CancelHandle
 ): Promise<void> {
   while (cancelHandle.cancelled !== true) {
     try {
       const session = await retry(
         async () => {
-          let s = (await loadAllSessions())[0];
-          if (!s) {
+          let { currentSession, roots, trustedSessions } =
+            (await loadAllSessions())[0] || {};
+          if (!currentSession) {
             const keys = await generateKeyPair();
-            const publicSession = await createNewSession(keys.publicKey);
+            const [publicSession, serverRoots] = await createNewSession(
+              keys.publicKey
+            );
             if (publicSession) {
-              s = {
+              currentSession = {
                 ...publicSession,
                 privateKey: keys.privateKey,
               };
-              await storeSession(s);
             }
+            roots = serverRoots!;
           }
-          return s;
+          return new TrustPool(currentSession, roots, trustedSessions);
         },
         30000,
         5000
@@ -83,29 +85,33 @@ async function setupSession(
   }
 }
 
-export function useMaybeSession(): OwnedSession | undefined {
-  const [session, setSession] = useState<OwnedSession | undefined>();
+export function useMaybeTrustPool(): TrustPool | undefined {
+  const [trustPool, setTrustPool] = useState<TrustPool | undefined>();
   const logger = useLogger();
   useEffect(() => {
     const handle: CancelHandle = {};
     setupSession(
       logger,
-      (s) => {
-        setSession(s);
+      (p) => {
+        setTrustPool(p);
       },
       handle
     );
     return () => {
       handle.cancelled = true;
     };
-  }, [logger, setSession]);
-  return session;
+  }, [logger, setTrustPool]);
+  return trustPool;
+}
+
+export function useTrustPool(): TrustPool {
+  const ctx = useContext(sessionContext);
+  assert(ctx.trustPool !== undefined);
+  return ctx.trustPool;
 }
 
 export function useSession(): OwnedSession {
-  const ctx = useContext(sessionContext);
-  assert(ctx.session !== undefined);
-  return ctx.session;
+  return useTrustPool().currentSession;
 }
 
 export type SessionProviderProps = React.PropsWithChildren<{
@@ -113,26 +119,24 @@ export type SessionProviderProps = React.PropsWithChildren<{
 }>;
 
 export function SessionProvider({ children, className }: SessionProviderProps) {
-  const session = useMaybeSession();
+  const trustPool = useMaybeTrustPool();
   const styles = useStyles();
-  if (!session) {
+  if (!trustPool) {
     return <LoadingView />;
   }
-  if (!session.owner) {
-    return <LoginView session={session} />;
+  if (!trustPool.currentSession.owner) {
+    return <LoginView session={trustPool.currentSession} />;
   }
   let banner =
-    session.owner !== 'root' ? null : (
+    trustPool.currentSession.owner !== 'root' ? null : (
       <div className={cn(styles.rootUserBanner)}>
         WARNING: Running as root user
       </div>
     );
   return (
-    <sessionContext.Provider value={{ session }}>
-      {/* <div className={className}> */}
+    <sessionContext.Provider value={{ trustPool }}>
       {banner}
       <div className={cn(styles.contentsArea)}>{children}</div>
-      {/* </div> */}
     </sessionContext.Provider>
   );
 }

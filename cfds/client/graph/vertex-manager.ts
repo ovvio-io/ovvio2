@@ -258,19 +258,20 @@ export class VertexManager<V extends Vertex = Vertex>
    * This method commits any pending local edits, and merges any pending remote
    * edits. NOP if nothing needs to be done.
    */
-  commit(): boolean {
+  async commit(): Promise<void> {
     if (this.isLocal) {
-      return false;
+      return;
     }
     const repo = this.repository;
     if (!repo) {
-      return false;
+      return;
     }
-    const res = repo.setValueForKey(this.key, this.record);
-    if (res) {
+    const updated = await repo.setValueForKey(this.key, this.record);
+    if (updated) {
       this.touch();
+    } else {
+      this._commitDelayTimer.unschedule();
     }
-    return res;
   }
 
   touch(): void {
@@ -281,7 +282,6 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const graph = this.graph;
     const prevRecord = this.record;
     const newRecord = repo.valueForKey(this.key);
     if (prevRecord.isEqual(newRecord)) {
