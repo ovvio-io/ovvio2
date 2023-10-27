@@ -42,6 +42,9 @@ const useStyles = makeStyles(() => ({
     color: theme.mono.m0,
     margin: '0px auto',
   },
+  table: {
+    textAlign: 'center',
+  },
 }));
 
 export function UsersTable() {
@@ -63,7 +66,7 @@ export function UsersTable() {
           filterIterable(
             repo.keys(),
             (k) =>
-              repo.valueForKey(k).scheme.namespace === SchemeNamespace.SESSIONS
+              repo.valueForKey(k).scheme.namespace === SchemeNamespace.USERS
           )
         )
       )
@@ -81,7 +84,7 @@ export function UsersTable() {
       <Button className={cn(styles.newButton)} onClick={onClick}>
         New User
       </Button>
-      <table>
+      <table className={cn(styles.table)}>
         <tr>
           <th>Key</th>
           <th>Email</th>

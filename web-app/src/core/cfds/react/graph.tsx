@@ -117,14 +117,7 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
 
     loadEssentialRepositories(manager).then(() => {
       if (!manager.hasVertex(manager.rootKey)) {
-        manager.createVertex(
-          NS_USERS,
-          {
-            email: 'ofri@ovvio.io',
-            name: 'Ofri',
-          },
-          manager.rootKey
-        );
+        manager.createVertex(NS_USERS, {}, manager.rootKey);
       }
       const lastUsedKey = getLastUsedViewKey(manager);
       if (!manager.hasVertex(lastUsedKey)) {

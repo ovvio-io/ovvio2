@@ -129,12 +129,12 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
   );
 }
 
-const Column: React.FC<BoardColumnProps> = ({
+function Column({
   children,
   title,
   onCreateCard,
   ...rest
-}) => {
+}: React.PropsWithChildren<BoardColumnProps>) {
   const styles = useStyles();
   return (
     <div className={cn(styles.column)} {...rest}>
@@ -142,11 +142,15 @@ const Column: React.FC<BoardColumnProps> = ({
       <div className={cn(styles.columnContent)}>{children}</div>
     </div>
   );
-};
+}
 
-export const BoardColumn: React.FC<
+export function BoardColumn({
+  title,
+  children,
+  ...props
+}: React.PropsWithChildren<
   Omit<DroppableProps<VertexManager<Note>>, 'children'> & BoardColumnProps
-> = ({ title, children, ...props }) => {
+>) {
   return (
     <Droppable {...props}>
       {(droppableProps) => (
@@ -156,4 +160,4 @@ export const BoardColumn: React.FC<
       )}
     </Droppable>
   );
-};
+}

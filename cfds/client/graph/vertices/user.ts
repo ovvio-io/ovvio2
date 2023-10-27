@@ -58,7 +58,7 @@ export class User extends BaseVertex {
   }
 
   get name(): string {
-    return this.record.get('name', this.email);
+    return this.record.get('name', this.email) || 'Anonymous';
   }
 
   set name(n: string) {
