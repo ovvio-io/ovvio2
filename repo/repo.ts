@@ -1,6 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
 import * as SetUtils from '../base/set.ts';
+import * as ArrayUtils from '../base/array.ts';
 import { Dictionary } from '../base/collections/dict.ts';
 import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
 import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
@@ -10,16 +11,10 @@ import { assert } from '../base/error.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
-import { kRecordIdField } from '../cfds/base/scheme-types.ts';
+import { SchemeNamespace, kRecordIdField } from '../cfds/base/scheme-types.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 import { repositoryForRecord } from './resolver.ts';
-import {
-  TrustPool,
-  sessionFromRecord,
-  sign,
-  signerIdForCommit,
-  verify,
-} from '../auth/session.ts';
+import { TrustPool, sessionFromRecord, sign } from '../auth/session.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -458,19 +453,36 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   async persistCommits(commits: Iterable<Commit>): Promise<Commit[]> {
-    const batchSize = 5;
-    const storage = this.storage;
+    const batchSize = 50;
     const result: Commit[] = [];
     let batch: Commit[] = [];
+
     for await (const verifiedCommit of this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
-        for (const persistedCommit of storage.persistCommits(batch, this)) {
-          result.push(persistedCommit);
-          this.emit(EVENT_NEW_COMMIT, persistedCommit);
-          batch = [];
-        }
+        ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
+        batch = [];
       }
+    }
+    if (batch.length > 0) {
+      ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
+    }
+    return result;
+  }
+
+  private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {
+    const storage = this.storage;
+    const result: Commit[] = [];
+    for (const persistedCommit of storage.persistCommits(batch, this)) {
+      const record = this.valueForKey(persistedCommit.key);
+      // Auto add newly discovered sessions to our trust pool
+      if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+        sessionFromRecord(record).then((session) => {
+          this.trustPool.addSession(session, persistedCommit);
+        });
+      }
+      this.emit(EVENT_NEW_COMMIT, persistedCommit);
+      result.push(persistedCommit);
     }
     return result;
   }

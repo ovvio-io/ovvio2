@@ -3,8 +3,8 @@ import {
   decode as b64Decode,
 } from 'std/encoding/base64.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
-import { kDayMs } from '../base/date.ts';
-import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { deserializeDate, kDayMs, serializeDate } from '../base/date.ts';
+import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { stableStringify } from '../base/json.ts';
 import { Commit } from '../repo/commit.ts';
 import { uniqueId } from '../base/common.ts';
@@ -28,11 +28,11 @@ export interface OwnedSession extends Session {
   privateKey: CryptoKey;
 }
 
-export interface EncodedSession extends CoreObject {
+export interface EncodedSession extends JSONObject {
   id: string;
   publicKey: ReadonlyJSONObject;
   owner?: string;
-  expiration: Date;
+  expiration: number;
 }
 
 export interface EncodedOwnedSession extends EncodedSession {
@@ -55,8 +55,7 @@ export async function generateSession(
   ttlMs = 30 * kDayMs
 ): Promise<OwnedSession> {
   const keyPair = await generateKeyPair();
-  const expiration = new Date();
-  expiration.setTime(expiration.getTime() + ttlMs);
+  const expiration = deserializeDate(Date.now() + ttlMs);
   return {
     id: uniqueId(),
     publicKey: keyPair.publicKey,
@@ -101,11 +100,11 @@ function parseSignature(
   if (!sig) {
     return [undefined, undefined];
   }
-  const comps = sig.split('/');
-  if (comps.length !== 2) {
+  const sepIdx = sig.indexOf('/');
+  if (sepIdx <= 0 || sepIdx > sig.length - 1) {
     return [undefined, undefined];
   }
-  return comps as [string, string];
+  return [sig.substring(0, sepIdx), sig.substring(sepIdx + 1)];
 }
 
 export async function verify(
@@ -173,11 +172,13 @@ export async function encodeSession(
         'jwk',
         session.privateKey
       )) as ReadonlyJSONObject,
+      expiration: serializeDate(session.expiration),
     };
   }
   return {
     ...session,
     publicKey,
+    expiration: serializeDate(session.expiration),
   };
 }
 
@@ -203,11 +204,13 @@ export async function decodeSession(
       ...session,
       publicKey,
       privateKey,
+      expiration: deserializeDate(session.expiration),
     };
   }
   return {
     ...session,
     publicKey,
+    expiration: deserializeDate(session.expiration),
   };
 }
 
@@ -224,6 +227,7 @@ export function encodedSessionToRecord(encodedSession: EncodedSession): Record {
   const data = {
     ...encodedSession,
     publicKey: JSON.stringify(encodedSession.publicKey),
+    expiration: deserializeDate(encodedSession.expiration),
   };
   // Private keys don't exist in the Session scheme, but just to be extra
   // cautious, we delete the field here as well.
@@ -237,6 +241,7 @@ export function encodedSessionToRecord(encodedSession: EncodedSession): Record {
 export function encodedSessionFromRecord(record: Record): EncodedSession {
   const data = record.cloneData(['id', 'owner', 'publicKey', 'expiration']);
   data.publicKey = JSON.parse(data.publicKey);
+  data.expiration = serializeDate(data.expiration);
   return data;
 }
 

@@ -16,23 +16,16 @@ import {
   ViewProp,
 } from '../../../../../cfds/client/graph/vertices/view.ts';
 import { useCurrentDevice, Devices } from '../../../../../styles/responsive.ts';
-import VersionMismatchView from '../../../app/version-mismatch/index.tsx';
 import { usePartialVertex, useVertex } from './vertex.ts';
 import { useLogger } from './logger.tsx';
 import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-settings.ts';
-import {
-  VertexId,
-  VertexIdGetKey,
-} from '../../../../../cfds/client/graph/vertex.ts';
 import { Repository } from '../../../../../repo/repo.ts';
 import { getClientData, setClientData } from '../../../../../server/config.ts';
-import { OwnedSession } from '../../../../../auth/session.ts';
 import { getBaseURL } from '../../../../../net/rest-api.ts';
 import { useTrustPool } from '../../../../../auth/react.tsx';
 
 type ContextProps = {
   graphManager?: GraphManager;
-  session?: OwnedSession;
   loadingFinished: boolean;
 };
 
@@ -96,10 +89,6 @@ export type CfdsClientProviderProps = React.PropsWithChildren<
   Record<string, unknown>
 >;
 
-// const kDemoDataPromise: Promise<ReadonlyJSONObject> = fetch('/demo.json').then(
-//   response => response.json()
-// );
-
 function getLastUsedViewKey(graph: GraphManager): string {
   return graph.rootKey + '-ViewLastUsed';
 }
@@ -119,12 +108,12 @@ export async function loadEssentialRepositories(
 
 export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   const logger = useLogger();
-  const session = useTrustPool();
+  const trustPool = useTrustPool();
   const device = useCurrentDevice();
   const [loaded, setLoaded] = useState(false);
 
   const graphManager = useMemo(() => {
-    const manager = new GraphManager(session, getBaseURL());
+    const manager = new GraphManager(trustPool, getBaseURL());
 
     loadEssentialRepositories(manager).then(() => {
       if (!manager.hasVertex(manager.rootKey)) {
@@ -209,7 +198,7 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
     // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
     return manager;
-  }, [session, device]);
+  }, [trustPool, device]);
 
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
@@ -234,10 +223,9 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   const ctx = useMemo<ContextProps>(
     () => ({
       graphManager: graphManager,
-      session,
       loadingFinished: loaded,
     }),
-    [graphManager, session, loaded]
+    [graphManager, loaded]
   );
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;

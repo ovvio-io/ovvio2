@@ -65,15 +65,6 @@ export class SyncService extends BaseService<ServerServices> {
         new SQLiteRepoStorage(joinPath(this.services.dir, type, id + '.repo')),
         this.services.trustPool
       );
-      repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
-        const record = repo!.valueForKey(c.key);
-        // Auto add newly discovered sessions to our trust pool
-        if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-          sessionFromRecord(record).then((session) => {
-            this.services.trustPool.addSession(session, c);
-          });
-        }
-      });
       this._repositories.set(id, repo);
       const replicas = this.services.replicas;
       if (replicas.length > 0) {

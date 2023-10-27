@@ -46,7 +46,11 @@ import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
-import { OwnedSession } from '../../../auth/session.ts';
+import {
+  OwnedSession,
+  TrustPool,
+  sessionFromRecord,
+} from '../../../auth/session.ts';
 
 // We consider only commits from the last 30 days to be "hot", and load them
 // automatically
@@ -95,7 +99,7 @@ export class GraphManager
   implements VertexSource
 {
   readonly sharedQueriesManager: SharedQueriesManager;
-  private readonly _session: OwnedSession;
+  private readonly _trustPool: TrustPool;
   private readonly _adjList: AdjacencyList;
   private readonly _vertManagers: Dictionary<string, VertexManager>;
   private readonly _pendingMutations: Dictionary<string, MutationPack>;
@@ -108,12 +112,12 @@ export class GraphManager
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
   private _prevClientStatus: ClientStatus = 'offline';
 
-  constructor(session: OwnedSession, baseServerUrl?: string) {
+  constructor(trustPool: TrustPool, baseServerUrl?: string) {
     super();
-    this._session = session;
+    this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    const ptrKey = `${session.owner}/${session.id}`;
+    const ptrKey = `${trustPool.currentSession.owner}/${trustPool.currentSession.id}`;
     this._ptrFilterFunc = (key: string) => key !== ptrKey;
     this._pendingMutations = new Map();
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
@@ -150,12 +154,12 @@ export class GraphManager
     return this._undoManager;
   }
 
-  get session(): OwnedSession {
-    return this._session;
+  get trustPool(): TrustPool {
+    return this._trustPool;
   }
 
   get rootKey(): string {
-    return this.session.owner!;
+    return this._trustPool.currentSession.owner!;
   }
 
   get ptrFilterFunc(): PointerFilterFunc {
@@ -228,7 +232,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     let plumbing = this._repoById.get(id);
     if (!plumbing) {
-      const repo = new Repository(new MemRepoStorage(), this.session);
+      const repo = new Repository(new MemRepoStorage(), this.trustPool);
       plumbing = {
         repo,
         backup: new IDBRepositoryBackup(id),
@@ -249,7 +253,7 @@ export class GraphManager
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
         const mgr = this.getVertexManager(c.key);
-        if (c.session === this.session.id) {
+        if (c.session === this.trustPool.currentSession.id) {
           mgr.touch();
         } else {
           mgr.commit();
@@ -385,19 +389,14 @@ export class GraphManager
     return vertices;
   }
 
+  getVertexManager<V extends Vertex = Vertex>(key: string): VertexManager<V>;
+
   getVertexManager<V extends Vertex = Vertex>(
-    key: string,
-    discoveredBy?: string
+    key: VertexId<V>
   ): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>,
-    discoveredBy?: string
-  ): VertexManager<V>;
-
-  getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>,
-    discoveredBy?: string
+    key: VertexId<V>
   ): VertexManager<V> {
     return this._createVertIfNeeded<V>(VertexIdGetKey(key));
   }
@@ -451,7 +450,7 @@ export class GraphManager
         this._vertexDidChange(key, pack, refsChange)
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
-    const session = this._session;
+    const session = this.trustPool.currentSession;
     mgr.reportInitialFields(
       mgr.repository?.headForKey(mgr.key, session.id)?.session === session.id
     );

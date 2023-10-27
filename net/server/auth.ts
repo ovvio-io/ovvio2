@@ -9,7 +9,7 @@ import {
   sessionToRecord,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
-import { kDayMs } from '../../base/date.ts';
+import { deserializeDate, kDayMs, kHourMs } from '../../base/date.ts';
 import { assert } from '../../base/error.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
@@ -88,7 +88,7 @@ export class AuthEndpoint implements Endpoint {
     const session: Session = {
       publicKey,
       id: sessionId,
-      expiration: new Date(Date.now() + 30 * kDayMs),
+      expiration: deserializeDate(Date.now() + 30 * kDayMs),
     };
     // All sessions are root sessions until setup is complete
     if (!services.settings.setupCompleted) {
@@ -126,6 +126,9 @@ function fetchEncodedRootSessions(services: ServerServices): EncodedSession[] {
   const result: EncodedSession[] = [];
   for (const r of encodedRecord) {
     const record = Record.fromJS(JSON.parse(r.json));
+    if (record.get<Date>('expiration').getTime() - Date.now() <= 0) {
+      continue;
+    }
     assert(record.get('owner') === 'root');
     result.push(encodedSessionFromRecord(record));
   }

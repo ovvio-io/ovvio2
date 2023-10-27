@@ -46,12 +46,12 @@ const useStyles = makeStyles(() => ({
 
 export function UsersTable() {
   const styles = useStyles();
-  const session = useTrustPool();
+  const trustPool = useTrustPool();
   const baseURL = getBaseURL();
   const navigate = useNavigate();
   const [userKeys, setUserKeys] = useState<string[]>([]);
   const [repo, client] = useMemo(() => {
-    const repo = new Repository(new MemRepoStorage(), session);
+    const repo = new Repository(new MemRepoStorage(), trustPool);
     const client = new RepoClient(
       repo,
       appendPathComponent(baseURL, 'sys', 'dir', 'sync'),
@@ -70,7 +70,7 @@ export function UsersTable() {
     );
     client.startSyncing();
     return [repo, client];
-  }, [session, baseURL, setUserKeys]);
+  }, [trustPool, baseURL, setUserKeys]);
 
   const onClick = useCallback(
     () => navigate('/tenant-admin/new-user'),
