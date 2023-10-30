@@ -91,6 +91,7 @@ interface RepositoryPlumbing {
   client?: RepoClient<MemRepoStorage>;
   backup?: IDBRepositoryBackup;
   loadingPromise?: Promise<void>;
+  loadingFinished?: true;
   active: boolean;
 }
 
@@ -210,6 +211,7 @@ export class GraphManager
     const backup = plumbing.backup;
 
     if (typeof backup === 'undefined') {
+      plumbing.loadingFinished = true;
       return Promise.resolve();
     }
 
@@ -217,7 +219,12 @@ export class GraphManager
     plumbing.loadingPromise = (async () => {
       const commits = await backup.loadCommits();
       await repo.persistCommits(commits);
+      // Load all keys from this repo
+      for (const key of repo.keys()) {
+        this.getVertexManager(key);
+      }
       plumbing.active = true;
+      plumbing.loadingFinished = true;
     })();
     return plumbing.loadingPromise;
   }
@@ -240,6 +247,9 @@ export class GraphManager
         active: !id.startsWith('/data/'),
       };
       repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+        if (plumbing?.loadingFinished !== true) {
+          return;
+        }
         plumbing!.backup?.persistCommits(id, [c]);
         if (!c.key) {
           return;

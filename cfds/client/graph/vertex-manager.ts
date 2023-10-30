@@ -37,6 +37,9 @@ import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Dictionary, isDictionary } from '../../../base/collections/dict.ts';
 import { Emitter } from '../../../base/emitter.ts';
 import { repositoryForRecord } from '../../../repo/resolver.ts';
+import { serviceUnavailable } from '../../base/errors.ts';
+import { ServerError } from '../../base/errors.ts';
+import { Code } from '../../base/errors.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -266,11 +269,19 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const updated = await repo.setValueForKey(this.key, this.record);
-    if (updated) {
-      this.touch();
-    } else {
-      this._commitDelayTimer.unschedule();
+    try {
+      const updated = await repo.setValueForKey(this.key, this.record);
+      if (updated) {
+        this.touch();
+      } else {
+        this._commitDelayTimer.unschedule();
+      }
+    } catch (e: unknown) {
+      if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
+        this.scheduleCommitIfNeeded();
+      } else {
+        throw e;
+      }
     }
   }
 

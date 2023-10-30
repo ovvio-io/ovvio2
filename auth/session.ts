@@ -90,6 +90,7 @@ export async function sign(
     key: commit.key,
     contents: commit.contents,
     timestamp: commit.timestamp,
+    parents: commit.parents,
     signature: `${session.id}/${b64Encode(sig)}`,
   });
 }

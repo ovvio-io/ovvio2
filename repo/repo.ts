@@ -126,19 +126,16 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   findMergeBase(commits: Iterable<Commit>): [Commit | undefined, Scheme] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
-    let noCommonAncestor = false;
     for (const c of commits) {
       if (!result) {
         result = c;
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      if (!noCommonAncestor) {
-        result = this._findMergeBase(result, c);
-        // Can't find a common ancestor
-        if (!result) {
-          noCommonAncestor = true;
-        }
+      result = this._findMergeBase(result, c);
+      // Can't find a common ancestor
+      if (!result) {
+        return [undefined, Scheme.nullScheme()];
       }
       const s = this.recordForCommit(c).scheme;
       assert(scheme.isNull || scheme.namespace === s.namespace); // Sanity check
@@ -176,6 +173,12 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       return undefined;
     }
     if (c1.contentsChecksum === c2.contentsChecksum) {
+      return c1;
+    }
+    if (c1.parents.includes(c2.id)) {
+      return c2;
+    }
+    if (c2.parents.includes(c1.id)) {
       return c1;
     }
     if (!c1Ancestors) {
@@ -402,10 +405,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         srcChecksum: baseRecord.checksum,
         dstChecksum: fullCommit.contentsChecksum,
       });
-      const commitEncoder = new JSONCyclicalEncoder();
-      commitEncoder.set('c', [fullCommit]);
       const deltaLength = JSON.stringify(edit.toJS()).length;
-      const fullLength = JSON.stringify(commitEncoder.getOutput()).length;
+      const fullLength = JSON.stringify(
+        fullCommit.contents.record.toJS()
+      ).length;
       // Only if our delta format is small enough relative to the full format,
       // then it's worth switching to it
       if (deltaLength <= fullLength * 0.85) {
@@ -467,6 +470,23 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (batch.length > 0) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
+
+    // Auto add newly discovered sessions to our trust pool
+    for (const persistedCommit of result) {
+      try {
+        const record = this.valueForKey(persistedCommit.key);
+        if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+          sessionFromRecord(record).then((session) => {
+            this.trustPool.addSession(session, persistedCommit);
+          });
+        }
+      } catch (e: unknown) {
+        // Rethrow any error not caused by a missing commit graph
+        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
+          throw e;
+        }
+      }
+    }
     return result;
   }
 
@@ -474,13 +494,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     const storage = this.storage;
     const result: Commit[] = [];
     for (const persistedCommit of storage.persistCommits(batch, this)) {
-      const record = this.valueForKey(persistedCommit.key);
-      // Auto add newly discovered sessions to our trust pool
-      if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-        sessionFromRecord(record).then((session) => {
-          this.trustPool.addSession(session, persistedCommit);
-        });
-      }
       this.emit(EVENT_NEW_COMMIT, persistedCommit);
       result.push(persistedCommit);
     }
