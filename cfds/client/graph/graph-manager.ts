@@ -255,6 +255,9 @@ export class GraphManager
           return;
         }
         plumbing!.backup?.persistCommits(id, [c]);
+        if (c.session === this.trustPool.currentSession.id) {
+          plumbing!.client?.touch();
+        }
         if (!c.key) {
           return;
         }
