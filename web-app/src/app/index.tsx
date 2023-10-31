@@ -120,9 +120,7 @@ const router = createBrowserRouter([
 export function AppView() {
   return (
     <App>
-      <CfdsClientProvider>
-        <RouterProvider router={router} />
-      </CfdsClientProvider>
+      <RouterProvider router={router} />
     </App>
   );
 }
