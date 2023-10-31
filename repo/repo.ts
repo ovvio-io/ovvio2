@@ -126,16 +126,18 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   findMergeBase(commits: Iterable<Commit>): [Commit | undefined, Scheme] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
+    let noBase = false;
     for (const c of commits) {
       if (!result) {
         result = c;
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      result = this._findMergeBase(result, c);
-      // Can't find a common ancestor
-      if (!result) {
-        return [undefined, Scheme.nullScheme()];
+      if (!noBase) {
+        result = this._findMergeBase(result, c);
+        if (!result) {
+          noBase = true;
+        }
       }
       const s = this.recordForCommit(c).scheme;
       assert(scheme.isNull || scheme.namespace === s.namespace); // Sanity check
@@ -247,7 +249,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   headForKey(
     key: string | null,
     session?: string,
-    pendingCommit?: Commit
+    pendingCommit?: Commit,
+    merge = true
   ): Commit | undefined {
     assert(!pendingCommit || pendingCommit.key === key);
     if (!session) {
@@ -259,101 +262,95 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       return undefined;
     }
     // Filter out any commits with equal records
-    const commitsToMerge = commitsWithUniqueRecords(leaves);
+    const commitsToMerge =
+      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it
     if (commitsToMerge.length === 1) {
       return commitsToMerge[0];
     }
-    // At this point our leaves have more than one value. Try to merge them all
-    // to a single value. Currently we're simply doing a crude N-way merge and
-    // rely on our patch to come up with a nice result. A better way may be to
-    // do a recursive 3-way merge like git does.
-    try {
-      // Find the base for our N-way merge
-      const [lca, scheme] = this.findMergeBase(commitsToMerge);
-      // If no LCA is found then we're dealing with concurrent writers who all
-      // created of the same key unaware of each other.
-      // Use the null record as a base in this case.
-      const base = lca
-        ? this.recordForCommit(lca).clone()
-        : Record.nullRecord();
-      // Find the newest scheme in this merge
-      // for (const c of commitsToMerge) {
-      //   const commitScheme = c.scheme;
-      //   if (!commitScheme || commitScheme.isNull) {
-      //     continue;
-      //   }
-      //   assert(
-      //     scheme.isNull || commitScheme.namespace === scheme.namespace,
-      //     'Commits with conflicting scheme detected'
-      //   );
+    let result: Commit | undefined;
 
-      //   if (
-      //     commitScheme.version > scheme.version &&
-      //     commitScheme.allowsAutoUpgradeFrom(scheme)
-      //   ) {
-      //     scheme = commitScheme;
-      //   }
-      // }
-      // Upgrade base to merge scheme
-      if (!scheme.isNull) {
-        base.upgradeScheme(scheme);
-      }
-      // Compute a compound diff from our base to all unique records
-      let changes: DataChanges = {};
-      for (const c of commitsToMerge) {
-        const record = this.recordForCommit(c).clone();
-        // Before computing the diff, upgrade the record to the scheme decided
-        // for this merge.
+    if (merge) {
+      // At this point our leaves have more than one value. Try to merge them all
+      // to a single value. Currently we're simply doing a crude N-way merge and
+      // rely on our patch to come up with a nice result. A better way may be to
+      // do a recursive 3-way merge like git does.
+      try {
+        // Find the base for our N-way merge
+        const [lca, scheme] = this.findMergeBase(commitsToMerge);
+        // If no LCA is found then we're dealing with concurrent writers who all
+        // created of the same key unaware of each other.
+        // Use the null record as a base in this case.
+        const base = lca
+          ? this.recordForCommit(lca).clone()
+          : Record.nullRecord();
+        // Upgrade base to merge scheme
         if (!scheme.isNull) {
-          record.upgradeScheme(scheme);
+          base.upgradeScheme(scheme);
         }
-        changes = concatChanges(
-          changes,
-          base.diff(record, c.session === session)
-        );
-      }
-      // Patch, and we're done.
-      base.patch(changes);
-      const mergeCommit = new Commit({
-        session,
-        key,
-        contents: base,
-        parents: leaves.map((c) => c.id),
-      });
-      this.persistCommits([this.deltaCompressIfNeeded(mergeCommit)]);
-      return mergeCommit;
-    } catch (e) {
-      // We're dealing with partial history, so need to come up with some value
-      // that makes sense
-      if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
-        // Since we're dealing with a partial graph, some of our leaves may not
-        // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
-        // If we somehow temporarily lost c2 and c4, we would consider both c3
-        // and c1 as leaves. Therefore, we first sort all our leaves from
-        // newest to oldest.
-        leaves.sort(compareCommitsDesc);
-        // Preserve local consistency for the caller and return whichever value
-        // it wrote last.
-        for (const c of leaves) {
-          if (c.session === session) {
-            return c;
+        // Compute a compound diff from our base to all unique records
+        let changes: DataChanges = {};
+        for (const c of commitsToMerge) {
+          const record = this.recordForCommit(c).clone();
+          // Before computing the diff, upgrade the record to the scheme decided
+          // for this merge.
+          if (!scheme.isNull) {
+            record.upgradeScheme(scheme);
           }
+          changes = concatChanges(
+            changes,
+            base.diff(record, c.session === session)
+          );
         }
-        // No session was provided. Return the last globally written value.
-        return leaves[0];
+        // Patch, and we're done.
+        base.patch(changes);
+        const mergeCommit = this.deltaCompressIfNeeded(
+          new Commit({
+            session,
+            key,
+            contents: base,
+            parents: leaves.map((c) => c.id),
+          })
+        );
+        sign(this.trustPool.currentSession, mergeCommit).then(
+          (signedCommit) => {
+            this.persistVerifiedCommits([signedCommit]);
+          }
+        );
+        return mergeCommit;
+      } catch (e) {
+        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
+          throw e; // Unknown error. Rethrow.
+        }
       }
-      // Unknown error. Rethrow.
-      throw e;
     }
+    if (!result) {
+      // Since we're dealing with a partial graph, some of our leaves may not
+      // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
+      // If we somehow temporarily lost c2 and c4, we would consider both c3
+      // and c1 as leaves. Therefore, we first sort all our leaves from
+      // newest to oldest.
+      leaves.sort(compareCommitsDesc);
+      // Preserve local consistency for the caller and return whichever value
+      // it wrote last.
+      for (const c of leaves) {
+        if (c.session === session) {
+          return c;
+        }
+      }
+      // No session was provided. Return the last globally written value.
+      return leaves[0];
+    }
+    return result;
   }
 
   valueForKey(
     key: string | null,
     session?: string,
-    pendingCommit?: Commit
+    pendingCommit?: Commit,
+    merge = true
   ): Record {
-    const head = this.headForKey(key, session, pendingCommit);
+    const head = this.headForKey(key, session, pendingCommit, merge);
     return head ? this.recordForCommit(head) : Record.nullRecord();
   }
 
@@ -374,7 +371,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       return false;
     }
     const session = this.trustPool.currentSession;
-    const head = this.headForKey(key, session.id);
+    const head = await this.headForKey(key);
     const headRecord = head ? this.recordForCommit(head) : undefined;
     if (headRecord?.isEqual(value)) {
       return false;
@@ -444,7 +441,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   hasKey(key: string | null): boolean {
-    return this.headForKey(key, '') !== undefined;
+    return this.headForKey(key, undefined, undefined, false) !== undefined;
   }
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
@@ -463,6 +460,25 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     for await (const verifiedCommit of this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
+        ArrayUtils.append(result, this.persistVerifiedCommits(batch));
+        batch = [];
+      }
+    }
+    if (batch.length > 0) {
+      ArrayUtils.append(result, this.persistVerifiedCommits(batch));
+    }
+    return result;
+  }
+
+  private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
+    const batchSize = 50;
+    const result: Commit[] = [];
+    let batch: Commit[] = [];
+
+    for (const verifiedCommit of commits) {
+      if (verifiedCommit.session === this.trustPool.currentSession.id) debugger;
+      batch.push(verifiedCommit);
+      if (batch.length >= batchSize) {
         ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
         batch = [];
       }
@@ -474,7 +490,12 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     // Auto add newly discovered sessions to our trust pool
     for (const persistedCommit of result) {
       try {
-        const record = this.valueForKey(persistedCommit.key);
+        const record = this.valueForKey(
+          persistedCommit.key,
+          undefined,
+          undefined,
+          false
+        );
         if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
           sessionFromRecord(record).then((session) => {
             this.trustPool.addSession(session, persistedCommit);
@@ -521,12 +542,10 @@ function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
   const hashes = new Set<string>();
   const result: Commit[] = [];
   for (const c of commits) {
-    const h = commitContentsIsRecord(c.contents)
-      ? c.contents.record.checksum
-      : c.contents.edit.dstChecksum;
-    if (!hashes.has(h)) {
+    const checksum = c.contentsChecksum;
+    if (!hashes.has(checksum)) {
       result.push(c);
-      hashes.add(h);
+      hashes.add(checksum);
     }
   }
   return result;

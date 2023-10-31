@@ -219,19 +219,23 @@ export class GraphManager
     plumbing.loadingPromise = (async () => {
       const commits = await backup.loadCommits();
       await repo.persistCommits(commits);
+      if (plumbing.client) {
+        await plumbing.client.sync();
+      }
       // Load all keys from this repo
       for (const key of repo.keys()) {
         this.getVertexManager(key);
       }
       plumbing.active = true;
       plumbing.loadingFinished = true;
+      plumbing.client?.startSyncing();
     })();
     return plumbing.loadingPromise;
   }
 
-  syncRepository(id: string): Promise<void> {
+  async syncRepository(id: string): Promise<void> {
     const { client } = this.plumbingForRepository(id);
-    this.loadRepository(id);
+    await this.loadRepository(id);
     return client && client.isOnline ? client.sync() : Promise.resolve();
   }
 
@@ -291,7 +295,7 @@ export class GraphManager
             this.emit('status-changed');
           }
         });
-        client.startSyncing();
+        // client.startSyncing();
       }
       // Start loading this repository to memory
       this.loadRepository(id);
@@ -302,6 +306,14 @@ export class GraphManager
   repository(id: string): Repository<MemRepoStorage> {
     this.loadRepository(id);
     return this.plumbingForRepository(id).repo;
+  }
+
+  repositoryReady(id: string | undefined): boolean {
+    if (!id) {
+      return false;
+    }
+    id = Repository.normalizeId(id);
+    return this._repoById.get(id)?.loadingFinished === true;
   }
 
   repositoryForKey(
@@ -462,7 +474,7 @@ export class GraphManager
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
     mgr.reportInitialFields(
-      mgr.repository?.headForKey(mgr.key, session.id)?.session === session.id
+      mgr.repository?.headForKey(mgr.key)?.session === session.id
     );
   }
 

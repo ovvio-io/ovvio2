@@ -177,7 +177,9 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    const res = !this.record.isEqual(repo.valueForKey(this.key));
+    const res = !this.record.isEqual(
+      repo.valueForKey(this.key, undefined, undefined, false)
+    );
     return res;
   }
 
@@ -263,6 +265,10 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   async commit(): Promise<void> {
     if (this.isLocal) {
+      return;
+    }
+    if (!this.graph.repositoryReady(this.repositoryId)) {
+      this.touch();
       return;
     }
     const repo = this.repository;
@@ -480,7 +486,9 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
-    this.scheduleCommitIfNeeded();
+    if (this.graph.repositoryReady(this.repositoryId)) {
+      this.scheduleCommitIfNeeded();
+    }
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {

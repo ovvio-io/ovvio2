@@ -17,6 +17,10 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     return this._repo;
   }
 
+  protected getLocalSize(): number {
+    return this._repo.numberOfCommits;
+  }
+
   protected buildSyncMessage(): SyncMessage<Commit> {
     const repo = this.repo;
     return SyncMessage.build(

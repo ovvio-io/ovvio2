@@ -166,6 +166,7 @@ export abstract class BaseClient<
 
   protected abstract buildSyncMessage(): SyncMessage<ValueType>;
   protected abstract persistPeerValues(values: ValueType[]): Promise<number>;
+  protected abstract getLocalSize(): number;
   abstract localIds(): Iterable<string>;
 
   private _setIsOnline(value: boolean): void {
@@ -263,7 +264,7 @@ export abstract class BaseClient<
     const config = getOvvioConfig();
 
     if (syncResp.buildVersion !== config.version) {
-      // TODO: Save uncomitted changes
+      // TODO: Save uncommitted changes
       if (config.debug) {
         location.reload();
       } else {
@@ -275,7 +276,6 @@ export abstract class BaseClient<
     let persistedCount = 0;
     if (syncResp.values.length) {
       const start = performance.now();
-      // persistedCount = repo.persistCommits(syncResp.commits).length;
       persistedCount = await this.persistPeerValues(syncResp.values);
       log({
         severity: 'INFO',
@@ -324,7 +324,7 @@ export abstract class BaseClient<
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
-    if (!serverFilter) {
+    if (!serverFilter || this._previousServerSize !== this.getLocalSize()) {
       return true;
     }
     for (const id of this.localIds()) {
