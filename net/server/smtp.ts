@@ -39,10 +39,10 @@ export class EmailService extends BaseService<ServerServices> {
               Data: message.plaintext,
               Charset: 'UTF-8',
             },
-            // Html: {
-            //   Data: escapeHtml(message.html),
-            //   Charset: 'UTF-8',
-            // },
+            Html: {
+              Data: message.html,
+              Charset: 'UTF-8',
+            },
           },
         },
       },

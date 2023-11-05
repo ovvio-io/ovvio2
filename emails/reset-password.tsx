@@ -10,14 +10,14 @@ import {
   MjmlButton,
   MjmlImage,
 } from '../external/mjml-react/index.tsx';
-import { renderReactToMjml } from './render.ts';
+import { renderReactToHtml } from './render.ts';
 
 export interface ResetPasswordEmailProps {
   clickURL: string;
 }
 
 export function ResetPasswordEmail({ clickURL }: ResetPasswordEmailProps) {
-  return renderReactToMjml(
+  return renderReactToHtml(
     <Mjml>
       <MjmlHead>
         <MjmlTitle>Last Minute Offer</MjmlTitle>
