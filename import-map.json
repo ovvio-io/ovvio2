@@ -13,6 +13,9 @@
     "std/": "https://deno.land/std@0.204.0/",
     "eventemitter3": "https://esm.sh/eventemitter3@5.0.1",
     "direction": "https://unpkg.com/direction@1.0.3",
-    "yargs": "https://deno.land/x/yargs@v17.7.1-deno/deno.ts"
+    "yargs": "https://deno.land/x/yargs@v17.7.1-deno/deno.ts",
+    "denomailer": "https://deno.land/x/denomailer@1.6.0/mod.ts",
+    "smtp": "https://deno.land/x/smtp@v0.7.0/mod.ts",
+    "escape": "https://deno.land/x/escape@1.4.2/mod.ts"
   }
 }

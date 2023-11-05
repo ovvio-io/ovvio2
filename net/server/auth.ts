@@ -1,3 +1,4 @@
+import { encodeBase64Url } from 'std/encoding/base64url.ts';
 import {
   EncodedSession,
   OwnedSession,
@@ -5,24 +6,41 @@ import {
   Session,
   encodeSession,
   encodedSessionFromRecord,
-  sessionFromRecord,
   sessionToRecord,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
-import { deserializeDate, kDayMs, kHourMs } from '../../base/date.ts';
+import { deserializeDate, kDayMs } from '../../base/date.ts';
 import { assert } from '../../base/error.ts';
+import { JSONObject } from '../../base/interfaces.ts';
+import { stableStringify } from '../../base/json.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
-import { SQLiteRepoStorage } from '../../server/sqlite3-repo-storage.ts';
-import { Endpoint, Server, ServerServices } from './server.ts';
-import { getRequestPath } from './utils.ts';
+import { Endpoint, ServerServices } from './server.ts';
+import { getBaseURL, getRequestPath } from './utils.ts';
+import { ResetPasswordEmail } from '../../emails/reset-password.tsx';
 
-export const kAuthEndpointPaths = ['/auth/session'] as const;
+export const kAuthEndpointPaths = [
+  '/auth/session',
+  '/auth/send-login-email',
+  '/auth/temp-login',
+] as const;
 export type AuthEndpointPath = (typeof kAuthEndpointPaths)[number];
 
 export type CreateSessionError = 'MissingPublicKey' | 'InvalidPublicKey';
+export type LoginError = 'MissingEmail' | 'SMTPNotConfigured';
 
-export type AuthError = CreateSessionError;
+export type AuthError = CreateSessionError | LoginError;
+
+export interface TemporaryLoginToken extends JSONObject {
+  e: string; // Email address
+  ts: number; // Creation timestamp
+  sl: string; // A random salt to ensure uniqueness
+}
+
+export interface SignedTemporaryLoginToken extends JSONObject {
+  t: TemporaryLoginToken; // The token itself
+  s: string; // Signature
+}
 
 export class AuthEndpoint implements Endpoint {
   filter(
@@ -38,6 +56,12 @@ export class AuthEndpoint implements Endpoint {
     switch (path) {
       case '/auth/session':
         return method === 'POST' || method === 'PATCH';
+
+      case '/auth/send-login-email':
+        return method === 'POST';
+
+      case '/auth/temp-login':
+        return method === 'GET';
     }
   }
 
@@ -53,6 +77,10 @@ export class AuthEndpoint implements Endpoint {
         if (method === 'POST') {
           return this.createNewSession(services, req);
         }
+        break;
+
+      case '/auth/send-login-email':
+        return this.sendTemporaryLoginEmail(services, req);
     }
 
     return new Response('Unknown request', {
@@ -105,6 +133,42 @@ export class AuthEndpoint implements Endpoint {
     resp.headers.set('Content-Type', 'application/json');
     return resp;
   }
+
+  private async sendTemporaryLoginEmail(
+    services: ServerServices,
+    req: Request
+  ): Promise<Response> {
+    const smtp = services.email;
+    const body = await req.json();
+    const email = body.email;
+    if (typeof email !== 'string') {
+      return responseForError('MissingEmail');
+    }
+
+    // TODO (ofri): Rate limit this call
+
+    // We unconditionally generate the signed token so this call isn't
+    // vulnerable to timing attacks.
+    const signedToken = await signToken(services.settings.session, {
+      e: email,
+      ts: Date.now(),
+      sl: uniqueId(),
+    });
+    const clickURL = `${getBaseURL(
+      services
+    )}/auth/temp-login?t=${encodeBase64Url(JSON.stringify(signedToken))}`;
+    // Only send the mail if a user really exists. We send the email
+    // asynchronously both for speed and to avoid timing attacks.
+    if (fetchUserByEmail(services, email) !== undefined) {
+      smtp.send({
+        to: email,
+        subject: 'Login to Ovvio',
+        plaintext: `Click on this link to login to Ovvio: ${clickURL}`,
+        html: ResetPasswordEmail({ clickURL }),
+      });
+    }
+    return new Response('OK', { status: 200 });
+  }
 }
 
 export async function persistSession(
@@ -135,8 +199,44 @@ function fetchEncodedRootSessions(services: ServerServices): EncodedSession[] {
   return result;
 }
 
+function fetchUserByEmail(
+  services: ServerServices,
+  email: string
+): Record | undefined {
+  const repo = services.sync.getSysDir();
+  const db = repo.storage.db;
+  const statement = db.prepare(
+    `SELECT json FROM heads WHERE ns = 'users' AND json->'$.d'->>'$.email' = '${email}' LIMIT 1;`
+  );
+  const row = statement.get();
+  if (!row || typeof row.json !== 'string') {
+    return undefined;
+  }
+  return Record.fromJS(JSON.parse(row.json));
+}
+
 function responseForError(err: AuthError): Response {
   return new Response(JSON.stringify({ error: err }), {
     status: 400,
   });
+}
+
+async function signToken(
+  session: OwnedSession,
+  token: TemporaryLoginToken
+): Promise<SignedTemporaryLoginToken> {
+  const str = stableStringify(token);
+  const buffer = new TextEncoder().encode(str);
+  const sig = await crypto.subtle.sign(
+    {
+      name: 'ECDSA',
+      hash: { name: 'SHA-384' },
+    },
+    session.privateKey,
+    buffer
+  );
+  return {
+    t: token,
+    s: `${session.id}/${encodeBase64Url(sig)}`,
+  };
 }

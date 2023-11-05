@@ -12,7 +12,11 @@ import {
 } from '../external/mjml-react/index.tsx';
 import { renderReactToMjml } from './render.ts';
 
-export function ResetPassword() {
+export interface ResetPasswordEmailProps {
+  clickURL: string;
+}
+
+export function ResetPasswordEmail({ clickURL }: ResetPasswordEmailProps) {
   return renderReactToMjml(
     <Mjml>
       <MjmlHead>
@@ -40,5 +44,3 @@ export function ResetPassword() {
     </Mjml>
   );
 }
-
-console.log(ResetPassword().html);

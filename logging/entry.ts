@@ -8,6 +8,8 @@ export type Severity =
   | 'ERROR'
   | 'WARNING'
   | 'NOTICE'
+  | 'METRIC'
+  | 'EVENT'
   | 'INFO'
   | 'DEBUG'
   | 'DEFAULT';
@@ -19,6 +21,8 @@ export const SeverityCodes: { [key in Severity]: number } = {
   ERROR: 500,
   WARNING: 400,
   NOTICE: 300,
+  METRIC: 250,
+  EVENT: 225,
   INFO: 200,
   DEBUG: 100,
   DEFAULT: 0,
@@ -50,6 +54,12 @@ export function SeverityFromCode(code: number): Severity {
 
     case SeverityCodes.INFO:
       return 'INFO';
+
+    case SeverityCodes.METRIC:
+      return 'METRIC';
+
+    case SeverityCodes.EVENT:
+      return 'EVENT';
 
     case SeverityCodes.DEBUG:
       return 'DEBUG';

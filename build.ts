@@ -7,7 +7,7 @@ import { getImportMapPath, getRepositoryPath } from './base/development.ts';
 
 const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
 
-export const kEntryPointsNames = ['web-app', 'tenant-admin'] as const;
+export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
 export type EntryPointName = (typeof kEntryPointsNames)[number];
 
 async function getEntryPoints(): Promise<{ in: string; out: string }[]> {

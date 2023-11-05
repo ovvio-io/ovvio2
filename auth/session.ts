@@ -1,14 +1,10 @@
-import {
-  encode as b64Encode,
-  decode as b64Decode,
-} from 'std/encoding/base64.ts';
+import { encodeBase64Url, decodeBase64Url } from 'std/encoding/base64url.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { deserializeDate, kDayMs, serializeDate } from '../base/date.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { stableStringify } from '../base/json.ts';
 import { Commit } from '../repo/commit.ts';
 import { uniqueId } from '../base/common.ts';
-import { CoreObject } from '../base/core-types/index.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 
@@ -91,7 +87,7 @@ export async function sign(
     contents: commit.contents,
     timestamp: commit.timestamp,
     parents: commit.parents,
-    signature: `${session.id}/${b64Encode(sig)}`,
+    signature: `${session.id}/${encodeBase64Url(sig)}`,
   });
 }
 
@@ -129,7 +125,7 @@ export async function verify(
       hash: { name: 'SHA-384' },
     },
     expectedSigner.publicKey,
-    b64Decode(sig),
+    decodeBase64Url(sig),
     serializeCommitForSigning(commit)
   );
 }

@@ -113,7 +113,7 @@ export type NavigationType = 'tab' | 'close' | 'open';
 export type Reason = 'not-supported' | 'denied';
 
 export interface ClientEventEntry extends BaseLogEntry {
-  severity: 'INFO';
+  severity: 'EVENT';
   event: ClientEvent;
   foreground?: boolean;
   source?: UISource;

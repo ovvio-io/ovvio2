@@ -82,6 +82,10 @@ export class SyncService extends BaseService<ServerServices> {
     return repo;
   }
 
+  getSysDir(): Repository<SQLiteRepoStorage> {
+    return this.getRepository('sys', 'dir');
+  }
+
   getLog(id: string): SQLiteLogStorage {
     let storage = this._logs.get(id);
     if (!storage) {

@@ -1,7 +1,12 @@
 import yargs from 'yargs';
 import * as path from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
-import { log, setGlobalLoggerStreams } from '../../logging/log.ts';
+import {
+  Logger,
+  log,
+  newLogger,
+  setGlobalLoggerStreams,
+} from '../../logging/log.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { PrometheusLogStream } from '../../server/prometeus-stream.ts';
 import { SyncEndpoint, SyncService } from './sync.ts';
@@ -13,6 +18,7 @@ import { MetricsMiddleware, PrometheusMetricsEndpoint } from './metrics.ts';
 import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
+import { EmailService } from './smtp.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -29,6 +35,8 @@ export interface ServerContext extends Arguments {
   readonly settings: SettingsService;
   readonly prometheus: PrometheusLogStream;
   readonly trustPool: TrustPool;
+  readonly email: EmailService;
+  readonly logger: Logger;
 }
 
 // Stuff specific to an organization
@@ -145,6 +153,8 @@ export class Server {
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
+    const logStreams = [new ConsoleLogStream(), prometeusLogStream];
+    setGlobalLoggerStreams(logStreams);
     this._baseContext = {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
@@ -152,9 +162,9 @@ export class Server {
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
+      email: new EmailService(),
+      logger: newLogger(logStreams),
     } as ServerContext;
-    const logStreams = [new ConsoleLogStream(), prometeusLogStream];
-    setGlobalLoggerStreams(logStreams);
     // Monitoring
     this.registerMiddleware(new MetricsMiddleware(logStreams));
     this.registerEndpoint(new PrometheusMetricsEndpoint());
@@ -177,6 +187,7 @@ export class Server {
     };
     // Setup Settings service
     await this._baseContext.settings.setup(services);
+    await this._baseContext.email.setup(services);
     (this._baseContext as any).trustPool = new TrustPool(
       this._baseContext.settings.session,
       []
@@ -226,7 +237,7 @@ export class Server {
     const orgId = organizationIdFromURL(req.url);
     if (!orgId) {
       log({
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'HttpStatusCode',
         unit: 'Count',
         value: 404,
@@ -299,7 +310,7 @@ export class Server {
       }
     }
     log({
-      severity: 'INFO',
+      severity: 'METRIC',
       name: 'ServerStarted',
       value: 1,
       unit: 'Count',

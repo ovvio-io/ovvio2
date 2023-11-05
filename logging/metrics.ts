@@ -36,7 +36,7 @@ export type HTTPMethod =
   | 'CONNECT'
   | 'PATCH';
 
-export type MetricSeverity = Extract<Severity, 'INFO' | 'DEBUG' | 'ERROR'>;
+export type MetricSeverity = Extract<Severity, 'METRIC' | 'ERROR'>;
 
 export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
   extends BaseLogEntry {
@@ -80,7 +80,10 @@ export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 export function logEntryIsMetric(
   entry: NormalizedLogEntry<BaseLogEntry>
 ): entry is NormalizedLogEntry<MetricLogEntry> {
-  if (entry.severity !== 'INFO' || typeof entry.name !== 'string') {
+  if (
+    (entry.severity !== 'METRIC' && entry.severity !== 'ERROR') ||
+    typeof entry.name !== 'string'
+  ) {
     return false;
   }
   return (kMetricNames as readonly string[]).includes(entry.name);

@@ -164,7 +164,7 @@ function SortByDropDown() {
   const onChange = useCallback(
     (val: SortBy) => {
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'FilterChange',
         type: `sortBy:${val}`,
         source: 'toolbar:sortBy',
@@ -406,7 +406,7 @@ function FilterButton() {
 
   const filterButtonClicked = useCallback(() => {
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: view.showFilters ? 'Show' : 'Hide',
       source: 'toolbar:filterMenu',
     });

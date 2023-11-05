@@ -14,10 +14,21 @@ import {
   JSONDecoder,
   JSONEncoder,
 } from '../../base/core-types/encoding/json.ts';
+import { JSONObject } from '../../base/interfaces.ts';
+
+export interface SMTPSettings extends JSONObject {
+  hostname: string;
+  port: number;
+  username?: string;
+  password?: string;
+  tls?: boolean;
+}
 
 export interface ServerSettings {
   session: OwnedSession;
+  serverTenantId: string;
   setupCompleted: boolean;
+  smtp?: SMTPSettings;
 }
 
 export class SettingsService extends BaseService<ServerServices> {
@@ -25,16 +36,25 @@ export class SettingsService extends BaseService<ServerServices> {
 
   async setup(ctx: ServerServices): Promise<void> {
     await super.setup(ctx);
+    let session: OwnedSession | undefined;
+    let serverTenantId = 's1';
+    let setupCompleted = false;
+    let smtp: SMTPSettings | undefined;
     try {
       const text = await Deno.readTextFile(this.jsonFilePath);
       const decoder = new JSONDecoder(JSON.parse(text));
-      const session = decoder.get('session') as EncodedSession | undefined;
-      assert(session !== undefined); // Sanity check
-      assert(session.privateKey !== undefined);
-      this._settings = {
-        session: (await decodeSession(session)) as OwnedSession,
-        setupCompleted: decoder.get<boolean>('setupCompleted') || false,
-      };
+      const encodedSession = decoder.get('session') as
+        | EncodedSession
+        | undefined;
+      if (encodedSession) {
+        assert(encodedSession.privateKey !== undefined);
+        session = (await decodeSession(encodedSession)) as OwnedSession;
+      }
+      serverTenantId = decoder.get<string>('serverTenantId') || 's1';
+      setupCompleted = decoder.get<boolean>('setupCompleted') || false;
+      if (decoder.has('smtp')) {
+        smtp = decoder.get<SMTPSettings>('smtp');
+      }
     } catch (_e: unknown) {
       //
     }
@@ -42,11 +62,17 @@ export class SettingsService extends BaseService<ServerServices> {
       return;
     }
 
-    const session = await generateSession('root');
+    if (!session) {
+      session = await generateSession('root');
+    }
     this._settings = {
       session: session,
-      setupCompleted: false,
+      serverTenantId: serverTenantId,
+      setupCompleted,
     };
+    if (smtp) {
+      this._settings.smtp = smtp;
+    }
     await this.persistSettings();
   }
 
@@ -65,6 +91,22 @@ export class SettingsService extends BaseService<ServerServices> {
 
   set setupCompleted(flag: boolean) {
     this._settings!.setupCompleted = flag;
+  }
+
+  get serverTenantId(): string {
+    return this._settings!.serverTenantId;
+  }
+
+  set serverTenantId(id: string) {
+    this._settings!.serverTenantId = id;
+  }
+
+  get smtp(): SMTPSettings | undefined {
+    return this._settings?.smtp;
+  }
+
+  set smtp(settings: SMTPSettings | undefined) {
+    this._settings!.smtp = settings;
   }
 
   async persistSettings(): Promise<void> {

@@ -417,7 +417,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
           parents: fullCommit.parents,
         });
         log({
-          severity: 'INFO',
+          severity: 'METRIC',
           name: 'DeltaFormatSavings',
           value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
           unit: 'Percent',
@@ -476,7 +476,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     let batch: Commit[] = [];
 
     for (const verifiedCommit of commits) {
-      if (verifiedCommit.session === this.trustPool.currentSession.id) debugger;
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
         ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));

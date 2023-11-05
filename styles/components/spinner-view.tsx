@@ -48,14 +48,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-// export interface SpinnerViewProps {
-// 	size?: number,
-// 	color?: string
-// }
+export interface SpinnerViewProps {
+  size?: number;
+  color?: string;
+}
 export const SpinnerView = ({
   size = styleguide.gridbase * 8,
   color = undefined,
-}) => {
+}: SpinnerViewProps) => {
   const styles = useStyles();
   const props: any = {};
   const style: any = {};

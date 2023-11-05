@@ -8,7 +8,7 @@ const domNode = document.getElementById('root')!;
 const root = createRoot(domNode);
 const router = createBrowserRouter([
   {
-    path: '/tenant-admin',
+    path: '/org-admin',
     element: <UsersTable />,
   },
 ]);
