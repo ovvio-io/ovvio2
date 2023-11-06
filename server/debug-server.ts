@@ -9,7 +9,10 @@ import {
 } from '../build.ts';
 import { getOvvioConfig } from './config.ts';
 import { Server } from '../net/server/server.ts';
-import { StaticAssets } from '../net/server/static-assets.ts';
+import {
+  StaticAssets,
+  compileAssetsDirectory,
+} from '../net/server/static-assets.ts';
 import { getRepositoryPath } from '../base/development.ts';
 
 function generateConfigSnippet(version: VersionNumber): string {
@@ -38,6 +41,10 @@ async function rebuildAssets(
         path.join(repoPath, ep, 'src', 'index.html')
       ),
       css: await Deno.readTextFile(path.join(repoPath, ep, 'src', 'index.css')),
+      assets: await compileAssetsDirectory(
+        path.join(repoPath, 'assets'),
+        path.join(repoPath, ep, 'assets')
+      ),
     };
   }
   return result;

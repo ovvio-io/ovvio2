@@ -2,11 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Route, RouterProvider } from 'react-router';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
 import { layout } from '../../../styles/layout.ts';
-import {
-  darkTheme,
-  lightTheme,
-  ThemeProvider,
-} from '../../../styles/theme.tsx';
+import { lightTheme } from '../../../styles/theme.tsx';
 import LoadingView from './loading-view.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
