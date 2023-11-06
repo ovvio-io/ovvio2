@@ -222,7 +222,7 @@ export abstract class BaseClient<
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
       log({
-        severity: 'DEBUG',
+        severity: 'METRIC',
         name: 'PeerResponseTime',
         value: syncDurationMs,
         unit: 'Milliseconds',
@@ -278,13 +278,13 @@ export abstract class BaseClient<
       const start = performance.now();
       persistedCount = await this.persistPeerValues(syncResp.values);
       log({
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'CommitsPersistTime',
         value: performance.now() - start,
         unit: 'Milliseconds',
       });
       log({
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'CommitsPersistCount',
         value: persistedCount,
         unit: 'Count',
