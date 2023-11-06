@@ -18,7 +18,7 @@ import { MetricsMiddleware, PrometheusMetricsEndpoint } from './metrics.ts';
 import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
-import { EmailService } from './smtp.ts';
+import { EmailService } from './email.ts';
 
 /**
  * CLI arguments consumed by our server.

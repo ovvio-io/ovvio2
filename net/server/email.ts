@@ -3,7 +3,6 @@ import {
   SendEmailCommand,
   SendEmailCommandInput,
 } from '@aws-sdk/client-sesv2';
-import { escapeHtml } from 'escape';
 import { ServerServices } from './server.ts';
 import { BaseService } from './service.ts';
 
