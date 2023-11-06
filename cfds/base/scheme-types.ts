@@ -1,20 +1,20 @@
-import { ConcreteCoreValue, CoreObject } from "../../base/core-types/index.ts";
-import { RichText } from "../richtext/tree.ts";
-import { ValueType } from "./types/index.ts";
-import { Dictionary } from "../../base/collections/dict.ts";
-import { Record as RecordObj } from "./record.ts";
+import { ConcreteCoreValue, CoreObject } from '../../base/core-types/index.ts';
+import { RichText } from '../richtext/tree.ts';
+import { ValueType } from './types/index.ts';
+import { Dictionary } from '../../base/collections/dict.ts';
+import { Record as RecordObj } from './record.ts';
 
 export enum SchemeNamespace {
-  WORKSPACE = "workspaces",
-  NOTES = "notes",
-  TAGS = "tags",
-  USERS = "users",
-  USER_SETTINGS = "user-settings",
-  VIEWS = "views",
-  Null = "",
+  WORKSPACE = 'workspaces',
+  NOTES = 'notes',
+  TAGS = 'tags',
+  USERS = 'users',
+  USER_SETTINGS = 'user-settings',
+  VIEWS = 'views',
+  Null = '',
 }
 
-export const KEY_SUFFIX_SETTINGS = "_settings";
+export const KEY_SUFFIX_SETTINGS = '_settings';
 
 const namespaces: SchemeNamespace[] = [];
 for (const key in SchemeNamespace) {
@@ -91,7 +91,7 @@ export type SchemeObject = Record<
 
 type Override<T1, T2> = Omit<T1, keyof T2> & T2;
 
-export const kRecordIdField = "<id>";
+export const kRecordIdField = '<id>';
 
 export class SchemeDef<T extends SchemeObject> {
   namespace: SchemeNamespace;
@@ -157,9 +157,9 @@ export interface ISchemeManagerRegister {
 }
 
 export enum InviteStatus {
-  PENDING = "pending",
-  ACCEPTED = "accepted",
-  REJECTED = "rejected",
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
 }
 
 export interface AttachmentData extends CoreObject {
@@ -177,58 +177,58 @@ export enum NoteStatus {
 }
 
 // export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
-export type WorkspaceGrouping = "none" | "Employee" | "Team"; //TODO: replaced
+export type WorkspaceGrouping = 'none' | 'Employee' | 'Team'; //TODO: replaced
 
 export const kShowChecked = [
-  "checked-unchecked",
-  "unchecked",
-  "checked",
+  'checked-unchecked',
+  'unchecked',
+  'checked',
 ] as const;
 
 export type ShowChecked = (typeof kShowChecked)[number];
 
-export const kShowPinned = ["pinned-unpinned", "pinned", "all"] as const;
+export const kShowPinned = ['pinned-unpinned', 'pinned', 'all'] as const;
 
 export type ShowPinned = (typeof kShowPinned)[number];
 
 export enum SortBy {
   // Priority = 'priority',
-  CreatedAscending = "created-asc",
-  CreatedDescending = "created-des",
-  LastModifiedAscending = "lastModified-asc",
-  LastModifiedDescending = "lastModified-des",
-  DueDateAscending = "dueDate-asc",
-  DueDateDescending = "dueDate-des",
-  TitleAscending = "title-asc",
-  TitleDescending = "title-des",
+  CreatedAscending = 'created-asc',
+  CreatedDescending = 'created-des',
+  LastModifiedAscending = 'lastModified-asc',
+  LastModifiedDescending = 'lastModified-des',
+  DueDateAscending = 'dueDate-asc',
+  DueDateDescending = 'dueDate-des',
+  TitleAscending = 'title-asc',
+  TitleDescending = 'title-des',
   Default = DueDateAscending,
 }
 
 export const kGroupBy = [
-  "assignee",
-  "workspace",
-  "dueDate",
-  "note",
-  "tag",
+  'assignee',
+  'workspace',
+  'dueDate',
+  'note',
+  'tag',
 ] as const;
 
 export type GroupBy = (typeof kGroupBy)[number];
 
-export const kViewType = ["list", "board"] as const;
+export const kViewType = ['list', 'board'] as const;
 
 export type ViewType = (typeof kViewType)[number];
 
 export const kTabIds = [
-  "tasks",
-  "notes",
-  "overview",
-  "general", // might be redundant
-  "details",
+  'tasks',
+  'notes',
+  'overview',
+  'general',
+  'details',
 ] as const;
 
 export type TabId = (typeof kTabIds)[number];
 
-export const kDateFilters = ["week", "month"] as const;
+export const kDateFilters = ['week', 'month'] as const;
 
 export type DateFilter = (typeof kDateFilters)[number];
 
@@ -239,16 +239,16 @@ export function encodeTagId(
   childName?: string | null
 ): TagId {
   return (
-    (parentName ? encodeURIComponent(parentName) : "null") +
-    "/" +
-    (childName ? encodeURIComponent(childName) : "null")
+    (parentName ? encodeURIComponent(parentName) : 'null') +
+    '/' +
+    (childName ? encodeURIComponent(childName) : 'null')
   );
 }
 
 export function decodeTagId(
   id: string
 ): [parent: string | null, child: string | null] {
-  const comps = id.split("/");
+  const comps = id.split('/');
   if (!comps.length) {
     return [null, null];
   }

@@ -17,11 +17,7 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
 import Layer from '../../../../styles/components/layer.tsx';
-import Menu, {
-  LineSeparator,
-  MenuItem,
-  MenuAction,
-} from '../../../../styles/components/menu.tsx';
+import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
 import Tooltip from '../../../../styles/components/tooltip/index.tsx';
@@ -58,9 +54,6 @@ import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
 import { LogoText } from '../../../../styles/components/logo.tsx';
 import { LogoIcon } from '../../../../styles/components/logo.tsx';
-import { IconDelete } from '../../../../styles/components/new-icons/icon-delete.tsx';
-import IconAdd from '../../../../styles/components/icons/IconAdd.tsx';
-import { IconAttachment } from '../../../../styles/components/new-icons/icon-attachment.tsx';
 import { IconGroup } from '../../../../styles/components/new-icons/icon-group.tsx';
 import { IconCheck } from '../../../../styles/components/new-icons/icon-check.tsx';
 import { IconUngroup } from '../../../../styles/components/new-icons/icon-ungroup.tsx';

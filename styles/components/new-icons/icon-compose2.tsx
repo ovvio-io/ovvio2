@@ -1,10 +1,10 @@
-import React from "react";
-import { IconProps, IconSize } from "./types.ts";
-import { brandLightTheme as theme } from "../../theme.tsx";
+import React from 'react';
+import { IconProps, IconSize } from './types.ts';
+import { brandLightTheme as theme } from '../../theme.tsx';
 
 export enum IconState {
-  None = "none",
-  Blue = "blue",
+  None = 'none',
+  Blue = 'blue',
 }
 
 const COLOR_MAP = {
