@@ -105,6 +105,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const navigate = useNavigate();
 
   const openSettings = useCallback(() => {
+    //TODO: change logger details.
     logger.log({
       severity: 'INFO',
       event: 'Start',
@@ -112,7 +113,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
       type: 'workspace',
       source: 'bar:workspace',
     });
-    navigate('/settings/me');
+    navigate('/settings');
   }, [logger, navigate]);
 
   return (

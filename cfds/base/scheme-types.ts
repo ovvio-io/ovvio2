@@ -224,6 +224,9 @@ export const kTabIds = [
   'overview',
   'general',
   'details',
+  'generalOrg',
+  'Members',
+  'Billing',
 ] as const;
 
 export type TabId = (typeof kTabIds)[number];

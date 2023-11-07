@@ -10,10 +10,11 @@ export enum IconColor {
   Primary = 'primary',
   Secondary = 'secondary',
   Mono = 'mono',
+  Supporting = 'supporting',
 }
 
 export interface IconProps {
   size?: IconSize;
   className?: string;
-  style?: React.CSSProperties;  
+  style?: React.CSSProperties;
 }

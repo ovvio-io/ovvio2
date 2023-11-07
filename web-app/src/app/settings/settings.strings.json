@@ -1,7 +1,11 @@
 {
     "en": {
       "general": "General",
-      "details": "Details"
+      "details": "Details",
+      "generalOrg": "General",
+      "members": "Members",
+      "billing": "Billing"
+
     }
   }
   

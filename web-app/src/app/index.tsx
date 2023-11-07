@@ -22,6 +22,8 @@ import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 import { PersonalSettings } from './settings/personal-information.tsx';
+import { Settings } from './settings/index.tsx';
+import { OrgSettings } from './settings/organization-settings.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -116,8 +118,32 @@ const router = createBrowserRouter([
     element: <RepoExplorer />,
   },
   {
+    path: '/settings',
+    element: (
+      <Settings style={lightTheme}>
+        <PersonalSettings />
+      </Settings>
+    ),
+  },
+  {
     path: '/settings/me',
-    element: <PersonalSettings />,
+    element: (
+      <Settings style={lightTheme}>
+        <PersonalSettings />,
+      </Settings>
+    ),
+  },
+  //   {
+  //     path: '/settings/myWorkspaces',
+  //     element: <WorkspacesSettings />,
+  //   },
+  {
+    path: '/settings/organization',
+    element: (
+      <Settings style={lightTheme}>
+        <OrgSettings />,
+      </Settings>
+    ),
   },
 ]);
 

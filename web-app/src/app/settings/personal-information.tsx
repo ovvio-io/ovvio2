@@ -1,104 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { layout } from '../../../../styles/layout.ts';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { TabId } from '../../../../cfds/base/scheme-types.ts';
+import React from 'react';
+import { cn } from '../../../../styles/css-objects/index.ts';
 import {
   usePartialRootUser,
   usePartialView,
 } from '../../core/cfds/react/graph.tsx';
-import {
-  TabButton,
-  TabsHeader,
-} from '../../../../styles/components/tabs/index.tsx';
 import SettingsField from './components/settings-field.tsx';
-import { tabPlugins } from './plugins/tab-plugin-interface.tsx';
-import { createUseStrings } from '../../core/localization/index.tsx';
-import localization from './settings.strings.json' assert { type: 'json' };
-
-export const SIDES_PADDING = styleguide.gridbase * 11;
-const useStrings = createUseStrings(localization);
-
-const useStyles = makeStyles(() => ({
-  root: {
-    height: '100vh',
-    background: 'var(--secondary-secondary-s-0, #FFFBF5)',
-    overflow: 'auto',
-  },
-  bar: {
-    justifyContent: 'flex-end',
-    alignItems: 'stretch',
-    boxSizing: 'border-box',
-    basedOn: [layout.column],
-  },
-  barRow: {
-    padding: ['40px', 0],
-    height: styleguide.gridbase * 5,
-    basedOn: [layout.column],
-  },
-  viewRow: {
-    borderBottom: `${theme.supporting.O1} 1px solid`,
-    marginBottom: styleguide.gridbase,
-    padding: [0, SIDES_PADDING],
-  },
-
-  dropDownButtonText: {
-    marginLeft: styleguide.gridbase,
-    marginRight: styleguide.gridbase,
-  },
-
-  noteTypeToggleSmall: {
-    width: styleguide.gridbase * 40,
-  },
-
-  dialogHeader: {
-    width: '100%',
-    height: styleguide.gridbase * 14,
-    boxSizing: 'border-box',
-    alignItems: 'center',
-    padding: [0, SIDES_PADDING],
-    basedOn: [layout.row],
-  },
-}));
-
-function TabView() {
-  const styles = useStyles();
-  const strings = useStrings();
-  const view = usePartialView('noteType', 'selectedTabId');
-
-  const setSelected = useCallback(
-    (tabId: TabId) => {
-      view.selectedTabId = tabId;
-    },
-    [view]
-  );
-
-  //TODO: ask Ofri about useString. why do we need them? why dont we spell all tabs with capital letter at the beginning?
-  const tabs: React.ReactElement[] = tabPlugins.map((plugin) => (
-    <TabButton
-      key={plugin.title}
-      value={plugin.title}
-      onClick={() => setSelected(plugin.title)}
-    >
-      {strings[plugin.title] || plugin.title}
-    </TabButton>
-  ));
-  return (
-    <TabsHeader
-      selected={view.selectedTabId}
-      setSelected={setSelected}
-      className={cn(styles.noteTypeToggleSmall)}
-    >
-      {...tabs}
-    </TabsHeader>
-  );
-}
+import TabView from './plugins/tab-plugin.tsx';
+import { tabsStyles } from './components/tabs-style.tsx';
 
 export function GeneralTabContent() {
-  const styles = useStyles();
+  const styles = tabsStyles();
   const userData = usePartialRootUser('name', 'email');
-
   return (
     <div className={cn(styles.barRow)}>
       <SettingsField
@@ -124,7 +36,7 @@ export function GeneralTabContent() {
 }
 
 export function DetailsTabContent() {
-  const styles = useStyles();
+  const styles = tabsStyles();
   return (
     <div className={cn(styles.barRow)}>
       <SettingsField
@@ -155,24 +67,13 @@ export type PersonalSettingsProps = {
 
 export function PersonalSettings(props?: PersonalSettingsProps) {
   const { className } = props || {};
-  const styles = useStyles();
-  const view = usePartialView('selectedTabId');
-
-  const renderSelectedTabContent = () => {
-    const selectedTabPlugin = tabPlugins.find(
-      (plugin) => plugin.title === view.selectedTabId
-    );
-    return selectedTabPlugin ? selectedTabPlugin.render() : null;
-  };
-
+  const styles = tabsStyles();
   return (
     <div className={styles.root}>
-      {' '}
       <div className={cn(styles.bar, className)}>
         <div className={cn(styles.dialogHeader)}>Personal Information</div>
         <div className={cn(styles.barRow, styles.viewRow)}>
-          <TabView />
-          {renderSelectedTabContent()}
+          <TabView sectionTitle="Personal Info" />
         </div>
       </div>
     </div>
