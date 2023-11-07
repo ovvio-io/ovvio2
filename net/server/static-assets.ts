@@ -1,29 +1,44 @@
 import { walk } from 'std/fs/walk.ts';
 import { exists } from 'std/fs/mod.ts';
-import { EntryPointName, kEntryPointsNames } from '../../build.ts';
+import { extname } from 'std/path/mod.ts';
+import {
+  EntryPointDefault,
+  EntryPointName,
+  kEntryPointsNames,
+} from '../../build.ts';
 import { ServerServices, Endpoint } from './server.ts';
 import { getRequestPath } from './utils.ts';
 
-export interface StaticEntryPoint {
-  readonly html: string;
-  readonly css: string;
-  readonly js: string;
-  readonly sourceMap?: string;
-  readonly assets?: Record<string, string>;
+export type ContentType =
+  | 'image/svg+xml'
+  | 'image/png'
+  | 'image/jpeg'
+  | 'image/jpeg'
+  | 'application/json'
+  | 'text/javascript'
+  | 'text/html'
+  | 'text/css';
+
+const ContentTypeMapping: Record<string, ContentType> = {
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  json: 'application/json',
+  js: 'text/javascript',
+  html: 'text/html',
+  css: 'text/css',
+};
+
+const kValidFileExtensions = Object.keys(ContentTypeMapping);
+
+export interface Asset {
+  data: Uint8Array;
+  contentType: ContentType;
 }
 
+export type StaticEntryPoint = Record<string, Asset>;
 export type StaticAssets = Required<Record<EntryPointName, StaticEntryPoint>>;
-
-export const kStaticPaths = [
-  '/index.html',
-  '/index.css',
-  '/app.js',
-  '/app.js.map',
-] as const;
-
-export const kStaticAssetsPathPrefix = '/assets/';
-
-export type StaticPath = (typeof kStaticPaths)[number];
 
 export class StaticAssetsEndpoint implements Endpoint {
   filter(
@@ -39,91 +54,41 @@ export class StaticAssetsEndpoint implements Endpoint {
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
-    const path = getRequestPath<StaticPath>(req);
+    let path = getRequestPath(req);
 
     const pathComps = path.split('/');
 
-    let ep: EntryPointName = 'web-app';
-    if (
-      // pathComps.length === 3 &&
-      kEntryPointsNames.includes(pathComps[1] as EntryPointName)
-    ) {
-      if (ep !== (pathComps[1] as EntryPointName)) {
-        ep = pathComps[1] as EntryPointName;
-      }
+    let ep: EntryPointName = EntryPointDefault;
+    if (kEntryPointsNames.includes(pathComps[1] as EntryPointName)) {
+      ep = pathComps[1] as EntryPointName;
     }
     const staticEP = services.staticAssets && services.staticAssets[ep];
 
-    if (path.startsWith(kStaticAssetsPathPrefix)) {
-      const asset =
-        staticEP?.assets &&
-        staticEP.assets[path.substring(kStaticAssetsPathPrefix.length)];
-      return Promise.resolve(
-        new Response(asset, {
-          headers: {
-            'content-type': 'text/javascript; charset=utf-8',
-          },
-          status: asset ? 200 : 404,
-        })
-      );
+    if (!staticEP) {
+      return Promise.resolve(new Response(null, { status: 404 }));
     }
 
-    const filename = ep === 'web-app' ? path.substring(1) : pathComps[2];
-    switch (filename) {
-      case 'app.js': {
-        return Promise.resolve(
-          new Response(staticEP?.js, {
-            headers: {
-              'content-type': 'text/javascript; charset=utf-8',
-            },
-            status: staticEP?.js ? 200 : 404,
-          })
-        );
-      }
-
-      case 'app.js.map': {
-        return Promise.resolve(
-          new Response(staticEP?.sourceMap, {
-            headers: {
-              'content-type': 'application/json; charset=utf-8',
-            },
-            status: staticEP?.sourceMap ? 200 : 404,
-          })
-        );
-      }
-
-      case 'index.css': {
-        return Promise.resolve(
-          new Response(staticEP?.css, {
-            headers: {
-              'content-type': 'text/css; charset=utf-8',
-            },
-            status: staticEP?.css ? 200 : 404,
-          })
-        );
-      }
-
-      case 'index.html':
-      default: {
-        return Promise.resolve(
-          new Response(staticEP?.html, {
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
-            },
-            status: staticEP?.html ? 200 : 404,
-          })
-        );
-      }
+    const epRelativePath =
+      ep === EntryPointDefault ? path : path.substring(ep.length + 1);
+    const asset = staticEP[epRelativePath] || staticEP['/index.html'];
+    if (!asset) {
+      return Promise.resolve(new Response(null, { status: 404 }));
     }
+
+    return Promise.resolve(
+      new Response(asset.data, {
+        headers: {
+          'content-type': asset.contentType,
+        },
+      })
+    );
   }
 }
 
-const kValidFileExtensions = ['svg', 'png', 'jpg', 'json'];
-
 export async function compileAssetsDirectory(
   ...assetsDirectories: string[]
-): Promise<Record<string, string>> {
-  const result: Record<string, string> = {};
+): Promise<Record<string, Asset>> {
+  const result: Record<string, Asset> = {};
   for (const dir of assetsDirectories) {
     if (!(await exists(dir))) {
       continue;
@@ -134,7 +99,11 @@ export async function compileAssetsDirectory(
       followSymlinks: false,
       exts: kValidFileExtensions,
     })) {
-      result[path.substring(dir.length + 1)] = await Deno.readTextFile(path);
+      const ext = extname(path).substring(1) as keyof typeof ContentTypeMapping;
+      result[path.substring(dir.length)] = {
+        data: await Deno.readFile(path),
+        contentType: ContentTypeMapping[ext] || 'application/octet-stream',
+      };
     }
   }
   return result;

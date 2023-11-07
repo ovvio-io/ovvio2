@@ -9,6 +9,7 @@ const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
 
 export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
 export type EntryPointName = (typeof kEntryPointsNames)[number];
+export const EntryPointDefault: EntryPointName = 'web-app';
 
 async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
   const repoPath = await getRepositoryPath();

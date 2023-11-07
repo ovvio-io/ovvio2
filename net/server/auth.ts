@@ -159,12 +159,18 @@ export class AuthEndpoint implements Endpoint {
     )}/auth/temp-login?t=${encodeBase64Url(JSON.stringify(signedToken))}`;
     // Only send the mail if a user really exists. We send the email
     // asynchronously both for speed and to avoid timing attacks.
-    if (fetchUserByEmail(services, email) !== undefined) {
+    const userRecord = fetchUserByEmail(services, email);
+    if (userRecord !== undefined) {
       smtp.send({
         to: email,
         subject: 'Login to Ovvio',
         plaintext: `Click on this link to login to Ovvio: ${clickURL}`,
-        html: ResetPasswordEmail({ clickURL }),
+        html: ResetPasswordEmail({
+          clickURL,
+          baseUrl: getBaseURL(services),
+          username: userRecord.get('name') || 'Anonymous',
+          orgname: services.organizationId,
+        }),
       });
     }
     return new Response('OK', { status: 200 });

@@ -9,16 +9,27 @@ import {
   MjmlColumn,
   MjmlButton,
   MjmlImage,
+  MjmlText,
 } from '../external/mjml-react/index.tsx';
 import { renderReactToHtml } from './render.ts';
 import { styleguide } from '../styles/styleguide.ts';
 import { lightTheme as theme } from '../styles/theme.tsx';
+import { getBaseURL } from '../net/server/utils.ts';
 
 export interface ResetPasswordEmailProps {
   clickURL: string;
+  username: string;
+  orgname: string;
+  baseUrl: string;
 }
 
-export function ResetPasswordEmail({ clickURL }: ResetPasswordEmailProps) {
+export function ResetPasswordEmail({
+  clickURL,
+  username,
+  orgname,
+  baseUrl,
+}: ResetPasswordEmailProps) {
+  console.log('logo url = ' + `${baseUrl}/assets/logo.png`);
   return renderReactToHtml(
     <Mjml>
       <MjmlHead>
@@ -27,20 +38,18 @@ export function ResetPasswordEmail({ clickURL }: ResetPasswordEmailProps) {
       </MjmlHead>
       {/* <MjmlBody width={500}> */}
       <MjmlBody>
-        <MjmlSection fullWidth backgroundColor="white">
+        <MjmlSection fullWidth backgroundColor="white" textAlign="center">
           <MjmlColumn>
-            <MjmlImage src="https://static.wixstatic.com/media/5cb24728abef45dabebe7edc1d97ddd2.jpg" />
+            <MjmlImage src={`${baseUrl}/logo.png`} />
           </MjmlColumn>
         </MjmlSection>
-        <MjmlSection>
+        <MjmlSection fullWidth backgroundColor="white" textAlign="center">
           <MjmlColumn>
-            <MjmlButton
-              padding="20px"
-              backgroundColor="#346DB7"
-              href="https://www.wix.com/"
-            >
-              I like it!
-            </MjmlButton>
+            <MjmlText>Hi {username}! You're almost there!</MjmlText>
+            <MjmlText>
+              Confirm your email address and you’ll join {orgname} team at Ovvio
+              in no time
+            </MjmlText>
           </MjmlColumn>
         </MjmlSection>
       </MjmlBody>

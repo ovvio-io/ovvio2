@@ -32,20 +32,30 @@ async function rebuildAssets(
   const buildResults = await ctx.rebuild();
   const repoPath = await getRepositoryPath();
   const result = {} as StaticAssets;
+  const textEncoder = new TextEncoder();
   for (const ep of kEntryPointsNames) {
     const { source, map } = buildResults[ep];
-    result[ep] = {
-      js: generateConfigSnippet(version) + source,
-      sourceMap: map,
-      html: await Deno.readTextFile(
-        path.join(repoPath, ep, 'src', 'index.html')
-      ),
-      css: await Deno.readTextFile(path.join(repoPath, ep, 'src', 'index.css')),
-      assets: await compileAssetsDirectory(
-        path.join(repoPath, 'assets'),
-        path.join(repoPath, ep, 'assets')
-      ),
+    const assets = await compileAssetsDirectory(
+      path.join(repoPath, 'assets'),
+      path.join(repoPath, ep, 'assets')
+    );
+    assets['/app.js'] = {
+      data: textEncoder.encode(generateConfigSnippet(version) + source),
+      contentType: 'text/javascript',
     };
+    assets['/app.js.map'] = {
+      data: textEncoder.encode(map),
+      contentType: 'application/json',
+    };
+    assets['/index.html'] = {
+      data: await Deno.readFile(path.join(repoPath, ep, 'src', 'index.html')),
+      contentType: 'text/html',
+    };
+    assets['/index.css'] = {
+      data: await Deno.readFile(path.join(repoPath, ep, 'src', 'index.css')),
+      contentType: 'text/css',
+    };
+    result[ep] = assets;
   }
   return result;
 }
