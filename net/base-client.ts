@@ -194,6 +194,7 @@ export abstract class BaseClient<
   }
 
   private async sendSyncMessage(): Promise<void> {
+    debugger;
     if (this.closed) {
       return;
     }

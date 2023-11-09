@@ -7,6 +7,7 @@ import { assert } from '../../base/error.ts';
  */
 export class BaseService<T> {
   private _services?: T;
+  private _active = false;
 
   setup(services: T): Promise<void> {
     this._services = services;
@@ -21,6 +22,15 @@ export class BaseService<T> {
     return this._services;
   }
 
-  start(): void {}
-  stop(): void {}
+  get active(): boolean {
+    return this._active;
+  }
+
+  start(): void {
+    this._active = true;
+  }
+
+  stop(): void {
+    this._active = false;
+  }
 }

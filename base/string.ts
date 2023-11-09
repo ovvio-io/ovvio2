@@ -157,3 +157,19 @@ const dirRegex = new RegExp('^[^' + ltrChars + ']*[' + rtlChars + ']');
 export function isRTL(s: string): boolean {
   return dirRegex.test(s);
 }
+
+const kEmailRegex = /^[\w-+\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+export function normalizeEmail(email: string): string;
+export function normalizeEmail(email: undefined): undefined;
+export function normalizeEmail(email: string | undefined): string | undefined {
+  if (!email) {
+    return undefined;
+  }
+  email = email.trim();
+  if (!email.length) {
+    return undefined;
+  }
+  email = email.toLowerCase();
+  const match = email.match(kEmailRegex);
+  return match ? match[0] : undefined;
+}

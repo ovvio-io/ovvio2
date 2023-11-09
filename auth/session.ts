@@ -68,16 +68,31 @@ function serializeCommitForSigning(commit: Commit): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
-export async function sign(
+export async function signBuffer(
   session: OwnedSession,
-  commit: Commit
-): Promise<Commit> {
+  buffer: string | Uint8Array
+): Promise<string> {
+  if (typeof buffer === 'string') {
+    const encoder = new TextEncoder();
+    buffer = encoder.encode(buffer);
+  }
   const sig = await crypto.subtle.sign(
     {
       name: 'ECDSA',
       hash: { name: 'SHA-384' },
     },
     session.privateKey,
+    buffer
+  );
+  return `${session.id}/${encodeBase64Url(sig)}`;
+}
+
+export async function sign(
+  session: OwnedSession,
+  commit: Commit
+): Promise<Commit> {
+  const signature = await signBuffer(
+    session,
     serializeCommitForSigning(commit)
   );
   return new Commit({
@@ -87,7 +102,7 @@ export async function sign(
     contents: commit.contents,
     timestamp: commit.timestamp,
     parents: commit.parents,
-    signature: `${session.id}/${encodeBase64Url(sig)}`,
+    signature,
   });
 }
 
@@ -104,11 +119,12 @@ function parseSignature(
   return [sig.substring(0, sepIdx), sig.substring(sepIdx + 1)];
 }
 
-export async function verify(
+export async function verifyBuffer(
   expectedSigner: Session,
-  commit: Commit
+  signature: string | undefined,
+  buffer: string | Uint8Array
 ): Promise<boolean> {
-  const [sessionId, sig] = parseSignature(commit.signature);
+  const [sessionId, sig] = parseSignature(signature);
   if (
     sessionId === undefined ||
     sig === undefined ||
@@ -119,6 +135,10 @@ export async function verify(
   if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
     return false;
   }
+  if (typeof buffer === 'string') {
+    const encoder = new TextEncoder();
+    buffer = encoder.encode(buffer);
+  }
   return await crypto.subtle.verify(
     {
       name: 'ECDSA',
@@ -126,12 +146,24 @@ export async function verify(
     },
     expectedSigner.publicKey,
     decodeBase64Url(sig),
+    buffer
+  );
+}
+
+export async function verify(
+  expectedSigner: Session,
+  commit: Commit
+): Promise<boolean> {
+  return await verifyBuffer(
+    expectedSigner,
+    commit.signature,
     serializeCommitForSigning(commit)
   );
 }
 
-export function signerIdForCommit(commit: Commit): string | undefined {
-  const sig = commit.signature;
+export function signerIdFromSignature(
+  sig: string | undefined
+): string | undefined {
   if (sig === undefined) {
     return undefined;
   }
@@ -143,8 +175,7 @@ export function signerIdForCommit(commit: Commit): string | undefined {
 }
 
 export function signerIdFromCommit(commit: Commit): string | undefined {
-  const comps = parseSignature(commit.signature);
-  return comps && comps[0];
+  return signerIdFromSignature(commit.signature);
 }
 
 export async function encodeSession(
@@ -247,19 +278,22 @@ export function encodedSessionFromRecord(record: Record): EncodedSession {
  * respect as signers of commits.
  */
 export class TrustPool {
-  readonly currentSession: OwnedSession;
   readonly roots: Session[];
   private readonly _sessions: Map<string, Session>;
+  private readonly _changeCallback?: () => void;
+  private _currentSession: OwnedSession;
 
   constructor(
     currentSession: OwnedSession,
     roots?: Session[],
-    trustedSessions?: Session[]
+    trustedSessions?: Session[],
+    changeCallback?: () => void
   ) {
-    this.currentSession = currentSession;
+    this._currentSession = currentSession;
     this.roots = roots || [];
     const sessions = new Map<string, Session>();
     this._sessions = sessions;
+    this._changeCallback = changeCallback;
 
     if (trustedSessions) {
       trustedSessions.forEach((s) => sessions.set(s.id, s));
@@ -269,6 +303,10 @@ export class TrustPool {
       sessions.set(s.id, s);
     }
     sessions.set(currentSession.id, currentSession);
+  }
+
+  get currentSession(): OwnedSession {
+    return this._currentSession;
   }
 
   get trustedSessions(): Session[] {
@@ -286,7 +324,7 @@ export class TrustPool {
     if (!commit.signature) {
       return false;
     }
-    const signerId = signerIdForCommit(commit);
+    const signerId = signerIdFromCommit(commit);
     if (
       this.currentSession.owner === 'root' &&
       signerId === this.currentSession.id
@@ -340,6 +378,19 @@ export class TrustPool {
           roots.push(s);
         }
       }
+      if (
+        s.id === this.currentSession.id &&
+        ((s.owner && !this.currentSession.owner) ||
+          s.expiration.getTime() > this.currentSession.expiration.getTime())
+      ) {
+        this._currentSession = {
+          ...s,
+          privateKey: this.currentSession.privateKey,
+        };
+      }
+    }
+    if (updated && this._changeCallback) {
+      this._changeCallback();
     }
     return updated;
   }
@@ -349,7 +400,7 @@ export class TrustPool {
   }
 
   async verify(commit: Commit): Promise<boolean> {
-    const signerId = signerIdForCommit(commit);
+    const signerId = signerIdFromCommit(commit);
     if (!signerId) {
       return false;
     }

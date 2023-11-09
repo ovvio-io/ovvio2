@@ -147,7 +147,6 @@ const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
 ]);
 
 const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
-  passwordHash: TYPE_STR, // Hash + salt
   lastLoggedIn: TYPE_DATE,
   seenTutorials: {
     type: TYPE_STR_SET,

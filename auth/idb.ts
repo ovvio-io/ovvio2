@@ -19,7 +19,7 @@ interface SessionDBSchema extends DBSchema {
 
 const kOpenDBOpts: OpenDBCallbacks<SessionDBSchema> = {
   upgrade(db, oldVersion, newVersion, txn, event) {
-    db.createObjectStore('session', { keyPath: 'session.id' });
+    db.createObjectStore('session', { keyPath: 'currentSession.id' });
   },
 };
 

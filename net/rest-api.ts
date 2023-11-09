@@ -1,6 +1,11 @@
-import { EncodedSession, Session, decodeSession } from '../auth/session.ts';
+import {
+  EncodedSession,
+  OwnedSession,
+  Session,
+  decodeSession,
+  signBuffer,
+} from '../auth/session.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
-import { Record } from '../cfds/base/record.ts';
 
 export async function createNewSession(
   publicKey: CryptoKey
@@ -25,6 +30,21 @@ export async function createNewSession(
   } catch (_err: unknown) {
     debugger;
     return [undefined, undefined];
+  }
+}
+
+export async function sendLoginEmail(
+  session: OwnedSession,
+  email: string
+): Promise<boolean> {
+  try {
+    const resp = await sendJSONToEndpoint('/auth/send-login-email', {
+      email,
+      signature: await signBuffer(session, email),
+    });
+    return resp.status === 200;
+  } catch (_err: unknown) {
+    return false;
   }
 }
 

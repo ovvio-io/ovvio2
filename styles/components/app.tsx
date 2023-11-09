@@ -9,18 +9,22 @@ const domNode = document.getElementById('root')!;
 
 type AppProps = React.PropsWithChildren<Record<string, unknown>>;
 
-export function App({ children }: AppProps) {
+export function SkeletonApp({ children }: AppProps) {
   return (
     <React.StrictMode>
-      <SessionProvider>
-        <StyleProvider dev={false}>
-          <CfdsClientProvider>
-            <ThemeProvider theme={theme} isRoot={true}>
-              {children}
-            </ThemeProvider>
-          </CfdsClientProvider>
-        </StyleProvider>
-      </SessionProvider>
+      <StyleProvider dev={false}>
+        <ThemeProvider theme={theme} isRoot={true}>
+          {children}
+        </ThemeProvider>
+      </StyleProvider>
     </React.StrictMode>
+  );
+}
+
+export function App({ children }: AppProps) {
+  return (
+    <SessionProvider>
+      <CfdsClientProvider>{children}</CfdsClientProvider>
+    </SessionProvider>
   );
 }

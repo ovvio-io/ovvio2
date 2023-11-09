@@ -102,7 +102,9 @@ export async function loadEssentialRepositories(
 ): Promise<void> {
   await graph.loadRepository(Repository.id('sys', 'dir'));
   // await graph.syncRepository(Repository.id('sys', 'dir'));
-  await graph.loadRepository(Repository.id('user', graph.rootKey));
+  if (graph.trustPool.currentSession.owner) {
+    await graph.loadRepository(Repository.id('user', graph.rootKey));
+  }
   // await graph.syncRepository(Repository.id('user', graph.rootKey));
 }
 
@@ -116,6 +118,11 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
     const manager = new GraphManager(trustPool, getBaseURL());
 
     loadEssentialRepositories(manager).then(() => {
+      // Don't run any setup until a successfull login
+      debugger;
+      if (!trustPool.currentSession.owner) {
+        return;
+      }
       if (!manager.hasVertex(manager.rootKey)) {
         manager.createVertex(NS_USERS, {}, manager.rootKey);
       }
@@ -196,7 +203,7 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'SessionAlive',
         foreground: document.visibilityState === 'visible',
       });

@@ -10,6 +10,8 @@ import { LoginView } from './login/login.tsx';
 import { assert } from '../base/error.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { styleguide } from '../styles/styleguide.ts';
+import { App, SkeletonApp } from '../styles/components/app.tsx';
+import { CfdsClientProvider } from '../web-app/src/core/cfds/react/graph.tsx';
 
 const kRootBannerHeight = styleguide.gridbase * 6;
 
@@ -65,8 +67,21 @@ async function setupSession(
               };
             }
             roots = serverRoots!;
+            // await storeSessionData(currentSession, roots, trustedSessions);
           }
-          return new TrustPool(currentSession, roots, trustedSessions);
+          const pool = new TrustPool(
+            currentSession,
+            roots,
+            trustedSessions,
+            () => {
+              storeSessionData(
+                pool.currentSession,
+                pool.roots,
+                pool.trustedSessions
+              );
+            }
+          );
+          return pool;
         },
         30000,
         5000
@@ -122,10 +137,20 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
   const trustPool = useMaybeTrustPool();
   const styles = useStyles();
   if (!trustPool) {
-    return <LoadingView />;
+    return (
+      <SkeletonApp>
+        <div className={cn(styles.contentsArea)}>
+          <LoadingView />
+        </div>
+      </SkeletonApp>
+    );
   }
   if (!trustPool.currentSession.owner) {
-    return <LoginView session={trustPool.currentSession} />;
+    children = (
+      <CfdsClientProvider>
+        <LoginView session={trustPool.currentSession} />
+      </CfdsClientProvider>
+    );
   }
   let banner =
     trustPool.currentSession.owner !== 'root' ? null : (

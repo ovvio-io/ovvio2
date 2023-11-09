@@ -15,6 +15,7 @@ import {
   JSONEncoder,
 } from '../../base/core-types/encoding/json.ts';
 import { JSONObject } from '../../base/interfaces.ts';
+import { SimpleTimer } from '../../base/timer.ts';
 
 export interface SMTPSettings extends JSONObject {
   hostname: string;
@@ -27,19 +28,43 @@ export interface SMTPSettings extends JSONObject {
 export interface ServerSettings {
   session: OwnedSession;
   serverTenantId: string;
-  setupCompleted: boolean;
+  operatorEmails: readonly string[];
   smtp?: SMTPSettings;
 }
 
 export class SettingsService extends BaseService<ServerServices> {
+  private _reloadTimer: SimpleTimer;
   private _settings?: ServerSettings;
+  private _watcher?: Deno.FsWatcher;
+
+  constructor() {
+    super();
+    this._reloadTimer = new SimpleTimer(
+      100,
+      false,
+      () => this.reloadSettingsFromDisk(),
+      'SettingsReload'
+    );
+  }
 
   async setup(ctx: ServerServices): Promise<void> {
     await super.setup(ctx);
+    await this.reloadSettingsFromDisk();
+    this.watchSettingsFile();
+  }
+
+  /**
+   * Loads the settings file and initializes the settings to a working state.
+   *
+   * @returns True if loaded successfully from disk, false if some values had
+   * to be generated for the first time (thus needing a followup disk write).
+   */
+  private async reloadSettingsFromDisk(): Promise<void> {
     let session: OwnedSession | undefined;
     let serverTenantId = 's1';
-    let setupCompleted = false;
     let smtp: SMTPSettings | undefined;
+    let updatedSettings = false;
+    let operatorEmails: string[] = [];
     try {
       const text = await Deno.readTextFile(this.jsonFilePath);
       const decoder = new JSONDecoder(JSON.parse(text));
@@ -51,29 +76,39 @@ export class SettingsService extends BaseService<ServerServices> {
         session = (await decodeSession(encodedSession)) as OwnedSession;
       }
       serverTenantId = decoder.get<string>('serverTenantId') || 's1';
-      setupCompleted = decoder.get<boolean>('setupCompleted') || false;
       if (decoder.has('smtp')) {
         smtp = decoder.get<SMTPSettings>('smtp');
       }
+      operatorEmails = decoder.get<string[]>('operatorEmails') || [];
     } catch (_e: unknown) {
       //
-    }
-    if (this._settings) {
-      return;
     }
 
     if (!session) {
       session = await generateSession('root');
+      updatedSettings = true;
     }
     this._settings = {
-      session: session,
-      serverTenantId: serverTenantId,
-      setupCompleted,
+      session,
+      serverTenantId,
+      operatorEmails,
     };
     if (smtp) {
       this._settings.smtp = smtp;
     }
-    await this.persistSettings();
+    if (updatedSettings) {
+      await this.persistSettings();
+    }
+  }
+
+  private async watchSettingsFile(): Promise<void> {
+    this._watcher = Deno.watchFs(this.jsonFilePath);
+    for await (const _event of this._watcher!) {
+      if (!this.active) {
+        continue;
+      }
+      this._reloadTimer.schedule();
+    }
   }
 
   get jsonFilePath(): string {
@@ -84,15 +119,6 @@ export class SettingsService extends BaseService<ServerServices> {
     assert(this._settings !== undefined);
     return this._settings.session;
   }
-
-  get setupCompleted(): boolean {
-    return this._settings?.setupCompleted || false;
-  }
-
-  set setupCompleted(flag: boolean) {
-    this._settings!.setupCompleted = flag;
-  }
-
   get serverTenantId(): string {
     return this._settings!.serverTenantId;
   }
@@ -107,6 +133,10 @@ export class SettingsService extends BaseService<ServerServices> {
 
   set smtp(settings: SMTPSettings | undefined) {
     this._settings!.smtp = settings;
+  }
+
+  get operatorEmails(): readonly string[] {
+    return this._settings?.operatorEmails || [];
   }
 
   async persistSettings(): Promise<void> {
