@@ -157,29 +157,35 @@ export class AuthEndpoint implements Endpoint {
       return responseForError('MissingSignature');
     }
 
-    const signerId = signerIdFromSignature(sig);
-    if (!signerId) {
+    const requestingSessionId = signerIdFromSignature(sig);
+    if (!requestingSessionId) {
       return responseForError('AccessDenied');
     }
 
-    const session = fetchSessionById(services, signerId);
-    if (!session) {
+    const requestingSession = fetchSessionById(services, requestingSessionId);
+    if (!requestingSession) {
       return responseForError('AccessDenied');
     }
 
-    if (!verifyBuffer(await sessionFromRecord(session), sig, email)) {
+    // Make sure a session doesn't try to change its owner
+    if (requestingSession.get('owner') !== undefined) {
+      return responseForError('AccessDenied');
+    }
+
+    // Verify it's actually this session who generated the request
+    if (!verifyBuffer(await sessionFromRecord(requestingSession), sig, email)) {
       return responseForError('AccessDenied');
     }
 
     const [userKey, userRecord] = fetchUserByEmail(services, email);
 
     // TODO (ofri): Rate limit this call
-
+    debugger;
     // We unconditionally generate the signed token so this call isn't
     // vulnerable to timing attacks.
     const signedToken = await signToken(services.settings.session, {
       u: userKey || '',
-      s: signerId,
+      s: requestingSessionId,
       ts: Date.now(),
       sl: uniqueId(),
     });
@@ -238,6 +244,9 @@ export class AuthEndpoint implements Endpoint {
       }
       const sessionRecord = fetchSessionById(services, token.t.s);
       if (!sessionRecord) {
+        return responseForError('AccessDenied');
+      }
+      if (sessionRecord.get('owner') !== undefined) {
         return responseForError('AccessDenied');
       }
       sessionRecord.set('owner', userKey);

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { retry } from '../base/time.ts';
 import { Logger } from '../logging/log.ts';
-import { createNewSession } from '../net/rest-api.ts';
+import { createNewSession, getBaseURL } from '../net/rest-api.ts';
 import { loadAllSessions, storeSessionData } from './idb.ts';
 import { OwnedSession, TrustPool, generateKeyPair } from './session.ts';
 import { useLogger } from '../web-app/src/core/cfds/react/logger.tsx';
@@ -12,6 +12,8 @@ import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { styleguide } from '../styles/styleguide.ts';
 import { App, SkeletonApp } from '../styles/components/app.tsx';
 import { CfdsClientProvider } from '../web-app/src/core/cfds/react/graph.tsx';
+import { GraphManager } from '../cfds/client/graph/graph-manager.ts';
+import { Repository } from '../repo/repo.ts';
 
 const kRootBannerHeight = styleguide.gridbase * 6;
 
@@ -91,6 +93,7 @@ async function setupSession(
         break;
       }
     } catch (err: any) {
+      debugger;
       logger.log({
         severity: 'INFO',
         error: 'SessionError',
@@ -133,10 +136,33 @@ export type SessionProviderProps = React.PropsWithChildren<{
   className?: string;
 }>;
 
+export async function loadEssentialRepositories(
+  graph: GraphManager
+): Promise<void> {
+  await graph.loadRepository(Repository.id('sys', 'dir'));
+  // await graph.syncRepository(Repository.id('sys', 'dir'));
+  if (graph.trustPool.currentSession.owner) {
+    await graph.loadRepository(Repository.id('user', graph.rootKey));
+  }
+  // await graph.syncRepository(Repository.id('user', graph.rootKey));
+}
 export function SessionProvider({ children, className }: SessionProviderProps) {
   const trustPool = useMaybeTrustPool();
   const styles = useStyles();
-  if (!trustPool) {
+  const baseUrl = getBaseURL();
+  const graph = useMemo(
+    () => (trustPool ? new GraphManager(trustPool, baseUrl) : undefined),
+    [trustPool, baseUrl]
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (graph) {
+      loadEssentialRepositories(graph).then(() => setLoading(false));
+    }
+  }, [graph, setLoading]);
+
+  if (!trustPool || loading) {
     return (
       <SkeletonApp>
         <div className={cn(styles.contentsArea)}>
@@ -145,12 +171,9 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
       </SkeletonApp>
     );
   }
+
   if (!trustPool.currentSession.owner) {
-    children = (
-      <CfdsClientProvider>
-        <LoginView session={trustPool.currentSession} />
-      </CfdsClientProvider>
-    );
+    return <LoginView session={trustPool.currentSession} />;
   }
   let banner =
     trustPool.currentSession.owner !== 'root' ? null : (
@@ -160,8 +183,10 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
     );
   return (
     <sessionContext.Provider value={{ trustPool }}>
-      {banner}
-      <div className={cn(styles.contentsArea)}>{children}</div>
+      <CfdsClientProvider graphManager={graph!}>
+        {banner}
+        <div className={cn(styles.contentsArea)}>{children}</div>
+      </CfdsClientProvider>
     </sessionContext.Provider>
   );
 }

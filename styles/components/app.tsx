@@ -22,9 +22,5 @@ export function SkeletonApp({ children }: AppProps) {
 }
 
 export function App({ children }: AppProps) {
-  return (
-    <SessionProvider>
-      <CfdsClientProvider>{children}</CfdsClientProvider>
-    </SessionProvider>
-  );
+  return <SessionProvider>{children}</SessionProvider>;
 }

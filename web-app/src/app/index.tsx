@@ -8,16 +8,9 @@ import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
 import { WorkspacesBar } from './workspaces-bar/index.tsx';
 import { createBrowserRouter } from 'react-router-dom';
-import { uniqueId } from '../../../base/common.ts';
-import { StyleProvider } from '../../../styles/css-objects/context.tsx';
-import {
-  CfdsClientProvider,
-  useIsGraphLoading,
-} from '../core/cfds/react/graph.tsx';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
-import { SessionProvider } from '../../../auth/react.tsx';
 import { App } from '../../../styles/components/app.tsx';
 
 const useStyles = makeStyles((theme) => ({
@@ -48,23 +41,13 @@ type RootProps = React.PropsWithChildren<{
 
 function Root({ style, children }: RootProps) {
   const styles = useStyles();
-  const isLoading = useIsGraphLoading();
-  const [loaded, setLoaded] = useState(!isLoading);
-
-  if (!loaded && !isLoading) {
-    setLoaded(true);
-  }
 
   return (
     <div className={cn(styles.root)} style={style}>
-      {loaded && <WorkspacesBar key={'wsbar'} />}
-      {loaded ? (
-        <div className={cn(styles.content)}>
-          <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
-        </div>
-      ) : (
-        <LoadingView />
-      )}
+      <WorkspacesBar key={'wsbar'} />
+      <div className={cn(styles.content)}>
+        <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
+      </div>
     </div>
   );
 }

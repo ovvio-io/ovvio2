@@ -26,19 +26,12 @@ import { useTrustPool } from '../../../../../auth/react.tsx';
 
 type ContextProps = {
   graphManager?: GraphManager;
-  loadingFinished: boolean;
 };
 
-export const CFDSContext = React.createContext<ContextProps>({
-  loadingFinished: false,
-});
+export const CFDSContext = React.createContext<ContextProps>({});
 
 export function useGraphManager(): GraphManager {
   return useContext(CFDSContext).graphManager!;
-}
-
-export function useIsGraphLoading(): boolean {
-  return !useContext(CFDSContext).loadingFinished;
 }
 export function useRootUser(): VertexManager<User> {
   const graph = useGraphManager();
@@ -85,9 +78,9 @@ export function useCfdsContext(): ContextProps {
   return useContext(CFDSContext);
 }
 
-export type CfdsClientProviderProps = React.PropsWithChildren<
-  Record<string, unknown>
->;
+export type CfdsClientProviderProps = React.PropsWithChildren<{
+  graphManager: GraphManager;
+}>;
 
 function getLastUsedViewKey(graph: GraphManager): string {
   return graph.rootKey + '-ViewLastUsed';
@@ -97,108 +90,84 @@ export interface ClientData {
   graphManager?: GraphManager;
 }
 
-export async function loadEssentialRepositories(
-  graph: GraphManager
-): Promise<void> {
-  await graph.loadRepository(Repository.id('sys', 'dir'));
-  // await graph.syncRepository(Repository.id('sys', 'dir'));
-  if (graph.trustPool.currentSession.owner) {
-    await graph.loadRepository(Repository.id('user', graph.rootKey));
-  }
-  // await graph.syncRepository(Repository.id('user', graph.rootKey));
-}
-
-export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
+export function CfdsClientProvider({
+  children,
+  graphManager,
+}: CfdsClientProviderProps) {
   const logger = useLogger();
   const trustPool = useTrustPool();
   const device = useCurrentDevice();
-  const [loaded, setLoaded] = useState(false);
-
-  const graphManager = useMemo(() => {
-    const manager = new GraphManager(trustPool, getBaseURL());
-
-    loadEssentialRepositories(manager).then(() => {
-      // Don't run any setup until a successfull login
-      debugger;
-      if (!trustPool.currentSession.owner) {
-        return;
-      }
-      if (!manager.hasVertex(manager.rootKey)) {
-        manager.createVertex(NS_USERS, {}, manager.rootKey);
-      }
-      const lastUsedKey = getLastUsedViewKey(manager);
-      if (!manager.hasVertex(lastUsedKey)) {
-        manager.createVertex(
-          SchemeNamespace.VIEWS,
-          {
-            owner: manager.rootKey,
-          },
-          lastUsedKey
-        );
-      }
-      // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
-      const globalView = manager.createVertex<View>(
-        SchemeNamespace.VIEWS,
-        { owner: manager.rootKey },
-        'ViewGlobal',
-        true
-      );
-      const tasksView = manager.createVertex<View>(
-        SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewTasks',
-        true
-      ).manager;
-      const notesView = manager.createVertex<View>(
-        SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewNotes',
-        true
-      ).manager;
-      const overviewView = manager.createVertex<View>(
-        SchemeNamespace.VIEWS,
-        { owner: manager.rootKey, parentView: 'ViewGlobal' },
-        'ViewOverview',
-        true
-      ).manager;
-      const lastUsed = manager.getVertex<View>(lastUsedKey);
-      if (!lastUsed.record.has('workspaceBarCollapsed')) {
-        lastUsed.workspaceBarCollapsed = device <= Devices.Tablet;
-      }
-      globalView.update(kViewPropsGlobal, lastUsed);
-      if (globalView.selectedTabId === 'overview') {
-        overviewView.getVertexProxy().update(kViewPropsTab, lastUsed);
-      } else if (globalView.selectedTabId === 'notes') {
-        notesView.getVertexProxy().update(kViewPropsTab, lastUsed);
-      } else {
-        tasksView.getVertexProxy().update(kViewPropsTab, lastUsed);
-      }
-      const callback = () => {
-        const globalView = manager.getVertex<View>('ViewGlobal');
-        const activeView =
-          globalView.selectedTabId === 'notes'
-            ? notesView
-            : globalView.selectedTabId === 'overview'
-            ? overviewView
-            : tasksView;
-        manager
-          .getVertex<View>(lastUsedKey)
-          .update(
-            kViewPersistentProps,
-            globalView,
-            activeView.getVertexProxy()
-          );
-      };
-      globalView.onVertexChanged(callback);
-      notesView.onVertexChanged(callback);
-      tasksView.onVertexChanged(callback);
-      overviewView.onVertexChanged(callback);
-      setLoaded(true);
-    });
-    // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
-
-    return manager;
-  }, [trustPool, device]);
+  // Don't run any setup until a successful login
+  if (!trustPool.currentSession.owner) {
+    return;
+  }
+  if (!graphManager.hasVertex(graphManager.rootKey)) {
+    graphManager.createVertex(NS_USERS, {}, graphManager.rootKey);
+  }
+  const lastUsedKey = getLastUsedViewKey(graphManager);
+  if (!graphManager.hasVertex(lastUsedKey)) {
+    graphManager.createVertex(
+      SchemeNamespace.VIEWS,
+      {
+        owner: graphManager.rootKey,
+      },
+      lastUsedKey
+    );
+  }
+  // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
+  const globalView = graphManager.createVertex<View>(
+    SchemeNamespace.VIEWS,
+    { owner: graphManager.rootKey },
+    'ViewGlobal',
+    true
+  );
+  const tasksView = graphManager.createVertex<View>(
+    SchemeNamespace.VIEWS,
+    { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
+    'ViewTasks',
+    true
+  ).manager;
+  const notesView = graphManager.createVertex<View>(
+    SchemeNamespace.VIEWS,
+    { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
+    'ViewNotes',
+    true
+  ).manager;
+  const overviewView = graphManager.createVertex<View>(
+    SchemeNamespace.VIEWS,
+    { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
+    'ViewOverview',
+    true
+  ).manager;
+  const lastUsed = graphManager.getVertex<View>(lastUsedKey);
+  if (!lastUsed.record.has('workspaceBarCollapsed')) {
+    lastUsed.workspaceBarCollapsed = device <= Devices.Tablet;
+  }
+  globalView.update(kViewPropsGlobal, lastUsed);
+  if (globalView.selectedTabId === 'overview') {
+    overviewView.getVertexProxy().update(kViewPropsTab, lastUsed);
+  } else if (globalView.selectedTabId === 'notes') {
+    notesView.getVertexProxy().update(kViewPropsTab, lastUsed);
+  } else {
+    tasksView.getVertexProxy().update(kViewPropsTab, lastUsed);
+  }
+  const callback = () => {
+    const globalView = graphManager.getVertex<View>('ViewGlobal');
+    const activeView =
+      globalView.selectedTabId === 'notes'
+        ? notesView
+        : globalView.selectedTabId === 'overview'
+        ? overviewView
+        : tasksView;
+    graphManager
+      .getVertex<View>(lastUsedKey)
+      .update(kViewPersistentProps, globalView, activeView.getVertexProxy());
+  };
+  globalView.onVertexChanged(callback);
+  notesView.onVertexChanged(callback);
+  tasksView.onVertexChanged(callback);
+  overviewView.onVertexChanged(callback);
+  // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {
     const sessionIntervalId = setInterval(() => {
@@ -223,9 +192,8 @@ export function CfdsClientProvider({ children }: CfdsClientProviderProps) {
   const ctx = useMemo<ContextProps>(
     () => ({
       graphManager: graphManager,
-      loadingFinished: loaded,
     }),
-    [graphManager, loaded]
+    [graphManager]
   );
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;

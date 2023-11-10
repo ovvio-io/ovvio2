@@ -269,11 +269,15 @@ export class GraphManager
         //
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
-        const mgr = this.getVertexManager(c.key);
-        if (c.session === this.trustPool.currentSession.id) {
-          mgr.touch();
-        } else {
-          mgr.commit();
+        if (
+          repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
+        ) {
+          const mgr = this.getVertexManager(c.key);
+          if (c.session === this.trustPool.currentSession.id) {
+            mgr.touch();
+          } else {
+            mgr.commit();
+          }
         }
 
         // Any kind of activity needs to reset the sync timer. This causes
