@@ -31,7 +31,8 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     const record = repo.valueForKey(commit.key);
     const userRecord = repo.valueForKey(userKey);
     const email = userRecord.get<string>('email');
-    const isOperator = email && fetchOperatorEmails().includes(email);
+    const operatorEmails = fetchOperatorEmails();
+    const isOperator = email && operatorEmails.includes(email);
     if (isOperator) {
       return true;
     }
@@ -43,8 +44,12 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         return users?.has(userKey) === true;
       }
 
-      // Readonly access to everyone
+      // Readonly access to everyone. Operators are transparent to everyone but
+      // other operators.
       case SchemeNamespace.USERS:
+        return !operatorEmails.includes(record.get<string>('email'));
+
+      // Readonly access to everyone
       case SchemeNamespace.SESSIONS:
         return write === false;
 
