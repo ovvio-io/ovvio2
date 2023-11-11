@@ -180,7 +180,7 @@ export class AuthEndpoint implements Endpoint {
     const [userKey, userRecord] = fetchUserByEmail(services, email);
 
     // TODO (ofri): Rate limit this call
-    debugger;
+
     // We unconditionally generate the signed token so this call isn't
     // vulnerable to timing attacks.
     const signedToken = await signToken(services.settings.session, {
@@ -215,7 +215,6 @@ export class AuthEndpoint implements Endpoint {
     req: Request
   ): Promise<Response> {
     const encodedToken = new URL(req.url).searchParams.get('t');
-    debugger;
     if (!encodedToken) {
       return responseForError('AccessDenied');
     }

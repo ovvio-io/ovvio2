@@ -245,8 +245,10 @@ export class SyncMessage<T extends SyncValueType>
     });
     const missingPeerValues: T[] = [];
     if (peerFilter && includeMissing) {
+      localSize = 0;
       for (const [id, v] of values) {
         localFilter.add(id);
+        ++localSize;
         if (!peerFilter.has(id)) {
           missingPeerValues.push(v);
         }

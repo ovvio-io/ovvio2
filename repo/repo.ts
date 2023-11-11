@@ -8,13 +8,18 @@ import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
 import { concatChanges, DataChanges } from '../cfds/base/object.ts';
 import { Record } from '../cfds/base/record.ts';
 import { assert } from '../base/error.ts';
-import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
 import { SchemeNamespace, kRecordIdField } from '../cfds/base/scheme-types.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
 import { repositoryForRecord } from './resolver.ts';
-import { TrustPool, sessionFromRecord, sign } from '../auth/session.ts';
+import {
+  Session,
+  TrustPool,
+  sessionFromRecord,
+  sign,
+} from '../auth/session.ts';
+import { filterIterable } from '../base/common.ts';
 
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
@@ -31,14 +36,23 @@ export interface RepoStorage<T extends RepoStorage<T>> {
   close(): void;
 }
 
+export type Authorizer<ST extends RepoStorage<ST>> = (
+  repo: Repository<ST>,
+  commit: Commit,
+  session: Session,
+  write: boolean
+) => boolean;
+
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly storage: ST;
   readonly trustPool: TrustPool;
+  readonly authorizer?: Authorizer<ST>;
 
-  constructor(storage: ST, trustPool: TrustPool) {
+  constructor(storage: ST, trustPool: TrustPool, authorizer?: Authorizer<ST>) {
     super();
     this.storage = storage;
     this.trustPool = trustPool;
+    this.authorizer = authorizer;
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -55,29 +69,63 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return id;
   }
 
-  get numberOfCommits(): number {
+  numberOfCommits(session?: Session): number {
+    const { authorizer } = this;
+    if (session && authorizer) {
+      let count = 0;
+      for (const _ of this.commits(session)) {
+        ++count;
+        return count;
+      }
+    }
     return this.storage.numberOfCommits();
   }
 
-  getCommit(id: string): Commit {
+  getCommit(id: string, session?: Session): Commit {
     const c = this.storage.getCommit(id);
     if (!c) {
       throw serviceUnavailable();
     }
+    const { authorizer } = this;
+    if (session && authorizer) {
+      if (!authorizer(this, c, session, false)) {
+        throw serviceUnavailable();
+      }
+    }
     return c;
   }
 
-  commits(): Iterable<Commit> {
+  hasCommit(id: string): boolean {
+    return this.storage.getCommit(id) !== undefined;
+  }
+
+  commits(session?: Session): Iterable<Commit> {
+    const { authorizer } = this;
+    if (session && authorizer) {
+      return filterIterable(this.storage.allCommits(), (c) =>
+        authorizer(this, c, session, false)
+      );
+    }
     return this.storage.allCommits();
   }
 
-  commitsForKey(key: string | null): Iterable<Commit> {
+  commitsForKey(key: string | null, session?: Session): Iterable<Commit> {
+    const { authorizer } = this;
+    if (session && authorizer) {
+      return filterIterable(this.storage.commitsForKey(key), (c) =>
+        authorizer(this, c, session, false)
+      );
+    }
     return this.storage.commitsForKey(key);
   }
 
-  leavesForKey(key: string | null, pendingCommit?: Commit): Commit[] {
+  leavesForKey(
+    key: string | null,
+    session?: Session,
+    pendingCommit?: Commit
+  ): Commit[] {
     const childrenPerCommit = new Map<string, Set<Commit>>();
-    for (const c of this.commitsForKey(key)) {
+    for (const c of this.commitsForKey(key, session)) {
       this._setChildrenPerCommit(c, childrenPerCommit);
     }
     if (pendingCommit) {
@@ -107,7 +155,13 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     }
   }
 
-  keys(): Iterable<string> {
+  keys(session?: Session): Iterable<string> {
+    const { authorizer } = this;
+    if (session && authorizer) {
+      return filterIterable(this.storage.allKeys(), (key) =>
+        authorizer(this, this.headForKey(key, session.id)!, session, false)
+      );
+    }
     return this.storage.allKeys();
   }
 
@@ -256,7 +310,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (!session) {
       session = this.trustPool.currentSession.id;
     }
-    const leaves = this.leavesForKey(key, pendingCommit);
+    const leaves = this.leavesForKey(
+      key,
+      session ? this.trustPool.getSession(session) : undefined,
+      pendingCommit
+    );
     if (leaves.length < 1) {
       // No commit history found. Return the null record as a starting point
       return undefined;
@@ -445,9 +503,18 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
+    const authorizer = this.authorizer;
     for (const c of commits) {
       if (await this.trustPool.verify(c)) {
-        yield c;
+        if (authorizer) {
+          const session = this.trustPool.getSession(c.session);
+          assert(session !== undefined);
+          if (authorizer(this, c, session, true)) {
+            yield c;
+          }
+        } else {
+          yield c;
+        }
       }
     }
   }

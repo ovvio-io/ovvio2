@@ -9,7 +9,7 @@ import { assert } from '../../base/error.ts';
 import { NormalizedLogEntry } from '../../logging/entry.ts';
 import { log } from '../../logging/log.ts';
 import {
-  EVENT_NEW_COMMIT,
+  Authorizer,
   Repository,
   RepositoryType,
   kRepositoryTypes,
@@ -31,8 +31,12 @@ import { Endpoint, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
-import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
-import { sessionFromRecord } from '../../auth/session.ts';
+import { Session } from '../../auth/session.ts';
+import {
+  createSysDirAuthorizer,
+  createWorkspaceAuthorizer,
+  createUserAuthorizer,
+} from '../../repo/auth.ts';
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
@@ -61,9 +65,31 @@ export class SyncService extends BaseService<ServerServices> {
   ): Repository<SQLiteRepoStorage> {
     let repo = this._repositories.get(id);
     if (!repo) {
+      let authorizer: Authorizer<SQLiteRepoStorage>;
+      switch (type) {
+        case 'sys':
+          assert(id === 'dir'); // Sanity check
+          authorizer = createSysDirAuthorizer(
+            () => this.services.settings.operatorEmails
+          );
+          break;
+
+        case 'data':
+          authorizer = createWorkspaceAuthorizer(
+            () => this.services.settings.operatorEmails,
+            this.getRepository('sys', 'dir'),
+            id
+          );
+          break;
+
+        case 'user':
+          authorizer = createUserAuthorizer(id);
+          break;
+      }
       repo = new Repository(
         new SQLiteRepoStorage(joinPath(this.services.dir, type, id + '.repo')),
-        this.services.trustPool
+        this.services.trustPool,
+        authorizer
       );
       this._repositories.set(id, repo);
       const replicas = this.services.replicas;
@@ -270,5 +296,45 @@ export class SyncEndpoint implements Endpoint {
         },
       }
     );
+  }
+}
+
+function* filterCommitsForSession(
+  services: ServerServices,
+  session: Session,
+  commits: Iterable<Commit>
+): Generator<Commit> {
+  const owner = session.owner;
+  // An anonymous session can only see its own session record
+  if (!owner) {
+    for (const c of _filterCommitsForAnonymousSession(session, commits)) {
+      yield c;
+    }
+    return;
+  }
+  const sysDir = services.sync.getSysDir();
+  const userRecord = sysDir.valueForKey(owner);
+
+  if (userRecord.isNull) {
+    for (const c of _filterCommitsForAnonymousSession(session, commits)) {
+      yield c;
+    }
+    return;
+  }
+
+  for (const c of commits) {
+    // if (c)
+  }
+}
+
+function* _filterCommitsForAnonymousSession(
+  session: Session,
+  commits: Iterable<Commit>
+): Generator<Commit> {
+  const sessionId = session.id;
+  for (const c of commits) {
+    if (c.key === sessionId) {
+      yield c;
+    }
   }
 }
