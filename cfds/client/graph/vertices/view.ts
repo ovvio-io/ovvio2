@@ -1,8 +1,9 @@
-import * as SetUtils from "../../../../base/set.ts";
+import * as SetUtils from '../../../../base/set.ts';
 import {
   DateFilter,
   GroupBy,
   SchemeNamespace,
+  SettingsTabId,
   ShowChecked,
   ShowPinned,
   SortBy,
@@ -10,23 +11,24 @@ import {
   TagId,
   ViewType,
   WorkspaceGrouping,
-} from "../../../base/scheme-types.ts";
-import { BaseVertex } from "./base.ts";
-import { Workspace } from "./workspace.ts";
-import { User } from "./user.ts";
-import { FieldTriggers, Vertex } from "../vertex.ts";
-import { triggerChildren } from "../propagation-triggers.ts";
-import { MutationOrigin, MutationPack } from "../mutations.ts";
-import { NoteType } from "./note.ts";
-import { CoreValue } from "../../../../base/core-types/base.ts";
+} from '../../../base/scheme-types.ts';
+import { BaseVertex } from './base.ts';
+import { Workspace } from './workspace.ts';
+import { User } from './user.ts';
+import { FieldTriggers, Vertex } from '../vertex.ts';
+import { triggerChildren } from '../propagation-triggers.ts';
+import { MutationOrigin, MutationPack } from '../mutations.ts';
+import { NoteType } from './note.ts';
+import { CoreValue } from '../../../../base/core-types/base.ts';
 
 export const kViewPropsGlobal: readonly (keyof View)[] = [
-  "workspaceGrouping",
-  "selectedWorkspaces",
-  "expandedWorkspaceGroups",
-  "workspaceBarCollapsed",
-  "noteType",
-  "selectedTabId",
+  'workspaceGrouping',
+  'selectedWorkspaces',
+  'expandedWorkspaceGroups',
+  'workspaceBarCollapsed',
+  'noteType',
+  'selectedTabId',
+  'selectedSettingsTabId',
 ] as const;
 
 export type ViewPropGlobal = Extract<
@@ -35,17 +37,17 @@ export type ViewPropGlobal = Extract<
 >;
 
 export const kViewPropsTab: readonly (keyof View)[] = [
-  "selectedAssignees",
-  "selectedTagIds",
-  "viewType",
-  "sortBy",
-  "groupBy",
-  "pivot",
-  "showChecked",
-  "showPinned",
-  "notesExpandOverride",
-  "notesExpandBase",
-  "dateFilter",
+  'selectedAssignees',
+  'selectedTagIds',
+  'viewType',
+  'sortBy',
+  'groupBy',
+  'pivot',
+  'showChecked',
+  'showPinned',
+  'notesExpandOverride',
+  'notesExpandBase',
+  'dateFilter',
 ] as const;
 
 export const kViewPersistentProps: readonly (keyof View)[] = [
@@ -54,7 +56,7 @@ export const kViewPersistentProps: readonly (keyof View)[] = [
 ] as const;
 
 export const kViewTransientProps: readonly (keyof View)[] = [
-  "showFilters",
+  'showFilters',
 ] as const;
 
 export const kViewPropsAll: readonly (keyof View)[] = [
@@ -67,14 +69,14 @@ export type ViewProp = Extract<
   (typeof kViewPersistentProps)[number]
 >;
 
-const kDefaultWorkspaceGrouping: WorkspaceGrouping = "none";
-const kDefaultShowChecked: ShowChecked = "checked-unchecked";
-const kDefaultShowPinned: ShowPinned = "pinned-unpinned";
+const kDefaultWorkspaceGrouping: WorkspaceGrouping = 'none';
+const kDefaultShowChecked: ShowChecked = 'checked-unchecked';
+const kDefaultShowPinned: ShowPinned = 'pinned-unpinned';
 const kDefaultNoteType: NoteType = NoteType.Task;
-const kDefaultGroupBy: GroupBy = "dueDate";
-const kDefaultViewType: ViewType = "list";
-const kDefaultTabId: TabId = "tasks";
-const kDefaultPersonalSettingsTabId: TabId = "general";
+const kDefaultGroupBy: GroupBy = 'dueDate';
+const kDefaultViewType: ViewType = 'list';
+const kDefaultTabId: TabId = 'tasks';
+const kDefaultSettingsTabId: SettingsTabId = 'generalPersonal';
 
 export class View extends BaseVertex {
   public showFilters: boolean = false;
@@ -84,11 +86,11 @@ export class View extends BaseVertex {
   }
 
   get owner(): User {
-    return this.graph.getVertex<User>(this.record.get("owner"));
+    return this.graph.getVertex<User>(this.record.get('owner'));
   }
 
   get parentView(): View | undefined {
-    const key = this.record.get("parentView");
+    const key = this.record.get('parentView');
     return key ? this.graph.getVertex<View>(key) : undefined;
   }
 
@@ -96,7 +98,7 @@ export class View extends BaseVertex {
     if (this.parentView) {
       return this.parentView.proxy.workspaceGrouping;
     }
-    return this.record.get("workspaceGrouping") || kDefaultWorkspaceGrouping;
+    return this.record.get('workspaceGrouping') || kDefaultWorkspaceGrouping;
   }
 
   set workspaceGrouping(grouping: WorkspaceGrouping) {
@@ -105,9 +107,9 @@ export class View extends BaseVertex {
       return;
     }
     if (grouping === kDefaultWorkspaceGrouping) {
-      this.record.delete("workspaceGrouping");
+      this.record.delete('workspaceGrouping');
     } else {
-      this.record.set("workspaceGrouping", grouping);
+      this.record.set('workspaceGrouping', grouping);
     }
   }
 
@@ -123,14 +125,14 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: WorkspaceGrouping | undefined
   ): MutationPack {
-    return ["workspaceGrouping", origin, oldValue];
+    return ['workspaceGrouping', origin, oldValue];
   }
 
   get selectedTabId(): TabId {
     if (this.parentView) {
       return this.parentView.selectedTabId;
     }
-    return this.record.get("selectedTab") || kDefaultTabId;
+    return this.record.get('selectedTab') || kDefaultTabId;
   }
 
   set selectedTabId(id: TabId) {
@@ -139,9 +141,28 @@ export class View extends BaseVertex {
       return;
     }
     if (id === kDefaultTabId) {
-      this.record.delete("selectedTab");
+      this.record.delete('selectedTab');
     } else {
-      this.record.set("selectedTab", id);
+      this.record.set('selectedTab', id);
+    }
+  }
+
+  get selectedSettingsTabId(): SettingsTabId {
+    if (this.parentView) {
+      return this.parentView.selectedSettingsTabId;
+    }
+    return this.record.get('selectedSettingsTab') || kDefaultSettingsTabId;
+  }
+
+  set selectedSettingsTabId(id: SettingsTabId) {
+    if (this.parentView) {
+      this.parentView.selectedSettingsTabId = id;
+      return;
+    }
+    if (id === kDefaultSettingsTabId) {
+      this.record.delete('selectedSettingsTab');
+    } else {
+      this.record.set('selectedSettingsTab', id);
     }
   }
 
@@ -149,7 +170,7 @@ export class View extends BaseVertex {
     if (this.parentView) {
       return this.parentView.proxy.selectedWorkspaces;
     }
-    return this.vertSetForField("selectedWorkspaces");
+    return this.vertSetForField('selectedWorkspaces');
   }
 
   set selectedWorkspaces(wss: Set<Workspace>) {
@@ -158,10 +179,10 @@ export class View extends BaseVertex {
       return;
     }
     if (wss.size <= 0) {
-      this.record.delete("selectedWorkspaces");
+      this.record.delete('selectedWorkspaces');
     } else {
       this.record.set(
-        "selectedWorkspaces",
+        'selectedWorkspaces',
         SetUtils.map(wss, (ws) => ws.key)
       );
     }
@@ -179,14 +200,14 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: Set<Workspace> | undefined
   ): MutationPack {
-    return ["selectedWorkspaces", origin, oldValue];
+    return ['selectedWorkspaces', origin, oldValue];
   }
 
   get expandedWorkspaceGroups(): Set<string> {
     if (this.parentView) {
       return this.parentView.proxy.expandedWorkspaceGroups;
     }
-    return this.record.get("expandedWorkspaceGroups") || new Set();
+    return this.record.get('expandedWorkspaceGroups') || new Set();
   }
 
   set expandedWorkspaceGroups(s: Set<string>) {
@@ -195,9 +216,9 @@ export class View extends BaseVertex {
       return;
     }
     if (s.size > 0) {
-      this.record.set("expandedWorkspaceGroups", s);
+      this.record.set('expandedWorkspaceGroups', s);
     } else {
-      this.record.delete("expandedWorkspaceGroups");
+      this.record.delete('expandedWorkspaceGroups');
     }
   }
 
@@ -213,14 +234,14 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: Set<string> | undefined
   ): MutationPack {
-    return ["expandedWorkspaceGroups", origin, oldValue];
+    return ['expandedWorkspaceGroups', origin, oldValue];
   }
 
   get workspaceBarCollapsed(): boolean | undefined {
     if (this.parentView) {
       return this.parentView.proxy.workspaceBarCollapsed;
     }
-    return this.record.get("workspaceBarCollapsed");
+    return this.record.get('workspaceBarCollapsed');
   }
 
   set workspaceBarCollapsed(flag: boolean | undefined) {
@@ -229,9 +250,9 @@ export class View extends BaseVertex {
       return;
     }
     if (flag) {
-      this.record.set("workspaceBarCollapsed", 1);
+      this.record.set('workspaceBarCollapsed', 1);
     } else {
-      this.record.delete("workspaceBarCollapsed");
+      this.record.delete('workspaceBarCollapsed');
     }
   }
 
@@ -243,14 +264,14 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: boolean | undefined
   ): MutationPack {
-    return ["workspaceBarCollapsed", origin, oldValue];
+    return ['workspaceBarCollapsed', origin, oldValue];
   }
 
   get noteType(): NoteType {
     if (this.parentView) {
       return this.parentView.proxy.noteType;
     }
-    return this.record.get("noteType") || kDefaultNoteType;
+    return this.record.get('noteType') || kDefaultNoteType;
   }
 
   set noteType(type: NoteType) {
@@ -259,9 +280,9 @@ export class View extends BaseVertex {
       return;
     }
     if (type === kDefaultNoteType) {
-      this.record.delete("noteType");
+      this.record.delete('noteType');
     } else {
-      this.record.set("noteType", type);
+      this.record.set('noteType', type);
     }
   }
 
@@ -273,45 +294,45 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: NoteType | undefined
   ): MutationPack {
-    return ["noteType", origin, oldValue];
+    return ['noteType', origin, oldValue];
   }
 
   get selectedAssignees(): Set<User> {
-    return this.vertSetForField("selectedAssignees");
+    return this.vertSetForField('selectedAssignees');
   }
 
   set selectedAssignees(s: Set<User>) {
     if (s.size) {
       this.record.set(
-        "selectedAssignees",
+        'selectedAssignees',
         SetUtils.map(s, (u) => u.key)
       );
     } else {
-      this.record.delete("selectedAssignees");
+      this.record.delete('selectedAssignees');
     }
   }
 
   get selectedTagIds(): Set<TagId> {
-    return this.record.get("selectedTagIds") || new Set();
+    return this.record.get('selectedTagIds') || new Set();
   }
 
   set selectedTagIds(ids: Set<TagId>) {
     if (ids.size) {
-      this.record.set("selectedTagIds", ids);
+      this.record.set('selectedTagIds', ids);
     } else {
-      this.record.delete("selectedTagIds");
+      this.record.delete('selectedTagIds');
     }
   }
 
   get showChecked(): ShowChecked {
-    return this.record.get("showChecked") || kDefaultShowChecked;
+    return this.record.get('showChecked') || kDefaultShowChecked;
   }
 
   set showChecked(v: ShowChecked) {
     if (v === kDefaultShowChecked) {
-      this.record.delete("showChecked");
+      this.record.delete('showChecked');
     } else {
-      this.record.set("showChecked", v);
+      this.record.set('showChecked', v);
     }
   }
 
@@ -326,38 +347,38 @@ export class View extends BaseVertex {
   }
 
   get sortBy(): SortBy {
-    return this.record.get("sortBy") || this.defaultSortBy();
+    return this.record.get('sortBy') || this.defaultSortBy();
   }
 
   set sortBy(s: SortBy) {
     if (s === this.defaultSortBy()) {
-      this.record.delete("sortBy");
+      this.record.delete('sortBy');
     } else {
-      this.record.set("sortBy", s);
+      this.record.set('sortBy', s);
     }
   }
 
   get showPinned(): ShowPinned {
-    return this.record.get("showPinned") || kDefaultShowPinned;
+    return this.record.get('showPinned') || kDefaultShowPinned;
   }
 
   set showPinned(s: ShowPinned) {
     if (s === kDefaultShowPinned) {
-      this.record.delete("showPinned");
+      this.record.delete('showPinned');
     } else {
-      this.record.set("showPinned", s);
+      this.record.set('showPinned', s);
     }
   }
 
   get groupBy(): GroupBy {
-    return this.record.get("groupBy") || kDefaultGroupBy;
+    return this.record.get('groupBy') || kDefaultGroupBy;
   }
 
   set groupBy(v: GroupBy) {
     if (v === kDefaultGroupBy) {
-      this.record.delete("groupBy");
+      this.record.delete('groupBy');
     } else {
-      this.record.set("groupBy", v);
+      this.record.set('groupBy', v);
     }
   }
 
@@ -366,38 +387,38 @@ export class View extends BaseVertex {
   }
 
   get pivot(): string | undefined {
-    return this.record.get("pivot");
+    return this.record.get('pivot');
   }
 
   set pivot(s: string | undefined) {
     if (s) {
-      this.record.set("pivot", s);
+      this.record.set('pivot', s);
     } else {
-      this.record.delete("pivot");
+      this.record.delete('pivot');
     }
   }
 
   get viewType(): ViewType {
-    return this.record.get("viewType") || kDefaultViewType;
+    return this.record.get('viewType') || kDefaultViewType;
   }
 
   set viewType(t: ViewType) {
     if (t === kDefaultViewType) {
-      this.record.delete("viewType");
+      this.record.delete('viewType');
     } else {
-      this.record.set("viewType", t);
+      this.record.set('viewType', t);
     }
   }
 
   get notesExpandOverride(): Set<string> {
-    return this.record.get("notesExpandOverride") || new Set();
+    return this.record.get('notesExpandOverride') || new Set();
   }
 
   set notesExpandOverride(s: Set<string>) {
     if (s.size > 0) {
-      this.record.set("notesExpandOverride", s);
+      this.record.set('notesExpandOverride', s);
     } else {
-      this.record.delete("notesExpandOverride");
+      this.record.delete('notesExpandOverride');
     }
   }
 
@@ -410,26 +431,26 @@ export class View extends BaseVertex {
   }
 
   get notesExpandBase(): boolean {
-    return this.record.get("notesExpandBase") === 1;
+    return this.record.get('notesExpandBase') === 1;
   }
 
   set notesExpandBase(flag: boolean) {
     if (flag) {
-      this.record.set("notesExpandBase", 1);
+      this.record.set('notesExpandBase', 1);
     } else {
-      this.record.delete("notesExpandBase");
+      this.record.delete('notesExpandBase');
     }
   }
 
   get dateFilter(): DateFilter | undefined {
-    return this.record.get("dateFilter");
+    return this.record.get('dateFilter');
   }
 
   set dateFilter(filter: DateFilter | undefined) {
-    if (typeof filter === "undefined") {
-      this.record.delete("dateFilter");
+    if (typeof filter === 'undefined') {
+      this.record.delete('dateFilter');
     } else {
-      this.record.set("dateFilter", filter);
+      this.record.set('dateFilter', filter);
     }
   }
 
@@ -461,18 +482,18 @@ export class View extends BaseVertex {
     this.proxy.showFilters = false;
   }
 
-  deleteFromSet<K extends keyof this & "selectedAssignees">(
+  deleteFromSet<K extends keyof this & 'selectedAssignees'>(
     fieldName: K,
     selector: (v: User) => boolean
   ): void;
 
-  deleteFromSet<K extends keyof this & "selectedTagIds">(
+  deleteFromSet<K extends keyof this & 'selectedTagIds'>(
     fieldName: K,
     selector: (v: TagId) => boolean
   ): void;
 
   deleteFromSet<
-    K extends keyof this & ("selectedAssignees" | "selectedTagIds")
+    K extends keyof this & ('selectedAssignees' | 'selectedTagIds')
   >(
     fieldName: K,
     selector: ((v: TagId) => boolean) | ((v: User) => boolean)
@@ -520,26 +541,26 @@ export class View extends BaseVertex {
 
 export const kFieldTriggersView: FieldTriggers<View> = {
   workspaceGrouping: triggerChildren(
-    "parentWorkspaceGroupingDidMutate",
-    "workspaceGrouping",
-    { namespace: SchemeNamespace.VIEWS, fieldName: "parentView" }
+    'parentWorkspaceGroupingDidMutate',
+    'workspaceGrouping',
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
   ),
   selectedWorkspaces: triggerChildren(
-    "parentSelectedWorkspacesDidMutate",
-    "selectedWorkspaces",
-    { namespace: SchemeNamespace.VIEWS, fieldName: "parentView" }
+    'parentSelectedWorkspacesDidMutate',
+    'selectedWorkspaces',
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
   ),
   expandedWorkspaceGroups: triggerChildren(
-    "parentExpandedWorkspaceGroupsDidMutate",
-    "expandedWorkspaceGroups",
-    { namespace: SchemeNamespace.VIEWS, fieldName: "parentView" }
+    'parentExpandedWorkspaceGroupsDidMutate',
+    'expandedWorkspaceGroups',
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
   ),
   workspaceBarCollapsed: triggerChildren(
-    "parentWorkspaceBarCollapsedDidMutate",
-    "workspaceBarCollapsed",
-    { namespace: SchemeNamespace.VIEWS, fieldName: "parentView" }
+    'parentWorkspaceBarCollapsedDidMutate',
+    'workspaceBarCollapsed',
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
   ),
-  noteType: triggerChildren("parentNoteTypeDidMutate", "noteType"),
+  noteType: triggerChildren('parentNoteTypeDidMutate', 'noteType'),
 };
 
 Vertex.registerFieldTriggers(View, kFieldTriggersView);

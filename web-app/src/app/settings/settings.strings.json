@@ -1,11 +1,16 @@
 {
     "en": {
-      "general": "General",
+      "generalPersonal": "General",
       "details": "Details",
-      "generalOrg": "General",
+      "generalOrganization": "General",
       "members": "Members",
-      "billing": "Billing"
-
+      "billing": "Billing",
+      "generalWorkspaces": "General",
+      "roles&details":"Roles & Details",
+      "tags":"Tags",
+      "PersonalInfo": "Personal Info",
+      "WorkspacesInfo": "My Workspaces",
+      "OrganizationInfo": "Organization"
     }
   }
   

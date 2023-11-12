@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Route, RouterProvider } from 'react-router';
+import { RouterProvider } from 'react-router';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
 import { layout } from '../../../styles/layout.ts';
 import {
@@ -21,9 +21,8 @@ import {
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
-import { PersonalSettings } from './settings/personal-information.tsx';
 import { Settings } from './settings/index.tsx';
-import { OrgSettings } from './settings/organization-settings.tsx';
+import { CategorySettings } from './settings/category-settings.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -117,31 +116,12 @@ const router = createBrowserRouter([
     path: `/_explorer`,
     element: <RepoExplorer />,
   },
+
   {
-    path: '/settings',
+    path: '/settings/:category/:tab',
     element: (
       <Settings style={lightTheme}>
-        <PersonalSettings />
-      </Settings>
-    ),
-  },
-  {
-    path: '/settings/me',
-    element: (
-      <Settings style={lightTheme}>
-        <PersonalSettings />,
-      </Settings>
-    ),
-  },
-  //   {
-  //     path: '/settings/myWorkspaces',
-  //     element: <WorkspacesSettings />,
-  //   },
-  {
-    path: '/settings/organization',
-    element: (
-      <Settings style={lightTheme}>
-        <OrgSettings />,
+        <CategorySettings />
       </Settings>
     ),
   },
@@ -165,3 +145,11 @@ export default function AppView() {
     </CfdsClientProvider>
   );
 }
+
+// scheme-version = add type
+// add to the global view  (iew.ts - client graph - verice)
+// view.ts - client graph - verices. = add getter setter
+
+// add scheme-types.ts add type for settings tabs.
+
+//javascript - the good parts (READ)

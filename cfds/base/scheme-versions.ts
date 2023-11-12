@@ -242,6 +242,7 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
   parentView: TYPE_REF,
 
   // Screen-level settings
+  selectedSettingsTab: TYPE_STR, //ADDED 12.11
   selectedTab: TYPE_STR,
   noteType: TYPE_STR,
   workspaceGrouping: TYPE_STR,

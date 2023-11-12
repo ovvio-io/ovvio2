@@ -37,7 +37,6 @@ const useStyles = makeStyles(() => ({
   },
   menu: {
     maxHeight: MenuItemStyle.rules.height * 8,
-    // overflowY: "auto", //TODO: need to be removed because the arrow must be out of the box.
   },
   iconAvatar: {
     backgroundColor: theme.secondary.s3,
@@ -101,20 +100,11 @@ export interface ToolbarMenuProps {
 
 export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const styles = useStyles();
-  const logger = useLogger();
   const navigate = useNavigate();
 
   const openSettings = useCallback(() => {
-    //TODO: change logger details.
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'create',
-      type: 'workspace',
-      source: 'bar:workspace',
-    });
-    navigate('/settings');
-  }, [logger, navigate]);
+    navigate('/settings/PersonalInfo/general');
+  }, [navigate]);
 
   return (
     <>

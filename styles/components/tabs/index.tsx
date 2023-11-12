@@ -1,17 +1,17 @@
-import React, { MouseEvent } from "react";
-import { makeStyles, cn } from "../../css-objects/index.ts";
-import { styleguide } from "../../styleguide.ts";
-import { layout } from "../../layout.ts";
-import { Button } from "../buttons.tsx";
-import { brandLightTheme } from "../../theme.tsx";
-import { useTypographyStyles } from "../typography.tsx";
-import { NoteType } from "../../../cfds/client/graph/vertices/note.ts";
-import { TabId } from "../../../cfds/base/scheme-types.ts";
+import React, { MouseEvent } from 'react';
+import { makeStyles, cn } from '../../css-objects/index.ts';
+import { styleguide } from '../../styleguide.ts';
+import { layout } from '../../layout.ts';
+import { Button } from '../buttons.tsx';
+import { brandLightTheme } from '../../theme.tsx';
+import { useTypographyStyles } from '../typography.tsx';
+import { NoteType } from '../../../cfds/client/graph/vertices/note.ts';
+import { TabId, SettingsTabId } from '../../../cfds/base/scheme-types.ts';
 
 const useStyles = makeStyles(
   (theme) => ({
     header: {
-      position: "relative",
+      position: 'relative',
       basedOn: [layout.row],
     },
     tab: {
@@ -19,37 +19,37 @@ const useStyles = makeStyles(
       color: brandLightTheme.colors.text,
       borderBottom: `1px solid ${brandLightTheme.supporting.O1}`,
       transitionDuration: `${styleguide.transition.duration.standard}ms`,
-      transitionProperty: "color",
-      transitionTimingFunction: "linear",
+      transitionProperty: 'color',
+      transitionTimingFunction: 'linear',
       basedOn: [layout.row, layout.centerCenter, useTypographyStyles.h5],
     },
     selected: {
       ...useTypographyStyles.label.rules,
     },
     selectedTabIndicator: {
-      position: "absolute",
+      position: 'absolute',
       bottom: 0,
       left: 0,
       height: 6,
-      transform: "translateX(0)",
+      transform: 'translateX(0)',
       backgroundColor: brandLightTheme.supporting.O2,
       ...styleguide.transition.standard,
-      transitionProperty: "transform",
+      transitionProperty: 'transform',
     },
     tabsRoot: {
-      width: "100%",
-      boxSizing: "border-box",
-      overflow: "hidden",
+      width: '100%',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
     },
     tabsFlipper: {
       flexShrink: 0,
-      overflow: "visible",
+      overflow: 'visible',
       ...styleguide.transition.standard,
-      transitionProperty: "transform",
+      transitionProperty: 'transform',
       basedOn: [layout.row],
     },
   }),
-  "tabs_3a7361"
+  'tabs_3a7361'
 );
 
 export type TabButtonProps = React.PropsWithChildren<{
@@ -91,8 +91,8 @@ export function TabButton({
 }
 
 export type TabsHeaderProps = React.PropsWithChildren<{
-  selected: TabId;
-  setSelected: (type: TabId) => void;
+  selected: TabId | SettingsTabId;
+  setSelected: (type: TabId | SettingsTabId) => void;
   className?: string;
 }>;
 export function TabsHeader({

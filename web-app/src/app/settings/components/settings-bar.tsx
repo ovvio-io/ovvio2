@@ -9,10 +9,11 @@ import {
   useTypographyStyles,
 } from '../../../../../styles/components/typography.tsx';
 import { useNavigate } from 'react-router';
-import { IconPersonalInfo } from '../../../../../styles/components/new-icons/icon-personal-info.tsx';
-import { IconArchive } from '../../../../../styles/components/new-icons/icon-archive.tsx';
-import { IconOrg } from '../../../../../styles/components/new-icons/icon-org.tsx';
 import { IconMenuClose } from '../../../../../styles/components/new-icons/icon-menu-close.tsx';
+import { PluginManager } from '../plugins/plugin-manager.tsx';
+import { SettingsTabPlugin } from '../plugins/plugins-list.tsx';
+import { createUseStrings } from '../../../core/localization/index.tsx';
+import localization from '../settings.strings.json' assert { type: 'json' };
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -51,7 +52,8 @@ const useStyles = makeStyles(() => ({
       marginBottom: 0,
     },
     ':hover': {
-      backgroundColor: theme.colors.secondaryButtonActive,
+      backgroundColor: theme.secondary.s4,
+      //   backgroundColor: theme.colors.secondaryButtonActive,
       color: theme.colors.text,
     },
     basedOn: [layout.row],
@@ -84,6 +86,7 @@ const useStyles = makeStyles(() => ({
     },
     alignItems: 'center',
     basedOn: [layout.row],
+    cursor: 'pointer',
   },
   text: {
     color: theme.colors.primaryButtonText,
@@ -98,8 +101,13 @@ const BackButton = React.forwardRef(
     ref: React.ForwardedRef<HTMLDivElement>
   ) => {
     const styles = useStyles();
+    const navigate = useNavigate();
+    const goBack = () => {
+      navigate('/');
+    };
+
     return (
-      <div className={cn(styles.back, className)} ref={ref}>
+      <div className={cn(styles.back, className)} onClick={goBack} ref={ref}>
         <IconMenuClose />
         <span className={cn(styles.text)}>Back</span>
       </div>
@@ -107,53 +115,57 @@ const BackButton = React.forwardRef(
   }
 );
 
-export interface SettingsBarActionsProps {
+interface CategoryMap {
+  [key: string]: SettingsTabPlugin[];
+}
+
+export interface SettingsBarCategoriesProps {
   className?: string;
 }
 
-function SettingsBarActions({ className }: SettingsBarActionsProps) {
+const useStrings = createUseStrings(localization);
+
+function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   const styles = useStyles();
+  const strings = useStrings();
   const navigate = useNavigate();
 
-  const userSettings = useCallback(() => {
-    navigate('/settings/me');
-  }, [navigate]);
+  const tabPlugins = PluginManager.getTabPlugins();
 
-  const workspacesSettings = useCallback(() => {
-    navigate('/settings/myWorkspaces');
-  }, [navigate]);
+  const categories = tabPlugins.reduce<CategoryMap>((acc, plugin) => {
+    const category = plugin.category;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(plugin);
+    return acc;
+  }, {});
 
-  const organizationSettings = useCallback(() => {
-    navigate('/settings/organization');
-  }, [navigate]);
+  const navigateToCategory = (category: string) => {
+    const categoryTabs = categories[category];
 
-  return (
-    <div className={cn(styles.root, className)}>
-      <div className={cn(styles.action)} onClick={userSettings}>
-        <div className={cn(styles.actionIcon)}>
-          <IconPersonalInfo />
-        </div>
-        <div className={cn(styles.actionText)}>Personal Info</div>
+    if (categoryTabs && categoryTabs.length > 0) {
+      navigate(`/settings/${category}/${categoryTabs[0].title}`);
+    }
+  };
+
+  const categoryElements = Object.keys(categories).map((category) => (
+    <div
+      key={category}
+      className={cn(styles.action)}
+      onClick={() => navigateToCategory(category)}
+    >
+      <div className={cn(styles.actionIcon)}>
+        {/*   need a way to dynamically assign icons based on category */}
       </div>
-      <div className={cn(styles.action)} onClick={workspacesSettings}>
-        <div className={cn(styles.actionIcon)}>
-          <IconArchive />
-        </div>
-        <div className={cn(styles.actionText)}>My Workspaces</div>
-      </div>
-      <div className={cn(styles.action)} onClick={organizationSettings}>
-        <div className={cn(styles.actionIcon)}>
-          <IconOrg />
-        </div>
-        <div className={cn(styles.actionText)}>Organization</div>
-      </div>
+      <div className={cn(styles.actionText)}>{strings[category]}</div>
     </div>
-  );
+  ));
+  return <div className={cn(styles.root, className)}>{categoryElements}</div>;
 }
 
 export function SettingsBar({ className }: { className?: string }) {
   const styles = useStyles();
-  //TODO: check how to go back to the prev page
 
   return (
     <Layer priority={2}>
@@ -161,10 +173,9 @@ export function SettingsBar({ className }: { className?: string }) {
         <div style={style} className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
             <BackButton />
-
             <LabelSm>Settings</LabelSm>
           </div>
-          <SettingsBarActions />
+          <SettingsBarCategories />
         </div>
       )}
     </Layer>

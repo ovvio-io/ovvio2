@@ -24,8 +24,8 @@ export function Settings({ style, children }: SettingsProps) {
 
   return (
     <div className={cn(styles.root)} style={style}>
-      {<SettingsBar />}
-      {<div className={cn(styles.content)}>{children}</div>}
+      <SettingsBar />
+      <div className={cn(styles.content)}>{children}</div>
     </div>
   );
 }
