@@ -1,9 +1,18 @@
 import { encodeBase64Url, decodeBase64Url } from 'std/encoding/base64url.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
-import { deserializeDate, kDayMs, serializeDate } from '../base/date.ts';
-import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
+import {
+  deserializeDate,
+  kDayMs,
+  kMinuteMs,
+  serializeDate,
+} from '../base/date.ts';
+import {
+  JSONObject,
+  JSONValue,
+  ReadonlyJSONObject,
+} from '../base/interfaces.ts';
 import { stableStringify } from '../base/json.ts';
-import { Commit } from '../repo/commit.ts';
+import { Commit, CommitSerializeOptions } from '../repo/commit.ts';
 import { uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
@@ -68,14 +77,62 @@ function serializeCommitForSigning(commit: Commit): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
-export async function signBuffer(
+export interface Signature<T extends JSONValue | undefined = undefined>
+  extends ReadonlyJSONObject {
+  /**
+   * The id of the signer session.
+   */
+  sessionId: string;
+  /**
+   * URL safe Base-64 encoded signature of the data
+   */
+  signature: string;
+  /**
+   * Any additional data to sign that's embedded into the signature string.
+   */
+  data: T;
+}
+
+interface DataToSignContainer extends JSONObject {
+  sessionId: string;
+  extData?: JSONValue;
+  sigData?: JSONValue;
+}
+
+/**
+ * This is our lowest-level signing primitive. It takes two kinds of optional
+ * data:
+ * 1. External data, that's provided alongside the signature. This is useful
+ *    when the data is potentially big such as commit data.
+ *
+ * 2. Embedded data, that's embedded into the signature string itself. Useful
+ *    for short values that need to be easy to handle as a single string. Used
+ *    for example for temporary login tokens.
+ *
+ * Both forms of data are signed together to form a single signature.]
+ *
+ * @param session The signing session.
+ * @param externalData Optional external data.
+ * @param embeddedData Optional embedded data.
+ *
+ * @returns A signature string that can be passed to `verifyData()`.
+ */
+export async function signData(
   session: OwnedSession,
-  buffer: string | Uint8Array
+  externalData?: JSONValue,
+  embeddedData?: ReadonlyJSONObject
 ): Promise<string> {
-  if (typeof buffer === 'string') {
-    const encoder = new TextEncoder();
-    buffer = encoder.encode(buffer);
+  const container: DataToSignContainer = {
+    sessionId: session.id,
+  };
+  if (externalData) {
+    container.extData = externalData;
   }
+  if (embeddedData) {
+    container.sigData = embeddedData;
+  }
+  const encoder = new TextEncoder();
+  const buffer = encoder.encode(stableStringify(container));
   const sig = await crypto.subtle.sign(
     {
       name: 'ECDSA',
@@ -84,16 +141,123 @@ export async function signBuffer(
     session.privateKey,
     buffer
   );
-  return `${session.id}/${encodeBase64Url(sig)}`;
+  const res: Signature<typeof embeddedData> = {
+    sessionId: session.id,
+    signature: encodeBase64Url(sig),
+  } as Signature<typeof embeddedData>;
+  if (embeddedData) {
+    res.data = embeddedData;
+  }
+  return encodeSignature(res);
 }
 
-export async function sign(
+/**
+ * This is the lowest-level verification primitive. Given an expected signer,
+ * an encoded signature string, and an optional external data, this function
+ * verifies they all match.
+ *
+ * @param expectedSigner The expected signing session.
+ * @param signature An encoded signature string.
+ * @param externalData An external data that was provided to `signData()`.
+ *
+ * @returns Whether the signature matches or not.
+ */
+export async function verifyData<T extends JSONValue>(
+  expectedSigner: Session,
+  signature: string | undefined | Signature<T>,
+  externalData?: JSONValue
+): Promise<boolean> {
+  if (!signature) {
+    return false;
+  }
+  const sig =
+    typeof signature === 'string' ? decodeSignature(signature) : signature;
+  if (!sig || !sig.sessionId || sig.sessionId !== expectedSigner.id) {
+    return false;
+  }
+  if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
+    return false;
+  }
+  const container: DataToSignContainer = {
+    sessionId: expectedSigner.id,
+  };
+  if (externalData) {
+    container.extData = externalData;
+  }
+  if (sig.data) {
+    container.sigData = sig.data;
+  }
+  const encoder = new TextEncoder();
+  const buffer = encoder.encode(stableStringify(container));
+  return await crypto.subtle.verify(
+    {
+      name: 'ECDSA',
+      hash: { name: 'SHA-384' },
+    },
+    expectedSigner.publicKey,
+    decodeBase64Url(sig.signature),
+    buffer
+  );
+}
+
+/**
+ * Encodes a given signature to a URL-safe string.
+ */
+export function encodeSignature<T extends JSONValue | undefined>(
+  sig: Signature<T>
+): string {
+  const encoder = new TextEncoder();
+  const obj: JSONObject = {
+    i: sig.sessionId,
+    s: sig.signature,
+  };
+  if (sig.data) {
+    obj.d = sig.data;
+  }
+  return encodeBase64Url(encoder.encode(JSON.stringify(obj)));
+}
+
+export function decodeSignature<T extends JSONValue | undefined = undefined>(
+  str: string
+): Signature<T>;
+export function decodeSignature(str: undefined): undefined;
+
+export function decodeSignature<T extends JSONValue | undefined = undefined>(
+  str: string | undefined
+): Signature<T> | undefined;
+
+/**
+ * Decodes a given signature string to a Signature structure.
+ * @param str The encoded signature string.
+ * @returns A signature structure.
+ */
+export function decodeSignature<T extends JSONValue | undefined = undefined>(
+  str: string | undefined
+): Signature<T> | undefined {
+  if (!str) {
+    return undefined;
+  }
+  const decoder = new TextDecoder();
+  const obj = JSON.parse(decoder.decode(decodeBase64Url(str)));
+  const result: Signature<T> = {
+    sessionId: obj.i,
+    signature: obj.s,
+  } as Signature<T>;
+  if (obj.d) {
+    result.data = obj.d;
+  }
+  return result;
+}
+
+export async function signCommit(
   session: OwnedSession,
   commit: Commit
 ): Promise<Commit> {
-  const signature = await signBuffer(
+  const signature = await signData(
     session,
-    serializeCommitForSigning(commit)
+    JSONCyclicalEncoder.serialize<CommitSerializeOptions>(commit, {
+      signed: false,
+    })
   );
   return new Commit({
     id: commit.id,
@@ -106,76 +270,22 @@ export async function sign(
   });
 }
 
-function parseSignature(
-  sig: string | undefined
-): [sessionId: string | undefined, encodedSig: string | undefined] {
-  if (!sig) {
-    return [undefined, undefined];
-  }
-  const sepIdx = sig.indexOf('/');
-  if (sepIdx <= 0 || sepIdx > sig.length - 1) {
-    return [undefined, undefined];
-  }
-  return [sig.substring(0, sepIdx), sig.substring(sepIdx + 1)];
-}
-
-export async function verifyBuffer(
-  expectedSigner: Session,
-  signature: string | undefined,
-  buffer: string | Uint8Array
-): Promise<boolean> {
-  const [sessionId, sig] = parseSignature(signature);
-  if (
-    sessionId === undefined ||
-    sig === undefined ||
-    sessionId !== expectedSigner.id
-  ) {
-    return false;
-  }
-  if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
-    return false;
-  }
-  if (typeof buffer === 'string') {
-    const encoder = new TextEncoder();
-    buffer = encoder.encode(buffer);
-  }
-  return await crypto.subtle.verify(
-    {
-      name: 'ECDSA',
-      hash: { name: 'SHA-384' },
-    },
-    expectedSigner.publicKey,
-    decodeBase64Url(sig),
-    buffer
-  );
-}
-
-export async function verify(
+export async function verifyCommit(
   expectedSigner: Session,
   commit: Commit
 ): Promise<boolean> {
-  return await verifyBuffer(
+  return await verifyData(
     expectedSigner,
     commit.signature,
-    serializeCommitForSigning(commit)
+    JSONCyclicalEncoder.serialize<CommitSerializeOptions>(commit, {
+      signed: false,
+    })
   );
 }
 
-export function signerIdFromSignature(
-  sig: string | undefined
-): string | undefined {
-  if (sig === undefined) {
-    return undefined;
-  }
-  const sepIdx = sig.indexOf('/');
-  if (sepIdx <= 0) {
-    return undefined;
-  }
-  return sig.substring(0, sepIdx);
-}
-
 export function signerIdFromCommit(commit: Commit): string | undefined {
-  return signerIdFromSignature(commit.signature);
+  const sig = commit.signature;
+  return sig && sessionIdFromSignature(sig);
 }
 
 export async function encodeSession(
@@ -273,6 +383,35 @@ export function encodedSessionFromRecord(record: Record): EncodedSession {
   return data;
 }
 
+interface RequestSignatureMetadata extends ReadonlyJSONObject {
+  readonly id: string;
+  readonly ts: number;
+}
+
+export function generateRequestSignature(
+  session: OwnedSession
+): Promise<string> {
+  return signData(session, null, {
+    id: uniqueId(),
+    ts: Date.now(),
+  });
+}
+
+export async function verifyRequestSignature(
+  session: Session,
+  signature: string
+): Promise<boolean> {
+  const sig = decodeSignature<RequestSignatureMetadata>(signature);
+  if (Math.abs(Date.now() - sig.data.ts) > 3 * kMinuteMs) {
+    return false;
+  }
+  return await verifyData(session, sig);
+}
+
+export function sessionIdFromSignature(sig: string): string {
+  return decodeSignature(sig).sessionId;
+}
+
 /**
  * The trust pool manages a set of trusted sessions that we can securely
  * respect as signers of commits.
@@ -329,11 +468,11 @@ export class TrustPool {
       this.currentSession.owner === 'root' &&
       signerId === this.currentSession.id
     ) {
-      return await verify(this.currentSession, commit);
+      return await verifyCommit(this.currentSession, commit);
     }
     for (const rootSession of this.roots) {
       if (signerId === rootSession.id) {
-        return await verify(rootSession, commit);
+        return await verifyCommit(rootSession, commit);
       }
     }
     return false;
@@ -408,6 +547,6 @@ export class TrustPool {
     if (!session) {
       return false;
     }
-    return await verify(session, commit);
+    return await verifyCommit(session, commit);
   }
 }

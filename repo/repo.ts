@@ -17,7 +17,7 @@ import {
   Session,
   TrustPool,
   sessionFromRecord,
-  sign,
+  signCommit,
 } from '../auth/session.ts';
 import { filterIterable } from '../base/common.ts';
 
@@ -370,7 +370,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
             parents: leaves.map((c) => c.id),
           })
         );
-        sign(this.trustPool.currentSession, mergeCommit).then(
+        signCommit(this.trustPool.currentSession, mergeCommit).then(
           (signedCommit) => {
             this.persistVerifiedCommits([signedCommit]);
           }
@@ -441,7 +441,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       parents: head?.id,
     });
     commit = this.deltaCompressIfNeeded(commit);
-    const signedCommit = await sign(session, commit);
+    const signedCommit = await signCommit(session, commit);
     await this.persistCommits([signedCommit]);
     return true;
   }

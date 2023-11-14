@@ -31,12 +31,19 @@ import { Endpoint, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
-import { Session } from '../../auth/session.ts';
+import {
+  Session,
+  generateRequestSignature,
+  sessionFromRecord,
+  sessionIdFromSignature,
+  verifyRequestSignature,
+} from '../../auth/session.ts';
 import {
   createSysDirAuthorizer,
   createWorkspaceAuthorizer,
   createUserAuthorizer,
 } from '../../repo/auth.ts';
+import { fetchSessionById } from './auth.ts';
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
@@ -83,7 +90,10 @@ export class SyncService extends BaseService<ServerServices> {
           break;
 
         case 'user':
-          authorizer = createUserAuthorizer(id);
+          authorizer = createUserAuthorizer(
+            this.getRepository('sys', 'dir'),
+            id
+          );
           break;
       }
       repo = new Repository(
@@ -203,6 +213,21 @@ export class SyncEndpoint implements Endpoint {
     const resourceId = path[2];
     const cmd = path[3];
     const syncService = services.sync;
+    const json = await req.json();
+    const msg = new SyncMessage<Commit | NormalizedLogEntry>({
+      decoder: new JSONCyclicalDecoder(json),
+    });
+    const signerSessionRecord = fetchSessionById(
+      services,
+      sessionIdFromSignature(msg.signature)
+    );
+    if (!signerSessionRecord) {
+      return new Response(null, { status: 401 });
+    }
+    const signerSession = await sessionFromRecord(signerSessionRecord);
+    if (!(await verifyRequestSignature(signerSession, msg.signature))) {
+      return new Response(null, { status: 403 });
+    }
     let resp: Response;
     switch (cmd) {
       case 'sync':
@@ -212,7 +237,8 @@ export class SyncEndpoint implements Endpoint {
           storageType === 'user'
         ) {
           resp = await this.handleSyncRequest(
-            req,
+            services,
+            msg as SyncMessage<Commit>,
             async (values) =>
               (
                 await syncService
@@ -221,32 +247,36 @@ export class SyncEndpoint implements Endpoint {
               ).length,
             () =>
               mapIterable(
-                syncService.getRepository(storageType, resourceId).commits(),
+                syncService
+                  .getRepository(storageType, resourceId)
+                  .commits(signerSession),
                 (c) => [c.id, c]
               ),
             () =>
-              syncService.getRepository(storageType, resourceId)
-                .numberOfCommits,
+              syncService
+                .getRepository(storageType, resourceId)
+                .numberOfCommits(signerSession),
             syncService.clientsForRepo(resourceId),
             true
           );
-        } else if (storageType === 'log') {
-          resp = await this.handleSyncRequest<NormalizedLogEntry>(
-            req,
-            (entries) => syncService.getLog(resourceId).persistEntries(entries),
-            () =>
-              mapIterable(syncService.getLog(resourceId).entriesSync(), (e) => [
-                e.logId,
-                e,
-              ]),
-            () => syncService.getLog(resourceId).numberOfEntries(),
-            syncService.clientsForLog(resourceId),
-            // TODO: Only include results when talking to other, trusted,
-            // servers. Clients should never receive log entries from the
-            // server.
-            true
-          );
         }
+        // else if (storageType === 'log') {
+        //   resp = await this.handleSyncRequest<NormalizedLogEntry>(
+        //     req,
+        //     (entries) => syncService.getLog(resourceId).persistEntries(entries),
+        //     () =>
+        //       mapIterable(syncService.getLog(resourceId).entriesSync(), (e) => [
+        //         e.logId,
+        //         e,
+        //       ]),
+        //     () => syncService.getLog(resourceId).numberOfEntries(),
+        //     syncService.clientsForLog(resourceId),
+        //     // TODO: Only include results when talking to other, trusted,
+        //     // servers. Clients should never receive log entries from the
+        //     // server.
+        //     true
+        //   );
+        // }
         break;
 
       default:
@@ -259,7 +289,8 @@ export class SyncEndpoint implements Endpoint {
   }
 
   private async handleSyncRequest<T extends SyncValueType>(
-    req: Request,
+    services: ServerServices,
+    msg: SyncMessage<T>,
     persistValues: (values: T[]) => Promise<number>,
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
@@ -267,10 +298,6 @@ export class SyncEndpoint implements Endpoint {
     includeMissing: boolean
   ): Promise<Response> {
     // TODO: Auth + Permissions
-    const json = await req.json();
-    const msg = new SyncMessage<T>({
-      decoder: new JSONCyclicalDecoder(json),
-    });
     if ((await persistValues(msg.values)) > 0 && replicas) {
       // Sync changes with replicas
       for (const c of replicas) {
@@ -284,6 +311,7 @@ export class SyncEndpoint implements Endpoint {
       getLocalCount(),
       msg.size,
       syncConfigGetCycles(kSyncConfigClient),
+      await generateRequestSignature(services.settings.session),
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version
     );
@@ -296,45 +324,5 @@ export class SyncEndpoint implements Endpoint {
         },
       }
     );
-  }
-}
-
-function* filterCommitsForSession(
-  services: ServerServices,
-  session: Session,
-  commits: Iterable<Commit>
-): Generator<Commit> {
-  const owner = session.owner;
-  // An anonymous session can only see its own session record
-  if (!owner) {
-    for (const c of _filterCommitsForAnonymousSession(session, commits)) {
-      yield c;
-    }
-    return;
-  }
-  const sysDir = services.sync.getSysDir();
-  const userRecord = sysDir.valueForKey(owner);
-
-  if (userRecord.isNull) {
-    for (const c of _filterCommitsForAnonymousSession(session, commits)) {
-      yield c;
-    }
-    return;
-  }
-
-  for (const c of commits) {
-    // if (c)
-  }
-}
-
-function* _filterCommitsForAnonymousSession(
-  session: Session,
-  commits: Iterable<Commit>
-): Generator<Commit> {
-  const sessionId = session.id;
-  for (const c of commits) {
-    if (c.key === sessionId) {
-      yield c;
-    }
   }
 }

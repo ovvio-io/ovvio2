@@ -69,7 +69,7 @@ async function setupSession(
               };
             }
             roots = serverRoots!;
-            // await storeSessionData(currentSession, roots, trustedSessions);
+            await storeSessionData(currentSession, roots, trustedSessions);
           }
           const pool = new TrustPool(
             currentSession,

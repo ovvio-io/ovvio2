@@ -1,22 +1,20 @@
-import { decodeBase64Url, encodeBase64Url } from 'std/encoding/base64url.ts';
 import {
   EncodedSession,
   OwnedSession,
   SESSION_CRYPTO_KEY_GEN_PARAMS,
   Session,
+  decodeSignature,
   encodeSession,
   encodedSessionFromRecord,
   sessionFromRecord,
+  sessionIdFromSignature,
   sessionToRecord,
-  signBuffer,
-  signerIdFromSignature,
-  verifyBuffer,
+  signData,
+  verifyData,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
 import { deserializeDate, kDayMs } from '../../base/date.ts';
 import { assert } from '../../base/error.ts';
-import { JSONObject } from '../../base/interfaces.ts';
-import { stableStringify } from '../../base/json.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { Endpoint, ServerServices } from './server.ts';
@@ -24,6 +22,7 @@ import { getBaseURL, getRequestPath, getServerBaseURL } from './utils.ts';
 import { ResetPasswordEmail } from '../../emails/reset-password.tsx';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
+import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -38,16 +37,11 @@ export type LoginError = 'MissingEmail' | 'MissingSignature';
 
 export type AuthError = GenericAuthError | CreateSessionError | LoginError;
 
-export interface TemporaryLoginToken extends JSONObject {
-  u: string; // User key
-  s: string; // Session ID
-  ts: number; // Creation timestamp
-  sl: string; // A random salt to ensure uniqueness
-}
-
-export interface SignedTemporaryLoginToken extends JSONObject {
-  t: TemporaryLoginToken; // The token itself
-  s: string; // Signature
+export interface TemporaryLoginToken extends ReadonlyJSONObject {
+  readonly u: string; // User key
+  readonly s: string; // Session ID
+  readonly ts: number; // Creation timestamp
+  readonly sl: string; // A random salt to ensure uniqueness
 }
 
 export class AuthEndpoint implements Endpoint {
@@ -157,7 +151,7 @@ export class AuthEndpoint implements Endpoint {
       return responseForError('MissingSignature');
     }
 
-    const requestingSessionId = signerIdFromSignature(sig);
+    const requestingSessionId = sessionIdFromSignature(sig);
     if (!requestingSessionId) {
       return responseForError('AccessDenied');
     }
@@ -173,7 +167,7 @@ export class AuthEndpoint implements Endpoint {
     }
 
     // Verify it's actually this session who generated the request
-    if (!verifyBuffer(await sessionFromRecord(requestingSession), sig, email)) {
+    if (!verifyData(await sessionFromRecord(requestingSession), sig, email)) {
       return responseForError('AccessDenied');
     }
 
@@ -183,15 +177,13 @@ export class AuthEndpoint implements Endpoint {
 
     // We unconditionally generate the signed token so this call isn't
     // vulnerable to timing attacks.
-    const signedToken = await signToken(services.settings.session, {
+    const signedToken = await signData(services.settings.session, undefined, {
       u: userKey || '',
       s: requestingSessionId,
       ts: Date.now(),
       sl: uniqueId(),
     });
-    const clickURL = `${getBaseURL(
-      services
-    )}/auth/temp-login?t=${encodeBase64Url(JSON.stringify(signedToken))}`;
+    const clickURL = `${getBaseURL(services)}/auth/temp-login?t=${signedToken}`;
     // Only send the mail if a user really exists. We send the email
     // asynchronously both for speed and to avoid timing attacks.
     if (userRecord !== undefined) {
@@ -219,11 +211,8 @@ export class AuthEndpoint implements Endpoint {
       return responseForError('AccessDenied');
     }
     try {
-      const decoder = new TextDecoder();
-      const token: SignedTemporaryLoginToken = JSON.parse(
-        decoder.decode(decodeBase64Url(encodedToken))
-      );
-      const signerId = signerIdFromSignature(token.s);
+      const signature = decodeSignature<TemporaryLoginToken>(encodedToken);
+      const signerId = signature.sessionId;
       if (!signerId) {
         return responseForError('AccessDenied');
       }
@@ -232,16 +221,19 @@ export class AuthEndpoint implements Endpoint {
         return responseForError('AccessDenied');
       }
       const signerSession = await sessionFromRecord(signerRecord);
-      if (!verifyToken(signerSession, token)) {
+      if (
+        signerSession.owner !== 'root' || // Only root may sign login tokens
+        !(await verifyData(signerSession, signature))
+      ) {
         return responseForError('AccessDenied');
       }
-      const userKey = token.t.u;
+      const userKey = signature.data.u;
       const repo = services.sync.getSysDir();
       const userRecord = repo.valueForKey(userKey);
       if (!userRecord || userRecord.isNull) {
         return responseForError('AccessDenied');
       }
-      const sessionRecord = fetchSessionById(services, token.t.s);
+      const sessionRecord = fetchSessionById(services, signature.data.s);
       if (!sessionRecord) {
         return responseForError('AccessDenied');
       }
@@ -249,7 +241,7 @@ export class AuthEndpoint implements Endpoint {
         return responseForError('AccessDenied');
       }
       sessionRecord.set('owner', userKey);
-      repo.setValueForKey(token.t.s, sessionRecord);
+      repo.setValueForKey(signature.data!.s, sessionRecord);
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return new Response(null, {
@@ -270,7 +262,7 @@ export async function persistSession(
 ): Promise<void> {
   const repo = services.sync.getRepository('sys', 'dir');
   const record = await sessionToRecord(session);
-  repo.setValueForKey(session.id, record);
+  await repo.setValueForKey(session.id, record);
 }
 
 function fetchEncodedRootSessions(services: ServerServices): EncodedSession[] {
@@ -321,7 +313,7 @@ function fetchUserByEmail(
   return [row.key, Record.fromJS(JSON.parse(row.json))];
 }
 
-function fetchSessionById(
+export function fetchSessionById(
   services: ServerServices,
   sessionId: string
 ): Record | undefined {
@@ -345,21 +337,4 @@ function responseForError(err: AuthError): Response {
   return new Response(JSON.stringify({ error: err }), {
     status,
   });
-}
-
-async function signToken(
-  session: OwnedSession,
-  token: TemporaryLoginToken
-): Promise<SignedTemporaryLoginToken> {
-  return {
-    t: token,
-    s: await signBuffer(session, stableStringify(token)),
-  };
-}
-
-async function verifyToken(
-  session: Session,
-  token: SignedTemporaryLoginToken
-): Promise<boolean> {
-  return await verifyBuffer(session, token.s, stableStringify(token.t));
 }

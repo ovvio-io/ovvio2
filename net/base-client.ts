@@ -164,7 +164,7 @@ export abstract class BaseClient<
     return this._closed;
   }
 
-  protected abstract buildSyncMessage(): SyncMessage<ValueType>;
+  protected abstract buildSyncMessage(): Promise<SyncMessage<ValueType>>;
   protected abstract persistPeerValues(values: ValueType[]): Promise<number>;
   protected abstract getLocalSize(): number;
   abstract localIds(): Iterable<string>;
@@ -199,7 +199,7 @@ export abstract class BaseClient<
     }
     const startingStatus = this.status;
     const syncConfig = this._syncConfig;
-    const reqMsg = this.buildSyncMessage();
+    const reqMsg = await this.buildSyncMessage();
     const msg = JSONCyclicalEncoder.serialize(reqMsg);
     let respText: string | undefined;
     try {

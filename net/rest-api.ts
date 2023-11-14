@@ -3,7 +3,7 @@ import {
   OwnedSession,
   Session,
   decodeSession,
-  signBuffer,
+  signData,
 } from '../auth/session.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 
@@ -40,7 +40,7 @@ export async function sendLoginEmail(
   try {
     const resp = await sendJSONToEndpoint('/auth/send-login-email', {
       email,
-      signature: await signBuffer(session, email),
+      signature: await signData(session, email),
     });
     return resp.status === 200;
   } catch (_err: unknown) {

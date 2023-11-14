@@ -46,7 +46,11 @@ export class EmailService extends BaseService<ServerServices> {
         },
       },
     };
-    const resp = await this._client.send(new SendEmailCommand(req));
-    return resp.MessageId !== undefined;
+    try {
+      const resp = await this._client.send(new SendEmailCommand(req));
+      return resp.MessageId !== undefined;
+    } catch (_: unknown) {
+      return false;
+    }
   }
 }

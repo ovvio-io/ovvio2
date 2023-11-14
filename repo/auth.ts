@@ -1,3 +1,4 @@
+import { sessionIdFromSignature } from '../auth/session.ts';
 import { SchemeNamespace } from '../cfds/base/scheme-types.ts';
 import { Authorizer, RepoStorage, Repository } from './repo.ts';
 
@@ -13,8 +14,22 @@ export type FetchOperatorEmails = () => readonly string[];
 export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
   fetchOperatorEmails: FetchOperatorEmails
 ): Authorizer<ST> {
+  // ATTENTION: We look at the session who signed the commit (source) for
+  // determining permissions, rather than the session who transmits the commit
+  // (transport).
   return (repo, commit, session, write: boolean) => {
-    const userKey = session.owner;
+    if (!commit.signature) {
+      return false;
+    }
+    let userKey: string | undefined;
+    if (commit.key === session.id) {
+      userKey = session.owner;
+    } else {
+      const commitSignerSessionRecord = repo.valueForKey(
+        sessionIdFromSignature(commit.signature)
+      );
+      userKey = commitSignerSessionRecord.get<string>('owner');
+    }
     // Anonymous session
     if (!userKey) {
       return commit.key === session.id;
@@ -36,10 +51,25 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     if (isOperator) {
       return true;
     }
+    // If a current record doesn't exist, and we got a delta commit or a null
+    // commit, reject it as an invalid case.
+    if (record.isNull && (!commit.scheme || commit.scheme?.isNull)) {
+      return false;
+    }
+    // Derive the scheme either from the existing record (update) or from the
+    // new commit (create).
+    const namespace = record.isNull
+      ? repo.recordForCommit(commit).scheme.namespace
+      : commit.scheme!.namespace;
     // Per-namespace breakdown of permissions
-    switch (record.scheme.namespace) {
+    switch (namespace) {
       // Read-write access to members only
       case SchemeNamespace.WORKSPACE: {
+        // Anyone is allowed to create a new workspace
+        if (record.isNull) {
+          return true;
+        }
+        // Only members of an existing workspace are allowed to edit it
         const users = record.get<Set<string>>('users');
         return users?.has(userKey) === true;
       }
@@ -47,7 +77,10 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
       case SchemeNamespace.USERS:
-        return !operatorEmails.includes(record.get<string>('email'));
+        return (
+          write === false ||
+          !operatorEmails.includes(record.get<string>('email'))
+        );
 
       // Readonly access to everyone
       case SchemeNamespace.SESSIONS:
@@ -73,8 +106,17 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
   sysDir: Repository<ST>,
   workspaceKey: string
 ): Authorizer<ST> {
+  // ATTENTION: We look at the session who signed the commit (source) for
+  // determining permissions, rather than the session who transmits the commit
+  // (transport).
   return (repo, commit, session, write: boolean) => {
-    const userKey = session.owner;
+    if (!commit.signature) {
+      return false;
+    }
+    const commitSignerSessionRecord = repo.valueForKey(
+      sessionIdFromSignature(commit.signature)
+    );
+    const userKey = commitSignerSessionRecord.get<string>('owner');
     // Anonymous session
     if (!userKey) {
       return false;
@@ -85,7 +127,7 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     }
 
     // Operator Access
-    const userRecord = repo.valueForKey(userKey);
+    const userRecord = sysDir.valueForKey(userKey);
     const email = userRecord.get<string>('email');
     const isOperator = email && fetchOperatorEmails().includes(email);
     if (isOperator) {
@@ -100,9 +142,21 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
 }
 
 export function createUserAuthorizer<ST extends RepoStorage<ST>>(
+  sysDir: Repository<ST>,
   userKey: string
 ): Authorizer<ST> {
+  // ATTENTION: We look at the session who signed the commit (source) for
+  // determining permissions, rather than the session who transmits the commit
+  // (transport).
   return (repo, commit, session, write: boolean) => {
-    return userKey === 'root' || userKey === session.owner;
+    if (!commit.signature) {
+      return false;
+    }
+    const commitSignerSessionRecord = sysDir.valueForKey(
+      sessionIdFromSignature(commit.signature)
+    );
+    return (
+      userKey === 'root' || userKey === commitSignerSessionRecord.get('owner')
+    );
   };
 }
