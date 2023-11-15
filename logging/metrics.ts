@@ -63,6 +63,7 @@ export type MetricLogWithError<
   T extends BaseMetricLogEntry = BaseMetricLogEntry
 > = T & {
   error?: string;
+  trace?: string;
 };
 
 export type MetricLogEntryType<N extends MetricName> =
