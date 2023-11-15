@@ -28,7 +28,9 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       const commitSignerSessionRecord = repo.valueForKey(
         sessionIdFromSignature(commit.signature)
       );
-      userKey = commitSignerSessionRecord.get<string>('owner');
+      userKey = commitSignerSessionRecord.isNull
+        ? undefined
+        : commitSignerSessionRecord.get<string>('owner');
     }
     // Anonymous session
     if (!userKey) {
@@ -45,9 +47,12 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     // Operator Access
     const record = repo.valueForKey(commit.key);
     const userRecord = repo.valueForKey(userKey);
-    const email = userRecord.get<string>('email');
+    const email = userRecord.isNull
+      ? undefined
+      : userRecord.get<string>('email');
     const operatorEmails = fetchOperatorEmails();
-    const isOperator = email && operatorEmails.includes(email);
+    const isOperator =
+      typeof email === 'string' && operatorEmails.includes(email);
     if (isOperator) {
       return true;
     }
@@ -77,10 +82,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
       case SchemeNamespace.USERS:
-        return (
-          write === false ||
-          !operatorEmails.includes(record.get<string>('email'))
-        );
+        return write === false || isOperator;
 
       // Readonly access to everyone
       case SchemeNamespace.SESSIONS:
@@ -113,9 +115,12 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     if (!commit.signature) {
       return false;
     }
-    const commitSignerSessionRecord = repo.valueForKey(
+    const commitSignerSessionRecord = sysDir.valueForKey(
       sessionIdFromSignature(commit.signature)
     );
+    if (commitSignerSessionRecord.isNull) {
+      return false;
+    }
     const userKey = commitSignerSessionRecord.get<string>('owner');
     // Anonymous session
     if (!userKey) {
