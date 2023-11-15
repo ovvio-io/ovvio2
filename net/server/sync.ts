@@ -33,6 +33,7 @@ import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
   Session,
+  decodeSession,
   generateRequestSignature,
   sessionFromRecord,
   sessionIdFromSignature,
@@ -43,7 +44,8 @@ import {
   createWorkspaceAuthorizer,
   createUserAuthorizer,
 } from '../../repo/auth.ts';
-import { fetchSessionById } from './auth.ts';
+import { fetchEncodedRootSessions, fetchSessionById } from './auth.ts';
+import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
@@ -64,6 +66,26 @@ export class SyncService extends BaseService<ServerServices> {
     this._clientsForRepo = new Map();
     this._logs = new Map();
     this._clientsForLog = new Map();
+  }
+
+  async setup(services: ServerServices): Promise<void> {
+    super.setup(services);
+    const sysDir = this.getSysDir();
+    const trustPool = services.trustPool;
+    // First, load all root sessions
+    fetchEncodedRootSessions(services).forEach(async (encodedSesion) => {
+      const session = await decodeSession(encodedSesion);
+      await trustPool.addSession(session, sysDir.headForKey(session.id)!);
+    });
+    // Second, load all sessions (signed by root)
+    for (const key of sysDir.keys()) {
+      const record = sysDir.valueForKey(key);
+      if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+        const session = await sessionFromRecord(record);
+        // debugger;
+        await trustPool.addSession(session, sysDir.headForKey(key)!);
+      }
+    }
   }
 
   getRepository(
