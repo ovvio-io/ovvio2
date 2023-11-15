@@ -13,7 +13,7 @@ export class MetricsMiddleware implements Middleware {
   ): Promise<Response> {
     log(
       {
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'HttpStatusCode',
         unit: 'Count',
         value: resp.status,

@@ -188,6 +188,7 @@ export class AuthEndpoint implements Endpoint {
     // asynchronously both for speed and to avoid timing attacks.
     if (userRecord !== undefined) {
       smtp.send({
+        type: 'Login',
         to: email,
         subject: 'Login to Ovvio',
         plaintext: `Click on this link to login to Ovvio: ${clickURL}`,

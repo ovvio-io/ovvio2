@@ -9,6 +9,7 @@ export const kServerMetricNames = [
   'HttpStatusCode',
   'IncompatibleProtocolVersion',
   'InternalServerError',
+  'EmailSent',
 ] as const;
 
 export const kClientMetricNames = [
@@ -38,6 +39,8 @@ export type HTTPMethod =
 
 export type MetricSeverity = Extract<Severity, 'METRIC' | 'ERROR'>;
 
+export type EmailType = 'Login';
+
 export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
   extends BaseLogEntry {
   severity: T;
@@ -59,6 +62,13 @@ export type MetricLogWithHTTP<T extends MetricLogWithURL = MetricLogWithURL> =
     method?: HTTPMethod;
   };
 
+export type MetricLogWithType<
+  T extends string = string,
+  BASE extends BaseMetricLogEntry = BaseMetricLogEntry
+> = BASE & {
+  type?: T;
+};
+
 export type MetricLogWithError<
   T extends BaseMetricLogEntry = BaseMetricLogEntry
 > = T & {
@@ -74,6 +84,8 @@ export type MetricLogEntryType<N extends MetricName> =
     : N extends 'InternalServerError'
     ? Required<MetricLogWithError<BaseMetricLogEntry<'ERROR'>>> &
         MetricLogWithHTTP<BaseMetricLogEntry<'ERROR'>>
+    : N extends 'EmailSent'
+    ? MetricLogWithType<EmailType>
     : BaseMetricLogEntry;
 
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;

@@ -19,6 +19,7 @@ export const kMetricTypes: Record<ServerMetricName, MetricType> = {
   HttpStatusCode: 'Count',
   IncompatibleProtocolVersion: 'Count',
   InternalServerError: 'Count',
+  EmailSent: 'Count',
 };
 
 export class PrometheusLogStream implements LogStream {

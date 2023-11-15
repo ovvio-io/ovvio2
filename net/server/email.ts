@@ -5,8 +5,10 @@ import {
 } from '@aws-sdk/client-sesv2';
 import { ServerServices } from './server.ts';
 import { BaseService } from './service.ts';
+import { EmailType } from '../../logging/metrics.ts';
 
 export interface EmailMessage {
+  type: EmailType;
   to: string;
   subject: string;
   plaintext: string;
@@ -46,6 +48,13 @@ export class EmailService extends BaseService<ServerServices> {
         },
       },
     };
+    this.services.logger.log({
+      severity: 'METRIC',
+      name: 'EmailSent',
+      value: 1,
+      unit: 'Count',
+      type: message.type,
+    });
     try {
       const resp = await this._client.send(new SendEmailCommand(req));
       return resp.MessageId !== undefined;
