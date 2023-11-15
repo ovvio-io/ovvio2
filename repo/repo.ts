@@ -71,7 +71,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   numberOfCommits(session?: Session): number {
     const { authorizer } = this;
-    if (session && authorizer) {
+    if (
+      session &&
+      session.id !== this.trustPool.currentSession.id &&
+      authorizer
+    ) {
       let count = 0;
       for (const _ of this.commits(session)) {
         ++count;
@@ -87,7 +91,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       throw serviceUnavailable();
     }
     const { authorizer } = this;
-    if (session && authorizer) {
+    if (
+      session &&
+      session.id !== this.trustPool.currentSession.id &&
+      authorizer
+    ) {
       if (!authorizer(this, c, session, false)) {
         throw serviceUnavailable();
       }
@@ -101,7 +109,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   commits(session?: Session): Iterable<Commit> {
     const { authorizer } = this;
-    if (session && authorizer) {
+    if (
+      session &&
+      session.id !== this.trustPool.currentSession.id &&
+      authorizer
+    ) {
       return filterIterable(this.storage.allCommits(), (c) =>
         authorizer(this, c, session, false)
       );
@@ -111,7 +123,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   commitsForKey(key: string | null, session?: Session): Iterable<Commit> {
     const { authorizer } = this;
-    if (session && authorizer) {
+    if (
+      session &&
+      session.id !== this.trustPool.currentSession.id &&
+      authorizer
+    ) {
       return filterIterable(this.storage.commitsForKey(key), (c) =>
         authorizer(this, c, session, false)
       );
@@ -157,7 +173,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
 
   keys(session?: Session): Iterable<string> {
     const { authorizer } = this;
-    if (session && authorizer) {
+    if (
+      session &&
+      session.id !== this.trustPool.currentSession.id &&
+      authorizer
+    ) {
       return filterIterable(this.storage.allKeys(), (key) =>
         authorizer(this, this.headForKey(key, session.id)!, session, false)
       );
