@@ -502,18 +502,17 @@ export class TrustPool {
       }
       if (s.owner === 'root') {
         const roots = this.roots;
-        let updated = false;
+        let found = false;
         for (let i = 0; i < roots.length; ++i) {
-          if (
-            roots[i].id === s.id &&
-            roots[i].expiration.getTime() < newExpiration
-          ) {
-            roots[i] = s;
-            updated = true;
+          if (roots[i].id === s.id) {
+            found = true;
+            if (roots[i].expiration.getTime() < newExpiration) {
+              roots[i] = s;
+            }
             break;
           }
         }
-        if (!updated) {
+        if (!found) {
           roots.push(s);
         }
       }
