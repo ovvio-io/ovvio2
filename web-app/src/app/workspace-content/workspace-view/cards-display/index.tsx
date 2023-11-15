@@ -84,38 +84,21 @@ const useStrings = createUseStrings(localization);
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
-  const strings = useStrings();
-
-  // debugger;
 
   let content = null;
-  const isInSearch = false;
-  if (isInSearch) {
-    // content = (
-    //   <SearchResults
-    //     className={cn(styles.contentView)}
-    //     searchTerm={query}
-    //   />
-    // );
-  } else {
-    if (view.viewType === 'list') {
-      content = <ListView key={'list'} className={cn(styles.contentView)} />;
-    } else if (view.viewType === 'board') {
-      content = <BoardView className={cn(styles.contentView)} />;
-    }
+  if (view.viewType === 'list') {
+    content = <ListView key={'list'} className={cn(styles.contentView)} />;
+  } else if (view.viewType === 'board') {
+    content = <BoardView className={cn(styles.contentView)} />;
   }
 
   return (
     <div className={cn(styles.displayRoot)}>
       <div className={cn(styles.displayMain)}>
-        {!isInSearch ? (
-          <DisplayBar />
-        ) : (
-          <H2 className={cn(styles.title)}>{strings.searchResults}</H2>
-        )}
-        <ToolbarCenterItem className={cn(layout.flexSpacer)}>
-          {/* <SearchField query={query} setQuery={setQuery} /> */}
-        </ToolbarCenterItem>
+        <DisplayBar />
+        <ToolbarCenterItem
+          className={cn(layout.flexSpacer)}
+        ></ToolbarCenterItem>
         <FiltersView className={cn(styles.filters)} />
         <ActiveFiltersView className={cn(styles.activeFilters)} />
         <div className={cn(styles.displayContent)}>{content}</div>

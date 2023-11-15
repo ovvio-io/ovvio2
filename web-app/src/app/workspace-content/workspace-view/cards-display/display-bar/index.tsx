@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   SortBy,
   ShowChecked,
@@ -470,6 +470,14 @@ export function DisplayBar(props?: DisplayBarProps) {
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
+
+  // Hack: This component gets rendered before the top toolbar container that's
+  // designed to hold the compose button. To work around it we force a delayed
+  // re-render.
+  const [_, setComposeButtonHackCount] = useState(0);
+  useEffect(() => {
+    setTimeout(() => setComposeButtonHackCount(1), 50);
+  }, []);
 
   const leftHand = (
     <>

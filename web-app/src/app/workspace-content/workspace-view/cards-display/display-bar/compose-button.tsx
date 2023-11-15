@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import Menu from '../../../../../../../styles/components/menu.tsx';
+import Menu, {
+  MenuItem,
+} from '../../../../../../../styles/components/menu.tsx';
 import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
 import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
 import {
@@ -13,7 +15,10 @@ import { layout } from '../../../../../../../styles/layout.ts';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
 import { MediaQueries } from '../../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import {
+  usePartialGlobalView,
+  usePartialView,
+} from '../../../../../core/cfds/react/graph.tsx';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
@@ -21,6 +26,7 @@ import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { createNewNote } from '../../../../../shared/card/create.ts';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -74,7 +80,7 @@ export function ComposeButton() {
   const styles = useStyles();
   const logger = useLogger();
   const docRouter = useDocumentRouter();
-  const view = usePartialView('selectedWorkspaces');
+  const view = usePartialGlobalView('selectedWorkspaces');
   const workspaces = useVertices(view.selectedWorkspaces);
   const [container, setContainer] = useState<HTMLDivElement | null>();
 
@@ -84,7 +90,7 @@ export function ComposeButton() {
     });
 
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'Create',
       type: 'note',
       source: 'toolbar',
@@ -93,7 +99,7 @@ export function ComposeButton() {
     docRouter.goTo(note);
   };
 
-  if (view.selectedWorkspaces.size === 1) {
+  if (workspaces.length === 1) {
     return (
       <Button onClick={() => createCard(workspaces[0])}>
         <ComposeInternalButton ref={(div) => setContainer(div)} />
@@ -114,14 +120,11 @@ export function ComposeButton() {
         value={null}
         onChange={(ws) => createCard(ws.getVertexProxy())}
       />
-      {/* {selectedWorkspaces.map(workspace => (
-        <MenuItem
-          key={workspace.key}
-          onClick={() => createCard(workspace.getVertexProxy())}
-        >
-          <WorkspaceItem workspace={workspace} />
+      {workspaces.map((workspace) => (
+        <MenuItem key={workspace.key} onClick={() => createCard(workspace)}>
+          <WorkspaceItem workspace={workspace.manager} />
         </MenuItem>
-      ))} */}
+      ))}
     </Menu>
   );
 }
