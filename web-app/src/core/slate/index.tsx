@@ -27,6 +27,7 @@ import { isDefined } from '../../../../base/comparisons.ts';
 import { createLinkDecoration } from './plugins/link-decoration/index.tsx';
 import { useLogger } from '../cfds/react/logger.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
+import { useTrustPool } from '../../../../auth/react.tsx';
 
 export function createOvvioEditor(getNote?: () => VertexManager<Note>): Editor {
   return withCfds(withCards(withReact(withMentions(createEditor())), getNote));
@@ -37,8 +38,8 @@ export function useBodyEditor(noteManager: VertexManager<Note>): {
   plugins: PluginStack;
   handlers: EditorHandler;
 } {
-  const { sessionId } = useCfdsContext();
   const noteManagerRef = useRef(noteManager);
+  const sessionId = useTrustPool().currentSession.id;
   const currentUser = useCurrentUser();
   const editor = useMemo(
     () => createOvvioEditor(() => noteManagerRef.current),
@@ -110,7 +111,7 @@ export function useTitleEditor(
     ...DEFAULT_OPTS,
     ...opts,
   };
-  const { sessionId } = useCfdsContext();
+  const sessionId = useTrustPool().currentSession.id;
   const user = useCurrentUser();
   const noteRef = useRef(note);
   useEffect(() => {
