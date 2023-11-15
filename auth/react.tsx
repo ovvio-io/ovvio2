@@ -31,8 +31,11 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: 6,
   },
   contentsArea: {
-    height: `calc(100vh - ${kRootBannerHeight}px)`,
+    height: `calc(100vh)`,
     width: '100%',
+  },
+  contentsAreaWithBanner: {
+    height: `calc(100vh - ${kRootBannerHeight}px)`,
   },
 }));
 
@@ -182,11 +185,19 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
       </div>
     );
   return (
-    <sessionContext.Provider value={{ trustPool }}>
-      <CfdsClientProvider graphManager={graph!}>
-        {banner}
-        <div className={cn(styles.contentsArea)}>{children}</div>
-      </CfdsClientProvider>
-    </sessionContext.Provider>
+    <SkeletonApp>
+      <sessionContext.Provider value={{ trustPool }}>
+        <CfdsClientProvider graphManager={graph!}>
+          {banner}
+          <div
+            className={cn(
+              banner ? styles.contentsAreaWithBanner : styles.contentsArea
+            )}
+          >
+            {children}
+          </div>
+        </CfdsClientProvider>
+      </sessionContext.Provider>
+    </SkeletonApp>
   );
 }
