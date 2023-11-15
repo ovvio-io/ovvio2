@@ -4,6 +4,7 @@ import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { UserSettings } from './user-settings.ts';
 import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
+import { normalizeEmail } from '../../../../base/string.ts';
 
 export class User extends BaseVertex {
   compare(other: Vertex): number {
@@ -40,7 +41,7 @@ export class User extends BaseVertex {
 
   set email(email: string) {
     assert(typeof email === 'string' && email.length > 0);
-    this.record.set('email', email);
+    this.record.set('email', normalizeEmail(email));
   }
 
   get lastLoggedIn(): Date | undefined {

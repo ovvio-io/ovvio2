@@ -265,7 +265,9 @@ export async function persistSession(
   await repo.setValueForKey(session.id, record);
 }
 
-function fetchEncodedRootSessions(services: ServerServices): EncodedSession[] {
+export function fetchEncodedRootSessions(
+  services: ServerServices
+): EncodedSession[] {
   const repo = services.sync.getRepository('sys', 'dir');
   const db = repo.storage.db;
   const statement = db.prepare(
@@ -291,7 +293,9 @@ function fetchUserByEmail(
   const repo = services.sync.getSysDir();
   const db = repo.storage.db;
   const statement = db.prepare(
-    `SELECT json, key FROM heads WHERE ns = 'users' AND json->'$.d'->>'$.email' = '${email}' LIMIT 1;`
+    `SELECT json, key FROM heads WHERE ns = 'users' AND json->'$.d'->>'$.email' = '${normalizeEmail(
+      email
+    )}' LIMIT 1;`
   );
   const row = statement.get();
   if (!row || typeof row.json !== 'string' || typeof row.key !== 'string') {
