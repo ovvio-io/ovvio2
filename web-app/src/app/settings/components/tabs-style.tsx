@@ -39,5 +39,8 @@ export const tabsStyles = makeStyles(() => ({
     alignItems: 'center',
     padding: [0, SIDES_PADDING],
     basedOn: [layout.row],
+    fontWeight: '400',
+    lineHeight: '24px',
+    fontSize: '18px',
   },
 }));

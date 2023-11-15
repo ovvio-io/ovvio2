@@ -3,7 +3,7 @@ import { makeStyles, cn } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
-import { brandLightTheme } from '../../theme.tsx';
+import { brandLightTheme, lightColorWheel } from '../../theme.tsx';
 import { useTypographyStyles } from '../typography.tsx';
 import { NoteType } from '../../../cfds/client/graph/vertices/note.ts';
 import { TabId, SettingsTabId } from '../../../cfds/base/scheme-types.ts';
@@ -22,6 +22,9 @@ const useStyles = makeStyles(
       transitionProperty: 'color',
       transitionTimingFunction: 'linear',
       basedOn: [layout.row, layout.centerCenter, useTypographyStyles.h5],
+      ':hover': {
+        fontWeight: 'bold',
+      },
     },
     selected: {
       ...useTypographyStyles.label.rules,

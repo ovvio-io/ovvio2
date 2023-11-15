@@ -14,6 +14,7 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { brandLightTheme as theme1 } from '../../../../../../../styles/theme.tsx';
 
 const HEIGHT = styleguide.gridbase * 4;
 
@@ -28,6 +29,9 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'border-box',
     backgroundColor: theme.background[400],
     color: theme.background[600],
+    ':hover': {
+      backgroundColor: theme1.secondary.s4,
+    },
     ':first-child': {
       borderTopLeftRadius: HEIGHT / 2,
       borderBottomLeftRadius: HEIGHT / 2,
