@@ -116,6 +116,9 @@ const useStyles = makeStyles(() => ({
     background: theme.colors.secondaryButton,
     color: theme.colors.text,
     basedOn: [useButtonStyles.button],
+    ':hover': {
+      backgroundColor: theme.secondary.s4,
+    },
   },
   hasFilters: {
     backgroundColor: theme.colors.secondaryButtonActive,

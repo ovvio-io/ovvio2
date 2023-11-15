@@ -1,4 +1,4 @@
-import React, { MouseEvent } from 'react';
+import React, { MouseEvent, useEffect, useRef, useState } from 'react';
 import { makeStyles, cn } from '../../css-objects/index.ts';
 import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';
@@ -105,17 +105,27 @@ export function TabsHeader({
   className,
 }: TabsHeaderProps) {
   const styles = useStyles();
+  const ref = useRef<HTMLDivElement>(null);
+  const [isFixedWidth, setIsFixedWidth] = useState(true);
+  const fixedTabWidth = 168;
   const count = React.Children.count(children);
+
+  useEffect(() => {
+    if (ref.current) {
+      const totalWidth = ref.current.offsetWidth;
+      const requiredWidth = count * fixedTabWidth;
+      setIsFixedWidth(totalWidth >= requiredWidth);
+    }
+  }, [count]);
+
   let selectedIndex = 0;
   return (
-    <div className={cn(styles.header, className)}>
+    <div ref={ref} className={cn(styles.header, className)}>
       {React.Children.map(children, (tab, i) => {
         if (!React.isValidElement(tab)) {
           return tab;
         }
-
         const { value } = tab.props as TabProps;
-        const style = (tab.props as TabProps).style || {};
         const isSelected = value === selected;
         if (isSelected) {
           selectedIndex = i;
@@ -124,8 +134,7 @@ export function TabsHeader({
           isSelected: isSelected,
           setSelected,
           style: {
-            ...style,
-            flexBasis: `${100 / count}%`,
+            width: isFixedWidth ? `${fixedTabWidth}px` : `${100 / count}%`,
           },
         };
 
@@ -134,7 +143,7 @@ export function TabsHeader({
       <div
         className={cn(styles.selectedTabIndicator)}
         style={{
-          width: `${100 / count}%`,
+          width: isFixedWidth ? `${fixedTabWidth}px` : `${100 / count}%`,
           transform: `translateX(${100 * selectedIndex}%)`,
         }}
       />

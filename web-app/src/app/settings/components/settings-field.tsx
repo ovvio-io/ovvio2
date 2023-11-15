@@ -3,6 +3,7 @@ import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { IconCompose2 } from '../../../../../styles/components/new-icons/icon-compose2.tsx';
 import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
 import { Button } from '../../../../../styles/components/buttons.tsx';
+import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 
 const useStyles = makeStyles(() => ({
   inputContainer: {
@@ -30,7 +31,14 @@ const useStyles = makeStyles(() => ({
     fontStyle: 'normal',
     padding: [0, 0, '40px', 0],
   },
+  editLine: {
+    width: '480px',
+    height: '1px',
+    background: theme.primary.p8,
+    margin: '5px',
+  },
 }));
+
 interface SettingsFieldProps {
   onChange?: (newValue: string) => void;
   title: string;
@@ -72,16 +80,24 @@ const SettingsField: React.FC<SettingsFieldProps> = ({
       case 'editable':
         if (isEditing) {
           return (
-            <div className={styles.inputContainer}>
-              <input
-                ref={inputRef}
-                className={cn(styles.info)}
-                type="text"
-                placeholder={placeholder}
-                value={value}
-                onChange={handleChange}
-                onBlur={() => setIsEditing(false)}
-              />
+            <div>
+              <div className={styles.inputContainer}>
+                <input
+                  ref={inputRef}
+                  className={cn(styles.info)}
+                  type="text"
+                  value={value}
+                  onChange={handleChange}
+                  onBlur={() => setIsEditing(false)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    background: 'none',
+                    width: '100%',
+                  }}
+                />
+              </div>
+              <div className={styles.editLine}></div>
             </div>
           );
         } else {

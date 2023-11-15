@@ -29,9 +29,6 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'border-box',
     backgroundColor: theme.background[400],
     color: theme.background[600],
-    ':hover': {
-      backgroundColor: theme1.secondary.s4,
-    },
     ':first-child': {
       borderTopLeftRadius: HEIGHT / 2,
       borderBottomLeftRadius: HEIGHT / 2,
@@ -46,6 +43,11 @@ const useStyles = makeStyles((theme) => ({
   text: {
     justifyContent: 'center',
     basedOn: [layout.flexSpacer, layout.row],
+  },
+  toggleButtonHover: {
+    ':hover': {
+      backgroundColor: theme1.secondary.s4,
+    },
   },
   selected: {
     color: theme.background[0],
@@ -85,6 +87,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
         <Button
           className={cn(
             styles.toggleButton,
+            view.viewType !== 'list' && styles.toggleButtonHover,
             view.viewType === 'list' && styles.selected
           )}
           onClick={() => setView('list')}
@@ -96,6 +99,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
         <Button
           className={cn(
             styles.toggleButton,
+            view.viewType !== 'board' && styles.toggleButtonHover,
             view.viewType === 'board' && styles.selected
           )}
           onClick={() => setView('board')}

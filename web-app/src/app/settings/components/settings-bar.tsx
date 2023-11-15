@@ -8,7 +8,7 @@ import {
   LabelSm,
   useTypographyStyles,
 } from '../../../../../styles/components/typography.tsx';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { IconMenuClose } from '../../../../../styles/components/new-icons/icon-menu-close.tsx';
 import { PluginManager } from '../plugins/plugin-manager.tsx';
 import { SettingsTabPlugin } from '../plugins/plugins-list.tsx';
@@ -53,7 +53,6 @@ const useStyles = makeStyles(() => ({
     },
     ':hover': {
       backgroundColor: theme.secondary.s4,
-      //   backgroundColor: theme.colors.secondaryButtonActive,
       color: theme.colors.text,
     },
     basedOn: [layout.row],
@@ -129,7 +128,8 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   const styles = useStyles();
   const strings = useStrings();
   const navigate = useNavigate();
-
+  const { category: currentCategory } = useParams<{ category: string }>();
+  console.log('currentCategory :', currentCategory);
   const tabPlugins = PluginManager.getTabPlugins();
 
   const categories = tabPlugins.reduce<CategoryMap>((acc, plugin) => {
@@ -149,18 +149,25 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
     }
   };
 
-  const categoryElements = Object.keys(categories).map((category) => (
-    <div
-      key={category}
-      className={cn(styles.action)}
-      onClick={() => navigateToCategory(category)}
-    >
-      <div className={cn(styles.actionIcon)}>
-        {/*   need a way to dynamically assign icons based on category */}
+  const categoryElements = Object.keys(categories).map((category) => {
+    return (
+      <div
+        key={category}
+        className={cn(styles.action)}
+        style={{
+          backgroundColor:
+            category === currentCategory ? theme.secondary.s7 : undefined,
+        }}
+        onClick={() => navigateToCategory(category)}
+      >
+        <div className={cn(styles.actionIcon)}>
+          {/*   need a way to dynamically assign icons based on category */}
+        </div>
+        <div className={cn(styles.actionText)}>{strings[category]}</div>
       </div>
-      <div className={cn(styles.actionText)}>{strings[category]}</div>
-    </div>
-  ));
+    );
+  });
+
   return <div className={cn(styles.root, className)}>{categoryElements}</div>;
 }
 
