@@ -272,6 +272,7 @@ export class Server {
           }
           return resp;
         } catch (e: any) {
+          debugger;
           log({
             severity: 'ERROR',
             name: 'InternalServerError',
@@ -280,6 +281,7 @@ export class Server {
             url: req.url,
             method: req.method as HTTPMethod,
             error: String(e),
+            trace: e.stack,
           });
           return new Response(null, {
             status: 500,

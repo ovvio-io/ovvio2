@@ -18,10 +18,16 @@ export function count<T = unknown>(iter: Iterable<T>): number {
   return count;
 }
 
-export function uniqueId(length = 20): string {
+export function uniqueId(length = 24): string {
   // Alphanumeric characters
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  // const chars =
+  //   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  // We're using lowercase characters only to be URL friendly. At the time of
+  // this writing (15/11/23), Deno enforces the entire URL to lowercase.
+  // To compensate for the reduced space, we've increased the default length
+  // from 20 to 24.
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let autoId = '';
   for (let i = 0; i < length; i++) {
     autoId += chars.charAt(Math.floor(Math.random() * chars.length));

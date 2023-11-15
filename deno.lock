@@ -1901,6 +1901,7 @@
     "https://deno.land/std@0.204.0/assert/assert.ts": "9a97dad6d98c238938e7540736b826440ad8c1c1e54430ca4c4e623e585607ee",
     "https://deno.land/std@0.204.0/assert/assertion_error.ts": "4d0bde9b374dfbcbe8ac23f54f567b77024fb67dbb1906a852d67fe050d42f56",
     "https://deno.land/std@0.204.0/encoding/_util.ts": "f368920189c4fe6592ab2e93bd7ded8f3065b84f95cd3e036a4a10a75649dcba",
+    "https://deno.land/std@0.204.0/encoding/base32.ts": "4a3c759be9be6b88586f15f42b0b470d2c8a1d6cdd015b3e7b6caad0a12dc075",
     "https://deno.land/std@0.204.0/encoding/base64.ts": "cc03110d6518170aeaa68ec97f89c6d6e2276294b30807e7332591d7ce2e4b72",
     "https://deno.land/std@0.204.0/encoding/base64url.ts": "7608862858d28a003f9d6cb78dd61e645ecd1ae1f45faf0e09a306eafe66b16e",
     "https://deno.land/std@0.204.0/fs/_util.ts": "fbf57dcdc9f7bc8128d60301eece608246971a7836a3bb1e78da75314f08b978",

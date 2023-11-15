@@ -1,4 +1,3 @@
-import { encodeBase64Url, decodeBase64Url } from 'std/encoding/base64url.ts';
 import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import {
   deserializeDate,
@@ -16,6 +15,11 @@ import { Commit, CommitSerializeOptions } from '../repo/commit.ts';
 import { uniqueId } from '../base/common.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Scheme } from '../cfds/base/scheme.ts';
+import {
+  decodeBase32URL,
+  decodeBase32URLString,
+  encodeBase32URL,
+} from '../base/string.ts';
 
 export const SESSION_CRYPTO_KEY_GEN_PARAMS: EcKeyGenParams = {
   name: 'ECDSA',
@@ -132,7 +136,8 @@ export async function signData(
     container.sigData = embeddedData;
   }
   const encoder = new TextEncoder();
-  const buffer = encoder.encode(stableStringify(container));
+  const stableJSONString = stableStringify(container);
+  const buffer = encoder.encode(stableJSONString);
   const sig = await crypto.subtle.sign(
     {
       name: 'ECDSA',
@@ -143,7 +148,7 @@ export async function signData(
   );
   const res: Signature<typeof embeddedData> = {
     sessionId: session.id,
-    signature: encodeBase64Url(sig),
+    signature: encodeBase32URL(sig),
   } as Signature<typeof embeddedData>;
   if (embeddedData) {
     res.data = embeddedData;
@@ -188,14 +193,15 @@ export async function verifyData<T extends JSONValue>(
     container.sigData = sig.data;
   }
   const encoder = new TextEncoder();
-  const buffer = encoder.encode(stableStringify(container));
+  const stableJSONString = stableStringify(container);
+  const buffer = encoder.encode(stableJSONString);
   return await crypto.subtle.verify(
     {
       name: 'ECDSA',
       hash: { name: 'SHA-384' },
     },
     expectedSigner.publicKey,
-    decodeBase64Url(sig.signature),
+    decodeBase32URL(sig.signature),
     buffer
   );
 }
@@ -206,7 +212,6 @@ export async function verifyData<T extends JSONValue>(
 export function encodeSignature<T extends JSONValue | undefined>(
   sig: Signature<T>
 ): string {
-  const encoder = new TextEncoder();
   const obj: JSONObject = {
     i: sig.sessionId,
     s: sig.signature,
@@ -214,7 +219,7 @@ export function encodeSignature<T extends JSONValue | undefined>(
   if (sig.data) {
     obj.d = sig.data;
   }
-  return encodeBase64Url(encoder.encode(JSON.stringify(obj)));
+  return encodeBase32URL(JSON.stringify(obj));
 }
 
 export function decodeSignature<T extends JSONValue | undefined = undefined>(
@@ -237,8 +242,7 @@ export function decodeSignature<T extends JSONValue | undefined = undefined>(
   if (!str) {
     return undefined;
   }
-  const decoder = new TextDecoder();
-  const obj = JSON.parse(decoder.decode(decodeBase64Url(str)));
+  const obj = JSON.parse(decodeBase32URLString(str));
   const result: Signature<T> = {
     sessionId: obj.i,
     signature: obj.s,
