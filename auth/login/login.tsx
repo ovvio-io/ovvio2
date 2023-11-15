@@ -138,6 +138,7 @@ function LoginContents({
             value={email}
             onChange={onChange}
             onKeyUp={onKeyUp}
+            autoFocus
           />
           {showError && (
             <div className={cn(styles.errorTextContainer)}>
