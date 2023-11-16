@@ -9,13 +9,38 @@
 import * as path from 'std/path/mod.ts';
 import { JSONObject } from '../base/interfaces.ts';
 import { getEntryFilePath } from '../base/development.ts';
-import { kMinuteMs } from '../base/date.ts';
+import { kMinuteMs, kSecondMs } from '../base/date.ts';
+
+const UNHEALTHY_CHECK_COUNT = 5;
+const HEALTH_CHECK_FREQ_MS = kSecondMs;
 
 export interface WatchdogSettings extends JSONObject {
   tenantId: string;
   serverBinaryURL: string;
   watchdogSettingsURL: string;
   serverSettingsURL: string;
+}
+
+/**
+ * Given a port number, this function looks for a process that's currently
+ * listening on it.
+ *
+ * @param port The port to look for.
+ * @returns A PID, or -1 if no process is listening on this port.
+ */
+async function processIdForPort(port: number): Promise<number> {
+  const cmd = new Deno.Command('lsof', {
+    args: ['-F', 'p', `-i:${port}`],
+  });
+  const output = await cmd.output();
+  const decoder = new TextDecoder();
+  const outputStr = decoder.decode(output.stdout);
+  for (const line of outputStr.split('\n')) {
+    if (line[0] === 'p') {
+      return parseInt(line.substring(1));
+    }
+  }
+  return -1;
 }
 
 async function updateServerSettings(
@@ -56,12 +81,20 @@ async function _startChildServerProcess(
   serverBinaryPath: string,
   idx: number
 ): Promise<Deno.ChildProcess> {
+  // We match the port to the index of the process
   const port = 9000 + idx;
+  // Kill any zombies that may be left listening on this port
+  const existingPid = await processIdForPort(port);
+  if (existingPid !== -1) {
+    Deno.kill(existingPid, 'SIGKILL');
+  }
+  // Start the server process
   const cmd = new Deno.Command(serverBinaryPath, {
     args: ['--silent', `--port=${port}`],
   });
   const child = cmd.spawn();
   child.ref();
+  // Wait for the server to ack its startup
   const decoder = new TextDecoder();
   while (true) {
     const output = await child.stdout.getReader().read();
@@ -69,11 +102,26 @@ async function _startChildServerProcess(
       break;
     }
   }
+  // Health check for this process
+  let failureCount = 0;
   const intervalId = setInterval(async () => {
     try {
-      const rep = await fetch()
+      const resp = await fetch(`http://localhost:${port}/healthy`);
+      if (resp.status !== 200) {
+        if (++failureCount === UNHEALTHY_CHECK_COUNT) {
+          child.kill('SIGKILL');
+        }
+      } else {
+        failureCount = 0;
+      }
+    } catch (_err: unknown) {
+      if (++failureCount === UNHEALTHY_CHECK_COUNT) {
+        child.kill('SIGKILL');
+      }
     }
-  })
+  }, HEALTH_CHECK_FREQ_MS);
+  // Cleanup on process termination
+  child.status.finally(() => clearInterval(intervalId));
   return child;
 }
 
@@ -85,11 +133,14 @@ async function startServerProcesses(
     const terminationCallback = async (status: Deno.CommandStatus) => {
       if (status.code !== 0) {
         console.log('Restarting crashed server');
-        serverProcesses[i] = await _startChildServerProcess(serverBinaryPath);
+        serverProcesses[i] = await _startChildServerProcess(
+          serverBinaryPath,
+          i
+        );
         serverProcesses[i].status.then(terminationCallback);
       }
     };
-    const child = await _startChildServerProcess(serverBinaryPath);
+    const child = await _startChildServerProcess(serverBinaryPath, i);
     child.status.then(terminationCallback);
     serverProcesses.push(child);
   }
