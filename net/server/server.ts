@@ -2,6 +2,7 @@ import yargs from 'yargs';
 import * as path from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import {
+  LogStream,
   Logger,
   log,
   newLogger,
@@ -28,6 +29,7 @@ interface Arguments {
   readonly dir: string;
   readonly replicas: string[];
   readonly port: number;
+  readonly silent?: boolean;
 }
 
 // Stuff that's shared to all organizations served by this server
@@ -118,6 +120,7 @@ export class Server {
   private readonly _baseContext: ServerContext;
   private readonly _servicesByOrg: Dictionary<string, ServerServices>;
   private _abortController: AbortController | undefined;
+  private _httpServer?: Deno.HttpServer;
 
   constructor(args?: Arguments) {
     this._endpoints = [];
@@ -137,6 +140,12 @@ export class Server {
           description:
             'A list of replica URLs which this server will sync with',
         })
+        .option('silent', {
+          type: 'boolean',
+          default: false,
+          description:
+            'A list of replica URLs which this server will sync with',
+        })
         .option('dir', {
           alias: 'd',
           description:
@@ -153,7 +162,10 @@ export class Server {
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
-    const logStreams = [new ConsoleLogStream(), prometeusLogStream];
+    const logStreams: LogStream[] = [prometeusLogStream];
+    if (args?.silent !== true) {
+      logStreams.splice(0, 0, new ConsoleLogStream());
+    }
     setGlobalLoggerStreams(logStreams);
     this._baseContext = {
       settings: settingsService,
@@ -187,7 +199,9 @@ export class Server {
     };
     // Setup Settings service
     await this._baseContext.settings.setup(services);
+    await this._baseContext.settings.start();
     await this._baseContext.email.setup(services);
+    await this._baseContext.settings.start();
     (this._baseContext as any).trustPool = new TrustPool(
       this._baseContext.settings.session,
       []
@@ -300,14 +314,14 @@ export class Server {
     return resp;
   }
 
-  start(): Promise<void> {
+  async start(): Promise<void> {
     if (this._abortController) {
       return Promise.resolve();
     }
     for (const services of this._servicesByOrg.values()) {
       for (const v of Object.values(services)) {
         if (v instanceof BaseService) {
-          v.start();
+          await v.start();
         }
       }
     }
@@ -323,7 +337,7 @@ export class Server {
       resolve = res;
     });
     this._abortController = new AbortController();
-    const server = Deno.serve(
+    this._httpServer = Deno.serve(
       {
         port: this._baseContext.port,
         onListen() {
@@ -333,23 +347,13 @@ export class Server {
       },
       this.processRequest.bind(this)
     );
+    if (this._baseContext.silent === true) {
+      console.log('STARTED');
+    }
+    Deno.addSignalListener('SIGTERM', () => {
+      Deno.exit(0);
+    });
     return result;
-  }
-
-  stop(): Promise<void> {
-    if (!this._abortController) {
-      return Promise.resolve();
-    }
-    this._abortController.abort();
-    for (const services of this._servicesByOrg.values()) {
-      for (const v of Object.values(services)) {
-        if (v instanceof BaseService) {
-          v.stop();
-        }
-      }
-    }
-    this._abortController = undefined;
-    return Promise.resolve();
   }
 }
 

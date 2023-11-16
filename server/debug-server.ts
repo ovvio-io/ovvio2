@@ -45,6 +45,9 @@ async function openBrowser(): Promise<void> {
 async function main(): Promise<void> {
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
+  Deno.addSignalListener('SIGTERM', () => {
+    ctx.close();
+  });
   const watcher = Deno.watchFs(await getRepositoryPath());
   const server = new Server();
   await server.setup();
@@ -72,8 +75,6 @@ async function main(): Promise<void> {
       }
     }
   }
-  await server.stop();
-  ctx.close();
 }
 
 main();
