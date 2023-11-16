@@ -15,21 +15,20 @@ data.
 
 Running the server will pull all dependencies, and compile the web-app.
 
-Normal run:
-`deno run --unstable -A server/run-server.ts -d <path to data dir>`
-
 Debug run:
 `deno run --unstable -A --inspect-brk server/run-server.ts -d <path to data dir>`
 
 NOTE: If you're having problems with deno.lock getting out of sync, add the
 `--lock-write` flag to deno run which will force update the lock file.
 
-### Live Reload
+### Compiling for Production
 
-When working on the web-app, and especially when working on CSS, it's useful to
-have live reload functionality. For live reload, simply run `debug-server.ts`
-instead of `run-server.ts`. If follows an identical arguments pattern except it
-also has live reload built in.
+When compiling for production, run the following command:
+`deno run -A server/build.ts`
+
+This will create a `build` directory inside the repository, containing
+executables both for the local OS and for x64 linux for production. These
+executables are fully self contained, and have no external dependencies.
 
 ### Starting Fresh
 

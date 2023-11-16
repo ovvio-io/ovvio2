@@ -4,7 +4,6 @@ import {
   SortBy,
   ViewType,
 } from '../cfds/base/scheme-types.ts';
-import { ToggleAction } from '../web-app/src/app/workspaces-bar/ws-selection-utils.ts';
 import { BaseLogEntry } from './entry.ts';
 
 export type ClientEvent =
@@ -126,7 +125,6 @@ export interface ClientEventEntry extends BaseLogEntry {
   status?: UIStatus | NoteStatus;
   reason?: Reason;
   routeInfo?: string;
-  action?: ToggleAction;
   flag?: boolean;
   flow?: UIFlow;
   id?: string;

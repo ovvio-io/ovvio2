@@ -8,6 +8,8 @@ import {
 } from '../../build.ts';
 import { ServerServices, Endpoint } from './server.ts';
 import { getRequestPath } from './utils.ts';
+import { JSONObject, ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
 
 export type ContentType =
   | 'image/svg+xml'
@@ -107,4 +109,36 @@ export async function compileAssetsDirectory(
     }
   }
   return result;
+}
+
+export function staticAssetsToJS(assets: StaticAssets): ReadonlyJSONObject {
+  const result: JSONObject = {};
+  for (const [ep, entry] of Object.entries(assets)) {
+    const encodedEp: JSONObject = {};
+    for (const [path, asset] of Object.entries(entry)) {
+      encodedEp[path] = {
+        data: encodeBase64(asset.data),
+        contentType: asset.contentType,
+      };
+    }
+    result[ep] = encodedEp;
+  }
+  return result;
+}
+
+export function staticAssetsFromJS(assets: ReadonlyJSONObject): StaticAssets {
+  const result: Record<string, StaticEntryPoint> = {};
+  for (const [ep, encodedEp] of Object.entries(assets)) {
+    const entry: StaticEntryPoint = {};
+    for (const [path, asset] of Object.entries(
+      encodedEp as ReadonlyJSONObject
+    )) {
+      entry[path] = {
+        data: decodeBase64((asset as ReadonlyJSONObject).data as string),
+        contentType: (asset as ReadonlyJSONObject).contentType as ContentType,
+      };
+    }
+    result[ep] = entry;
+  }
+  return result as StaticAssets;
 }

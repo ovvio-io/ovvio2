@@ -1,5 +1,5 @@
-// @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
-import * as esbuild from 'https://deno.land/x/esbuild@v0.19.2/mod.js';
+// @deno-types="esbuild-types"
+import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
 import { assert, notReached } from './base/error.ts';
 import { retry } from './base/time.ts';
@@ -21,7 +21,7 @@ async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
   });
 }
 
-const ENTRY_POINTS = await getEntryPoints();
+export const ENTRY_POINTS = await getEntryPoints();
 
 function isPath(str: string): boolean {
   return str.startsWith('/') || str.startsWith('./') || str.startsWith('../');
@@ -177,7 +177,7 @@ export async function bundle(): Promise<Record<EntryPointName, BundleResult>> {
   return bundleResultFromBuildResult(result);
 }
 
-function bundleResultFromBuildResult(
+export function bundleResultFromBuildResult(
   buildResult: esbuild.BuildResult
 ): Record<EntryPointName, BundleResult> {
   const result = {} as Record<EntryPointName, BundleResult>;
@@ -202,12 +202,18 @@ export function stopBackgroundCompiler(): void {
   esbuild.stop();
 }
 
-export interface BuildContext {
+export interface ReBuildContext {
   rebuild(): Promise<Record<EntryPointName, BundleResult>>;
   close(): void;
 }
 
-export async function createBuildContext(): Promise<BuildContext> {
+export function isReBuildContext(
+  ctx: ReBuildContext | typeof esbuild
+): ctx is ReBuildContext {
+  return typeof (ctx as ReBuildContext).rebuild === 'function';
+}
+
+export async function createBuildContext(): Promise<ReBuildContext> {
   const ctx = await esbuild.context({
     entryPoints: ENTRY_POINTS,
     plugins: [await createOvvioImportPlugin()],
