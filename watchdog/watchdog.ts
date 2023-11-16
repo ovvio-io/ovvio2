@@ -43,6 +43,13 @@ async function processIdForPort(port: number): Promise<number> {
   return -1;
 }
 
+/**
+ * Updates the settings file for server. Servers are watching this file and
+ * automatically pick up any changes made to it.
+ *
+ * @param url The url to download the settings json from.
+ * @param localPath Where to store the updated settings.
+ */
 async function updateServerSettings(
   url: string,
   localPath: string
@@ -56,6 +63,15 @@ async function updateServerSettings(
   }
 }
 
+/**
+ * Updates the server binary. Upon success, terminates all existing servers and
+ * replaces them with updated ones.
+ *
+ * @param url
+ * @param localPath
+ * @param childProcesses
+ * @returns
+ */
 async function updateServerBinary(
   url: string,
   localPath: string,
@@ -65,6 +81,7 @@ async function updateServerBinary(
   try {
     const resp = await fetch(url);
     const buff = await resp.arrayBuffer();
+    // TODO: Take snapshot of the disk before actually updating anything
     await Deno.writeFile(localPath, new Uint8Array(buff));
     success = true;
   } catch (err: unknown) {
