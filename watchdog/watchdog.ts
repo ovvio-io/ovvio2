@@ -10,6 +10,7 @@ import * as path from 'std/path/mod.ts';
 import { JSONObject } from '../base/interfaces.ts';
 import { getEntryFilePath } from '../base/development.ts';
 import { kMinuteMs, kSecondMs } from '../base/date.ts';
+import { coreValueEquals } from '../base/core-types/equals.ts';
 
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
@@ -81,7 +82,7 @@ async function updateServerBinary(
   try {
     const resp = await fetch(url);
     const buff = await resp.arrayBuffer();
-    // TODO: Take snapshot of the disk before actually updating anything
+    // TODO: Take an EBS snapshot before proceeding with server update
     await Deno.writeFile(localPath, new Uint8Array(buff));
     success = true;
   } catch (err: unknown) {
@@ -183,6 +184,10 @@ async function main(): Promise<void> {
     try {
       const resp = await fetch(settings.watchdogSettingsURL);
       const updatedSettings = await resp.json();
+      if (coreValueEquals(settings, updatedSettings)) {
+        return;
+      }
+      // TODO: Take an EBS snapshot before updating anything
       if (settings.serverSettingsURL !== updatedSettings.serverSettingsURL) {
         await updateServerSettings(
           updatedSettings.serverSettingsURL,
@@ -201,6 +206,10 @@ async function main(): Promise<void> {
         );
       }
       settings = updatedSettings;
+      await Deno.writeTextFile(
+        settings.watchSettingsFile,
+        JSON.stringify(settings)
+      );
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error && err.stack) {
