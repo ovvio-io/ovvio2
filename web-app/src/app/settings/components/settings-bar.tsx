@@ -129,7 +129,6 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   const strings = useStrings();
   const navigate = useNavigate();
   const { category: currentCategory } = useParams<{ category: string }>();
-  console.log('currentCategory :', currentCategory);
   const tabPlugins = PluginManager.getTabPlugins();
 
   const categories = tabPlugins.reduce<CategoryMap>((acc, plugin) => {

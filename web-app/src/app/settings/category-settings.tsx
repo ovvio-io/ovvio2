@@ -21,7 +21,7 @@ export function CategorySettings(props?: CategorySettingsProps) {
   return (
     <div className={styles.root}>
       <div className={cn(styles.bar, className)}>
-        <div className={cn(styles.dialogHeader)}>{strings[category]}</div>
+        <div className={cn(styles.dialogHeader)}>{strings[category + 'S']}</div>
         <div className={cn(styles.barRow, styles.viewRow)}>
           <TabView category={category} />
         </div>

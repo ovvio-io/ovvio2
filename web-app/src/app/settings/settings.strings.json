@@ -9,8 +9,11 @@
       "roles&details":"Roles & Details",
       "tags":"Tags",
       "PersonalInfo": "Personal Info",
+      "PersonalInfoS": "Personal Information",
+      "WorkspacesInfoS": "Workspace Settings",
       "WorkspacesInfo": "My Workspaces",
-      "OrganizationInfo": "Organization"
+      "OrganizationInfo": "Organization",
+      "OrganizationInfoS": "Organization Settings"
     }
   }
   
