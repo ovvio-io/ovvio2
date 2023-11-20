@@ -39,13 +39,13 @@ export interface ServerContext extends Arguments {
   readonly trustPool: TrustPool;
   readonly email: EmailService;
   readonly logger: Logger;
+  staticAssets: StaticAssets | undefined;
 }
 
 // Stuff specific to an organization
 export interface ServerServices extends ServerContext {
   readonly organizationId: string;
   readonly sync: SyncService;
-  staticAssets: StaticAssets | undefined;
 }
 
 /**
@@ -122,7 +122,7 @@ export class Server {
   private _abortController: AbortController | undefined;
   private _httpServer?: Deno.HttpServer;
 
-  constructor(args?: Arguments) {
+  constructor(args?: Arguments, staticAssets?: StaticAssets) {
     this._endpoints = [];
     this._middlewares = [];
     if (args === undefined) {
@@ -176,6 +176,7 @@ export class Server {
       port: args?.port || 8080,
       email: new EmailService(),
       logger: newLogger(logStreams),
+      staticAssets,
     } as ServerContext;
     // Monitoring
     this.registerMiddleware(new MetricsMiddleware(logStreams));
