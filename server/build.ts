@@ -1,4 +1,4 @@
-// @deno-types="esbuild-types"
+// @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
 import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
 import { defaultAssetsBuild } from './generate-statc-assets.ts';

@@ -1,15 +1,15 @@
-// @deno-types="esbuild-types"
+// @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
 import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
 import { assert, notReached } from './base/error.ts';
 import { retry } from './base/time.ts';
 import { getImportMapPath, getRepositoryPath } from './base/development.ts';
+import {
+  kEntryPointsNames,
+  EntryPointName,
+} from './net/server/static-assets.ts';
 
 const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
-
-export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
-export type EntryPointName = (typeof kEntryPointsNames)[number];
-export const EntryPointDefault: EntryPointName = 'web-app';
 
 async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
   const repoPath = await getRepositoryPath();

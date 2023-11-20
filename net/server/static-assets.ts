@@ -1,15 +1,14 @@
 import { walk } from 'std/fs/walk.ts';
 import { exists } from 'std/fs/mod.ts';
 import { extname } from 'std/path/mod.ts';
-import {
-  EntryPointDefault,
-  EntryPointName,
-  kEntryPointsNames,
-} from '../../build.ts';
 import { ServerServices, Endpoint } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
+
+export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
+export type EntryPointName = (typeof kEntryPointsNames)[number];
+export const EntryPointDefault: EntryPointName = 'web-app';
 
 export type ContentType =
   | 'image/svg+xml'
