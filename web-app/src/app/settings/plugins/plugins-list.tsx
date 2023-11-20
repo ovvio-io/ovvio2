@@ -7,9 +7,17 @@ import { cn } from '../../../../../styles/css-objects/index.ts';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../core/cfds/react/vertex.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
-import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
+import {
+  TextSm,
+  Text,
+  Bold,
+  H4,
+  H6,
+} from '../../../../../styles/components/typography.tsx';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
-import { AssignButton } from '../components/settings-buttons.tsx';
+import { AssignButton, EditButton } from '../components/settings-buttons.tsx';
+import { Box } from '../components/multiselection-toolbar.tsx';
+import IconClose from '../../../../../styles/components/icons/IconClose.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -19,44 +27,44 @@ export interface SettingsTabPlugin {
 
 export const tabPlugins: SettingsTabPlugin[] = [
   {
-    title: 'generalPersonal',
+    title: 'general-personal',
     render: () => <GeneralTabContent />,
-    category: 'PersonalInfo',
+    category: 'personal-info',
   },
   {
     title: 'details',
     render: () => <DetailsTabContent />,
-    category: 'PersonalInfo',
+    category: 'personal-info',
   },
   {
-    title: 'generalWorkspaces',
+    title: 'general-workspaces',
     render: () => <GeneralOrgTabContent />,
-    category: 'WorkspacesInfo',
+    category: 'workspaces-info',
   },
   {
     title: 'tags',
     render: () => <DetailsTabContent />,
-    category: 'WorkspacesInfo',
+    category: 'workspaces-info',
   },
   {
-    title: 'roles&details',
+    title: 'roles-details',
     render: () => <DetailsTabContent />,
-    category: 'WorkspacesInfo',
+    category: 'workspaces-info',
   },
   {
-    title: 'generalOrganization',
+    title: 'general-organization',
     render: () => <GeneralOrgTabContent />,
-    category: 'OrganizationInfo',
+    category: 'organization-info',
   },
   {
     title: 'members',
     render: () => <MembersTabContent />,
-    category: 'OrganizationInfo',
+    category: 'organization-info',
   },
   {
     title: 'billing',
     render: () => <DetailsTabContent />,
-    category: 'OrganizationInfo',
+    category: 'organization-info',
   },
 ];
 
@@ -126,11 +134,6 @@ const getRandomName = () => {
   return `${randomFirstName} ${randomLastName}`;
 };
 
-const dummyUsers = Array.from({ length: 100 }, () => ({
-  name: getRandomName(),
-  email: 'example@example.com', // Use a generic email or generate random ones similarly
-}));
-
 export function MembersTabContent() {
   const styles = tabsStyles();
   const usersQuery = useSharedQuery('users');
@@ -178,12 +181,12 @@ export function MembersTabContent() {
   const [dummyUsers, setDummyUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const users = Array.from({ length: 50 }, () => ({
+    const users = Array.from({ length: 50 }, (_, i) => ({
       name: getRandomName(),
-      email: 'example@example.com',
+      email: `example${i}@example.com`,
     }));
     setDummyUsers(users);
-    setFilteredUsers(users); // Initially, filtered data is the same as the complete set
+    setFilteredUsers(users);
   }, []);
 
   // Filter dummy data based on search term
@@ -210,58 +213,95 @@ export function MembersTabContent() {
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
+  const [showSearchRow, setShowSearchRow] = useState<boolean>(false);
+  const toggleSearchRow = () => setShowSearchRow((prev) => !prev);
+
+  const buttonsContainerStyle: CSSProperties = {
+    display: 'flex',
+    gap: '16px',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  };
+  const HeaderContainerStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    padding: '50px 0px 24px',
+    maxWidth: '905px',
+  };
+  const multiselection: CSSProperties = {
+    height: '64px',
+    left: '0',
+    position: 'absolute',
+    width: '1478px',
+    backgroundColor: '#3184dd',
+    padding: 0,
+    display: 'flex',
+    alignItems: 'center',
+  };
+
   return (
     <div>
-      <AssignButton />
+      <div style={multiselection}>
+        <IconClose />
+        <H4>Assign to workspace</H4>
+      </div>
+      <H6>Choose members to assign</H6>
+      {/* <Box /> */}
+      <div style={HeaderContainerStyle}>
+        <Bold>Org. Members</Bold>
+        <div style={buttonsContainerStyle}>
+          <AssignButton onAssignClick={toggleSearchRow} />
+          <EditButton />
+        </div>
+      </div>
 
-      <div className={cn(styles.barRow)}>
-        <SettingsField title="Org. Members" value="" toggle="label" />
-        <div>
-          <div style={scrollContainerStyle}>
-            <div style={searchRowStyle}>
-              <div
-                style={{
-                  marginRight: '8px',
-                }}
-              >
-                <IconSearch />
-              </div>
-              <Text>
-                <input
-                  type="text"
-                  placeholder="Search member"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  style={{
-                    flexGrow: 1,
-                    border: 'none',
-                    outline: 'none',
-                    background: 'none',
-                    width: '100%',
-                  }}
-                />
-              </Text>
+      <div>
+        {showSearchRow && (
+          <div style={searchRowStyle}>
+            <div
+              style={{
+                marginRight: '8px',
+              }}
+            >
+              <IconSearch />
             </div>
-
-            {filteredUsers.map((user, index) => (
-              <div
-                key={index}
+            <Text>
+              <input
+                type="text"
+                placeholder="Search member"
+                value={searchTerm}
+                onChange={handleSearchChange}
                 style={{
-                  ...rowStyle,
-                  marginBottom:
-                    index === filteredUsers.length - 1
-                      ? '0'
-                      : rowStyle.marginBottom,
+                  flexGrow: 1,
+                  border: 'none',
+                  outline: 'none',
+                  background: 'none',
+                  width: '100%',
                 }}
-              >
-                <Text style={firstColumnStyle}>{user.name}</Text>
-                <TextSm style={otherColumnStyle}>{user.email}</TextSm>
-                <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
-                <TextSm style={otherColumnStyle}>{'placeholder2'}</TextSm>
-                <TextSm style={otherColumnStyle}>{'placeholder3'}</TextSm>
-              </div>
-            ))}
+              />
+            </Text>
           </div>
+        )}
+        <div style={scrollContainerStyle}>
+          {filteredUsers.map((user, index) => (
+            <div
+              key={index}
+              style={{
+                ...rowStyle,
+                marginBottom:
+                  index === filteredUsers.length - 1
+                    ? '0'
+                    : rowStyle.marginBottom,
+              }}
+            >
+              <Text style={firstColumnStyle}>{user.name}</Text>
+              <TextSm style={otherColumnStyle}>{user.email}</TextSm>
+              <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
+              <TextSm style={otherColumnStyle}>{'placeholder2'}</TextSm>
+              <TextSm style={otherColumnStyle}>{'placeholder3'}</TextSm>
+            </div>
+          ))}
         </div>
       </div>
     </div>

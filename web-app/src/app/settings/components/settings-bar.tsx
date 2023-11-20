@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import Layer from '../../../../../styles/components/layer.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../styles/layout.ts';
@@ -14,6 +14,8 @@ import { PluginManager } from '../plugins/plugin-manager.tsx';
 import { SettingsTabPlugin } from '../plugins/plugins-list.tsx';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
+import { usePartialView } from '../../../core/cfds/react/graph.tsx';
+import { IconPersonalInfo } from '../../../../../styles/components/new-icons/icon-personal-info.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -140,13 +142,34 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
     return acc;
   }, {});
 
+  const view = usePartialView('selectedSettingsTabId');
+
   const navigateToCategory = (category: string) => {
     const categoryTabs = categories[category];
-
+    //TODO: needs to fix the memory of tab view when switching categories.
+    console.log('VIEW -', view.selectedSettingsTabId);
     if (categoryTabs && categoryTabs.length > 0) {
-      navigate(`/settings/${category}/${categoryTabs[0].title}`);
+      navigate(`/settings/${category}/${strings[categoryTabs[0].title]}`);
     }
   };
+
+  // const navigateToCategory = (category: string) => {
+  //   // Convert the category to lowercase and replace spaces with hyphens
+  //   const formattedCategory = category
+  //     .toLowerCase()
+  //     .replace(/\s+/g, '-')
+  //     .replace(/&/g, 'and'); // Optional: Replace '&' with 'and'
+
+  //   const categoryTabs = categories[formattedCategory];
+
+  //   if (categoryTabs && categoryTabs.length > 0) {
+  //     navigate(
+  //       `/settings/${formattedCategory}/${categoryTabs[0].title
+  //         .toLowerCase()
+  //         .replace(/\s+/g, '-')}`
+  //     );
+  //   }
+  // };
 
   const categoryElements = Object.keys(categories).map((category) => {
     return (
@@ -160,7 +183,7 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
         onClick={() => navigateToCategory(category)}
       >
         <div className={cn(styles.actionIcon)}>
-          {/*   need a way to dynamically assign icons based on category */}
+          <IconPersonalInfo />
         </div>
         <div className={cn(styles.actionText)}>{strings[category]}</div>
       </div>

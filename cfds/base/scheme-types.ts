@@ -220,19 +220,23 @@ export type ViewType = (typeof kViewType)[number];
 export const kTabIds = ['tasks', 'notes', 'overview'] as const;
 
 export const kSettingsTabIds = [
-  'generalPersonal',
+  'general-personal',
   'details',
-  'generalOrganization',
+  'general-organization',
   'members',
   'billing',
-  'generalWorkspaces',
+  'general-workspaces',
   'tags',
-  'roles&details',
+  'roles-details',
 ] as const;
 
 export type TabId = (typeof kTabIds)[number];
 
 export type SettingsTabId = (typeof kSettingsTabIds)[number];
+
+export function isSettingsTabId(tabId: string): tabId is SettingsTabId {
+  return kSettingsTabIds.includes(tabId as any);
+}
 
 export const kDateFilters = ['week', 'month'] as const;
 

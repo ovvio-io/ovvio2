@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect } from 'react';
-import { SettingsTabId } from '../../../../../cfds/base/scheme-types.ts';
+import {
+  SettingsTabId,
+  TabId,
+  isSettingsTabId,
+} from '../../../../../cfds/base/scheme-types.ts';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
 import { usePartialView } from '../../../core/cfds/react/graph.tsx';
@@ -93,10 +97,14 @@ function TabView({ category }: any) {
   }, [routeTab, view]);
 
   const setSelected = useCallback(
-    (tabId: SettingsTabId) => {
+    (tabId: TabId | SettingsTabId) => {
       try {
-        view.selectedSettingsTabId = tabId;
-        navigate(`/settings/${category}/${tabId}`);
+        if (isSettingsTabId(tabId)) {
+          view.selectedSettingsTabId = tabId;
+          navigate(`/settings/${category}/${strings[tabId]}`);
+        } else {
+          view.selectedTabId = tabId;
+        }
       } catch (error) {
         console.error('Error setting selectedTabId:', error);
       }

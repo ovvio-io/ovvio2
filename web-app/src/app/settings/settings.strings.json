@@ -1,19 +1,19 @@
 {
     "en": {
-      "generalPersonal": "General",
+      "general-personal": "General",
       "details": "Details",
-      "generalOrganization": "General",
+      "general-organization": "General",
       "members": "Members",
       "billing": "Billing",
-      "generalWorkspaces": "General",
-      "roles&details":"Roles & Details",
+      "general-workspaces": "General",
+      "roles-details":"Roles & Details",
       "tags":"Tags",
-      "PersonalInfo": "Personal Info",
-      "PersonalInfoS": "Personal Information",
-      "WorkspacesInfoS": "Workspace Settings",
-      "WorkspacesInfo": "My Workspaces",
-      "OrganizationInfo": "Organization",
-      "OrganizationInfoS": "Organization Settings"
+      "personal-info": "Personal Info",
+      "personal-infoS": "Personal Information",
+      "workspaces-infoS": "Workspace Settings",
+      "workspaces-info": "My Workspaces",
+      "organization-info": "Organization",
+      "organization-infoS": "Organization Settings"
     }
   }
   

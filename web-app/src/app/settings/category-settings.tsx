@@ -29,3 +29,4 @@ export function CategorySettings(props?: CategorySettingsProps) {
     </div>
   );
 }
+// i have a component that has to be inside TabView, but i dont want the style of viewRow (i dont want the padding), how can i achieve it?

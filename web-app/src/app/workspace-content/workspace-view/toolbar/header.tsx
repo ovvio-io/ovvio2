@@ -103,7 +103,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const navigate = useNavigate();
 
   const openSettings = useCallback(() => {
-    navigate('/settings/PersonalInfo/general');
+    navigate('/settings/personal-info/General');
   }, [navigate]);
 
   return (

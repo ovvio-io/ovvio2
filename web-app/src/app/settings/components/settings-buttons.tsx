@@ -8,6 +8,8 @@ import { MediaQueries } from '../../../../../styles/responsive.ts';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import { IconArchive } from '../../../../../styles/components/new-icons/icon-archive.tsx';
 import { Button } from '../../../../../styles/components/buttons.tsx';
+import { IconEdit } from '../../../../../styles/components/icons/index.ts';
+import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -38,16 +40,12 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-// const useStrings = createUseStrings(localization);
-
-const ComposeInternalButton = React.forwardRef(
+const ComposeInternalButtonAssign = React.forwardRef(
   (
     { className }: { className?: string },
     ref: React.ForwardedRef<HTMLDivElement>
   ) => {
     const styles = useStyles();
-    // const strings = useStrings();
-
     return (
       <div className={cn(styles.compose, className)} ref={ref}>
         <IconArchive />
@@ -57,7 +55,37 @@ const ComposeInternalButton = React.forwardRef(
   }
 );
 
-export function AssignButton() {
+interface AssignButtonProps {
+  onAssignClick?: () => void;
+}
+
+export function AssignButton({ onAssignClick }: AssignButtonProps) {
+  const [container, setContainer] = useState<HTMLDivElement | null>();
+
+  return (
+    <Button onClick={onAssignClick}>
+      <ComposeInternalButtonAssign ref={(div) => setContainer(div)} />
+    </Button>
+  );
+}
+
+const ComposeInternalButtonEdit = React.forwardRef(
+  (
+    { className }: { className?: string },
+    ref: React.ForwardedRef<HTMLDivElement>
+  ) => {
+    const styles = useStyles();
+    // const strings = useStrings();
+
+    return (
+      <div className={cn(styles.compose, className)} ref={ref}>
+        <IconExportMail />
+        <span className={cn(styles.text)}>{'Edit'}</span>
+      </div>
+    );
+  }
+);
+export function EditButton() {
   //   const styles = useStyles();
   //   const logger = useLogger();
   //   const docRouter = useDocumentRouter();
@@ -67,7 +95,7 @@ export function AssignButton() {
 
   return (
     <Button onClick={() => ''}>
-      <ComposeInternalButton ref={(div) => setContainer(div)} />
+      <ComposeInternalButtonEdit ref={(div) => setContainer(div)} />
     </Button>
   );
 }

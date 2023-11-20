@@ -26,8 +26,8 @@ export const tabsStyles = makeStyles(() => ({
     borderBottom: `${theme.supporting.O1} 1px solid`,
     marginBottom: styleguide.gridbase,
     padding: [0, SIDES_PADDING],
+    position: 'relative',
   },
-
   dropDownButtonText: {
     marginLeft: styleguide.gridbase,
     marginRight: styleguide.gridbase,
