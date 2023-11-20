@@ -102,13 +102,13 @@ export class SettingsService extends BaseService<ServerServices> {
   }
 
   private async watchSettingsFile(): Promise<void> {
-    this._watcher = Deno.watchFs(this.jsonFilePath);
-    for await (const _event of this._watcher!) {
-      if (!this.active) {
-        continue;
-      }
-      this._reloadTimer.schedule();
-    }
+    // this._watcher = Deno.watchFs(this.jsonFilePath);
+    // for await (const _event of this._watcher!) {
+    //   if (!this.active) {
+    //     continue;
+    //   }
+    //   this._reloadTimer.schedule();
+    // }
   }
 
   get jsonFilePath(): string {
