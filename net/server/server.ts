@@ -196,7 +196,6 @@ export class Server {
       ...this._baseContext,
       organizationId: '<global>',
       sync: new SyncService(),
-      staticAssets: undefined,
     };
     // Setup Settings service
     await this._baseContext.settings.setup(services);
@@ -223,7 +222,6 @@ export class Server {
           baseTrustPool.currentSession,
           baseTrustPool.roots
         ),
-        staticAssets: undefined,
       };
 
       // Setup all services in the correct order of dependencies
