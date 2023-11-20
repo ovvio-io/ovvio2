@@ -1,8 +1,4 @@
-import {
-  Database,
-  Statement,
-  Transaction,
-} from 'https://deno.land/x/sqlite3@0.9.1/mod.ts';
+import { Database, Statement, Transaction } from 'sqlite3';
 import { resolve as resolvePath, dirname } from 'std/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {

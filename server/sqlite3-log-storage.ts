@@ -1,8 +1,4 @@
-import {
-  Database,
-  Statement,
-  Transaction,
-} from 'https://deno.land/x/sqlite3@0.9.1/mod.ts';
+import { Database, Statement, Transaction } from 'sqlite3';
 import { resolve as resolvePath } from 'std/path/mod.ts';
 import { LogClientStorage } from '../net/log-client.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';

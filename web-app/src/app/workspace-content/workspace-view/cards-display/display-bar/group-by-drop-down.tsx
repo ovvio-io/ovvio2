@@ -55,7 +55,7 @@ export function GroupByDropDown() {
 
   const setGroup = (group: 'assignee' | 'workspace' | 'dueDate' | 'note') => {
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'FilterChange',
       type: `groupBy:${group}`,
       source: 'toolbar:groupBy',
