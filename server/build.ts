@@ -1,23 +1,14 @@
 // @deno-types="esbuild-types"
 import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
-import { buildAssets } from './generate-statc-assets.ts';
+import { defaultAssetsBuild } from './generate-statc-assets.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { getRepositoryPath } from '../base/development.ts';
-import { staticAssetsToJS } from '../net/server/static-assets.ts';
 import { tuple4ToString } from '../base/tuple.ts';
 
 async function main(): Promise<void> {
   const repoPath = await getRepositoryPath();
-  await Deno.mkdir(path.join(repoPath, 'build'), { recursive: true });
-
-  console.log('Bundling client code...');
-  const assets = await buildAssets(esbuild, VCurrent);
-  await Deno.writeTextFile(
-    path.join(repoPath, 'build', 'staticAssets.json'),
-    JSON.stringify(staticAssetsToJS(assets))
-  );
-  esbuild.stop();
+  await defaultAssetsBuild();
   console.log('Generating executable for local OS...');
   const compileLocalCmd = new Deno.Command('deno', {
     args: [

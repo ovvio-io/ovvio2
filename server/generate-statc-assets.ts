@@ -2,7 +2,7 @@
 import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
 import { getRepositoryPath } from '../base/development.ts';
-import { VersionNumber } from '../base/version-number.ts';
+import { VCurrent, VersionNumber } from '../base/version-number.ts';
 import {
   ReBuildContext,
   isReBuildContext,
@@ -14,6 +14,7 @@ import {
 import {
   StaticAssets,
   compileAssetsDirectory,
+  staticAssetsToJS,
 } from '../net/server/static-assets.ts';
 import { getOvvioConfig } from './config.ts';
 
@@ -72,4 +73,21 @@ export async function buildAssets(
     result[ep] = assets;
   }
   return result;
+}
+
+export async function defaultAssetsBuild(): Promise<void> {
+  const repoPath = await getRepositoryPath();
+  await Deno.mkdir(path.join(repoPath, 'build'), { recursive: true });
+
+  console.log('Bundling client code...');
+  const assets = await buildAssets(esbuild, VCurrent);
+  await Deno.writeTextFile(
+    path.join(repoPath, 'build', 'staticAssets.json'),
+    JSON.stringify(staticAssetsToJS(assets))
+  );
+  esbuild.stop();
+}
+
+if (import.meta.main) {
+  defaultAssetsBuild();
 }
