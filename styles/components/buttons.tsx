@@ -165,19 +165,22 @@ const useLinkButtonStyles = makeStyles(
   }),
   'buttons_8deff1'
 );
-type ButtonProps = React.ComponentPropsWithoutRef<'button'>;
+type ButtonProps = React.ComponentProps<'button'>;
 
 function makeButton<TProps>(useStyles: () => any, className: string) {
-  return function (props: ButtonProps, ref: React.Ref<HTMLButtonElement>) {
+  return React.forwardRef(function (
+    props: ButtonProps,
+    ref: React.Ref<HTMLButtonElement>
+  ) {
     const styles = useStyles();
     return (
       <button
-        ref={ref}
+        ref={ref || props.ref}
         {...props}
         className={cn(props.className, styles[className])}
       />
     );
-  };
+  });
 }
 
 export const Button = makeButton<ButtonProps>(useButtonStyles, 'button');
