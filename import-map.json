@@ -15,6 +15,6 @@
     "direction": "https://unpkg.com/direction@1.0.3",
     "yargs": "https://deno.land/x/yargs@v17.7.1-deno/deno.ts",
     "esbuild": "https://deno.land/x/esbuild@v0.19.2/mod.js",
-    "esbuild-types": "https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
+    "sqlite3": "https://deno.land/x/sqlite3@0.10.0/mod.ts"
   }
 }

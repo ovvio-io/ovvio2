@@ -48,17 +48,24 @@ export class EmailService extends BaseService<ServerServices> {
         },
       },
     };
-    this.services.logger.log({
-      severity: 'METRIC',
-      name: 'EmailSent',
-      value: 1,
-      unit: 'Count',
-      type: message.type,
-    });
     try {
       const resp = await this._client.send(new SendEmailCommand(req));
-      return resp.MessageId !== undefined;
-    } catch (_: unknown) {
+      const success = resp.MessageId !== undefined;
+      if (success) {
+        this.services.logger.log({
+          severity: 'METRIC',
+          name: 'EmailSent',
+          value: 1,
+          unit: 'Count',
+          type: message.type,
+        });
+      } else {
+        console.error('Failed sending email');
+      }
+      return success;
+    } catch (err: unknown) {
+      console.error('Failed sending email:' + err);
+      console.error('Trace:' + (err as Error).stack);
       return false;
     }
   }

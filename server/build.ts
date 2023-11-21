@@ -1,23 +1,17 @@
-// @deno-types="esbuild-types"
+// @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
 import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
-import { buildAssets } from './generate-statc-assets.ts';
+import { defaultAssetsBuild } from './generate-statc-assets.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { getRepositoryPath } from '../base/development.ts';
-import { staticAssetsToJS } from '../net/server/static-assets.ts';
 import { tuple4ToString } from '../base/tuple.ts';
 
 async function main(): Promise<void> {
   const repoPath = await getRepositoryPath();
-  await Deno.mkdir(path.join(repoPath, 'build'), { recursive: true });
-
-  console.log('Bundling client code...');
-  const assets = await buildAssets(esbuild, VCurrent);
-  await Deno.writeTextFile(
-    path.join(repoPath, 'build', 'staticAssets.json'),
-    JSON.stringify(staticAssetsToJS(assets))
-  );
-  esbuild.stop();
+  const buildDirPath = path.join(repoPath, 'build');
+  await Deno.remove(buildDirPath, { recursive: true });
+  await Deno.mkdir(buildDirPath, { recursive: true });
+  await defaultAssetsBuild();
   console.log('Generating executable for local OS...');
   const compileLocalCmd = new Deno.Command('deno', {
     args: [
@@ -25,6 +19,7 @@ async function main(): Promise<void> {
       '--unstable',
       '-A',
       '--no-check',
+      '--no-lock',
       `--output=${path.join(
         repoPath,
         'build',
@@ -36,18 +31,20 @@ async function main(): Promise<void> {
   await compileLocalCmd.output();
   if (Deno.build.os !== 'linux' || Deno.build.arch !== 'aarch64') {
     console.log('Generating x64 linux build for server deployment...');
+    const outputPath = path.join(
+      repoPath,
+      'build',
+      `ovvio_x64_linux_${tuple4ToString(VCurrent)}`
+    );
     const compileServerCmd = new Deno.Command('deno', {
       args: [
         'compile',
         '--unstable',
         '-A',
         '--no-check',
+        '--no-lock',
         '--target=x86_64-unknown-linux-gnu',
-        `--output=${path.join(
-          repoPath,
-          'build',
-          `ovvio_x64_linux_${tuple4ToString(VCurrent)}`
-        )}`,
+        `--output=${outputPath}`,
         path.join(repoPath, 'server', 'run-server.ts'),
       ],
     });

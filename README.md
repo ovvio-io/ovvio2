@@ -1,12 +1,6 @@
 # Installation
 
-We're using Deno as our server, and ES6 modules for package management.
-
-First, install deno from here https://deno.com/manual/getting_started/installation
-
-Second, install and run `npm install` inside the root directory of this
-repository. This is a temporary hack to allow us to continue using an old
-version of slate, and will be removed in the future.
+We're using Deno as our server. Install it from here https://deno.com/manual/getting_started/installation.
 
 ## Running the Server
 

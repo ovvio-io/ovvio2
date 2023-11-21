@@ -10,10 +10,3 @@ export function getBaseURL(services: ServerServices): string {
   }
   return `https://${services.organizationId}.ovvio.io`;
 }
-
-export function getServerBaseURL(services: ServerServices): string {
-  if (services.organizationId === 'localhost') {
-    return 'http://localhost:8080';
-  }
-  return `https://${services.settings.serverTenantId}.${services.organizationId}.ovvio.io`;
-}
