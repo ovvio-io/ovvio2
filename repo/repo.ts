@@ -340,7 +340,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       return undefined;
     }
     // Filter out any commits with equal records
-    const commitsToMerge =
+    let commitsToMerge =
       commitsWithUniqueRecords(leaves).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it
     if (commitsToMerge.length === 1) {
@@ -354,6 +354,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       // rely on our patch to come up with a nice result. A better way may be to
       // do a recursive 3-way merge like git does.
       try {
+        const roots = commitsToMerge.filter((c) => c.parents.length === 0);
+        commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
         // Find the base for our N-way merge
         const [lca, scheme] = this.findMergeBase(commitsToMerge);
         // If no LCA is found then we're dealing with concurrent writers who all
@@ -366,10 +368,27 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         if (!scheme.isNull) {
           base.upgradeScheme(scheme);
         }
-        // Compute a compound diff from our base to all unique records
+        // Compute all changes to be applied in this merge
         let changes: DataChanges = {};
+        // First, handle any new roots that may have appeared as leaves.
+        // We transform them to diff format by computing a diff from null.
+        // Note that we start with these changes in order to let later changes
+        // override them as concurrent root creation is likely a temporary
+        // error.
+        const nullRecord = Record.nullRecord();
+        for (const c of roots) {
+          const record = this.recordForCommit(c);
+          if (record.isNull) {
+            continue;
+          }
+          changes = concatChanges(
+            changes,
+            nullRecord.diff(record, c.session === session)
+          );
+        }
+        // Second, compute a compound diff from our base to all unique records
         for (const c of commitsToMerge) {
-          const record = this.recordForCommit(c).clone();
+          const record = this.recordForCommit(c);
           // Before computing the diff, upgrade the record to the scheme decided
           // for this merge.
           if (!scheme.isNull) {
