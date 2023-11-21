@@ -40,10 +40,10 @@ export const useFabStyles = makeStyles(
       height: styleguide.gridbase * 7,
       zIndex: 100,
       borderRadius: '50%',
-      backgroundColor: theme.primary[500],
+      backgroundColor: theme.primary.p5,
       ...colorTransition,
       ':hover': {
-        backgroundColor: theme.primary['400'],
+        backgroundColor: theme.primary.p4,
       },
       display: 'flex',
       flexDirection: 'column',
@@ -167,19 +167,17 @@ const useLinkButtonStyles = makeStyles(
 );
 type ButtonProps = React.ComponentPropsWithoutRef<'button'>;
 
-function makeButton<TProps>(useStyles, className) {
-  return React.forwardRef<HTMLButtonElement, TProps>(
-    (props: ButtonProps, ref) => {
-      const styles = useStyles();
-      return (
-        <button
-          ref={ref}
-          {...props}
-          className={cn(props.className, styles[className])}
-        />
-      );
-    }
-  );
+function makeButton<TProps>(useStyles: () => any, className: string) {
+  return function (props: ButtonProps, ref: React.Ref<HTMLButtonElement>) {
+    const styles = useStyles();
+    return (
+      <button
+        ref={ref}
+        {...props}
+        className={cn(props.className, styles[className])}
+      />
+    );
+  };
 }
 
 export const Button = makeButton<ButtonProps>(useButtonStyles, 'button');

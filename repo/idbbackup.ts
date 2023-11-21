@@ -11,8 +11,7 @@ import {
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { log } from '../logging/log.ts';
 import { Commit } from './commit.ts';
-import * as StringUtils from '../base/string.ts';
-import { assert } from '../base/error.ts';
+import { SerialScheduler } from '../base/serial-scheduler.ts';
 
 const K_DB_VERSION = 1;
 
@@ -37,87 +36,78 @@ interface EncodedCommit extends ReadonlyJSONObject {
 
 interface RepoBackupSchema extends DBSchema {
   commits: {
-    key: 'id';
+    key: string;
     value: EncodedCommit;
   };
 }
 
 export class IDBRepositoryBackup {
-  private _dbPromise: Promise<IDBPDatabase<RepoBackupSchema>> | undefined;
-  constructor(readonly dbName: string) {
-    this.getDB(); // Start open of our DB as soon as possible
-  }
+  private _openCount = 0;
 
-  private getDB(): Promise<IDBPDatabase<RepoBackupSchema>> {
-    if (this._dbPromise === undefined) {
-      this._dbPromise = openDB<RepoBackupSchema>(this.dbName, K_DB_VERSION, {
-        upgrade(db) {
-          db.createObjectStore('commits', { keyPath: 'id' });
-        },
-      });
-    }
-    return this._dbPromise;
-  }
+  constructor(readonly dbName: string) {}
 
-  async close(): Promise<boolean> {
-    if (undefined === this._dbPromise) {
-      return false;
-    }
-    const db = await this._dbPromise;
-    db.close();
-    this._dbPromise = undefined;
-    return true;
-  }
-
-  async delete(): Promise<void> {
-    await this.close();
-    await deleteDB(this.dbName);
-  }
-
-  async persistCommits(
-    repoId: string,
-    commits: Iterable<Commit>
-  ): Promise<void> {
-    const db = await this.getDB();
-    const txn = db.transaction('commits', 'readwrite', {
-      durability: 'relaxed',
+  private open(): Promise<IDBPDatabase<RepoBackupSchema>> {
+    return openDB<RepoBackupSchema>(this.dbName, K_DB_VERSION, {
+      upgrade(db) {
+        db.createObjectStore('commits', { keyPath: 'id' });
+      },
     });
-    const store = txn.objectStore('commits');
-    const promises: Promise<void>[] = [];
-    for (const c of commits) {
-      promises.push(
-        (async () => {
-          try {
-            await store.put(JSONCyclicalEncoder.serialize(c) as EncodedCommit);
-          } catch (e) {
-            log({
-              severity: 'ERROR',
-              error: 'BackupWriteFailed',
-              message: e.message,
-              trace: e.stack,
-              repo: repoId,
-              commit: c.id,
-            });
-            throw e;
-          }
-        })()
-      );
-    }
-    for (const p of promises) {
-      await p;
-    }
-    await txn.done;
   }
 
-  async loadCommits(): Promise<Commit[]> {
-    const db = await this.getDB();
-    const txn = db.transaction('commits', 'readonly');
-    const cursor = await txn.store.openCursor();
-    return (await txn.store.getAll()).map(
-      (json) =>
-        new Commit({
-          decoder: new JSONCyclicalDecoder(json),
-        })
-    );
+  // async delete(): Promise<void> {
+  //   await this.close();
+  //   await deleteDB(this.dbName);
+  // }
+
+  persistCommits(repoId: string, commits: Iterable<Commit>): Promise<void> {
+    return SerialScheduler.get('idb').run(async () => {
+      const db = await this.open();
+      const txn = db.transaction('commits', 'readwrite', {
+        durability: 'relaxed',
+      });
+      const store = txn.objectStore('commits');
+      const promises: Promise<void>[] = [];
+      for (const c of commits) {
+        promises.push(
+          (async () => {
+            try {
+              await store.put(
+                JSONCyclicalEncoder.serialize(c) as EncodedCommit
+              );
+            } catch (e) {
+              log({
+                severity: 'ERROR',
+                error: 'BackupWriteFailed',
+                message: e.message,
+                trace: e.stack,
+                repo: repoId,
+                commit: c.id,
+              });
+              throw e;
+            }
+          })()
+        );
+      }
+      for (const p of promises) {
+        await p;
+      }
+      await txn.done;
+      db.close();
+    });
+  }
+
+  loadCommits(): Promise<Commit[]> {
+    return SerialScheduler.get('idb').run(async () => {
+      const db = await this.open();
+      const txn = db.transaction('commits', 'readonly');
+      const result = (await txn.store.getAll()).map(
+        (json) =>
+          new Commit({
+            decoder: new JSONCyclicalDecoder(json),
+          })
+      );
+      db.close();
+      return result;
+    });
   }
 }

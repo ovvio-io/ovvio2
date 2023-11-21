@@ -1,32 +1,27 @@
-// @deno-types="https://deno.land/x/esbuild@v0.19.2/mod.d.ts"
-import * as esbuild from 'https://deno.land/x/esbuild@v0.19.2/mod.js';
+// @deno-types="esbuild-types"
+import * as esbuild from 'esbuild';
 import * as path from 'std/path/mod.ts';
-import { assert, notReached } from '../base/error.ts';
-import { retry } from '../base/time.ts';
+import { assert, notReached } from './base/error.ts';
+import { retry } from './base/time.ts';
+import { getImportMapPath, getRepositoryPath } from './base/development.ts';
 
 const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
 
-function getCDNURLForDependency(dep: string): string {
-  // return `https://cdn.skypack.dev/${dep}?dts`;
-  return `https://esm.sh/${dep}`;
+export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
+export type EntryPointName = (typeof kEntryPointsNames)[number];
+export const EntryPointDefault: EntryPointName = 'web-app';
+
+async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
+  const repoPath = await getRepositoryPath();
+  return kEntryPointsNames.map((name) => {
+    return {
+      in: path.join(repoPath, name, 'src', 'index.tsx'),
+      out: name,
+    };
+  });
 }
 
-export function getRepositoryPath(): string {
-  const buildFile = path.fromFileUrl(import.meta.url);
-  return path.dirname(path.dirname(buildFile));
-}
-
-export function getIndexFilePath(ext = '.tsx'): string {
-  const buildFile = path.fromFileUrl(import.meta.url);
-  const rootDir = path.dirname(buildFile);
-  return path.join(rootDir, 'src', 'index' + ext);
-}
-
-function getImportMapPath(): string {
-  const buildFile = path.fromFileUrl(import.meta.url);
-  const rootDir = path.dirname(path.dirname(buildFile));
-  return path.join(rootDir, 'import-map.json');
-}
+export const ENTRY_POINTS = await getEntryPoints();
 
 function isPath(str: string): boolean {
   return str.startsWith('/') || str.startsWith('./') || str.startsWith('../');
@@ -88,8 +83,10 @@ function baseUrlFromUrl(url: string): string {
  *
  * @returns An ESBuild plugin.
  */
-export function createOvvioImportPlugin(): esbuild.Plugin {
-  const map = JSON.parse(Deno.readTextFileSync(getImportMapPath())).imports;
+export async function createOvvioImportPlugin(): Promise<esbuild.Plugin> {
+  const map = JSON.parse(
+    await Deno.readTextFile(await getImportMapPath())
+  ).imports;
   const filter = /.*?/;
   return {
     name: 'ovvio',
@@ -164,125 +161,66 @@ export function createOvvioImportPlugin(): esbuild.Plugin {
   };
 }
 
-// export function createNPMPlugin(): esbuild.Plugin {
-//   const filter = /.*?/;
-//   return {
-//     name: 'npm',
-//     setup(build) {
-//       build.onResolve({ filter }, async (args) => {
-//         const importedValue = args.path;
-//         let url: string = importedValue;
-
-//         for (const [prefix, replacement] of Object.entries(map)) {
-//           if (
-//             prefix.endsWith('/') && // This is a prefix mapping,
-//             importedValue.startsWith(prefix) && // and a match,
-//             typeof replacement === 'string' // and we have a replacement
-//           ) {
-//             url = replacement + importedValue.substring(prefix.length);
-//             break;
-//           }
-//         }
-
-//         if (map[url]) {
-//           url = map[url];
-//         } else if (args.importer.startsWith('https://') && isPath(url)) {
-//           if (url.startsWith('/')) {
-//             url = `https://${new URL(args.importer).host}${url}`;
-//           } else {
-//             url = `${baseUrlFromUrl(args.importer)}/${url}`;
-//           }
-//         } else if (!url.startsWith('https://') && !isPath(importedValue)) {
-//           url = getCDNURLForDependency(importedValue);
-//         }
-
-//         if (url.startsWith('https://')) {
-//           const resp = await retry(async () => {
-//             const r = await fetch(url!);
-//             assert(r.status === 200, `Failed downloading ${url}`);
-//             return r;
-//           }, 5 * 1000);
-//           return {
-//             path: resp.url,
-//             namespace: 'ovvio',
-//           };
-//         }
-//       });
-//       build.onLoad({ filter, namespace: 'ovvio' }, async (args) => {
-//         const url = args.path;
-//         assert(url.startsWith('https://'), 'Unsupported URL');
-//         const resp = await retry(async () => {
-//           const r = await fetch(url);
-//           assert(r.status === 200, `Failed downloading ${url}`);
-//           return r;
-//         }, 5 * 1000);
-//         const text = await resp.text();
-//         return {
-//           contents: text,
-//           loader: loaderForFile(url),
-//         };
-//       });
-//     },
-//   };
-// }
-
 export interface BundleResult {
   source: string;
   map: string;
 }
 
-export async function bundle(path?: string): Promise<BundleResult> {
-  if (!path) {
-    path = getIndexFilePath();
-  }
+export async function bundle(): Promise<Record<EntryPointName, BundleResult>> {
   const result = await esbuild.build({
-    entryPoints: [path],
-    plugins: [createOvvioImportPlugin()],
+    entryPoints: ENTRY_POINTS,
+    plugins: [await createOvvioImportPlugin()],
     bundle: true,
     write: false,
-    outfile: 'app.js',
     sourcemap: 'linked',
   });
   return bundleResultFromBuildResult(result);
 }
 
-function bundleResultFromBuildResult(
-  result: esbuild.BuildResult
-): BundleResult {
-  let source, sourceMap: string;
-  for (const file of result.outputFiles!) {
+export function bundleResultFromBuildResult(
+  buildResult: esbuild.BuildResult
+): Record<EntryPointName, BundleResult> {
+  const result = {} as Record<EntryPointName, BundleResult>;
+  for (const file of buildResult.outputFiles!) {
+    const entryPoint = path.basename(file.path).split('.')[0] as EntryPointName;
+    assert(kEntryPointsNames.includes(entryPoint)); // Sanity check
+    let bundleResult: BundleResult | undefined = result[entryPoint];
+    if (!bundleResult) {
+      bundleResult = {} as BundleResult;
+      result[entryPoint] = bundleResult;
+    }
     if (file.path.endsWith('.js')) {
-      source = file.text;
+      bundleResult.source = file.text;
     } else if (file.path.endsWith('.js.map')) {
-      sourceMap = file.text;
+      bundleResult.map = file.text;
     }
   }
-  return {
-    source: source!,
-    map: sourceMap!,
-  };
+  return result;
 }
 
 export function stopBackgroundCompiler(): void {
   esbuild.stop();
 }
 
-export interface BuildContext {
-  rebuild(): Promise<BundleResult>;
+export interface ReBuildContext {
+  rebuild(): Promise<Record<EntryPointName, BundleResult>>;
   close(): void;
 }
 
-export async function createBuildContext(path?: string): Promise<BuildContext> {
-  if (!path) {
-    path = getIndexFilePath();
-  }
+export function isReBuildContext(
+  ctx: ReBuildContext | typeof esbuild
+): ctx is ReBuildContext {
+  return typeof (ctx as ReBuildContext).rebuild === 'function';
+}
+
+export async function createBuildContext(): Promise<ReBuildContext> {
   const ctx = await esbuild.context({
-    entryPoints: [path],
-    plugins: [createOvvioImportPlugin()],
+    entryPoints: ENTRY_POINTS,
+    plugins: [await createOvvioImportPlugin()],
     bundle: true,
     write: false,
-    outfile: 'app.js',
     sourcemap: 'linked',
+    outdir: 'output',
   });
   return {
     rebuild: async () => bundleResultFromBuildResult(await ctx.rebuild()),

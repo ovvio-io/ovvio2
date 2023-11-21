@@ -351,11 +351,11 @@ export function useTheme() {
   return useContext(themeContext);
 }
 
-interface ThemeProviderProps {
+export type ThemeProviderProps = React.PropsWithChildren<{
   theme: Theme;
-  children: ({ style }) => React.ReactNode;
   isRoot?: boolean;
-}
+}>;
+
 export function ThemeProvider(props: ThemeProviderProps) {
   const { theme, children, isRoot = false } = props;
   const style = useMemo(() => {
@@ -392,10 +392,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     }
   }, [isRoot, style]);
 
-  const generatedChildren = useMemo(() => children({ style }), [style]);
   return (
-    <themeContext.Provider value={theme}>
-      {generatedChildren}
-    </themeContext.Provider>
+    <themeContext.Provider value={theme}>{children}</themeContext.Provider>
   );
 }

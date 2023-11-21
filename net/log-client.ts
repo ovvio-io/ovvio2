@@ -29,6 +29,10 @@ export class LogClient
     });
   }
 
+  protected getLocalSize(): number {
+    // TODO:Count
+  }
+
   protected buildSyncMessage(): SyncMessage<NormalizedLogEntry> {
     return SyncMessage.build(
       this.previousServerFilter,

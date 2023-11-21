@@ -8,6 +8,8 @@ export const kServerMetricNames = [
   'ServerStarted',
   'HttpStatusCode',
   'IncompatibleProtocolVersion',
+  'InternalServerError',
+  'EmailSent',
 ] as const;
 
 export const kClientMetricNames = [
@@ -24,9 +26,24 @@ export type ClientMetricName = (typeof kClientMetricNames)[number];
 export type MetricName = ServerMetricName | ClientMetricName;
 export type MetricUnit = 'Count' | 'Bytes' | 'Milliseconds' | 'Percent';
 export type MetricType = 'Count' | 'Gauge' | 'Histogram' | 'Summary';
+export type HTTPMethod =
+  | 'OPTIONS'
+  | 'GET'
+  | 'HEAD'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'TRACE'
+  | 'CONNECT'
+  | 'PATCH';
 
-export interface BaseMetricLogEntry extends BaseLogEntry {
-  severity: Severity & ('INFO' | 'DEBUG');
+export type MetricSeverity = Extract<Severity, 'METRIC' | 'ERROR'>;
+
+export type EmailType = 'Login';
+
+export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
+  extends BaseLogEntry {
+  severity: T;
   name: MetricName;
   value: number;
   unit: MetricUnit;
@@ -40,15 +57,46 @@ export type MetricLogWithURL<
   urls?: string[];
 };
 
+export type MetricLogWithHTTP<T extends MetricLogWithURL = MetricLogWithURL> =
+  T & {
+    method?: HTTPMethod;
+  };
+
+export type MetricLogWithType<
+  T extends string = string,
+  BASE extends BaseMetricLogEntry = BaseMetricLogEntry
+> = BASE & {
+  type?: T;
+};
+
+export type MetricLogWithError<
+  T extends BaseMetricLogEntry = BaseMetricLogEntry
+> = T & {
+  error?: string;
+  trace?: string;
+};
+
 export type MetricLogEntryType<N extends MetricName> =
-  N extends 'PeerResponseTime' ? MetricLogWithURL : BaseMetricLogEntry;
+  N extends 'PeerResponseTime'
+    ? MetricLogWithURL
+    : N extends 'HttpStatusCode'
+    ? MetricLogWithHTTP
+    : N extends 'InternalServerError'
+    ? Required<MetricLogWithError<BaseMetricLogEntry<'ERROR'>>> &
+        MetricLogWithHTTP<BaseMetricLogEntry<'ERROR'>>
+    : N extends 'EmailSent'
+    ? MetricLogWithType<EmailType>
+    : BaseMetricLogEntry;
 
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 
 export function logEntryIsMetric(
   entry: NormalizedLogEntry<BaseLogEntry>
 ): entry is NormalizedLogEntry<MetricLogEntry> {
-  if (entry.severity !== 'INFO' || typeof entry.name !== 'string') {
+  if (
+    (entry.severity !== 'METRIC' && entry.severity !== 'ERROR') ||
+    typeof entry.name !== 'string'
+  ) {
     return false;
   }
   return (kMetricNames as readonly string[]).includes(entry.name);

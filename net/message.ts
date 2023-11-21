@@ -42,6 +42,10 @@ export interface SyncMessageConfig<T extends SyncValueType> {
    */
   size: number;
   /**
+   * A request signature for this message.
+   */
+  signature: string;
+  /**
    * An array of values that the other side is suspected to be missing.
    */
   values?: T[];
@@ -122,6 +126,7 @@ export class SyncMessage<T extends SyncValueType>
   private _size!: number;
   private _values!: T[];
   private _accessDenied?: string[];
+  private _signature!: string;
 
   constructor(config: ConstructorDecoderConfig | SyncMessageConfig<T>) {
     if (isDecoderConfig(config)) {
@@ -129,6 +134,7 @@ export class SyncMessage<T extends SyncValueType>
     } else {
       this._filter = config.filter;
       this._size = config.size;
+      this._signature = config.signature;
       this._values = config.values || [];
       if (config.accessDenied) {
         this._accessDenied = Array.from(config.accessDenied);
@@ -147,6 +153,9 @@ export class SyncMessage<T extends SyncValueType>
 
   get size(): number {
     return this._size;
+  }
+  get signature(): string {
+    return this._signature;
   }
 
   get values(): T[] {
@@ -176,6 +185,7 @@ export class SyncMessage<T extends SyncValueType>
     encoder.set('ver', this.buildVersion);
     encoder.set('f', this.filter);
     encoder.set('s', this.size);
+    encoder.set('sig', this.signature);
     switch (this.valueFlag) {
       case SyncValueFlag.Commit:
         encoder.set(
@@ -204,6 +214,7 @@ export class SyncMessage<T extends SyncValueType>
     this._filter.deserialize(decoder.getDecoder('f'));
     this._size = decoder.get<number>('s')!;
     this._accessDenied = decoder.get('ad', []);
+    this._signature = decoder.get<string>('sig')!;
     if (decoder.has('c')) {
       this._values = decoder
         .get<ReadonlyDecodedArray>('c', [])!
@@ -222,6 +233,7 @@ export class SyncMessage<T extends SyncValueType>
     localSize: number,
     peerSize: number,
     expectedSyncCycles: number,
+    signature: string,
     includeMissing = true
   ): SyncMessage<T> {
     const numberOfEntries = Math.max(1, localSize, peerSize);
@@ -245,8 +257,10 @@ export class SyncMessage<T extends SyncValueType>
     });
     const missingPeerValues: T[] = [];
     if (peerFilter && includeMissing) {
+      localSize = 0;
       for (const [id, v] of values) {
         localFilter.add(id);
+        ++localSize;
         if (!peerFilter.has(id)) {
           missingPeerValues.push(v);
         }
@@ -256,6 +270,7 @@ export class SyncMessage<T extends SyncValueType>
       filter: localFilter,
       size: localSize,
       values: missingPeerValues,
+      signature,
     });
   }
 }

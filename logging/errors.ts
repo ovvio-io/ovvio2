@@ -24,7 +24,10 @@ export type OperationalError =
   | 'UnknownSyncError'
   | 'AttachmentRemovalFailed'
   | 'AttachmentDownloadFailed'
-  | 'DuplicateFailed';
+  | 'DuplicateFailed'
+  | 'SessionError';
+
+export type SessionErrorType = 'AnonCreationFailed';
 
 export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   severity: 'INFO';
@@ -34,6 +37,7 @@ export interface OperationalErrorLogEntry extends BaseErrorLogEntry {
   valueType?: string;
   value?: JSONValue;
   vertex?: string;
+  type?: SessionErrorType;
 }
 
 export type SystemError =

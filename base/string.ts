@@ -1,4 +1,5 @@
 import { assert } from './error.ts';
+import { encodeBase32, decodeBase32 } from 'std/encoding/base32.ts';
 
 export function splice(
   str: string,
@@ -156,4 +157,35 @@ const dirRegex = new RegExp('^[^' + ltrChars + ']*[' + rtlChars + ']');
 
 export function isRTL(s: string): boolean {
   return dirRegex.test(s);
+}
+
+const kEmailRegex = /^[\w-+\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+export function normalizeEmail(email: string): string;
+export function normalizeEmail(email: undefined): undefined;
+export function normalizeEmail(email: string | undefined): string | undefined {
+  if (!email) {
+    return undefined;
+  }
+  email = email.trim();
+  if (!email.length) {
+    return undefined;
+  }
+  email = email.toLowerCase();
+  const match = email.match(kEmailRegex);
+  return match ? match[0] : undefined;
+}
+
+export function encodeBase32URL(
+  value: ArrayBuffer | Uint8Array | string
+): string {
+  return encodeBase32(value).replace('=', '_').toLowerCase();
+}
+
+export function decodeBase32URL(value: string): Uint8Array {
+  return decodeBase32(value.toUpperCase().replace('_', '='));
+}
+
+export function decodeBase32URLString(value: string): string {
+  const decoder = new TextDecoder();
+  return decoder.decode(decodeBase32URL(value));
 }

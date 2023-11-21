@@ -37,8 +37,8 @@ export function tuple4Break(tuple: Tuple4): Tuple4Values {
 }
 
 export function tuple4ToString(tuple: Tuple4): string {
-  return `${tuple4Get(tuple, 3)}.${tuple4Get(tuple, 2)}.${tuple4Get(
+  return `${tuple4Get(tuple, 0)}.${tuple4Get(tuple, 1)}.${tuple4Get(
     tuple,
-    1
-  )}.${tuple4Get(tuple, 0)}`;
+    2
+  )}.${tuple4Get(tuple, 3)}`;
 }

@@ -58,13 +58,6 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   private readonly _updateHeadStatement: Statement;
   private readonly _deleteRefStatement: Statement;
   private readonly _putRefStatement: Statement;
-  // private readonly _putCommitTxn: Transaction<
-  //   [
-  //     commits: Iterable<Commit>,
-  //     repo: Repository<SQLiteRepoStorage>,
-  //     outCommits: Commit[]
-  //   ]
-  // >;
 
   constructor(path?: string) {
     if (path) {
@@ -110,7 +103,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       `SELECT json from heads WHERE KEY = :key LIMIT 1;`
     );
     this._updateHeadStatement = db.prepare(
-      `UPDATE heads SET key = :key, commitId = :commitId, ns = :ns, ts = :ts, json = :json`
+      `INSERT OR REPLACE INTO heads (key, commitId, ns, ts, json) VALUES (:key, :commitId, :ns, :ts, :json)`
     );
     this._putRefStatement = db.prepare(
       `INSERT OR IGNORE INTO refs (src, dst) VALUES (:src, :dst);`
@@ -118,32 +111,6 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     this._deleteRefStatement = db.prepare(
       `DELETE FROM refs WHERE src = :src AND dst = :dst`
     );
-    // this._putCommitTxn = db.transaction(([commits, repo, outCommits]) => {
-    //   // First, check we haven't already persisted this commit
-    //   for (const newCommit of commits) {
-    //     if (this._getCommitStatement.values({ id: newCommit.id }).length > 0) {
-    //       continue;
-    //     }
-    //     const { key, session } = newCommit;
-    //     const headId = this.headIdForKey(key);
-    //     const head = headId ? this.getCommit(headId) : undefined;
-    //     const newHead = repo.headForKey(key, session, newCommit)!;
-    //     // Persist our commit to the commits table
-    //     this._putCommitStatement.run({
-    //       id: newCommit.id,
-    //       key: newCommit.key,
-    //       ts: newCommit.timestamp.getTime(),
-    //       json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
-    //     });
-    //     outCommits.push(newCommit);
-    //     // Skip aux tables update if our head hasn't changed (if this is an
-    //     // historic commit that was missed).
-    //     if (headId === newHead?.id) {
-    //       continue;
-    //     }
-    //     this.updateHead(repo, head, newHead);
-    //   }
-    // });
   }
 
   private putCommitInTxn(
@@ -159,7 +126,6 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       const { key, session } = newCommit;
       const headId = this.headIdForKey(key);
       const head = headId ? this.getCommit(headId) : undefined;
-      const newHead = repo.headForKey(key, session, newCommit)!;
       // Persist our commit to the commits table
       this._putCommitStatement.run({
         id: newCommit.id,
@@ -168,6 +134,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
         json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
       });
       outCommits.push(newCommit);
+      const newHead = repo.headForKey(key, session, newCommit)!;
       // Skip aux tables update if our head hasn't changed (if this is an
       // historic commit that was missed).
       if (headId === newHead?.id) {
@@ -260,9 +227,9 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     this._updateHeadStatement.run({
       key: newHead.key,
       commitId: newHead.id,
-      ns: headRecord.scheme.namespace,
+      ns: newHeadRecord.scheme.namespace,
       ts: newHead.timestamp.getTime(),
-      json: JSON.stringify(JSONCyclicalEncoder.serialize(headRecord)),
+      json: JSON.stringify(JSONCyclicalEncoder.serialize(newHeadRecord)),
     });
     const deletedRefs = SetUtils.subtract(headRecord.refs, newHeadRecord.refs);
     const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);

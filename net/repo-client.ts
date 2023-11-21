@@ -3,6 +3,7 @@ import { SyncMessage } from './message.ts';
 import { BaseClient, SyncConfig } from './base-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { mapIterable } from '../base/common.ts';
+import { generateRequestSignature } from '../auth/session.ts';
 
 export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   private readonly _repo: Repository<T>;
@@ -17,14 +18,20 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     return this._repo;
   }
 
-  protected buildSyncMessage(): SyncMessage<Commit> {
+  protected getLocalSize(): number {
+    return this._repo.numberOfCommits(this.repo.trustPool.currentSession);
+  }
+
+  protected async buildSyncMessage(): Promise<SyncMessage<Commit>> {
     const repo = this.repo;
+    const session = repo.trustPool.currentSession;
     return SyncMessage.build(
       this.previousServerFilter,
-      mapIterable(repo.commits(), (c) => [c.id, c]),
-      repo.numberOfCommits,
+      mapIterable(repo.commits(session), (c) => [c.id, c]),
+      repo.numberOfCommits(session),
       this.previousServerSize,
-      this.syncCycles
+      this.syncCycles,
+      await generateRequestSignature(repo.trustPool.currentSession)
     );
   }
 
@@ -34,7 +41,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     }
   }
 
-  protected persistPeerValues(values: Commit[]): Promise<number> {
-    return Promise.resolve(this.repo.persistCommits(values).length);
+  protected async persistPeerValues(values: Commit[]): Promise<number> {
+    return (await this.repo.persistCommits(values)).length;
   }
 }

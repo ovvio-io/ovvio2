@@ -18,6 +18,8 @@ export const kMetricTypes: Record<ServerMetricName, MetricType> = {
   ServerStarted: 'Count',
   HttpStatusCode: 'Count',
   IncompatibleProtocolVersion: 'Count',
+  InternalServerError: 'Count',
+  EmailSent: 'Count',
 };
 
 export class PrometheusLogStream implements LogStream {
@@ -76,7 +78,7 @@ export class PrometheusLogStream implements LogStream {
     console.log('METRICS count', Object.keys(metricsMap).length);
     console.log('METRICS details', Object.keys(metricsMap));
     const metrics = this.myRegistry.metrics();
-    console.log('REGISTRY', metrics.length);
+    console.log('REGISRTRY ', metrics.length);
     return metrics;
   }
 

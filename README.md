@@ -15,23 +15,22 @@ data.
 
 Running the server will pull all dependencies, and compile the web-app.
 
-Normal run:
-`deno run --unstable -A server/run-server.ts -d <path to data dir>`
-
 Debug run:
 `deno run --unstable -A --inspect-brk server/run-server.ts -d <path to data dir>`
 
 NOTE: If you're having problems with deno.lock getting out of sync, add the
 `--lock-write` flag to deno run which will force update the lock file.
 
-### Live Reload
+## Compiling for Production
 
-When working on the web-app, and especially when working on CSS, it's useful to
-have live reload functionality. For live reload, simply run `debug-server.ts`
-instead of `run-server.ts`. If follows an identical arguments pattern except it
-also has live reload built in.
+When compiling for production, run the following command:
+`deno run -A server/build.ts`
 
-### Starting Fresh
+This will create a `build` directory inside, containing executables both for
+the local OS and for x64 linux for production. These executables are fully self
+contained, and have no external dependencies.
+
+## Starting Fresh
 
 Since Ovvio is designed to resist data loss using automatic replication, it's
 a bit tricky to clean all data and start fresh. To do so, perform the following
@@ -152,20 +151,3 @@ log the creation before actually accepting any data.
 
 The client isn't bothered by all of this, it'll just wait happily for everything
 to sync.
-
-## Publicly Available URLs
-
-- `https://<tenantId>.ovvio.io/<repoId>/<key>`
-  Shows the head of the specified key.
-
-- `https://<tenantId>.ovvio.io/<repoId>/<key>/<commitId>`
-  TODO: Shows the specific historic version (commit) of the specified key.
-
-- `https://<tenantId>.ovvio.io/settings`
-  Deep link for settings home page.
-
-- `https://<tenantId>.ovvio.io/settings/<workspaceId>`
-  Deep link for settings of the specific workspace.
-
-- `https://<tenantId>.ovvio.io/new`
-  Deep link for creating a new workspace.

@@ -147,7 +147,6 @@ const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
 ]);
 
 const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
-  passwordHash: TYPE_STR, // Hash + salt
   lastLoggedIn: TYPE_DATE,
   seenTutorials: {
     type: TYPE_STR_SET,
@@ -264,6 +263,22 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
   dateFilter: TYPE_STR,
 });
 
+const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
+  id: {
+    type: TYPE_STR,
+    required: true,
+  },
+  publicKey: {
+    type: TYPE_STR,
+    required: true,
+  },
+  expiration: {
+    type: TYPE_DATE,
+    required: true,
+  },
+  owner: TYPE_REF, // NOTE: Anonymous sessions don't have an owner
+});
+
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
@@ -272,6 +287,7 @@ export {
   SCHEME_TAG_1 as TAG_SCHEME,
   SCHEME_USER_1 as USER_SCHEME,
   SCHEME_VIEW_1 as VIEW_SCHEME,
+  SCHEME_SESSION_1 as SESSION_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -348,7 +364,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1],
+    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_SESSION_1],
     [
       SchemeNamespace.NOTES,
       SchemeNamespace.TAGS,

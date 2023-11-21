@@ -138,7 +138,6 @@ export const StyleProvider: React.FC<StyleProviderProps> = ({
   //   }),
   //   [css, ensureAttached]
   // );
-
   return (
     <React.Fragment>
       <StyleTag dev={dev} children={undefined} />

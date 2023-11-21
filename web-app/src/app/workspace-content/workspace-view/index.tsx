@@ -7,7 +7,10 @@ import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx'
 import NoteView from './note-editor/index.tsx';
 import { CardsDisplay } from './cards-display/index.tsx';
 import { EmptyState } from './empty-state/index.tsx';
-import { usePartialView } from '../../../core/cfds/react/graph.tsx';
+import {
+  usePartialGlobalView,
+  usePartialView,
+} from '../../../core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -46,7 +49,7 @@ export default function WorkspaceContentView({
   children,
 }: ContentProps) {
   const styles = useStyles();
-  const view = usePartialView('selectedWorkspaces');
+  const view = usePartialGlobalView('selectedWorkspaces');
 
   // debugger;
 

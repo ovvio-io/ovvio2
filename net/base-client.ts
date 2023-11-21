@@ -164,8 +164,9 @@ export abstract class BaseClient<
     return this._closed;
   }
 
-  protected abstract buildSyncMessage(): SyncMessage<ValueType>;
+  protected abstract buildSyncMessage(): Promise<SyncMessage<ValueType>>;
   protected abstract persistPeerValues(values: ValueType[]): Promise<number>;
+  protected abstract getLocalSize(): number;
   abstract localIds(): Iterable<string>;
 
   private _setIsOnline(value: boolean): void {
@@ -198,7 +199,7 @@ export abstract class BaseClient<
     }
     const startingStatus = this.status;
     const syncConfig = this._syncConfig;
-    const reqMsg = this.buildSyncMessage();
+    const reqMsg = await this.buildSyncMessage();
     const msg = JSONCyclicalEncoder.serialize(reqMsg);
     let respText: string | undefined;
     try {
@@ -221,7 +222,7 @@ export abstract class BaseClient<
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
       log({
-        severity: 'DEBUG',
+        severity: 'METRIC',
         name: 'PeerResponseTime',
         value: syncDurationMs,
         unit: 'Milliseconds',
@@ -263,7 +264,7 @@ export abstract class BaseClient<
     const config = getOvvioConfig();
 
     if (syncResp.buildVersion !== config.version) {
-      // TODO: Save uncomitted changes
+      // TODO: Save uncommitted changes
       if (config.debug) {
         location.reload();
       } else {
@@ -275,16 +276,15 @@ export abstract class BaseClient<
     let persistedCount = 0;
     if (syncResp.values.length) {
       const start = performance.now();
-      // persistedCount = repo.persistCommits(syncResp.commits).length;
       persistedCount = await this.persistPeerValues(syncResp.values);
       log({
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'CommitsPersistTime',
         value: performance.now() - start,
         unit: 'Milliseconds',
       });
       log({
-        severity: 'INFO',
+        severity: 'METRIC',
         name: 'CommitsPersistCount',
         value: persistedCount,
         unit: 'Count',
@@ -324,7 +324,7 @@ export abstract class BaseClient<
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
-    if (!serverFilter) {
+    if (!serverFilter || this._previousServerSize !== this.getLocalSize()) {
       return true;
     }
     for (const id of this.localIds()) {

@@ -1,36 +1,26 @@
-import React, { useState, useMemo } from 'react';
-import { RouterProvider } from 'react-router';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Route, RouterProvider } from 'react-router';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
 import { layout } from '../../../styles/layout.ts';
-import {
-  darkTheme,
-  lightTheme,
-  ThemeProvider,
-} from '../../../styles/theme.tsx';
+import { lightTheme } from '../../../styles/theme.tsx';
 import LoadingView from './loading-view.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
 import { WorkspacesBar } from './workspaces-bar/index.tsx';
 import { createBrowserRouter } from 'react-router-dom';
-import { uniqueId } from '../../../base/common.ts';
-import { StyleProvider } from '../../../styles/css-objects/context.tsx';
-import {
-  CfdsClientProvider,
-  useIsGraphLoading,
-} from '../core/cfds/react/graph.tsx';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 import { Settings } from './settings/index.tsx';
 import { CategorySettings } from './settings/category-settings.tsx';
+import { App } from '../../../styles/components/app.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
     filter: 'blur(2px)',
   },
   root: {
-    height: '100vh',
-    width: '100vw',
+    height: '100%',
     basedOn: [layout.row],
   },
   content: {
@@ -53,23 +43,13 @@ type RootProps = React.PropsWithChildren<{
 
 function Root({ style, children }: RootProps) {
   const styles = useStyles();
-  const isLoading = useIsGraphLoading();
-  const [loaded, setLoaded] = useState(!isLoading);
-
-  if (!loaded && !isLoading) {
-    setLoaded(true);
-  }
 
   return (
     <div className={cn(styles.root)} style={style}>
-      {loaded && <WorkspacesBar key={'wsbar'} />}
-      {loaded ? (
-        <div className={cn(styles.content)}>
-          <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
-        </div>
-      ) : (
-        <LoadingView />
-      )}
+      <WorkspacesBar key={'wsbar'} />
+      <div className={cn(styles.content)}>
+        <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
+      </div>
     </div>
   );
 }
@@ -127,22 +107,11 @@ const router = createBrowserRouter([
   },
 ]);
 
-export default function AppView() {
-  //const wsLoadedRef = useRef(false);
-  const theme = useMemo(() => (isDarkTheme ? darkTheme : lightTheme), []);
-
+export function AppView() {
   return (
-    <CfdsClientProvider user="ofri" sessionId={`ofri/${uniqueId()}`}>
-      <StyleProvider dev={false}>
-        <ThemeProvider theme={theme} isRoot={true}>
-          {({ style }) => (
-            <React.StrictMode>
-              <RouterProvider router={router} />
-            </React.StrictMode>
-          )}
-        </ThemeProvider>
-      </StyleProvider>
-    </CfdsClientProvider>
+    <App>
+      <RouterProvider router={router} />
+    </App>
   );
 }
 

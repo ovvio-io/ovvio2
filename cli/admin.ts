@@ -99,7 +99,7 @@ async function main(): Promise<void> {
     //   console.log('Invalid JSON');
     //   break;
     // }
-    repo.setValueForKey(updateKey, sessionId, record);
+    repo.setValueForKey(updateKey, record);
     console.log(`Updated ${updateKey}.`);
   }
 
@@ -157,7 +157,7 @@ async function main(): Promise<void> {
         //   console.log('Invalid JSON');
         //   break;
         // }
-        repo.setValueForKey(cmdArgs[1], sessionId, record);
+        repo.setValueForKey(cmdArgs[1], record);
         console.log(`Updated ${cmdArgs[1]}.`);
         break;
       }
@@ -172,7 +172,7 @@ async function main(): Promise<void> {
         //   console.log('Invalid JSON');
         //   break;
         // }
-        repo.setValueForKey(cmdArgs[1], sessionId, record);
+        repo.setValueForKey(cmdArgs[1], record);
         console.log(`Updated ${cmdArgs[1]}.`);
         break;
       }

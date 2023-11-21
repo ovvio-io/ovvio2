@@ -1,0 +1,27 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  font-family: 'Poppins', 'Heebo', sans-serif;
+  overflow: hidden;
+}
+.layout-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex {
+  flex: 1 0 auto;
+}
+
+.flex-spacer {
+  flex: 1 1 auto;
+}

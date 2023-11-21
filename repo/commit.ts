@@ -41,6 +41,11 @@ export interface CommitConfig {
   parents?: string | Iterable<string>;
   timestamp?: Date;
   buildVersion?: VersionNumber;
+  signature?: string;
+}
+
+export interface CommitSerializeOptions {
+  signed?: boolean;
 }
 
 export class Commit implements Encodable, Decodable, Equatable, Comparable {
@@ -51,6 +56,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _parents: string[] | undefined;
   private _timestamp!: Date;
   private _contents!: CommitContents;
+  private _signature?: string;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -80,6 +86,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
         this._contents.record.lock();
       }
       this._buildVersion = config.buildVersion || getOvvioConfig().version;
+      this._signature = config.signature;
     }
   }
 
@@ -126,7 +133,11 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return contents.record.scheme;
   }
 
-  serialize(encoder: Encoder): void {
+  get signature(): string | undefined {
+    return this._signature;
+  }
+
+  serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
     if (this.key) {
@@ -141,6 +152,9 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     const contentsEncoder = encoder.newEncoder();
     commitContentsSerialize(this.contents, contentsEncoder);
     encoder.set('c', contentsEncoder.getOutput());
+    if (this._signature && opts?.signed !== false) {
+      encoder.set('sig', this._signature);
+    }
   }
 
   deserialize(decoder: Decoder): void {
@@ -151,6 +165,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._timestamp = decoder.get<Date>('ts', new Date())!;
     this._parents = decoder.get<string[]>('p');
     this._contents = commitContentsDeserialize(decoder.getDecoder('c'));
+    this._signature = decoder.get<string | undefined>('sig');
   }
 
   isEqual(other: Commit): boolean {
