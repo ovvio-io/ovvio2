@@ -8,25 +8,25 @@ import React, {
   MouseEvent,
   Children,
   createContext,
-} from "react";
-import ReactDOM from "react-dom";
-import { makeStyles, cn } from "../css-objects/index.ts";
-import { styleguide } from "../styleguide.ts";
-import { layout } from "../layout.ts";
-import { Button } from "./buttons.tsx";
-import Popper from "./popper.tsx";
-import { Text } from "./typography.tsx";
-import Layer from "./layer.tsx";
-import { IconExpander } from "./icons/index.ts";
-import Arrow from "./arrow.tsx";
-import { brandLightTheme as theme1 } from "../theme.tsx";
+} from 'react';
+import ReactDOM from 'react-dom';
+import { makeStyles, cn } from '../css-objects/index.ts';
+import { styleguide } from '../styleguide.ts';
+import { layout } from '../layout.ts';
+import { Button } from './buttons.tsx';
+import Popper from './popper.tsx';
+import { Text } from './typography.tsx';
+import Layer from './layer.tsx';
+import { IconExpander } from './icons/index.ts';
+import Arrow from './arrow.tsx';
+import { brandLightTheme as theme1 } from '../theme.tsx';
 
 export const LineSeparator = () => (
   <div
     style={{
-      height: "1px",
+      height: '1px',
       backgroundColor: theme1.secondary.s2,
-      width: "100%",
+      width: '100%',
     }}
   />
 );
@@ -38,29 +38,29 @@ const useStyles = makeStyles((theme) => ({
 
   item: {
     ...styleguide.textStyles.text,
-    backgroundColor: "white",
-    boxSizing: "border-box",
+    backgroundColor: 'white',
+    boxSizing: 'border-box',
     height: styleguide.gridbase * 4,
     minWidth: styleguide.gridbase * 12,
     maxWidth: styleguide.gridbase * 27,
-    padding: "8px 16px 8px 8px",
+    padding: '8px 16px 8px 8px',
     color: theme.background.text,
-    cursor: "pointer",
-    ":hover": {
+    cursor: 'pointer',
+    ':hover': {
       backgroundColor: theme1.secondary.s3,
     },
     flexShrink: 0,
-    transition: "background-color 0.15s linear",
-    alignItems: "center",
+    transition: 'background-color 0.15s linear',
+    alignItems: 'center',
     basedOn: [layout.row],
-    display: "flex",
-    width: "auto",
+    display: 'flex',
+    width: 'auto',
   },
 
   icon: {
     marginRight: styleguide.gridbase,
-    width: "16px",
-    height: "16px",
+    width: '16px',
+    height: '16px',
   },
   actionIcon: {
     // marginRight: styleguide.gridbase,
@@ -69,7 +69,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   menuButton: {
-    userSelect: "none",
+    userSelect: 'none',
   },
 
   MenuContainer: {
@@ -77,24 +77,24 @@ const useStyles = makeStyles((theme) => ({
   },
 
   dropDown: {
-    position: "relative",
+    position: 'relative',
     basedOn: [layout.column],
-    transformOrigin: "top",
-    whitespace: "nowrap",
-    display: "flex",
-    boxShadow: "0px -1px 3px rgba(0, 0, 0, 0.25)",
-    borderRadius: "2px",
-    justifyContent: "center",
-    border: "2px solid #F5ECDC",
-    font: "Poppins",
-    backgroundColor: "white",
+    transformOrigin: 'top',
+    whitespace: 'nowrap',
+    display: 'flex',
+    boxShadow: '0px -1px 3px rgba(0, 0, 0, 0.25)',
+    borderRadius: '2px',
+    justifyContent: 'center',
+    border: '2px solid #F5ECDC',
+    font: 'Poppins',
+    backgroundColor: 'white',
   },
 
   iconMenu: {
     ...layout.row.rules,
-    boxSizing: "border-box",
+    boxSizing: 'border-box',
     padding: [styleguide.gridbase * 2, styleguide.gridbase * 1.5],
-    alignItems: "center",
+    alignItems: 'center',
   },
   iconItem: {
     padding: 0,
@@ -105,15 +105,15 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row, layout.centerCenter],
   },
   backdrop: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    display: "none",
-    userSelect: "none",
-    "&backdropVisible": {
-      display: "block",
+    display: 'none',
+    userSelect: 'none',
+    '&backdropVisible': {
+      display: 'block',
     },
   },
   tooltip: {
@@ -121,8 +121,8 @@ const useStyles = makeStyles((theme) => ({
   },
   backdropVisible: {},
   secondaryIcon: {
-    transform: "rotate(270deg)",
-    transformOrigin: "center center",
+    transform: 'rotate(270deg)',
+    transformOrigin: 'center center',
   },
 }));
 
@@ -131,7 +131,7 @@ const MenuContext = React.createContext({
   hasParent: false,
 });
 
-type DivProps = React.ComponentPropsWithoutRef<"div">;
+type DivProps = React.ComponentPropsWithoutRef<'div'>;
 
 export type SecondaryMenuItemProps = React.PropsWithChildren<{
   className?: string;
@@ -200,7 +200,7 @@ export const MenuItem = React.forwardRef<
   const invoke = (e: MouseEvent) => {
     e.stopPropagation();
     Promise.resolve(onClick()).then((r) => {
-      if (typeof r === "undefined" || r) {
+      if (typeof r === 'undefined' || r) {
         ctx.close();
       }
     });
@@ -273,14 +273,14 @@ export const Backdrop = React.forwardRef<
             styles.backdrop,
             visible && styles.backdropVisible
           )}
-          style={{ zIndex, marginBottom: "8px" }}
+          style={{ zIndex, marginBottom: '8px' }}
           {...rest}
         >
           {children}
         </div>
       )}
     </Layer>,
-    document.getElementById("root")!
+    document.getElementById('root')!
   );
 });
 
@@ -296,9 +296,9 @@ interface MenuProps {
   oneCellMenu?: boolean;
   backdropClassName?: string;
   className?: string;
-  align?: "start" | "center" | "end";
-  position?: "top" | "bottom" | "left" | "right";
-  direction?: "in" | "out";
+  align?: 'start' | 'center' | 'end';
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  direction?: 'in' | 'out';
   onClick?: () => void;
   sizeByButton?: boolean;
   style?: {};
@@ -326,10 +326,11 @@ export default function Menu({
 }: MenuProps) {
   const styles = useStyles();
   const [open, setOpen] = useState(false);
-  const anchor = useRef(null); // This creates a reference to the element that triggers the menu.
-  const backdrop = useRef(null); //This creates a reference to the backdrop element that appears behind the menu.
-  const [minWidthStyle, setMinWidthStyle] = useState({}); //This state is used to set the minimum width of the menu based on the triggering element's width.
+  const anchor = useRef(null);
+  const backdrop = useRef(null);
+  const [minWidthStyle, setMinWidthStyle] = useState({});
   const menuCtx = useContext(MenuContext);
+  debugger;
 
   const close = useCallback(
     (e?: MouseEvent) => {
@@ -369,13 +370,12 @@ export default function Menu({
       setMinWidthStyle({});
     }
   }, [children, sizeByButton]);
-
   const content = (
     <Popper
       className={undefined}
       anchor={anchor.current!}
       open={open}
-      position={position}
+      position={position!}
       align={align}
       direction={direction}
     >
@@ -392,9 +392,9 @@ export default function Menu({
           ))}
         </div>
         <Arrow
-          containerPosition={position + "ArrowContainer"}
-          position={position}
-          shadowPosition={position + "Shadow"}
+          containerPosition={`${position!}ArrowContainer`}
+          position={position!}
+          shadowPosition={`${position!}Shadow`}
           oneCellMenu={oneCellMenu}
         />
       </div>
