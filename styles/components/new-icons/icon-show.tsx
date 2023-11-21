@@ -1,54 +1,71 @@
 import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconColor, IconProps, IconSize } from './types.ts';
 
-export function IconShow() {
+const COLOR_MAP = {
+  [IconColor.Mono]: {
+    var1: theme.mono.m4,
+    var2: theme.mono.m3,
+    var3: theme.mono.m4,
+  },
+  [IconColor.Primary]: {
+    var1: theme.primary.p8,
+    var2: theme.primary.p9,
+    var3: theme.primary.p10,
+  },
+};
+
+export interface IconShowProps extends IconProps {
+  color?: IconColor.Primary | IconColor.Mono;
+}
+
+export function IconShow({
+  color,
+  size = IconSize.Small,
+  style = {},
+  className,
+}: IconShowProps) {
+  color = color === undefined ? IconColor.Mono : color;
+
+  const colors = COLOR_MAP[color];
+
   return (
     <svg
-      width="17"
-      height="16"
-      viewBox="0 0 17 16"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      style={{ paddingRight: '8px', ...style }}
+      width="16"
+      height="11"
+      viewBox="0 0 16 11"
+      fill="none"
     >
-      <g clipPath="url(#clip0_2423_116009)">
-        <path
-          opacity="0.7"
-          d="M15.125 8.2C15.125 8.2 13.025 4 8.125 4C3.225 4 1.125 8.2 1.125 8.2"
-          stroke="#8C8C8C"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          opacity="0.7"
-          d="M15.125 8.19999C15.125 8.19999 13.025 12.4 8.125 12.4C3.225 12.4 1.125 8.19999 1.125 8.19999"
-          stroke="#3F3F3F"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          opacity="0.8"
-          d="M10.125 8.20001C10.125 9.30458 9.22957 10.2 8.125 10.2C7.02043 10.2 6.125 9.30458 6.125 8.20001"
-          stroke="#8C8C8C"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          opacity="0.7"
-          d="M10.125 8.20001C10.125 7.09544 9.22957 6.20001 8.125 6.20001C7.02043 6.20001 6.125 7.09544 6.125 8.20001"
-          stroke="#3F3F3F"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </g>
-      <defs>
-        <clipPath id="clip0_2423_116009">
-          <rect
-            width="16"
-            height="16"
-            fill="white"
-            transform="translate(0.125)"
-          />
-        </clipPath>
-      </defs>
+      <path
+        opacity="0.7"
+        d="M15 5.2C15 5.2 12.9 1 8 1C3.1 1 1 5.2 1 5.2"
+        stroke={colors.var2}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <path
+        opacity="0.7"
+        d="M15 5.19999C15 5.19999 12.9 9.39999 8 9.39999C3.1 9.39999 1 5.19999 1 5.19999"
+        stroke={colors.var3}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <path
+        opacity="0.8"
+        d="M10 5.2C10 6.30457 9.10457 7.2 8 7.2C6.89543 7.2 6 6.30457 6 5.2"
+        stroke={colors.var2}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <path
+        opacity="0.7"
+        d="M10 5.2C10 4.09543 9.10457 3.2 8 3.2C6.89543 3.2 6 4.09543 6 5.2"
+        stroke={colors.var3}
+        stroke-width="2"
+        stroke-linecap="round"
+      />
     </svg>
   );
 }

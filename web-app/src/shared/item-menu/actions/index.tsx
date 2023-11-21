@@ -1,50 +1,54 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Path } from 'slate';
-import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import React, { useCallback, useContext, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { Path } from "slate";
+import { duplicateCard } from "../../../../../cfds/client/duplicate.ts";
+import { VertexManager } from "../../../../../cfds/client/graph/vertex-manager.ts";
 import {
   Note,
   NoteType,
-} from '../../../../../cfds/client/graph/vertices/note.ts';
+} from "../../../../../cfds/client/graph/vertices/note.ts";
 import {
   Button,
   RaisedButton,
-} from '../../../../../styles/components/buttons.tsx';
+} from "../../../../../styles/components/buttons.tsx";
 import {
   Dialog,
   DialogActions,
   DialogContent,
-} from '../../../../../styles/components/dialog/index.tsx';
-import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
-import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
-import { IconTask } from '../../../../../styles/components/new-icons/icon-task.tsx';
-import { IconNote } from '../../../../../styles/components/new-icons/icon-note.tsx';
-import { IconViewNote } from '../../../../../styles/components/new-icons/icon-view-note.tsx';
-import { IconOpen } from '../../../../../styles/components/new-icons/icon-open.tsx';
-import { IconExportPdf } from '../../../../../styles/components/new-icons/icon-export-pdf.tsx';
-import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
-import { IconDueDate } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
-import { IconColor } from '../../../../../styles/components/new-icons/types.ts';
-import { IconLink } from '../../../../../styles/components/icons/index.ts';
-import { MenuAction } from '../../../../../styles/components/menu.tsx';
-import { H3, Text } from '../../../../../styles/components/texts.tsx';
+} from "../../../../../styles/components/dialog/index.tsx";
+import { IconDelete } from "../../../../../styles/components/new-icons/icon-delete.tsx";
+import { IconDuplicate } from "../../../../../styles/components/new-icons/icon-duplicate.tsx";
+import { IconTask } from "../../../../../styles/components/new-icons/icon-task.tsx";
+import { IconNote } from "../../../../../styles/components/new-icons/icon-note.tsx";
+import { IconViewNote } from "../../../../../styles/components/new-icons/icon-view-note.tsx";
+import { IconOpen } from "../../../../../styles/components/new-icons/icon-open.tsx";
+import { IconExportPdf } from "../../../../../styles/components/new-icons/icon-export-pdf.tsx";
+import { IconExportMail } from "../../../../../styles/components/new-icons/icon-export-mail.tsx";
+import { IconDueDate } from "../../../../../styles/components/new-icons/icon-due-date.tsx";
+import { IconColor } from "../../../../../styles/components/new-icons/types.ts";
+import { IconLink } from "../../../../../styles/components/icons/index.ts";
+import { MenuAction } from "../../../../../styles/components/menu.tsx";
+import { H3, Text } from "../../../../../styles/components/texts.tsx";
 import {
   toastContext,
   useToastController,
-} from '../../../../../styles/components/toast/index.tsx';
-import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
-import { useDocumentRouter } from '../../../core/react-utils/index.ts';
-import { CardElement } from '../../../core/slate/elements/card.element/index.tsx';
-import { OvvioEditor } from '../../../core/slate/types.ts';
-import { ElementUtils } from '../../../core/slate/utils/element-utils.ts';
-import { useDueDate } from '../../components/due-date-editor/index.tsx';
+} from "../../../../../styles/components/toast/index.tsx";
+import { useGraphManager } from "../../../core/cfds/react/graph.tsx";
+import { useDocumentRouter } from "../../../core/react-utils/index.ts";
+import { CardElement } from "../../../core/slate/elements/card.element/index.tsx";
+import { OvvioEditor } from "../../../core/slate/types.ts";
+import { ElementUtils } from "../../../core/slate/utils/element-utils.ts";
+import { useDueDate } from "../../components/due-date-editor/index.tsx";
 import {
   usePartialVertex,
   useVertex,
-} from '../../../core/cfds/react/vertex.ts';
-import { useLogger } from '../../../core/cfds/react/logger.tsx';
-import { UISource } from '../../../../../logging/client-events.ts';
+} from "../../../core/cfds/react/vertex.ts";
+import { useLogger } from "../../../core/cfds/react/logger.tsx";
+import { UISource } from "../../../../../logging/client-events.ts";
+import {
+  IconAddDueDate,
+  IconAddDueDateState,
+} from "../../../../../styles/components/new-icons/icon-add-due-date.tsx";
 
 interface CardActionProps {
   cardManager: VertexManager<Note>;
@@ -64,10 +68,10 @@ export function EditCardAction({
 
   const openItem = () => {
     logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'menu:note:open',
-      destination: 'editor',
+      severity: "INFO",
+      event: "Click",
+      source: "menu:note:open",
+      destination: "editor",
       vertex: cardManager.key,
     });
     if (editor) {
@@ -103,7 +107,7 @@ export function EditDueDateAction({
     <MenuAction
       {...props}
       onClick={onClick}
-      IconComponent={IconDueDate}
+      IconComponent={IconAddDueDate}
       text="Add Due Date"
     />
   );
@@ -116,13 +120,13 @@ export function ViewInNoteAction({
 }: CardActionProps) {
   const logger = useLogger();
   const navigate = useNavigate();
-  const pCard = usePartialVertex(cardManager, ['workspace', 'parentNote']);
+  const pCard = usePartialVertex(cardManager, ["workspace", "parentNote"]);
 
   const openNote = useCallback(() => {
     logger.log({
-      severity: 'INFO',
-      event: 'Click',
-      source: 'menu:note:view-in-parent',
+      severity: "INFO",
+      event: "Click",
+      source: "menu:note:view-in-parent",
       vertex: pCard.key,
     });
     navigate(`${pCard.workspace.key}/${pCard.parentNote!.key}`);
@@ -143,7 +147,7 @@ export function ViewInNoteAction({
 }
 export function cardHasChildren(card: Note) {
   try {
-    for (const [child] of card.inEdges('parentNote')) {
+    for (const [child] of card.inEdges("parentNote")) {
       if (!child.isDeleted) return true;
     }
   } catch (e) {}
@@ -168,11 +172,11 @@ export function DeleteCardAction({
   const onOpen = useCallback(() => {
     setOpen(true);
     logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'delete',
+      severity: "INFO",
+      event: "Start",
+      flow: "delete",
       vertex: card.key,
-      source: source || 'menu:note:delete',
+      source: source || "menu:note:delete",
     });
     return new Promise<void>((resolve) => {
       resolveRef.current = () => {
@@ -188,11 +192,11 @@ export function DeleteCardAction({
       resolveRef.current();
       if (isCancelled) {
         logger.log({
-          severity: 'INFO',
-          event: 'Cancel',
-          flow: 'delete',
+          severity: "INFO",
+          event: "Cancel",
+          flow: "delete",
           vertex: card.key,
-          source: source || 'menu:note:delete',
+          source: source || "menu:note:delete",
         });
       }
     },
@@ -202,15 +206,15 @@ export function DeleteCardAction({
   const onDeleteClick = useCallback(() => {
     card.isDeleted = 1;
     logger.log({
-      severity: 'INFO',
-      event: 'End',
-      flow: 'delete',
+      severity: "INFO",
+      event: "End",
+      flow: "delete",
       vertex: card.key,
-      source: source || 'menu:note:delete',
+      source: source || "menu:note:delete",
     });
     closeDialog(false);
     onDeleted && onDeleted();
-    navigate('/');
+    navigate("/");
     // if (source === 'title' || source === 'editor:title') {
     //   const prevState = history.getRouteInformation(1);
     //   if (prevState === undefined || prevState === null) {
@@ -222,9 +226,9 @@ export function DeleteCardAction({
   }, [card, logger, closeDialog, onDeleted, source, navigate]);
   const hasChildren = cardHasChildren(card);
   const msg = hasChildren
-    ? 'Deleting this item is permanent and will include the data it contains; including text and items'
-    : 'Deleting this item is permanent';
-  const deleteText = hasChildren ? 'Delete Items' : 'Delete';
+    ? "Deleting this item is permanent and will include the data it contains; including text and items"
+    : "Deleting this item is permanent";
+  const deleteText = hasChildren ? "Delete Items" : "Delete";
   return (
     <React.Fragment>
       <MenuAction
@@ -270,8 +274,8 @@ export function DuplicateCardAction({
   const onDuplicate = () => {
     const newCard = duplicateCard(graph, cardManager.key)!;
     logger.log({
-      severity: 'INFO',
-      event: 'Duplicate',
+      severity: "INFO",
+      event: "Duplicate",
       vertex: cardManager.key,
       target: newCard?.key,
       source,
@@ -305,23 +309,23 @@ export function DuplicateCardAction({
 export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
   const logger = useLogger();
   const toastController = useToastController();
-  const { type } = usePartialVertex(cardManager, ['type']);
-  const text = type === NoteType.Note ? 'Convert To Task' : 'Convert To Note';
+  const { type } = usePartialVertex(cardManager, ["type"]);
+  const text = type === NoteType.Note ? "Convert To Task" : "Convert To Note";
   const onClick = () => {
     const p = cardManager.getVertexProxy();
     const newType = type === NoteType.Note ? NoteType.Task : NoteType.Note;
     p.type = newType;
     logger.log({
-      severity: 'INFO',
-      event: 'MetadataChanged',
-      source: 'menu:note:convert',
+      severity: "INFO",
+      event: "MetadataChanged",
+      source: "menu:note:convert",
       vertex: cardManager.key,
     });
 
     toastController.displayToast({
       text: `${type} converted to ${newType}`,
       action: {
-        text: 'Undo',
+        text: "Undo",
         fn: (dismiss) => {
           cardManager.getVertexProxy().type = type;
           dismiss();
@@ -335,7 +339,6 @@ export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
       IconComponent={type === NoteType.Note ? IconTask : IconNote}
       text={text}
       onClick={onClick}
-      color={IconColor.Mono}
     />
   );
 }

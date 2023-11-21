@@ -179,8 +179,7 @@ export enum NoteStatus {
 }
 
 // export type WorkspaceGrouping = 'none' | 'assignee' | 'teamLeader';
-export type WorkspaceGrouping = 'none' | 'Employee' | 'Team'; //TODO: replaced
-
+export type WorkspaceGrouping = 'none' | 'Employee' | 'Team';
 export const kShowChecked = [
   'checked-unchecked',
   'unchecked',
@@ -222,7 +221,24 @@ export type ViewType = (typeof kViewType)[number];
 
 export const kTabIds = ['tasks', 'notes', 'overview'] as const;
 
+export const kSettingsTabIds = [
+  'general-personal',
+  'details',
+  'general-organization',
+  'members',
+  'billing',
+  'general-workspaces',
+  'tags',
+  'roles-details',
+] as const;
+
 export type TabId = (typeof kTabIds)[number];
+
+export type SettingsTabId = (typeof kSettingsTabIds)[number];
+
+export function isSettingsTabId(tabId: string): tabId is SettingsTabId {
+  return kSettingsTabIds.includes(tabId as any);
+}
 
 export const kDateFilters = ['week', 'month'] as const;
 

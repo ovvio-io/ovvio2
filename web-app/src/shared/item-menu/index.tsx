@@ -1,6 +1,6 @@
-import React from 'react';
-import Menu from '../../../../styles/components/menu.tsx';
-import { IconOverflow } from '../../../../styles/components/icons/index.ts';
+import React, { useCallback, useEffect } from "react";
+import Menu from "../../../../styles/components/menu.tsx";
+import { IconOverflow } from "../../../../styles/components/icons/index.ts";
 import {
   EditCardAction,
   // UploadAttachmentAction,
@@ -12,13 +12,30 @@ import {
   DuplicateCardAction,
   // CopyUrlAction,
   ConvertNoteAction,
-} from './actions/index.tsx';
-import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
-import { OvvioEditor } from '../../core/slate/types.ts';
-import { UISource } from '../../../../logging/client-events.ts';
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+} from "./actions/index.tsx";
+import { Note } from "../../../../cfds/client/graph/vertices/note.ts";
+import { VertexManager } from "../../../../cfds/client/graph/vertex-manager.ts";
+import { OvvioEditor } from "../../core/slate/types.ts";
+import { UISource } from "../../../../logging/client-events.ts";
+import { useLogger } from "../../core/cfds/react/logger.tsx";
+import { usePartialVertex } from "../../core/cfds/react/vertex.ts";
+import { IconMore } from "../../../../styles/components/new-icons/icon-more.tsx";
+import { makeStyles } from "../../../../styles/css-objects/index.ts";
+import { styleguide } from "../../../../styles/styleguide.ts";
+import { notFound } from "../../../../cfds/base/errors.ts";
+
+const useStyles = makeStyles(() => ({
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: "opacity",
+    marginRight: styleguide.gridbase,
+  },
+  itemMenuOpen: {
+    opacity: 1,
+    padding: "0px 6px 0px 0px",
+  },
+}));
 
 export interface CardMenuViewProps {
   cardManager: VertexManager<Note>;
@@ -27,9 +44,10 @@ export interface CardMenuViewProps {
   className?: any;
   source: UISource;
   editorRootKey?: string;
-  direction?: 'in' | 'out';
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  direction?: "in" | "out";
+  position?: "top" | "bottom" | "left" | "right";
   editor?: OvvioEditor;
+  visible?: boolean;
 }
 
 export default function CardMenuView({
@@ -42,20 +60,38 @@ export default function CardMenuView({
   direction,
   position,
   editor,
+  visible,
 }: CardMenuViewProps) {
   const logger = useLogger();
-  const partialNote = usePartialVertex(cardManager, ['parentNote']);
+  const styles = useStyles();
+
+  const partialNote = usePartialVertex(cardManager, ["parentNote"]);
   if (!cardManager) {
     return null;
   }
 
+  const renderButton = useCallback(
+    (
+      { isOpen } //TODO: fix this.
+    ) => (
+      <div
+        className={!isOpen && visible ? styles.itemMenu : styles.itemMenuOpen}
+      >
+        <IconMore />
+      </div>
+    ),
+    [styles]
+  );
+
+  // useEffect(()=> {
+  //   if()
+  // })
   return (
     <Menu
-      renderButton={() => <IconOverflow />}
-      align="end"
-      direction={direction}
-      position={position}
-      className={className}
+      renderButton={renderButton}
+      direction="out"
+      position="left"
+      align="start"
     >
       {allowsEdit && (
         <EditCardAction

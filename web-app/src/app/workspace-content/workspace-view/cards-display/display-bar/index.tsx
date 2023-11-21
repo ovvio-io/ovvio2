@@ -16,7 +16,6 @@ import {
   Button,
 } from '../../../../../../../styles/components/buttons.tsx';
 import IconDropDownArrow from '../../../../../../../styles/components/icons/IconDropDownArrow.tsx';
-import IconDueDate from '../../../../../../../styles/components/icons/IconDueDate.tsx';
 import IconFilter from '../../../../../../../styles/components/icons/IconFilter.tsx';
 import DropDown, {
   DropDownItem,
@@ -51,6 +50,10 @@ import { ViewToggle } from './view-toggle.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
 import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
+import {
+  DueDateState,
+  IconDueDate,
+} from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -113,6 +116,9 @@ const useStyles = makeStyles(() => ({
     background: theme.colors.secondaryButton,
     color: theme.colors.text,
     basedOn: [useButtonStyles.button],
+    ':hover': {
+      backgroundColor: theme.secondary.s4,
+    },
   },
   hasFilters: {
     backgroundColor: theme.colors.secondaryButtonActive,
@@ -262,7 +268,8 @@ function DateFilterDropdown() {
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconDueDate />
+        <IconDueDate state={DueDateState.Default} />
+
         <Text className={cn(styles.dropDownButtonText)}>{text}</Text>
         <IconDropDownArrow />
       </div>

@@ -42,6 +42,8 @@ export function useTransitionedOpen(
   const [visibility, setVisibility] = useState(
     open ? TRANSITION_STATES.ENTERING : TRANSITION_STATES.REMOVED
   );
+  // debugger;
+
   const prevOpen = useRef(open);
   const isMounted = useMountedIndicator();
   const animDuration = useRef(animationDuration);

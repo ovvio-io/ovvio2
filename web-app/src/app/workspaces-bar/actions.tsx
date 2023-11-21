@@ -1,57 +1,57 @@
-import React, { useState, useCallback } from 'react';
-import Tooltip from '../../../../styles/components/tooltip/index.tsx';
-import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { layout } from '../../../../styles/layout.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
-import { usePartialView } from '../../core/cfds/react/graph.tsx';
-import { useSharedQuery } from '../../core/cfds/react/query.ts';
-import { createUseStrings } from '../../core/localization/index.tsx';
-import localization from './workspace-bar.strings.json' assert { type: 'json' };
-import { useLogger } from '../../core/cfds/react/logger.tsx';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback } from "react";
+import Tooltip from "../../../../styles/components/tooltip/index.tsx";
+import { useTypographyStyles } from "../../../../styles/components/typography.tsx";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import { layout } from "../../../../styles/layout.ts";
+import { styleguide } from "../../../../styles/styleguide.ts";
+import { brandLightTheme as theme } from "../../../../styles/theme.tsx";
+import { usePartialView } from "../../core/cfds/react/graph.tsx";
+import { useSharedQuery } from "../../core/cfds/react/query.ts";
+import { createUseStrings } from "../../core/localization/index.tsx";
+import localization from "./workspace-bar.strings.json" assert { type: "json" };
+import { useLogger } from "../../core/cfds/react/logger.tsx";
+import { useNavigate } from "react-router-dom";
 
 const useStyles = makeStyles(
   () => ({
     root: {
-      width: '100%',
+      width: "100%",
       flexShrink: 0,
     },
     action: {
-      cursor: 'pointer',
-      userSelect: 'none',
+      cursor: "pointer",
+      userSelect: "none",
       height: styleguide.gridbase * 5,
-      boxSizing: 'border-box',
-      width: '100%',
+      boxSizing: "border-box",
+      width: "100%",
       backgroundColor: theme.colors.secondaryButton,
       color: theme.colors.barActionText,
       padding: styleguide.gridbase * 2,
-      alignItems: 'center',
+      alignItems: "center",
       marginBottom: styleguide.gridbase,
-      ':last-child': {
+      ":last-child": {
         marginBottom: 0,
       },
-      ':hover': {
+      ":hover": {
         backgroundColor: theme.colors.secondaryButtonActive,
         color: theme.colors.text,
       },
       basedOn: [layout.row],
     },
     disabled: {
-      cursor: 'not-allowed',
+      cursor: "not-allowed",
     },
     actionIcon: {
       marginRight: styleguide.gridbase,
       basedOn: [layout.column, layout.centerCenter],
     },
     actionText: {
-      whiteSpace: 'nowrap',
-      color: 'currentColor',
+      whiteSpace: "nowrap",
+      color: "currentColor",
       basedOn: [useTypographyStyles.button, layout.column, layout.centerCenter],
     },
   }),
-  'actions_2eb8a6'
+  "actions_2eb8a6"
 );
 
 const useStrings = createUseStrings(localization);
@@ -64,20 +64,20 @@ export function WorkspaceBarActions({ className }: WorkspaceBarActionsProps) {
   const styles = useStyles();
   const strings = useStrings();
   const logger = useLogger();
-  const workspaces = useSharedQuery('workspaces').results;
+  const workspaces = useSharedQuery("workspaces").results;
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const view = usePartialView('workspaceBarCollapsed');
+  const view = usePartialView("workspaceBarCollapsed");
   const navigate = useNavigate();
 
   const createNew = useCallback(() => {
     logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'create',
-      type: 'workspace',
-      source: 'bar:workspace',
+      severity: "INFO",
+      event: "Start",
+      flow: "create",
+      type: "workspace",
+      source: "bar:workspace",
     });
-    navigate('/new');
+    navigate("/new");
   }, [logger, navigate]);
 
   const openInvite = useCallback(() => {

@@ -1,25 +1,28 @@
-import React, { useCallback } from 'react';
-import { useSlateStatic } from 'slate-react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';
-import { usePartialVertex } from '../../../../cfds/react/vertex.ts';
-import CardMenuView from '../../../../../shared/item-menu/index.tsx';
-import { formatTimeDiff } from '../../../../../../../styles/utils/dateutils.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { IconButton } from '../../../../../../../styles/components/buttons.tsx';
-import { IconCalendar } from '../../../../../../../styles/components/icons/index.ts';
-import { Tooltip } from '../../../../../../../styles/components/tooltip/index.tsx';
+import React, { useCallback } from "react";
+import { useSlateStatic } from "slate-react";
+import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
+import { Note } from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { useDueDate } from "../../../../../shared/components/due-date-editor/index.tsx";
+import { usePartialVertex } from "../../../../cfds/react/vertex.ts";
+import CardMenuView from "../../../../../shared/item-menu/index.tsx";
+import { formatTimeDiff } from "../../../../../../../styles/utils/dateutils.ts";
+import { layout, styleguide } from "../../../../../../../styles/index.ts";
+import { IconButton } from "../../../../../../../styles/components/buttons.tsx";
+import { Tooltip } from "../../../../../../../styles/components/tooltip/index.tsx";
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useLogger } from '../../../../cfds/react/logger.tsx';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { useLogger } from "../../../../cfds/react/logger.tsx";
+import {
+  DueDateState,
+  IconDueDate,
+} from "../../../../../../../styles/components/new-icons/icon-due-date.tsx";
 
 const useStyles = makeStyles((theme) => ({
   actionsContainer: {
     height: styleguide.gridbase * 4,
-    alignItems: 'center',
+    alignItems: "center",
     basedOn: [layout.row],
   },
   uploading: {
@@ -48,7 +51,7 @@ export function CardActions({
       <DueDateIndicator card={card} />
       <CardMenuView
         cardManager={card}
-        source={'editor:body:inline-task'}
+        source={"editor:body:inline-task"}
         editorRootKey={editorRootKey}
         allowsEdit={true}
         editor={editor}
@@ -58,7 +61,7 @@ export function CardActions({
 }
 
 function DueDateIndicator({ card }: { card: VertexManager<Note> }) {
-  const { dueDate } = usePartialVertex(card, ['dueDate']);
+  const { dueDate } = usePartialVertex(card, ["dueDate"]);
   const dueDateEditor = useDueDate();
   const logger = useLogger();
 
@@ -68,11 +71,11 @@ function DueDateIndicator({ card }: { card: VertexManager<Note> }) {
 
   const onClick = () => {
     logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'edit',
-      type: 'due',
-      source: 'editor:body:inline-task',
+      severity: "INFO",
+      event: "Start",
+      flow: "edit",
+      type: "due",
+      source: "editor:body:inline-task",
       vertex: card.key,
     });
     dueDateEditor.edit(card.getVertexProxy());
@@ -83,7 +86,9 @@ function DueDateIndicator({ card }: { card: VertexManager<Note> }) {
   return (
     <Tooltip text={`Due by ${formatTimeDiff(dueDate)}`}>
       <IconButton onClick={onClick}>
-        <IconCalendar fill={isOverdue ? '#fe4a62' : '#9cb2cd'} />
+        <IconDueDate
+          state={isOverdue ? DueDateState.OverDue : DueDateState.Default}
+        />
       </IconButton>
     </Tooltip>
   );

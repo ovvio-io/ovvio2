@@ -3,6 +3,7 @@ import {
   DateFilter,
   GroupBy,
   SchemeNamespace,
+  SettingsTabId,
   ShowChecked,
   ShowPinned,
   SortBy,
@@ -27,6 +28,7 @@ export const kViewPropsGlobal: readonly (keyof View)[] = [
   'workspaceBarCollapsed',
   'noteType',
   'selectedTabId',
+  'selectedSettingsTabId',
 ] as const;
 
 export type ViewPropGlobal = Extract<
@@ -74,6 +76,7 @@ const kDefaultNoteType: NoteType = NoteType.Task;
 const kDefaultGroupBy: GroupBy = 'dueDate';
 const kDefaultViewType: ViewType = 'list';
 const kDefaultTabId: TabId = 'tasks';
+const kDefaultSettingsTabId: SettingsTabId = 'generalPersonal';
 
 export class View extends BaseVertex {
   public showFilters: boolean = false;
@@ -141,6 +144,25 @@ export class View extends BaseVertex {
       this.record.delete('selectedTab');
     } else {
       this.record.set('selectedTab', id);
+    }
+  }
+
+  get selectedSettingsTabId(): SettingsTabId {
+    if (this.parentView) {
+      return this.parentView.selectedSettingsTabId;
+    }
+    return this.record.get('selectedSettingsTab') || kDefaultSettingsTabId;
+  }
+
+  set selectedSettingsTabId(id: SettingsTabId) {
+    if (this.parentView) {
+      this.parentView.selectedSettingsTabId = id;
+      return;
+    }
+    if (id === kDefaultSettingsTabId) {
+      this.record.delete('selectedSettingsTab');
+    } else {
+      this.record.set('selectedSettingsTab', id);
     }
   }
 

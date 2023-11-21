@@ -55,8 +55,9 @@ export default function DatePill({ className, value, onDelete }) {
 
   return (
     <div className={cn(className, styles.pill, isOverdue && styles.overdue)}>
-      <IconCalendar fill={isOverdue ? '#fe4a62' : '#9cb2cd'} />
-      <Text className={cn(styles.text, isOverdue && styles.overdue)}>
+        <IconDueDate
+          state={isOverdue ? DueDateState.OverDue : DueDateState.Default}
+        />      <Text className={cn(styles.text, isOverdue && styles.overdue)}>
         {value.toLocaleDateString()}
       </Text>
       <Button onClick={onDelete}>

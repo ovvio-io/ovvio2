@@ -14,6 +14,7 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { brandLightTheme as theme1 } from '../../../../../../../styles/theme.tsx';
 
 const HEIGHT = styleguide.gridbase * 4;
 
@@ -42,6 +43,11 @@ const useStyles = makeStyles((theme) => ({
   text: {
     justifyContent: 'center',
     basedOn: [layout.flexSpacer, layout.row],
+  },
+  toggleButtonHover: {
+    ':hover': {
+      backgroundColor: theme1.secondary.s4,
+    },
   },
   selected: {
     color: theme.background[0],
@@ -81,6 +87,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
         <Button
           className={cn(
             styles.toggleButton,
+            view.viewType !== 'list' && styles.toggleButtonHover,
             view.viewType === 'list' && styles.selected
           )}
           onClick={() => setView('list')}
@@ -92,6 +99,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
         <Button
           className={cn(
             styles.toggleButton,
+            view.viewType !== 'board' && styles.toggleButtonHover,
             view.viewType === 'board' && styles.selected
           )}
           onClick={() => setView('board')}

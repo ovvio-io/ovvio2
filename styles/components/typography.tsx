@@ -58,7 +58,9 @@ export const useStyles = makeStyles(
       padding: 0,
     },
     h4: {
-      color: theme.colors.text,
+      // color: theme.colors.text,
+      color: 'white',
+
       margin: 0,
       padding: 0,
       fontWeight: '400',
@@ -76,6 +78,13 @@ export const useStyles = makeStyles(
       fontWeight: '400',
       lineHeight: '22px',
     },
+    h6: {
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: '21px',
+      letterSpacing: 0.1,
+    },
+
     label: {
       color: theme.colors.text,
       fontSize: 16,
@@ -177,7 +186,20 @@ export const H4 = React.forwardRef(
     );
   }
 );
+export const H6 = React.forwardRef(
+  (
+    { children, className, ...props }: TypographyProps<'h4'>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
+  ) => {
+    const styles = useStyles();
 
+    return (
+      <h4 ref={ref} {...props} className={cn(styles.h6, className)}>
+        {children}
+      </h4>
+    );
+  }
+);
 export const Text = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,

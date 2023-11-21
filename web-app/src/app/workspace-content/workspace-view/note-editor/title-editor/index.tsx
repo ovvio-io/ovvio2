@@ -1,43 +1,43 @@
-import React, { useRef, useEffect } from 'react';
-import { Editable, RenderElementProps, Slate } from 'slate-react';
+import React, { useRef, useEffect } from "react";
+import { Editable, RenderElementProps, Slate } from "slate-react";
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../../../../styles/index.ts';
-import { H1 } from '../../../../../../../styles/components/texts.tsx';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { useTitleEditor } from '../../../../../core/slate/index.tsx';
-import { EditableCardContext } from '../../../../../core/slate/elements/card.element/index.tsx';
-import CardMenuView from '../../../../../shared/item-menu/index.tsx';
+} from "../../../../../../../styles/css-objects/index.ts";
+import { styleguide, layout } from "../../../../../../../styles/index.ts";
+import { H1 } from "../../../../../../../styles/components/texts.tsx";
+import { Note } from "../../../../../../../cfds/client/graph/vertices/note.ts";
+import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
+import { useTitleEditor } from "../../../../../core/slate/index.tsx";
+import { EditableCardContext } from "../../../../../core/slate/elements/card.element/index.tsx";
+import CardMenuView from "../../../../../shared/item-menu/index.tsx";
 // import { useEventLogger } from '../../../../../core/analytics';
-import { FocusReporter } from '../focus-reporter.tsx';
-import { CardFooter } from '../../cards-display/card-item/card-footer.tsx';
-import { CardHeader, CardSize } from '../../cards-display/card-item/index.tsx';
+import { FocusReporter } from "../focus-reporter.tsx";
+import { CardFooter } from "../../cards-display/card-item/card-footer.tsx";
+import { CardHeader, CardSize } from "../../cards-display/card-item/index.tsx";
 
 const useStyles = makeStyles((theme) => ({
   placeholder: {
     marginLeft: styleguide.gridbase * 1.5,
     marginRight: styleguide.gridbase * 1.5,
     marginBottom: styleguide.gridbase * 2,
-    color: '#b7b4bf',
+    color: "#b7b4bf",
     fontSize: 12,
-    position: 'absolute',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    pointerEvents: 'none',
-    direction: 'ltr',
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none",
+    direction: "ltr",
   },
   header: {
-    position: 'relative',
+    position: "relative",
   },
   textContainer: {
-    position: 'relative',
-    alignItems: 'center',
+    position: "relative",
+    alignItems: "center",
     minHeight: styleguide.gridbase * 7,
     basedOn: [layout.row],
-    ':hover': {
+    ":hover": {
       backgroundColor: theme.background[100],
       overflowIcon: {
         opacity: 1,
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
   tags: {
     marginLeft: 0,
     marginBottom: styleguide.gridbase * 2,
-    '& > :first-child': {
+    "& > :first-child": {
       marginLeft: 0,
     },
   },
@@ -55,22 +55,22 @@ const useStyles = makeStyles((theme) => ({
     height: styleguide.gridbase * 4,
   },
   rtl: {
-    direction: 'rtl',
+    direction: "rtl",
   },
   noteHeader: {
     fontSize: 56,
   },
   noteEditor: {
-    maxWidth: '100%',
+    maxWidth: "100%",
     flexShrink: 1,
   },
   pills: {
     flexShrink: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
     basedOn: [layout.row],
   },
   assignees: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
 }));
 
@@ -143,7 +143,7 @@ export default function TitleEditorView({
   const { editor, plugins, handlers } = useTitleEditor(
     cardManager,
     Title,
-    'title',
+    "title",
     {
       onFocusNext: focusNext,
     }

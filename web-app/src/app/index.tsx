@@ -11,6 +11,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
+import { Settings } from './settings/index.tsx';
+import { CategorySettings } from './settings/category-settings.tsx';
 import { App } from '../../../styles/components/app.tsx';
 
 const useStyles = makeStyles((theme) => ({
@@ -64,7 +66,7 @@ const router = createBrowserRouter([
   {
     path: '/new',
     element: (
-      <CreateWorkspaceView //TODO: CHECK linr 78-88 in comment
+      <CreateWorkspaceView //TODO: CHECK line 78-88 in comment
         source="bar:workspace"
         // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
 
@@ -94,6 +96,15 @@ const router = createBrowserRouter([
     path: `/_explorer`,
     element: <RepoExplorer />,
   },
+
+  {
+    path: '/settings/:category/:tab',
+    element: (
+      <Settings style={lightTheme}>
+        <CategorySettings />
+      </Settings>
+    ),
+  },
 ]);
 
 export function AppView() {
@@ -103,3 +114,11 @@ export function AppView() {
     </App>
   );
 }
+
+// scheme-version = add type
+// add to the global view  (iew.ts - client graph - verice)
+// view.ts - client graph - verices. = add getter setter
+
+// add scheme-types.ts add type for settings tabs.
+
+//javascript - the good parts (READ)

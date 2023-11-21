@@ -1,6 +1,6 @@
-import React from 'react';
-import { brandLightTheme as theme } from '../../theme.tsx';
-import { IconColor, IconProps, IconSize } from './types.ts';
+import React from "react";
+import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconColor, IconProps, IconSize } from "./types.ts";
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -20,15 +20,17 @@ export interface IconNoteProps extends IconProps {
 }
 
 export function IconNote({
-  color = IconColor.Mono,
+  color = IconColor.Primary,
   size = IconSize.Small,
   className,
+  style = {},
 }: IconNoteProps) {
   const colorOpts = COLOR_MAP[color];
 
   return (
     <svg
       className={className}
+      style={{ paddingRight: "8px", ...style }}
       width={size}
       height={size}
       viewBox="0 0 16 16"

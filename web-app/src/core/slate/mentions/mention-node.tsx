@@ -7,36 +7,36 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
-} from 'react';
-import { Node, Transforms } from 'slate';
-import { RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
-import { Scroller, useScrollParent } from '../../react-utils/scrolling.tsx';
-import { layout, styleguide } from '../../../../../styles/index.ts';
+} from "react";
+import { Node, Transforms } from "slate";
+import { RenderElementProps, useSelected, useSlateStatic } from "slate-react";
+import { Scroller, useScrollParent } from "../../react-utils/scrolling.tsx";
+import { layout, styleguide } from "../../../../../styles/index.ts";
 
-import PopperView from '../../../../../styles/components/popper.tsx';
-import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
-import { CfdsEditor } from '../cfds/with-cfds.tsx';
-import { isKeyPressed } from '../utils/hotkeys.ts';
-import { MentionElement } from '../../../../../cfds/richtext/model.ts';
+import PopperView from "../../../../../styles/components/popper.tsx";
+import { makeStyles, cn } from "../../../../../styles/css-objects/index.ts";
+import { CfdsEditor } from "../cfds/with-cfds.tsx";
+import { isKeyPressed } from "../utils/hotkeys.ts";
+import { MentionElement } from "../../../../../cfds/richtext/model.ts";
 
 const useStyles = makeStyles((theme) => ({
   scroller: {
     maxHeight: styleguide.gridbase * 40,
-    overflowY: 'auto',
+    overflowY: "auto",
   },
   suggestionItem: {
     // height: styleguide.gridbase * 7,
-    minWidth: styleguide.gridbase * 25,
+    minWidth: styleguide.gridbase * 16,
     padding: styleguide.gridbase * 2,
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     fontSize: 14,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: theme.background[0],
     transform: `backgroundColor linear ${styleguide.transition.duration.short}ms`,
-    ':hover': {
-      backgroundColor: '#f7f9ff',
+    ":hover": {
+      backgroundColor: "#f7f9ff",
     },
-    userSelect: 'none',
+    userSelect: "none",
     basedOn: [layout.row],
   },
   suggestionIcon: {
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.background[500],
   },
   anchor: {
-    display: 'inline-block',
+    display: "inline-block",
   },
   popperShadow: {
     boxShadow: theme.shadows.z2,
@@ -148,21 +148,21 @@ function InnerSuggestionComponent<T>({
   useEffect(() => {
     return registerKeyDown((e) => {
       switch (e.key) {
-        case 'ArrowUp':
-        case 'Up': {
+        case "ArrowUp":
+        case "Up": {
           setSelectedIndex((x) => (x - 1) % length);
           e.preventDefault();
           break;
         }
-        case 'ArrowDown':
-        case 'Down': {
+        case "ArrowDown":
+        case "Down": {
           setSelectedIndex((x) => (x + 1) % length);
           e.preventDefault();
           break;
         }
-        case 'Enter':
-        case 'ArrowRight':
-        case 'Right': {
+        case "Enter":
+        case "ArrowRight":
+        case "Right": {
           e.preventDefault();
           onItemSelected(selectedItem.current);
           break;
@@ -222,7 +222,7 @@ export function MentionElementNode<T>({
       return;
     }
     Transforms.removeNodes(editor, { at: path });
-    editor.activeMention = '';
+    editor.activeMention = "";
     editor.discardMention = () => {};
   }, [editor, element]);
   const closeMentionRef = useRef(closeMention);
@@ -234,7 +234,7 @@ export function MentionElementNode<T>({
 
   useEffect(() => {
     return registerKeyDown((e) => {
-      if (isKeyPressed(e, 'Backspace') && contentRef.current === trigger) {
+      if (isKeyPressed(e, "Backspace") && contentRef.current === trigger) {
         e.preventDefault();
         closeMentionRef.current();
       }

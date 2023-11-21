@@ -17,11 +17,7 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
 import Layer from '../../../../styles/components/layer.tsx';
-import Menu, {
-  LineSeparator,
-  MenuItem,
-  MenuAction,
-} from '../../../../styles/components/menu.tsx';
+import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
 import Tooltip from '../../../../styles/components/tooltip/index.tsx';
@@ -58,15 +54,17 @@ import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
 import { LogoText } from '../../../../styles/components/logo.tsx';
 import { LogoIcon } from '../../../../styles/components/logo.tsx';
-import { IconDelete } from '../../../../styles/components/new-icons/icon-delete.tsx';
-import IconSettings from '../../../../styles/components/icons/IconSettings.tsx';
-import IconAdd from '../../../../styles/components/icons/IconAdd.tsx';
-import { IconAttachment } from '../../../../styles/components/new-icons/icon-attachment.tsx';
 import { IconGroup } from '../../../../styles/components/new-icons/icon-group.tsx';
 import { IconCheck } from '../../../../styles/components/new-icons/icon-check.tsx';
 import { IconUngroup } from '../../../../styles/components/new-icons/icon-ungroup.tsx';
 import { IndeterminateProgressIndicator } from '../../../../styles/components/progress-indicator.tsx';
 import { Repository } from '../../../../repo/repo.ts';
+import { IconShow } from '../../../../styles/components/new-icons/icon-show.tsx';
+import { IconSettings } from '../../../../styles/components/new-icons/icon-settings.tsx';
+import { IconHide } from '../../../../styles/components/new-icons/icon-hide.tsx';
+import { IconTemplateSet } from '../../../../styles/components/new-icons/icon-template-set.tsx';
+import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-template-unset.tsx';
+import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -341,7 +339,12 @@ const useStyles = makeStyles(
     workSpaceMenu: {
       top: '-7px',
     },
+    itemMenuOpen: {
+      opacity: 1,
+      padding: '0px 6px 0px 0px',
+    },
   }),
+
   'workspaces-bar_881015'
 );
 
@@ -691,7 +694,15 @@ function WorkspaceListItem({
     textRef.current &&
     textRef.current.offsetWidth < textRef.current.scrollWidth;
 
-  const renderButton = useCallback(() => <IconMore />, []);
+  // const renderButton = useCallback(() => <IconMore />, []);
+  const renderButton = useCallback(
+    ({ isOpen }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <IconMore />
+      </div>
+    ),
+    []
+  );
 
   const setWorkspaceState = useCallback(
     (state: 'template' | 'hidden' | 'pinned' | 'none') => {
@@ -773,17 +784,19 @@ function WorkspaceListItem({
               direction="out"
               position="right"
               align="start"
-              className={cn(styles.itemMenu)}
+              // className={cn(styles.itemMenu)}
             >
-              <MenuItem onClick={() => setIsSettingsOpen(true)}>
-                {strings.workspaceSettings}
-              </MenuItem>
               {!isTemplate && (
                 <MenuItem
                   onClick={() =>
                     setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
                   }
                 >
+                  {groupId === 'hidden' ? (
+                    <IconShow color={IconColor.Primary} />
+                  ) : (
+                    <IconHide />
+                  )}
                   {groupId === 'hidden'
                     ? strings.showWorkspace
                     : strings.hideWorkspace}
@@ -797,11 +810,21 @@ function WorkspaceListItem({
                     )
                   }
                 >
+                  {groupId === 'templates' ? (
+                    <IconTemplateUnset />
+                  ) : (
+                    <IconTemplateSet />
+                  )}
+
                   {groupId === 'templates'
                     ? strings.unsetTemplate
                     : strings.setTemplate}
                 </MenuItem>
               )}
+              <MenuItem onClick={() => setIsSettingsOpen(true)}>
+                <IconSettings />
+                {strings.workspaceSettings}
+              </MenuItem>
             </Menu>
           </React.Fragment>
         ))}
@@ -813,6 +836,7 @@ function WorkspaceListItem({
     </div>
   );
 }
+
 //   return (
 //     <div
 //       className={cn(

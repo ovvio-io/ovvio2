@@ -1,6 +1,6 @@
-import React from 'react';
-import { brandLightTheme as theme } from '../../theme.tsx';
-import { IconColor, IconProps, IconSize } from './types.ts';
+import React from "react";
+import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconColor, IconProps, IconSize } from "./types.ts";
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -20,8 +20,9 @@ export interface IconTaskProps extends IconProps {
 }
 
 export function IconTask({
-  color = IconColor.Mono,
+  color = IconColor.Primary,
   size = IconSize.Small,
+  style = {},
   className,
 }: IconTaskProps) {
   const colorOpts = COLOR_MAP[color];
@@ -29,6 +30,7 @@ export function IconTask({
   return (
     <svg
       className={className}
+      style={{ paddingRight: "8px", ...style }}
       width={size}
       height={size}
       viewBox="0 0 17 16"

@@ -4,7 +4,6 @@ import IconFilter from './IconFilter.tsx';
 import IconMenu from './IconMenu.tsx';
 import IconNotifications from './IconNotifications.tsx';
 import IconSearch from './IconSearch.tsx';
-import IconSettings from './IconSettings.tsx';
 import IconTag from './IconTag.tsx';
 import IconAlignCenter from './IconAlignCenter.tsx';
 import IconAlignLeft from './IconAlignLeft.tsx';
@@ -25,7 +24,6 @@ import IconTasksTick from './IconTasksTick.tsx';
 import IconOverflow from './IconOverflow.tsx';
 import IconClose from './IconClose.tsx';
 import IconDelete from './IconDelete.tsx';
-import IconEdit from './IconEdit.tsx';
 import IconViewNote from './IconViewNote.tsx';
 import IconKeyboard from './IconKeyboard.tsx';
 import IconBack from './IconBack.tsx';
@@ -34,13 +32,14 @@ import IconCalendar from './IconCalendar.tsx';
 import IconSorting from './IconSorting.tsx';
 import IconImage from './IconImage.tsx';
 import IconAssignee from './IconAssignee.tsx';
-import IconDueDate from './IconDueDate.tsx';
 import IconAttachment from './IconAttachment.tsx';
 import IconCamera from './IconCamera.tsx';
 import IconExportMail from './IconExportMail.tsx';
 import IconExportPdf from './IconExportPdf.tsx';
 import IconDuplicate from './IconDuplicate.tsx';
 import IconExpander from './IconExpander.tsx';
+import { IconDueDate } from '../new-icons/icon-due-date.tsx';
+import { IconSettings } from '../new-icons/icon-settings.tsx';
 
 export {
   IconAdd,

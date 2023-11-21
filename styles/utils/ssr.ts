@@ -23,6 +23,7 @@ export const createUniversalPortal = (
   container?: Element,
   key?: string
 ) => {
+  debugger;
   if (isServerSide) {
     return null;
   }

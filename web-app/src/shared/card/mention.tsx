@@ -1,51 +1,85 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
-import { TextField } from '../../../../styles/components/inputs/index.ts';
-import { useMenuClose } from '../../../../styles/components/menu.tsx';
-import { useFocusOnMount } from '../../core/react-utils/index.ts';
+import React, { useState, useRef, useLayoutEffect } from "react";
+import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
+import { styleguide, layout } from "../../../../styles/index.ts";
+import { TextField } from "../../../../styles/components/inputs/index.ts";
+import {
+  LineSeparator,
+  useMenuClose,
+} from "../../../../styles/components/menu.tsx";
+import { useFocusOnMount } from "../../core/react-utils/index.ts";
 import {
   Scroller,
   useScrollParent,
-} from '../../core/react-utils/scrolling.tsx';
+} from "../../core/react-utils/scrolling.tsx";
+import { IconSearch } from "../../../../styles/components/new-icons/icon-search.tsx";
 
 const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: theme.background[0],
-    width: styleguide.gridbase * 32,
+    // width: styleguide.gridbase * 16.5,
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
     backgroundColor: theme.background[0],
-    width: '100%',
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     basedOn: [layout.column],
   },
   list: {
-    width: '100%',
+    width: "100%",
     maxHeight: styleguide.gridbase * 6 * 5,
-    overflowY: 'auto',
+    overflowY: "auto",
     basedOn: [layout.column],
   },
+
+  searchContainer: {
+    display: "flex",
+    padding: "6px 8px 6px 10px",
+    alignItems: "center",
+    gap: "8px",
+    flexShrink: 0,
+    background: "var(--secondary-secondary-s-0, #FFFBF5)",
+  },
+
+  iconContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   input: {
-    border: 'none',
-    width: '100%',
-    borderBottom: '1px solid rgba(156, 178, 205, 0.6)',
+    display: "flex",
+    height: "20px",
+    flexDirection: "column",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+    background: "var(--secondary-secondary-s-0, #FFFBF5)",
+    color: "var(--monochrom-m-10, #262626)",
+    fontFeatureSettings: "'clig' off, 'liga' off",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontFamily: "Poppins",
+    fontSize: "13px",
+    fontStyle: "normal",
+    fontWeight: 400,
+    lineHeight: "normal",
+    letterSpacing: "0.075px",
+    border: "none",
     borderRadius: 0,
   },
   mention: {
     flexShrink: 0,
-    width: '100%',
-    height: styleguide.gridbase * 6,
+    width: "100%",
+    height: styleguide.gridbase * 4,
     padding: [0, styleguide.gridbase],
-    boxSizing: 'border-box',
+    boxSizing: "border-box",
     backgroundColor: theme.background[0],
-    alignItems: 'center',
-    cursor: 'pointer',
+    alignItems: "center",
+    cursor: "pointer",
     basedOn: [layout.row],
   },
   selected: {
-    backgroundColor: '#f0f3fa',
+    // backgroundColor: "#f0f3fa",
   },
 }));
 
@@ -141,29 +175,29 @@ export function MentionPopup<T>({
   const items = getItems(filter.substring(trigger.length));
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((x) => (x - 1 < 0 ? items.length - 1 : x - 1));
         break;
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((x) => (x + 1) % items.length);
         break;
-      case 'Backspace':
+      case "Backspace":
         if (!filter) {
           e.preventDefault();
           e.stopPropagation();
           close();
         }
         break;
-      case 'Escape':
+      case "Escape":
         e.preventDefault();
         e.stopPropagation();
         close();
         break;
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         e.stopPropagation();
         select(items[selectedIndex]);
@@ -174,23 +208,33 @@ export function MentionPopup<T>({
   };
   return (
     <div className={cn(styles.popupContent)}>
-      <TextField
-        className={cn(styles.input)}
-        type="text"
-        value={filter}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        ref={ref}
-      />
+      <div className={cn(styles.searchContainer)}>
+        <div className={cn(styles.iconContainer)}>
+          <IconSearch />
+        </div>
+        <TextField
+          className={cn(styles.input)}
+          type="text"
+          value={filter}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          ref={ref}
+        />
+      </div>
+
       <Scroller>
         {(ref) => (
           <div className={cn(styles.list)} ref={ref}>
-            {items.map((item, i) =>
-              renderItem(item, {
-                isSelected: i === selectedIndex,
-                onClick: () => select(item),
-              })
-            )}
+            {items.map((item, i) => (
+              <>
+                {renderItem(item, {
+                  isSelected: i === selectedIndex,
+                  onClick: () => select(item),
+                })}
+
+                {i !== items.length - 1 && <LineSeparator />}
+              </>
+            ))}
           </div>
         )}
       </Scroller>

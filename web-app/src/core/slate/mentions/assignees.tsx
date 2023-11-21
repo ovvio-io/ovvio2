@@ -1,27 +1,27 @@
-import React, { useCallback } from 'react';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import React, { useCallback } from "react";
+import { VertexManager } from "../../../../../cfds/client/graph/vertex-manager.ts";
 import {
   Note,
   User,
   Workspace,
-} from '../../../../../cfds/client/graph/vertices/index.ts';
-import { IconCreateNew } from '../../../../../styles/components/icons/index.ts';
-import { Text } from '../../../../../styles/components/texts.tsx';
-import { usePartialVertex } from '../../cfds/react/vertex.ts';
-import { useMountedIndicator } from '../../react-utils/base-utils.ts';
-import AvatarView from '../../../shared/avatar/index.tsx';
+} from "../../../../../cfds/client/graph/vertices/index.ts";
+import { IconCreateNew } from "../../../../../styles/components/icons/index.ts";
+import { Text } from "../../../../../styles/components/texts.tsx";
+import { usePartialVertex } from "../../cfds/react/vertex.ts";
+import { useMountedIndicator } from "../../react-utils/base-utils.ts";
+import AvatarView from "../../../shared/avatar/index.tsx";
 import {
   createMentionsPlugin,
   filterSortMentions,
   MentionOptions,
-} from './index.tsx';
-import { useCurrentCard } from '../elements/card.element/index.tsx';
-import { Plugin } from '../plugins/index.ts';
+} from "./index.tsx";
+import { useCurrentCard } from "../elements/card.element/index.tsx";
+import { Plugin } from "../plugins/index.ts";
 import {
   RenderMentionPopupProps,
   SuggestionItem,
   SuggestionItemIcon,
-} from './mention-node.tsx';
+} from "./mention-node.tsx";
 
 // const INVITE_USER = 'INVITE_USER';
 type UserItem = VertexManager<User>; //| typeof INVITE_USER;
@@ -48,7 +48,7 @@ function UserSuggestion({
   isSelected: boolean;
   onItemSelected: (item: UserItem) => void;
 }) {
-  const { name } = usePartialVertex(item, ['name']);
+  const { name } = usePartialVertex(item, ["name"]);
 
   return (
     <SuggestionItem item={item} {...rest}>
@@ -82,9 +82,9 @@ function AssigneesSuggestionComponent({
 }: RenderMentionPopupProps<UserItem>) {
   const card = useCurrentCard();
   const partial = usePartialVertex(card as VertexManager<Note>, [
-    'assignees',
-    'workspace',
-    'workspaceKey',
+    "assignees",
+    "workspace",
+    "workspaceKey",
   ]);
 
   const wsMng = partial.workspace.manager as VertexManager<Workspace>;
@@ -143,14 +143,14 @@ function AssigneesSuggestionComponent({
 }
 
 interface AssigneesPluginOptions
-  extends Pick<MentionOptions<User>, 'canOpen' | 'editor'> {}
+  extends Pick<MentionOptions<User>, "canOpen" | "editor"> {}
 
 export function createAssigneesPlugin(
   options: AssigneesPluginOptions
 ): Partial<Plugin> {
   return createMentionsPlugin<UserItem>({
     ...options,
-    trigger: '@',
+    trigger: "@",
     MentionComponent: AssigneesSuggestionComponent,
   });
 }
