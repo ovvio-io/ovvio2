@@ -6,7 +6,6 @@ import { VCurrent, VersionNumber } from '../base/version-number.ts';
 import {
   ReBuildContext,
   isReBuildContext,
-  kEntryPointsNames,
   ENTRY_POINTS,
   createOvvioImportPlugin,
   bundleResultFromBuildResult,
@@ -14,6 +13,7 @@ import {
 import {
   StaticAssets,
   compileAssetsDirectory,
+  kEntryPointsNames,
   staticAssetsToJS,
 } from '../net/server/static-assets.ts';
 import { getOvvioConfig } from './config.ts';

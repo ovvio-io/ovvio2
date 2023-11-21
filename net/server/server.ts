@@ -247,6 +247,9 @@ export class Server {
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
+    if (req.url === 'http://AWSALB/healthy') {
+      return new Response(null, { status: 200 });
+    }
     const orgId = organizationIdFromURL(req.url);
     if (!orgId) {
       log({

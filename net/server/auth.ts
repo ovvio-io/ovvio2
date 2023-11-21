@@ -18,7 +18,7 @@ import { assert } from '../../base/error.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
 import { Endpoint, ServerServices } from './server.ts';
-import { getBaseURL, getRequestPath, getServerBaseURL } from './utils.ts';
+import { getBaseURL, getRequestPath } from './utils.ts';
 // import { ResetPasswordEmail } from '../../emails/reset-password.tsx';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
@@ -249,7 +249,7 @@ export class AuthEndpoint implements Endpoint {
       return new Response(null, {
         status: 307,
         headers: {
-          Location: getServerBaseURL(services),
+          Location: getBaseURL(services),
         },
       });
     } catch (_: unknown) {
