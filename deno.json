@@ -2,5 +2,6 @@
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
-  "importMap": "./import-map.json"
+  "importMap": "./import-map.json",
+  "lock": false
 }
