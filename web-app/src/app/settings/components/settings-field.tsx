@@ -35,7 +35,7 @@ const useStyles = makeStyles(() => ({
     width: '480px',
     height: '1px',
     background: theme.primary.p8,
-    margin: '5px',
+    margin: '5px 0px 0px 0px',
   },
 }));
 

@@ -16,8 +16,8 @@ import {
 } from '../../../../../styles/components/typography.tsx';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { AssignButton, EditButton } from '../components/settings-buttons.tsx';
-import { Box } from '../components/multiselection-toolbar.tsx';
 import IconClose from '../../../../../styles/components/icons/IconClose.tsx';
+import { IconButton } from '../../../../../styles/components/buttons.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -172,6 +172,7 @@ export function MembersTabContent() {
   const searchRowStyle = {
     ...rowStyle,
     justifyContent: 'flex-start',
+    overflowY: 'clip', //check
   };
   const scrollContainerStyle: CSSProperties = {
     maxHeight: '700px',
@@ -214,7 +215,21 @@ export function MembersTabContent() {
     setSearchTerm(event.target.value);
   };
   const [showSearchRow, setShowSearchRow] = useState<boolean>(false);
-  const toggleSearchRow = () => setShowSearchRow((prev) => !prev);
+  const [showMultiSelection, setShowMultiSelection] = useState<boolean>(false);
+  const [showButtons, setShowButtons] = useState<boolean>(true);
+
+  const toggleSearchRow = () => {
+    setShowSearchRow((prev) => !prev);
+    setShowMultiSelection((prev) => !prev);
+    setShowButtons((prev) => !prev);
+  };
+
+  const handleCloseMultiSelection = () => {
+    setShowSearchRow(false);
+    setShowMultiSelection(false);
+    setShowButtons(true);
+    setSearchTerm('');
+  };
 
   const buttonsContainerStyle: CSSProperties = {
     display: 'flex',
@@ -227,7 +242,7 @@ export function MembersTabContent() {
     justifyContent: 'space-between',
     alignItems: 'baseline',
     padding: '50px 0px 24px',
-    maxWidth: '905px',
+    maxWidth: '900px',
   };
   const multiselection: CSSProperties = {
     height: '64px',
@@ -242,18 +257,25 @@ export function MembersTabContent() {
 
   return (
     <div>
-      <div style={multiselection}>
-        <IconClose />
-        <H4>Assign to workspace</H4>
-      </div>
-      <H6>Choose members to assign</H6>
-      {/* <Box /> */}
+      {showMultiSelection && (
+        <div>
+          <div style={multiselection}>
+            <IconButton onClick={handleCloseMultiSelection}>
+              <IconClose />
+            </IconButton>
+            <H4>Assign to workspaces</H4>
+          </div>
+          <H6>Choose a </H6>
+        </div>
+      )}
       <div style={HeaderContainerStyle}>
         <Bold>Org. Members</Bold>
-        <div style={buttonsContainerStyle}>
-          <AssignButton onAssignClick={toggleSearchRow} />
-          <EditButton />
-        </div>
+        {showButtons && (
+          <div style={buttonsContainerStyle}>
+            <AssignButton onAssignClick={toggleSearchRow} />
+            <EditButton />
+          </div>
+        )}
       </div>
 
       <div>
@@ -261,7 +283,7 @@ export function MembersTabContent() {
           <div style={searchRowStyle}>
             <div
               style={{
-                marginRight: '8px',
+                marginRight: '4px',
               }}
             >
               <IconSearch />
@@ -278,6 +300,8 @@ export function MembersTabContent() {
                   outline: 'none',
                   background: 'none',
                   width: '100%',
+                  fontSize: '13px',
+                  letterSpacing: '0.075px',
                 }}
               />
             </Text>
