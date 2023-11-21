@@ -9,6 +9,7 @@ import { Commit } from '../repo/commit.ts';
 import { Record as CFDSRecord } from '../cfds/base/record.ts';
 import * as SetUtils from '../base/set.ts';
 import { slices } from '../base/array.ts';
+import { Code, ServerError } from '../cfds/base/errors.ts';
 
 // export const TABLE_COMMITS = 'commits';
 // export const INDEX_COMMITS_BY_KEY = 'commitsByKey';
@@ -187,7 +188,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
         .transaction(() => {
           this.putCommitInTxn(s, repo, persistedCommits);
         })
-        .immediate(undefined);
+        .immediate();
     }
     return persistedCommits;
   }
@@ -215,27 +216,39 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     oldHead: Commit | undefined,
     newHead: Commit
   ): void {
-    const headRecord = oldHead
-      ? repo.recordForCommit(oldHead)
-      : CFDSRecord.nullRecord();
-    const newHeadRecord = repo.recordForCommit(newHead);
-    // Update this key's head
-    this._updateHeadStatement.run({
-      key: newHead.key,
-      commitId: newHead.id,
-      ns: newHeadRecord.scheme.namespace,
-      ts: newHead.timestamp.getTime(),
-      json: JSON.stringify(JSONCyclicalEncoder.serialize(newHeadRecord)),
-    });
-    const deletedRefs = SetUtils.subtract(headRecord.refs, newHeadRecord.refs);
-    const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);
-    // Update refs table
-    const src = newHead.key;
-    for (const ref of deletedRefs) {
-      this._deleteRefStatement.run({ src, dst: ref });
-    }
-    for (const ref of addedRefs) {
-      this._putRefStatement.run({ src, dst: ref });
+    try {
+      const headRecord = oldHead
+        ? repo.recordForCommit(oldHead)
+        : CFDSRecord.nullRecord();
+      const newHeadRecord = repo.recordForCommit(newHead);
+      // Update this key's head
+      this._updateHeadStatement.run({
+        key: newHead.key,
+        commitId: newHead.id,
+        ns: newHeadRecord.scheme.namespace,
+        ts: newHead.timestamp.getTime(),
+        json: JSON.stringify(JSONCyclicalEncoder.serialize(newHeadRecord)),
+      });
+      const deletedRefs = SetUtils.subtract(
+        headRecord.refs,
+        newHeadRecord.refs
+      );
+      const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);
+      // Update refs table
+      const src = newHead.key;
+      for (const ref of deletedRefs) {
+        this._deleteRefStatement.run({ src, dst: ref });
+      }
+      for (const ref of addedRefs) {
+        this._putRefStatement.run({ src, dst: ref });
+      }
+    } catch (err: unknown) {
+      if (
+        !(err instanceof ServerError) ||
+        err.code !== Code.ServiceUnavailable
+      ) {
+        throw err;
+      }
     }
   }
 }

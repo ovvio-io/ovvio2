@@ -168,7 +168,10 @@ const useLinkButtonStyles = makeStyles(
 type ButtonProps = React.ComponentProps<'button'>;
 
 function makeButton<TProps>(useStyles: () => any, className: string) {
-  return function (props: ButtonProps, ref: React.Ref<HTMLButtonElement>) {
+  return React.forwardRef(function (
+    props: ButtonProps,
+    ref: React.Ref<HTMLButtonElement>
+  ) {
     const styles = useStyles();
     debugger;
     return (
@@ -178,7 +181,7 @@ function makeButton<TProps>(useStyles: () => any, className: string) {
         className={cn(props.className, styles[className])}
       />
     );
-  };
+  });
 }
 
 export const Button = makeButton<ButtonProps>(useButtonStyles, 'button');
