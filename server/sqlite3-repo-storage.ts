@@ -184,11 +184,18 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   ): Iterable<Commit> {
     const persistedCommits: Commit[] = [];
     for (const s of slices(commits, 100)) {
-      this.db
-        .transaction(() => {
-          this.putCommitInTxn(s, repo, persistedCommits);
-        })
-        .immediate();
+      try {
+        this.db
+          .transaction(() => {
+            this.putCommitInTxn(s, repo, persistedCommits);
+          })
+          .immediate();
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message === 'database is locked') {
+          console.log('******* DB Locked ******');
+          continue;
+        }
+      }
     }
     return persistedCommits;
   }
