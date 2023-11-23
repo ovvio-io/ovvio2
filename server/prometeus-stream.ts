@@ -74,17 +74,10 @@ export class PrometheusLogStream implements LogStream {
   }
 
   getMetrics(): string {
-    const metricsMap = this.metrics;
-    console.log('METRICS count', Object.keys(metricsMap).length);
-    console.log('METRICS details', Object.keys(metricsMap));
-    const metrics = this.myRegistry.metrics();
-    console.log('REGISRTRY ', metrics.length);
-    return metrics;
+    return this.myRegistry.metrics();
   }
 
   appendEntry<T extends BaseLogEntry>(e: NormalizedLogEntry<T>): void {
-    console.log('current Metric Name:  ', e.logId);
-
     if (logEntryIsMetric(e)) {
       // if (isServerMetric(e)) {
       const metricName = e.name;
