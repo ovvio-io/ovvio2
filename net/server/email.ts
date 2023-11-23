@@ -18,9 +18,9 @@ export interface EmailMessage {
 export class EmailService extends BaseService<ServerServices> {
   private _client: SESv2Client;
 
-  constructor() {
+  constructor(region: string) {
     super();
-    this._client = new SESv2Client({ region: 'us-east-1' });
+    this._client = new SESv2Client({ region });
   }
 
   async send(message: EmailMessage): Promise<boolean> {

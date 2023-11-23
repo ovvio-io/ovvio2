@@ -30,6 +30,7 @@ interface Arguments {
   readonly replicas: string[];
   readonly port: number;
   readonly silent?: boolean;
+  readonly sesRegion?: string;
 }
 
 // Stuff that's shared to all organizations served by this server
@@ -143,13 +144,16 @@ export class Server {
         .option('silent', {
           type: 'boolean',
           default: false,
-          description:
-            'A list of replica URLs which this server will sync with',
+          description: 'Disables metric logging to stdout',
         })
         .option('dir', {
           alias: 'd',
           description:
             'A full path to a local directory which will host all repositories managed by this server',
+        })
+        .option('sesRegion', {
+          description:
+            'An AWS region to use for sending emails with SES. Defaults to us-east-1.',
         })
         .demandOption(
           ['dir']
@@ -167,6 +171,7 @@ export class Server {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
     setGlobalLoggerStreams(logStreams);
+    const sesRegion = args?.sesRegion || 'us-east-1';
     this._baseContext = {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
@@ -174,9 +179,11 @@ export class Server {
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
-      email: new EmailService(),
+      email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
+      silent: args?.silent === true,
       staticAssets,
+      sesRegion,
     } as ServerContext;
     // Monitoring
     this.registerMiddleware(new MetricsMiddleware(logStreams));
