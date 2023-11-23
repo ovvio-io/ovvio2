@@ -173,7 +173,6 @@ function makeButton<TProps>(useStyles: () => any, className: string) {
     ref: React.Ref<HTMLButtonElement>
   ) {
     const styles = useStyles();
-    debugger;
     return (
       <button
         ref={ref || props.ref}
