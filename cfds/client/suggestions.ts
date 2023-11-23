@@ -92,13 +92,3 @@ export function suggestResults<T>(
     .slice(0, MIN_SUGGESTIONS)
     .map((e) => e[1]);
 }
-
-// console.log(
-//   suggestResults('o', [
-//     'Status/In Progress',
-//     'Status/Done',
-//     'Status/To Do',
-//     'Type/Task',
-//     'Type/Note',
-//   ])
-// );
