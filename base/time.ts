@@ -88,6 +88,15 @@ export async function retry<T>(
   throw err instanceof RetryBaseErr ? err.origError : err;
 }
 
+export async function sleep(durationMs: number): Promise<void> {
+  let resolve: () => void;
+  const promise = new Promise<void>((res) => {
+    resolve = res;
+  });
+  setTimeout(resolve!, durationMs);
+  return promise;
+}
+
 export function clip(value: number, min: number = 0, max: number = 1): number {
   return Math.max(min, Math.min(max, value));
 }
