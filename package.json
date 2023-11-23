@@ -5,5 +5,9 @@
     "html-minifier": "^4.0.0",
     "slate": "^0.81.1",
     "slate-react": "^0.81.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.456.0",
+    "@aws-sdk/lib-storage": "^3.456.0"
   }
 }
