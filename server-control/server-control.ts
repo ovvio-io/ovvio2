@@ -1,18 +1,45 @@
 import * as path from 'std/path/mod.ts';
 import { kSecondMs } from '../base/date.ts';
-import { JSONObject } from '../base/interfaces.ts';
 import { sleep } from '../base/time.ts';
+import { getRepositoryPath } from '../base/development.ts';
+import { EC2MetadataToken, getTenantId } from './ec2.ts';
+import { tuple4ToString } from '../base/tuple.ts';
+import { VCurrent } from '../base/version-number.ts';
 
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
+const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
 
-interface ServerControlSettings extends JSONObject {
-  serverArchiveURL: string;
+const SERVER_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gzip`;
+const CONTROL_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gzip`;
+
+const ec2MetadataToken = new EC2MetadataToken();
+
+async function getServerSettingsURL(): Promise<string | undefined> {
+  const tenantId = await getTenantId(ec2MetadataToken);
+  if (!tenantId) {
+    return undefined;
+  }
+  return `https://ovvio2-release.s3.amazonaws.com/settings-${tenantId}.json`;
+}
+
+interface ServerControlSettings {
   serverBinaryDir: string;
   dataDir: string;
-  controlArchiveURL: string;
-  serverSettingsURL?: string;
-  controlSettingsURL?: string;
+}
+
+async function getControlSettings(): Promise<ServerControlSettings> {
+  if (Deno.build.os === 'linux') {
+    return {
+      serverBinaryDir: '/',
+      dataDir: '/serverData',
+    };
+  }
+  const repoDir = await getRepositoryPath();
+  return {
+    serverBinaryDir: path.join(repoDir, 'build'),
+    dataDir: path.join(repoDir, 'serverdata'),
+  };
 }
 
 async function decompressFile(srcPath: string, dstPath: string): Promise<void> {
@@ -24,7 +51,7 @@ async function decompressFile(srcPath: string, dstPath: string): Promise<void> {
     truncate: true,
   });
   await src.readable
-    .pipeThrough(new CompressionStream('gzip'))
+    .pipeThrough(new DecompressionStream('gzip'))
     .pipeTo(dst.writable);
 }
 
@@ -69,7 +96,7 @@ async function _startChildServerProcess(
     Deno.kill(existingPid, 'SIGKILL');
   }
   // Start the server process
-  const binaryFileName = filenameFromURL(settings.serverArchiveURL, '.gzip');
+  const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gzip');
   const cmd = new Deno.Command(
     path.join(settings.serverBinaryDir, binaryFileName),
     {
@@ -183,19 +210,29 @@ async function updateBinary(
     // TODO: Take an EBS snapshot before proceeding with server update
     const archivePath = serverBinaryPath + '.gzip';
     await Deno.writeFile(archivePath, new Uint8Array(buff));
-    await Deno.remove(serverBinaryPath, { recursive: true });
-    console.log(`Decompressing ${archivePath}...`);
-    await decompressFile(archivePath, serverBinaryPath);
+    console.log(
+      `Decompressing ${archivePath} into ${serverBinaryPath}.tmp ...`
+    );
+    await decompressFile(archivePath, serverBinaryPath + '.tmp');
+    await Deno.chmod(serverBinaryPath + '.tmp', 0o555);
+    try {
+      await Deno.remove(serverBinaryPath, { recursive: true });
+    } catch (_: unknown) {}
+    await Deno.rename(serverBinaryPath + '.tmp', serverBinaryPath);
     console.log(`Writing updated ETag...`);
     const etag = resp.headers.get('etag');
     if (typeof etag === 'string' && etag.length > 0) {
       await Deno.writeTextFile(etagFilePath, etag);
     } else {
       console.log(`Error: ETag file update failed.`);
-      await Deno.remove(etagFilePath, { recursive: true });
+      try {
+        await Deno.remove(etagFilePath, { recursive: true });
+      } catch (_: unknown) {}
     }
+    return true;
   } catch (err: unknown) {
     console.log(err);
+    debugger;
   }
   return false;
 }
@@ -209,7 +246,7 @@ async function updateServerBinary(
   childProcesses: Deno.ChildProcess[] = []
 ): Promise<Deno.ChildProcess[]> {
   const success = await updateBinary(
-    settings.serverArchiveURL,
+    SERVER_ARCHIVE_URL,
     settings.serverBinaryDir
   );
   if (success) {
@@ -231,29 +268,28 @@ async function updateServerBinary(
     : await startServerProcesses(settings);
 }
 
-async function updateControlBinary(
-  settings: ServerControlSettings
-): Promise<void> {
-  const workingDir = path.dirname(path.fromFileUrl(import.meta.url));
-  const success = await updateBinary(settings.controlArchiveURL, workingDir);
-  if (!success) {
-    return;
-  }
-  const updatedBinaryPath = filenameFromURL(
-    settings.controlArchiveURL,
-    '.gzip'
-  );
-  const latestSymlinkPath = path.join(workingDir, 'server-control-latest');
-  await Deno.remove(latestSymlinkPath, { recursive: true });
-  await Deno.symlink(
-    path.join(workingDir, updatedBinaryPath),
-    latestSymlinkPath
-  );
-  if (Deno.build.os === 'darwin') {
-    const cmd = new Deno.Command(latestSymlinkPath);
-    cmd.spawn();
-    await sleep(kSecondMs);
-    Deno.kill(Deno.pid, 'SIGKILL');
+async function updateControlBinary(): Promise<void> {
+  const workingDir = path.dirname(Deno.execPath());
+  const success = await updateBinary(CONTROL_ARCHIVE_URL, workingDir);
+  if (success) {
+    if (Deno.build.os === 'darwin') {
+      console.log(
+        'Successfully updated control binary. Starting new process...'
+      );
+      const cmd = new Deno.Command(filenameFromURL(CONTROL_ARCHIVE_URL), {
+        stdin: 'inherit',
+        stdout: 'inherit',
+        stderr: 'inherit',
+      });
+      cmd.spawn();
+      await sleep(kSecondMs);
+      console.log('Done. Killing old process.');
+      Deno.kill(Deno.pid, 'SIGKILL');
+    }
+    console.log(
+      'Control binary successfully updated. Exiting and letting systemd restart the updated binary...'
+    );
+    Deno.exit(0);
   }
 }
 
@@ -287,6 +323,10 @@ async function updateJSONFile(
       console.log(`ETag matched. Nothing to do.`);
       return false;
     }
+    if (resp.status !== 200) {
+      console.log(`Fetch failed with status ${resp.status}`);
+      return false;
+    }
     const json = await resp.json();
     await Deno.writeTextFile(localPath, JSON.stringify(json));
     console.log(`Writing updated ETag...`);
@@ -295,7 +335,9 @@ async function updateJSONFile(
       await Deno.writeTextFile(etagFilePath, etag);
     } else {
       console.log(`Error: ETag file update failed.`);
-      await Deno.remove(etagFilePath, { recursive: true });
+      try {
+        await Deno.remove(etagFilePath, { recursive: true });
+      } catch (_: unknown) {}
     }
     return true;
   } catch (err: unknown) {
@@ -305,39 +347,33 @@ async function updateJSONFile(
 }
 
 async function main(): Promise<void> {
-  const controlDir = path.dirname(path.fromFileUrl(import.meta.url));
-  const controlSettingsPath = path.join(controlDir, 'server-control.json');
-  let settings: ServerControlSettings = JSON.parse(
-    await Deno.readTextFile(controlSettingsPath)
-  );
-  if (settings.controlSettingsURL) {
-    if (await updateJSONFile(settings.controlSettingsURL, controlDir)) {
-      settings = JSON.parse(await Deno.readTextFile(controlSettingsPath));
-    }
-  }
-  await updateControlBinary(settings);
-  if (settings.serverSettingsURL) {
-    await updateJSONFile(settings.serverSettingsURL, settings.dataDir);
+  console.log(`Ovvio Control v${tuple4ToString(VCurrent)} started`);
+  const settings = await getControlSettings();
+  await Deno.mkdir(settings.dataDir, { recursive: true });
+  await updateControlBinary();
+  let serverSettingsURL = await getServerSettingsURL();
+  if (serverSettingsURL) {
+    await updateJSONFile(serverSettingsURL, settings.dataDir);
   }
   let childProcesses = await updateServerBinary(settings);
   let updateInProgress = false;
-  setInterval(async () => {
+  const updateLoop = async () => {
     if (updateInProgress) {
       return;
     }
     updateInProgress = true;
-    await updateControlBinary(settings);
-    if (settings.controlSettingsURL) {
-      if (await updateJSONFile(settings.controlSettingsURL, controlDir)) {
-        settings = JSON.parse(await Deno.readTextFile(controlSettingsPath));
-      }
+    await updateControlBinary();
+    if (!serverSettingsURL) {
+      serverSettingsURL = await getServerSettingsURL();
     }
-    if (settings.serverSettingsURL) {
-      await updateJSONFile(settings.serverSettingsURL, settings.dataDir);
+    if (serverSettingsURL) {
+      await updateJSONFile(serverSettingsURL, settings.dataDir);
     }
     childProcesses = await updateServerBinary(settings, childProcesses);
     updateInProgress = false;
-  }, 5 * kSecondMs);
+    setTimeout(updateLoop, CHECK_UPDATED_INTERVAL_MS);
+  };
+  setTimeout(updateLoop, CHECK_UPDATED_INTERVAL_MS);
 }
 
 main();

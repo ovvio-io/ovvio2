@@ -35,6 +35,7 @@ async function uploadToS3(uploadPath: string): Promise<void> {
     Body: file.readable,
     Bucket: 'ovvio2-release',
     Key: path.basename(uploadPath),
+    ACL: 'public-read',
   };
   console.log(`Uploading ${uploadPath} \u{02192} ${req.Bucket}/${req.Key}`);
 
@@ -52,6 +53,13 @@ async function uploadToS3(uploadPath: string): Promise<void> {
   console.log('\nDone');
 }
 
+export function outputFileName(
+  target: BuildTarget,
+  deployment: boolean
+): string {
+  return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}`;
+}
+
 async function build(
   repoPath: string,
   upload: boolean,
@@ -60,27 +68,23 @@ async function build(
 ): Promise<void> {
   console.log(
     `Generating ${target} executable for ${
-      deployment ? 'x64 linux' : Deno.build.os
+      deployment ? 'linux' : Deno.build.os
     }...`
   );
-  const fileNameSuffix = deployment
-    ? `_x64_linux_${tuple4ToString(VCurrent)}`
-    : `_${Deno.build.arch}_${Deno.build.os}_${tuple4ToString(VCurrent)}`;
-  const fileName =
-    (target === 'server' ? 'ovvio' : 'ovvio_control') + fileNameSuffix;
+  const fileName = outputFileName(target, deployment);
   const binaryOutputPath = path.join(repoPath, 'build', fileName);
   const compileArgs = [
     'compile',
-    '--unstable',
     '-A',
     '--no-lock',
+    '--no-check',
     `--output=${binaryOutputPath}`,
   ];
   if (deployment) {
     compileArgs.push('--target=x86_64-unknown-linux-gnu');
   }
   if (target === 'server') {
-    compileArgs.push('--no-check');
+    compileArgs.push('--unstable');
     compileArgs.push(path.join(repoPath, 'server', 'run-server.ts'));
   } else {
     compileArgs.push(
@@ -90,9 +94,13 @@ async function build(
   const compileLocalCmd = new Deno.Command('deno', {
     args: compileArgs,
   });
-  await compileLocalCmd.output();
+  const output = await compileLocalCmd.output();
+  if (!output.success) {
+    console.log('Build failed');
+    return;
+  }
   if (upload) {
-    const archivePath = binaryOutputPath + '.gzip';
+    const archivePath = fileName + '.gzip';
     await compressFile(binaryOutputPath, archivePath);
     await uploadToS3(archivePath);
   }
@@ -112,9 +120,12 @@ async function main(): Promise<void> {
       description: `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
     })
     .parse();
+  console.log(`Building based on version ${tuple4ToString(VCurrent)}`);
   const repoPath = await getRepositoryPath();
   const buildDirPath = path.join(repoPath, 'build');
-  await Deno.remove(buildDirPath, { recursive: true });
+  try {
+    await Deno.remove(buildDirPath, { recursive: true });
+  } catch (_: unknown) {}
   await Deno.mkdir(buildDirPath, { recursive: true });
   const controlBuild = args?.control === true;
   if (!controlBuild) {
@@ -128,4 +139,6 @@ async function main(): Promise<void> {
   );
 }
 
-main();
+if (import.meta.main) {
+  main();
+}

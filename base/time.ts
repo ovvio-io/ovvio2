@@ -41,7 +41,7 @@ export function delay<T>(delayMs: number, func: () => T): Promise<T> {
 }
 
 export class RetryBaseErr extends Error {
-  constructor(readonly origError: any) {
+  constructor(readonly origError?: unknown) {
     super(origError instanceof Error ? origError.message : 'Unknown Error');
   }
 }
