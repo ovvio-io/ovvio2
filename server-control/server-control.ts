@@ -272,20 +272,6 @@ async function updateControlBinary(): Promise<void> {
   const workingDir = path.dirname(Deno.execPath());
   const success = await updateBinary(CONTROL_ARCHIVE_URL, workingDir);
   if (success) {
-    if (Deno.build.os === 'darwin') {
-      console.log(
-        'Successfully updated control binary. Starting new process...'
-      );
-      const cmd = new Deno.Command(filenameFromURL(CONTROL_ARCHIVE_URL), {
-        stdin: 'inherit',
-        stdout: 'inherit',
-        stderr: 'inherit',
-      });
-      cmd.spawn();
-      await sleep(kSecondMs);
-      console.log('Done. Killing old process.');
-      Deno.kill(Deno.pid, 'SIGKILL');
-    }
     console.log(
       'Control binary successfully updated. Exiting and letting systemd restart the updated binary...'
     );
