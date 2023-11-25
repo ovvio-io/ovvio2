@@ -1,17 +1,17 @@
 import * as path from 'std/path/mod.ts';
 import { kSecondMs } from '../base/date.ts';
 import { sleep } from '../base/time.ts';
-import { getRepositoryPath } from '../base/development.ts';
 import { EC2MetadataToken, getTenantId } from './ec2.ts';
 import { tuple4ToString } from '../base/tuple.ts';
 import { VCurrent } from '../base/version-number.ts';
+import { ReadonlyJSONObject } from '../base/interfaces.ts';
 
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
 const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
 
-const SERVER_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gzip`;
-const CONTROL_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gzip`;
+const SERVER_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gz`;
+const CONTROL_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gz`;
 
 const ec2MetadataToken = new EC2MetadataToken();
 
@@ -28,17 +28,11 @@ interface ServerControlSettings {
   dataDir: string;
 }
 
-async function getControlSettings(): Promise<ServerControlSettings> {
-  if (Deno.build.os === 'linux') {
-    return {
-      serverBinaryDir: '/',
-      dataDir: '/serverData',
-    };
-  }
-  const repoDir = await getRepositoryPath();
+function getControlSettings(): ServerControlSettings {
+  const dir = path.dirname(getScriptPath());
   return {
-    serverBinaryDir: path.join(repoDir, 'build'),
-    dataDir: path.join(repoDir, 'serverdata'),
+    serverBinaryDir: dir,
+    dataDir: path.join(dir, 'serverdata'),
   };
 }
 
@@ -96,7 +90,7 @@ async function _startChildServerProcess(
     Deno.kill(existingPid, 'SIGKILL');
   }
   // Start the server process
-  const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gzip');
+  const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gz');
   const cmd = new Deno.Command(
     path.join(settings.serverBinaryDir, binaryFileName),
     {
@@ -166,6 +160,29 @@ async function startServerProcesses(
   return serverProcesses;
 }
 
+async function verifyBuffer(
+  buffer: Uint8Array,
+  expectedChecksum: Uint8Array
+): Promise<boolean> {
+  const actualChecksum = new Uint8Array(
+    await crypto.subtle.digest('SHA-512', buffer)
+  );
+  if (actualChecksum.length !== expectedChecksum.length) {
+    console.log(
+      `Checksums differ in length: expected ${expectedChecksum.length} got ${actualChecksum.length}`
+    );
+    return false;
+  }
+  const len = actualChecksum.length;
+  for (let i = 0; i < len; ++i) {
+    if (actualChecksum.at(i) !== expectedChecksum.at(i)) {
+      console.log(`Checksums differ at byte ${i}`);
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Attempts to update a local binary from a remote zip archive.
  *
@@ -181,7 +198,14 @@ async function updateBinary(
 ): Promise<boolean> {
   try {
     await Deno.mkdir(outputDir, { recursive: true });
-    const binaryFileName = filenameFromURL(archiveURL, '.gzip');
+    console.log(`Fetching checksum from ${archiveURL}.sha512...`);
+    const checksumResp = await fetch(archiveURL + '.sha512');
+    if (checksumResp.status !== 200) {
+      console.log(`Checksum fetch failed with status ${checksumResp.status}`);
+      return false;
+    }
+    const checksum = new Uint8Array(await checksumResp.arrayBuffer());
+    const binaryFileName = filenameFromURL(archiveURL, '.gz');
     const serverBinaryPath = path.join(outputDir, binaryFileName);
     const etagFilePath = serverBinaryPath + '.etag';
     let requestInit: RequestInit | undefined;
@@ -205,11 +229,19 @@ async function updateBinary(
       console.log(`Fetch failed with status ${resp.status}`);
       return false;
     }
-    const buff = await resp.arrayBuffer();
-    await Deno.mkdir(outputDir, { recursive: true });
+    const buff = new Uint8Array(await resp.arrayBuffer());
+    if (!(await verifyBuffer(buff, checksum))) {
+      console.log(`Checksum did not match for downloaded binary. Aborting.`);
+      return false;
+    }
+    console.log(`Checksum matched. Proceeding with the update.`);
     // TODO: Take an EBS snapshot before proceeding with server update
-    const archivePath = serverBinaryPath + '.gzip';
-    await Deno.writeFile(archivePath, new Uint8Array(buff));
+    const archivePath = serverBinaryPath + '.gz';
+    await Deno.writeFile(archivePath, buff);
+    console.log(`Updated archive written to ${archivePath}`);
+    await Deno.writeFile(archivePath + '.sha512', checksum);
+    console.log(`Updated checksum written to ${archivePath}.sha512`);
+
     console.log(
       `Decompressing ${archivePath} into ${serverBinaryPath}.tmp ...`
     );
@@ -268,8 +300,22 @@ async function updateServerBinary(
     : await startServerProcesses(settings);
 }
 
+/**
+ * Returns the path to the executing script if running using `deno run ...`
+ * command, or the path to the executable when running from a compiled binary.
+ *
+ * @returns A full path to this script's "file".
+ */
+function getScriptPath(): string {
+  const execPath = Deno.execPath();
+  if (path.basename(execPath) === 'deno') {
+    return filenameFromURL(import.meta.url);
+  }
+  return execPath;
+}
+
 async function updateControlBinary(): Promise<void> {
-  const workingDir = path.dirname(Deno.execPath());
+  const workingDir = path.dirname(getScriptPath());
   const success = await updateBinary(CONTROL_ARCHIVE_URL, workingDir);
   if (success) {
     console.log(
@@ -288,10 +334,15 @@ async function updateControlBinary(): Promise<void> {
  */
 async function updateJSONFile(
   url: string,
-  localPath: string
+  localPath: string,
+  localFileName?: string
 ): Promise<boolean> {
   try {
-    const etagFilePath = localPath + '.etag';
+    const jsonFilePath = path.join(
+      localPath,
+      localFileName || filenameFromURL(url)
+    );
+    const etagFilePath = jsonFilePath + '.etag';
     let requestInit: RequestInit | undefined;
     try {
       const etag = await Deno.readTextFile(etagFilePath);
@@ -313,14 +364,22 @@ async function updateJSONFile(
       console.log(`Fetch failed with status ${resp.status}`);
       return false;
     }
-    const json = await resp.json();
-    await Deno.writeTextFile(localPath, JSON.stringify(json));
-    console.log(`Writing updated ETag...`);
+    const updatedJSON = await resp.json();
+    let existingJSONData: ReadonlyJSONObject = {};
+    try {
+      existingJSONData = JSON.parse(await Deno.readTextFile(jsonFilePath));
+    } catch (_: unknown) {}
+    await Deno.writeTextFile(
+      jsonFilePath,
+      JSON.stringify({ ...existingJSONData, ...updatedJSON })
+    );
+    console.log(`Updated JSON file at ${jsonFilePath}`);
     const etag = resp.headers.get('etag');
     if (typeof etag === 'string' && etag.length > 0) {
       await Deno.writeTextFile(etagFilePath, etag);
+      console.log(`Updated ETag at ${etagFilePath}`);
     } else {
-      console.log(`Error: ETag file update failed.`);
+      console.log(`ETag update failed at ${etagFilePath}`);
       try {
         await Deno.remove(etagFilePath, { recursive: true });
       } catch (_: unknown) {}
@@ -334,12 +393,12 @@ async function updateJSONFile(
 
 async function main(): Promise<void> {
   console.log(`Ovvio Control v${tuple4ToString(VCurrent)} started`);
-  const settings = await getControlSettings();
+  const settings = getControlSettings();
   await Deno.mkdir(settings.dataDir, { recursive: true });
   await updateControlBinary();
   let serverSettingsURL = await getServerSettingsURL();
   if (serverSettingsURL) {
-    await updateJSONFile(serverSettingsURL, settings.dataDir);
+    await updateJSONFile(serverSettingsURL, settings.dataDir, 'settings.json');
   }
   let childProcesses = await updateServerBinary(settings);
   let updateInProgress = false;
@@ -353,7 +412,11 @@ async function main(): Promise<void> {
       serverSettingsURL = await getServerSettingsURL();
     }
     if (serverSettingsURL) {
-      await updateJSONFile(serverSettingsURL, settings.dataDir);
+      await updateJSONFile(
+        serverSettingsURL,
+        settings.dataDir,
+        'settings.json'
+      );
     }
     childProcesses = await updateServerBinary(settings, childProcesses);
     updateInProgress = false;
