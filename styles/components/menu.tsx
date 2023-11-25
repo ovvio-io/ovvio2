@@ -330,7 +330,6 @@ export default function Menu({
   const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
   const menuCtx = useContext(MenuContext);
-  debugger;
 
   const close = useCallback(
     (e?: MouseEvent) => {
