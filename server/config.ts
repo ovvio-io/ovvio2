@@ -5,6 +5,7 @@ export interface OvvioConfig {
   debug: boolean;
   tenantSetup?: boolean;
   clientData?: unknown;
+  serverURL?: string;
 }
 
 export function getOvvioConfig(): OvvioConfig {

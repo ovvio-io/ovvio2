@@ -6,6 +6,7 @@ import {
   signData,
 } from '../auth/session.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 export async function createNewSession(
   publicKey: CryptoKey
@@ -49,7 +50,8 @@ export async function sendLoginEmail(
 }
 
 export function getBaseURL(): string {
-  return `${location.protocol}//${location.host}`;
+  const serverURL = getOvvioConfig().serverURL;
+  return serverURL || `${location.protocol}//${location.host}`;
 }
 
 function urlForEndpoint(endpoint: string): string {

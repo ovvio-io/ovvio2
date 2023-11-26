@@ -65,6 +65,7 @@ export class AuthEndpoint implements Endpoint {
       case '/auth/temp-login':
         return method === 'GET';
     }
+    return false;
   }
 
   async processRequest(

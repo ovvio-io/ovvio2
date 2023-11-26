@@ -18,19 +18,25 @@ import {
 } from '../net/server/static-assets.ts';
 import { getOvvioConfig } from './config.ts';
 
-function generateConfigSnippet(version: VersionNumber): string {
-  const config = getOvvioConfig();
-  const res = `;\n\rwindow.OvvioConfig = ${JSON.stringify({
-    ...config,
+function generateConfigSnippet(
+  version: VersionNumber,
+  serverURL?: string
+): string {
+  const config = {
+    ...getOvvioConfig(),
     debug: true,
     version,
-  })};`;
-  return res;
+  };
+  if (serverURL) {
+    config.serverURL = serverURL;
+  }
+  return `;\n\rwindow.OvvioConfig = ${JSON.stringify(config)};`;
 }
 
 export async function buildAssets(
   ctx: ReBuildContext | typeof esbuild,
-  version: VersionNumber
+  version: VersionNumber,
+  serverURL?: string
 ): Promise<StaticAssets> {
   const buildResults = await (isReBuildContext(ctx)
     ? ctx.rebuild()
@@ -55,7 +61,9 @@ export async function buildAssets(
       path.join(repoPath, ep, 'assets')
     );
     assets['/app.js'] = {
-      data: textEncoder.encode(generateConfigSnippet(version) + source),
+      data: textEncoder.encode(
+        generateConfigSnippet(version, serverURL) + source
+      ),
       contentType: 'text/javascript',
     };
     assets['/app.js.map'] = {

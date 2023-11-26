@@ -20,6 +20,7 @@ import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
 import { EmailService } from './email.ts';
+import { CORSMiddleware, CORSEndpoint } from './cors.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -196,6 +197,9 @@ export class Server {
     this.registerEndpoint(new StaticAssetsEndpoint());
     // Sync
     this.registerEndpoint(new SyncEndpoint());
+    // CORS Support
+    this.registerMiddleware(new CORSMiddleware());
+    this.registerEndpoint(new CORSEndpoint());
   }
 
   async setup(): Promise<void> {
@@ -274,7 +278,7 @@ export class Server {
     const services = await this.servicesForOrganization(orgId);
     const middlewares = this._middlewares;
     for (const endpoint of this._endpoints) {
-      if (endpoint.filter(services, req, info)) {
+      if (endpoint.filter(services, req, info) === true) {
         try {
           let resp: Response | undefined;
           for (const m of middlewares) {
