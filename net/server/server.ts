@@ -21,6 +21,9 @@ import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
 import { EmailService } from './email.ts';
 import { CORSMiddleware, CORSEndpoint } from './cors.ts';
+import { SQLiteLogStream } from '../../logging/sqlite-log-stream.ts';
+import { ServerError } from '../../cfds/base/errors.ts';
+import { LogsEndpoint } from './logs.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -37,7 +40,8 @@ interface Arguments {
 // Stuff that's shared to all organizations served by this server
 export interface ServerContext extends Arguments {
   readonly settings: SettingsService;
-  readonly prometheus: PrometheusLogStream;
+  readonly prometheusLogStream: PrometheusLogStream;
+  readonly sqliteLogStream: SQLiteLogStream;
   readonly trustPool: TrustPool;
   readonly email: EmailService;
   readonly logger: Logger;
@@ -167,7 +171,10 @@ export class Server {
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
-    const logStreams: LogStream[] = [prometeusLogStream];
+    const sqliteLogStream = new SQLiteLogStream(
+      path.join(args!.dir, 'logs.sqlite')
+    );
+    const logStreams: LogStream[] = [sqliteLogStream, prometeusLogStream];
     if (args?.silent !== true) {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
@@ -176,7 +183,8 @@ export class Server {
     this._baseContext = {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
-      prometheus: prometeusLogStream,
+      prometheusLogStream: prometeusLogStream,
+      sqliteLogStream,
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
@@ -200,6 +208,8 @@ export class Server {
     // CORS Support
     this.registerMiddleware(new CORSMiddleware());
     this.registerEndpoint(new CORSEndpoint());
+    // Logs
+    this.registerEndpoint(new LogsEndpoint());
   }
 
   async setup(): Promise<void> {
@@ -299,6 +309,21 @@ export class Server {
           }
           return resp;
         } catch (e: any) {
+          if (e instanceof ServerError) {
+            log({
+              severity: 'ERROR',
+              name: 'InternalServerError',
+              unit: 'Count',
+              value: e.code,
+              url: req.url,
+              method: req.method as HTTPMethod,
+              error: e.message,
+              trace: e.stack,
+            });
+            return new Response(null, {
+              status: e.code,
+            });
+          }
           debugger;
           log({
             severity: 'ERROR',

@@ -1,4 +1,4 @@
-import { Database, Statement, Transaction } from 'sqlite3';
+import { Database, Statement } from 'sqlite3';
 import { resolve as resolvePath, dirname } from 'std/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {

@@ -20,6 +20,7 @@ export const kMetricTypes: Record<ServerMetricName, MetricType> = {
   IncompatibleProtocolVersion: 'Count',
   InternalServerError: 'Count',
   EmailSent: 'Count',
+  OperatorLogsQuery: 'Count',
 };
 
 export class PrometheusLogStream implements LogStream {

@@ -43,7 +43,7 @@ export class PrometheusMetricsEndpoint implements Endpoint {
     req: Request,
     info: Deno.ServeHandlerInfo
   ): Promise<Response> {
-    const logStream = services.prometheus;
+    const logStream = services.prometheusLogStream;
     const metrics = logStream.getMetrics();
     return Promise.resolve(
       new Response(metrics, {
