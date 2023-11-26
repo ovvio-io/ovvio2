@@ -5,7 +5,6 @@ import { NormalizedLogEntry } from './entry.ts';
 
 export class SQLiteLogStream implements LogStream {
   readonly db: Database;
-  private readonly _appendStatement: Statement;
 
   constructor(path?: string) {
     if (path) {
@@ -25,13 +24,13 @@ export class SQLiteLogStream implements LogStream {
       severity TINYTEXT NOT NULL,
       json TEXT NOT NULL
     );`);
-    this._appendStatement = db.prepare(
-      `INSERT OR IGNORE INTO entries (id, ts, code, severity, json) VALUES (:id, :ts, :code, :severity, :json);`
-    );
   }
 
   appendEntry(e: NormalizedLogEntry<LogEntry>): void {
-    this._appendStatement.run({
+    const statement = this.db.prepare(
+      `INSERT OR IGNORE INTO entries (id, ts, code, severity, json) VALUES (:id, :ts, :code, :severity, :json);`
+    );
+    statement.run({
       id: e.logId,
       ts: e.timestamp,
       code: e.severityCode,
