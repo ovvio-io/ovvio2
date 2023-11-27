@@ -21,7 +21,7 @@ export const kMetricTypes: Record<ServerMetricName, MetricType> = {
   InternalServerError: 'Count',
   EmailSent: 'Count',
   OperatorLogsQuery: 'Count',
-  DBLocked: 'Count',
+  DBError: 'Count',
 };
 
 export class PrometheusLogStream implements LogStream {

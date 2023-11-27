@@ -11,7 +11,7 @@ export const kServerMetricNames = [
   'InternalServerError',
   'EmailSent',
   'OperatorLogsQuery',
-  'DBLocked',
+  'DBError',
 ] as const;
 
 export const kClientMetricNames = [
@@ -104,7 +104,9 @@ export type MetricLogEntryType<N extends MetricName> =
     ? MetricLogWithType<EmailType>
     : N extends 'OperatorLogsQuery'
     ? MetricLogWithQuery<MetricLogWithError>
-    : N extends 'DBLocked'
+    : N extends 'DBError'
+    ? MetricLogWithPath
+    : N extends 'CommitsPersistTime' | 'CommitsPersistCount'
     ? MetricLogWithPath
     : BaseMetricLogEntry;
 

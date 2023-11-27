@@ -11,7 +11,9 @@ import * as SetUtils from '../base/set.ts';
 import { slices } from '../base/array.ts';
 import { Code, ServerError } from '../cfds/base/errors.ts';
 import { log } from '../logging/log.ts';
+import { randomInt } from '../base/math.ts';
 
+const ALL_COMMITS_CACHE_MS = 100;
 export type UnknownRow = Record<string, unknown>;
 
 export interface CommitRow extends UnknownRow {
@@ -44,6 +46,9 @@ export interface RefRow extends UnknownRow {
  * "refs": All edges in the graph defined by the "heads" table.
  */
 export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
+  private _allCommitsCache: Commit[] | undefined;
+  private _allCommitsCacheTs: number = 0;
+
   readonly db: Database;
   constructor(readonly path?: string) {
     if (path) {
@@ -118,7 +123,8 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     commits: Iterable<Commit>,
     repo: Repository<SQLiteRepoStorage>,
     outCommits: Commit[]
-  ): void {
+  ): number {
+    let persistedCount = 0;
     // First, check we haven't already persisted this commit
     for (const newCommit of commits) {
       if (this.getCommitStatement.values({ id: newCommit.id }).length > 0) {
@@ -135,6 +141,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
         json: JSON.stringify(JSONCyclicalEncoder.serialize(newCommit)),
       });
       outCommits.push(newCommit);
+      ++persistedCount;
       const newHead = repo.headForKey(key, session, newCommit)!;
       // Skip aux tables update if our head hasn't changed (if this is an
       // historic commit that was missed).
@@ -143,6 +150,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       }
       this.updateHead(repo, head, newHead);
     }
+    return persistedCount;
   }
 
   numberOfCommits(): number {
@@ -158,13 +166,25 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       : undefined;
   }
 
-  *allCommits(): Generator<Commit> {
-    const statement = this.db.prepare(`SELECT json FROM commits;`).bind();
-    for (const { json } of statement) {
-      yield new Commit({
-        decoder: new JSONCyclicalDecoder(JSON.parse(json)),
-      });
+  allCommits(): Iterable<Commit> {
+    if (
+      this._allCommitsCache &&
+      performance.now() - this._allCommitsCacheTs <= ALL_COMMITS_CACHE_MS
+    ) {
+      return this._allCommitsCache;
     }
+    const statement = this.db.prepare(`SELECT json FROM commits;`).bind();
+    const result: Commit[] = [];
+    for (const { json } of statement) {
+      result.push(
+        new Commit({
+          decoder: new JSONCyclicalDecoder(JSON.parse(json)),
+        })
+      );
+    }
+    this._allCommitsCache = result;
+    this._allCommitsCacheTs = performance.now();
+    return result;
   }
 
   *commitsForKey(key: string): Generator<Commit> {
@@ -188,24 +208,26 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   ): Iterable<Commit> {
     const startTime = performance.now();
     const persistedCommits: Commit[] = [];
+    const repoPathForMetric = this.path || ':memory:';
+    let commitCount = 0;
     for (const s of slices(commits, 100)) {
       try {
         this.db.transaction(() => {
-          this.putCommitInTxn(s, repo, persistedCommits);
+          commitCount += this.putCommitInTxn(s, repo, persistedCommits);
         })();
       } catch (err: unknown) {
-        if (err instanceof Error && err.message === 'database is locked') {
-          log({
-            severity: 'METRIC',
-            name: 'DBLocked',
-            unit: 'Count',
-            value: 1,
-            path: this.path || ':memory:',
-            trace: err.stack,
-          });
-        } else {
-          throw err;
-        }
+        // if (err instanceof Error && err.message === 'database is locked') {
+        log({
+          severity: 'METRIC',
+          name: 'DBError',
+          unit: 'Count',
+          value: 1,
+          path: repoPathForMetric,
+          trace: (err as Error).stack,
+        });
+        // } else {
+        //   throw err;
+        // }
       }
     }
     log({
@@ -213,7 +235,20 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       name: 'CommitsPersistTime',
       unit: 'Milliseconds',
       value: performance.now() - startTime,
+      path: repoPathForMetric,
     });
+    log({
+      severity: 'METRIC',
+      name: 'CommitsPersistCount',
+      unit: 'Milliseconds',
+      value: commitCount,
+      path: repoPathForMetric,
+    });
+    if (randomInt(0, 10) === 0) {
+      try {
+        this.db.exec('PRAGMA wal_checkpoint');
+      } catch (_: unknown) {}
+    }
     return persistedCommits;
   }
 

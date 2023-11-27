@@ -2,6 +2,7 @@ import { Database, Statement } from 'sqlite3';
 import { resolve as resolvePath, dirname } from 'std/path/mod.ts';
 import { LogEntry, LogStream } from './log.ts';
 import { NormalizedLogEntry } from './entry.ts';
+import { randomInt } from '../base/math.ts';
 
 export class SQLiteLogStream implements LogStream {
   readonly db: Database;
@@ -24,9 +25,13 @@ export class SQLiteLogStream implements LogStream {
       severity TINYTEXT NOT NULL,
       json TEXT NOT NULL
     );`);
+    db.exec('CREATE INDEX IF NOT EXISTS entriesByTs ON entries (ts)');
   }
 
   appendEntry(e: NormalizedLogEntry<LogEntry>): void {
+    if (e.code === 403) {
+      return;
+    }
     const statement = this.db.prepare(
       `INSERT OR IGNORE INTO entries (id, ts, code, severity, json) VALUES (:id, :ts, :code, :severity, :json);`
     );
@@ -37,5 +42,10 @@ export class SQLiteLogStream implements LogStream {
       severity: e.severity,
       json: JSON.stringify(e),
     });
+    if (randomInt(0, 100) === 0) {
+      try {
+        this.db.exec('PRAGMA wal_checkpoint');
+      } catch (_: unknown) {}
+    }
   }
 }
