@@ -232,7 +232,14 @@ export abstract class BaseDynamicTimer extends BaseTimer {
   }
 
   reset(): void {
+    const scheduled = this.isScheduled;
+    if (scheduled) {
+      this.unschedule();
+    }
     this._lastResetTime = performance.now();
+    if (scheduled) {
+      this.schedule();
+    }
   }
 
   schedule(): BaseDynamicTimer {
