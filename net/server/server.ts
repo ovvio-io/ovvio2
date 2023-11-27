@@ -309,10 +309,11 @@ export class Server {
           }
           return resp;
         } catch (e: any) {
+          debugger;
           if (e instanceof ServerError) {
             log({
               severity: 'ERROR',
-              name: 'InternalServerError',
+              name: 'HttpStatusCode',
               unit: 'Count',
               value: e.code,
               url: req.url,
@@ -324,7 +325,6 @@ export class Server {
               status: e.code,
             });
           }
-          debugger;
           log({
             severity: 'ERROR',
             name: 'InternalServerError',
