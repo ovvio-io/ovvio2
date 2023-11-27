@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
-import { retry } from '../base/time.ts';
+import { retry, sleep } from '../base/time.ts';
 import { log } from '../logging/log.ts';
 import {
   JSONCyclicalDecoder,
@@ -11,6 +11,8 @@ import {
 import { MovingAverage } from '../base/math.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { VersionNumber } from '../base/version-number.ts';
+
+const SYNC_INTERVAL_DELAY_MS = 50;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -317,7 +319,12 @@ export abstract class BaseClient<
     // local commits that our peer doesn't have (local changes or peer recovery)
     let i = 0;
     do {
+      const startTime = performance.now();
       await this.sendSyncMessage();
+      const dt = performance.now() - startTime;
+      if (dt < SYNC_INTERVAL_DELAY_MS) {
+        await sleep(SYNC_INTERVAL_DELAY_MS - dt);
+      }
       ++i;
     } while (!this.closed && (i < cycleCount || this.needsReplication()));
   }
