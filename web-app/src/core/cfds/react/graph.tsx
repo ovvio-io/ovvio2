@@ -23,6 +23,7 @@ import { Repository } from '../../../../../repo/repo.ts';
 import { getClientData, setClientData } from '../../../../../server/config.ts';
 import { getBaseURL } from '../../../../../net/rest-api.ts';
 import { useTrustPool } from '../../../../../auth/react.tsx';
+import { kSecondMs } from '../../../../../base/date.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -151,7 +152,9 @@ export function CfdsClientProvider({
   } else {
     tasksView.getVertexProxy().update(kViewPropsTab, lastUsed);
   }
-  const callback = () => {
+  let saveViewTimeout: number | undefined;
+  const timeoutCallback = () => {
+    saveViewTimeout = undefined;
     const globalView = graphManager.getVertex<View>('ViewGlobal');
     const activeView =
       globalView.selectedTabId === 'notes'
@@ -163,10 +166,16 @@ export function CfdsClientProvider({
       .getVertex<View>(lastUsedKey)
       .update(kViewPersistentProps, globalView, activeView.getVertexProxy());
   };
-  globalView.onVertexChanged(callback);
-  notesView.onVertexChanged(callback);
-  tasksView.onVertexChanged(callback);
-  overviewView.onVertexChanged(callback);
+  const changeCallback = () => {
+    if (saveViewTimeout) {
+      clearTimeout(saveViewTimeout);
+    }
+    saveViewTimeout = setTimeout(timeoutCallback, 3 * kSecondMs);
+  };
+  globalView.onVertexChanged(changeCallback);
+  notesView.onVertexChanged(changeCallback);
+  tasksView.onVertexChanged(changeCallback);
+  overviewView.onVertexChanged(changeCallback);
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {
