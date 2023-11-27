@@ -9,6 +9,7 @@ import { ReadonlyJSONObject } from '../base/interfaces.ts';
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
 const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
+const SERVER_STARTUP_TIMEOUT_MS = kSecondMs;
 
 const SERVER_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gz`;
 const CONTROL_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gz`;
@@ -78,40 +79,53 @@ function filenameFromURL(url: string, suffix?: string): string {
 async function _startChildServerProcess(
   settings: ServerControlSettings,
   idx: number
-): Promise<Deno.ChildProcess> {
+): Promise<Deno.ChildProcess | undefined> {
   // We match the port to the index of the process
   const port = 9000 + idx;
   // Kill any zombies that may be left listening on this port
   const existingPid = await processIdForPort(port);
   if (existingPid !== -1) {
     console.log(
-      `Killing zombie proccess (pid ${existingPid}) listening on port ${port}`
+      `Killing zombie process (pid ${existingPid}) listening on port ${port}`
     );
     Deno.kill(existingPid, 'SIGKILL');
   }
   // Start the server process
   const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gz');
-  const cmd = new Deno.Command(
-    path.join(settings.serverBinaryDir, binaryFileName),
-    {
-      args: ['--silent', `--port=${port}`, '-d', settings.dataDir],
-      stdout: 'piped',
-    }
-  );
+  const cmd = new Deno.Command('nice', {
+    args: [
+      '-n',
+      '3',
+      path.join(settings.serverBinaryDir, binaryFileName),
+      '--silent',
+      `--port=${port}`,
+      '-d',
+      settings.dataDir,
+    ],
+    stdout: 'piped',
+  });
   const child = cmd.spawn();
   // child.ref();
   console.log(`Server started on port ${port}. Waiting for it to boot...`);
   const stdoutReader = child.stdout.getReader();
   // Wait for the server to ack its startup
   const decoder = new TextDecoder();
-  while (true) {
+  const startTime = performance.now();
+  let success = false;
+  while (performance.now() - startTime <= SERVER_STARTUP_TIMEOUT_MS) {
     const output = await stdoutReader.read();
     const value = decoder.decode(output.value);
     if (output.value && value.startsWith('STARTED')) {
+      success = true;
       break;
     }
+    await sleep(50);
   }
   stdoutReader.cancel();
+  if (!success) {
+    console.log(`ERROR: Server didn't start properly.`);
+    return undefined;
+  }
   console.log(`Server successfully started on port ${port}`);
   // Health check for this process
   let failureCount = 0;
@@ -142,19 +156,24 @@ async function _startChildServerProcess(
 
 async function startServerProcesses(
   settings: ServerControlSettings
-): Promise<Deno.ChildProcess[]> {
-  const serverProcesses: Deno.ChildProcess[] = [];
+): Promise<(Deno.ChildProcess | undefined)[]> {
+  const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
   const processCount = 2; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const terminationCallback = async (status: Deno.CommandStatus) => {
       if (status.code !== 0) {
         console.log('Restarting crashed server');
-        serverProcesses[i] = await _startChildServerProcess(settings, i);
-        serverProcesses[i].status.then(terminationCallback);
+        const child = await _startChildServerProcess(settings, i);
+        serverProcesses[i] = child;
+        if (child) {
+          child.status.then(terminationCallback);
+        }
       }
     };
     const child = await _startChildServerProcess(settings, i);
-    child.status.then(terminationCallback);
+    if (child) {
+      child.status.then(terminationCallback);
+    }
     serverProcesses.push(child);
   }
   return serverProcesses;
@@ -275,17 +294,19 @@ async function updateBinary(
  */
 async function updateServerBinary(
   settings: ServerControlSettings,
-  childProcesses: Deno.ChildProcess[] = []
-): Promise<Deno.ChildProcess[]> {
+  childProcesses: (Deno.ChildProcess | undefined)[] = []
+): Promise<(Deno.ChildProcess | undefined)[]> {
   const success = await updateBinary(
     SERVER_ARCHIVE_URL,
     settings.serverBinaryDir
   );
   if (success) {
-    // Stop all existing processes gracefully
+    // Try to stop all existing processes gracefully
     childProcesses.forEach((child) => {
       try {
-        child.kill('SIGTERM');
+        if (child) {
+          child.kill('SIGTERM');
+        }
       } catch (_: unknown) {}
     });
     // Give them a short delay to actually exit cleanly
