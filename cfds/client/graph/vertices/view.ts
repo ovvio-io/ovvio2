@@ -518,9 +518,9 @@ export class View extends BaseVertex {
         value = (v[fieldName] || value) as CoreValue;
       }
       if (value) {
-        (this as any)[fieldName] = value;
+        (this.proxy as any)[fieldName] = value;
       } else {
-        delete this[fieldName];
+        delete this.proxy[fieldName];
       }
     }
   }
