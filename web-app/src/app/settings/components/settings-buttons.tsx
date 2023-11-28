@@ -10,6 +10,7 @@ import { IconArchive } from '../../../../../styles/components/new-icons/icon-arc
 import { Button } from '../../../../../styles/components/buttons.tsx';
 import { IconEdit } from '../../../../../styles/components/icons/index.ts';
 import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
+import IconAdd from '../../../../../styles/components/icons/IconAdd.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -40,6 +41,21 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
+const ComposeInternalButtonChooseWs = React.forwardRef(
+  (
+    { className }: { className?: string },
+    ref: React.ForwardedRef<HTMLDivElement>
+  ) => {
+    const styles = useStyles();
+    return (
+      <div className={cn(styles.compose, className)} ref={ref}>
+        <IconAdd />
+        <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
+      </div>
+    );
+  }
+);
+
 const ComposeInternalButtonAssign = React.forwardRef(
   (
     { className }: { className?: string },
@@ -49,7 +65,7 @@ const ComposeInternalButtonAssign = React.forwardRef(
     return (
       <div className={cn(styles.compose, className)} ref={ref}>
         <IconArchive />
-        <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
+        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
       </div>
     );
   }
@@ -85,6 +101,20 @@ const ComposeInternalButtonEdit = React.forwardRef(
     );
   }
 );
+interface ChooseWsButtonProps {
+  onChooseWsClick?: () => void;
+}
+
+export function ChooseWsButton({ onChooseWsClick }: ChooseWsButtonProps) {
+  const [container, setContainer] = useState<HTMLDivElement | null>();
+
+  return (
+    <Button onClick={onChooseWsClick}>
+      <ComposeInternalButtonChooseWs ref={(div) => setContainer(div)} />
+    </Button>
+  );
+}
+
 export function EditButton() {
   //   const styles = useStyles();
   //   const logger = useLogger();

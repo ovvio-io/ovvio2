@@ -11,13 +11,17 @@ import {
   TextSm,
   Text,
   Bold,
-  H4,
-  H6,
 } from '../../../../../styles/components/typography.tsx';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
-import { AssignButton, EditButton } from '../components/settings-buttons.tsx';
-import IconClose from '../../../../../styles/components/icons/IconClose.tsx';
-import { IconButton } from '../../../../../styles/components/buttons.tsx';
+import {
+  AssignButton,
+  ChooseWsButton,
+  EditButton,
+} from '../components/settings-buttons.tsx';
+import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
+import { IconSelect } from './IconSelect.tsx';
+import MultiSelection from '../components/multi-selection.tsx';
+import { IconCheck } from '../components/icon-check.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -124,35 +128,71 @@ export function GeneralOrgTabContent() {
     </div>
   );
 }
-const getRandomName = () => {
-  const firstNames = ['Alice', 'Bob', 'Carol', 'David'];
-  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown'];
-  const randomFirstName =
-    firstNames[Math.floor(Math.random() * firstNames.length)];
-  const randomLastName =
-    lastNames[Math.floor(Math.random() * lastNames.length)];
-  return `${randomFirstName} ${randomLastName}`;
-};
+
+interface MemberStepProps {
+  selectedUsers: User[];
+  setSelectedUsers: (users: User[]) => void;
+}
+
+export function MemberStep({
+  selectedUsers,
+  setSelectedUsers,
+}: MemberStepProps) {
+  const handleChooseWsClick = () => {};
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+      }}
+    >
+      {selectedUsers && (
+        <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+      )}
+      {selectedUsers.map((user, index) => (
+        <div>{user.name} </div>
+      ))}
+    </div>
+  );
+}
 
 export function MembersTabContent() {
-  const styles = tabsStyles();
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [showMemberStep, setShowMemberStep] = useState<boolean>(false);
 
-  const rowStyle = {
-    display: 'flex',
-    padding: '12px 16px',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'var(--monochrom-m-0, #FFF)',
-    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    width: '875px',
-    borderRadius: '2px',
-    marginBottom: '1px', // Add this line for the gap
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const isUserSelected = (user: User) => selectedUsers.includes(user);
+
+  const getRowStyle = (index?: number, user?: User): CSSProperties => {
+    const isHovered = showMemberStep && hoverIndex === index;
+    const isSelected = showMemberStep && isUserSelected(user);
+
+    return {
+      display: 'flex',
+      padding: '12px 16px',
+      alignItems: 'center',
+      gap: '8px',
+      boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
+      width: '875px',
+      borderRadius: '2px',
+      marginBottom: index === filteredUsers.length - 1 ? '0' : '1px',
+      cursor: isHovered ? 'pointer' : 'default',
+      backgroundColor:
+        isHovered && !isSelected ? '#FBF6EF' : isSelected ? '#F5F9FB' : '#FFF',
+      border: isSelected ? '1px solid #CCE3ED' : 'none',
+    };
   };
 
+  const IconSelectColumnStyle = {
+    position: 'absolute',
+    left: '30px',
+  };
   const firstColumnStyle = {
     display: 'flex',
     width: '200px',
@@ -169,47 +209,33 @@ export function MembersTabContent() {
     justifyContent: 'center',
   };
 
-  const searchRowStyle = {
-    ...rowStyle,
+  const searchRowStyle: CSSProperties = {
+    ...getRowStyle(-1, {} as User),
     justifyContent: 'flex-start',
-    overflowY: 'clip', //check
+    cursor: 'default',
+    backgroundColor: '#FFF',
+    // overflowY: 'clip',
   };
+
   const scrollContainerStyle: CSSProperties = {
     maxHeight: '700px',
     overflowY: 'auto',
   };
 
-  const [dummyUsers, setDummyUsers] = useState<User[]>([]);
+  const handleUserClick = (user: User) => {
+    if (selectedUsers.includes(user)) {
+      setSelectedUsers(selectedUsers.filter((u) => u !== user));
+    } else {
+      setSelectedUsers([...selectedUsers, user]);
+    }
+  };
 
   useEffect(() => {
-    const users = Array.from({ length: 50 }, (_, i) => ({
-      name: getRandomName(),
-      email: `example${i}@example.com`,
-    }));
-    setDummyUsers(users);
-    setFilteredUsers(users);
-  }, []);
-
-  // Filter dummy data based on search term
-  useEffect(() => {
-    const filtered = dummyUsers.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  }, [searchTerm, dummyUsers]);
-
-  // useEffect(() => {
-  //   if (users) {
-  //     const filtered = users.filter(
-  //       (user) =>
-  //         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //         user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  //     );
-  //     setFilteredUsers(filtered);
-  //   }
-  // }, [searchTerm, usersQuery.results]);
+    if (users) {
+      const filtered = suggestResults(searchTerm, users, (t) => t.name);
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, usersQuery.results]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -218,16 +244,18 @@ export function MembersTabContent() {
   const [showMultiSelection, setShowMultiSelection] = useState<boolean>(false);
   const [showButtons, setShowButtons] = useState<boolean>(true);
 
-  const toggleSearchRow = () => {
+  const handleAssignClick = () => {
     setShowSearchRow((prev) => !prev);
+    setShowMemberStep(true);
+    setShowButtons(false);
     setShowMultiSelection((prev) => !prev);
-    setShowButtons((prev) => !prev);
   };
 
   const handleCloseMultiSelection = () => {
     setShowSearchRow(false);
     setShowMultiSelection(false);
     setShowButtons(true);
+    setSelectedUsers([]);
     setSearchTerm('');
   };
 
@@ -244,48 +272,38 @@ export function MembersTabContent() {
     padding: '50px 0px 24px',
     maxWidth: '900px',
   };
-  const multiselection: CSSProperties = {
-    height: '64px',
-    left: '0',
-    position: 'absolute',
-    width: '1478px',
-    backgroundColor: '#3184dd',
-    padding: 0,
-    display: 'flex',
-    alignItems: 'center',
-  };
+
+  const currentStep: 'Members' | 'Workspaces' | 'Assign' = 'Members';
 
   return (
     <div>
       {showMultiSelection && (
-        <div>
-          <div style={multiselection}>
-            <IconButton onClick={handleCloseMultiSelection}>
-              <IconClose />
-            </IconButton>
-            <H4>Assign to workspaces</H4>
-          </div>
-          <H6>Choose a </H6>
-        </div>
+        <MultiSelection
+          onClose={handleCloseMultiSelection}
+          currentStep={currentStep}
+          currentStepIndex={1}
+        />
       )}
       <div style={HeaderContainerStyle}>
+        {showMultiSelection && <div>Choose members to assign</div>}
         <Bold>Org. Members</Bold>
         {showButtons && (
           <div style={buttonsContainerStyle}>
-            <AssignButton onAssignClick={toggleSearchRow} />
+            <AssignButton onAssignClick={handleAssignClick} />
             <EditButton />
           </div>
         )}
       </div>
-
+      {showMemberStep && (
+        <MemberStep
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+        />
+      )}
       <div>
         {showSearchRow && (
           <div style={searchRowStyle}>
-            <div
-              style={{
-                marginRight: '4px',
-              }}
-            >
+            <div style={{ marginRight: '4px' }}>
               <IconSearch />
             </div>
             <Text>
@@ -298,7 +316,6 @@ export function MembersTabContent() {
                   flexGrow: 1,
                   border: 'none',
                   outline: 'none',
-                  background: 'none',
                   width: '100%',
                   fontSize: '13px',
                   letterSpacing: '0.075px',
@@ -307,18 +324,24 @@ export function MembersTabContent() {
             </Text>
           </div>
         )}
+
         <div style={scrollContainerStyle}>
           {filteredUsers.map((user, index) => (
             <div
               key={index}
-              style={{
-                ...rowStyle,
-                marginBottom:
-                  index === filteredUsers.length - 1
-                    ? '0'
-                    : rowStyle.marginBottom,
-              }}
+              onClick={() => handleUserClick(user)}
+              style={getRowStyle(index, user)}
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(null)}
             >
+              <div style={IconSelectColumnStyle}>
+                {hoverIndex === index && showMemberStep && <IconSelect />}
+              </div>
+              {selectedUsers.includes(user) && (
+                <div style={IconSelectColumnStyle}>
+                  <IconCheck />
+                </div>
+              )}
               <Text style={firstColumnStyle}>{user.name}</Text>
               <TextSm style={otherColumnStyle}>{user.email}</TextSm>
               <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
