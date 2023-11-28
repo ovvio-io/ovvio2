@@ -187,6 +187,9 @@ export class AuthEndpoint implements Endpoint {
       sl: uniqueId(),
     });
     const clickURL = `${getBaseURL(services)}/auth/temp-login?t=${signedToken}`;
+    if (services.organizationId === 'localhost') {
+      console.log(`****** ${clickURL} ******`);
+    }
     // Only send the mail if a user really exists. We send the email
     // asynchronously both for speed and to avoid timing attacks.
     if (userRecord !== undefined) {
