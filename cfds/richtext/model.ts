@@ -5,23 +5,21 @@ import {
 } from '../../base/core-types/index.ts';
 import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
 
-export type MarkupNode =
-  | ParagraphNode
-  | Header1Node
-  | Header2Node
-  | UnorderedListNode
-  | OrderedListNode
-  | ListItemNode
-  | TableNode
-  | TableRowNode
-  | TableCellNode
-  | RefNode
-  | RefMarker
-  | SpanNode
-  | ObjectNode
-  | HyperlinkNode
-  | ImageNode
-  | MentionElement;
+export type MarkupNode = ParagraphNode | Header1Node;
+// | Header2Node
+// | UnorderedListNode
+// | OrderedListNode
+// | ListItemNode
+// | TableNode
+// | TableRowNode
+// | TableCellNode
+// | RefNode
+// | RefMarker
+// | SpanNode
+// | ObjectNode
+// | HyperlinkNode
+// | ImageNode
+// | MentionElement;
 
 export interface ParagraphNode extends ElementNode {
   readonly tagName: 'p';
