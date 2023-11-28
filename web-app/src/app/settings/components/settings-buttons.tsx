@@ -49,8 +49,8 @@ const ComposeInternalButtonChooseWs = React.forwardRef(
     const styles = useStyles();
     return (
       <div className={cn(styles.compose, className)} ref={ref}>
-        <IconAdd />
-        <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
+        <IconArchive />
+        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
       </div>
     );
   }
@@ -65,7 +65,7 @@ const ComposeInternalButtonAssign = React.forwardRef(
     return (
       <div className={cn(styles.compose, className)} ref={ref}>
         <IconArchive />
-        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
+        <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
       </div>
     );
   }
@@ -128,4 +128,8 @@ export function EditButton() {
       <ComposeInternalButtonEdit ref={(div) => setContainer(div)} />
     </Button>
   );
+}
+
+export function SecondaryButtonSettings() {
+  // for the secondaries buttons at the memeber step.
 }

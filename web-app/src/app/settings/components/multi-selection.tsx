@@ -66,13 +66,11 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
 
 export interface MultiSelectionProps {
   onClose: () => void;
-  currentStep: 'Members' | 'Workspaces' | 'Assign';
   currentStepIndex: number;
 }
 
 export const MultiSelection: React.FC<MultiSelectionProps> = ({
   onClose,
-  currentStep,
   currentStepIndex,
 }) => {
   const multiselectionStyle: CSSProperties = {

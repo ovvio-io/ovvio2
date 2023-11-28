@@ -79,7 +79,7 @@ function CloseIcon({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function AssigneePill({ user }: { user: VertexManager<User> }) {
+export function AssigneePill({ user }: { user: VertexManager<User> }) {
   const styles = useStyles();
   const { name } = usePartialVertex(user, ['name']);
   const view = usePartialView('selectedAssignees');

@@ -4,7 +4,7 @@ import { tabsStyles } from '../components/tabs-style.tsx';
 import { usePartialRootUser } from '../../../core/cfds/react/graph.tsx';
 import SettingsField from '../components/settings-field.tsx';
 import { cn } from '../../../../../styles/css-objects/index.ts';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { isWorkspace, useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../core/cfds/react/vertex.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import {
@@ -22,6 +22,12 @@ import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { IconSelect } from './IconSelect.tsx';
 import MultiSelection from '../components/multi-selection.tsx';
 import { IconCheck } from '../components/icon-check.tsx';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/index.ts';
+import { AssigneePill } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
+import {
+  RaisedButton,
+  SecondaryButton,
+} from '../../../../../styles/components/buttons.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -131,29 +137,110 @@ export function GeneralOrgTabContent() {
 
 interface MemberStepProps {
   selectedUsers: User[];
-  setSelectedUsers: (users: User[]) => void;
+  setShowStep2: (arg0: boolean) => void;
+  setShowStep1: (arg0: boolean) => void;
+  setStep: (arg0: number) => void;
 }
 
 export function MemberStep({
   selectedUsers,
-  setSelectedUsers,
+  setShowStep2,
+  setShowStep1,
+  setStep,
 }: MemberStepProps) {
+  const handleChooseWsClick = () => {
+    setShowStep1(false);
+    setShowStep2(true);
+    setStep(2);
+  };
+  const HeaderContainerStyle: CSSProperties = {
+    padding: '50px 0px 24px',
+    maxWidth: '900px',
+  };
+  const FunctionsHeader: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  };
+  const ChosenMembersContainer: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: '400px',
+    gap: '4px',
+  };
+  const tableHeader: CSSProperties = {
+    display: 'flex',
+    padding: '34px 0px 0px 0px',
+  };
+  return (
+    <div style={HeaderContainerStyle}>
+      <div style={FunctionsHeader}>
+        <div>Choose members to assign</div>
+        {selectedUsers && (
+          <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+        )}
+        <RaisedButton>TTT</RaisedButton>
+      </div>
+      <div style={ChosenMembersContainer}>
+        {selectedUsers.map((user) => (
+          <AssigneePill key={user.key} user={user.manager} />
+        ))}
+      </div>
+      <div style={tableHeader}>
+        <Bold>Org. Members</Bold>
+      </div>
+    </div>
+  );
+}
+
+interface WorkspacesStepProps {
+  selectedUsers: User[];
+}
+
+export function WorkspacesStep({ selectedUsers }: WorkspacesStepProps) {
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
+
   const handleChooseWsClick = () => {};
 
+  const HeaderContainerStyle: CSSProperties = {
+    padding: '50px 0px 24px',
+    maxWidth: '900px',
+  };
+  const FunctionsHeader: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  };
+  const ChosenMembersContainer: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: '400px',
+    gap: '4px',
+  };
+  const tableHeader: CSSProperties = {
+    display: 'flex',
+    padding: '34px 0px 0px 0px',
+  };
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-      }}
-    >
-      {selectedUsers && (
-        <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
-      )}
-      {selectedUsers.map((user, index) => (
-        <div>{user.name} </div>
-      ))}
+    <div style={HeaderContainerStyle}>
+      <div style={FunctionsHeader}>
+        <div>Choose workspaces to assign</div>
+        {selectedUsers && (
+          <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+        )}
+      </div>
+      <div style={ChosenMembersContainer}>
+        {selectedUsers.map((user, index) => (
+          <div>{user.name} </div>
+        ))}
+      </div>
+      <div style={tableHeader}>
+        <Bold>My Workspaces</Bold>
+        {workspaces.map((workspace, index) => (
+          <div>{workspace.name} </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -164,14 +251,28 @@ export function MembersTabContent() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-  const [showMemberStep, setShowMemberStep] = useState<boolean>(false);
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
+
+  const [showSearchRow, setShowSearchRow] = useState<boolean>(false);
+  const [showMultiSelection, setShowMultiSelection] = useState<boolean>(false);
+  const [showStep0, setShowStep0] = useState<boolean>(true);
+  const [showStep1, setShowStep1] = useState<boolean>(false);
+  const [showStep2, setShowStep2] = useState<boolean>(false);
+  const [step, setStep] = useState<number>(1);
 
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const isUserSelected = (user: User) => selectedUsers.includes(user);
+  const isWorkspaceSelected = (ws: Workspace) =>
+    selectedWorkspaces.includes(ws);
 
-  const getRowStyle = (index?: number, user?: User): CSSProperties => {
-    const isHovered = showMemberStep && hoverIndex === index;
-    const isSelected = showMemberStep && isUserSelected(user);
+  const getRowStyle = (
+    index?: number,
+    user?: User,
+    workspace?: Workspace
+  ): CSSProperties => {
+    const isHovered = showStep1 && hoverIndex === index;
+    const isSelected = showStep1 && isUserSelected(user);
+    const isSelectedWs = showStep2 && isWorkspaceSelected(workspace);
 
     return {
       display: 'flex',
@@ -184,8 +285,12 @@ export function MembersTabContent() {
       marginBottom: index === filteredUsers.length - 1 ? '0' : '1px',
       cursor: isHovered ? 'pointer' : 'default',
       backgroundColor:
-        isHovered && !isSelected ? '#FBF6EF' : isSelected ? '#F5F9FB' : '#FFF',
-      border: isSelected ? '1px solid #CCE3ED' : 'none',
+        isHovered && !isSelected && !isSelectedWs
+          ? '#FBF6EF'
+          : isSelected || isSelectedWs
+          ? '#F5F9FB'
+          : '#FFF',
+      border: isSelected || isSelectedWs ? '1px solid #CCE3ED' : 'none',
     };
   };
 
@@ -210,7 +315,7 @@ export function MembersTabContent() {
   };
 
   const searchRowStyle: CSSProperties = {
-    ...getRowStyle(-1, {} as User),
+    ...getRowStyle(-1, {} as User, {} as Workspace),
     justifyContent: 'flex-start',
     cursor: 'default',
     backgroundColor: '#FFF',
@@ -219,7 +324,7 @@ export function MembersTabContent() {
 
   const scrollContainerStyle: CSSProperties = {
     maxHeight: '700px',
-    overflowY: 'auto',
+    // overflowY: 'auto',
   };
 
   const handleUserClick = (user: User) => {
@@ -227,6 +332,13 @@ export function MembersTabContent() {
       setSelectedUsers(selectedUsers.filter((u) => u !== user));
     } else {
       setSelectedUsers([...selectedUsers, user]);
+    }
+  };
+  const handleWorkspaceClick = (workspace: Workspace) => {
+    if (selectedWorkspaces.includes(workspace)) {
+      setSelectedWorkspaces(selectedWorkspaces.filter((w) => w !== workspace));
+    } else {
+      setSelectedWorkspaces([...selectedWorkspaces, workspace]);
     }
   };
 
@@ -240,26 +352,24 @@ export function MembersTabContent() {
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
-  const [showSearchRow, setShowSearchRow] = useState<boolean>(false);
-  const [showMultiSelection, setShowMultiSelection] = useState<boolean>(false);
-  const [showButtons, setShowButtons] = useState<boolean>(true);
 
   const handleAssignClick = () => {
     setShowSearchRow((prev) => !prev);
-    setShowMemberStep(true);
-    setShowButtons(false);
-    setShowMultiSelection((prev) => !prev);
+    setShowStep0(false);
+    setShowStep1(true);
+    setShowMultiSelection(true);
   };
 
   const handleCloseMultiSelection = () => {
+    setShowStep0(true);
+    setShowStep1(false);
     setShowSearchRow(false);
     setShowMultiSelection(false);
-    setShowButtons(true);
     setSelectedUsers([]);
     setSearchTerm('');
   };
 
-  const buttonsContainerStyle: CSSProperties = {
+  const step0ContainerStyle: CSSProperties = {
     display: 'flex',
     gap: '16px',
     justifyContent: 'flex-end',
@@ -272,34 +382,50 @@ export function MembersTabContent() {
     padding: '50px 0px 24px',
     maxWidth: '900px',
   };
-
-  const currentStep: 'Members' | 'Workspaces' | 'Assign' = 'Members';
+  const InputTextStyle: CSSProperties = {
+    flexGrow: 1,
+    border: 'none',
+    outline: 'none',
+    width: '100%',
+    fontSize: '13px',
+    letterSpacing: '0.075px',
+  };
 
   return (
     <div>
       {showMultiSelection && (
         <MultiSelection
           onClose={handleCloseMultiSelection}
-          currentStep={currentStep}
-          currentStepIndex={1}
+          currentStepIndex={step}
         />
       )}
-      <div style={HeaderContainerStyle}>
-        {showMultiSelection && <div>Choose members to assign</div>}
-        <Bold>Org. Members</Bold>
-        {showButtons && (
-          <div style={buttonsContainerStyle}>
+
+      {showStep0 && (
+        <div style={HeaderContainerStyle}>
+          <Bold>Org. Members</Bold>
+          <div style={step0ContainerStyle}>
             <AssignButton onAssignClick={handleAssignClick} />
             <EditButton />
           </div>
-        )}
-      </div>
-      {showMemberStep && (
+        </div>
+      )}
+
+      {showStep1 && (
         <MemberStep
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          setShowStep1={setShowStep1}
+          setShowStep2={setShowStep2}
+          setStep={setStep}
+        />
+      )}
+      {showStep2 && (
+        <WorkspacesStep
           selectedUsers={selectedUsers}
           setSelectedUsers={setSelectedUsers}
         />
       )}
+
       <div>
         {showSearchRow && (
           <div style={searchRowStyle}>
@@ -312,19 +438,11 @@ export function MembersTabContent() {
                 placeholder="Search member"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                style={{
-                  flexGrow: 1,
-                  border: 'none',
-                  outline: 'none',
-                  width: '100%',
-                  fontSize: '13px',
-                  letterSpacing: '0.075px',
-                }}
+                style={InputTextStyle}
               />
             </Text>
           </div>
         )}
-
         <div style={scrollContainerStyle}>
           {filteredUsers.map((user, index) => (
             <div
@@ -335,18 +453,39 @@ export function MembersTabContent() {
               onMouseLeave={() => setHoverIndex(null)}
             >
               <div style={IconSelectColumnStyle}>
-                {hoverIndex === index && showMemberStep && <IconSelect />}
+                {hoverIndex === index && showStep1 && <IconSelect />}
               </div>
-              {selectedUsers.includes(user) && (
+              {showStep1 && selectedUsers.includes(user) && (
                 <div style={IconSelectColumnStyle}>
                   <IconCheck />
                 </div>
               )}
-              <Text style={firstColumnStyle}>{user.name}</Text>
-              <TextSm style={otherColumnStyle}>{user.email}</TextSm>
-              <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
-              <TextSm style={otherColumnStyle}>{'placeholder2'}</TextSm>
-              <TextSm style={otherColumnStyle}>{'placeholder3'}</TextSm>
+              {!showStep2 && (
+                <>
+                  <Text style={firstColumnStyle}>{user.name}</Text>
+                  <TextSm style={otherColumnStyle}>{user.email}</TextSm>
+                  <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
+                  <TextSm style={otherColumnStyle}>{'placeholder2'}</TextSm>
+                  <TextSm style={otherColumnStyle}>{'placeholder3'}</TextSm>
+                </>
+              )}
+            </div>
+          ))}
+          {selectedWorkspaces.map((workspace, index) => (
+            <div
+              key={index}
+              onClick={() => handleWorkspaceClick(workspace)}
+              style={getRowStyle(index, undefined, workspace)}
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(null)}
+            >
+              {/* {showStep2 && (
+                <>
+                  <Text style={firstColumnStyle}>{'Workspace1'}</Text>
+                  <TextSm style={otherColumnStyle}>{'Workspace2'}</TextSm>
+                  <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
+                </>
+              )} */}
             </div>
           ))}
         </div>
