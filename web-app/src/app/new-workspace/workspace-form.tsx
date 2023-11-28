@@ -91,7 +91,7 @@ export function WorkspaceForm({
 
   useEffect(() => {
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'Start',
       flow: 'create',
       type: 'workspace',
@@ -105,7 +105,7 @@ export function WorkspaceForm({
       copyFrom: duplicateWs,
     });
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'End',
       flow: 'create',
       type: 'workspace',
