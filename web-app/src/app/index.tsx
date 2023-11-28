@@ -14,6 +14,7 @@ import { CardsDisplay } from './workspace-content/workspace-view/cards-display/i
 import { Settings } from './settings/index.tsx';
 import { CategorySettings } from './settings/category-settings.tsx';
 import { App } from '../../../styles/components/app.tsx';
+import { Editor } from '../../../editor/editor.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -84,7 +85,8 @@ const router = createBrowserRouter([
     // element: <NoteView />,
     element: (
       <Root style={lightTheme}>
-        <NoteView />
+        {/* <NoteView /> */}
+        <Editor />
       </Root>
     ),
   },
