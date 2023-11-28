@@ -326,7 +326,7 @@ export abstract class BaseClient<
         await sleep(SYNC_INTERVAL_DELAY_MS - dt);
       }
       ++i;
-    } while (!this.closed && (i < cycleCount || this.needsReplication()));
+    } while (!this.closed && i < cycleCount /*|| this.needsReplication()*/);
   }
 
   needsReplication(): boolean {
