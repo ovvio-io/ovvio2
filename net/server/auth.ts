@@ -25,6 +25,7 @@ import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { ServerError, Code, accessDenied } from '../../cfds/base/errors.ts';
+import { copyToClipboard } from '../../base/development.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -188,7 +189,10 @@ export class AuthEndpoint implements Endpoint {
     });
     const clickURL = `${getBaseURL(services)}/auth/temp-login?t=${signedToken}`;
     if (services.organizationId === 'localhost') {
-      console.log(`****** ${clickURL} ******`);
+      // console.log(`****** ${clickURL} ******`);
+      if (await copyToClipboard(clickURL)) {
+        console.log(`Login URL copied to clipboard`);
+      }
     }
     // Only send the mail if a user really exists. We send the email
     // asynchronously both for speed and to avoid timing attacks.

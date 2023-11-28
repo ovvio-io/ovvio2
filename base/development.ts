@@ -24,3 +24,24 @@ export async function getRepositoryPath(): Promise<string> {
 export async function getImportMapPath(): Promise<string> {
   return path.join(await getRepositoryPath(), 'import-map.json');
 }
+
+export async function copyToClipboard(value: string): Promise<boolean> {
+  try {
+    if (Deno.build.os === 'darwin') {
+      const process = new Deno.Command('pbcopy', {
+        stdin: 'piped',
+      }).spawn();
+      const encoder = new TextEncoder();
+      const writer = process.stdin.getWriter();
+      await writer.write(encoder.encode(value));
+      // await writer.write(encoder.encode('\u0004'));
+      await writer.close();
+      // await process.stdin.close();
+      await process.output();
+      return true;
+    }
+  } catch (_err: unknown) {
+    debugger;
+  }
+  return false;
+}
