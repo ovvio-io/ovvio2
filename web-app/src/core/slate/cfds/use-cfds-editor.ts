@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Descendant, Editor, Range as SlateRange } from 'slate';
+import { BaseRange, Descendant, Editor, Range as SlateRange } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
 import {
@@ -16,14 +16,17 @@ import { usePartialVertex } from '../../cfds/react/vertex.ts';
 import { CfdsEditor, isCfdsInternal } from './with-cfds.tsx';
 import { useGraphManager } from '../../cfds/react/graph.tsx';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { coreValueEquals } from '../../../../../base/core-types/equals.ts';
 
-export type RichtextKeys<T> = {
+export type RichtextKeys<T extends Note> = {
   [K in keyof T]: T[K] extends UnkeyedDocument ? K : never;
-}[keyof T];
+}[keyof T] &
+  string;
 
 export interface EditorHandler {
   value: Descendant[];
   onChange: (newValue: Descendant[]) => void;
+  selection?: BaseRange | null;
 }
 
 interface CfdsEditorOptions {
@@ -110,36 +113,43 @@ function useUndoContext(
   }, [editor, graph, vMng, field, addBodyRefs]);
 }
 
-function handleSelection(editor: Editor, selection: Range | undefined) {
+function handleSelection(
+  editor: Editor,
+  document: UnkeyedDocument,
+  selectionId: string
+) {
   if (!ReactEditor.isFocused(editor)) {
     return;
   }
-  const slateSelection = CfdsEditor.cfdsRangeToSlateRange(editor, selection);
+  const slateSelection = CfdsEditor.cfdsRangeToSlateRange(
+    document,
+    selectionId
+  );
 
   if (!editor.selection && !slateSelection) {
     return;
   }
 
-  if (
-    (!editor.selection && slateSelection) ||
-    (editor.selection && !slateSelection) ||
-    !SlateRange.equals(slateSelection!, editor.selection!)
-  ) {
-    CfdsEditor.setExternalSelection(editor, slateSelection);
-  }
+  // if (
+  //   (!editor.selection && slateSelection) ||
+  //   (editor.selection && !slateSelection) ||
+  //   !SlateRange.equals(slateSelection!, editor.selection!)
+  // ) {
+  CfdsEditor.setExternalSelection(editor, slateSelection);
+  // }
 }
 
 // Set this to false to disable updating of selection on external change
-const SET_EXTERNAL_SELECTION = false;
+const SET_EXTERNAL_SELECTION = true;
 
-export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
+export function useCfdsEditor<T extends Note, K extends RichtextKeys<T>>(
   vertexMng: VertexManager<T>,
   field: K,
   editor: Editor,
   selectionId: string,
   opts: Partial<CfdsEditorOptions> = {}
 ): EditorHandler {
-  const vertex = usePartialVertex(vertexMng, [field]);
+  const vertex = usePartialVertex<T>(vertexMng, [field]);
   const {
     undoAddBodyRefs = DEFAULT_OPTS.undoAddBodyRefs,
     expirationInMs = DEFAULT_OPTS.expirationInMs,
@@ -150,6 +160,7 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   const onChange = useCallback(
     (newValue: Descendant[]) => {
       const ranges: DocumentRanges = {};
+      debugger;
       if (editor.selection) {
         ranges[selectionId] = {
           ...CfdsEditor.slateRangeToCfdsRange(editor, editor.selection),
@@ -168,15 +179,24 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   );
   const value = richtext.root.children as Descendant[];
 
-  const selection = (richtext.ranges || {})[selectionId];
+  // const selection = (richtext.ranges || {})[selectionId];
+
+  // debugger;
 
   const slateValue = useMemo(() => {
     if (SET_EXTERNAL_SELECTION) {
-      // editor.children = value;
-      handleSelection(editor, selection);
+      if (!coreValueEquals(editor.children, value)) {
+        editor.children = value;
+      }
+      handleSelection(editor, richtext, selectionId);
     }
     return value;
-  }, [value, selection, editor]);
+  }, [richtext, editor]);
+  // let slateValue = value;
+  // if (SET_EXTERNAL_SELECTION) {
+  //   // editor.children = value;
+  //   handleSelection(editor, selection);
+  // }
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -213,5 +233,9 @@ export function useCfdsEditor<T extends Vertex, K extends RichtextKeys<T>>(
   return {
     onChange,
     value: slateValue,
+    selection: CfdsEditor.cfdsRangeToSlateRange(
+      vertex[field] as unknown as Document,
+      selectionId
+    ),
   };
 }

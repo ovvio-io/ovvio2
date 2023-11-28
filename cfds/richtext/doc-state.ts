@@ -313,6 +313,38 @@ export function projectRanges(
   );
 }
 
+function nodePathToIndexPath(
+  root: ElementNode,
+  nodePath: readonly ElementNode[]
+): number[] {
+  const result: number[] = [];
+  let parent: ElementNode = root;
+  for (const element of nodePath) {
+    const idx = parent.children.indexOf(element);
+    assert(idx >= 0);
+    result.push(idx);
+    parent = element;
+  }
+  return result;
+}
+
+export function pointToPath(
+  document: UnkeyedDocument,
+  point: Point
+): { path: number[]; offset: number } {
+  for (const [node, _depth, path] of dfs(document.root)) {
+    if (node === point.node) {
+      const indexPath = nodePathToIndexPath(document.root, path);
+      indexPath.push(path[path.length - 1].children.indexOf(node));
+      return {
+        path: indexPath,
+        offset: point.offset,
+      };
+    }
+  }
+  notReached();
+}
+
 // interface ProjectionContext {
 //   diff: Diff[];
 //   offsetsMap1: OrderedMap<TreeNode, number>;

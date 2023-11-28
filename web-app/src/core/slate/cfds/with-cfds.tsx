@@ -9,7 +9,11 @@ import {
 } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { uniqueId } from '../../../../../base/common.ts';
-import { Range } from '../../../../../cfds/richtext/doc-state.ts';
+import {
+  Range,
+  UnkeyedDocument,
+  pointToPath,
+} from '../../../../../cfds/richtext/doc-state.ts';
 import { TextNode } from '../../../../../cfds/richtext/tree.ts';
 import { NodeKey, TreeKeys } from '../../../../../cfds/richtext/tree-keys.ts';
 import { CoreValue } from '../../../../../base/core-types/base.ts';
@@ -151,28 +155,28 @@ export const CfdsEditor = {
     notReached('CfdsEditor.findPath() failed finding a path');
   },
   cfdsRangeToSlateRange(
-    editor: Editor,
-    range: Range | undefined
+    document: UnkeyedDocument,
+    selectionId: string
   ): BaseRange | null {
-    if (!range) return null;
-    const anchor = range.anchor.node;
-    const focus = range.focus.node;
+    // if (!range) return null;
+    if (!document.ranges) {
+      return null;
+    }
+
+    const range = document.ranges[selectionId];
+    if (!range) {
+      return null;
+    }
 
     // const anchorPath = ReactEditor.findPath(editor, anchor);
     // const focusPath = ReactEditor.findPath(editor, focus);
 
-    const anchorPath = CfdsEditor.findPath(editor, anchor);
-    const focusPath = CfdsEditor.findPath(editor, focus);
+    // const anchorPath = CfdsEditor.findPath(editor, anchor);
+    // const focusPath = CfdsEditor.findPath(editor, focus);
 
     return {
-      anchor: {
-        path: anchorPath,
-        offset: range.anchor.offset,
-      },
-      focus: {
-        path: focusPath,
-        offset: range.focus.offset,
-      },
+      anchor: pointToPath(document, range.anchor),
+      focus: pointToPath(document, range.focus),
     };
   },
 };
