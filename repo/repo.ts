@@ -21,6 +21,7 @@ import {
 } from '../auth/session.ts';
 import { filterIterable } from '../base/common.ts';
 
+const HEAD_CACHE_EXPIRATION_MS = 1000;
 export const EVENT_NEW_COMMIT = 'NewCommit';
 
 export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
@@ -29,7 +30,7 @@ export type RepositoryType = (typeof kRepositoryTypes)[number];
 export interface RepoStorage<T extends RepoStorage<T>> {
   numberOfCommits(): number;
   getCommit(id: string): Commit | undefined;
-  allCommits(): Iterable<Commit>;
+  allCommitsIds(): Iterable<string>;
   commitsForKey(key: string | null): Iterable<Commit>;
   allKeys(): Iterable<string>;
   persistCommits(c: Iterable<Commit>, repo: Repository<T>): Iterable<Commit>;
@@ -43,16 +44,25 @@ export type Authorizer<ST extends RepoStorage<ST>> = (
   write: boolean
 ) => boolean;
 
+interface CachedHead {
+  commit: Commit;
+  timestamp: number;
+}
+
 export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly storage: ST;
   readonly trustPool: TrustPool;
   readonly authorizer?: Authorizer<ST>;
+  private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
+  private readonly _commitsCache: Map<string, Commit>;
 
   constructor(storage: ST, trustPool: TrustPool, authorizer?: Authorizer<ST>) {
     super();
     this.storage = storage;
     this.trustPool = trustPool;
     this.authorizer = authorizer;
+    this._cachedHeadsByKey = new Map();
+    this._commitsCache = new Map();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -86,7 +96,13 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   getCommit(id: string, session?: Session): Commit {
-    const c = this.storage.getCommit(id);
+    let c = this._commitsCache.get(id);
+    if (!c) {
+      c = this.storage.getCommit(id);
+      if (c) {
+        this._commitsCache.set(id, c);
+      }
+    }
     if (!c) {
       throw serviceUnavailable();
     }
@@ -107,18 +123,16 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return this.storage.getCommit(id) !== undefined;
   }
 
-  commits(session?: Session): Iterable<Commit> {
+  *commits(session?: Session): Generator<Commit> {
     const { authorizer } = this;
-    if (
-      session &&
-      session.id !== this.trustPool.currentSession.id &&
-      authorizer
-    ) {
-      return filterIterable(this.storage.allCommits(), (c) =>
-        authorizer(this, c, session, false)
-      );
+    const checkAuth =
+      session && session.id !== this.trustPool.currentSession.id && authorizer;
+    for (const id of this.storage.allCommitsIds()) {
+      const commit = this.getCommit(id);
+      if (!checkAuth || authorizer(this, this.getCommit(id), session, false)) {
+        yield commit;
+      }
     }
-    return this.storage.allCommits();
   }
 
   commitsForKey(key: string | null, session?: Session): Iterable<Commit> {
@@ -330,6 +344,15 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (!session) {
       session = this.trustPool.currentSession.id;
     }
+
+    const cacheEntry = this._cachedHeadsByKey.get(key);
+    if (
+      cacheEntry &&
+      cacheEntry.commit.session === session &&
+      performance.now() - cacheEntry.timestamp <= HEAD_CACHE_EXPIRATION_MS
+    ) {
+      return cacheEntry.commit;
+    }
     const leaves = this.leavesForKey(
       key,
       session ? this.trustPool.getSession(session) : undefined,
@@ -344,6 +367,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       commitsWithUniqueRecords(leaves).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it
     if (commitsToMerge.length === 1) {
+      this._cachedHeadsByKey.set(key, {
+        commit: commitsToMerge[0],
+        timestamp: performance.now(),
+      });
       return commitsToMerge[0];
     }
     let result: Commit | undefined;
@@ -414,6 +441,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
             this.persistVerifiedCommits([signedCommit]);
           }
         );
+        this._cachedHeadsByKey.set(key, {
+          commit: mergeCommit,
+          timestamp: performance.now(),
+        });
         return mergeCommit;
       } catch (e) {
         if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
@@ -432,12 +463,24 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       // it wrote last.
       for (const c of leaves) {
         if (c.session === session) {
+          this._cachedHeadsByKey.set(key, {
+            commit: c,
+            timestamp: performance.now(),
+          });
           return c;
         }
       }
       // No session was provided. Return the last globally written value.
+      this._cachedHeadsByKey.set(key, {
+        commit: leaves[0],
+        timestamp: performance.now(),
+      });
       return leaves[0];
     }
+    this._cachedHeadsByKey.set(key, {
+      commit: result,
+      timestamp: performance.now(),
+    });
     return result;
   }
 
@@ -482,6 +525,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
     await this.persistCommits([signedCommit]);
+    this._cachedHeadsByKey.delete(key);
+    this._commitsCache.set(signedCommit.id, signedCommit);
     return true;
   }
 
@@ -572,6 +617,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     }
     if (batch.length > 0) {
       ArrayUtils.append(result, this.persistVerifiedCommits(batch));
+    }
+    for (const c of result) {
+      this._cachedHeadsByKey.delete(c.session);
     }
     return result;
   }
@@ -694,8 +742,8 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
     return this._commitsById.get(id);
   }
 
-  allCommits(): Iterable<Commit> {
-    return this._commitsById.values();
+  allCommitsIds(): Iterable<string> {
+    return this._commitsById.keys();
   }
 
   commitsForKey(key: string): Iterable<Commit> {

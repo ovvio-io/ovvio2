@@ -46,7 +46,7 @@ export interface RefRow extends UnknownRow {
  * "refs": All edges in the graph defined by the "heads" table.
  */
 export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
-  private _allCommitsCache: Commit[] | undefined;
+  private _allCommitsCache: string[] | undefined;
   private _allCommitsCacheTs: number = 0;
 
   readonly db: Database;
@@ -166,21 +166,17 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       : undefined;
   }
 
-  allCommits(): Iterable<Commit> {
+  allCommitsIds(): Iterable<string> {
     if (
       this._allCommitsCache &&
       performance.now() - this._allCommitsCacheTs <= ALL_COMMITS_CACHE_MS
     ) {
       return this._allCommitsCache;
     }
-    const statement = this.db.prepare(`SELECT json FROM commits;`).bind();
-    const result: Commit[] = [];
-    for (const { json } of statement) {
-      result.push(
-        new Commit({
-          decoder: new JSONCyclicalDecoder(JSON.parse(json)),
-        })
-      );
+    const statement = this.db.prepare(`SELECT id FROM commits;`).bind();
+    const result: string[] = [];
+    for (const { id } of statement) {
+      result.push(id);
     }
     this._allCommitsCache = result;
     this._allCommitsCacheTs = performance.now();
