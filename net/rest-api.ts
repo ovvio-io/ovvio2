@@ -4,14 +4,16 @@ import {
   Session,
   decodeSession,
   signData,
+  generateRequestSignature,
 } from '../auth/session.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { getOvvioConfig } from '../server/config.ts';
 
 export async function createNewSession(
   publicKey: CryptoKey
 ): Promise<[Session | undefined, Session[] | undefined]> {
   try {
-    const resp = await sendJSONToEndpoint('/auth/session', {
+    const resp = await sendJSONToEndpoint('/auth/session', undefined, {
       publicKey: (await crypto.subtle.exportKey(
         'jwk',
         publicKey
@@ -38,7 +40,7 @@ export async function sendLoginEmail(
   email: string
 ): Promise<boolean> {
   try {
-    const resp = await sendJSONToEndpoint('/auth/send-login-email', {
+    const resp = await sendJSONToEndpoint('/auth/send-login-email', undefined, {
       email,
       signature: await signData(session, email),
     });
@@ -49,7 +51,8 @@ export async function sendLoginEmail(
 }
 
 export function getBaseURL(): string {
-  return `${location.protocol}//${location.host}`;
+  const serverURL = getOvvioConfig().serverURL;
+  return serverURL || `${location.protocol}//${location.host}`;
 }
 
 function urlForEndpoint(endpoint: string): string {
@@ -59,15 +62,20 @@ function urlForEndpoint(endpoint: string): string {
   return `${getBaseURL()}/${endpoint}`;
 }
 
-function sendJSONToEndpoint(
+export async function sendJSONToEndpoint(
   endpoint: string,
+  session: OwnedSession | undefined,
   json: ReadonlyJSONObject
 ): Promise<Response> {
-  return fetch(urlForEndpoint(endpoint), {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (session !== undefined) {
+    headers['X-Ovvio-Sig'] = await generateRequestSignature(session);
+  }
+  return await fetch(urlForEndpoint(endpoint), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(json),
   });
 }

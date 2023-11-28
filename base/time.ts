@@ -41,7 +41,7 @@ export function delay<T>(delayMs: number, func: () => T): Promise<T> {
 }
 
 export class RetryBaseErr extends Error {
-  constructor(readonly origError: any) {
+  constructor(readonly origError?: unknown) {
     super(origError instanceof Error ? origError.message : 'Unknown Error');
   }
 }
@@ -86,6 +86,15 @@ export async function retry<T>(
 
   // If we got this far then we timed out on an error. Bubble it up.
   throw err instanceof RetryBaseErr ? err.origError : err;
+}
+
+export async function sleep(durationMs: number): Promise<void> {
+  let resolve: () => void;
+  const promise = new Promise<void>((res) => {
+    resolve = res;
+  });
+  setTimeout(resolve!, durationMs);
+  return promise;
 }
 
 export function clip(value: number, min: number = 0, max: number = 1): number {

@@ -11,6 +11,7 @@ import {
   sessionToRecord,
   signData,
   verifyData,
+  verifyRequestSignature,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
 import { deserializeDate, kDayMs } from '../../base/date.ts';
@@ -23,6 +24,7 @@ import { getBaseURL, getRequestPath } from './utils.ts';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
+import { ServerError, Code, accessDenied } from '../../cfds/base/errors.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -65,6 +67,7 @@ export class AuthEndpoint implements Endpoint {
       case '/auth/temp-login':
         return method === 'GET';
     }
+    return false;
   }
 
   async processRequest(
@@ -184,6 +187,9 @@ export class AuthEndpoint implements Endpoint {
       sl: uniqueId(),
     });
     const clickURL = `${getBaseURL(services)}/auth/temp-login?t=${signedToken}`;
+    if (services.organizationId === 'localhost') {
+      console.log(`****** ${clickURL} ******`);
+    }
     // Only send the mail if a user really exists. We send the email
     // asynchronously both for speed and to avoid timing attacks.
     if (userRecord !== undefined) {
@@ -335,6 +341,22 @@ export function fetchSessionById(
   return Record.fromJS(JSON.parse(row.json));
 }
 
+export function fetchUserById(
+  services: ServerServices,
+  userId: string
+): Record | undefined {
+  const repo = services.sync.getSysDir();
+  const db = repo.storage.db;
+  const statement = db.prepare(
+    `SELECT json FROM heads WHERE ns = 'users' AND key = '${userId}' LIMIT 1;`
+  );
+  const row = statement.get();
+  if (!row || typeof row.json !== 'string') {
+    return undefined;
+  }
+  return Record.fromJS(JSON.parse(row.json));
+}
+
 function responseForError(err: AuthError): Response {
   let status = 400;
   if (err === 'AccessDenied') {
@@ -343,4 +365,52 @@ function responseForError(err: AuthError): Response {
   return new Response(JSON.stringify({ error: err }), {
     status,
   });
+}
+
+export type Role = 'operator' | 'anonymous';
+
+export async function requireSignedUser(
+  services: ServerServices,
+  requestOrSignature: Request | string,
+  role?: Role
+): Promise<
+  [userId: string, userRecord: Record | undefined, userSession: Session]
+> {
+  const signature =
+    typeof requestOrSignature === 'string'
+      ? requestOrSignature
+      : requestOrSignature.headers.get('x-ovvio-sig');
+  if (!signature) {
+    throw accessDenied();
+  }
+  const signerSessionRecord = fetchSessionById(
+    services,
+    sessionIdFromSignature(signature)
+  );
+  if (signerSessionRecord === undefined) {
+    throw accessDenied();
+  }
+  const signerSession = await sessionFromRecord(signerSessionRecord);
+  if (!(await verifyRequestSignature(signerSession, signature))) {
+    throw accessDenied();
+  }
+  const userId = signerSessionRecord.get<string>('owner');
+  // Disallow anonymous access
+  if (userId === undefined && role !== 'anonymous') {
+    throw accessDenied();
+  }
+  const userRecord = fetchUserById(services, userId);
+  if (userRecord === undefined && role !== 'anonymous') {
+    throw accessDenied();
+  }
+  if (role === 'operator') {
+    const email = userRecord!.get<string>('email');
+    if (email === undefined || email.length <= 0) {
+      throw accessDenied();
+    }
+    if (!services.settings.operatorEmails.includes(email)) {
+      throw accessDenied();
+    }
+  }
+  return [userId, userRecord, signerSession];
 }

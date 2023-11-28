@@ -20,10 +20,9 @@ export const useIsomorphicLayoutEffect = isServerSide
 
 export const createUniversalPortal = (
   children: React.ReactNode,
-  container?: Element,
+  container?: Element | null,
   key?: string
 ) => {
-  // debugger;
   if (isServerSide) {
     return null;
   }
@@ -33,5 +32,5 @@ export const createUniversalPortal = (
     container = document.getElementById(rootKey);
   }
 
-  return ReactDOM.createPortal(children, container, key);
+  return ReactDOM.createPortal(children, container!, key);
 };

@@ -1,5 +1,7 @@
 import { Endpoint, Middleware, ServerServices } from './server.ts';
 
+const ORIGIN_DEBUG = 'http://localhost:8080';
+
 export class CORSMiddleware implements Middleware {
   didProcess(
     services: ServerServices,
@@ -7,10 +9,7 @@ export class CORSMiddleware implements Middleware {
     info: Deno.ServeHandlerInfo,
     resp: Response
   ): Promise<Response> {
-    resp.headers.set(
-      'access-control-allow-origin',
-      req.headers.get('origin') || '*'
-    );
+    resp.headers.set('access-control-allow-origin', ORIGIN_DEBUG);
     resp.headers.set('access-control-allow-methods', req.method || '*');
     resp.headers.set('access-control-allow-headers', '*');
     return Promise.resolve(resp);

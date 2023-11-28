@@ -32,19 +32,16 @@ import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
-  Session,
   decodeSession,
   generateRequestSignature,
   sessionFromRecord,
-  sessionIdFromSignature,
-  verifyRequestSignature,
 } from '../../auth/session.ts';
 import {
   createSysDirAuthorizer,
   createWorkspaceAuthorizer,
   createUserAuthorizer,
 } from '../../repo/auth.ts';
-import { fetchEncodedRootSessions, fetchSessionById } from './auth.ts';
+import { fetchEncodedRootSessions, requireSignedUser } from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 
 export class SyncService extends BaseService<ServerServices> {
@@ -239,17 +236,11 @@ export class SyncEndpoint implements Endpoint {
     const msg = new SyncMessage<Commit | NormalizedLogEntry>({
       decoder: new JSONCyclicalDecoder(json),
     });
-    const signerSessionRecord = fetchSessionById(
+    const [userId, userRecord, userSession] = await requireSignedUser(
       services,
-      sessionIdFromSignature(msg.signature)
+      msg.signature,
+      'anonymous'
     );
-    if (!signerSessionRecord) {
-      return new Response(null, { status: 401 });
-    }
-    const signerSession = await sessionFromRecord(signerSessionRecord);
-    if (!(await verifyRequestSignature(signerSession, msg.signature))) {
-      return new Response(null, { status: 403 });
-    }
     let resp: Response;
     switch (cmd) {
       case 'sync':
@@ -271,13 +262,13 @@ export class SyncEndpoint implements Endpoint {
               mapIterable(
                 syncService
                   .getRepository(storageType, resourceId)
-                  .commits(signerSession),
+                  .commits(userSession),
                 (c) => [c.id, c]
               ),
             () =>
               syncService
                 .getRepository(storageType, resourceId)
-                .numberOfCommits(signerSession),
+                .numberOfCommits(userSession),
             syncService.clientsForRepo(resourceId),
             true
           );

@@ -10,6 +10,8 @@ export const kServerMetricNames = [
   'IncompatibleProtocolVersion',
   'InternalServerError',
   'EmailSent',
+  'OperatorLogsQuery',
+  'DBError',
 ] as const;
 
 export const kClientMetricNames = [
@@ -76,6 +78,20 @@ export type MetricLogWithError<
   trace?: string;
 };
 
+export type MetricLogWithQuery<
+  T extends BaseMetricLogEntry = BaseMetricLogEntry
+> = T & {
+  query: string;
+  operator: string;
+  session: string;
+};
+
+export type MetricLogWithPath<
+  T extends BaseMetricLogEntry = BaseMetricLogEntry
+> = T & {
+  path: string;
+};
+
 export type MetricLogEntryType<N extends MetricName> =
   N extends 'PeerResponseTime'
     ? MetricLogWithURL
@@ -86,6 +102,12 @@ export type MetricLogEntryType<N extends MetricName> =
         MetricLogWithHTTP<BaseMetricLogEntry<'ERROR'>>
     : N extends 'EmailSent'
     ? MetricLogWithType<EmailType>
+    : N extends 'OperatorLogsQuery'
+    ? MetricLogWithQuery<MetricLogWithError>
+    : N extends 'DBError'
+    ? MetricLogWithPath
+    : N extends 'CommitsPersistTime' | 'CommitsPersistCount'
+    ? MetricLogWithPath
     : BaseMetricLogEntry;
 
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;

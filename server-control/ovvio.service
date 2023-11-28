@@ -1,0 +1,15 @@
+[Unit]
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ec2-user
+Nice=-2
+WorkingDirectory=/home/ec2-user
+ExecStart=/home/ec2-user/ovvio-control-linux
+
+[Install]
+WantedBy=multi-user.target

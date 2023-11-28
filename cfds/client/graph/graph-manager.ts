@@ -654,6 +654,7 @@ export class GraphManager
     // which causes the vertices to actually appear in query results.
     for (const mgr of createdManagers) {
       this._setupVertexManager(mgr);
+      mgr.scheduleCommitIfNeeded();
     }
     return createdManagers;
   }

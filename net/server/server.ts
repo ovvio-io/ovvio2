@@ -20,6 +20,10 @@ import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
 import { EmailService } from './email.ts';
+import { CORSMiddleware, CORSEndpoint } from './cors.ts';
+import { SQLiteLogStream } from '../../logging/sqlite-log-stream.ts';
+import { ServerError } from '../../cfds/base/errors.ts';
+import { LogsEndpoint } from './logs.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -30,12 +34,14 @@ interface Arguments {
   readonly replicas: string[];
   readonly port: number;
   readonly silent?: boolean;
+  readonly sesRegion?: string;
 }
 
 // Stuff that's shared to all organizations served by this server
 export interface ServerContext extends Arguments {
   readonly settings: SettingsService;
-  readonly prometheus: PrometheusLogStream;
+  readonly prometheusLogStream: PrometheusLogStream;
+  readonly sqliteLogStream: SQLiteLogStream;
   readonly trustPool: TrustPool;
   readonly email: EmailService;
   readonly logger: Logger;
@@ -143,13 +149,16 @@ export class Server {
         .option('silent', {
           type: 'boolean',
           default: false,
-          description:
-            'A list of replica URLs which this server will sync with',
+          description: 'Disables metric logging to stdout',
         })
         .option('dir', {
           alias: 'd',
           description:
             'A full path to a local directory which will host all repositories managed by this server',
+        })
+        .option('sesRegion', {
+          description:
+            'An AWS region to use for sending emails with SES. Defaults to us-east-1.',
         })
         .demandOption(
           ['dir']
@@ -162,21 +171,28 @@ export class Server {
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
-    const logStreams: LogStream[] = [prometeusLogStream];
+    const sqliteLogStream = new SQLiteLogStream(
+      path.join(args!.dir, 'logs.sqlite')
+    );
+    const logStreams: LogStream[] = [sqliteLogStream, prometeusLogStream];
     if (args?.silent !== true) {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
     setGlobalLoggerStreams(logStreams);
+    const sesRegion = args?.sesRegion || 'us-east-1';
     this._baseContext = {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
-      prometheus: prometeusLogStream,
+      prometheusLogStream: prometeusLogStream,
+      sqliteLogStream,
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
-      email: new EmailService(),
+      email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
+      silent: args?.silent === true,
       staticAssets,
+      sesRegion,
     } as ServerContext;
     // Monitoring
     this.registerMiddleware(new MetricsMiddleware(logStreams));
@@ -189,6 +205,11 @@ export class Server {
     this.registerEndpoint(new StaticAssetsEndpoint());
     // Sync
     this.registerEndpoint(new SyncEndpoint());
+    // CORS Support
+    this.registerMiddleware(new CORSMiddleware());
+    this.registerEndpoint(new CORSEndpoint());
+    // Logs
+    this.registerEndpoint(new LogsEndpoint());
   }
 
   async setup(): Promise<void> {
@@ -267,7 +288,7 @@ export class Server {
     const services = await this.servicesForOrganization(orgId);
     const middlewares = this._middlewares;
     for (const endpoint of this._endpoints) {
-      if (endpoint.filter(services, req, info)) {
+      if (endpoint.filter(services, req, info) === true) {
         try {
           let resp: Response | undefined;
           for (const m of middlewares) {
@@ -289,6 +310,21 @@ export class Server {
           return resp;
         } catch (e: any) {
           debugger;
+          if (e instanceof ServerError) {
+            log({
+              severity: 'ERROR',
+              name: 'HttpStatusCode',
+              unit: 'Count',
+              value: e.code,
+              url: req.url,
+              method: req.method as HTTPMethod,
+              error: e.message,
+              trace: e.stack,
+            });
+            return new Response(null, {
+              status: e.code,
+            });
+          }
           log({
             severity: 'ERROR',
             name: 'InternalServerError',

@@ -27,7 +27,6 @@ export interface SMTPSettings extends JSONObject {
 
 export interface ServerSettings {
   session: OwnedSession;
-  serverTenantId: string;
   operatorEmails: readonly string[];
   smtp?: SMTPSettings;
 }
@@ -61,7 +60,6 @@ export class SettingsService extends BaseService<ServerServices> {
    */
   private async reloadSettingsFromDisk(): Promise<void> {
     let session: OwnedSession | undefined;
-    let serverTenantId = 's1';
     let smtp: SMTPSettings | undefined;
     let updatedSettings = false;
     let operatorEmails: string[] = [];
@@ -75,7 +73,6 @@ export class SettingsService extends BaseService<ServerServices> {
         assert(encodedSession.privateKey !== undefined);
         session = (await decodeSession(encodedSession)) as OwnedSession;
       }
-      serverTenantId = decoder.get<string>('serverTenantId') || 's1';
       if (decoder.has('smtp')) {
         smtp = decoder.get<SMTPSettings>('smtp');
       }
@@ -90,7 +87,6 @@ export class SettingsService extends BaseService<ServerServices> {
     }
     this._settings = {
       session,
-      serverTenantId,
       operatorEmails,
     };
     if (smtp) {
@@ -118,13 +114,6 @@ export class SettingsService extends BaseService<ServerServices> {
   get session(): OwnedSession {
     assert(this._settings !== undefined);
     return this._settings.session;
-  }
-  get serverTenantId(): string {
-    return this._settings!.serverTenantId;
-  }
-
-  set serverTenantId(id: string) {
-    this._settings!.serverTenantId = id;
   }
 
   get smtp(): SMTPSettings | undefined {
