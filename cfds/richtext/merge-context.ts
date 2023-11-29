@@ -40,7 +40,7 @@ export interface PatchCommand {
  * needs to be created.
  */
 export class MergeContext {
-  private readonly _origValues: Iterable<FlatRepAtom>;
+  private _origValues: Iterable<FlatRepAtom>;
   private readonly _deletions: Set<number>;
   private readonly _insertions: Dictionary<number, FlatRepAtom[]>;
   private readonly _eqOpts?: CoreOptions;
@@ -89,6 +89,33 @@ export class MergeContext {
         this.deleteRange(change.start, change.end!);
         break;
     }
+  }
+
+  /**
+   * Returns the current atom at the given index, or undefined if the index is
+   * out of bounds of the result.
+   *
+   * NOTE: This is an O(Max(N, E)) operation where N is the original rep, and E
+   * are the number of edits. Internally, each call to this method must
+   * recalculate the final result in order to determine the value at the given
+   * index.
+   *
+   * @param idx The index to get.
+   * @returns The atom at the specified index.
+   */
+  at(idx: number): FlatRepAtom | undefined {
+    // Make sure we don't destroy the original values on repeated calls
+    if (!(this._origValues instanceof Array)) {
+      this._origValues = Array.from(this._origValues);
+    }
+    let i = 0;
+    for (const atom of this.finalize()) {
+      if (i === idx) {
+        return atom;
+      }
+      ++i;
+    }
+    return undefined;
   }
 
   *finalize(): Generator<FlatRepAtom> {

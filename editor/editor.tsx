@@ -9,13 +9,33 @@ import {
   isTextNode,
 } from '../cfds/richtext/tree.ts';
 import { RichTextRenderer } from '../cfds/richtext/react.tsx';
-import { docFromRT } from '../cfds/richtext/doc-state.ts';
+import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { assert } from '../base/error.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { useTrustPool } from '../auth/react.tsx';
+import { makeStyles, cn } from '../styles/css-objects/index.ts';
+import { MergeContext } from '../cfds/richtext/merge-context.ts';
+import {
+  filteredPointersRep,
+  flattenRichText,
+  IndexedPointerValue,
+  projectPointers,
+  reconstructRichText,
+} from '../cfds/richtext/flat-rep.ts';
 
-type InputType = 'textInput';
+const useStyles = makeStyles((theme) => ({
+  contentEditable: {
+    width: '100%',
+    height: '100%',
+  },
+}));
+
+const DELETE_INPUT_TYPES = [
+  'deleteContentBackward',
+  'deleteContent',
+  'deleteContentForward',
+] as const;
 
 function findEndOfDocument(document: Document): TextNode | ElementNode {
   let lastTextNode: TextNode | undefined;
@@ -35,9 +55,11 @@ function handleInsertTextInputEvent(
   event: InputEvent,
   selectionId: string
 ): Document {
+  if (event.data === '\n') {
+    console.log('newline');
+  }
   const result = coreValueClone(document);
   let selection = result.ranges && result.ranges[selectionId];
-  debugger;
   if (!selection) {
     const lastNode = findEndOfDocument(result);
     let textNode: TextNode;
@@ -68,10 +90,77 @@ function handleInsertTextInputEvent(
       text.substring(0, selection.focus.offset) +
       (event.data || '') +
       text.substring(selection.focus.offset);
-    selection.focus.offset += event.data!.length + 1;
+    selection.anchor.offset += event.data!.length;
+    selection.focus.offset += event.data!.length;
   }
 
   return result;
+}
+
+function handleDeleteEvent(
+  document: Document,
+  event: InputEvent,
+  selectionId: string
+): Document {
+  let selection = document.ranges && document.ranges[selectionId];
+  if (!selection) {
+    return document;
+  }
+  const pointers: IndexedPointerValue[] = [];
+  const mergeCtx = new MergeContext(
+    Array.from(
+      filteredPointersRep(
+        flattenRichText(docToRT(document), true),
+        (ptr) => {
+          return true;
+        },
+        pointers
+      )
+    )
+  );
+  let start, end: number | undefined;
+  for (const [idx, ptr] of pointers) {
+    if (ptr.key === selectionId) {
+      if (ptr.type === 'anchor') {
+        start = idx;
+      } else {
+        end = idx;
+      }
+    }
+  }
+  if (start === undefined) {
+    start = end;
+  }
+  if (end === undefined) {
+    end = start;
+  }
+  if (start === undefined && end === undefined) {
+    return document;
+  }
+  if (start! > end!) {
+    const tmp = start;
+    start = end;
+    end = tmp;
+  }
+  debugger;
+  if (start === end) {
+    // if (selection.anchor.node.text.length === selection.anchor.offset) {
+    if (start! > 0) {
+      mergeCtx.delete(start! - 1);
+    }
+    // } else {
+    //   mergeCtx.delete(start!);
+    // }
+  } else {
+    mergeCtx.deleteRange(start!, end!);
+  }
+  const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
+  const finalRt = projectPointers(
+    docToRT(document),
+    rtWithDeletions,
+    () => true
+  );
+  return docFromRT(finalRt);
 }
 
 function handleTextInputEvent(
@@ -79,13 +168,14 @@ function handleTextInputEvent(
   event: InputEvent,
   selectionId: string
 ): Document {
-  switch (event.type as InputType) {
-    case 'textInput':
-      return handleInsertTextInputEvent(document, event, selectionId);
-
-    default:
-      return document;
+  if (event.type === 'textInput') {
+    return handleInsertTextInputEvent(document, event, selectionId);
   }
+  if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
+    return handleDeleteEvent(document, event, selectionId);
+  }
+  console.log(event.type);
+  return document;
 }
 
 export function Editor() {
@@ -94,6 +184,7 @@ export function Editor() {
   const selectionId = trustPool.currentSession.id;
   const anchorRef = useRef<HTMLElement>(null);
   const focusRef = useRef<HTMLElement>(null);
+  const styles = useStyles();
 
   useLayoutEffect(() => {
     const selection = getSelection();
@@ -106,9 +197,14 @@ export function Editor() {
           state.ranges![selectionId].anchor.offset
         );
       }
-      if (focusRef.current) {
+      const focusNode =
+        focusRef.current ||
+        (selection.anchorNode === selection.focusNode
+          ? anchorRef.current
+          : null);
+      if (focusNode) {
         range.setEnd(
-          focusRef.current.childNodes[0],
+          focusNode.childNodes[0],
           state.ranges![selectionId].focus.offset
         );
       }
@@ -118,7 +214,6 @@ export function Editor() {
 
   const onSelectionChanged = useCallback(() => {
     const selection = getSelection();
-    // debugger;
     if (!selection) {
       const doc = coreValueClone(state);
       if (doc.ranges && doc.ranges[selectionId]) {
@@ -168,11 +263,24 @@ export function Editor() {
   // debugger;
   return (
     <div
+      className={cn(styles.contentEditable)}
       contentEditable
       onBeforeInput={(event) => {
         // debugger;
         const inputType = (event.nativeEvent as InputEvent).inputType;
-        console.log(event.nativeEvent);
+        // console.log(event.nativeEvent);
+        event.stopPropagation();
+        event.preventDefault();
+        setState(
+          handleTextInputEvent(
+            state,
+            event.nativeEvent as InputEvent,
+            selectionId
+          )
+        );
+        return false;
+      }}
+      onInput={(event) => {
         event.stopPropagation();
         event.preventDefault();
         setState(

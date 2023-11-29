@@ -712,7 +712,7 @@ function keysFromPointers(pointers: Set<Pointer> | undefined): Set<string> {
 /**
  * An [index, pointer] tuple.
  */
-type IndexedPointerValue = [index: number, ptr: PointerValue];
+export type IndexedPointerValue = [index: number, ptr: PointerValue];
 
 function* filterExpiredPointers(
   flatRep: Iterable<FlatRepAtom>
@@ -727,12 +727,15 @@ function* filterExpiredPointers(
 /**
  * Given a flat rep, this function filters out pointers as per the given filter
  * function.
+ *
  * @param flatRep The flat rep to filter.
  * @param outFilteredPointers An array to which the removed pointers and their
  *                            corresponding indexes will be added.
  * @param filter A filter function.
+ *
+ * @returns A flat rep with the filtered out pointers removed.
  */
-function* filteredPointersRep(
+export function* filteredPointersRep(
   flatRep: Iterable<FlatRepAtom>,
   filter: (ptr: PointerValue) => boolean,
   outFilteredPointers?: IndexedPointerValue[]
