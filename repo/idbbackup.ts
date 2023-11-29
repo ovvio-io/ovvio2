@@ -98,16 +98,21 @@ export class IDBRepositoryBackup {
 
   loadCommits(): Promise<Commit[]> {
     return SerialScheduler.get('idb').run(async () => {
-      const db = await this.open();
-      const txn = db.transaction('commits', 'readonly');
-      const result = (await txn.store.getAll()).map(
-        (json) =>
-          new Commit({
-            decoder: new JSONCyclicalDecoder(json),
-          })
-      );
-      db.close();
-      return result;
+      try {
+        const db = await this.open();
+        const txn = db.transaction('commits', 'readonly');
+        const result = (await txn.store.getAll()).map(
+          (json) =>
+            new Commit({
+              decoder: new JSONCyclicalDecoder(json),
+            })
+        );
+        db.close();
+        return result;
+      } catch (err: unknown) {
+        console.log('IDB error: ' + err);
+        return [];
+      }
     });
   }
 }

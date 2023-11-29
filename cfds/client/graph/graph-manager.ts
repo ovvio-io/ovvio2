@@ -219,6 +219,7 @@ export class GraphManager
     plumbing.loadingPromise = (async () => {
       const commits = await backup.loadCommits();
       if (!(commits instanceof Array)) {
+        console.log(commits);
         debugger;
       }
       await repo.persistCommits(commits);

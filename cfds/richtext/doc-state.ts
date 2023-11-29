@@ -20,6 +20,7 @@ import { Dictionary } from '../../base/collections/dict.ts';
 export interface Range extends CoreObject {
   anchor: Point;
   focus: Point;
+  dir: PointerDirection;
   isLocal?: boolean;
   expiration?: Date;
 }
@@ -135,6 +136,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
                 node: lastTextNode,
                 offset: lastTextNode.text.length,
               },
+              dir: ptr.dir,
             };
           } else if (ptr.dir === PointerDirection.Backward) {
             if (firstTextNode === undefined) {
@@ -149,6 +151,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
                 node: firstTextNode,
                 offset: 0,
               },
+              dir: ptr.dir,
             };
           }
         } else {
@@ -166,6 +169,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
                 node: ptr.node,
                 offset: ptr.offset,
               },
+              dir: ptr.dir,
             };
           } else if (ptr.dir === PointerDirection.Forward) {
             if (firstTextNode === undefined) {
@@ -180,6 +184,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
                 node: ptr.node,
                 offset: ptr.offset,
               },
+              dir: ptr.dir,
             };
           }
         }
@@ -194,6 +199,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
               node: ptr.node,
               offset: ptr.offset,
             },
+            dir: ptr.dir,
           };
         }
         // Update in resulting map
@@ -248,12 +254,16 @@ export function decomposeRanges(doc: UnkeyedDocument): Set<Pointer> {
     // if (range.expiration !== undefined && range.expiration.getTime() < now) {
     //   continue;
     // }
-    const anchorOffset = nodesToIndexes.get(range.anchor.node)!;
-    const focusOffset = nodesToIndexes.get(range.focus.node)!;
+    const anchorNodeOffset = nodesToIndexes.get(range.anchor.node)!;
+    const focusNodeOffset = nodesToIndexes.get(range.focus.node)!;
     const dir =
-      anchorOffset < focusOffset
+      anchorNodeOffset < focusNodeOffset
         ? PointerDirection.Forward
-        : anchorOffset > focusOffset
+        : anchorNodeOffset > focusNodeOffset
+        ? PointerDirection.Backward
+        : range.anchor.offset < range.focus.offset
+        ? PointerDirection.Forward
+        : range.anchor.offset > range.focus.offset
         ? PointerDirection.Backward
         : PointerDirection.None;
     result.add(buildRangePointer(key, range, 'anchor', dir));

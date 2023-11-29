@@ -2,6 +2,8 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import React from 'react';
 import {
   ElementNode,
+  Pointer,
+  PointerDirection,
   TextNode,
   dfs,
   initRichText,
@@ -11,7 +13,6 @@ import {
 import { RichTextRenderer } from '../cfds/richtext/react.tsx';
 import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
-import { assert } from '../base/error.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { useTrustPool } from '../auth/react.tsx';
 import { makeStyles, cn } from '../styles/css-objects/index.ts';
@@ -58,7 +59,7 @@ function handleInsertTextInputEvent(
   if (event.data === '\n') {
     console.log('newline');
   }
-  const result = coreValueClone(document);
+  let result = coreValueClone(document);
   let selection = result.ranges && result.ranges[selectionId];
   if (!selection) {
     const lastNode = findEndOfDocument(result);
@@ -82,6 +83,7 @@ function handleInsertTextInputEvent(
         node: textNode,
         offset: textNode.text.length,
       },
+      dir: PointerDirection.None,
     };
   } else {
     const textNode = selection.focus.node;
@@ -90,6 +92,13 @@ function handleInsertTextInputEvent(
       text.substring(0, selection.focus.offset) +
       (event.data || '') +
       text.substring(selection.focus.offset);
+    if (
+      selection.anchor.node !== selection.focus.node ||
+      selection.anchor.offset !== selection.focus.offset
+    ) {
+      result = deleteCurrentSelection(result, selectionId);
+      selection = (result.ranges && result.ranges[selectionId])!;
+    }
     selection.anchor.offset += event.data!.length;
     selection.focus.offset += event.data!.length;
   }
@@ -97,9 +106,8 @@ function handleInsertTextInputEvent(
   return result;
 }
 
-function handleDeleteEvent(
+function deleteCurrentSelection(
   document: Document,
-  event: InputEvent,
   selectionId: string
 ): Document {
   let selection = document.ranges && document.ranges[selectionId];
@@ -142,7 +150,6 @@ function handleDeleteEvent(
     start = end;
     end = tmp;
   }
-  debugger;
   if (start === end) {
     // if (selection.anchor.node.text.length === selection.anchor.offset) {
     if (start! > 0) {
@@ -172,7 +179,7 @@ function handleTextInputEvent(
     return handleInsertTextInputEvent(document, event, selectionId);
   }
   if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
-    return handleDeleteEvent(document, event, selectionId);
+    return deleteCurrentSelection(document, selectionId);
   }
   console.log(event.type);
   return document;
@@ -188,25 +195,93 @@ export function Editor() {
 
   useLayoutEffect(() => {
     const selection = getSelection();
+    // try {
+    //   if (
+    //     state.ranges![selectionId].focus.offset !=
+    //     state.ranges![selectionId].anchor.offset
+    //   )
+    //     debugger;
+    // } catch (_: unknown) {}
     if (selection) {
       selection.removeAllRanges();
-      const range = document.createRange();
-      if (anchorRef.current) {
-        range.setStart(
-          anchorRef.current.childNodes[0],
-          state.ranges![selectionId].anchor.offset
-        );
+      if (!state.ranges || !state.ranges[selectionId]) {
+        return;
       }
-      const focusNode =
-        focusRef.current ||
-        (selection.anchorNode === selection.focusNode
-          ? anchorRef.current
-          : null);
+      const cfdsRange = state.ranges[selectionId];
+      const range = document.createRange();
+      let offsetShift = 0;
+      let desiredStartOffset = cfdsRange.anchor.offset;
+      const origAnchorNode =
+        anchorRef.current?.childNodes[0] ||
+        anchorRef.current ||
+        focusRef.current?.childNodes[0] ||
+        focusRef.current;
+      if (!origAnchorNode) {
+        return;
+      }
+      let anchorNode = origAnchorNode;
+      if (cfdsRange.dir === PointerDirection.Backward) {
+        // if (
+        //   anchorNode instanceof Text &&
+        //   desiredStartOffset === anchorNode.data.length
+        // ) {
+        //   const parent = anchorNode.parentNode!;
+        //   const indexInParent = Array.from(parent.childNodes).indexOf(
+        //     anchorNode
+        //   );
+        //   anchorNode = parent as unknown as ChildNode;
+        //   desiredStartOffset = indexInParent - 1;
+        // }
+        range.setEnd(anchorNode, desiredStartOffset);
+        offsetShift = range.endOffset - desiredStartOffset;
+      } else {
+        // if (
+        //   anchorNode instanceof Text &&
+        //   desiredStartOffset === anchorNode.data.length
+        // ) {
+        //   debugger;
+        //   const parent = anchorNode.parentNode!;
+        //   const indexInParent = Array.from(parent.childNodes).indexOf(
+        //     anchorNode
+        //   );
+        //   anchorNode = parent as unknown as ChildNode;
+        //   desiredStartOffset = indexInParent + 1;
+        // }
+        range.setStart(anchorNode, desiredStartOffset);
+        offsetShift = range.startOffset - desiredStartOffset;
+      }
+
+      let focusNode: ChildNode | null = null;
+      if (focusRef.current) {
+        focusNode = focusRef.current.childNodes[0] || focusRef.current;
+      }
+      if (!focusNode) {
+        focusNode = origAnchorNode;
+      }
       if (focusNode) {
-        range.setEnd(
-          focusNode.childNodes[0],
-          state.ranges![selectionId].focus.offset
-        );
+        if (cfdsRange.dir === PointerDirection.Backward) {
+          let offset = state.ranges![selectionId].focus.offset + offsetShift;
+          if (focusNode instanceof Text && offset === focusNode.data.length) {
+            const parent = focusNode.parentNode!;
+            const indexInParent = Array.from(parent.childNodes).indexOf(
+              focusNode
+            );
+            focusNode = parent as unknown as ChildNode;
+            offset = indexInParent - 1;
+          }
+          range.setStart(focusNode, offset);
+        } else {
+          let offset = state.ranges![selectionId].focus.offset + offsetShift;
+          // if (focusNode instanceof Text && offset === focusNode.data.length) {
+          //   const parent = focusNode.parentNode!;
+          //   const indexInParent = Array.from(parent.childNodes).indexOf(
+          //     focusNode
+          //   );
+          //   focusNode = parent as unknown as ChildNode;
+          //   offset = indexInParent + 1;
+          // }
+          range.setEnd(focusNode, offset);
+        }
       }
       selection.addRange(range);
     }
@@ -227,32 +302,34 @@ export function Editor() {
       if (selectionAnchorNode) {
         const anchorNode = state.nodeKeys.nodeFromKey(
           (selectionAnchorNode instanceof Text
-            ? selectionAnchorNode.parentNode
+            ? selectionAnchorNode.parentNode!
             : selectionAnchorNode
           ).dataset.ovvKey
         );
         const selectionFocusNode = selection.focusNode || selection.anchorNode;
         const focusNode = state.nodeKeys.nodeFromKey(
           (selectionFocusNode instanceof Text
-            ? selectionFocusNode.parentNode
+            ? selectionFocusNode.parentNode!
             : selectionFocusNode
           ).dataset.ovvKey
         );
-        if (anchorNode && focusNode) {
+        if (anchorNode || focusNode) {
           if (!state.ranges) {
             state.ranges = {};
           }
           state.ranges[selectionId] = {
             anchor: {
-              node: anchorNode as TextNode,
+              node: (anchorNode || focusNode) as TextNode,
               offset: selection.anchorOffset,
             },
             focus: {
-              node: focusNode as TextNode,
+              node: (focusNode || anchorNode) as TextNode,
               offset: selection.focusOffset,
             },
+            dir: PointerDirection.None,
           };
-          setState(coreValueClone(state));
+          const result = docFromRT(docToRT(state));
+          setState(result);
         }
       }
     } catch (err: unknown) {
@@ -260,15 +337,12 @@ export function Editor() {
     }
   }, [state]);
 
-  // debugger;
   return (
     <div
       className={cn(styles.contentEditable)}
       contentEditable
       onBeforeInput={(event) => {
-        // debugger;
         const inputType = (event.nativeEvent as InputEvent).inputType;
-        // console.log(event.nativeEvent);
         event.stopPropagation();
         event.preventDefault();
         setState(
