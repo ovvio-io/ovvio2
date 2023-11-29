@@ -392,7 +392,11 @@ export function Editor() {
               focusNode
             );
             focusNode = parent as unknown as ChildNode;
-            offset = indexInParent - 1;
+            if (cfdsRange.dir === PointerDirection.Backward) {
+              desiredStartOffset = indexInParent - 1;
+            } else {
+              desiredStartOffset = indexInParent + 1;
+            }
           }
           range.setStart(focusNode, offset);
         } else {
@@ -423,7 +427,6 @@ export function Editor() {
       return;
     }
     try {
-      debugger;
       const selectionAnchorNode = selection.anchorNode;
       if (selectionAnchorNode) {
         const anchorNode = state.nodeKeys.nodeFromKey(
