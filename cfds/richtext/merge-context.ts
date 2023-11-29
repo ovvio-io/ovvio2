@@ -91,6 +91,13 @@ export class MergeContext {
     }
   }
 
+  makeReusable(): void {
+    // Make sure we don't destroy the original values on repeated calls
+    if (!(this._origValues instanceof Array)) {
+      this._origValues = Array.from(this._origValues);
+    }
+  }
+
   /**
    * Returns the current atom at the given index, or undefined if the index is
    * out of bounds of the result.
@@ -104,10 +111,7 @@ export class MergeContext {
    * @returns The atom at the specified index.
    */
   at(idx: number): FlatRepAtom | undefined {
-    // Make sure we don't destroy the original values on repeated calls
-    if (!(this._origValues instanceof Array)) {
-      this._origValues = Array.from(this._origValues);
-    }
+    this.makeReusable();
     let i = 0;
     for (const atom of this.finalize()) {
       if (i === idx) {
@@ -118,8 +122,26 @@ export class MergeContext {
     return undefined;
   }
 
+  findLastBefore(
+    searchEndIdx: number,
+    selector: (atom: FlatRepAtom) => boolean
+  ): FlatRepAtom | undefined {
+    let result: FlatRepAtom | undefined;
+    let idx = 0;
+    this.makeReusable();
+    for (const atom of this.finalize()) {
+      if (selector(atom)) {
+        result = atom;
+      }
+      if (++idx === searchEndIdx) {
+        break;
+      }
+    }
+    return result;
+  }
+
   *finalize(): Generator<FlatRepAtom> {
-    assert(!this._finalized);
+    assert(this._origValues instanceof Array || !this._finalized);
     const deletions = this._deletions;
     const insertions = this._insertions;
     let idx = 0;

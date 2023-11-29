@@ -2,6 +2,20 @@ import React from 'react';
 import { Document } from './doc-state.ts';
 import { TreeNode, isElementNode, isTextNode } from './tree.ts';
 import { MarkupNode } from './model.ts';
+import { makeStyles, cn } from '../../styles/css-objects/index.ts';
+
+const useStyles = makeStyles((theme) => ({
+  contentEditable: {
+    width: '100%',
+    height: '100%',
+    whiteSpace: 'pre-wrap',
+  },
+  emptySpan: {
+    display: 'inline-block',
+    minHeight: '1em',
+    minWidth: '1px',
+  },
+}));
 
 interface RenderContext {
   doc: Document;
@@ -10,7 +24,11 @@ interface RenderContext {
   focusRef: React.RefObject<HTMLElement>;
 }
 
-function renderNode(node: MarkupNode, ctx: RenderContext) {
+function renderNode(
+  node: MarkupNode,
+  ctx: RenderContext,
+  styles: ReturnType<typeof useStyles>
+) {
   const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
   const ref =
     (selection?.anchor?.node as TreeNode) === node
@@ -21,6 +39,7 @@ function renderNode(node: MarkupNode, ctx: RenderContext) {
   if (isTextNode(node)) {
     return (
       <span
+        className={cn(node.text.length === 0 && styles.emptySpan)}
         key={ctx.doc.nodeKeys.keyFor(node).id}
         ref={ref}
         data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
@@ -31,7 +50,9 @@ function renderNode(node: MarkupNode, ctx: RenderContext) {
   }
   let children: JSX.Element[] | undefined;
   if (isElementNode(node)) {
-    children = node.children.map((n) => renderNode(n as MarkupNode, ctx));
+    children = node.children.map((n) =>
+      renderNode(n as MarkupNode, ctx, styles)
+    );
   }
 
   switch (node.tagName) {
@@ -60,8 +81,9 @@ function renderNode(node: MarkupNode, ctx: RenderContext) {
 }
 
 export function RichTextRenderer(ctx: RenderContext) {
+  const styles = useStyles();
   const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
   return ctx.doc.root.children.map((node) => {
-    return renderNode(node as MarkupNode, ctx);
+    return renderNode(node as MarkupNode, ctx, styles);
   });
 }

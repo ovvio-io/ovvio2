@@ -9,6 +9,7 @@ import {
   initRichText,
   isElementNode,
   isTextNode,
+  kCoreValueTreeNodeOpts,
 } from '../cfds/richtext/tree.ts';
 import { RichTextRenderer } from '../cfds/richtext/react.tsx';
 import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
@@ -18,9 +19,13 @@ import { useTrustPool } from '../auth/react.tsx';
 import { makeStyles, cn } from '../styles/css-objects/index.ts';
 import { MergeContext } from '../cfds/richtext/merge-context.ts';
 import {
+  DepthMarker,
   filteredPointersRep,
   flattenRichText,
   IndexedPointerValue,
+  isDepthMarker,
+  kElementSpacer,
+  PointerValue,
   projectPointers,
   reconstructRichText,
 } from '../cfds/richtext/flat-rep.ts';
@@ -30,6 +35,7 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
     height: '100%',
     whiteSpace: 'pre-wrap',
+    padding: '10px',
   },
 }));
 
@@ -52,6 +58,97 @@ function findEndOfDocument(document: Document): TextNode | ElementNode {
   return lastTextNode || lastParent;
 }
 
+function handleNewline(document: Document, selectionId: string): Document {
+  let selection = document.ranges && document.ranges[selectionId];
+  if (!selection) {
+    return document;
+  }
+  const pointers: IndexedPointerValue[] = [];
+  const mergeCtx = new MergeContext(
+    Array.from(
+      filteredPointersRep(
+        flattenRichText(docToRT(document), true),
+        (ptr) => {
+          return true;
+        },
+        pointers
+      )
+    )
+  );
+  let start, end: number | undefined;
+  for (const [idx, ptr] of pointers) {
+    if (ptr.key === selectionId) {
+      if (ptr.type === 'anchor') {
+        start = idx;
+      } else {
+        end = idx;
+      }
+    }
+  }
+  if (start === undefined) {
+    start = end;
+  }
+  if (end === undefined) {
+    end = start;
+  }
+  if (start === undefined && end === undefined) {
+    return document;
+  }
+  if (start! > end!) {
+    const tmp = start;
+    start = end;
+    end = tmp;
+  }
+  if (start != end) {
+    mergeCtx.deleteRange(start!, end!);
+  }
+
+  mergeCtx.makeReusable();
+  let prevElement: ElementNode | undefined;
+  let prevDepthMarker: DepthMarker | undefined;
+  let idx = 0;
+  for (const atom of mergeCtx.finalize()) {
+    if (isElementNode(atom)) {
+      prevElement = atom;
+    } else if (isDepthMarker(atom)) {
+      prevDepthMarker = atom;
+    }
+    if (++idx === end!) {
+      break;
+    }
+  }
+  mergeCtx.insert(end!, [
+    {
+      depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0,
+    },
+    kElementSpacer,
+    prevElement || {
+      children: [],
+      tagName: 'p',
+    },
+    {
+      depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker : 1,
+    },
+    {
+      key: selectionId,
+      type: 'anchor',
+      dir: PointerDirection.None,
+    } as PointerValue,
+    {
+      key: selectionId,
+      type: 'focus',
+      dir: PointerDirection.None,
+    } as PointerValue,
+  ]);
+  const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
+  const finalRt = projectPointers(
+    docToRT(document),
+    rtWithDeletions,
+    (ptr) => ptr.key !== selectionId
+  );
+  return docFromRT(finalRt);
+}
+
 function handleInsertTextInputEvent(
   document: Document,
   event: InputEvent | KeyboardEvent,
@@ -63,11 +160,11 @@ function handleInsertTextInputEvent(
   } else {
     insertData = event.data || '';
   }
-  if (insertData === '\n') {
-    console.log('newline');
-  }
   if (!insertData.length) {
-    return;
+    return document;
+  }
+  if (insertData === '\n') {
+    return handleNewline(document, selectionId);
   }
   let result = coreValueClone(document);
   let selection = result.ranges && result.ranges[selectionId];
@@ -161,13 +258,9 @@ function deleteCurrentSelection(
     end = tmp;
   }
   if (start === end) {
-    // if (selection.anchor.node.text.length === selection.anchor.offset) {
     if (start! > 0) {
       mergeCtx.delete(start! - 1);
     }
-    // } else {
-    //   mergeCtx.delete(start!);
-    // }
   } else {
     mergeCtx.deleteRange(start!, end!);
   }
@@ -237,6 +330,18 @@ export function Editor() {
         return;
       }
       let anchorNode = origAnchorNode;
+      if (anchorNode instanceof Text && anchorNode.data.length === 0) {
+        const newAnchor = anchorNode.parentNode as unknown as ChildNode;
+        const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
+          anchorNode
+        );
+        if (cfdsRange.dir === PointerDirection.Backward) {
+          desiredStartOffset = origAnchorIdx + 1;
+        } else {
+          desiredStartOffset = origAnchorIdx - 1;
+        }
+        anchorNode = newAnchor;
+      }
       if (cfdsRange.dir === PointerDirection.Backward) {
         // if (
         //   anchorNode instanceof Text &&
@@ -274,6 +379,9 @@ export function Editor() {
       }
       if (!focusNode) {
         focusNode = origAnchorNode;
+      }
+      if (focusNode instanceof Text && focusNode.data.length === 0) {
+        focusNode = focusNode.parentNode as unknown as ChildNode;
       }
       if (focusNode) {
         if (cfdsRange.dir === PointerDirection.Backward) {
@@ -315,6 +423,7 @@ export function Editor() {
       return;
     }
     try {
+      debugger;
       const selectionAnchorNode = selection.anchorNode;
       if (selectionAnchorNode) {
         const anchorNode = state.nodeKeys.nodeFromKey(
