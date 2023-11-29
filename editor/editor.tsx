@@ -29,6 +29,7 @@ const useStyles = makeStyles((theme) => ({
   contentEditable: {
     width: '100%',
     height: '100%',
+    whiteSpace: 'pre-wrap',
   },
 }));
 
@@ -53,11 +54,20 @@ function findEndOfDocument(document: Document): TextNode | ElementNode {
 
 function handleInsertTextInputEvent(
   document: Document,
-  event: InputEvent,
+  event: InputEvent | KeyboardEvent,
   selectionId: string
 ): Document {
-  if (event.data === '\n') {
+  let insertData = '';
+  if (event instanceof KeyboardEvent) {
+    insertData = event.key;
+  } else {
+    insertData = event.data || '';
+  }
+  if (insertData === '\n') {
     console.log('newline');
+  }
+  if (!insertData.length) {
+    return;
   }
   let result = coreValueClone(document);
   let selection = result.ranges && result.ranges[selectionId];
@@ -70,7 +80,7 @@ function handleInsertTextInputEvent(
     } else {
       textNode = lastNode;
     }
-    textNode.text += event.data;
+    textNode.text += insertData;
     if (!result.ranges) {
       result.ranges = {};
     }
@@ -90,7 +100,7 @@ function handleInsertTextInputEvent(
     const text = textNode.text;
     textNode.text =
       text.substring(0, selection.focus.offset) +
-      (event.data || '') +
+      insertData +
       text.substring(selection.focus.offset);
     if (
       selection.anchor.node !== selection.focus.node ||
@@ -99,8 +109,8 @@ function handleInsertTextInputEvent(
       result = deleteCurrentSelection(result, selectionId);
       selection = (result.ranges && result.ranges[selectionId])!;
     }
-    selection.anchor.offset += event.data!.length;
-    selection.focus.offset += event.data!.length;
+    selection.anchor.offset += insertData.length;
+    selection.focus.offset += insertData.length;
   }
 
   return result;
@@ -172,16 +182,23 @@ function deleteCurrentSelection(
 
 function handleTextInputEvent(
   document: Document,
-  event: InputEvent,
+  event: InputEvent | KeyboardEvent,
   selectionId: string
 ): Document {
-  if (event.type === 'textInput') {
-    return handleInsertTextInputEvent(document, event, selectionId);
-  }
-  if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
-    return deleteCurrentSelection(document, selectionId);
+  if (event instanceof KeyboardEvent) {
+    if (event.code === 'Space') {
+      return handleInsertTextInputEvent(document, event, selectionId);
+    }
+  } else {
+    if (event.type === 'textInput') {
+      return handleInsertTextInputEvent(document, event, selectionId);
+    }
+    if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
+      return deleteCurrentSelection(document, selectionId);
+    }
   }
   console.log(event.type);
+  debugger;
   return document;
 }
 
