@@ -78,6 +78,40 @@ function renderNode(
         </h2>
       );
 
+    case 'ol':
+      return (
+        <ol
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          ref={ref as React.RefObject<HTMLOListElement>}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          start={node.start}
+        >
+          {children}
+        </ol>
+      );
+
+    case 'ul':
+      return (
+        <ul
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          ref={ref as React.RefObject<HTMLUListElement>}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+        >
+          {children}
+        </ul>
+      );
+
+    case 'li':
+      return (
+        <li
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          ref={ref as React.RefObject<HTMLLIElement>}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+        >
+          {children}
+        </li>
+      );
+
     default:
       return (
         <p

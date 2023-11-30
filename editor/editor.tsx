@@ -32,6 +32,7 @@ import {
 } from '../cfds/richtext/flat-rep.ts';
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
+import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -120,21 +121,46 @@ function handleNewline(document: Document, selectionId: string): Document {
       break;
     }
   }
-  const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
 
+  // Special case: newline at the beginning of an element.
+  if (isDepthMarker(mergeCtx.at(end! - 1))) {
+    mergeCtx.insert(end! - 3, [
+      kElementSpacer,
+      { tagName: 'p', children: [] },
+      { depthMarker: 1 },
+      { text: '' },
+    ]);
+    const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
+    const finalRt = projectPointers(
+      docToRT(document),
+      rtWithDeletions,
+      (ptr) => true
+    );
+    return docFromRT(finalRt);
+  }
+  const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
+  const prevElementIsSticky =
+    prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
+  const isEmptyElement = isDepthMarker(mergeCtx.at(end! - 1));
+
+  let startDepth = prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0;
+  if (isEmptyElement) {
+    startDepth = 0;
+  }
   const atomsToInsert: FlatRepAtom[] = [
     {
-      depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0,
+      depthMarker: startDepth,
     },
     kElementSpacer,
-    !isAtEndOfElement && prevElement
+    ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
+    prevElement
       ? prevElement
       : {
           children: [],
           tagName: 'p',
         },
     {
-      depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker : 1,
+      depthMarker: startDepth + 1,
     },
     {
       key: selectionId,
@@ -154,6 +180,7 @@ function handleNewline(document: Document, selectionId: string): Document {
     atomsToInsert.splice(0, 0, { text: '' });
   }
   mergeCtx.insert(end!, atomsToInsert);
+
   const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
     docToRT(document),
@@ -284,7 +311,9 @@ function deleteCurrentSelection(
   } else {
     mergeCtx.deleteRange(start!, end!);
   }
-  const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
+  const rtWithDeletions = normalizeRichText(
+    reconstructRichText(mergeCtx.finalize())
+  );
   const finalRt = projectPointers(
     docToRT(document),
     rtWithDeletions,

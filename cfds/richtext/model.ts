@@ -5,20 +5,23 @@ import {
 } from '../../base/core-types/index.ts';
 import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
 
-export type MarkupNode = ParagraphNode | Header1Node | Header2Node;
-// | UnorderedListNode
-// | OrderedListNode
-// | ListItemNode
+export type MarkupNode =
+  | ParagraphNode
+  | Header1Node
+  | Header2Node
+  | UnorderedListNode
+  | OrderedListNode
+  | ListItemNode;
 // | TableNode
 // | TableRowNode
 // | TableCellNode
-// | RefNode
-// | RefMarker
 // | SpanNode
 // | ObjectNode
 // | HyperlinkNode
 // | ImageNode
 // | MentionElement;
+
+export const STICKY_ELEMENT_TAGS = ['li'] as readonly (string | undefined)[];
 
 export interface ParagraphNode extends ElementNode {
   readonly tagName: 'p';
@@ -38,6 +41,7 @@ export interface UnorderedListNode extends ElementNode {
 
 export interface OrderedListNode extends ElementNode {
   readonly tagName: 'ol';
+  start?: number;
 }
 
 export interface ListItemNode extends ElementNode {
