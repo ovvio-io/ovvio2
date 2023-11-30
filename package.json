@@ -4,7 +4,6 @@
     "@aws-sdk/client-sesv2": "^3.441.0",
     "@lexical/react": "^0.12.4",
     "html-minifier": "^4.0.0",
-    "lexical": "^0.12.4",
     "slate": "^0.81.1",
     "slate-react": "^0.81.0"
   },
