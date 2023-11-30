@@ -105,7 +105,6 @@ function replaceOL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
   if (buffer.length < 6) {
     return;
   }
-  debugger;
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -123,7 +122,7 @@ function replaceOL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
       children: [],
     };
     if (buffer[3].text !== '1') {
-      ol.value = parseInt(buffer[3].text);
+      ol.start = parseInt(buffer[3].text);
     }
     return [
       6,
