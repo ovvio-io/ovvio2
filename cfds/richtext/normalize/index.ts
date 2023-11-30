@@ -60,6 +60,13 @@ function stripTrivialTextNodes(rt: RichText): void {
       node.text.length === 0 &&
       !hasPointers(node, rt.pointers)
     ) {
+      if (path.length === 0) {
+        const idx = rt.root.children.indexOf(node);
+        if (idx >= 0) {
+          rt.root.children.splice(idx, 1);
+        }
+        continue;
+      }
       const parent = path[path.length - 1];
       if (parent.children.length > 1) {
         const idx = parent.children.indexOf(node);
