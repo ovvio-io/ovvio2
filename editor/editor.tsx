@@ -122,8 +122,9 @@ function handleNewline(document: Document, selectionId: string): Document {
     }
   }
 
+  const isEmptyElement = isDepthMarker(mergeCtx.at(end! - 1));
   // Special case: newline at the beginning of an element.
-  if (isDepthMarker(mergeCtx.at(end! - 1))) {
+  if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
       kElementSpacer,
       { tagName: 'p', children: [] },
@@ -141,7 +142,6 @@ function handleNewline(document: Document, selectionId: string): Document {
   const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
   const prevElementIsSticky =
     prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
-  const isEmptyElement = isDepthMarker(mergeCtx.at(end! - 1));
 
   let startDepth = prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0;
   if (isEmptyElement) {
@@ -414,7 +414,7 @@ export function Editor() {
       }
       if (focusNode) {
         if (cfdsRange.dir === PointerDirection.Backward) {
-          let offset = state.ranges![selectionId].focus.offset + offsetShift;
+          const offset = state.ranges![selectionId].focus.offset + offsetShift;
           if (focusNode instanceof Text && offset === focusNode.data.length) {
             const parent = focusNode.parentNode!;
             const indexInParent = Array.from(parent.childNodes).indexOf(
@@ -513,18 +513,6 @@ export function Editor() {
         );
         return false;
       }}
-      // onInput={(event) => {
-      //   event.stopPropagation();
-      //   event.preventDefault();
-      //   setState(
-      //     handleTextInputEvent(
-      //       state,
-      //       event.nativeEvent as InputEvent,
-      //       selectionId
-      //     )
-      //   );
-      //   return false;
-      // }}
       onSelect={onSelectionChanged}
       onKeyDown={(event) => {
         if (event.key === 'Backspace' || event.key === 'Delete') {
