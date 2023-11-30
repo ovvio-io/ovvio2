@@ -101,14 +101,14 @@ export class IDBRepositoryBackup {
       try {
         const db = await this.open();
         const txn = db.transaction('commits', 'readonly');
-        const result = (await txn.store.getAll()).map(
+        const result = ((await txn.store.getAll()) || []).map(
           (json) =>
             new Commit({
               decoder: new JSONCyclicalDecoder(json),
             })
         );
         db.close();
-        return result;
+        return result || [];
       } catch (err: unknown) {
         console.log('IDB error: ' + err);
         return [];
