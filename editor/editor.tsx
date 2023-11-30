@@ -11,7 +11,7 @@ import {
   isTextNode,
   kCoreValueTreeNodeOpts,
 } from '../cfds/richtext/tree.ts';
-import { RichTextRenderer } from '../cfds/richtext/react.tsx';
+import { renderRichText } from '../cfds/richtext/react.tsx';
 import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
@@ -241,16 +241,15 @@ function deleteCurrentSelection(
   }
   const pointers: IndexedPointerValue[] = [];
   const mergeCtx = new MergeContext(
-    Array.from(
-      filteredPointersRep(
-        flattenRichText(docToRT(document), true),
-        (ptr) => {
-          return true;
-        },
-        pointers
-      )
+    filteredPointersRep(
+      flattenRichText(docToRT(document), true),
+      (ptr) => {
+        return true;
+      },
+      pointers
     )
   );
+  mergeCtx.makeReusable();
   let start, end: number | undefined;
   for (const [idx, ptr] of pointers) {
     if (ptr.key === selectionId) {
@@ -276,8 +275,11 @@ function deleteCurrentSelection(
     end = tmp;
   }
   if (start === end) {
-    if (start! > 0) {
-      mergeCtx.delete(start! - 1);
+    start = start!;
+    if (isDepthMarker(mergeCtx.at(start - 1))) {
+      mergeCtx.deleteRange(start - 4, start);
+    } else {
+      mergeCtx.delete(start - 1);
     }
   } else {
     mergeCtx.deleteRange(start!, end!);
@@ -299,6 +301,9 @@ function handleTextInputEvent(
   if (event instanceof KeyboardEvent) {
     if (event.code === 'Space') {
       return handleInsertTextInputEvent(document, event, selectionId);
+    }
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      return deleteCurrentSelection(document, selectionId);
     }
   } else {
     if (event.type === 'textInput') {
@@ -455,6 +460,13 @@ export function Editor() {
     }
   }, [state]);
 
+  const contents = renderRichText({
+    doc: state,
+    selectionId: selectionId,
+    anchorRef: anchorRef,
+    focusRef: focusRef,
+  });
+
   return (
     <div
       className={cn(styles.contentEditable)}
@@ -472,26 +484,35 @@ export function Editor() {
         );
         return false;
       }}
-      onInput={(event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        setState(
-          handleTextInputEvent(
-            state,
-            event.nativeEvent as InputEvent,
-            selectionId
-          )
-        );
-        return false;
-      }}
+      // onInput={(event) => {
+      //   event.stopPropagation();
+      //   event.preventDefault();
+      //   setState(
+      //     handleTextInputEvent(
+      //       state,
+      //       event.nativeEvent as InputEvent,
+      //       selectionId
+      //     )
+      //   );
+      //   return false;
+      // }}
       onSelect={onSelectionChanged}
+      onKeyDown={(event) => {
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+          event.stopPropagation();
+          event.preventDefault();
+          setState(
+            handleTextInputEvent(
+              state,
+              event.nativeEvent as KeyboardEvent,
+              selectionId
+            )
+          );
+          return false;
+        }
+      }}
     >
-      <RichTextRenderer
-        doc={state}
-        selectionId={selectionId}
-        anchorRef={anchorRef}
-        focusRef={focusRef}
-      />
+      {contents}
     </div>
   );
 }

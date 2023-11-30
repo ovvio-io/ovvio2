@@ -91,9 +91,10 @@ function renderNode(
   }
 }
 
-export function RichTextRenderer(ctx: RenderContext) {
+export function renderRichText(ctx: RenderContext) {
   const styles = useStyles();
   const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
+
   return ctx.doc.root.children.map((node) => {
     return renderNode(node as MarkupNode, ctx, styles);
   });
