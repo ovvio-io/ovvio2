@@ -7,6 +7,7 @@ import {
   TextNode,
   dfs,
   initRichText,
+  initRichTextRoot,
   isElementNode,
   isTextNode,
   kCoreValueTreeNodeOpts,
@@ -35,6 +36,7 @@ import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
 import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
 import { assert } from '../base/error.ts';
+import { coreValueEquals } from '../base/core-types/equals.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -50,6 +52,8 @@ const DELETE_INPUT_TYPES = [
   'deleteContent',
   'deleteContentForward',
 ] as const;
+
+const EMPTY_DOCUMENT_ROOT = initRichTextRoot();
 
 function findEndOfDocument(document: Document): TextNode | ElementNode {
   let lastTextNode: TextNode | undefined;
@@ -264,6 +268,9 @@ function deleteCurrentSelection(
   document: Document,
   selectionId: string
 ): Document {
+  if (coreValueEquals(EMPTY_DOCUMENT_ROOT, document.root)) {
+    return document;
+  }
   let selection = document.ranges && document.ranges[selectionId];
   if (!selection) {
     return document;
