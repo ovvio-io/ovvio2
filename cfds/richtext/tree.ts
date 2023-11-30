@@ -416,14 +416,24 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
   return result.trim();
 }
 
-export function pathForNode(
+export function pathForNode<T extends ElementNode>(
   root: ElementNode,
   searchNode: TreeNode
-): readonly ElementNode[] | undefined {
+): readonly T[] | undefined {
   for (const [node, _depth, path] of dfs(root)) {
     if (node === searchNode) {
-      return path;
+      return path as T[];
     }
   }
   return undefined;
+}
+
+export function findLastTextNode(root: ElementNode) {
+  let textNode: TextNode | undefined;
+  for (const [node] of dfs(root)) {
+    if (isTextNode(node) && node.text.length > 0) {
+      textNode = node;
+    }
+  }
+  return textNode;
 }
