@@ -21,6 +21,7 @@ import { MergeContext } from '../cfds/richtext/merge-context.ts';
 import {
   DepthMarker,
   filteredPointersRep,
+  FlatRepAtom,
   flattenRichText,
   IndexedPointerValue,
   isDepthMarker,
@@ -30,6 +31,7 @@ import {
   reconstructRichText,
 } from '../cfds/richtext/flat-rep.ts';
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
+import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -119,7 +121,8 @@ function handleNewline(document: Document, selectionId: string): Document {
     }
   }
   const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
-  mergeCtx.insert(end!, [
+
+  const atomsToInsert: FlatRepAtom[] = [
     {
       depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0,
     },
@@ -143,7 +146,14 @@ function handleNewline(document: Document, selectionId: string): Document {
       type: 'focus',
       dir: PointerDirection.None,
     } as PointerValue,
-  ]);
+  ];
+  // If we're dealing with an empty element, we must add an extra empty text
+  // node so we don't make it empty (thus causing it to be deleted at a later
+  // normalization pass).
+  if (isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1))) {
+    atomsToInsert.splice(0, 0, { text: '' });
+  }
+  mergeCtx.insert(end!, atomsToInsert);
   const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
     docToRT(document),
