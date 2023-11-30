@@ -29,6 +29,7 @@ import {
   projectPointers,
   reconstructRichText,
 } from '../cfds/richtext/flat-rep.ts';
+import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -117,15 +118,18 @@ function handleNewline(document: Document, selectionId: string): Document {
       break;
     }
   }
+  const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
   mergeCtx.insert(end!, [
     {
       depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0,
     },
     kElementSpacer,
-    prevElement || {
-      children: [],
-      tagName: 'p',
-    },
+    !isAtEndOfElement && prevElement
+      ? prevElement
+      : {
+          children: [],
+          tagName: 'p',
+        },
     {
       depthMarker: prevDepthMarker ? prevDepthMarker.depthMarker : 1,
     },
@@ -210,6 +214,10 @@ function handleInsertTextInputEvent(
     selection.focus.offset += insertData.length;
   }
 
+  // Run any shortcuts
+  result = docFromRT(
+    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true)))
+  );
   return result;
 }
 
@@ -343,32 +351,9 @@ export function Editor() {
         anchorNode = newAnchor;
       }
       if (cfdsRange.dir === PointerDirection.Backward) {
-        // if (
-        //   anchorNode instanceof Text &&
-        //   desiredStartOffset === anchorNode.data.length
-        // ) {
-        //   const parent = anchorNode.parentNode!;
-        //   const indexInParent = Array.from(parent.childNodes).indexOf(
-        //     anchorNode
-        //   );
-        //   anchorNode = parent as unknown as ChildNode;
-        //   desiredStartOffset = indexInParent - 1;
-        // }
         range.setEnd(anchorNode, desiredStartOffset);
         offsetShift = range.endOffset - desiredStartOffset;
       } else {
-        // if (
-        //   anchorNode instanceof Text &&
-        //   desiredStartOffset === anchorNode.data.length
-        // ) {
-        //   debugger;
-        //   const parent = anchorNode.parentNode!;
-        //   const indexInParent = Array.from(parent.childNodes).indexOf(
-        //     anchorNode
-        //   );
-        //   anchorNode = parent as unknown as ChildNode;
-        //   desiredStartOffset = indexInParent + 1;
-        // }
         range.setStart(anchorNode, desiredStartOffset);
         offsetShift = range.startOffset - desiredStartOffset;
       }
@@ -400,15 +385,7 @@ export function Editor() {
           }
           range.setStart(focusNode, offset);
         } else {
-          let offset = state.ranges![selectionId].focus.offset + offsetShift;
-          // if (focusNode instanceof Text && offset === focusNode.data.length) {
-          //   const parent = focusNode.parentNode!;
-          //   const indexInParent = Array.from(parent.childNodes).indexOf(
-          //     focusNode
-          //   );
-          //   focusNode = parent as unknown as ChildNode;
-          //   offset = indexInParent + 1;
-          // }
+          const offset = state.ranges![selectionId].focus.offset + offsetShift;
           range.setEnd(focusNode, offset);
         }
       }
@@ -430,17 +407,19 @@ export function Editor() {
       const selectionAnchorNode = selection.anchorNode;
       if (selectionAnchorNode) {
         const anchorNode = state.nodeKeys.nodeFromKey(
-          (selectionAnchorNode instanceof Text
-            ? selectionAnchorNode.parentNode!
-            : selectionAnchorNode
-          ).dataset.ovvKey
+          (
+            (selectionAnchorNode instanceof Text
+              ? selectionAnchorNode.parentNode!
+              : selectionAnchorNode) as HTMLElement
+          ).dataset.ovvKey!
         );
         const selectionFocusNode = selection.focusNode || selection.anchorNode;
         const focusNode = state.nodeKeys.nodeFromKey(
-          (selectionFocusNode instanceof Text
-            ? selectionFocusNode.parentNode!
-            : selectionFocusNode
-          ).dataset.ovvKey
+          (
+            (selectionFocusNode instanceof Text
+              ? selectionFocusNode.parentNode!
+              : selectionFocusNode) as HTMLElement
+          ).dataset.ovvKey!
         );
         if (anchorNode || focusNode) {
           if (!state.ranges) {

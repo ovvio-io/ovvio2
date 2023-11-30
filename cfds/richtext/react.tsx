@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
   },
   emptySpan: {
     display: 'inline-block',
-    minHeight: '1em',
+    minHeight: '0.7em',
     minWidth: '1px',
   },
 }));
@@ -65,6 +65,17 @@ function renderNode(
         >
           {children}
         </h1>
+      );
+
+    case 'h2':
+      return (
+        <h2
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          ref={ref as React.RefObject<HTMLHeadingElement>}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+        >
+          {children}
+        </h2>
       );
 
     default:

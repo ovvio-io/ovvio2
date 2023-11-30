@@ -5,8 +5,7 @@ import {
 } from '../../base/core-types/index.ts';
 import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
 
-export type MarkupNode = ParagraphNode | Header1Node;
-// | Header2Node
+export type MarkupNode = ParagraphNode | Header1Node | Header2Node;
 // | UnorderedListNode
 // | OrderedListNode
 // | ListItemNode
