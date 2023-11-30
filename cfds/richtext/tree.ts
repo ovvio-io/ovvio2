@@ -416,29 +416,14 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
   return result.trim();
 }
 
-// export function isDuplicateTitleBug(rt: RichText): boolean {
-//   const txt = treeToPlaintext(rt.root);
-//   const len = txt.length;
-//   if (len <= 0 || len % 2 !== 0) {
-//     return false;
-//   }
-//   const mid = txt.length / 2;
-//   return txt.substring(0, mid) === txt.substring(mid);
-// }
-
-// export function fixDuplicateTitleBug(rt: RichText): RichText {
-//   while (isDuplicateTitleBug(rt)) {
-//     const txt = treeToPlaintext(rt.root);
-//     rt = {
-//       root: {
-//         tagName: 'p',
-//         children: [
-//           {
-//             text: txt.substring(0, txt.length / 2),
-//           },
-//         ],
-//       },
-//     };
-//   }
-//   return rt;
-// }
+export function pathForNode(
+  root: ElementNode,
+  searchNode: TreeNode
+): readonly ElementNode[] | undefined {
+  for (const [node, _depth, path] of dfs(root)) {
+    if (node === searchNode) {
+      return path;
+    }
+  }
+  return undefined;
+}

@@ -10,6 +10,7 @@ import {
   isElementNode,
   isTextNode,
   kCoreValueTreeNodeOpts,
+  pathForNode,
 } from '../cfds/richtext/tree.ts';
 import { renderRichText } from '../cfds/richtext/react.tsx';
 import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
@@ -33,6 +34,7 @@ import {
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
 import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
+import { assert } from '../base/error.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -303,8 +305,30 @@ function deleteCurrentSelection(
   }
   if (start === end) {
     start = start!;
-    if (isDepthMarker(mergeCtx.at(start - 1))) {
+    const prevAtom = mergeCtx.at(start - 1);
+    if (isDepthMarker(prevAtom)) {
       mergeCtx.deleteRange(start - 4, start);
+
+      const path = pathForNode(document.root, selection.anchor.node);
+      assert(path !== undefined);
+      if (path.length > 1) {
+        const parent = path[path.length - 2];
+        const childIndex = parent.children.indexOf(path[path.length - 1]);
+        const newDepth = prevAtom.depthMarker - 1;
+        if (childIndex === 0) {
+          mergeCtx.delete(start - 5);
+          mergeCtx.insert(start - 5, [
+            { tagName: 'p', children: [] },
+            { depthMarker: newDepth },
+          ]);
+          mergeCtx.insert(start + 1, [
+            { depthMarker: newDepth - 1 },
+            kElementSpacer,
+            { ...parent, children: [] },
+            { depthMarker: newDepth },
+          ]);
+        }
+      }
     } else {
       mergeCtx.delete(start - 1);
     }
