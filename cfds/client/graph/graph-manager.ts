@@ -217,12 +217,16 @@ export class GraphManager
 
     const repo = plumbing.repo;
     plumbing.loadingPromise = (async () => {
-      const commits = await backup.loadCommits();
-      if (!(commits instanceof Array)) {
-        console.log(commits);
-        debugger;
+      if (backup) {
+        const commits = await backup.loadCommits();
+        if (!(commits instanceof Array)) {
+          console.log(commits);
+          debugger;
+        }
+        await repo.persistCommits(commits);
+      } else {
+        console.log(`Backup disabled for repo: ${id}`);
       }
-      await repo.persistCommits(commits);
       if (plumbing.client) {
         await plumbing.client.sync();
       }
