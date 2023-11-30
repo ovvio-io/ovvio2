@@ -50,8 +50,8 @@ function renderNode(
   }
   let children: JSX.Element[] | undefined;
   if (isElementNode(node)) {
-    children = node.children.map((n) =>
-      renderNode(n as MarkupNode, ctx, styles)
+    children = node.children.map(
+      (n) => renderNode(n as MarkupNode, ctx, styles) as JSX.Element
     );
   }
 
