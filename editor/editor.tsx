@@ -1,8 +1,12 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import React from 'react';
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useEffect,
+} from 'react';
 import {
   ElementNode,
-  Pointer,
   PointerDirection,
   TextNode,
   dfs,
@@ -10,7 +14,6 @@ import {
   initRichTextRoot,
   isElementNode,
   isTextNode,
-  kCoreValueTreeNodeOpts,
   pathForNode,
 } from '../cfds/richtext/tree.ts';
 import { renderRichText } from '../cfds/richtext/react.tsx';
@@ -75,14 +78,12 @@ function handleNewline(document: Document, selectionId: string): Document {
   }
   const pointers: IndexedPointerValue[] = [];
   const mergeCtx = new MergeContext(
-    Array.from(
-      filteredPointersRep(
-        flattenRichText(docToRT(document), true),
-        (ptr) => {
-          return true;
-        },
-        pointers
-      )
+    filteredPointersRep(
+      flattenRichText(docToRT(document), true),
+      (ptr) => {
+        return true;
+      },
+      pointers
     )
   );
   let start, end: number | undefined;
@@ -113,7 +114,6 @@ function handleNewline(document: Document, selectionId: string): Document {
     mergeCtx.deleteRange(start!, end!);
   }
 
-  mergeCtx.makeReusable();
   let prevElement: ElementNode | undefined;
   let prevDepthMarker: DepthMarker | undefined;
   let idx = 0;
@@ -285,7 +285,6 @@ function deleteCurrentSelection(
       pointers
     )
   );
-  mergeCtx.makeReusable();
   let start, end: number | undefined;
   for (const [idx, ptr] of pointers) {
     if (ptr.key === selectionId) {
@@ -530,7 +529,7 @@ export function Editor() {
   return (
     <div
       className={cn(styles.contentEditable)}
-      contentEditable="plaintext-only"
+      contentEditable={true}
       suppressContentEditableWarning={true}
       onBeforeInput={(event) => {
         const inputType = (event.nativeEvent as InputEvent).inputType;
