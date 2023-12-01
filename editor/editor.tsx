@@ -400,6 +400,47 @@ function handleTextInputEvent(
   return document;
 }
 
+function handleTabPressed(
+  doc: Document,
+  event: KeyboardEvent,
+  selectionId: string
+): Document | undefined {
+  const selection = doc.ranges && doc.ranges[selectionId];
+  if (!selection || selection.anchor.node !== selection.focus.node) {
+    return;
+  }
+  const path = pathForNode(doc.root, selection.anchor.node);
+  if (!path || path.length < 2) {
+    return;
+  }
+  const parent = path[path.length - 1];
+  if (parent.tagName === 'li') {
+    const grandParent = path[path.length - 2];
+    const liIndex = grandParent.children.indexOf(parent);
+    if (event.shiftKey) {
+      if (path.length === 2) {
+        const idx = doc.root.children.indexOf(grandParent);
+        doc.root.children[idx] = {
+          tagName: 'p',
+          children: parent.children,
+        };
+      } else {
+        // const grandGrandParent = path[path.length - 3];
+        // const idx = grandGrandParent.children.indexOf(grandParent);
+        // grandGrandParent.children[idx]
+        const mergeCtx = new MergeContext(flattenRichText(docToRT(doc), true));
+        debugger;
+      }
+    } else {
+      grandParent.children[liIndex] = {
+        ...grandParent,
+        children: [parent],
+      };
+    }
+    return coreValueClone(doc);
+  }
+}
+
 export function Editor() {
   const [state, setState] = useState(docFromRT(initRichText()));
   const trustPool = useTrustPool();
@@ -571,13 +612,16 @@ export function Editor() {
         if (event.key === 'Backspace' || event.key === 'Delete') {
           event.stopPropagation();
           event.preventDefault();
-          setState(
-            handleTextInputEvent(
-              state,
-              event.nativeEvent as KeyboardEvent,
-              selectionId
-            )
-          );
+          setState(handleTextInputEvent(state, event.nativeEvent, selectionId));
+          return false;
+        }
+        if (event.key === 'Tab') {
+          const doc = handleTabPressed(state, event.nativeEvent, selectionId);
+          if (doc) {
+            event.stopPropagation();
+            event.preventDefault();
+            setState(doc);
+          }
           return false;
         }
       }}
