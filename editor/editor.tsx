@@ -72,7 +72,7 @@ function findEndOfDocument(document: Document): TextNode | ElementNode {
 }
 
 function handleNewline(document: Document, selectionId: string): Document {
-  let selection = document.ranges && document.ranges[selectionId];
+  const selection = document.ranges && document.ranges[selectionId];
   if (!selection) {
     return document;
   }
@@ -128,7 +128,9 @@ function handleNewline(document: Document, selectionId: string): Document {
     }
   }
 
-  const isEmptyElement = isDepthMarker(mergeCtx.at(end! - 1));
+  const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
+  const isEmptyElement =
+    isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -136,6 +138,7 @@ function handleNewline(document: Document, selectionId: string): Document {
       { tagName: 'p', children: [] },
       { depthMarker: 1 },
       { text: '' },
+      { depthMarker: 0 },
     ]);
     const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
     const finalRt = projectPointers(
@@ -145,47 +148,67 @@ function handleNewline(document: Document, selectionId: string): Document {
     );
     return docFromRT(finalRt);
   }
-  const isAtEndOfElement = isDepthMarker(mergeCtx.at(end! + 1));
   const prevElementIsSticky =
     prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
 
+  const focusPath = pathForNode(document.root, selection.focus.node);
+  const isStartOfDocument =
+    document.root.children[0] === (focusPath && focusPath[0]);
   let startDepth = prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0;
+  debugger;
   if (isEmptyElement) {
     startDepth = 0;
+    // When clearing the beginning of the document, create a paragraph instead
+
+    const origValues = mergeCtx.origValues;
+    const emptyElementDepth = mergeCtx.at<DepthMarker>(end! - 1)!.depthMarker;
+    mergeCtx.deleteRange(end! - 3, end! + 1);
+    for (let idx = end! - 4; idx >= 0; --idx) {
+      const atom = origValues[idx];
+      if (
+        isDepthMarker(atom) &&
+        (atom.depthMarker <= 0 || atom.depthMarker >= emptyElementDepth - 1)
+      ) {
+        break;
+      }
+      mergeCtx.delete(idx);
+    }
   }
-  const atomsToInsert: FlatRepAtom[] = [
-    {
-      depthMarker: startDepth,
-    },
-    kElementSpacer,
-    ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
-    prevElement
-      ? prevElement
-      : {
-          children: [],
-          tagName: 'p',
-        },
-    {
-      depthMarker: startDepth + 1,
-    },
-    {
-      key: selectionId,
-      type: 'anchor',
-      dir: PointerDirection.None,
-    } as PointerValue,
-    {
-      key: selectionId,
-      type: 'focus',
-      dir: PointerDirection.None,
-    } as PointerValue,
-  ];
-  // If we're dealing with an empty element, we must add an extra empty text
-  // node so we don't make it empty (thus causing it to be deleted at a later
-  // normalization pass).
-  if (isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1))) {
-    atomsToInsert.splice(0, 0, { text: '' });
+  if (isStartOfDocument || !isEmptyElement) {
+    const atomsToInsert: FlatRepAtom[] = [
+      {
+        depthMarker: startDepth,
+      },
+      kElementSpacer,
+      ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
+      prevElement
+        ? prevElement
+        : {
+            children: [],
+            tagName: 'p',
+          },
+      {
+        depthMarker: startDepth + 1,
+      },
+      {
+        key: selectionId,
+        type: 'anchor',
+        dir: PointerDirection.None,
+      } as PointerValue,
+      {
+        key: selectionId,
+        type: 'focus',
+        dir: PointerDirection.None,
+      } as PointerValue,
+    ];
+    // If we're dealing with an empty element, we must add an extra empty text
+    // node so we don't make it empty (thus causing it to be deleted at a later
+    // normalization pass).
+    if (isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1))) {
+      atomsToInsert.splice(0, 0, { text: '' });
+    }
+    mergeCtx.insert(end!, atomsToInsert);
   }
-  mergeCtx.insert(end!, atomsToInsert);
 
   const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
@@ -271,7 +294,7 @@ function deleteCurrentSelection(
   if (coreValueEquals(EMPTY_DOCUMENT_ROOT, document.root)) {
     return document;
   }
-  let selection = document.ranges && document.ranges[selectionId];
+  const selection = document.ranges && document.ranges[selectionId];
   if (!selection) {
     return document;
   }
@@ -532,7 +555,6 @@ export function Editor() {
       contentEditable={true}
       suppressContentEditableWarning={true}
       onBeforeInput={(event) => {
-        const inputType = (event.nativeEvent as InputEvent).inputType;
         event.stopPropagation();
         event.preventDefault();
         setState(

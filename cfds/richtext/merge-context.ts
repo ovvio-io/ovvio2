@@ -39,7 +39,7 @@ export interface PatchCommand {
  * needs to be created.
  */
 export class MergeContext {
-  private _origValues: FlatRepAtom[];
+  private _origValues: readonly FlatRepAtom[];
   private readonly _deletions: Set<number>;
   private readonly _insertions: Dictionary<number, FlatRepAtom[]>;
   private readonly _eqOpts?: CoreOptions;
@@ -50,6 +50,10 @@ export class MergeContext {
     this._deletions = new Set();
     this._insertions = new Map();
     this._eqOpts = eqOpts;
+  }
+
+  get origValues(): readonly FlatRepAtom[] {
+    return this._origValues;
   }
 
   delete(index: number): void {
@@ -103,8 +107,8 @@ export class MergeContext {
    * @param idx The index to get.
    * @returns The atom at the specified index.
    */
-  at(idx: number): FlatRepAtom | undefined {
-    return this.finalize()[idx];
+  at<T extends FlatRepAtom>(idx: number): T | undefined {
+    return this.finalize()[idx] as T;
   }
 
   findLastBefore(

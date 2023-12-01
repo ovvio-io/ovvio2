@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
   },
   emptySpan: {
     display: 'inline-block',
-    minHeight: '0.7em',
+    minHeight: '1em',
     minWidth: '1px',
   },
 }));

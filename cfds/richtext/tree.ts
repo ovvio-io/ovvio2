@@ -428,10 +428,10 @@ export function pathForNode<T extends ElementNode>(
   return undefined;
 }
 
-export function findLastTextNode(root: ElementNode) {
+export function findLastTextNode(root: ElementNode, notEmpty = false) {
   let textNode: TextNode | undefined;
   for (const [node] of dfs(root)) {
-    if (isTextNode(node) && node.text.length > 0) {
+    if (isTextNode(node) && (notEmpty === false || node.text.length > 0)) {
       textNode = node;
     }
   }
