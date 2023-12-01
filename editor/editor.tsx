@@ -530,7 +530,8 @@ export function Editor() {
   return (
     <div
       className={cn(styles.contentEditable)}
-      contentEditable
+      contentEditable="plaintext-only"
+      suppressContentEditableWarning={true}
       onBeforeInput={(event) => {
         const inputType = (event.nativeEvent as InputEvent).inputType;
         event.stopPropagation();
