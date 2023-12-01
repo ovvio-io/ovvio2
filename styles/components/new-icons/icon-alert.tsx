@@ -19,7 +19,7 @@ export function IconAlert({ className }: IconProps) {
           cy="8"
           r="7"
           stroke="#E24716"
-          stroke-width="2"
+          strokeWidth="2"
         />
         <g id="Group 11319">
           <circle
@@ -35,8 +35,8 @@ export function IconAlert({ className }: IconProps) {
           id="Line 85"
           d="M8 4L8 9"
           stroke="#B11A04"
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </g>
       <defs>

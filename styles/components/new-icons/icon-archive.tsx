@@ -41,65 +41,65 @@ export function IconArchive({
         opacity="0.6"
         d="M7.99999 1L1 4.50003"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M8 1L15 4.50003"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M7.99999 11.5L1 8"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M15 8L8 11.5"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M7.99999 15L1 11.5"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M15 11.5L8 15"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M7.99999 7.99996L1 4.5"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
         opacity="0.6"
         d="M15 4.5L8 7.99996"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

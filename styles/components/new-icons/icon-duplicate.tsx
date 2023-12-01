@@ -1,11 +1,11 @@
-import React from "react";
-import { IconProps, IconSize } from "./types.ts";
-import { brandLightTheme as theme } from "../../theme.tsx";
+import React from 'react';
+import { IconProps, IconSize } from './types.ts';
+import { brandLightTheme as theme } from '../../theme.tsx';
 
 export enum DuplicateState {
-  None = "none",
-  Late = "late",
-  Blue = "blue",
+  None = 'none',
+  Late = 'late',
+  Blue = 'blue',
 }
 
 const COLOR_MAP = {
@@ -41,7 +41,7 @@ export function IconDuplicate({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       width="16"
       height="16"
       viewBox="0 0 16 16"
@@ -51,43 +51,43 @@ export function IconDuplicate({
         opacity="0.7"
         d="M14 15H5"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M5 4V15"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M2 1V12"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M5 4H14"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M2 1H11"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M14 4V15"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <line
         opacity="0.7"
@@ -96,8 +96,8 @@ export function IconDuplicate({
         x2="11"
         y2="4"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <line
         opacity="0.7"
@@ -106,8 +106,8 @@ export function IconDuplicate({
         x2="5"
         y2="12"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

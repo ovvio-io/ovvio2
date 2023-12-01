@@ -1,14 +1,17 @@
 import React from 'react';
-import { IconProps, IconSize ,IconColor} from './types.ts';
-import { brandLightTheme as theme } from "../../theme.tsx";
+import { IconProps, IconSize, IconColor } from './types.ts';
+import { brandLightTheme as theme } from '../../theme.tsx';
 
 export interface IconCheckProps extends IconProps {
   color?: IconColor.Primary | IconColor.Mono | String;
-
 }
 
-export function IconGroup({ size = IconSize.Small, color , className }: IconProps) {
-  const checkColor = color === "blue" ? theme.primary.p9 : theme.mono.m5;
+export function IconGroup({
+  size = IconSize.Small,
+  color,
+  className,
+}: IconProps) {
+  const checkColor = color === 'blue' ? theme.primary.p9 : theme.mono.m5;
 
   return (
     <svg
@@ -23,29 +26,29 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         opacity="0.7"
         d="M1 1H15"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M1 15H15"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M15 1L15 15"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M1 1L0.999999 15"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <rect
         opacity="0.7"
@@ -54,8 +57,8 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         width="2"
         height="2"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinejoin="round"
       />
       <rect
         opacity="0.7"
@@ -64,8 +67,8 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         width="2"
         height="2"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinejoin="round"
       />
       <rect
         opacity="0.7"
@@ -74,8 +77,8 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         width="2"
         height="2"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinejoin="round"
       />
       <rect
         opacity="0.7"
@@ -84,8 +87,8 @@ export function IconGroup({ size = IconSize.Small, color , className }: IconProp
         width="2"
         height="2"
         stroke={checkColor}
-        stroke-width="2"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinejoin="round"
       />
     </svg>
   );
