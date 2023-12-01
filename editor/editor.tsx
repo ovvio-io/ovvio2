@@ -131,6 +131,7 @@ function handleNewline(document: Document, selectionId: string): Document {
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
   const isEmptyElement =
     isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
+  debugger;
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -155,8 +156,7 @@ function handleNewline(document: Document, selectionId: string): Document {
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
   let startDepth = prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0;
-  debugger;
-  if (isEmptyElement) {
+  if (isEmptyElement && prevElement?.tagName !== 'p') {
     startDepth = 0;
     // When clearing the beginning of the document, create a paragraph instead
 
@@ -174,7 +174,7 @@ function handleNewline(document: Document, selectionId: string): Document {
       mergeCtx.delete(idx);
     }
   }
-  if (isStartOfDocument || !isEmptyElement) {
+  if (isStartOfDocument || !isEmptyElement || prevElement?.tagName === 'p') {
     const atomsToInsert: FlatRepAtom[] = [
       {
         depthMarker: startDepth,
