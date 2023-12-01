@@ -149,9 +149,9 @@ function handleNewline(document: Document, selectionId: string): Document {
     );
     return docFromRT(finalRt);
   }
+  let didSetSelection = false;
   const prevElementIsSticky =
     prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
-
   const focusPath = pathForNode(document.root, selection.focus.node);
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
@@ -208,13 +208,14 @@ function handleNewline(document: Document, selectionId: string): Document {
       atomsToInsert.splice(0, 0, { text: '' });
     }
     mergeCtx.insert(end!, atomsToInsert);
+    didSetSelection = true;
   }
 
   const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
     docToRT(document),
     rtWithDeletions,
-    (ptr) => ptr.key !== selectionId
+    (ptr) => !didSetSelection || ptr.key !== selectionId
   );
   return docFromRT(finalRt);
 }
