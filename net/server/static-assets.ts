@@ -101,7 +101,8 @@ export async function compileAssetsDirectory(
       exts: kValidFileExtensions,
     })) {
       const ext = extname(path).substring(1) as keyof typeof ContentTypeMapping;
-      result[path.substring(dir.length)] = {
+      const key = path.substring(dir.length).toLowerCase();
+      result[key] = {
         data: await Deno.readFile(path),
         contentType: ContentTypeMapping[ext] || 'application/octet-stream',
       };
