@@ -9,7 +9,15 @@ import {
   EntryPointName,
 } from './net/server/static-assets.ts';
 
-const EXCLUDED_IMPORTS = ['slate', 'slate-react'];
+const EXCLUDED_IMPORTS = [
+  'react-reconciler',
+  'react-router',
+  'react-router-dom',
+  'react-dom',
+  'react-dom/server',
+  'react-dom/client',
+  'react',
+];
 
 async function getEntryPoints(): Promise<{ in: string; out: string }[]> {
   const repoPath = await getRepositoryPath();
