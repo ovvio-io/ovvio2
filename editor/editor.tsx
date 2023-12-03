@@ -4,7 +4,9 @@ import React, {
   useRef,
   useState,
   useEffect,
+  forwardRef,
 } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import {
   ElementNode,
   PointerDirection,
@@ -38,15 +40,68 @@ import {
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
 import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
-import { assert } from '../base/error.ts';
+import { assert, notReached } from '../base/error.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
+import { WritingDirection, resolveWritingDirection } from '../base/string.ts';
+import { H1, Text as TextComponent } from '../styles/components/typography.tsx';
+import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../cfds/client/graph/vertices/note.ts';
+import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
+import { layout } from '../styles/layout.ts';
+import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../styles/styleguide.ts';
+import { Repository } from '../repo/repo.ts';
+import { useGraphManager } from '../web-app/src/core/cfds/react/graph.tsx';
+import LoadingView from '../web-app/src/app/loading-view.tsx';
 
-const useStyles = makeStyles((theme) => ({
+const HEADER_HEIGHT = styleguide.gridbase * 24;
+
+const useStyles = makeStyles(() => ({
+  mainContainer: {
+    height: '100%',
+    width: '100%',
+  },
+  header: {
+    height: HEADER_HEIGHT,
+    width: '100%',
+    borderBottom: '1px solid',
+    borderColor: theme.mono.m1,
+    overflow: 'hidden',
+  },
+  headerMainActions: {
+    position: 'absolute',
+    right: styleguide.gridbase * 3,
+    top: styleguide.gridbase * 3,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    width: styleguide.gridbase * 7,
+  },
+  headerMainActionButton: {
+    cursor: 'pointer',
+  },
+  titleInput: {
+    display: 'block',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    marginTop: styleguide.gridbase * 14,
+    height: styleguide.gridbase * 3,
+    width: styleguide.gridbase * 40,
+    outline: 'none',
+    fontFamily: 'Poppins',
+    fontSize: '30px',
+    fontWeight: '600',
+    lineHeight: styleguide.gridbase * 3,
+    textAlign: 'center',
+    border: 'none',
+    cursor: 'text',
+  },
   contentEditable: {
     width: '100%',
-    height: '100%',
+    height: `calc(100% - ${HEADER_HEIGHT}px)`,
     whiteSpace: 'pre-wrap',
     padding: '10px',
+    outline: 'none',
+    cursor: 'text',
   },
 }));
 
@@ -131,7 +186,6 @@ function handleNewline(document: Document, selectionId: string): Document {
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
   const isEmptyElement =
     isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
-  debugger;
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -415,219 +469,391 @@ function handleTabPressed(
     return;
   }
   const parent = path[path.length - 1];
-  if (parent.tagName === 'li') {
-    const grandParent = path[path.length - 2];
-    const liIndex = grandParent.children.indexOf(parent);
-    if (event.shiftKey) {
-      if (path.length === 2) {
-        const idx = doc.root.children.indexOf(grandParent);
-        doc.root.children[idx] = {
-          tagName: 'p',
-          children: parent.children,
-        };
-      } else {
-        // const grandGrandParent = path[path.length - 3];
-        // const idx = grandGrandParent.children.indexOf(grandParent);
-        // grandGrandParent.children[idx]
-        const mergeCtx = new MergeContext(flattenRichText(docToRT(doc), true));
-        debugger;
-      }
-    } else {
-      grandParent.children[liIndex] = {
-        ...grandParent,
-        children: [parent],
-      };
-    }
-    return coreValueClone(doc);
-  }
+  // if (parent.tagName === 'li') {
+  //   const grandParent = path[path.length - 2];
+  //   const liIndex = grandParent.children.indexOf(parent);
+  //   if (event.shiftKey) {
+  //     if (path.length === 2) {
+  //       const idx = doc.root.children.indexOf(grandParent);
+  //       doc.root.children[idx] = {
+  //         tagName: 'p',
+  //         children: parent.children,
+  //       };
+  //     } else {
+  //       // const grandGrandParent = path[path.length - 3];
+  //       // const idx = grandGrandParent.children.indexOf(grandParent);
+  //       // grandGrandParent.children[idx]
+  //       const mergeCtx = new MergeContext(flattenRichText(docToRT(doc), true));
+  //       debugger;
+  //     }
+  //   } else {
+  //     grandParent.children[liIndex] = {
+  //       ...grandParent,
+  //       children: [parent],
+  //     };
+  //   }
+  //   return coreValueClone(doc);
+  // }
 }
 
-export function Editor() {
-  const [state, setState] = useState(docFromRT(initRichText()));
-  const trustPool = useTrustPool();
-  const selectionId = trustPool.currentSession.id;
-  const anchorRef = useRef<HTMLElement>(null);
-  const focusRef = useRef<HTMLElement>(null);
-  const styles = useStyles();
+export interface RichTextEditorProps {
+  note: VertexManager<Note>;
+  className?: string;
+  ref?: React.RefObject<HTMLDivElement>;
+}
 
-  useLayoutEffect(() => {
-    const selection = getSelection();
-    // try {
-    //   if (
-    //     state.ranges![selectionId].focus.offset !=
-    //     state.ranges![selectionId].anchor.offset
-    //   )
-    //     debugger;
-    // } catch (_: unknown) {}
-    if (selection) {
-      selection.removeAllRanges();
-      if (!state.ranges || !state.ranges[selectionId]) {
-        return;
-      }
-      const cfdsRange = state.ranges[selectionId];
-      const range = document.createRange();
-      let offsetShift = 0;
-      let desiredStartOffset = cfdsRange.anchor.offset;
-      const origAnchorNode =
-        anchorRef.current?.childNodes[0] ||
-        anchorRef.current ||
-        focusRef.current?.childNodes[0] ||
-        focusRef.current;
-      if (!origAnchorNode) {
-        return;
-      }
-      let anchorNode = origAnchorNode;
-      if (anchorNode instanceof Text && anchorNode.data.length === 0) {
-        const newAnchor = anchorNode.parentNode as unknown as ChildNode;
-        const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
-          anchorNode
-        );
-        if (cfdsRange.dir === PointerDirection.Backward) {
-          desiredStartOffset = origAnchorIdx + 1;
-        } else {
-          desiredStartOffset = origAnchorIdx - 1;
-        }
-        anchorNode = newAnchor;
-      }
-      if (cfdsRange.dir === PointerDirection.Backward) {
-        range.setEnd(anchorNode, desiredStartOffset);
-        offsetShift = range.endOffset - desiredStartOffset;
-      } else {
-        range.setStart(anchorNode, desiredStartOffset);
-        offsetShift = range.startOffset - desiredStartOffset;
-      }
-
-      let focusNode: ChildNode | null = null;
-      if (focusRef.current) {
-        focusNode = focusRef.current.childNodes[0] || focusRef.current;
-      }
-      if (!focusNode) {
-        focusNode = origAnchorNode;
-      }
-      if (focusNode instanceof Text && focusNode.data.length === 0) {
-        focusNode = focusNode.parentNode as unknown as ChildNode;
-      }
-      if (focusNode) {
-        if (cfdsRange.dir === PointerDirection.Backward) {
-          const offset = state.ranges![selectionId].focus.offset + offsetShift;
-          if (focusNode instanceof Text && offset === focusNode.data.length) {
-            const parent = focusNode.parentNode!;
-            const indexInParent = Array.from(parent.childNodes).indexOf(
-              focusNode
-            );
-            focusNode = parent as unknown as ChildNode;
-            if (cfdsRange.dir === PointerDirection.Backward) {
-              desiredStartOffset = indexInParent - 1;
-            } else {
-              desiredStartOffset = indexInParent + 1;
-            }
-          }
-          range.setStart(focusNode, offset);
-        } else {
-          const offset = state.ranges![selectionId].focus.offset + offsetShift;
-          range.setEnd(focusNode, offset);
-        }
-      }
-      selection.addRange(range);
+function isNodeChildOf(parent: HTMLElement, child: HTMLElement): boolean {
+  do {
+    if (child === parent) {
+      return true;
     }
-  }, [anchorRef, focusRef, selectionId, state]);
+    child = child.parentNode;
+  } while (child);
+  return false;
+}
 
-  const onSelectionChanged = useCallback(() => {
-    const selection = getSelection();
-    if (!selection) {
-      const doc = coreValueClone(state);
-      if (doc.ranges && doc.ranges[selectionId]) {
-        delete doc.ranges[selectionId];
-        setState(doc);
-      }
-      return;
-    }
-    try {
-      const selectionAnchorNode = selection.anchorNode;
-      if (selectionAnchorNode) {
-        const anchorNode = state.nodeKeys.nodeFromKey(
-          (
-            (selectionAnchorNode instanceof Text
-              ? selectionAnchorNode.parentNode!
-              : selectionAnchorNode) as HTMLElement
-          ).dataset.ovvKey!
-        );
-        const selectionFocusNode = selection.focusNode || selection.anchorNode;
-        const focusNode = state.nodeKeys.nodeFromKey(
-          (
-            (selectionFocusNode instanceof Text
-              ? selectionFocusNode.parentNode!
-              : selectionFocusNode) as HTMLElement
-          ).dataset.ovvKey!
-        );
-        if (anchorNode || focusNode) {
-          if (!state.ranges) {
-            state.ranges = {};
-          }
-          state.ranges[selectionId] = {
-            anchor: {
-              node: (anchorNode || focusNode) as TextNode,
-              offset: selection.anchorOffset,
-            },
-            focus: {
-              node: (focusNode || anchorNode) as TextNode,
-              offset: selection.focusOffset,
-            },
-            dir: PointerDirection.None,
-          };
-          const result = docFromRT(docToRT(state));
-          setState(result);
-        }
-      }
-    } catch (err: unknown) {
+export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
+  function RichTextEditor({ note, className }: RichTextEditorProps, ref) {
+    const partialNote = usePartialVertex(note, ['body', 'plaintextTitle']);
+    const trustPool = useTrustPool();
+    const selectionId = trustPool.currentSession.id;
+    const anchorRef = useRef<HTMLElement>(null);
+    const focusRef = useRef<HTMLElement>(null);
+    const styles = useStyles();
+    const state = partialNote.body;
+    const baseDirection = resolveWritingDirection(partialNote.plaintextTitle);
+
+    useLayoutEffect(() => {
+      const selection = getSelection();
       debugger;
-    }
-  }, [state]);
+      // try {
+      //   if (
+      //     state.ranges![selectionId].focus.offset !=
+      //     state.ranges![selectionId].anchor.offset
+      //   )
+      //     debugger;
+      // } catch (_: unknown) {}
+      if (selection) {
+        selection.removeAllRanges();
+        if (!state.ranges || !state.ranges[selectionId]) {
+          return;
+        }
+        const cfdsRange = state.ranges[selectionId];
+        const range = document.createRange();
+        let offsetShift = 0;
+        let desiredStartOffset = cfdsRange.anchor.offset;
+        const origAnchorNode =
+          anchorRef.current?.childNodes[0] ||
+          anchorRef.current ||
+          focusRef.current?.childNodes[0] ||
+          focusRef.current;
+        if (!origAnchorNode) {
+          return;
+        }
+        let anchorNode = origAnchorNode;
+        if (anchorNode instanceof Text && anchorNode.data.length === 0) {
+          const newAnchor = anchorNode.parentNode as unknown as ChildNode;
+          const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
+            anchorNode
+          );
+          if (cfdsRange.dir === PointerDirection.Backward) {
+            desiredStartOffset = origAnchorIdx + 1;
+          } else {
+            desiredStartOffset = origAnchorIdx - 1;
+          }
+          anchorNode = newAnchor;
+        }
+        if (cfdsRange.dir === PointerDirection.Backward) {
+          range.setEnd(anchorNode, desiredStartOffset);
+          offsetShift = range.endOffset - desiredStartOffset;
+        } else {
+          range.setStart(anchorNode, desiredStartOffset);
+          offsetShift = range.startOffset - desiredStartOffset;
+        }
 
-  const contents = renderRichText({
-    doc: state,
-    selectionId: selectionId,
-    anchorRef: anchorRef,
-    focusRef: focusRef,
-  });
+        let focusNode: ChildNode | null = null;
+        if (focusRef.current) {
+          focusNode = focusRef.current.childNodes[0] || focusRef.current;
+        }
+        if (!focusNode) {
+          focusNode = origAnchorNode;
+        }
+        if (focusNode instanceof Text && focusNode.data.length === 0) {
+          focusNode = focusNode.parentNode as unknown as ChildNode;
+        }
+        if (focusNode) {
+          if (cfdsRange.dir === PointerDirection.Backward) {
+            const offset =
+              state.ranges![selectionId].focus.offset + offsetShift;
+            if (focusNode instanceof Text && offset === focusNode.data.length) {
+              const parent = focusNode.parentNode!;
+              const indexInParent = Array.from(parent.childNodes).indexOf(
+                focusNode
+              );
+              focusNode = parent as unknown as ChildNode;
+              if (cfdsRange.dir === PointerDirection.Backward) {
+                desiredStartOffset = indexInParent - 1;
+              } else {
+                desiredStartOffset = indexInParent + 1;
+              }
+            }
+            range.setStart(focusNode, offset);
+          } else {
+            const offset =
+              state.ranges![selectionId].focus.offset + offsetShift;
+            range.setEnd(focusNode, offset);
+          }
+        }
+        selection.addRange(range);
+      }
+    }, [anchorRef, focusRef, selectionId, partialNote]);
 
-  return (
-    <div
-      className={cn(styles.contentEditable)}
-      contentEditable={true}
-      suppressContentEditableWarning={true}
-      onBeforeInput={(event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        setState(
-          handleTextInputEvent(
+    const onSelectionChanged = useCallback(() => {
+      const selection = getSelection();
+      if (!selection) {
+        const doc = coreValueClone(state);
+        if (doc.ranges && doc.ranges[selectionId]) {
+          delete doc.ranges[selectionId];
+          partialNote.body = doc;
+        }
+        return;
+      }
+      try {
+        const selectionAnchorNode = selection.anchorNode;
+        if (selectionAnchorNode) {
+          const anchorNode = state.nodeKeys.nodeFromKey(
+            (
+              (selectionAnchorNode instanceof Text
+                ? selectionAnchorNode.parentNode!
+                : selectionAnchorNode) as HTMLElement
+            ).dataset.ovvKey!
+          );
+          const selectionFocusNode =
+            selection.focusNode || selection.anchorNode;
+          const focusNode = state.nodeKeys.nodeFromKey(
+            (
+              (selectionFocusNode instanceof Text
+                ? selectionFocusNode.parentNode!
+                : selectionFocusNode) as HTMLElement
+            ).dataset.ovvKey!
+          );
+          if (anchorNode || focusNode) {
+            if (!state.ranges) {
+              state.ranges = {};
+            }
+            state.ranges[selectionId] = {
+              anchor: {
+                node: (anchorNode || focusNode) as TextNode,
+                offset: selection.anchorOffset,
+              },
+              focus: {
+                node: (focusNode || anchorNode) as TextNode,
+                offset: selection.focusOffset,
+              },
+              dir: PointerDirection.None,
+            };
+            const result = docFromRT(docToRT(state));
+            partialNote.body = result;
+          }
+        }
+      } catch (err: unknown) {
+        debugger;
+      }
+    }, [partialNote]);
+
+    const contents = renderRichText({
+      doc: partialNote.body,
+      selectionId: selectionId,
+      anchorRef: anchorRef,
+      focusRef: focusRef,
+      baseDirection,
+    });
+
+    return (
+      <div
+        ref={ref}
+        className={cn(className, styles.contentEditable)}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        dir={baseDirection === 'rtl' ? 'rtl' : undefined}
+        onBeforeInput={(event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          partialNote.body = handleTextInputEvent(
             state,
             event.nativeEvent as InputEvent,
             selectionId
-          )
-        );
-        return false;
-      }}
-      onSelect={onSelectionChanged}
-      onKeyDown={(event) => {
-        if (event.key === 'Backspace' || event.key === 'Delete') {
-          event.stopPropagation();
-          event.preventDefault();
-          setState(handleTextInputEvent(state, event.nativeEvent, selectionId));
+          );
           return false;
-        }
-        if (event.key === 'Tab') {
-          const doc = handleTabPressed(state, event.nativeEvent, selectionId);
-          if (doc) {
+        }}
+        onSelect={onSelectionChanged}
+        onKeyDown={(event) => {
+          if (event.key === 'Backspace' || event.key === 'Delete') {
             event.stopPropagation();
             event.preventDefault();
-            setState(doc);
+            partialNote.body = handleTextInputEvent(
+              state,
+              event.nativeEvent,
+              selectionId
+            );
+            return false;
           }
-          return false;
-        }
-      }}
-    >
-      {contents}
+          if (event.key === 'Tab') {
+            const doc = handleTabPressed(state, event.nativeEvent, selectionId);
+            if (doc) {
+              event.stopPropagation();
+              event.preventDefault();
+              partialNote.body = doc;
+            }
+            return false;
+          }
+        }}
+      >
+        {contents}
+      </div>
+    );
+  }
+);
+
+interface HeaderTitleProps {
+  note: VertexManager<Note>;
+  onEnter: () => void;
+}
+
+const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
+  function HeaderTitle({ note, onEnter }: HeaderTitleProps, ref) {
+    const styles = useStyles();
+    const partialVertex = usePartialVertex(note, ['plaintextTitle']);
+    const baseDirection = resolveWritingDirection(partialVertex.plaintextTitle);
+    return (
+      <input
+        key="EditorTitle"
+        ref={ref}
+        className={cn(styles.titleInput)}
+        type="text"
+        dir={baseDirection === 'rtl' ? 'rtl' : undefined}
+        value={partialVertex.plaintextTitle}
+        onChange={(e) => {
+          partialVertex.plaintextTitle = (e.target as HTMLInputElement).value;
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            debugger;
+            e.preventDefault();
+            e.stopPropagation();
+            // onEnter();
+          }
+        }}
+        autoFocus
+      />
+    );
+  }
+);
+
+export interface NoteEditorProps {
+  note?: VertexManager<Note>;
+}
+
+export interface NoteEditorURLParams
+  extends Record<string, string | undefined> {
+  workspaceId: string | undefined;
+  noteId: string | undefined;
+}
+
+function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
+  const styles = useStyles();
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  const [didFocus, setDidFocus] = useState(false);
+
+  // useEffect(() => {
+  //   if (didFocus) {
+  //     return;
+  //   }
+  //   let timeout: number | undefined = setTimeout(() => {
+  //     debugger;
+  //     if (titleInputRef.current) {
+  //       console.log('focused!!!');
+  //       titleInputRef.current.focus();
+  //       setDidFocus(true);
+  //     }
+  //     timeout = undefined;
+  //   }, 500);
+  //   return () => {
+  //     if (timeout) {
+  //       clearTimeout(timeout);
+  //       timeout = undefined;
+  //     }
+  //   };
+  // }, [didFocus, setDidFocus, titleInputRef]);
+
+  const onTitleEnter = useCallback(() => {
+    if (!editorRef.current) {
+      return;
+    }
+    editorRef.current.focus();
+  }, [editorRef]);
+
+  return (
+    <div className={cn(styles.mainContainer)} key="EditorContainer">
+      <div className={cn(styles.header)} key="EditorHeader">
+        <div className={cn(styles.headerMainActions)} key="EditorHeaderActions">
+          <img
+            key="ExitEditorAction"
+            className={cn(styles.headerMainActionButton)}
+            src="/icons/editor/icon/close-circle.svg"
+            onClick={() => {
+              navigate('/');
+            }}
+          />
+        </div>
+        <HeaderTitle
+          key="EditorHeader"
+          ref={titleInputRef}
+          note={note}
+          onEnter={onTitleEnter}
+        />
+      </div>
+      <RichTextEditor key="EditorBody" ref={editorRef} note={note} />
     </div>
+  );
+}
+
+export function NoteEditor({ note }: NoteEditorProps) {
+  const styles = useStyles();
+  const params = useParams<NoteEditorURLParams>();
+  const repoId = note
+    ? note.repositoryId
+    : params.workspaceId
+    ? Repository.id('data', params.workspaceId)
+    : undefined;
+  const graph = useGraphManager();
+  const [repoLoaded, setRepoLoaded] = useState(
+    repoId ? graph.repositoryFinishedLoading(repoId) : false
+  );
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!repoLoaded && repoId) {
+      graph.loadRepository(repoId).then(() => {
+        setRepoLoaded(graph.repositoryFinishedLoading(repoId));
+      });
+    }
+  }, [repoLoaded, repoId]);
+  if (!repoId || !params.noteId) {
+    navigate('/');
+    notReached();
+  }
+
+  if (!repoLoaded) {
+    return <LoadingView />;
+  }
+
+  return (
+    <NoteEditorInternal
+      note={note || graph.getVertexManager<Note>(params.noteId)}
+    />
   );
 }

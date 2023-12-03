@@ -8,7 +8,7 @@ body,
   font-family: 'Poppins', 'Heebo', sans-serif;
   overflow: hidden;
 }
-.layout-column {
+/* .layout-column {
   display: flex;
   flex-direction: column;
 }
@@ -24,4 +24,4 @@ body,
 
 .flex-spacer {
   flex: 1 1 auto;
-}
+} */

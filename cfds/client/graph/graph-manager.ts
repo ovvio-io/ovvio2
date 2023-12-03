@@ -211,6 +211,7 @@ export class GraphManager
     const backup = plumbing.backup;
 
     if (typeof backup === 'undefined') {
+      debugger;
       plumbing.loadingFinished = true;
       return Promise.resolve();
     }
@@ -232,7 +233,8 @@ export class GraphManager
       }
       // Load all keys from this repo
       for (const key of repo.keys()) {
-        this.getVertexManager(key);
+        if (id.startsWith('data/')) debugger;
+        this.getVertexManager(key).touch();
       }
       plumbing.active = true;
       plumbing.loadingFinished = true;
@@ -344,6 +346,10 @@ export class GraphManager
 
   repositoryIsActive(id: string): boolean {
     return this._repoById.get(id)?.active === true;
+  }
+
+  repositoryFinishedLoading(id: string): boolean {
+    return this.plumbingForRepository(id).loadingFinished === true;
   }
 
   setRepositoryIsActive(id: string, flag: boolean): void {

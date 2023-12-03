@@ -449,6 +449,26 @@ export class Note extends ContentVertex {
     return this._cachedPlaintextTitle;
   }
 
+  set plaintextTitle(str: string) {
+    const updatedRT: RichText = {
+      root: {
+        children: [
+          {
+            tagName: 'p',
+            children: [
+              {
+                text: str,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const finalRT = projectPointers(this.titleRT, updatedRT, () => true);
+    this.titleRT = finalRT;
+    this._cachedPlaintextTitle = undefined;
+  }
+
   private get titleRT(): RichText {
     if (!this._cachedTitleRT) {
       this._cachedTitleRT = reconstructRichText(
