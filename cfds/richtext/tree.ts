@@ -413,7 +413,7 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
       result += node.text;
     }
   }
-  return result.trim();
+  return result;
 }
 
 export function pathForNode<T extends ElementNode>(

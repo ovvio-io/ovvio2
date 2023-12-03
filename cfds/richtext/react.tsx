@@ -71,7 +71,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLHeadingElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </h1>
@@ -83,7 +83,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLHeadingElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </h2>
@@ -96,7 +96,7 @@ function renderNode(
           ref={ref as React.RefObject<HTMLOListElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           start={node.start}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </ol>
@@ -108,7 +108,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLUListElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </ul>
@@ -120,7 +120,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLLIElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </li>
@@ -132,7 +132,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLParagraphElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir === 'rtl' ? 'rtl' : undefined}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}
         </p>

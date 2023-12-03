@@ -94,6 +94,7 @@ const useStyles = makeStyles(() => ({
     textAlign: 'center',
     border: 'none',
     cursor: 'text',
+    whiteSpace: 'pre-wrap',
   },
   contentEditable: {
     width: '100%',
@@ -102,6 +103,7 @@ const useStyles = makeStyles(() => ({
     padding: '10px',
     outline: 'none',
     cursor: 'text',
+    boxSizing: 'border-box',
   },
 }));
 
@@ -502,30 +504,24 @@ export interface RichTextEditorProps {
   ref?: React.RefObject<HTMLDivElement>;
 }
 
-function isNodeChildOf(parent: HTMLElement, child: HTMLElement): boolean {
-  do {
-    if (child === parent) {
-      return true;
-    }
-    child = child.parentNode;
-  } while (child);
-  return false;
-}
-
 export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
   function RichTextEditor({ note, className }: RichTextEditorProps, ref) {
-    const partialNote = usePartialVertex(note, ['body', 'plaintextTitle']);
+    const partialNote = usePartialVertex(note, ['body', 'titlePlaintext']);
     const trustPool = useTrustPool();
     const selectionId = trustPool.currentSession.id;
     const anchorRef = useRef<HTMLElement>(null);
     const focusRef = useRef<HTMLElement>(null);
     const styles = useStyles();
     const state = partialNote.body;
-    const baseDirection = resolveWritingDirection(partialNote.plaintextTitle);
+    const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
 
     useLayoutEffect(() => {
       const selection = getSelection();
-      debugger;
+      const divElement = (ref as React.MutableRefObject<HTMLDivElement>)
+        ?.current;
+      if (!divElement || document.activeElement !== divElement) {
+        return;
+      }
       // try {
       //   if (
       //     state.ranges![selectionId].focus.offset !=
@@ -684,7 +680,6 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
             event.nativeEvent as InputEvent,
             selectionId
           );
-          return false;
         }}
         onSelect={onSelectionChanged}
         onKeyDown={(event) => {
@@ -696,7 +691,6 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
               event.nativeEvent,
               selectionId
             );
-            return false;
           }
           if (event.key === 'Tab') {
             const doc = handleTabPressed(state, event.nativeEvent, selectionId);
@@ -705,8 +699,18 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
               event.preventDefault();
               partialNote.body = doc;
             }
-            return false;
           }
+          if (
+            event.key === 'z' &&
+            (event.ctrlKey || event.metaKey || event.shiftKey)
+          ) {
+            event.stopPropagation();
+            event.preventDefault();
+          }
+        }}
+        onPaste={(event) => {
+          event.stopPropagation();
+          event.preventDefault();
         }}
       >
         {contents}
@@ -723,8 +727,8 @@ interface HeaderTitleProps {
 const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
   function HeaderTitle({ note, onEnter }: HeaderTitleProps, ref) {
     const styles = useStyles();
-    const partialVertex = usePartialVertex(note, ['plaintextTitle']);
-    const baseDirection = resolveWritingDirection(partialVertex.plaintextTitle);
+    const partialVertex = usePartialVertex(note, ['titlePlaintext']);
+    const baseDirection = resolveWritingDirection(partialVertex.titlePlaintext);
     return (
       <input
         key="EditorTitle"
@@ -732,16 +736,15 @@ const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
         className={cn(styles.titleInput)}
         type="text"
         dir={baseDirection === 'rtl' ? 'rtl' : undefined}
-        value={partialVertex.plaintextTitle}
+        value={partialVertex.titlePlaintext}
         onChange={(e) => {
-          partialVertex.plaintextTitle = (e.target as HTMLInputElement).value;
+          partialVertex.titlePlaintext = (e.target as HTMLInputElement).value;
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
-            debugger;
             e.preventDefault();
             e.stopPropagation();
-            // onEnter();
+            onEnter();
           }
         }}
         autoFocus
@@ -768,26 +771,24 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
 
   const [didFocus, setDidFocus] = useState(false);
 
-  // useEffect(() => {
-  //   if (didFocus) {
-  //     return;
-  //   }
-  //   let timeout: number | undefined = setTimeout(() => {
-  //     debugger;
-  //     if (titleInputRef.current) {
-  //       console.log('focused!!!');
-  //       titleInputRef.current.focus();
-  //       setDidFocus(true);
-  //     }
-  //     timeout = undefined;
-  //   }, 500);
-  //   return () => {
-  //     if (timeout) {
-  //       clearTimeout(timeout);
-  //       timeout = undefined;
-  //     }
-  //   };
-  // }, [didFocus, setDidFocus, titleInputRef]);
+  useEffect(() => {
+    if (didFocus) {
+      return;
+    }
+    let timeout: number | undefined = setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+        setDidFocus(true);
+      }
+      timeout = undefined;
+    }, 500);
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = undefined;
+      }
+    };
+  }, [didFocus, setDidFocus, titleInputRef]);
 
   const onTitleEnter = useCallback(() => {
     if (!editorRef.current) {
