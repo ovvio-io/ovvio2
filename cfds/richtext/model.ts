@@ -4,6 +4,7 @@ import {
   isReadonlyCoreObject,
 } from '../../base/core-types/index.ts';
 import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
+import { WritingDirection } from '../../base/string.ts';
 
 export type MarkupNode =
   | ParagraphNode
@@ -23,28 +24,32 @@ export type MarkupNode =
 
 export const STICKY_ELEMENT_TAGS = ['li'] as readonly (string | undefined)[];
 
-export interface ParagraphNode extends ElementNode {
+interface ElementWithDirection extends ElementNode {
+  dir?: WritingDirection;
+}
+
+export interface ParagraphNode extends ElementNode, ElementWithDirection {
   readonly tagName: 'p';
 }
 
-export interface Header1Node extends ElementNode {
+export interface Header1Node extends ElementNode, ElementWithDirection {
   readonly tagName: 'h1';
 }
 
-export interface Header2Node extends ElementNode {
+export interface Header2Node extends ElementNode, ElementWithDirection {
   readonly tagName: 'h2';
 }
 
-export interface UnorderedListNode extends ElementNode {
+export interface UnorderedListNode extends ElementNode, ElementWithDirection {
   readonly tagName: 'ul';
 }
 
-export interface OrderedListNode extends ElementNode {
+export interface OrderedListNode extends ElementNode, ElementWithDirection {
   readonly tagName: 'ol';
   start?: number;
 }
 
-export interface ListItemNode extends ElementNode {
+export interface ListItemNode extends ElementNode, ElementWithDirection {
   readonly tagName: 'li';
 }
 

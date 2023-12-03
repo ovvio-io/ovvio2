@@ -3,6 +3,10 @@ import { Document } from './doc-state.ts';
 import { TreeNode, isElementNode, isTextNode } from './tree.ts';
 import { MarkupNode } from './model.ts';
 import { makeStyles, cn } from '../../styles/css-objects/index.ts';
+import {
+  WritingDirection,
+  resolveWritingDirection,
+} from '../../base/string.ts';
 
 const useStyles = makeStyles((theme) => ({
   contentEditable: {
@@ -22,6 +26,7 @@ interface RenderContext {
   selectionId: string;
   anchorRef: React.RefObject<HTMLElement>;
   focusRef: React.RefObject<HTMLElement>;
+  baseDirection?: WritingDirection;
 }
 
 function renderNode(
@@ -49,10 +54,14 @@ function renderNode(
     );
   }
   let children: JSX.Element[] | undefined;
+  let dir: WritingDirection = node.dir || 'auto';
   if (isElementNode(node)) {
-    children = node.children.map(
-      (n) => renderNode(n as MarkupNode, ctx, styles) as JSX.Element
-    );
+    children = node.children.map((n) => {
+      if (dir === 'auto' && isTextNode(n)) {
+        dir = resolveWritingDirection(n.text);
+      }
+      return renderNode(n as MarkupNode, ctx, styles) as JSX.Element;
+    });
   }
 
   switch (node.tagName) {
@@ -62,6 +71,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLHeadingElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </h1>
@@ -73,6 +83,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLHeadingElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </h2>
@@ -85,6 +96,7 @@ function renderNode(
           ref={ref as React.RefObject<HTMLOListElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           start={node.start}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </ol>
@@ -96,6 +108,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLUListElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </ul>
@@ -107,6 +120,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLLIElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </li>
@@ -118,6 +132,7 @@ function renderNode(
           key={ctx.doc.nodeKeys.keyFor(node).id}
           ref={ref as React.RefObject<HTMLParagraphElement>}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir === 'rtl' ? 'rtl' : undefined}
         >
           {children}
         </p>
