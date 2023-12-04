@@ -108,7 +108,7 @@ const EditorNode = React.forwardRef<RichTextRef, EditorNodeProps>(
           },
         };
       },
-      [anchorRef, focusRef]
+      [anchorRef.current, focusRef.current]
     );
 
     if (isTextNode(node)) {
