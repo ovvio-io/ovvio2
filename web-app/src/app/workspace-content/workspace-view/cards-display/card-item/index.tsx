@@ -183,15 +183,12 @@ function Title({
   card: VertexManager<Note>;
   source: UISource;
 }) {
-  // const { editor, plugins, handlers } = useTitleEditor(card, TitleNode, source);
-  const { plaintextTitle } = usePartialVertex(card, ['plaintextTitle']);
+  const styles = useStyles();
+  const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
 
   return (
     <div>
-      {/* <Slate editor={editor} {...handlers}>
-        <Editable {...plugins} readOnly={true} />
-      </Slate> */}
-      <Text>{plaintextTitle}</Text>
+      <Text className={cn(styles.titleText)}>{titlePlaintext}</Text>
     </div>
   );
 }
