@@ -13,7 +13,8 @@ export type MarkupNode =
   | UnorderedListNode
   | OrderedListNode
   | ListItemNode
-  | RefNode;
+  | RefNode
+  | TextNode;
 // | TableNode
 // | TableRowNode
 // | TableCellNode

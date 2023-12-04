@@ -11,6 +11,7 @@ import {
   PointerDirection,
   Point,
   PointerType,
+  isElementNode,
 } from './tree.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { TreeKeys } from './tree-keys.ts';
@@ -353,6 +354,19 @@ export function pointToPath(
     }
   }
   notReached();
+}
+
+export function findEndOfDocument(document: Document): TextNode | ElementNode {
+  let lastTextNode: TextNode | undefined;
+  let lastParent: ElementNode = document.root;
+  for (const [node] of dfs(document.root)) {
+    if (isTextNode(node)) {
+      lastTextNode = node;
+    } else if (isElementNode(node)) {
+      lastParent = node;
+    }
+  }
+  return lastTextNode || lastParent;
 }
 
 // interface ProjectionContext {

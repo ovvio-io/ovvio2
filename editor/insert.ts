@@ -1,4 +1,8 @@
-import { docToRT, docFromRT } from '../cfds/richtext/doc-state.ts';
+import {
+  docToRT,
+  docFromRT,
+  findEndOfDocument,
+} from '../cfds/richtext/doc-state.ts';
 import {
   IndexedPointerValue,
   filteredPointersRep,
@@ -18,9 +22,13 @@ import {
   isElementNode,
   pathToNode,
   PointerDirection,
+  TextNode,
 } from '../cfds/richtext/tree.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { uniqueId } from '../base/common.ts';
+import { coreValueClone } from '../base/core-types/clone.ts';
+import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
+import { deleteCurrentSelection } from './delete.ts';
 
 export function handleNewline(
   document: Document,
@@ -198,4 +206,72 @@ export function handleNewline(
     (ptr) => !didSetSelection || ptr.key !== selectionId
   );
   return docFromRT(finalRt);
+}
+
+export function handleInsertTextInputEvent(
+  document: Document,
+  event: InputEvent | KeyboardEvent,
+  selectionId: string
+): Document {
+  let insertData = '';
+  if (event instanceof KeyboardEvent) {
+    insertData = event.key;
+  } else {
+    insertData = event.data || '';
+  }
+  if (!insertData.length) {
+    return document;
+  }
+  if (insertData === '\n') {
+    return handleNewline(document, selectionId);
+  }
+  let result = coreValueClone(document);
+  let selection = result.ranges && result.ranges[selectionId];
+  if (!selection) {
+    const lastNode = findEndOfDocument(result);
+    let textNode: TextNode;
+    if (isElementNode(lastNode)) {
+      textNode = { text: '' };
+      lastNode.children.push(textNode);
+    } else {
+      textNode = lastNode;
+    }
+    textNode.text += insertData;
+    if (!result.ranges) {
+      result.ranges = {};
+    }
+    result.ranges[selectionId] = {
+      anchor: {
+        node: textNode,
+        offset: textNode.text.length,
+      },
+      focus: {
+        node: textNode,
+        offset: textNode.text.length,
+      },
+      dir: PointerDirection.None,
+    };
+  } else {
+    const textNode = selection.focus.node;
+    const text = textNode.text;
+    textNode.text =
+      text.substring(0, selection.focus.offset) +
+      insertData +
+      text.substring(selection.focus.offset);
+    if (
+      selection.anchor.node !== selection.focus.node ||
+      selection.anchor.offset !== selection.focus.offset
+    ) {
+      result = deleteCurrentSelection(result, selectionId);
+      selection = (result.ranges && result.ranges[selectionId])!;
+    }
+    selection.anchor.offset += insertData.length;
+    selection.focus.offset += insertData.length;
+  }
+
+  // Run any shortcuts
+  result = docFromRT(
+    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true)))
+  );
+  return result;
 }

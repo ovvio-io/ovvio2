@@ -8,43 +8,17 @@ import React, {
 } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
-  ElementNode,
   PointerDirection,
   TextNode,
-  dfs,
-  initRichText,
-  initRichTextRoot,
-  isElementNode,
-  isTextNode,
   pathToNode,
 } from '../cfds/richtext/tree.ts';
-import { renderRichText } from '../cfds/richtext/react.tsx';
+import { RichTextRef, RichTextRenderer } from '../cfds/richtext/react.tsx';
 import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { useTrustPool } from '../auth/react.tsx';
 import { makeStyles, cn } from '../styles/css-objects/index.ts';
-import { MergeContext } from '../cfds/richtext/merge-context.ts';
-import {
-  DepthMarker,
-  filteredPointersRep,
-  FlatRepAtom,
-  flattenRichText,
-  IndexedPointerValue,
-  isDepthMarker,
-  kElementSpacer,
-  PointerValue,
-  projectPointers,
-  reconstructRichText,
-} from '../cfds/richtext/flat-rep.ts';
-import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
-import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
-import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
-import { assert, notReached } from '../base/error.ts';
-import { coreValueEquals } from '../base/core-types/equals.ts';
-import { WritingDirection, resolveWritingDirection } from '../base/string.ts';
-import { H1, Text as TextComponent } from '../styles/components/typography.tsx';
-import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { resolveWritingDirection } from '../base/string.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
@@ -52,7 +26,10 @@ import { styleguide } from '../styles/styleguide.ts';
 import { Repository } from '../repo/repo.ts';
 import { useGraphManager } from '../web-app/src/core/cfds/react/graph.tsx';
 import LoadingView from '../web-app/src/app/loading-view.tsx';
-import { handleNewline } from './newline.ts';
+import { handleInsertTextInputEvent } from './insert.ts';
+import { deleteCurrentSelection } from './delete.ts';
+import { notReached } from '../base/error.ts';
+import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 
 const HEADER_HEIGHT = styleguide.gridbase * 24;
 
@@ -113,177 +90,6 @@ const DELETE_INPUT_TYPES = [
   'deleteContentForward',
 ] as const;
 
-const EMPTY_DOCUMENT_ROOT = initRichTextRoot();
-
-function findEndOfDocument(document: Document): TextNode | ElementNode {
-  let lastTextNode: TextNode | undefined;
-  let lastParent: ElementNode = document.root;
-  for (const [node] of dfs(document.root)) {
-    if (isTextNode(node)) {
-      lastTextNode = node;
-    } else if (isElementNode(node)) {
-      lastParent = node;
-    }
-  }
-  return lastTextNode || lastParent;
-}
-
-function handleInsertTextInputEvent(
-  document: Document,
-  event: InputEvent | KeyboardEvent,
-  selectionId: string
-): Document {
-  let insertData = '';
-  if (event instanceof KeyboardEvent) {
-    insertData = event.key;
-  } else {
-    insertData = event.data || '';
-  }
-  if (!insertData.length) {
-    return document;
-  }
-  if (insertData === '\n') {
-    return handleNewline(document, selectionId);
-  }
-  let result = coreValueClone(document);
-  let selection = result.ranges && result.ranges[selectionId];
-  if (!selection) {
-    const lastNode = findEndOfDocument(result);
-    let textNode: TextNode;
-    if (isElementNode(lastNode)) {
-      textNode = { text: '' };
-      lastNode.children.push(textNode);
-    } else {
-      textNode = lastNode;
-    }
-    textNode.text += insertData;
-    if (!result.ranges) {
-      result.ranges = {};
-    }
-    result.ranges[selectionId] = {
-      anchor: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      focus: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      dir: PointerDirection.None,
-    };
-  } else {
-    const textNode = selection.focus.node;
-    const text = textNode.text;
-    textNode.text =
-      text.substring(0, selection.focus.offset) +
-      insertData +
-      text.substring(selection.focus.offset);
-    if (
-      selection.anchor.node !== selection.focus.node ||
-      selection.anchor.offset !== selection.focus.offset
-    ) {
-      result = deleteCurrentSelection(result, selectionId);
-      selection = (result.ranges && result.ranges[selectionId])!;
-    }
-    selection.anchor.offset += insertData.length;
-    selection.focus.offset += insertData.length;
-  }
-
-  // Run any shortcuts
-  result = docFromRT(
-    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true)))
-  );
-  return result;
-}
-
-function deleteCurrentSelection(
-  document: Document,
-  selectionId: string
-): Document {
-  if (coreValueEquals(EMPTY_DOCUMENT_ROOT, document.root)) {
-    return document;
-  }
-  const selection = document.ranges && document.ranges[selectionId];
-  if (!selection) {
-    return document;
-  }
-  const pointers: IndexedPointerValue[] = [];
-  const mergeCtx = new MergeContext(
-    filteredPointersRep(
-      flattenRichText(docToRT(document), true),
-      (ptr) => {
-        return true;
-      },
-      pointers
-    )
-  );
-  let start, end: number | undefined;
-  for (const [idx, ptr] of pointers) {
-    if (ptr.key === selectionId) {
-      if (ptr.type === 'anchor') {
-        start = idx;
-      } else {
-        end = idx;
-      }
-    }
-  }
-  if (start === undefined) {
-    start = end;
-  }
-  if (end === undefined) {
-    end = start;
-  }
-  if (start === undefined && end === undefined) {
-    return document;
-  }
-  if (start! > end!) {
-    const tmp = start;
-    start = end;
-    end = tmp;
-  }
-  if (start === end) {
-    start = start!;
-    const prevAtom = mergeCtx.at(start - 1);
-    if (isDepthMarker(prevAtom)) {
-      mergeCtx.deleteRange(start - 4, start);
-
-      const path = pathToNode(document.root, selection.anchor.node);
-      assert(path !== undefined);
-      if (path.length > 1) {
-        const parent = path[path.length - 2];
-        const childIndex = parent.children.indexOf(path[path.length - 1]);
-        const newDepth = prevAtom.depthMarker - 1;
-        if (childIndex === 0) {
-          mergeCtx.delete(start - 5);
-          mergeCtx.insert(start - 5, [
-            { tagName: 'p', children: [] },
-            { depthMarker: newDepth },
-          ]);
-          mergeCtx.insert(start + 1, [
-            { depthMarker: newDepth - 1 },
-            kElementSpacer,
-            { ...parent, children: [] },
-            { depthMarker: newDepth },
-          ]);
-        }
-      }
-    } else {
-      mergeCtx.delete(start - 1);
-    }
-  } else {
-    mergeCtx.deleteRange(start!, end!);
-  }
-  const rtWithDeletions = normalizeRichText(
-    reconstructRichText(mergeCtx.finalize())
-  );
-  const finalRt = projectPointers(
-    docToRT(document),
-    rtWithDeletions,
-    () => true
-  );
-  return docFromRT(finalRt);
-}
-
 function handleTextInputEvent(
   document: Document,
   event: InputEvent | KeyboardEvent,
@@ -322,7 +128,7 @@ function handleTabPressed(
   if (!path || path.length < 2) {
     return;
   }
-  const parent = path[path.length - 1];
+  // const parent = path[path.length - 1];
   // if (parent.tagName === 'li') {
   //   const grandParent = path[path.length - 2];
   //   const liIndex = grandParent.children.indexOf(parent);
@@ -349,12 +155,12 @@ function handleTabPressed(
   //   return coreValueClone(doc);
   // }
 }
-function updateBrowserSelectionToDocument(
+function setBrowserSelectionToDocument(
   state: Document,
   selectionId: string,
   ref: React.MutableRefObject<HTMLDivElement> | undefined | null,
-  anchorRef: React.RefObject<HTMLElement>,
-  focusRef: React.RefObject<HTMLElement>
+  anchorRefNode: HTMLElement | null | undefined,
+  focusRefNode: HTMLElement | null | undefined
 ): void {
   const selection = getSelection();
   const divElement = (ref as React.MutableRefObject<HTMLDivElement>)?.current;
@@ -378,10 +184,10 @@ function updateBrowserSelectionToDocument(
     let offsetShift = 0;
     let desiredStartOffset = cfdsRange.anchor.offset;
     const origAnchorNode =
-      anchorRef.current?.childNodes[0] ||
-      anchorRef.current ||
-      focusRef.current?.childNodes[0] ||
-      focusRef.current;
+      anchorRefNode?.childNodes[0] ||
+      anchorRefNode ||
+      focusRefNode?.childNodes[0] ||
+      focusRefNode;
     if (!origAnchorNode) {
       return;
     }
@@ -407,8 +213,8 @@ function updateBrowserSelectionToDocument(
     }
 
     let focusNode: ChildNode | null = null;
-    if (focusRef.current) {
-      focusNode = focusRef.current.childNodes[0] || focusRef.current;
+    if (focusRefNode) {
+      focusNode = focusRefNode.childNodes[0] || focusRefNode;
     }
     if (!focusNode) {
       focusNode = origAnchorNode;
@@ -452,21 +258,20 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
     const partialNote = usePartialVertex(note, ['body', 'titlePlaintext']);
     const trustPool = useTrustPool();
     const selectionId = trustPool.currentSession.id;
-    const anchorRef = useRef<HTMLElement>(null);
-    const focusRef = useRef<HTMLElement>(null);
+    const richTextRef = useRef<RichTextRef>(null);
     const styles = useStyles();
     const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
 
     useLayoutEffect(
       () =>
-        updateBrowserSelectionToDocument(
+        setBrowserSelectionToDocument(
           note.getVertexProxy().body,
           selectionId,
           ref as React.MutableRefObject<HTMLDivElement>,
-          anchorRef,
-          focusRef
+          richTextRef.current?.anchorNode,
+          richTextRef.current?.focusNode
         ),
-      [anchorRef, focusRef, selectionId, partialNote]
+      [richTextRef.current, selectionId, partialNote]
     );
 
     const onSelectionChanged = useCallback(() => {
@@ -491,12 +296,12 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
             ).dataset.ovvKey!
           );
           if (!anchorNode) {
-            updateBrowserSelectionToDocument(
+            setBrowserSelectionToDocument(
               state,
               selectionId,
               ref as React.MutableRefObject<HTMLDivElement>,
-              anchorRef,
-              focusRef
+              richTextRef.current?.anchorNode,
+              richTextRef.current?.focusNode
             );
             return;
           }
@@ -598,13 +403,12 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
         onKeyDown={onKeyDown}
         onPaste={onPaste}
       >
-        {renderRichText({
-          doc: partialNote.body,
-          selectionId: selectionId,
-          anchorRef: anchorRef,
-          focusRef: focusRef,
-          baseDirection,
-        })}
+        <RichTextRenderer
+          doc={partialNote.body}
+          selectionId={selectionId}
+          baseDirection={baseDirection}
+          ref={richTextRef}
+        />
       </div>
     );
   }
@@ -672,7 +476,7 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
         setDidFocus(true);
       }
       timeout = undefined;
-    }, 500);
+    }, 50);
     return () => {
       if (timeout) {
         clearTimeout(timeout);
