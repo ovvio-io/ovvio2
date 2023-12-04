@@ -246,11 +246,11 @@ export class Note extends ContentVertex {
         let childV: Note;
         if (!oldRefs.has(key)) {
           if (graph.hasVertex(key)) {
-            //This was a deleted task.
+            // This was a deleted task.
             childV = graph.getVertex<Note>(key);
             childV.isDeleted = 0;
           } else {
-            //New Task
+            // New Task
             childV = graph.createVertex(
               NS_NOTES,
               {
@@ -264,7 +264,7 @@ export class Note extends ContentVertex {
             );
           }
         } else {
-          //Existing task
+          // Existing task
           childV = graph.getVertex<Note>(key);
         }
         childV.titleRT = rt;

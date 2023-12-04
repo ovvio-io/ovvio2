@@ -1,4 +1,10 @@
-import { FlatRepAtom, isDepthMarker, isElementSpacer } from './flat-rep.ts';
+import { uniqueId } from '../../base/common.ts';
+import {
+  FlatRepAtom,
+  isDepthMarker,
+  isElementSpacer,
+  kElementSpacer,
+} from './flat-rep.ts';
 import { OrderedListNode } from './model.ts';
 import { isElementNode, isTextNode } from './tree.ts';
 
@@ -143,6 +149,47 @@ function replaceOL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
   }
 }
 
+function replaceTask(
+  buffer: FlatRepAtom[]
+): [number, FlatRepAtom[]] | undefined {
+  if (buffer.length < 5) {
+    return;
+  }
+  if (
+    isElementSpacer(buffer[0]) &&
+    isElementNode(buffer[1]) &&
+    isDepthMarker(buffer[2]) &&
+    isTextNode(buffer[3]) &&
+    buffer[3].text === '-' &&
+    isTextNode(buffer[4]) &&
+    buffer[4].text === ' '
+  ) {
+    return [
+      5,
+      [
+        buffer[0],
+        {
+          tagName: 'ref',
+          type: 'inter-doc',
+          ref: uniqueId(),
+          children: [],
+        },
+        buffer[2],
+        kElementSpacer,
+        {
+          tagName: 'p',
+          children: [],
+        },
+        { depthMarker: buffer[2].depthMarker + 1 },
+        {
+          text: '',
+        },
+        buffer[2],
+      ],
+    ];
+  }
+}
+
 export function* applyShortcuts(
   flatRep: Iterable<FlatRepAtom>
 ): Generator<FlatRepAtom> {
@@ -153,7 +200,8 @@ export function* applyShortcuts(
       replaceH1(buffer) ||
       replaceH2(buffer) ||
       replaceUL(buffer) ||
-      replaceOL(buffer);
+      replaceOL(buffer) ||
+      replaceTask(buffer);
     if (replacement) {
       for (const a of replacement[1]) {
         yield a;

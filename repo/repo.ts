@@ -668,8 +668,11 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     const storage = this.storage;
     const result: Commit[] = [];
     for (const persistedCommit of storage.persistCommits(batch, this)) {
-      this.emit(EVENT_NEW_COMMIT, persistedCommit);
+      this._cachedHeadsByKey.delete(persistedCommit.key);
       result.push(persistedCommit);
+    }
+    for (const c of result) {
+      this.emit(EVENT_NEW_COMMIT, c);
     }
     return result;
   }

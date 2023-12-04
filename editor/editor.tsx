@@ -47,7 +47,6 @@ import { H1, Text as TextComponent } from '../styles/components/typography.tsx';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
-import { layout } from '../styles/layout.ts';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { Repository } from '../repo/repo.ts';
@@ -100,7 +99,7 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     height: `calc(100% - ${HEADER_HEIGHT}px)`,
     whiteSpace: 'pre-wrap',
-    padding: '10px',
+    padding: styleguide.gridbase * 11,
     outline: 'none',
     cursor: 'text',
     boxSizing: 'border-box',
@@ -497,6 +496,97 @@ function handleTabPressed(
   //   return coreValueClone(doc);
   // }
 }
+function updateBrowserSelectionToDocument(
+  state: Document,
+  selectionId: string,
+  ref: React.MutableRefObject<HTMLDivElement> | undefined | null,
+  anchorRef: React.RefObject<HTMLElement>,
+  focusRef: React.RefObject<HTMLElement>
+): void {
+  const selection = getSelection();
+  const divElement = (ref as React.MutableRefObject<HTMLDivElement>)?.current;
+  if (!divElement || document.activeElement !== divElement) {
+    return;
+  }
+  // try {
+  //   if (
+  //     state.ranges![selectionId].focus.offset !=
+  //     state.ranges![selectionId].anchor.offset
+  //   )
+  //     debugger;
+  // } catch (_: unknown) {}
+  if (selection) {
+    selection.removeAllRanges();
+    if (!state.ranges || !state.ranges[selectionId]) {
+      return;
+    }
+    const cfdsRange = state.ranges[selectionId];
+    const range = document.createRange();
+    let offsetShift = 0;
+    let desiredStartOffset = cfdsRange.anchor.offset;
+    const origAnchorNode =
+      anchorRef.current?.childNodes[0] ||
+      anchorRef.current ||
+      focusRef.current?.childNodes[0] ||
+      focusRef.current;
+    if (!origAnchorNode) {
+      return;
+    }
+    let anchorNode = origAnchorNode;
+    if (anchorNode instanceof Text && anchorNode.data.length === 0) {
+      const newAnchor = anchorNode.parentNode as unknown as ChildNode;
+      const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
+        anchorNode
+      );
+      if (cfdsRange.dir === PointerDirection.Backward) {
+        desiredStartOffset = origAnchorIdx + 1;
+      } else {
+        desiredStartOffset = origAnchorIdx - 1;
+      }
+      anchorNode = newAnchor;
+    }
+    if (cfdsRange.dir === PointerDirection.Backward) {
+      range.setEnd(anchorNode, desiredStartOffset);
+      offsetShift = range.endOffset - desiredStartOffset;
+    } else {
+      range.setStart(anchorNode, desiredStartOffset);
+      offsetShift = range.startOffset - desiredStartOffset;
+    }
+
+    let focusNode: ChildNode | null = null;
+    if (focusRef.current) {
+      focusNode = focusRef.current.childNodes[0] || focusRef.current;
+    }
+    if (!focusNode) {
+      focusNode = origAnchorNode;
+    }
+    if (focusNode instanceof Text && focusNode.data.length === 0) {
+      focusNode = focusNode.parentNode as unknown as ChildNode;
+    }
+    if (focusNode) {
+      if (cfdsRange.dir === PointerDirection.Backward) {
+        const offset = state.ranges![selectionId].focus.offset + offsetShift;
+        if (focusNode instanceof Text && offset === focusNode.data.length) {
+          const parent = focusNode.parentNode!;
+          const indexInParent = Array.from(parent.childNodes).indexOf(
+            focusNode
+          );
+          focusNode = parent as unknown as ChildNode;
+          if (cfdsRange.dir === PointerDirection.Backward) {
+            desiredStartOffset = indexInParent - 1;
+          } else {
+            desiredStartOffset = indexInParent + 1;
+          }
+        }
+        range.setStart(focusNode, offset);
+      } else {
+        const offset = state.ranges![selectionId].focus.offset + offsetShift;
+        range.setEnd(focusNode, offset);
+      }
+    }
+    selection.addRange(range);
+  }
+}
 
 export interface RichTextEditorProps {
   note: VertexManager<Note>;
@@ -512,100 +602,23 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
     const anchorRef = useRef<HTMLElement>(null);
     const focusRef = useRef<HTMLElement>(null);
     const styles = useStyles();
-    const state = partialNote.body;
     const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
 
-    useLayoutEffect(() => {
-      const selection = getSelection();
-      const divElement = (ref as React.MutableRefObject<HTMLDivElement>)
-        ?.current;
-      if (!divElement || document.activeElement !== divElement) {
-        return;
-      }
-      // try {
-      //   if (
-      //     state.ranges![selectionId].focus.offset !=
-      //     state.ranges![selectionId].anchor.offset
-      //   )
-      //     debugger;
-      // } catch (_: unknown) {}
-      if (selection) {
-        selection.removeAllRanges();
-        if (!state.ranges || !state.ranges[selectionId]) {
-          return;
-        }
-        const cfdsRange = state.ranges[selectionId];
-        const range = document.createRange();
-        let offsetShift = 0;
-        let desiredStartOffset = cfdsRange.anchor.offset;
-        const origAnchorNode =
-          anchorRef.current?.childNodes[0] ||
-          anchorRef.current ||
-          focusRef.current?.childNodes[0] ||
-          focusRef.current;
-        if (!origAnchorNode) {
-          return;
-        }
-        let anchorNode = origAnchorNode;
-        if (anchorNode instanceof Text && anchorNode.data.length === 0) {
-          const newAnchor = anchorNode.parentNode as unknown as ChildNode;
-          const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
-            anchorNode
-          );
-          if (cfdsRange.dir === PointerDirection.Backward) {
-            desiredStartOffset = origAnchorIdx + 1;
-          } else {
-            desiredStartOffset = origAnchorIdx - 1;
-          }
-          anchorNode = newAnchor;
-        }
-        if (cfdsRange.dir === PointerDirection.Backward) {
-          range.setEnd(anchorNode, desiredStartOffset);
-          offsetShift = range.endOffset - desiredStartOffset;
-        } else {
-          range.setStart(anchorNode, desiredStartOffset);
-          offsetShift = range.startOffset - desiredStartOffset;
-        }
-
-        let focusNode: ChildNode | null = null;
-        if (focusRef.current) {
-          focusNode = focusRef.current.childNodes[0] || focusRef.current;
-        }
-        if (!focusNode) {
-          focusNode = origAnchorNode;
-        }
-        if (focusNode instanceof Text && focusNode.data.length === 0) {
-          focusNode = focusNode.parentNode as unknown as ChildNode;
-        }
-        if (focusNode) {
-          if (cfdsRange.dir === PointerDirection.Backward) {
-            const offset =
-              state.ranges![selectionId].focus.offset + offsetShift;
-            if (focusNode instanceof Text && offset === focusNode.data.length) {
-              const parent = focusNode.parentNode!;
-              const indexInParent = Array.from(parent.childNodes).indexOf(
-                focusNode
-              );
-              focusNode = parent as unknown as ChildNode;
-              if (cfdsRange.dir === PointerDirection.Backward) {
-                desiredStartOffset = indexInParent - 1;
-              } else {
-                desiredStartOffset = indexInParent + 1;
-              }
-            }
-            range.setStart(focusNode, offset);
-          } else {
-            const offset =
-              state.ranges![selectionId].focus.offset + offsetShift;
-            range.setEnd(focusNode, offset);
-          }
-        }
-        selection.addRange(range);
-      }
-    }, [anchorRef, focusRef, selectionId, partialNote]);
+    useLayoutEffect(
+      () =>
+        updateBrowserSelectionToDocument(
+          note.getVertexProxy().body,
+          selectionId,
+          ref as React.MutableRefObject<HTMLDivElement>,
+          anchorRef,
+          focusRef
+        ),
+      [anchorRef, focusRef, selectionId, partialNote]
+    );
 
     const onSelectionChanged = useCallback(() => {
       const selection = getSelection();
+      const state = note.getVertexProxy().body;
       if (!selection) {
         const doc = coreValueClone(state);
         if (doc.ranges && doc.ranges[selectionId]) {
@@ -624,6 +637,16 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
                 : selectionAnchorNode) as HTMLElement
             ).dataset.ovvKey!
           );
+          if (!anchorNode) {
+            updateBrowserSelectionToDocument(
+              state,
+              selectionId,
+              ref as React.MutableRefObject<HTMLDivElement>,
+              anchorRef,
+              focusRef
+            );
+            return;
+          }
           const selectionFocusNode =
             selection.focusNode || selection.anchorNode;
           const focusNode = state.nodeKeys.nodeFromKey(
@@ -649,21 +672,66 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
               dir: PointerDirection.None,
             };
             const result = docFromRT(docToRT(state));
-            partialNote.body = result;
+            note.getVertexProxy().body = result;
           }
         }
       } catch (err: unknown) {
         debugger;
       }
-    }, [partialNote]);
+    }, [note]);
 
-    const contents = renderRichText({
-      doc: partialNote.body,
-      selectionId: selectionId,
-      anchorRef: anchorRef,
-      focusRef: focusRef,
-      baseDirection,
-    });
+    const onBeforeInput = useCallback(
+      (event: React.FormEvent<HTMLDivElement>) => {
+        const state = note.getVertexProxy().body;
+        event.stopPropagation();
+        event.preventDefault();
+        note.getVertexProxy().body = handleTextInputEvent(
+          state,
+          event.nativeEvent as InputEvent,
+          selectionId
+        );
+      },
+      [note]
+    );
+
+    const onKeyDown = useCallback(
+      (event: React.KeyboardEvent<HTMLDivElement>) => {
+        const state = note.getVertexProxy().body;
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+          event.stopPropagation();
+          event.preventDefault();
+          note.getVertexProxy().body = handleTextInputEvent(
+            state,
+            event.nativeEvent,
+            selectionId
+          );
+        }
+        if (event.key === 'Tab') {
+          const doc = handleTabPressed(state, event.nativeEvent, selectionId);
+          if (doc) {
+            event.stopPropagation();
+            event.preventDefault();
+            note.getVertexProxy().body = doc;
+          }
+        }
+        if (
+          event.key === 'z' &&
+          (event.ctrlKey || event.metaKey || event.shiftKey)
+        ) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      },
+      [note]
+    );
+
+    const onPaste = useCallback(
+      (event: React.ClipboardEvent<HTMLDivElement>) => {
+        event.stopPropagation();
+        event.preventDefault();
+      },
+      [note]
+    );
 
     return (
       <div
@@ -672,48 +740,18 @@ export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
         contentEditable={true}
         suppressContentEditableWarning={true}
         dir={baseDirection === 'rtl' ? 'rtl' : undefined}
-        onBeforeInput={(event) => {
-          event.stopPropagation();
-          event.preventDefault();
-          partialNote.body = handleTextInputEvent(
-            state,
-            event.nativeEvent as InputEvent,
-            selectionId
-          );
-        }}
+        onBeforeInput={onBeforeInput}
         onSelect={onSelectionChanged}
-        onKeyDown={(event) => {
-          if (event.key === 'Backspace' || event.key === 'Delete') {
-            event.stopPropagation();
-            event.preventDefault();
-            partialNote.body = handleTextInputEvent(
-              state,
-              event.nativeEvent,
-              selectionId
-            );
-          }
-          if (event.key === 'Tab') {
-            const doc = handleTabPressed(state, event.nativeEvent, selectionId);
-            if (doc) {
-              event.stopPropagation();
-              event.preventDefault();
-              partialNote.body = doc;
-            }
-          }
-          if (
-            event.key === 'z' &&
-            (event.ctrlKey || event.metaKey || event.shiftKey)
-          ) {
-            event.stopPropagation();
-            event.preventDefault();
-          }
-        }}
-        onPaste={(event) => {
-          event.stopPropagation();
-          event.preventDefault();
-        }}
+        onKeyDown={onKeyDown}
+        onPaste={onPaste}
       >
-        {contents}
+        {renderRichText({
+          doc: partialNote.body,
+          selectionId: selectionId,
+          anchorRef: anchorRef,
+          focusRef: focusRef,
+          baseDirection,
+        })}
       </div>
     );
   }

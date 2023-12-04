@@ -12,7 +12,8 @@ export type MarkupNode =
   | Header2Node
   | UnorderedListNode
   | OrderedListNode
-  | ListItemNode;
+  | ListItemNode
+  | RefNode;
 // | TableNode
 // | TableRowNode
 // | TableCellNode
@@ -24,32 +25,32 @@ export type MarkupNode =
 
 export const STICKY_ELEMENT_TAGS = ['li'] as readonly (string | undefined)[];
 
-interface ElementWithDirection extends ElementNode {
+interface NodeWithDirection {
   dir?: WritingDirection;
 }
 
-export interface ParagraphNode extends ElementNode, ElementWithDirection {
+export interface ParagraphNode extends ElementNode, NodeWithDirection {
   readonly tagName: 'p';
 }
 
-export interface Header1Node extends ElementNode, ElementWithDirection {
+export interface Header1Node extends ElementNode, NodeWithDirection {
   readonly tagName: 'h1';
 }
 
-export interface Header2Node extends ElementNode, ElementWithDirection {
+export interface Header2Node extends ElementNode, NodeWithDirection {
   readonly tagName: 'h2';
 }
 
-export interface UnorderedListNode extends ElementNode, ElementWithDirection {
+export interface UnorderedListNode extends ElementNode, NodeWithDirection {
   readonly tagName: 'ul';
 }
 
-export interface OrderedListNode extends ElementNode, ElementWithDirection {
+export interface OrderedListNode extends ElementNode, NodeWithDirection {
   readonly tagName: 'ol';
   start?: number;
 }
 
-export interface ListItemNode extends ElementNode, ElementWithDirection {
+export interface ListItemNode extends ElementNode, NodeWithDirection {
   readonly tagName: 'li';
 }
 
@@ -78,7 +79,7 @@ export enum RefType {
  *
  * - During composition, to represent a reference that's still loading.
  */
-export interface RefMarker extends RichTextValue {
+export interface RefMarker extends RichTextValue, NodeWithDirection {
   ref: string;
   readonly type: RefType;
   readonly loading?: true;
@@ -88,7 +89,7 @@ export interface RefMarker extends RichTextValue {
  * A composited reference node as an element. Its children hold a
  * representation of the reference's target.
  */
-export interface RefNode extends ElementNode, RefMarker {
+export interface RefNode extends ElementNode, RefMarker, NodeWithDirection {
   readonly tagName: 'ref';
   ref: string;
   type: RefType;

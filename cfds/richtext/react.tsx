@@ -1,14 +1,16 @@
 import React from 'react';
 import { Document } from './doc-state.ts';
 import { TreeNode, isElementNode, isTextNode } from './tree.ts';
-import { MarkupNode } from './model.ts';
+import { MarkupNode, RefNode } from './model.ts';
 import { makeStyles, cn } from '../../styles/css-objects/index.ts';
 import {
   WritingDirection,
   resolveWritingDirection,
 } from '../../base/string.ts';
+import { brandLightTheme as theme } from '../../styles/theme.tsx';
+import { styleguide } from '../../styles/styleguide.ts';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   contentEditable: {
     width: '100%',
     height: '100%',
@@ -19,6 +21,18 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '1em',
     minWidth: '1px',
   },
+  taskElement: {
+    boxSizing: 'border-box',
+    borderBottom: '1px solid',
+    borderTop: '1px solid',
+    borderColor: theme.primary.p2,
+    display: 'flex',
+  },
+  taskCheckbox: {
+    marginTop: styleguide.gridbase * 2,
+    marginBottom: styleguide.gridbase * 2,
+    marginRight: styleguide.gridbase * 2,
+  },
 }));
 
 interface RenderContext {
@@ -28,6 +42,26 @@ interface RenderContext {
   focusRef: React.RefObject<HTMLElement>;
   baseDirection?: WritingDirection;
 }
+
+type TaskElementProps = React.PropsWithChildren<{
+  className?: string;
+  dir?: WritingDirection;
+}>;
+
+const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
+  function TaskElement({ children, className, dir }: TaskElementProps, ref) {
+    const styles = useStyles();
+    return (
+      <div className={cn(styles.taskElement, className)} ref={ref} dir={dir}>
+        <img
+          className={cn(styles.taskCheckbox)}
+          src="/icons/design-system/checkbox/not-selected.svg"
+        />
+        {children}
+      </div>
+    );
+  }
+);
 
 function renderNode(
   node: MarkupNode,
@@ -126,6 +160,19 @@ function renderNode(
         </li>
       );
 
+    case 'ref':
+      return (
+        <TaskElement
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          ref={ref as React.RefObject<HTMLParagraphElement>}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
+        >
+          {children}
+        </TaskElement>
+      );
+
+    case 'p':
     default:
       return (
         <p
