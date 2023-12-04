@@ -416,7 +416,7 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
   return result;
 }
 
-export function pathForNode<T extends ElementNode>(
+export function pathToNode<T extends ElementNode>(
   root: ElementNode,
   searchNode: TreeNode
 ): readonly T[] | undefined {
