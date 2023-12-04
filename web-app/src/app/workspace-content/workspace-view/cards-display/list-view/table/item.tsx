@@ -722,7 +722,7 @@ function TitleCell({
   isDraft?: boolean;
 }) {
   const styles = useStyles();
-  const { plaintextTitle } = usePartialVertex(note, ['plaintextTitle']);
+  const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
   // const { editor, plugins, handlers } = useTitleEditor(note, TitleNode);
   // useEffect(() => {
   //   if (!isDraft) {
@@ -751,7 +751,7 @@ function TitleCell({
             readOnly={!isDraft}
           />
         </Slate> */}
-        <Text>{plaintextTitle}</Text>
+        <Text>{titlePlaintext}</Text>
       </div>
     </Cell>
   );
