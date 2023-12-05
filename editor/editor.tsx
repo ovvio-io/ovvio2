@@ -5,11 +5,15 @@ import React, {
   useState,
   useEffect,
   forwardRef,
+  useImperativeHandle,
 } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   PointerDirection,
   TextNode,
+  dfs,
+  isElementNode,
+  isTextNode,
   pathToNode,
 } from '../cfds/richtext/tree.ts';
 import { RichTextRef, RichTextRenderer } from '../cfds/richtext/react.tsx';
@@ -158,13 +162,13 @@ function handleTabPressed(
 function setBrowserSelectionToDocument(
   state: Document,
   selectionId: string,
-  ref: React.MutableRefObject<HTMLDivElement> | undefined | null,
+  editorDivNode: HTMLDivElement | undefined | null,
   anchorRefNode: HTMLElement | null | undefined,
   focusRefNode: HTMLElement | null | undefined
 ): void {
   const selection = getSelection();
-  const divElement = (ref as React.MutableRefObject<HTMLDivElement>)?.current;
-  if (!divElement || document.activeElement !== divElement) {
+  debugger;
+  if (!editorDivNode || document.activeElement !== editorDivNode) {
     return;
   }
   // try {
@@ -253,166 +257,230 @@ export interface RichTextEditorProps {
   ref?: React.RefObject<HTMLDivElement>;
 }
 
-export const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
-  function RichTextEditor({ note, className }: RichTextEditorProps, ref) {
-    const partialNote = usePartialVertex(note, ['body', 'titlePlaintext']);
-    const trustPool = useTrustPool();
-    const selectionId = trustPool.currentSession.id;
-    const richTextRef = useRef<RichTextRef>(null);
-    const styles = useStyles();
-    const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
+export interface RichTextEditorRef {
+  readonly contenteditable: HTMLDivElement | null;
+}
 
-    useLayoutEffect(
-      () =>
-        setBrowserSelectionToDocument(
-          note.getVertexProxy().body,
-          selectionId,
-          ref as React.MutableRefObject<HTMLDivElement>,
-          richTextRef.current?.anchorNode,
-          richTextRef.current?.focusNode
-        ),
-      [richTextRef.current, selectionId, partialNote]
-    );
+export const RichTextEditor = forwardRef<
+  RichTextEditorRef,
+  RichTextEditorProps
+>(function RichTextEditor({ note, className }: RichTextEditorProps, ref) {
+  const partialNote = usePartialVertex(note, ['body', 'titlePlaintext']);
+  const trustPool = useTrustPool();
+  const selectionId = trustPool.currentSession.id;
+  const richTextRef = useRef<RichTextRef>(null);
+  const styles = useStyles();
+  const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
+  const editorDivRef = useRef<HTMLDivElement>(null);
 
-    const onSelectionChanged = useCallback(() => {
-      const selection = getSelection();
-      const state = note.getVertexProxy().body;
-      if (!selection) {
-        const doc = coreValueClone(state);
-        if (doc.ranges && doc.ranges[selectionId]) {
-          delete doc.ranges[selectionId];
-          partialNote.body = doc;
-        }
-        return;
+  useImperativeHandle(
+    ref,
+    () => {
+      return {
+        get contenteditable() {
+          return editorDivRef.current;
+        },
+      };
+    },
+    [editorDivRef.current]
+  );
+
+  useLayoutEffect(
+    () =>
+      setBrowserSelectionToDocument(
+        note.getVertexProxy().body,
+        selectionId,
+        editorDivRef.current,
+        richTextRef.current?.anchorNode,
+        richTextRef.current?.focusNode
+      ),
+    [richTextRef.current, selectionId, partialNote]
+  );
+
+  const onSelectionChanged = useCallback(() => {
+    const selection = getSelection();
+    const state = note.getVertexProxy().body;
+    if (!selection) {
+      const doc = coreValueClone(state);
+      if (doc.ranges && doc.ranges[selectionId]) {
+        delete doc.ranges[selectionId];
+        partialNote.body = doc;
       }
-      try {
-        const selectionAnchorNode = selection.anchorNode;
-        if (selectionAnchorNode) {
-          const anchorNode = state.nodeKeys.nodeFromKey(
-            (
-              (selectionAnchorNode instanceof Text
-                ? selectionAnchorNode.parentNode!
-                : selectionAnchorNode) as HTMLElement
-            ).dataset.ovvKey!
+      return;
+    }
+    try {
+      const selectionAnchorNode = selection.anchorNode;
+      if (selectionAnchorNode) {
+        let anchorNode = state.nodeKeys.nodeFromKey(
+          (
+            (selectionAnchorNode instanceof Text
+              ? selectionAnchorNode.parentNode!
+              : selectionAnchorNode) as HTMLElement
+          ).dataset.ovvKey!
+        );
+        if (!anchorNode) {
+          setBrowserSelectionToDocument(
+            state,
+            selectionId,
+            editorDivRef.current,
+            richTextRef.current?.anchorNode,
+            richTextRef.current?.focusNode
           );
-          if (!anchorNode) {
+          return;
+        }
+        const selectionFocusNode = selection.focusNode || selection.anchorNode;
+        let focusNode = state.nodeKeys.nodeFromKey(
+          (
+            (selectionFocusNode instanceof Text
+              ? selectionFocusNode.parentNode!
+              : selectionFocusNode) as HTMLElement
+          ).dataset.ovvKey!
+        );
+        if (anchorNode || focusNode) {
+          if (!state.ranges) {
+            state.ranges = {};
+          }
+          let { anchorOffset, focusOffset } = selection;
+          debugger;
+          if (isElementNode(anchorNode)) {
+            for (const [node] of dfs(anchorNode)) {
+              if (isTextNode(node)) {
+                if (focusNode === anchorNode) {
+                  focusNode = node;
+                  focusOffset = 0;
+                }
+                anchorNode = node;
+                anchorOffset = 0;
+                break;
+              }
+            }
+          }
+          if (isElementNode(focusNode)) {
+            for (const [node] of dfs(focusNode)) {
+              if (isTextNode(node)) {
+                focusNode = node;
+                focusOffset = 0;
+                break;
+              }
+            }
+          }
+          if (!isTextNode(anchorNode)) {
             setBrowserSelectionToDocument(
               state,
               selectionId,
-              ref as React.MutableRefObject<HTMLDivElement>,
+              editorDivRef.current,
               richTextRef.current?.anchorNode,
               richTextRef.current?.focusNode
             );
             return;
           }
-          const selectionFocusNode =
-            selection.focusNode || selection.anchorNode;
-          const focusNode = state.nodeKeys.nodeFromKey(
-            (
-              (selectionFocusNode instanceof Text
-                ? selectionFocusNode.parentNode!
-                : selectionFocusNode) as HTMLElement
-            ).dataset.ovvKey!
-          );
-          if (anchorNode || focusNode) {
-            if (!state.ranges) {
-              state.ranges = {};
-            }
-            state.ranges[selectionId] = {
-              anchor: {
-                node: (anchorNode || focusNode) as TextNode,
-                offset: selection.anchorOffset,
-              },
-              focus: {
-                node: (focusNode || anchorNode) as TextNode,
-                offset: selection.focusOffset,
-              },
-              dir: PointerDirection.None,
-            };
-            const result = docFromRT(docToRT(state));
-            note.getVertexProxy().body = result;
+          if (!isTextNode(focusNode)) {
+            focusNode = anchorNode;
+            focusOffset = anchorOffset;
           }
+          state.ranges[selectionId] = {
+            anchor: {
+              node: anchorNode as TextNode,
+              offset: anchorOffset,
+            },
+            focus: {
+              node: focusNode as TextNode,
+              offset: focusOffset,
+            },
+            dir: PointerDirection.None,
+          };
+          const result = docFromRT(docToRT(state));
+          note.getVertexProxy().body = result;
         }
-      } catch (err: unknown) {
-        debugger;
       }
-    }, [note]);
+    } catch (err: unknown) {
+      debugger;
+    }
+  }, [note]);
 
-    const onBeforeInput = useCallback(
-      (event: React.FormEvent<HTMLDivElement>) => {
-        const state = note.getVertexProxy().body;
+  const onBeforeInput = useCallback(
+    (event: React.FormEvent<HTMLDivElement>) => {
+      const state = note.getVertexProxy().body;
+      event.stopPropagation();
+      event.preventDefault();
+      note.getVertexProxy().body = handleTextInputEvent(
+        state,
+        event.nativeEvent as InputEvent,
+        selectionId
+      );
+    },
+    [note]
+  );
+
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const state = note.getVertexProxy().body;
+      if (event.key === 'Backspace' || event.key === 'Delete') {
         event.stopPropagation();
         event.preventDefault();
         note.getVertexProxy().body = handleTextInputEvent(
           state,
-          event.nativeEvent as InputEvent,
+          event.nativeEvent,
           selectionId
         );
-      },
-      [note]
-    );
-
-    const onKeyDown = useCallback(
-      (event: React.KeyboardEvent<HTMLDivElement>) => {
-        const state = note.getVertexProxy().body;
-        if (event.key === 'Backspace' || event.key === 'Delete') {
+      }
+      if (event.key === 'Tab') {
+        const doc = handleTabPressed(state, event.nativeEvent, selectionId);
+        if (doc) {
           event.stopPropagation();
           event.preventDefault();
-          note.getVertexProxy().body = handleTextInputEvent(
-            state,
-            event.nativeEvent,
-            selectionId
-          );
+          note.getVertexProxy().body = doc;
         }
-        if (event.key === 'Tab') {
-          const doc = handleTabPressed(state, event.nativeEvent, selectionId);
-          if (doc) {
-            event.stopPropagation();
-            event.preventDefault();
-            note.getVertexProxy().body = doc;
-          }
-        }
-        if (
-          event.key === 'z' &&
-          (event.ctrlKey || event.metaKey || event.shiftKey)
-        ) {
-          event.stopPropagation();
-          event.preventDefault();
-        }
-      },
-      [note]
-    );
-
-    const onPaste = useCallback(
-      (event: React.ClipboardEvent<HTMLDivElement>) => {
+      }
+      if (
+        event.key === 'z' &&
+        (event.ctrlKey || event.metaKey || event.shiftKey)
+      ) {
         event.stopPropagation();
         event.preventDefault();
-      },
-      [note]
-    );
+      }
+    },
+    [note]
+  );
 
-    return (
-      <div
-        ref={ref}
-        className={cn(className, styles.contentEditable)}
-        contentEditable={true}
-        suppressContentEditableWarning={true}
-        dir={baseDirection === 'rtl' ? 'rtl' : undefined}
-        onBeforeInput={onBeforeInput}
-        onSelect={onSelectionChanged}
-        onKeyDown={onKeyDown}
-        onPaste={onPaste}
-      >
-        <RichTextRenderer
-          doc={partialNote.body}
-          selectionId={selectionId}
-          baseDirection={baseDirection}
-          ref={richTextRef}
-        />
-      </div>
-    );
-  }
-);
+  const onPaste = useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+      event.preventDefault();
+    },
+    [note]
+  );
+
+  return (
+    <div
+      ref={editorDivRef}
+      className={cn(className, styles.contentEditable)}
+      contentEditable={true}
+      suppressContentEditableWarning={true}
+      dir={baseDirection === 'rtl' ? 'rtl' : undefined}
+      onBeforeInput={onBeforeInput}
+      onSelect={onSelectionChanged}
+      onKeyDown={onKeyDown}
+      onPaste={onPaste}
+      onFocus={(event) =>
+        setBrowserSelectionToDocument(
+          note.getVertexProxy().body,
+          selectionId,
+          editorDivRef.current,
+          richTextRef.current?.anchorNode,
+          richTextRef.current?.focusNode
+        )
+      }
+    >
+      <RichTextRenderer
+        doc={partialNote.body}
+        selectionId={selectionId}
+        baseDirection={baseDirection}
+        ref={richTextRef}
+      />
+    </div>
+  );
+});
 
 interface HeaderTitleProps {
   note: VertexManager<Note>;
@@ -461,7 +529,7 @@ export interface NoteEditorURLParams
 function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   const styles = useStyles();
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<RichTextEditorRef>(null);
   const navigate = useNavigate();
 
   const [didFocus, setDidFocus] = useState(false);
@@ -486,10 +554,7 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, [didFocus, setDidFocus, titleInputRef]);
 
   const onTitleEnter = useCallback(() => {
-    if (!editorRef.current) {
-      return;
-    }
-    editorRef.current.focus();
+    editorRef.current?.contenteditable?.focus();
   }, [editorRef]);
 
   return (
