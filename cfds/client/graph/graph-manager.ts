@@ -220,20 +220,22 @@ export class GraphManager
     plumbing.loadingPromise = (async () => {
       if (backup) {
         const commits = await backup.loadCommits();
-        if (!(commits instanceof Array)) {
-          console.log(commits);
+        if (commits instanceof Array) {
+          await repo.persistCommits(commits);
+        } else {
           debugger;
+          console.log(`Unexpected IDB result: ${commits}`);
         }
-        await repo.persistCommits(commits);
       } else {
         console.log(`Backup disabled for repo: ${id}`);
       }
-      if (plumbing.client) {
+      // Wait for a full sync for empty repositories. Repositories with
+      // contents just sync normally in the background
+      if (plumbing.client && repo.numberOfCommits() === 0) {
         await plumbing.client.sync();
       }
       // Load all keys from this repo
       for (const key of repo.keys()) {
-        if (id.startsWith('data/')) debugger;
         this.getVertexManager(key).touch();
       }
       plumbing.active = true;
@@ -256,7 +258,7 @@ export class GraphManager
       const repo = new Repository(new MemRepoStorage(), this.trustPool);
       plumbing = {
         repo,
-        backup: new IDBRepositoryBackup(id),
+        backup: new IDBRepositoryBackup(id, repo),
         // Data repo starts inactive. Everything else starts active.
         active: !id.startsWith('/data/'),
       };
@@ -264,7 +266,7 @@ export class GraphManager
         if (plumbing?.loadingFinished !== true) {
           return;
         }
-        plumbing!.backup?.persistCommits(id, [c]);
+        plumbing!.backup?.persistCommits([c]);
         if (c.session === this.trustPool.currentSession.id) {
           plumbing!.client?.touch();
         }

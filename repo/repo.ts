@@ -334,6 +334,36 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     }
   }
 
+  private cacheHeadForKey(
+    key: string | null,
+    head: Commit | undefined
+  ): Commit | undefined {
+    // Look for a commit with a full value, so we don't crash on a later read
+    while (head) {
+      try {
+        this.recordForCommit(head);
+        break;
+      } catch (e) {
+        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
+          throw e; // Unknown error. Rethrow.
+        }
+        for (const p of head.parents) {
+          if (this.hasCommit(p)) {
+            head = this.getCommit(p);
+          }
+        }
+        head = undefined;
+      }
+    }
+    if (head) {
+      this._cachedHeadsByKey.set(key, {
+        commit: head,
+        timestamp: performance.now(),
+      });
+    }
+    return head;
+  }
+
   headForKey(
     key: string | null,
     session?: string,
@@ -365,13 +395,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     // Filter out any commits with equal records
     let commitsToMerge =
       commitsWithUniqueRecords(leaves).sort(coreValueCompare);
-    // If our leaves converged on a single value, we can simply return it
+    // If our leaves converged on a single value, we can simply return it.
     if (commitsToMerge.length === 1) {
-      this._cachedHeadsByKey.set(key, {
-        commit: commitsToMerge[0],
-        timestamp: performance.now(),
-      });
-      return commitsToMerge[0];
+      return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     let result: Commit | undefined;
 
@@ -441,11 +467,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
             this.persistVerifiedCommits([signedCommit]);
           }
         );
-        this._cachedHeadsByKey.set(key, {
-          commit: mergeCommit,
-          timestamp: performance.now(),
-        });
-        return mergeCommit;
+        return this.cacheHeadForKey(key, mergeCommit);
       } catch (e) {
         if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
           throw e; // Unknown error. Rethrow.
@@ -463,25 +485,13 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       // it wrote last.
       for (const c of leaves) {
         if (c.session === session) {
-          this._cachedHeadsByKey.set(key, {
-            commit: c,
-            timestamp: performance.now(),
-          });
-          return c;
+          return this.cacheHeadForKey(key, c);
         }
       }
       // No session was provided. Return the last globally written value.
-      this._cachedHeadsByKey.set(key, {
-        commit: leaves[0],
-        timestamp: performance.now(),
-      });
-      return leaves[0];
+      return this.cacheHeadForKey(key, leaves[0]);
     }
-    this._cachedHeadsByKey.set(key, {
-      commit: result,
-      timestamp: performance.now(),
-    });
-    return result;
+    return this.cacheHeadForKey(key, result);
   }
 
   valueForKey(
