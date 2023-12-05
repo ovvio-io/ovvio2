@@ -17,7 +17,11 @@ import {
   pathToNode,
 } from '../cfds/richtext/tree.ts';
 import { RichTextRef, RichTextRenderer } from '../cfds/richtext/react.tsx';
-import { docFromRT, docToRT } from '../cfds/richtext/doc-state.ts';
+import {
+  docFromRT,
+  docToRT,
+  findEndOfDocument,
+} from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { useTrustPool } from '../auth/react.tsx';
@@ -34,6 +38,8 @@ import { handleInsertTextInputEvent } from './insert.ts';
 import { deleteCurrentSelection } from './delete.ts';
 import { notReached } from '../base/error.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { findFirstTextNode } from '../cfds/richtext/utils.ts';
+import { kSecondMs } from '../base/date.ts';
 
 const HEADER_HEIGHT = styleguide.gridbase * 24;
 
@@ -93,6 +99,11 @@ const DELETE_INPUT_TYPES = [
   'deleteContent',
   'deleteContentForward',
 ] as const;
+
+const SELECTION_TTL_MS = 10 * kSecondMs;
+function expirationForSelection(): Date {
+  return new Date(Date.now() + SELECTION_TTL_MS);
+}
 
 function handleTextInputEvent(
   document: Document,
@@ -294,7 +305,31 @@ export const RichTextEditor = forwardRef<
         richTextRef.current?.anchorNode,
         richTextRef.current?.focusNode
       ),
-    [richTextRef.current, selectionId, partialNote]
+    [
+      note.getVertexProxy().body,
+      selectionId,
+      editorDivRef.current,
+      richTextRef.current?.anchorNode,
+      richTextRef.current?.focusNode,
+    ]
+  );
+
+  useEffect(
+    () =>
+      setBrowserSelectionToDocument(
+        note.getVertexProxy().body,
+        selectionId,
+        editorDivRef.current,
+        richTextRef.current?.anchorNode,
+        richTextRef.current?.focusNode
+      ),
+    [
+      note.getVertexProxy().body,
+      selectionId,
+      editorDivRef.current,
+      richTextRef.current?.anchorNode,
+      richTextRef.current?.focusNode,
+    ]
   );
 
   const onSelectionChanged = useCallback(() => {
@@ -388,6 +423,7 @@ export const RichTextEditor = forwardRef<
               offset: focusOffset,
             },
             dir: PointerDirection.None,
+            expiration: expirationForSelection(),
           };
           const result = docFromRT(docToRT(state));
           note.getVertexProxy().body = result;
@@ -451,6 +487,75 @@ export const RichTextEditor = forwardRef<
     [note]
   );
 
+  const onFocus = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      // debugger;
+      const doc = coreValueClone(note.getVertexProxy().body);
+      if (!doc.ranges) {
+        doc.ranges = {};
+      }
+      if (!doc.ranges[selectionId]) {
+        const node = findEndOfDocument(doc);
+        if (isTextNode(node)) {
+          doc.ranges[selectionId] = {
+            anchor: {
+              node: node,
+              offset: node.text.length,
+            },
+            focus: {
+              node: node,
+              offset: node.text.length,
+            },
+            dir: PointerDirection.None,
+            expiration: expirationForSelection(),
+          };
+          note.getVertexProxy().body = doc;
+        }
+        // setTimeout(() => {
+        //   setBrowserSelectionToDocument(
+        //     note.getVertexProxy().body,
+        //     selectionId,
+        //     editorDivRef.current,
+        //     richTextRef.current?.anchorNode,
+        //     richTextRef.current?.focusNode
+        //   );
+        // }, 0);
+      }
+      // setBrowserSelectionToDocument(
+      //   note.getVertexProxy().body,
+      //   selectionId,
+      //   editorDivRef.current,
+      //   richTextRef.current?.anchorNode,
+      //   richTextRef.current?.focusNode
+      // );
+    },
+    [
+      note,
+      selectionId,
+      editorDivRef.current,
+      richTextRef.current?.anchorNode,
+      richTextRef.current?.focusNode,
+    ]
+  );
+
+  useEffect(() => {
+    const editorDivNode = editorDivRef.current;
+    if (!editorDivNode || document.activeElement !== editorDivNode) {
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      const proxy = note.getVertexProxy();
+      const body = coreValueClone(proxy.body);
+      if (!body.ranges || !body.ranges[selectionId]) {
+        return;
+      }
+      const selection = body.ranges[selectionId];
+      selection.expiration = expirationForSelection();
+      proxy.body = body;
+    }, SELECTION_TTL_MS * 0.9);
+    return () => clearTimeout(timeoutId);
+  }, [editorDivRef.current]);
+
   return (
     <div
       ref={editorDivRef}
@@ -462,15 +567,7 @@ export const RichTextEditor = forwardRef<
       onSelect={onSelectionChanged}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
-      onFocus={(event) =>
-        setBrowserSelectionToDocument(
-          note.getVertexProxy().body,
-          selectionId,
-          editorDivRef.current,
-          richTextRef.current?.anchorNode,
-          richTextRef.current?.focusNode
-        )
-      }
+      onFocus={onFocus}
     >
       <RichTextRenderer
         doc={partialNote.body}
@@ -555,7 +652,7 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
 
   const onTitleEnter = useCallback(() => {
     editorRef.current?.contenteditable?.focus();
-  }, [editorRef]);
+  }, [editorRef.current?.contenteditable]);
 
   return (
     <div className={cn(styles.mainContainer)} key="EditorContainer">
