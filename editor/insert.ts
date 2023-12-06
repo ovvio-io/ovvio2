@@ -29,6 +29,7 @@ import { uniqueId } from '../base/common.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { deleteCurrentSelection } from './delete.ts';
+import { expirationForSelection } from './editor.tsx';
 
 export function handleNewline(
   document: Document,
@@ -250,6 +251,7 @@ export function handleInsertTextInputEvent(
         offset: textNode.text.length,
       },
       dir: PointerDirection.None,
+      expiration: expirationForSelection(),
     };
   } else {
     const textNode = selection.focus.node;
