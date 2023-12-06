@@ -55,6 +55,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   readonly authorizer?: Authorizer<ST>;
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
+  private readonly _nsForKey: Map<string | null, SchemeNamespace>;
 
   constructor(storage: ST, trustPool: TrustPool, authorizer?: Authorizer<ST>) {
     super();
@@ -63,6 +64,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
     this._commitsCache = new Map();
+    this._nsForKey = new Map();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -617,7 +619,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     const batchSize = 50;
     const result: Commit[] = [];
     let batch: Commit[] = [];
-
+    commits = filterIterable(commits, (c) => !this.hasCommit(c.id));
     for await (const verifiedCommit of this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
@@ -632,6 +634,25 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       this._cachedHeadsByKey.delete(c.session);
     }
     return result;
+  }
+
+  namespaceForKey(key: string | null): SchemeNamespace {
+    let result = this._nsForKey.get(key);
+    if (result) {
+      return result;
+    }
+    const commits = this.commitsForKey(key);
+    for (const c of commits) {
+      const scheme = c.scheme;
+      if (scheme && !scheme.isNull) {
+        result = scheme.namespace;
+        break;
+      }
+    }
+    if (result) {
+      this._nsForKey.set(key, result);
+    }
+    return result || SchemeNamespace.Null;
   }
 
   private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
@@ -653,14 +674,19 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     // Auto add newly discovered sessions to our trust pool
     for (const persistedCommit of result) {
       try {
-        const record = this.valueForKey(
+        if (
+          this.namespaceForKey(persistedCommit.key) !== SchemeNamespace.SESSIONS
+        ) {
+          continue;
+        }
+        const headRecord = this.valueForKey(
           persistedCommit.key,
           undefined,
           undefined,
           false
         );
-        if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-          sessionFromRecord(record).then((session) => {
+        if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
+          sessionFromRecord(headRecord).then((session) => {
             this.trustPool.addSession(session, persistedCommit);
           });
         }

@@ -12,8 +12,6 @@ import { MovingAverage } from '../base/math.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { VersionNumber } from '../base/version-number.ts';
 
-const SYNC_INTERVAL_DELAY_MS = 50;
-
 export interface SyncConfig {
   minSyncFreqMs: number;
   maxSyncFreqMs: number;
@@ -322,14 +320,9 @@ export abstract class BaseClient<
     // changes received from server).
     let i = 0;
     do {
-      const startTime = performance.now();
       await this.sendSyncMessage();
-      const dt = performance.now() - startTime;
-      if (dt < SYNC_INTERVAL_DELAY_MS) {
-        await sleep(SYNC_INTERVAL_DELAY_MS - dt);
-      }
       ++i;
-    } while (!this.closed && i < cycleCount /*|| this.needsReplication()*/);
+    } while (!this.closed && i < cycleCount);
   }
 
   needsReplication(): boolean {
