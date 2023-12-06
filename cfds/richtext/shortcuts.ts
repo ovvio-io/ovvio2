@@ -184,7 +184,6 @@ function replaceTask(
         {
           text: '',
         },
-        buffer[2],
       ],
     ];
   }
