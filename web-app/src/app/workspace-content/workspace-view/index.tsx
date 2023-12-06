@@ -8,6 +8,7 @@ import {
   usePartialGlobalView,
   usePartialView,
 } from '../../../core/cfds/react/graph.tsx';
+import { EmptyState } from './empty-state/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
