@@ -569,6 +569,7 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<RichTextEditorRef>(null);
   const navigate = useNavigate();
+  const trustPool = useTrustPool();
 
   const [didFocus, setDidFocus] = useState(false);
 
@@ -592,6 +593,27 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, [didFocus, setDidFocus, titleInputRef]);
 
   const onTitleEnter = useCallback(() => {
+    const doc = coreValueClone(note.getVertexProxy().body);
+    const node = findEndOfDocument(doc);
+    if (isTextNode(node)) {
+      const selectionId = trustPool.currentSession.id;
+      if (!doc.ranges) {
+        doc.ranges = {};
+      }
+      doc.ranges[selectionId] = {
+        anchor: {
+          node,
+          offset: node.text.length,
+        },
+        focus: {
+          node,
+          offset: node.text.length,
+        },
+        dir: PointerDirection.None,
+        expiration: expirationForSelection(),
+      };
+      note.getVertexProxy().body = doc;
+    }
     editorRef.current?.contenteditable?.focus();
   }, [editorRef.current?.contenteditable]);
 
