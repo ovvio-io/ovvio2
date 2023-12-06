@@ -26,6 +26,7 @@ import { normalizeEmail } from '../../base/string.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { ServerError, Code, accessDenied } from '../../cfds/base/errors.ts';
 import { copyToClipboard } from '../../base/development.ts';
+import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -333,16 +334,19 @@ export function fetchSessionById(
   services: ServerServices,
   sessionId: string
 ): Record | undefined {
-  const repo = services.sync.getSysDir();
-  const db = repo.storage.db;
-  const statement = db.prepare(
-    `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.id' = '${sessionId}' LIMIT 1;`
-  );
-  const row = statement.get();
-  if (!row || typeof row.json !== 'string') {
-    return undefined;
-  }
-  return Record.fromJS(JSON.parse(row.json));
+  // const repo = services.sync.getSysDir();
+  // const db = repo.storage.db;
+  // const statement = db.prepare(
+  //   `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.id' = '${sessionId}' LIMIT 1;`
+  // );
+  // const row = statement.get();
+  // if (!row || typeof row.json !== 'string') {
+  //   return undefined;
+  // }
+  // return Record.fromJS(JSON.parse(row.json));
+  const record = services.sync.getSysDir().valueForKey(sessionId);
+  assert(!record || record.scheme.namespace === SchemeNamespace.SESSIONS);
+  return record;
 }
 
 export function fetchUserById(

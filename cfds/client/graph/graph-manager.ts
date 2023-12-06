@@ -211,7 +211,6 @@ export class GraphManager
     const backup = plumbing.backup;
 
     if (typeof backup === 'undefined') {
-      debugger;
       plumbing.loadingFinished = true;
       return Promise.resolve();
     }
@@ -223,7 +222,6 @@ export class GraphManager
         if (commits instanceof Array) {
           await repo.persistCommits(commits);
         } else {
-          debugger;
           console.log(`Unexpected IDB result: ${commits}`);
         }
       } else {
@@ -231,7 +229,10 @@ export class GraphManager
       }
       // Wait for a full sync for empty repositories. Repositories with
       // contents just sync normally in the background
-      if (plumbing.client && repo.numberOfCommits() === 0) {
+      if (
+        plumbing.client &&
+        (id === '/sys/dir' || repo.numberOfCommits() === 0)
+      ) {
         await plumbing.client.sync();
       }
       // Load all keys from this repo

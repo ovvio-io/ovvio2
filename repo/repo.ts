@@ -536,9 +536,8 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     });
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
-    await this.persistCommits([signedCommit]);
     this._cachedHeadsByKey.delete(key);
-    this._commitsCache.set(signedCommit.id, signedCommit);
+    await this.persistCommits([signedCommit]);
     return true;
   }
 
@@ -631,7 +630,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       ArrayUtils.append(result, this.persistVerifiedCommits(batch));
     }
     for (const c of result) {
-      this._cachedHeadsByKey.delete(c.session);
+      this._cachedHeadsByKey.delete(c.key);
     }
     return result;
   }
@@ -679,6 +678,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         ) {
           continue;
         }
+        this._cachedHeadsByKey.delete(persistedCommit.key);
         const headRecord = this.valueForKey(
           persistedCommit.key,
           undefined,
@@ -697,6 +697,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         }
       }
     }
+    for (const c of result) {
+      this.emit(EVENT_NEW_COMMIT, c);
+    }
     return result;
   }
 
@@ -706,9 +709,6 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     for (const persistedCommit of storage.persistCommits(batch, this)) {
       this._cachedHeadsByKey.delete(persistedCommit.key);
       result.push(persistedCommit);
-    }
-    for (const c of result) {
-      this.emit(EVENT_NEW_COMMIT, c);
     }
     return result;
   }

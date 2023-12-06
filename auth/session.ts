@@ -499,7 +499,8 @@ export class TrustPool {
       const existingSession = this._sessions.get(s.id);
       if (
         !existingSession ||
-        existingSession.expiration.getTime() < newExpiration
+        existingSession.expiration.getTime() < newExpiration ||
+        (!existingSession.owner && s.owner)
       ) {
         this._sessions.set(s.id, s);
         updated = true;
