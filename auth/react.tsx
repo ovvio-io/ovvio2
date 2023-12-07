@@ -142,12 +142,16 @@ export type SessionProviderProps = React.PropsWithChildren<{
 export async function loadEssentialRepositories(
   graph: GraphManager
 ): Promise<void> {
-  await graph.loadRepository(Repository.id('sys', 'dir'));
-  await graph.syncRepository(Repository.id('sys', 'dir'));
+  const sysDirId = Repository.id('sys', 'dir');
+  await graph.loadRepository(sysDirId);
+  await graph.syncRepository(sysDirId);
   if (graph.trustPool.currentSession.owner) {
-    await graph.loadRepository(Repository.id('user', graph.rootKey));
-    await graph.syncRepository(Repository.id('user', graph.rootKey));
+    const userRepoId = Repository.id('user', graph.rootKey);
+    await graph.loadRepository(userRepoId);
+    await graph.syncRepository(userRepoId);
+    graph.startSyncing(userRepoId);
   }
+  graph.startSyncing(sysDirId);
 }
 export function SessionProvider({ children, className }: SessionProviderProps) {
   const trustPool = useMaybeTrustPool();

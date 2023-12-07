@@ -658,7 +658,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
 
   useEffect(() => {
     if (!repoLoaded && repoId) {
-      graph.loadRepository(repoId).then(() => {
+      graph.prepareRepositoryForUI(repoId).then(() => {
         setRepoLoaded(graph.repositoryFinishedLoading(repoId));
       });
     }

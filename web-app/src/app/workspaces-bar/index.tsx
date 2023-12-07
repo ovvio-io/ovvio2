@@ -647,17 +647,6 @@ function WorkspaceToggleView({
   );
 }
 
-async function loadRepository(
-  graph: GraphManager,
-  repoId: string
-): Promise<void> {
-  await graph.loadRepository(repoId);
-  const repo = graph.repository(repoId);
-  if (repo.numberOfCommits() <= 0) {
-    await graph.syncRepository(repoId);
-  }
-}
-
 function WorkspaceListItem({
   workspace,
   groupId,
@@ -697,7 +686,7 @@ function WorkspaceListItem({
 
   useEffect(() => {
     if (isSelected) {
-      loadRepository(graph, repoId).then(() => setLoaded(true));
+      graph.prepareRepositoryForUI(repoId).then(() => setLoaded(true));
     }
   }, [graph, repoId, isSelected]);
 

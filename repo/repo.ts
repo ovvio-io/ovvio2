@@ -340,6 +340,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         assert(result.checksum === contents.edit.dstChecksum);
         result = result;
       }
+      result.checksum;
       this._cachedRecordForCommit.set(c.id, result);
     }
     return result.clone();

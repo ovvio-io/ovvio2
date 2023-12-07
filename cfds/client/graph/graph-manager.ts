@@ -233,16 +233,31 @@ export class GraphManager
       }
       plumbing.active = true;
       plumbing.loadingFinished = true;
-      plumbing.client?.startSyncing();
+      // plumbing.client?.startSyncing();
     })();
     return plumbing.loadingPromise;
   }
 
   async syncRepository(id: string): Promise<void> {
     const { client } = this.plumbingForRepository(id);
-    // await this.loadRepository(id);
+    await this.loadRepository(id);
     if (client && client.isOnline) {
       await client.sync();
+      // client.startSyncing();
+    }
+  }
+
+  startSyncing(repoId: string): void {
+    this.plumbingForRepository(repoId).client?.startSyncing();
+  }
+
+  async prepareRepositoryForUI(repoId: string): Promise<void> {
+    await this.loadRepository(repoId);
+    const repo = this.repository(repoId);
+    if (repo.numberOfCommits() <= 0) {
+      await this.syncRepository(repoId);
+    } else {
+      this.startSyncing(repoId);
     }
   }
 
