@@ -143,11 +143,11 @@ export async function loadEssentialRepositories(
   graph: GraphManager
 ): Promise<void> {
   await graph.loadRepository(Repository.id('sys', 'dir'));
-  // await graph.syncRepository(Repository.id('sys', 'dir'));
+  await graph.syncRepository(Repository.id('sys', 'dir'));
   if (graph.trustPool.currentSession.owner) {
     await graph.loadRepository(Repository.id('user', graph.rootKey));
+    await graph.syncRepository(Repository.id('user', graph.rootKey));
   }
-  // await graph.syncRepository(Repository.id('user', graph.rootKey));
 }
 export function SessionProvider({ children, className }: SessionProviderProps) {
   const trustPool = useMaybeTrustPool();

@@ -227,14 +227,6 @@ export class GraphManager
       } else {
         console.log(`Backup disabled for repo: ${id}`);
       }
-      // Wait for a full sync for empty repositories. Repositories with
-      // contents just sync normally in the background
-      if (
-        plumbing.client &&
-        (id === '/sys/dir' || repo.numberOfCommits() === 0)
-      ) {
-        await plumbing.client.sync();
-      }
       // Load all keys from this repo
       for (const key of repo.keys()) {
         this.getVertexManager(key).touch();
@@ -248,8 +240,10 @@ export class GraphManager
 
   async syncRepository(id: string): Promise<void> {
     const { client } = this.plumbingForRepository(id);
-    await this.loadRepository(id);
-    return client && client.isOnline ? client.sync() : Promise.resolve();
+    // await this.loadRepository(id);
+    if (client && client.isOnline) {
+      await client.sync();
+    }
   }
 
   private plumbingForRepository(id: string): RepositoryPlumbing {
