@@ -65,6 +65,7 @@ import { IconHide } from '../../../../styles/components/new-icons/icon-hide.tsx'
 import { IconTemplateSet } from '../../../../styles/components/new-icons/icon-template-set.tsx';
 import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-template-unset.tsx';
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
+import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -646,6 +647,17 @@ function WorkspaceToggleView({
   );
 }
 
+async function loadRepository(
+  graph: GraphManager,
+  repoId: string
+): Promise<void> {
+  await graph.loadRepository(repoId);
+  const repo = graph.repository(repoId);
+  if (repo.numberOfCommits() <= 0) {
+    await graph.syncRepository(repoId);
+  }
+}
+
 function WorkspaceListItem({
   workspace,
   groupId,
@@ -685,7 +697,7 @@ function WorkspaceListItem({
 
   useEffect(() => {
     if (isSelected) {
-      graph.loadRepository(repoId).then(() => setLoaded(true));
+      loadRepository(graph, repoId).then(() => setLoaded(true));
     }
   }, [graph, repoId, isSelected]);
 
@@ -696,7 +708,7 @@ function WorkspaceListItem({
 
   // const renderButton = useCallback(() => <IconMore />, []);
   const renderButton = useCallback(
-    ({ isOpen }) => (
+    ({ isOpen }: { isOpen: boolean }) => (
       <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
         <IconMore />
       </div>
@@ -1135,7 +1147,7 @@ function WorkspaceBarInternal({
       )
     );
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'FilterChange',
       type: 'workspace',
       source: 'bar:workspace',
@@ -1155,7 +1167,7 @@ function WorkspaceBarInternal({
   const unselectAll = useCallback(() => {
     view.clear();
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'FilterChange',
       type: 'workspace',
       source: 'bar:workspace',

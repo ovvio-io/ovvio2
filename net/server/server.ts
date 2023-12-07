@@ -309,8 +309,8 @@ export class Server {
           }
           return resp;
         } catch (e: any) {
-          debugger;
           if (e instanceof ServerError) {
+            if (e.code === 500) debugger;
             log({
               severity: 'ERROR',
               name: 'HttpStatusCode',
@@ -325,6 +325,7 @@ export class Server {
               status: e.code,
             });
           }
+          debugger;
           log({
             severity: 'ERROR',
             name: 'InternalServerError',

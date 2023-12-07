@@ -3,6 +3,7 @@ import {
   deserializeDate,
   kDayMs,
   kMinuteMs,
+  kSecondMs,
   serializeDate,
 } from '../base/date.ts';
 import {
@@ -412,8 +413,18 @@ export async function verifyRequestSignature(
   return await verifyData(session, sig);
 }
 
+let sessionIdsCache: Map<string, string> = new Map();
+setInterval(() => {
+  sessionIdsCache = new Map();
+}, 10 * kSecondMs);
+
 export function sessionIdFromSignature(sig: string): string {
-  return decodeSignature(sig).sessionId;
+  let id = sessionIdsCache.get(sig);
+  if (!id) {
+    id = decodeSignature(sig).sessionId;
+    sessionIdsCache.set(sig, id);
+  }
+  return id;
 }
 
 /**

@@ -56,6 +56,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
+  private readonly _cachedRecordForCommit: Map<string, Record>;
 
   constructor(storage: ST, trustPool: TrustPool, authorizer?: Authorizer<ST>) {
     super();
@@ -65,6 +66,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     this._cachedHeadsByKey = new Map();
     this._commitsCache = new Map();
     this._nsForKey = new Map();
+    this._cachedRecordForCommit = new Map();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -321,19 +323,26 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
   }
 
   recordForCommit(c: Commit | string): Record {
-    if (typeof c === 'string') {
-      c = this.getCommit(c);
+    let result = this._cachedRecordForCommit.get(
+      typeof c === 'string' ? c : c.id
+    );
+    if (!result) {
+      if (typeof c === 'string') {
+        c = this.getCommit(c);
+      }
+      if (commitContentsIsRecord(c.contents)) {
+        result = c.contents.record;
+      } else {
+        const contents: DeltaContents = c.contents as DeltaContents;
+        result = this.recordForCommit(contents.base).clone();
+        assert(result.checksum === contents.edit.srcChecksum);
+        result.patch(contents.edit.changes);
+        assert(result.checksum === contents.edit.dstChecksum);
+        result = result;
+      }
+      this._cachedRecordForCommit.set(c.id, result);
     }
-    if (commitContentsIsRecord(c.contents)) {
-      return c.contents.record.clone();
-    } else {
-      const contents: DeltaContents = c.contents as DeltaContents;
-      const result = this.recordForCommit(contents.base).clone();
-      assert(result.checksum === contents.edit.srcChecksum);
-      result.patch(contents.edit.changes);
-      assert(result.checksum === contents.edit.dstChecksum);
-      return result.clone();
-    }
+    return result.clone();
   }
 
   private cacheHeadForKey(
@@ -618,7 +627,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     const batchSize = 50;
     const result: Commit[] = [];
     let batch: Commit[] = [];
-    commits = filterIterable(commits, (c) => !this.hasCommit(c.id));
+    commits = filterIterable(commits, (c) => !this._commitsCache.has(c.id));
     for await (const verifiedCommit of this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {

@@ -345,8 +345,8 @@ export function fetchSessionById(
   // }
   // return Record.fromJS(JSON.parse(row.json));
   const record = services.sync.getSysDir().valueForKey(sessionId);
-  assert(!record || record.scheme.namespace === SchemeNamespace.SESSIONS);
-  return record;
+  assert(record.isNull || record.scheme.namespace === SchemeNamespace.SESSIONS);
+  return record.isNull ? undefined : record;
 }
 
 export function fetchUserById(

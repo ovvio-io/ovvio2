@@ -84,9 +84,9 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       PRIMARY KEY (src, dst)
     );`);
     // Prefetch all commits
-    // for (const id of this.allCommitsIds()) {
-    //   this.getCommit(id);
-    // }
+    for (const id of this.allCommitsIds()) {
+      this.getCommit(id);
+    }
   }
 
   get countStatement(): Statement {
