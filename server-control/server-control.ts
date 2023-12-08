@@ -1,4 +1,5 @@
 import * as path from 'std/path/mod.ts';
+import * as ArrayUtils from '../base/array.ts';
 import { kSecondMs } from '../base/date.ts';
 import { sleep } from '../base/time.ts';
 import { EC2MetadataToken, getTenantId } from './ec2.ts';
@@ -78,7 +79,8 @@ function filenameFromURL(url: string, suffix?: string): string {
 
 async function _startChildServerProcess(
   settings: ServerControlSettings,
-  idx: number
+  idx: number,
+  replicas: string[]
 ): Promise<Deno.ChildProcess | undefined> {
   // We match the port to the index of the process
   const port = 9000 + idx;
@@ -92,16 +94,21 @@ async function _startChildServerProcess(
   }
   // Start the server process
   const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gz');
+  const args = [
+    '-n',
+    '3',
+    path.join(settings.serverBinaryDir, binaryFileName),
+    '--silent',
+    `--port=${port}`,
+    '-d',
+    settings.dataDir,
+  ];
+  if (replicas) {
+    args.push('-r');
+    ArrayUtils.append(args, replicas);
+  }
   const cmd = new Deno.Command('nice', {
-    args: [
-      '-n',
-      '3',
-      path.join(settings.serverBinaryDir, binaryFileName),
-      '--silent',
-      `--port=${port}`,
-      '-d',
-      settings.dataDir,
-    ],
+    args,
     stdout: 'piped',
   });
   const child = cmd.spawn();
@@ -158,19 +165,25 @@ async function startServerProcesses(
   settings: ServerControlSettings
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 2; //navigator.hardwareConcurrency;
+  const processCount = 4; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
+    const replicas: string[] = [];
+    for (let x = 0; x < processCount; ++x) {
+      if (x !== i) {
+        replicas.push(`http://localhost:${9000 + x}`);
+      }
+    }
     const terminationCallback = async (status: Deno.CommandStatus) => {
       if (status.code !== 0) {
         console.log('Restarting crashed server');
-        const child = await _startChildServerProcess(settings, i);
+        const child = await _startChildServerProcess(settings, i, replicas);
         serverProcesses[i] = child;
         if (child) {
           child.status.then(terminationCallback);
         }
       }
     };
-    const child = await _startChildServerProcess(settings, i);
+    const child = await _startChildServerProcess(settings, i, replicas);
     if (child) {
       child.status.then(terminationCallback);
     }

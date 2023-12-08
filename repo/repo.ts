@@ -6,7 +6,7 @@ import { Dictionary } from '../base/collections/dict.ts';
 import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
 import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
 import { concatChanges, DataChanges } from '../cfds/base/object.ts';
-import { Record } from '../cfds/base/record.ts';
+import { Record as CFDSRecord } from '../cfds/base/record.ts';
 import { assert } from '../base/error.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import { log } from '../logging/log.ts';
@@ -20,6 +20,7 @@ import {
   signCommit,
 } from '../auth/session.ts';
 import { filterIterable } from '../base/common.ts';
+import { RepositoryIndex } from './index.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 export const EVENT_NEW_COMMIT = 'NewCommit';
@@ -49,16 +50,30 @@ interface CachedHead {
   timestamp: number;
 }
 
-export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
+export type RepositoryIndexes<T extends RepoStorage<T>> = Record<
+  string,
+  RepositoryIndex<T>
+>;
+
+export class Repository<
+  ST extends RepoStorage<ST>,
+  IT extends RepositoryIndexes<ST> = RepositoryIndexes<ST>
+> extends EventEmitter {
   readonly storage: ST;
   readonly trustPool: TrustPool;
+  readonly indexes?: IT;
   readonly authorizer?: Authorizer<ST>;
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
-  private readonly _cachedRecordForCommit: Map<string, Record>;
+  private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
 
-  constructor(storage: ST, trustPool: TrustPool, authorizer?: Authorizer<ST>) {
+  constructor(
+    storage: ST,
+    trustPool: TrustPool,
+    authorizer?: Authorizer<ST>,
+    indexes?: (repo: Repository<ST, IT>) => IT
+  ) {
     super();
     this.storage = storage;
     this.trustPool = trustPool;
@@ -67,6 +82,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     this._commitsCache = new Map();
     this._nsForKey = new Map();
     this._cachedRecordForCommit = new Map();
+    if (indexes) {
+      this.indexes = indexes(this);
+    }
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -105,6 +123,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
       c = this.storage.getCommit(id);
       if (c) {
         this._commitsCache.set(id, c);
+        this._runUpdatesOnNewCommit(c);
       }
     }
     if (!c) {
@@ -139,18 +158,22 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     }
   }
 
-  commitsForKey(key: string | null, session?: Session): Iterable<Commit> {
+  *commitsForKey(key: string | null, session?: Session): Generator<Commit> {
     const { authorizer } = this;
-    if (
-      session &&
-      session.id !== this.trustPool.currentSession.id &&
-      authorizer
-    ) {
-      return filterIterable(this.storage.commitsForKey(key), (c) =>
+    const commits = this.storage.commitsForKey(key);
+    for (const c of commits) {
+      if (!this._commitsCache.has(c.id)) {
+        this._runUpdatesOnNewCommit(c);
+      }
+      if (
+        !session ||
+        session.id === this.trustPool.currentSession.id ||
+        !authorizer ||
         authorizer(this, c, session, false)
-      );
+      ) {
+        yield c;
+      }
     }
-    return this.storage.commitsForKey(key);
   }
 
   leavesForKey(
@@ -322,7 +345,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     return undefined;
   }
 
-  recordForCommit(c: Commit | string): Record {
+  recordForCommit(c: Commit | string): CFDSRecord {
     let result = this._cachedRecordForCommit.get(
       typeof c === 'string' ? c : c.id
     );
@@ -428,7 +451,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         // Use the null record as a base in this case.
         const base = lca
           ? this.recordForCommit(lca).clone()
-          : Record.nullRecord();
+          : CFDSRecord.nullRecord();
         // Upgrade base to merge scheme
         if (!scheme.isNull) {
           base.upgradeScheme(scheme);
@@ -440,7 +463,7 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
         // Note that we start with these changes in order to let later changes
         // override them as concurrent root creation is likely a temporary
         // error.
-        const nullRecord = Record.nullRecord();
+        const nullRecord = CFDSRecord.nullRecord();
         for (const c of roots) {
           const record = this.recordForCommit(c);
           if (record.isNull) {
@@ -511,9 +534,9 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     session?: string,
     pendingCommit?: Commit,
     merge = true
-  ): Record {
+  ): CFDSRecord {
     const head = this.headForKey(key, session, pendingCommit, merge);
-    return head ? this.recordForCommit(head) : Record.nullRecord();
+    return head ? this.recordForCommit(head) : CFDSRecord.nullRecord();
   }
 
   /**
@@ -526,7 +549,10 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
    * returned value, future calls to `valueForKey` will return the updated
    * record.
    */
-  async setValueForKey(key: string | null, value: Record): Promise<boolean> {
+  async setValueForKey(
+    key: string | null,
+    value: CFDSRecord
+  ): Promise<boolean> {
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
     if (value.isNull) {
@@ -679,38 +705,38 @@ export class Repository<ST extends RepoStorage<ST>> extends EventEmitter {
     if (batch.length > 0) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
+    for (const c of result) {
+      this._runUpdatesOnNewCommit(c);
+    }
+    return result;
+  }
 
+  private _runUpdatesOnNewCommit(commit: Commit): void {
+    this._commitsCache.set(commit.id, commit);
     // Auto add newly discovered sessions to our trust pool
-    for (const persistedCommit of result) {
-      try {
-        if (
-          this.namespaceForKey(persistedCommit.key) !== SchemeNamespace.SESSIONS
-        ) {
-          continue;
-        }
-        this._cachedHeadsByKey.delete(persistedCommit.key);
+    try {
+      if (this.namespaceForKey(commit.key) === SchemeNamespace.SESSIONS) {
+        this._cachedHeadsByKey.delete(commit.key);
         const headRecord = this.valueForKey(
-          persistedCommit.key,
+          commit.key,
           undefined,
           undefined,
           false
         );
         if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
           sessionFromRecord(headRecord).then((session) => {
-            this.trustPool.addSession(session, persistedCommit);
+            this.trustPool.addSession(session, commit);
           });
         }
-      } catch (e: unknown) {
-        // Rethrow any error not caused by a missing commit graph
-        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
-          throw e;
-        }
+      }
+    } catch (e: unknown) {
+      // Rethrow any error not caused by a missing commit graph
+      if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
+        throw e;
       }
     }
-    for (const c of result) {
-      this.emit(EVENT_NEW_COMMIT, c);
-    }
-    return result;
+    // Notify everyone else
+    this.emit(EVENT_NEW_COMMIT, commit);
   }
 
   private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {

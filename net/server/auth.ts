@@ -281,15 +281,16 @@ export async function persistSession(
 export function fetchEncodedRootSessions(
   services: ServerServices
 ): EncodedSession[] {
-  const repo = services.sync.getRepository('sys', 'dir');
-  const db = repo.storage.db;
-  const statement = db.prepare(
-    `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`
-  );
-  const encodedRecord = statement.all();
+  // const repo = services.sync.getRepository('sys', 'dir');
+  // const db = repo.storage.db;
+  // const statement = db.prepare(
+  //   `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`
+  // );
+  // const encodedRecord = statement.all();
+
   const result: EncodedSession[] = [];
-  for (const r of encodedRecord) {
-    const record = Record.fromJS(JSON.parse(r.json));
+  const rootSessions = services.sync.getSysDir().indexes!.rootSessions;
+  for (const [key, record] of rootSessions.values()) {
     if (record.get<Date>('expiration').getTime() - Date.now() <= 0) {
       continue;
     }
@@ -303,47 +304,17 @@ function fetchUserByEmail(
   services: ServerServices,
   email: string
 ): [key: string | undefined, record: Record | undefined] {
-  const repo = services.sync.getSysDir();
-  const db = repo.storage.db;
-  const statement = db.prepare(
-    `SELECT json, key FROM heads WHERE ns = 'users' AND json->'$.d'->>'$.email' = '${normalizeEmail(
-      email
-    )}' LIMIT 1;`
-  );
-  const row = statement.get();
-  if (!row || typeof row.json !== 'string' || typeof row.key !== 'string') {
-    if (services.settings.operatorEmails.includes(email)) {
-      // Lazily create operator records
-      const record = new Record({
-        scheme: Scheme.user(),
-        data: {
-          email,
-        },
-      });
-      const key = uniqueId();
-      repo.setValueForKey(key, record);
-      return [key, record];
-    } else {
-      return [undefined, undefined];
-    }
-  }
-  return [row.key, Record.fromJS(JSON.parse(row.json))];
+  email = normalizeEmail(email);
+  const row = services.sync
+    .getSysDir()
+    .indexes!.users.find((k, r) => r.get('email') === email, 1)[0];
+  return row ? [row[0]!, row[1]] : [undefined, undefined];
 }
 
 export function fetchSessionById(
   services: ServerServices,
   sessionId: string
 ): Record | undefined {
-  // const repo = services.sync.getSysDir();
-  // const db = repo.storage.db;
-  // const statement = db.prepare(
-  //   `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.id' = '${sessionId}' LIMIT 1;`
-  // );
-  // const row = statement.get();
-  // if (!row || typeof row.json !== 'string') {
-  //   return undefined;
-  // }
-  // return Record.fromJS(JSON.parse(row.json));
   const record = services.sync.getSysDir().valueForKey(sessionId);
   assert(record.isNull || record.scheme.namespace === SchemeNamespace.SESSIONS);
   return record.isNull ? undefined : record;
@@ -353,16 +324,9 @@ export function fetchUserById(
   services: ServerServices,
   userId: string
 ): Record | undefined {
-  const repo = services.sync.getSysDir();
-  const db = repo.storage.db;
-  const statement = db.prepare(
-    `SELECT json FROM heads WHERE ns = 'users' AND key = '${userId}' LIMIT 1;`
-  );
-  const row = statement.get();
-  if (!row || typeof row.json !== 'string') {
-    return undefined;
-  }
-  return Record.fromJS(JSON.parse(row.json));
+  const record = services.sync.getSysDir().valueForKey(userId);
+  assert(record.isNull || record.scheme.namespace === SchemeNamespace.USERS);
+  return record.isNull ? undefined : record;
 }
 
 function responseForError(err: AuthError): Response {

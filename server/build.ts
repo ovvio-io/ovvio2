@@ -110,12 +110,15 @@ async function build(
   const fileName = outputFileName(target, linux);
   const outputDir = path.join(repoPath, 'build');
   const binaryOutputPath = path.join(outputDir, fileName);
+  Deno.chdir(repoPath);
   const compileArgs = [
     'compile',
     '-A',
     '--no-lock',
     '--no-check',
     `--output=${binaryOutputPath}`,
+    '--include',
+    path.join('.', 'server', 'sqlite3-worker.ts'),
   ];
   if (linux) {
     compileArgs.push('--target=x86_64-unknown-linux-gnu');
