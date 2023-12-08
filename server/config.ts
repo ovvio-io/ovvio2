@@ -9,13 +9,13 @@ export interface OvvioConfig {
 }
 
 export function getOvvioConfig(): OvvioConfig {
-  let config = (window as any).OvvioConfig as OvvioConfig | undefined;
+  let config = (self as any).OvvioConfig as OvvioConfig | undefined;
   if (!config) {
     config = config || {
       version: VCurrent,
       debug: false,
     };
-    (window as any).OvvioConfig = config;
+    (self as any).OvvioConfig = config;
   }
   return config;
 }

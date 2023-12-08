@@ -8,6 +8,7 @@ import {
 import { assert } from '../base/error.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { SerialScheduler } from '../base/serial-scheduler.ts';
+import { setGlobalLoggerStreams } from '../logging/log.ts';
 import { kSyncConfigServer } from '../net/base-client.ts';
 import { RepoClient } from '../net/repo-client.ts';
 import { Commit } from '../repo/commit.ts';
@@ -37,7 +38,7 @@ async function processMessage(msg: SQLite3WorkerMessage): Promise<void> {
           const clients = replicas.map((baseServerUrl) =>
             new RepoClient(
               repo!,
-              new URL(`/${msg.type}/${msg.id}`, baseServerUrl).toString(),
+              new URL(`/${msg.type}/${msg.id}/sync`, baseServerUrl).toString(),
               kSyncConfigServer
             ).startSyncing()
           );
@@ -84,4 +85,5 @@ function onMessage(event: MessageEvent<SQLite3WorkerMessage>): void {
   SerialScheduler.get('sqlite3worker').run(() => processMessage(data));
 }
 
+setGlobalLoggerStreams([]);
 self.onmessage = onMessage;
