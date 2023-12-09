@@ -72,10 +72,10 @@ export class PluginManager {
   }
 }
 
-const useStrings = createUseStrings(localization);
-
 // Function to update state based on URL
 const updateStateFromURL = (url: string) => {};
+
+const useStrings = createUseStrings(localization);
 
 function TabView({ category }: any) {
   const styles = useStyles();

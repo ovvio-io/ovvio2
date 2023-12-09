@@ -24,10 +24,7 @@ import MultiSelection from '../components/multi-selection.tsx';
 import { IconCheck } from '../components/icon-check.tsx';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { AssigneePill } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
-import {
-  Button,
-  RaisedButton,
-} from '../../../../../styles/components/buttons.tsx';
+import { RaisedButton } from '../../../../../styles/components/buttons.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -135,6 +132,135 @@ export function GeneralOrgTabContent() {
   );
 }
 
+interface MemberStepProps {
+  selectedUsers: User[];
+  setShowStep2: (arg0: boolean) => void;
+  setShowStep1: (arg0: boolean) => void;
+  setStep: (arg0: number) => void;
+}
+
+export function MemberStep({
+  selectedUsers,
+  setShowStep2,
+  setShowStep1,
+  setStep,
+}: MemberStepProps) {
+  const handleChooseWsClick = () => {
+    setShowStep1(false);
+    setShowStep2(true);
+    setStep(2);
+  };
+  const HeaderContainerStyle: CSSProperties = {
+    padding: '50px 0px 24px',
+    maxWidth: '900px',
+  };
+  const FunctionsHeader: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  };
+  const ChosenMembersContainer: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: '400px',
+    gap: '4px',
+  };
+  const tableHeader: CSSProperties = {
+    display: 'flex',
+    padding: '34px 0px 0px 0px',
+  };
+  return (
+    <div style={HeaderContainerStyle}>
+      <div style={FunctionsHeader}>
+        <div>Choose members to assign</div>
+        {selectedUsers && (
+          <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+        )}
+        <RaisedButton>TTT</RaisedButton>
+      </div>
+      <div style={ChosenMembersContainer}>
+        {selectedUsers.map((user) => (
+          <AssigneePill key={user.key} user={user.manager} />
+        ))}
+      </div>
+      <div style={tableHeader}>
+        <Bold>Org. Members</Bold>
+      </div>
+    </div>
+  );
+}
+
+interface WorkspacesStepProps {
+  selectedUsers: User[];
+}
+
+export function WorkspacesStep({ selectedUsers }: WorkspacesStepProps) {
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
+  const isWorkspaceSelected = (ws: Workspace) =>
+    selectedWorkspaces.includes(ws);
+  const handleChooseWsClick = () => {};
+
+  const handleWorkspaceClick = (workspace: Workspace) => {
+    if (selectedWorkspaces.includes(workspace)) {
+      setSelectedWorkspaces(selectedWorkspaces.filter((w) => w !== workspace));
+    } else {
+      setSelectedWorkspaces([...selectedWorkspaces, workspace]);
+    }
+  };
+
+  const HeaderContainerStyle: CSSProperties = {
+    padding: '50px 0px 24px',
+    maxWidth: '900px',
+  };
+  const FunctionsHeader: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  };
+  const ChosenMembersContainer: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: '400px',
+    gap: '4px',
+  };
+  const tableHeader: CSSProperties = {
+    display: 'flex',
+    padding: '34px 0px 0px 0px',
+  };
+  return (
+    <div style={HeaderContainerStyle}>
+      <div style={FunctionsHeader}>
+        <div>Choose workspaces to assign</div>
+        {selectedUsers && (
+          <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+        )}
+      </div>
+      <div style={ChosenMembersContainer}>
+        {selectedUsers.map((user, index) => (
+          <AssigneePill key={user.key} user={user.manager} />
+        ))}
+      </div>
+      <div style={tableHeader}>
+        <Bold>My Workspaces</Bold>
+        {workspaces.map((workspace, index) => (
+          <div>{workspace.name} </div>
+        ))}
+      </div>
+      {selectedWorkspaces.map((workspace, index) => (
+        <div
+          key={index}
+          onClick={() => handleWorkspaceClick(workspace)}
+          style={getRowStyle(index, undefined, workspace)}
+          onMouseEnter={() => setHoverIndex(index)}
+          onMouseLeave={() => setHoverIndex(null)}
+        ></div>
+      ))}
+    </div>
+  );
+}
+
 export function MembersTabContent() {
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
@@ -150,8 +276,6 @@ export function MembersTabContent() {
   const [step, setStep] = useState<number>(1);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const isUserSelected = (user: User) => selectedUsers.includes(user);
-  const isWorkspaceSelected = (ws: Workspace) =>
-    selectedWorkspaces.includes(ws);
 
   const getRowStyle = (
     index?: number,
@@ -222,13 +346,6 @@ export function MembersTabContent() {
       setSelectedUsers([...selectedUsers, user]);
     }
   };
-  const handleWorkspaceClick = (workspace: Workspace) => {
-    if (selectedWorkspaces.includes(workspace)) {
-      setSelectedWorkspaces(selectedWorkspaces.filter((w) => w !== workspace));
-    } else {
-      setSelectedWorkspaces([...selectedWorkspaces, workspace]);
-    }
-  };
 
   useEffect(() => {
     if (users) {
@@ -255,122 +372,8 @@ export function MembersTabContent() {
     setShowMultiSelection(false);
     setSelectedUsers([]);
     setSearchTerm('');
+    setStep(1);
   };
-
-  interface MemberStepProps {
-    selectedUsers: User[];
-    setShowStep2: (arg0: boolean) => void;
-    setShowStep1: (arg0: boolean) => void;
-    setStep: (arg0: number) => void;
-  }
-
-  function MemberStep({
-    selectedUsers,
-    setShowStep2,
-    setShowStep1,
-    setStep,
-  }: MemberStepProps) {
-    const handleChooseWsClick = () => {
-      debugger;
-      setShowStep1(false);
-      setShowStep2(true);
-      setStep(2);
-      console.log('The current step: ', step);
-    };
-    const HeaderContainerStyle: CSSProperties = {
-      padding: '50px 0px 24px',
-      maxWidth: '900px',
-    };
-    const FunctionsHeader: CSSProperties = {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'baseline',
-    };
-    const ChosenMembersContainer: CSSProperties = {
-      display: 'flex',
-      flexWrap: 'wrap',
-      maxWidth: '400px',
-      gap: '4px',
-    };
-    const tableHeader: CSSProperties = {
-      display: 'flex',
-      padding: '34px 0px 0px 0px',
-    };
-    return (
-      <div style={HeaderContainerStyle}>
-        <div style={FunctionsHeader}>
-          <div>Choose members to assign</div>
-          {selectedUsers && (
-            <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
-          )}
-          {/* {selectedUsers && (
-            <Button onClick={handleChooseWsClick}> CLICK</Button>
-          )} */}
-          <RaisedButton>TTT</RaisedButton>
-        </div>
-        <div style={ChosenMembersContainer}>
-          {selectedUsers.map((user) => (
-            <AssigneePill key={user.key} user={user.manager} />
-          ))}
-        </div>
-        <div style={tableHeader}>
-          <Bold>Org. Members</Bold>
-        </div>
-      </div>
-    );
-  }
-
-  interface WorkspacesStepProps {
-    selectedUsers: User[];
-  }
-
-  function WorkspacesStep({ selectedUsers }: WorkspacesStepProps) {
-    const workspacesQuery = useSharedQuery('workspaces');
-    const workspaces = useVertices(workspacesQuery.results) as Workspace[];
-
-    const handleChooseWsClick = () => {};
-
-    const HeaderContainerStyle: CSSProperties = {
-      padding: '50px 0px 24px',
-      maxWidth: '900px',
-    };
-    const FunctionsHeader: CSSProperties = {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'baseline',
-    };
-    const ChosenMembersContainer: CSSProperties = {
-      display: 'flex',
-      flexWrap: 'wrap',
-      maxWidth: '400px',
-      gap: '4px',
-    };
-    const tableHeader: CSSProperties = {
-      display: 'flex',
-      padding: '34px 0px 0px 0px',
-    };
-    return (
-      <div style={HeaderContainerStyle}>
-        <div style={FunctionsHeader}>
-          <div>Choose workspaces to assign</div>
-          {selectedUsers && (
-            <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
-          )}
-        </div>
-        <div style={ChosenMembersContainer}>
-          {selectedUsers.map((user, index) => (
-            <AssigneePill key={user.key} user={user.manager} />
-          ))}
-        </div>
-        <div style={tableHeader}>
-          <Bold>My Workspaces</Bold>
-          {workspaces.map((workspace, index) => (
-            <div>{workspace.name} </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   const step0ContainerStyle: CSSProperties = {
     display: 'flex',
@@ -420,7 +423,6 @@ export function MembersTabContent() {
         />
       )}
       {showStep2 && <WorkspacesStep selectedUsers={selectedUsers} />}
-
       <div>
         {showSearchRow && (
           <div style={searchRowStyle}>
@@ -457,6 +459,7 @@ export function MembersTabContent() {
                     <IconCheck />
                   </div>
                 )}
+
                 <Text style={firstColumnStyle}>{user.name}</Text>
                 <TextSm style={otherColumnStyle}>{user.email}</TextSm>
                 <TextSm style={otherColumnStyle}>{'placeholder1'}</TextSm>
@@ -466,15 +469,6 @@ export function MembersTabContent() {
             ))}
           </div>
         )}
-        {selectedWorkspaces.map((workspace, index) => (
-          <div
-            key={index}
-            onClick={() => handleWorkspaceClick(workspace)}
-            style={getRowStyle(index, undefined, workspace)}
-            onMouseEnter={() => setHoverIndex(index)}
-            onMouseLeave={() => setHoverIndex(null)}
-          ></div>
-        ))}
       </div>
     </div>
   );
