@@ -24,7 +24,6 @@ export const IconVector: React.FC<IconVectorProps> = ({ color }) => {
       />
     </svg>
   );
-  np;
 };
 
 interface IconEllipseProps {

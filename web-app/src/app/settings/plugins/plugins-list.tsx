@@ -207,7 +207,6 @@ export function MembersTabContent() {
     justifyContent: 'flex-start',
     cursor: 'default',
     backgroundColor: '#FFF',
-    // overflowY: 'clip',
   };
 
   const scrollContainerStyle: CSSProperties = {
@@ -222,6 +221,7 @@ export function MembersTabContent() {
       setSelectedUsers([...selectedUsers, user]);
     }
   };
+
   const handleWorkspaceClick = (workspace: Workspace) => {
     if (selectedWorkspaces.includes(workspace)) {
       setSelectedWorkspaces(selectedWorkspaces.filter((w) => w !== workspace));
