@@ -35,6 +35,7 @@ import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
+  TrustPool,
   decodeSession,
   generateRequestSignature,
   sessionFromRecord,
@@ -81,26 +82,27 @@ export class SyncService extends BaseService<ServerServices> {
     super.setup(services);
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
-    // First, load all root sessions
-    fetchEncodedRootSessions(services).forEach(async (encodedSesion) => {
-      const session = await decodeSession(encodedSesion);
-      await trustPool.addSession(session, sysDir.headForKey(session.id)!);
-    });
-    // Second, load all sessions (signed by root)
-    for (const key of sysDir.keys()) {
-      const record = sysDir.valueForKey(key);
-      if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-        const session = await sessionFromRecord(record);
-        // debugger;
-        await trustPool.addSession(session, sysDir.headForKey(key)!);
-      }
-    }
+    await setupTrustPool(trustPool, sysDir);
     // Setup backup service
-    this.getSysDir(); // Create /sys/dir
     this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
       const repo = this._repositories.get(repoId);
       if (repo) {
-        repo.persistCommits(commits);
+        debugger;
+        repo.persistCommits(commits).then((persisted) => {
+          console.log(
+            `Persisted ${persisted.length} commits from backup to ${repoId}`
+          );
+          if (repoId === 'sys/dir') {
+            let ws: string[] = [];
+            for (const key of repo.keys()) {
+              const r = repo.valueForKey(key);
+              if (r.scheme.namespace === SchemeNamespace.WORKSPACE) {
+                ws.push(key);
+              }
+            }
+            console.log(`Workspaces in sys/dir: ${ws}`);
+          }
+        });
       }
     });
     await this._backup.open('sys', 'dir'); // Load /sys/dir from backup
@@ -391,5 +393,24 @@ export class SyncEndpoint implements Endpoint {
         },
       }
     );
+  }
+}
+
+export async function setupTrustPool(
+  trustPool: TrustPool,
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>
+): Promise<void> {
+  fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
+    const session = await decodeSession(encodedSesion);
+    await trustPool.addSession(session, sysDir.headForKey(session.id)!);
+  });
+  // Second, load all sessions (signed by root)
+  for (const key of sysDir.keys()) {
+    const record = sysDir.valueForKey(key);
+    if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+      const session = await sessionFromRecord(record);
+      // debugger;
+      await trustPool.addSession(session, sysDir.headForKey(key)!);
+    }
   }
 }

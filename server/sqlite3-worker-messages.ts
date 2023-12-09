@@ -1,6 +1,18 @@
-import { EncodedOwnedSession } from '../auth/session.ts';
+import { EncodedOwnedSession, EncodedSession } from '../auth/session.ts';
 import { JSONObject, JSONArray } from '../base/interfaces.ts';
 import { RepositoryType } from '../repo/repo.ts';
+
+export interface InitWorkerMessage extends JSONObject {
+  msg: 'initWorker';
+  baseDir: string;
+  session: EncodedOwnedSession;
+}
+
+export interface WorkerReadyMessage extends JSONObject {
+  msg: 'workerReady';
+  rootSessions: EncodedSession[];
+  trustedSessions: EncodedSession[];
+}
 
 export interface CommitsMessage extends JSONObject {
   msg: 'commits';
@@ -12,9 +24,6 @@ export interface OpenRepositoryMessage extends JSONObject {
   msg: 'openRepo';
   type: RepositoryType;
   id: string;
-  path: string;
-  session: EncodedOwnedSession;
-  replicas: string[];
   requestId: number;
 }
 
@@ -27,6 +36,8 @@ export interface LoadingFinishedMessage extends JSONObject {
 }
 
 export type SQLite3WorkerMessage =
+  | InitWorkerMessage
+  | WorkerReadyMessage
   | CommitsMessage
   | OpenRepositoryMessage
   | LoadingFinishedMessage;

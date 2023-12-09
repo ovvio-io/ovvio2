@@ -229,6 +229,7 @@ export class GraphManager
       }
       // Load all keys from this repo
       for (const key of repo.keys()) {
+        if (id.startsWith('/user')) debugger;
         this.getVertexManager(key).touch();
       }
       plumbing.active = true;

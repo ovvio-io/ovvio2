@@ -24,6 +24,8 @@ import { CORSMiddleware, CORSEndpoint } from './cors.ts';
 import { SQLiteLogStream } from '../../logging/sqlite-log-stream.ts';
 import { ServerError } from '../../cfds/base/errors.ts';
 import { LogsEndpoint } from './logs.ts';
+import { sleep } from '../../base/time.ts';
+import { kSecondMs } from '../../base/date.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -389,6 +391,9 @@ export class Server {
     if (this._baseContext.silent === true) {
       console.log('STARTED');
     }
+    sleep(kSecondMs).then(() =>
+      console.log(`Replicas = ${this._baseContext?.replicas}`)
+    );
     Deno.addSignalListener('SIGTERM', () => {
       Deno.exit(0);
     });

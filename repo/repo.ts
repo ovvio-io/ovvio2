@@ -382,12 +382,17 @@ export class Repository<
         if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
           throw e; // Unknown error. Rethrow.
         }
+        let found = false;
         for (const p of head.parents) {
           if (this.hasCommit(p)) {
             head = this.getCommit(p);
+            found = true;
+            break;
           }
         }
-        head = undefined;
+        if (!found) {
+          head = undefined;
+        }
       }
     }
     if (head) {

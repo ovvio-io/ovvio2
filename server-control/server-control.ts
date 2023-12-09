@@ -128,7 +128,10 @@ async function _startChildServerProcess(
     }
     await sleep(50);
   }
-  stdoutReader.cancel();
+  stdoutReader.read().then((output) => {
+    console.log(decoder.decode(output.value));
+  });
+  // stdoutReader.cancel();
   if (!success) {
     console.log(`ERROR: Server didn't start properly.`);
     return undefined;
@@ -165,7 +168,7 @@ async function startServerProcesses(
   settings: ServerControlSettings
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 4; //navigator.hardwareConcurrency;
+  const processCount = 1; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {

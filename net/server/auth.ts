@@ -27,6 +27,8 @@ import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { ServerError, Code, accessDenied } from '../../cfds/base/errors.ts';
 import { copyToClipboard } from '../../base/development.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
+import { MemRepoStorage, RepoStorage, Repository } from '../../repo/repo.ts';
+import { SysDirIndexes } from './sync.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -133,7 +135,7 @@ export class AuthEndpoint implements Endpoint {
     const resp = new Response(
       JSON.stringify({
         session: encodedSession,
-        roots: fetchEncodedRootSessions(services),
+        roots: fetchEncodedRootSessions(services.sync.getSysDir()),
       })
     );
     resp.headers.set('Content-Type', 'application/json');
@@ -230,6 +232,7 @@ export class AuthEndpoint implements Endpoint {
         return responseForError('AccessDenied');
       }
       const signerRecord = fetchSessionById(services, signerId);
+      debugger;
       if (!signerRecord) {
         return responseForError('AccessDenied');
       }
@@ -279,18 +282,11 @@ export async function persistSession(
 }
 
 export function fetchEncodedRootSessions(
-  services: ServerServices
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>
 ): EncodedSession[] {
-  // const repo = services.sync.getRepository('sys', 'dir');
-  // const db = repo.storage.db;
-  // const statement = db.prepare(
-  //   `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`
-  // );
-  // const encodedRecord = statement.all();
-
   const result: EncodedSession[] = [];
-  const rootSessions = services.sync.getSysDir().indexes!.rootSessions;
-  for (const [key, record] of rootSessions.values()) {
+  const rootSessions = sysDir.indexes!.rootSessions;
+  for (const [_key, record] of rootSessions.values()) {
     if (record.get<Date>('expiration').getTime() - Date.now() <= 0) {
       continue;
     }
@@ -305,9 +301,20 @@ function fetchUserByEmail(
   email: string
 ): [key: string | undefined, record: Record | undefined] {
   email = normalizeEmail(email);
-  const row = services.sync
-    .getSysDir()
-    .indexes!.users.find((k, r) => r.get('email') === email, 1)[0];
+  const repo = services.sync.getSysDir();
+  let row = repo.indexes!.users.find((_k, r) => r.get('email') === email, 1)[0];
+  // Lazily create operator records
+  if (!row && services.settings.operatorEmails.includes(email)) {
+    const record = new Record({
+      scheme: Scheme.user(),
+      data: {
+        email,
+      },
+    });
+    const key = uniqueId();
+    repo.setValueForKey(key, record);
+    row = [key, record];
+  }
   return row ? [row[0]!, row[1]] : [undefined, undefined];
 }
 

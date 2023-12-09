@@ -4,10 +4,12 @@ import { getBaseURL } from '../net/server/utils.ts';
 import { Repository, RepositoryType } from '../repo/repo.ts';
 import {
   CommitsMessage,
+  InitWorkerMessage,
   OpenRepositoryMessage,
   SQLite3WorkerMessage,
+  WorkerReadyMessage,
 } from './sqlite3-worker-messages.ts';
-import { encodeSession } from '../auth/session.ts';
+import { decodeSession, encodeSession } from '../auth/session.ts';
 import { Commit } from '../repo/commit.ts';
 import {
   JSONCyclicalDecoder,
@@ -61,11 +63,41 @@ export class SQLite3RepoBackup {
           }
           break;
         }
+
+        case 'workerReady': {
+          this.onWorkerReady(msg);
+          break;
+        }
       }
     };
+    sleep(kSecondMs).then(() => {
+      this.initWorker();
+    });
   }
 
-  async open(type: RepositoryType, id: string): Promise<void> {
+  private async initWorker(): Promise<void> {
+    const initMsg: InitWorkerMessage = {
+      msg: 'initWorker',
+      baseDir: this.services.dir,
+      session: await encodeSession(this.services.settings.session),
+    };
+    this._worker.postMessage(initMsg);
+  }
+
+  private async onWorkerReady(msg: WorkerReadyMessage): Promise<void> {
+    const trustPool = this.services.trustPool;
+    debugger;
+    for (const encodedSession of msg.rootSessions) {
+      trustPool.addSessionUnsafe(await decodeSession(encodedSession));
+    }
+    for (const encodedSession of msg.trustedSessions) {
+      trustPool.addSessionUnsafe(await decodeSession(encodedSession));
+    }
+    await this.open('sys', 'dir');
+    debugger;
+  }
+
+  open(type: RepositoryType, id: string): Promise<void> {
     let resolve: () => void;
     const result = new Promise<void>((res) => {
       resolve = res;
@@ -78,12 +110,8 @@ export class SQLite3RepoBackup {
       msg: 'openRepo',
       type,
       id,
-      path: path.join(this.services.dir, type, id + '.repo'),
-      session: await encodeSession(this.services.settings.session),
-      replicas: this.services.replicas,
       requestId,
     };
-    await sleep(kSecondMs);
     this._worker.postMessage(msg);
     return result;
   }

@@ -368,10 +368,10 @@ function WorkspaceGIDToString(gid: WorkspaceGID): string {
 
 function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | null {
   const user = ws.graph.getRootVertex<User>();
-  if (user.hiddenWorkspaces.has(ws.key)) {
+  if (user.hiddenWorkspaces?.has(ws.key)) {
     return 'hidden';
   }
-  if (user.pinnedWorkspaces.has(ws.key)) {
+  if (user.pinnedWorkspaces?.has(ws.key)) {
     return 'pinned';
   }
   if (ws.isTemplate) {
