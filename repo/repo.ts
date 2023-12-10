@@ -440,7 +440,6 @@ export class Repository<
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     let result: Commit | undefined;
-
     if (merge) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
