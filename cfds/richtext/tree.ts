@@ -403,15 +403,20 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
   }
   let result = '';
   let prevDepth = 1;
+  let idx = 0;
   for (const [node, depth] of dfs(root)) {
     if (depth !== prevDepth) {
-      result += '\n';
       prevDepth = depth;
+    }
+
+    if (isElementNode(node) && idx > 1) {
+      result += '\n';
     }
 
     if (isTextNode(node)) {
       result += node.text;
     }
+    ++idx;
   }
   return result;
 }

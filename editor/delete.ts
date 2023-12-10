@@ -79,12 +79,14 @@ export function deleteCurrentSelection(
             { tagName: 'p', children: [] },
             { depthMarker: newDepth },
           ]);
-          mergeCtx.insert(start + 1, [
-            { depthMarker: newDepth - 1 },
-            kElementSpacer,
-            { ...parent, children: [] },
-            { depthMarker: newDepth },
-          ]);
+          if (parent.tagName !== 'ref') {
+            mergeCtx.insert(start + 1, [
+              { depthMarker: newDepth - 1 },
+              kElementSpacer,
+              { ...parent, children: [] },
+              { depthMarker: newDepth },
+            ]);
+          }
         }
       }
     } else {
@@ -93,9 +95,7 @@ export function deleteCurrentSelection(
   } else {
     mergeCtx.deleteRange(start!, end!);
   }
-  const rtWithDeletions = normalizeRichText(
-    reconstructRichText(mergeCtx.finalize())
-  );
+  const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
     docToRT(document),
     rtWithDeletions,

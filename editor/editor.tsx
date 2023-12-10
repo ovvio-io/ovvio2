@@ -24,12 +24,12 @@ import {
   domIdFromNodeKey,
 } from '../cfds/richtext/react.tsx';
 import {
+  docClone,
   docFromRT,
   docToRT,
   findEndOfDocument,
 } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
-import { coreValueClone } from '../base/core-types/clone.ts';
 import { useTrustPool } from '../auth/react.tsx';
 import { makeStyles, cn } from '../styles/css-objects/index.ts';
 import { resolveWritingDirection } from '../base/string.ts';
@@ -45,9 +45,9 @@ import { deleteCurrentSelection } from './delete.ts';
 import { notReached } from '../base/error.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { findFirstTextNode } from '../cfds/richtext/utils.ts';
-import { kSecondMs } from '../base/date.ts';
+import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
-import { uniqueId } from '../base/common.ts';
+import { prettyJSON, uniqueId } from '../base/common.ts';
 
 const HEADER_HEIGHT = styleguide.gridbase * 24;
 
@@ -110,7 +110,9 @@ const DELETE_INPUT_TYPES = [
 
 export const SELECTION_TTL_MS = 10 * kSecondMs;
 export function expirationForSelection(): Date {
-  return new Date(Date.now() + SELECTION_TTL_MS);
+  const d = new Date();
+  d.setTime(d.getTime() + SELECTION_TTL_MS);
+  return d;
 }
 
 function handleTextInputEvent(
@@ -197,7 +199,9 @@ function setBrowserSelectionToDocument(
     const state = ctx.doc;
     const selectionId = ctx.selectionId;
     if (!state.ranges || !state.ranges[selectionId]) {
-      selection.removeAllRanges();
+      if (selection.type !== 'None') {
+        selection.removeAllRanges();
+      }
       return;
     }
     const cfdsRange = state.ranges[selectionId];
@@ -291,8 +295,7 @@ export const RichTextEditor = forwardRef<
   RichTextEditorProps
 >(function RichTextEditor({ note, className }: RichTextEditorProps, ref) {
   const partialNote = usePartialVertex(note, ['body', 'titlePlaintext']);
-  const trustPool = useTrustPool();
-  const selectionId = trustPool.currentSession.id;
+  const selectionId = note.graph.selectionId;
   const styles = useStyles();
   const baseDirection = resolveWritingDirection(partialNote.titlePlaintext);
   const editorDivRef = useRef<HTMLDivElement>(null);
@@ -304,7 +307,7 @@ export const RichTextEditor = forwardRef<
       editorId,
       baseDirection,
     };
-  }, [partialNote.body, selectionId, editorId, baseDirection]);
+  }, [partialNote, selectionId, editorId, baseDirection]);
 
   useImperativeHandle(
     ref,
@@ -331,12 +334,11 @@ export const RichTextEditor = forwardRef<
         return;
       }
       const selection = getSelection();
-      const state = note.getVertexProxy().body;
+      const state = docClone(note.getVertexProxy().body);
       if (!selection) {
-        const doc = coreValueClone(state);
-        if (doc.ranges && doc.ranges[selectionId]) {
-          delete doc.ranges[selectionId];
-          partialNote.body = doc;
+        if (state.ranges && state.ranges[selectionId]) {
+          delete state.ranges[selectionId];
+          partialNote.body = state;
         }
         return;
       }
@@ -431,17 +433,19 @@ export const RichTextEditor = forwardRef<
       const state = note.getVertexProxy().body;
       event.stopPropagation();
       event.preventDefault();
-      note.getVertexProxy().body = handleTextInputEvent(
+      const updatedBody = handleTextInputEvent(
         state,
         event.nativeEvent as InputEvent,
         selectionId
       );
+      note.getVertexProxy().body = updatedBody;
     },
     [note]
   );
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
+      debugger;
       const state = note.getVertexProxy().body;
       if (event.key === 'Backspace' || event.key === 'Delete') {
         event.stopPropagation();
@@ -486,7 +490,7 @@ export const RichTextEditor = forwardRef<
     }
     const timeoutId = setTimeout(() => {
       const proxy = note.getVertexProxy();
-      const body = coreValueClone(proxy.body);
+      const body = docClone(proxy.body);
       if (!body.ranges || !body.ranges[selectionId]) {
         return;
       }
@@ -593,10 +597,10 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, [didFocus, setDidFocus, titleInputRef]);
 
   const onTitleEnter = useCallback(() => {
-    const doc = coreValueClone(note.getVertexProxy().body);
+    const doc = docClone(note.getVertexProxy().body);
     const node = findEndOfDocument(doc);
     if (isTextNode(node)) {
-      const selectionId = trustPool.currentSession.id;
+      const selectionId = note.graph.selectionId;
       if (!doc.ranges) {
         doc.ranges = {};
       }

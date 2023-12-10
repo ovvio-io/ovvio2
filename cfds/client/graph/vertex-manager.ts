@@ -279,9 +279,8 @@ export class VertexManager<V extends Vertex = Vertex>
       const updated = await repo.setValueForKey(this.key, this.record);
       if (updated) {
         this.touch();
-      } else {
-        this._commitDelayTimer.unschedule();
       }
+      this._commitDelayTimer.unschedule();
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
         this.scheduleCommitIfNeeded();

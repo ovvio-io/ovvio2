@@ -15,7 +15,12 @@ import {
 } from './tree.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { TreeKeys } from './tree-keys.ts';
-import { PointerValue, projectPointers } from './flat-rep.ts';
+import {
+  PointerValue,
+  flattenRichText,
+  projectPointers,
+  reconstructRichText,
+} from './flat-rep.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 
 export interface Range extends CoreObject {
@@ -72,6 +77,11 @@ export function docToRT(doc: RichText | UnkeyedDocument): RichText {
   return result;
 }
 
+export function docClone(doc: Document): Document {
+  return docFromRT(
+    reconstructRichText(flattenRichText(docToRT(doc), true, false))
+  );
+}
 export function isDocument(doc: UnkeyedDocument): doc is Document {
   return doc.nodeKeys instanceof TreeKeys;
 }

@@ -105,7 +105,6 @@ export class GraphManager
   private readonly _vertManagers: Dictionary<string, VertexManager>;
   private readonly _pendingMutations: Dictionary<string, MutationPack>;
   private readonly _undoManager: UndoManager;
-  private readonly _ptrFilterFunc: PointerFilterFunc;
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
@@ -118,8 +117,6 @@ export class GraphManager
     this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    const ptrKey = `${trustPool.currentSession.owner}/${trustPool.currentSession.id}`;
-    this._ptrFilterFunc = (key: string) => key !== ptrKey;
     this._pendingMutations = new Map();
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
       this._processPendingMutations()
@@ -163,8 +160,14 @@ export class GraphManager
     return this._trustPool.currentSession.owner!;
   }
 
+  get selectionId(): string {
+    const trustPool = this.trustPool;
+    return `${trustPool.currentSession.owner}/${trustPool.currentSession.id}`;
+  }
+
   get ptrFilterFunc(): PointerFilterFunc {
-    return this._ptrFilterFunc;
+    const selectionId = this.selectionId;
+    return (key: string) => key !== selectionId;
   }
 
   get isLoading(): boolean {
@@ -229,7 +232,6 @@ export class GraphManager
       }
       // Load all keys from this repo
       for (const key of repo.keys()) {
-        if (id.startsWith('/user')) debugger;
         this.getVertexManager(key).touch();
       }
       plumbing.active = true;
