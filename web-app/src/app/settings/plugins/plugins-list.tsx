@@ -28,6 +28,7 @@ import {
   Button,
   RaisedButton,
 } from '../../../../../styles/components/buttons.tsx';
+import MembersTabContent from './organization/members/base.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -135,7 +136,7 @@ export function GeneralOrgTabContent() {
   );
 }
 
-export function MembersTabContent() {
+export function MembersTabContentOld() {
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
   const [searchTerm, setSearchTerm] = useState<string>('');

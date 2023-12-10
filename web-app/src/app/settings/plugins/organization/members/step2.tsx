@@ -3,27 +3,25 @@ import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
-import {
-  AssignButton,
-  ChooseWsButton,
-  EditButton,
-} from '../../../components/settings-buttons.tsx';
-import UserTable from '../../../components/user-table.tsx';
+import { ChooseWsButton } from '../../../components/settings-buttons.tsx';
 import { AssigneePill } from '../../../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import WorkspaceTable from '../../../components/workspace-table.tsx';
 
-export function Step2({ setStep, selectedUsers }) {
-  const usersQuery = useSharedQuery('users');
-  const users = useVertices(usersQuery.results) as User[];
+type Step2Props = {
+  setStep: (step: number) => void;
+  selectedUsers: User[];
+};
+
+export const Step2: React.FC<Step2Props> = ({ setStep, selectedUsers }) => {
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
+
   const handleChooseWsClick = () => {
-    setStep(2);
+    setStep(3);
   };
 
-  const step0ContainerStyle: CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  };
   const HeaderContainerStyle: CSSProperties = {
     padding: '50px 0px 24px',
     maxWidth: '900px',
@@ -43,11 +41,20 @@ export function Step2({ setStep, selectedUsers }) {
     display: 'flex',
     padding: '34px 0px 0px 0px',
   };
+
+  const handleRowSelect = (ws: Workspace) => {
+    if (selectedWorkspaces.includes(ws)) {
+      setSelectedWorkspaces(selectedWorkspaces.filter((u) => u !== ws));
+    } else {
+      setSelectedWorkspaces([...selectedWorkspaces, ws]);
+    }
+  };
+
   return (
     <div style={HeaderContainerStyle}>
       <div style={FunctionsHeader}>
         <div>Choose workspaces to assign</div>
-        {selectedUsers && (
+        {selectedWorkspaces && (
           <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
         )}
       </div>
@@ -59,12 +66,16 @@ export function Step2({ setStep, selectedUsers }) {
       <div style={tableHeader}>
         <Bold>My Workspaces</Bold>
       </div>
-      <UserTable
-        users={users}
-        onRowSelect={() => {}}
+
+      <WorkspaceTable
+        workspaces={workspaces}
+        onRowSelect={handleRowSelect}
         showSelection={false}
+        selectedUsers={selectedUsers}
+        selectedWorkspaces={selectedWorkspaces}
         showSearch={false}
+        isHoverable={true}
       />
     </div>
   );
-}
+};
