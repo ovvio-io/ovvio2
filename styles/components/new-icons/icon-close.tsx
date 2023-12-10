@@ -1,7 +1,7 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconColor, IconProps, IconSize } from "./types.ts";
-import { COLORS } from "../color-picker.tsx";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconColor, IconProps, IconSize } from './types.ts';
+import { COLORS } from '../color-picker.tsx';
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -38,15 +38,15 @@ export function IconClose({
         opacity="0.6"
         d="M7.4495 7.44981L2.49976 2.50006"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M2.49976 7.50006L7.4495 2.55031"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

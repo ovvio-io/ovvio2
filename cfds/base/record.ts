@@ -33,13 +33,7 @@ import {
   MD5Checksum,
 } from '../../base/core-types/encoding/checksum.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
-import {
-  ConcreteCoreValue,
-  CoreValue,
-  Encodable,
-  Encoder,
-} from '../../base/core-types/index.ts';
-import { SerializeValueTypeOptions } from './types/index.ts';
+import { CoreValue, Encodable, Encoder } from '../../base/core-types/index.ts';
 
 export interface ReadonlyRecord {
   readonly isNull: boolean;

@@ -1,6 +1,6 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconColor, IconProps, IconSize } from "./types.ts";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconColor, IconProps, IconSize } from './types.ts';
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -30,7 +30,7 @@ export function IconSettings({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       width="16"
       height="16"
       viewBox="0 0 16 16"
@@ -42,7 +42,7 @@ export function IconSettings({
         cy="8.05828"
         r="4.37616"
         stroke={colors.var3}
-        stroke-width="2"
+        strokeWidth="2"
       />
       <path
         opacity="0.7"

@@ -112,7 +112,8 @@ export function useWorkspaceColor(
   workspaceId: VertexId<Workspace> | null
 ): WorkspaceColor {
   const graph = useGraphManager();
-  const colorMap = usePartialUserSettings(['workspaceColors']).workspaceColors;
+  const partialSettings = usePartialUserSettings(['workspaceColors']);
+  const colorMap = partialSettings.workspaceColors;
   const workspacesQuery = useSharedQuery('workspaces');
 
   if (!workspaceId) {

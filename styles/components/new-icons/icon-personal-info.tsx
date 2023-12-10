@@ -41,36 +41,36 @@ export function IconPersonalInfo({
         opacity="0.7"
         d="M11 5C11 6.65685 9.65685 8 8 8C6.34315 8 5 6.65685 5 5"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M11 5C11 3.34315 9.65685 2 8 2C6.34315 2 5 3.34315 5 5"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M2 15V14C2 10.6863 4.68629 8 8 8V8"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M14 15H2"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M14 15V14C14 10.6863 11.3137 8 8 8V8"
         stroke={colors.var4}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

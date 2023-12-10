@@ -12,8 +12,6 @@ import { MovingAverage } from '../base/math.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { VersionNumber } from '../base/version-number.ts';
 
-const SYNC_INTERVAL_DELAY_MS = 50;
-
 export interface SyncConfig {
   minSyncFreqMs: number;
   maxSyncFreqMs: number;
@@ -316,17 +314,16 @@ export abstract class BaseClient<
     const cycleCount = syncConfigGetCycles(syncConfig) + 1;
     // We need to do a minimum number of successful sync cycles in order to make
     // sure everything is sync'ed. Also need to make sure we don't have any
-    // local commits that our peer doesn't have (local changes or peer recovery)
+    // local commits that our peer doesn't have (local changes or peer recovery).
+    //
+    // Alternative algorithm: Wait for 2 consecutive cycles that are empty (no
+    // changes received from server).
     let i = 0;
     do {
-      const startTime = performance.now();
+      console.log(`Sync cycle ${i}/${cycleCount}`);
       await this.sendSyncMessage();
-      const dt = performance.now() - startTime;
-      if (dt < SYNC_INTERVAL_DELAY_MS) {
-        await sleep(SYNC_INTERVAL_DELAY_MS - dt);
-      }
       ++i;
-    } while (!this.closed && i < cycleCount /*|| this.needsReplication()*/);
+    } while (!this.closed && i < cycleCount);
   }
 
   needsReplication(): boolean {

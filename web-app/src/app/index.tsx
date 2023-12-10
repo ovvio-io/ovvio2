@@ -1,19 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Route, RouterProvider } from 'react-router';
+import { createBrowserRouter } from 'react-router-dom';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
 import { layout } from '../../../styles/layout.ts';
 import { lightTheme } from '../../../styles/theme.tsx';
-import LoadingView from './loading-view.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
 import { WorkspacesBar } from './workspaces-bar/index.tsx';
-import { createBrowserRouter } from 'react-router-dom';
-import NoteView from './workspace-content/workspace-view/note-editor/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 import { Settings } from './settings/index.tsx';
 import { CategorySettings } from './settings/category-settings.tsx';
 import { App } from '../../../styles/components/app.tsx';
+import { NoteEditor } from '../../../editor/editor.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -82,11 +81,7 @@ const router = createBrowserRouter([
   {
     path: `/:workspaceId/notes/:noteId`,
     // element: <NoteView />,
-    element: (
-      <Root style={lightTheme}>
-        <NoteView />
-      </Root>
-    ),
+    element: <NoteEditor />,
   },
   {
     path: `/:repoType/:repoId/_explorer`,

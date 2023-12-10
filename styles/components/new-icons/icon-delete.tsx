@@ -1,6 +1,6 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconColor, IconProps, IconSize } from "./types.ts";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconColor, IconProps, IconSize } from './types.ts';
 
 const COLOR_MAP = {
   [IconColor.Mono]: {
@@ -32,7 +32,7 @@ export function IconDelete({
       width={size}
       height={size}
       viewBox="0 0 16 16"
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -41,15 +41,15 @@ export function IconDelete({
           opacity="0.7"
           d="M2.5 3V13C2.5 14.1046 3.39543 15 4.5 15H11.5C12.6046 15 13.5 14.1046 13.5 13V3"
           stroke={colors.var3}
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
         <path
           opacity="0.7"
           d="M6 3V2C6 1.44772 6.44772 1 7 1H9C9.55228 1 10 1.44772 10 2V3"
           stroke={colors.var2}
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
         <line
           opacity="0.7"
@@ -58,8 +58,8 @@ export function IconDelete({
           x2="1"
           y2="3"
           stroke={colors.var2}
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
         <line
           opacity="0.7"
@@ -68,8 +68,8 @@ export function IconDelete({
           x2="6"
           y2="12"
           stroke={colors.var2}
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
         <line
           opacity="0.7"
@@ -78,8 +78,8 @@ export function IconDelete({
           x2="10"
           y2="12"
           stroke={colors.var2}
-          stroke-width="2"
-          stroke-linecap="round"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </g>
       <defs>

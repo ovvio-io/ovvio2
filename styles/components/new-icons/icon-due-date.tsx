@@ -1,13 +1,13 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconProps, IconSize } from "./types.ts";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconProps, IconSize } from './types.ts';
 
 export enum DueDateState {
-  Default = "default",
-  Today = "today",
-  OverDue = "overdue",
-  Done = "done",
-  Clear = "clear",
+  Default = 'default',
+  Today = 'today',
+  OverDue = 'overdue',
+  Done = 'done',
+  Clear = 'clear',
 }
 
 const COLOR_MAP = {
@@ -42,7 +42,7 @@ export function IconDueDate({
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       viewBox="0 0 15 15"
       fill="none"
     >
@@ -50,50 +50,50 @@ export function IconDueDate({
         opacity="0.6"
         d="M14 14H1"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M14 2H1"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M1 2L1 14"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M14 2L14 14"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M10 1L10 3"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M5 1L5 3"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M14 6H1"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

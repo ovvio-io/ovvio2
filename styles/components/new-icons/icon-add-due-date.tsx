@@ -1,10 +1,10 @@
-import React from "react";
-import { brandLightTheme as theme } from "../../theme.tsx";
-import { IconProps, IconSize } from "./types.ts";
+import React from 'react';
+import { brandLightTheme as theme } from '../../theme.tsx';
+import { IconProps, IconSize } from './types.ts';
 
 export enum AddDueDateState {
-  Default = "default",
-  Primary = "primary",
+  Default = 'default',
+  Primary = 'primary',
 }
 
 const COLOR_MAP = {
@@ -38,71 +38,71 @@ export function IconAddDueDate({
       width={size}
       height={size}
       viewBox="0 0 16 16"
-      style={{ paddingRight: "8px", ...style }}
+      style={{ paddingRight: '8px', ...style }}
       fill="none"
     >
       <path
         opacity="0.6"
         d="M8 13H1"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M13 2H1"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M13 6H1"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M1 2L1 13"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M13 2L13 8"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M9 1L9 3"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M5 1L5 3"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M13 15L13 11"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M15 13L11 13"
         stroke={colors.var1}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

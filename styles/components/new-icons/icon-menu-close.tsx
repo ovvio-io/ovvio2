@@ -41,15 +41,15 @@ export function IconMenuClose({
         opacity="0.6"
         d="M5 8L11 14"
         stroke="#F5F9FB"
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.6"
         d="M11 2L5 8"
         stroke="white"
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

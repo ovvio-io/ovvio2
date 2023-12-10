@@ -42,29 +42,29 @@ export function IconShow({
         opacity="0.7"
         d="M15 5.2C15 5.2 12.9 1 8 1C3.1 1 1 5.2 1 5.2"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M15 5.19999C15 5.19999 12.9 9.39999 8 9.39999C3.1 9.39999 1 5.19999 1 5.19999"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.8"
         d="M10 5.2C10 6.30457 9.10457 7.2 8 7.2C6.89543 7.2 6 6.30457 6 5.2"
         stroke={colors.var2}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         opacity="0.7"
         d="M10 5.2C10 4.09543 9.10457 3.2 8 3.2C6.89543 3.2 6 4.09543 6 5.2"
         stroke={colors.var3}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );

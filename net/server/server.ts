@@ -24,6 +24,8 @@ import { CORSMiddleware, CORSEndpoint } from './cors.ts';
 import { SQLiteLogStream } from '../../logging/sqlite-log-stream.ts';
 import { ServerError } from '../../cfds/base/errors.ts';
 import { LogsEndpoint } from './logs.ts';
+import { sleep } from '../../base/time.ts';
+import { kSecondMs } from '../../base/date.ts';
 
 /**
  * CLI arguments consumed by our server.
@@ -41,7 +43,7 @@ interface Arguments {
 export interface ServerContext extends Arguments {
   readonly settings: SettingsService;
   readonly prometheusLogStream: PrometheusLogStream;
-  readonly sqliteLogStream: SQLiteLogStream;
+  // readonly sqliteLogStream: SQLiteLogStream;
   readonly trustPool: TrustPool;
   readonly email: EmailService;
   readonly logger: Logger;
@@ -171,10 +173,10 @@ export class Server {
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
-    const sqliteLogStream = new SQLiteLogStream(
-      path.join(args!.dir, 'logs.sqlite')
-    );
-    const logStreams: LogStream[] = [sqliteLogStream, prometeusLogStream];
+    // const sqliteLogStream = new SQLiteLogStream(
+    //   path.join(args!.dir, 'logs.sqlite')
+    // );
+    const logStreams: LogStream[] = [/*sqliteLogStream,*/ prometeusLogStream];
     if (args?.silent !== true) {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
@@ -184,7 +186,7 @@ export class Server {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
       prometheusLogStream: prometeusLogStream,
-      sqliteLogStream,
+      // sqliteLogStream,
       dir: args!.dir,
       replicas: args?.replicas || [],
       port: args?.port || 8080,
@@ -309,8 +311,8 @@ export class Server {
           }
           return resp;
         } catch (e: any) {
-          debugger;
           if (e instanceof ServerError) {
+            if (e.code === 500) debugger;
             log({
               severity: 'ERROR',
               name: 'HttpStatusCode',
@@ -325,6 +327,7 @@ export class Server {
               status: e.code,
             });
           }
+          debugger;
           log({
             severity: 'ERROR',
             name: 'InternalServerError',
@@ -388,6 +391,9 @@ export class Server {
     if (this._baseContext.silent === true) {
       console.log('STARTED');
     }
+    sleep(kSecondMs).then(() =>
+      console.log(`Replicas = ${this._baseContext?.replicas}`)
+    );
     Deno.addSignalListener('SIGTERM', () => {
       Deno.exit(0);
     });

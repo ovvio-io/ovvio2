@@ -10,7 +10,10 @@ import { NormalizedLogEntry } from '../../logging/entry.ts';
 import { log } from '../../logging/log.ts';
 import {
   Authorizer,
+  EVENT_NEW_COMMIT,
+  MemRepoStorage,
   Repository,
+  RepositoryIndexes,
   RepositoryType,
   kRepositoryTypes,
 } from '../../repo/repo.ts';
@@ -32,6 +35,7 @@ import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
+  TrustPool,
   decodeSession,
   generateRequestSignature,
   sessionFromRecord,
@@ -43,20 +47,29 @@ import {
 } from '../../repo/auth.ts';
 import { fetchEncodedRootSessions, requireSignedUser } from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
+import { SQLite3RepoBackup } from '../../server/sqlite3-repo-backup.ts';
+import { RepositoryIndex } from '../../repo/index.ts';
+
+export interface SysDirIndexes extends RepositoryIndexes<MemRepoStorage> {
+  users: RepositoryIndex<MemRepoStorage>;
+  rootSessions: RepositoryIndex<MemRepoStorage>;
+}
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
     string,
-    Repository<SQLiteRepoStorage>
+    Repository<MemRepoStorage>
   >;
   private readonly _clientsForRepo: Dictionary<
     string,
-    RepoClient<SQLiteRepoStorage>[]
+    RepoClient<MemRepoStorage>[]
   >;
   readonly name = 'sync';
 
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
+  private _backup: SQLite3RepoBackup | undefined;
+
   constructor() {
     super();
     this._repositories = new Map();
@@ -69,75 +82,114 @@ export class SyncService extends BaseService<ServerServices> {
     super.setup(services);
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
-    // First, load all root sessions
-    fetchEncodedRootSessions(services).forEach(async (encodedSesion) => {
-      const session = await decodeSession(encodedSesion);
-      await trustPool.addSession(session, sysDir.headForKey(session.id)!);
-    });
-    // Second, load all sessions (signed by root)
-    for (const key of sysDir.keys()) {
-      const record = sysDir.valueForKey(key);
-      if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-        const session = await sessionFromRecord(record);
-        // debugger;
-        await trustPool.addSession(session, sysDir.headForKey(key)!);
+    await setupTrustPool(trustPool, sysDir);
+    // Setup backup service
+    this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
+      const repo = this._repositories.get(repoId);
+      if (repo) {
+        repo.persistCommits(commits).then((persisted) => {
+          if (repoId === 'sys/dir') {
+            let ws: string[] = [];
+            for (const key of repo.keys()) {
+              const r = repo.valueForKey(key);
+              if (r.scheme.namespace === SchemeNamespace.WORKSPACE) {
+                ws.push(key);
+              }
+            }
+            console.log(`Workspaces in sys/dir: ${ws}`);
+          }
+        });
       }
-    }
+    });
+    await this._backup.open('sys', 'dir'); // Load /sys/dir from backup
   }
 
-  getRepository(
+  setupRepository(
     type: RepositoryType,
-    id: string
-  ): Repository<SQLiteRepoStorage> {
-    let repo = this._repositories.get(id);
-    if (!repo) {
-      let authorizer: Authorizer<SQLiteRepoStorage>;
-      switch (type) {
-        case 'sys':
-          assert(id === 'dir'); // Sanity check
-          authorizer = createSysDirAuthorizer(
-            () => this.services.settings.operatorEmails
-          );
-          break;
-
-        case 'data':
-          authorizer = createWorkspaceAuthorizer(
-            () => this.services.settings.operatorEmails,
-            this.getRepository('sys', 'dir'),
-            id
-          );
-          break;
-
-        case 'user':
-          authorizer = createUserAuthorizer(
-            this.getRepository('sys', 'dir'),
-            id
-          );
-          break;
-      }
-      repo = new Repository(
-        new SQLiteRepoStorage(joinPath(this.services.dir, type, id + '.repo')),
-        this.services.trustPool,
-        authorizer
-      );
-      this._repositories.set(id, repo);
-      const replicas = this.services.replicas;
-      if (replicas.length > 0) {
-        assert(!this._clientsForRepo.has(id)); // Sanity check
-        const clients = this.services.replicas.map((baseServerUrl) =>
-          new RepoClient(
-            repo!,
-            new URL(`/${type}/` + id, baseServerUrl).toString(),
-            kSyncConfigServer
-          ).startSyncing()
+    id: string,
+    indexes?: (
+      repo: Repository<MemRepoStorage, RepositoryIndexes<MemRepoStorage>>
+    ) => RepositoryIndexes<MemRepoStorage>
+  ): Repository<MemRepoStorage> {
+    const repoId = Repository.id(type, id);
+    assert(!this._repositories.has(repoId));
+    let authorizer: Authorizer<MemRepoStorage>;
+    switch (type) {
+      case 'sys':
+        assert(id === 'dir'); // Sanity check
+        authorizer = createSysDirAuthorizer(
+          () => this.services.settings.operatorEmails
         );
-        this._clientsForRepo.set(id, clients);
-      }
+        break;
+
+      case 'data':
+        authorizer = createWorkspaceAuthorizer(
+          () => this.services.settings.operatorEmails,
+          this.getRepository('sys', 'dir'),
+          id
+        );
+        break;
+
+      case 'user':
+        authorizer = createUserAuthorizer(this.getRepository('sys', 'dir'), id);
+        break;
     }
+    const repo = new Repository(
+      new MemRepoStorage(),
+      this.services.trustPool,
+      authorizer,
+      indexes
+    );
+    this._repositories.set(repoId, repo);
+    const replicas = this.services.replicas;
+    if (replicas.length > 0) {
+      assert(!this._clientsForRepo.has(repoId)); // Sanity check
+      const clients = this.services.replicas.map((baseServerUrl) =>
+        new RepoClient(
+          repo!,
+          new URL(`/${type}/` + id, baseServerUrl).toString(),
+          kSyncConfigServer
+        ).startSyncing()
+      );
+      this._clientsForRepo.set(repoId, clients);
+    }
+    this._backup?.open(type, id);
+    repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+      this._backup?.persistCommits(repoId, [c]);
+    });
     return repo;
   }
 
-  getSysDir(): Repository<SQLiteRepoStorage> {
+  getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
+    type: RepositoryType,
+    id: string
+  ): Repository<MemRepoStorage, T> {
+    const repoId = Repository.id(type, id);
+    let repo = this._repositories.get(repoId);
+    if (!repo) {
+      if (repoId === Repository.id('sys', 'dir')) {
+        repo = this.setupRepository(type, id, (r) => {
+          return {
+            users: new RepositoryIndex(
+              r,
+              (key, record) => record.scheme.namespace === SchemeNamespace.USERS
+            ),
+            rootSessions: new RepositoryIndex(
+              r,
+              (key, record) =>
+                record.scheme.namespace === SchemeNamespace.SESSIONS &&
+                record.get('owner') === 'root'
+            ),
+          };
+        });
+      } else {
+        repo = this.setupRepository(type, id);
+      }
+    }
+    return repo as Repository<MemRepoStorage, T>;
+  }
+
+  getSysDir(): Repository<MemRepoStorage, SysDirIndexes> {
     return this.getRepository('sys', 'dir');
   }
 
@@ -168,7 +220,7 @@ export class SyncService extends BaseService<ServerServices> {
     return this._clientsForLog.get(id)!;
   }
 
-  clientsForRepo(id: string): RepoClient<SQLiteRepoStorage>[] {
+  clientsForRepo(id: string): RepoClient<MemRepoStorage>[] {
     return this._clientsForRepo.get(id)!;
   }
 
@@ -337,5 +389,23 @@ export class SyncEndpoint implements Endpoint {
         },
       }
     );
+  }
+}
+
+export async function setupTrustPool(
+  trustPool: TrustPool,
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>
+): Promise<void> {
+  fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
+    const session = await decodeSession(encodedSesion);
+    await trustPool.addSession(session, sysDir.headForKey(session.id)!);
+  });
+  // Second, load all sessions (signed by root)
+  for (const key of sysDir.keys()) {
+    const record = sysDir.valueForKey(key);
+    if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+      const session = await sessionFromRecord(record);
+      await trustPool.addSession(session, sysDir.headForKey(key)!);
+    }
   }
 }

@@ -413,32 +413,27 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
       result += node.text;
     }
   }
-  return result.trim();
+  return result;
 }
 
-// export function isDuplicateTitleBug(rt: RichText): boolean {
-//   const txt = treeToPlaintext(rt.root);
-//   const len = txt.length;
-//   if (len <= 0 || len % 2 !== 0) {
-//     return false;
-//   }
-//   const mid = txt.length / 2;
-//   return txt.substring(0, mid) === txt.substring(mid);
-// }
+export function pathToNode<T extends ElementNode>(
+  root: ElementNode,
+  searchNode: TreeNode
+): readonly T[] | undefined {
+  for (const [node, _depth, path] of dfs(root)) {
+    if (node === searchNode) {
+      return path as T[];
+    }
+  }
+  return undefined;
+}
 
-// export function fixDuplicateTitleBug(rt: RichText): RichText {
-//   while (isDuplicateTitleBug(rt)) {
-//     const txt = treeToPlaintext(rt.root);
-//     rt = {
-//       root: {
-//         tagName: 'p',
-//         children: [
-//           {
-//             text: txt.substring(0, txt.length / 2),
-//           },
-//         ],
-//       },
-//     };
-//   }
-//   return rt;
-// }
+export function findLastTextNode(root: ElementNode, notEmpty = false) {
+  let textNode: TextNode | undefined;
+  for (const [node] of dfs(root)) {
+    if (isTextNode(node) && (notEmpty === false || node.text.length > 0)) {
+      textNode = node;
+    }
+  }
+  return textNode;
+}

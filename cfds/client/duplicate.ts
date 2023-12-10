@@ -10,6 +10,7 @@ import {
   isTextNode,
   RichText,
   TextNode,
+  findLastTextNode,
 } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
 import { Note } from './graph/vertices/note.ts';
@@ -68,12 +69,11 @@ export function duplicateCard(
  * @returns true means that duplicate process can proceed
  */
 function checkRecords(graph: GraphManager, rootKey: string) {
-  const root = graph.getVertex<Note>(rootKey);
-
-  if (root.errorCode || root.isLoading) {
+  if (!graph.hasVertex(rootKey)) {
     return false;
   }
 
+  const root = graph.getVertex<Note>(rootKey);
   for (const refKey of root.getBodyRefs()) {
     if (!checkRecords(graph, refKey)) {
       return false;
@@ -150,22 +150,12 @@ function fixSorting(outRecords: { [s: string]: CoreObject }) {
   }
 }
 
-function lastTextNode(rt: RichText) {
-  let textNode: TextNode | undefined;
-  for (const [node] of dfs(rt.root)) {
-    if (isTextNode(node) && node.text.length > 0) {
-      textNode = node;
-    }
-  }
-  return textNode;
-}
-
 function tryAppendText(noteData: CoreObject, text: string | undefined) {
   const title = noteData.title;
   if (!title || !text || !isRichText(title)) {
     return;
   }
-  const lastNode = lastTextNode(title);
+  const lastNode = findLastTextNode(title.root);
   if (!lastNode) {
     return;
   }

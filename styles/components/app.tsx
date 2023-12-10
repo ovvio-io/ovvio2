@@ -11,13 +11,13 @@ type AppProps = React.PropsWithChildren<Record<string, unknown>>;
 
 export function SkeletonApp({ children }: AppProps) {
   return (
-    <React.StrictMode>
-      <StyleProvider dev={false}>
-        <ThemeProvider theme={theme} isRoot={true}>
-          {children}
-        </ThemeProvider>
-      </StyleProvider>
-    </React.StrictMode>
+    // <React.StrictMode>
+    <StyleProvider dev={false}>
+      <ThemeProvider theme={theme} isRoot={true}>
+        {children}
+      </ThemeProvider>
+    </StyleProvider>
+    // </React.StrictMode>
   );
 }
 

@@ -128,6 +128,15 @@ export function usePartialVertex<
 >(
   vertexId: VertexId<V> | undefined | null,
   keys?: readonly K[],
+  opts?: OnChangeOpts
+): undefined | null | (Pick<V, K> & Vertex);
+
+export function usePartialVertex<
+  V extends Vertex,
+  K extends StringKeys<V> = StringKeys<V>
+>(
+  vertexId: VertexId<V> | undefined | null,
+  keys?: readonly K[],
   opts: OnChangeOpts = EMPTY_OPTS
 ): undefined | null | (Pick<V, K> & Vertex) {
   const graph = useGraphManager();

@@ -5,68 +5,65 @@ import React, {
   useEffect,
   MouseEventHandler,
   KeyboardEventHandler,
-} from "react";
-import { ReactEditor, Slate, Editable } from "slate-react";
-import { formatTimeDiff } from "../../../../../../../../base/date.ts";
-import { VertexManager } from "../../../../../../../../cfds/client/graph/vertex-manager.ts";
+} from 'react';
+import { formatTimeDiff } from '../../../../../../../../base/date.ts';
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
   NoteType,
-} from "../../../../../../../../cfds/client/graph/vertices/note.ts";
-import { Tag } from "../../../../../../../../cfds/client/graph/vertices/tag.ts";
-import { User } from "../../../../../../../../cfds/client/graph/vertices/user.ts";
-import { Workspace } from "../../../../../../../../cfds/client/graph/vertices/workspace.ts";
-import { Button } from "../../../../../../../../styles/components/buttons.tsx";
-import IconDelete from "../../../../../../../../styles/components/icons/IconDelete.tsx";
-import IconNote from "../../../../../../../../styles/components/icons/IconNote.tsx";
-import CheckBox from "../../../../../../../../styles/components/inputs/CheckBox.tsx";
-import { IconArrowDown } from "../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx";
-import { IconContent } from "../../../../../../../../styles/components/new-icons/icon-content.tsx";
+} from '../../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
+import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
+import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import IconDelete from '../../../../../../../../styles/components/icons/IconDelete.tsx';
+import IconNote from '../../../../../../../../styles/components/icons/IconNote.tsx';
+import CheckBox from '../../../../../../../../styles/components/inputs/CheckBox.tsx';
+import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
+import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
 import {
   IconDueDate,
   DueDateState,
-} from "../../../../../../../../styles/components/new-icons/icon-due-date.tsx";
-import { IconNewTask } from "../../../../../../../../styles/components/new-icons/icon-new-task.tsx";
-import { IconPin } from "../../../../../../../../styles/components/new-icons/icon-pin.tsx";
-import { useToastController } from "../../../../../../../../styles/components/toast/index.tsx";
+} from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
+import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
+import { useToastController } from '../../../../../../../../styles/components/toast/index.tsx';
 import {
   useTypographyStyles,
   TextSm,
-} from "../../../../../../../../styles/components/typography.tsx";
+} from '../../../../../../../../styles/components/typography.tsx';
 import {
   makeStyles,
   cn,
-} from "../../../../../../../../styles/css-objects/index.ts";
-import { brandLightTheme as theme } from "../../../../../../../../styles/theme.tsx";
-import { layout } from "../../../../../../../../styles/layout.ts";
-import { Text } from "../../../../../../../../styles/components/texts.tsx";
-import { styleguide } from "../../../../../../../../styles/styleguide.ts";
-import { usePartialView } from "../../../../../../core/cfds/react/graph.tsx";
-import { usePartialVertex } from "../../../../../../core/cfds/react/vertex.ts";
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { layout } from '../../../../../../../../styles/layout.ts';
+import { Text } from '../../../../../../../../styles/components/texts.tsx';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
+import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
 import {
   createUseStrings,
   format,
-} from "../../../../../../core/localization/index.tsx";
-import { useTitleEditor } from "../../../../../../core/slate/index.tsx";
-import { isHotkeyActive } from "../../../../../../core/slate/utils/hotkeys.ts";
+} from '../../../../../../core/localization/index.tsx';
 import {
   Assignee,
   AssignButton,
-} from "../../../../../../shared/card/assignees-view.tsx";
-import { RenderDraggableProps } from "../../../../../../shared/dragndrop/draggable.tsx";
-import CardMenuView from "../../../../../../shared/item-menu/index.tsx";
-import TagButton from "../../../../../../shared/tags/tag-button.tsx";
-import TagView from "../../../../../../shared/tags/tag-view.tsx";
-import { assignNote } from "../../../../../../shared/utils/assignees.ts";
-import { moveCard } from "../../../../../../shared/utils/move.ts";
-import { useWorkspaceColor } from "../../../../../../shared/workspace-icon/index.tsx";
+} from '../../../../../../shared/card/assignees-view.tsx';
+import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
+import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
+import TagButton from '../../../../../../shared/tags/tag-button.tsx';
+import TagView from '../../../../../../shared/tags/tag-view.tsx';
+import { assignNote } from '../../../../../../shared/utils/assignees.ts';
+import { moveCard } from '../../../../../../shared/utils/move.ts';
+import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import {
   WorkspaceIndicatorButtonProps,
   WorkspaceIndicator,
-} from "../../card-item/workspace-indicator.tsx";
-import { GridColumns, useGridStyles } from "./grid.tsx";
-import localization from "../list.strings.json" assert { type: "json" };
-import { useLogger } from "../../../../../../core/cfds/react/logger.tsx";
+} from '../../card-item/workspace-indicator.tsx';
+import { GridColumns, useGridStyles } from './grid.tsx';
+import localization from '../list.strings.json' assert { type: 'json' };
+import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 
@@ -76,12 +73,12 @@ const useStyles = makeStyles(
       height: ROW_HEIGHT,
     },
     itemRow: {
-      position: "relative",
+      position: 'relative',
       // This is required to allow position relative for table
       // rows on certain browsers
-      transform: "scale(1)",
+      transform: 'scale(1)',
       borderBottom: `1px solid ${theme.primary.p3}`,
-      ":hover": {
+      ':hover': {
         [GridColumns.DragAnchor]: {
           opacity: 1,
         },
@@ -96,35 +93,35 @@ const useStyles = makeStyles(
       backgroundColor: theme.colors.background,
     },
     doneIndicator: {
-      pointerEvents: "none",
-      position: "absolute",
-      top: "50%",
+      pointerEvents: 'none',
+      position: 'absolute',
+      top: '50%',
       left: styleguide.gridbase * 4,
       width: 0,
       height: 1,
       backgroundColor: theme.mono.m4,
       ...styleguide.transition.standard,
-      transitionProperty: "width",
+      transitionProperty: 'width',
     },
     doneIndicatorActive: {
       width: `calc(100% - ${styleguide.gridbase * 8}px)`,
     },
     cell: {},
     cellInner: {
-      height: "100%",
-      alignItems: "center",
+      height: '100%',
+      alignItems: 'center',
       basedOn: [layout.row],
     },
     iconCell: {
       width: styleguide.gridbase * 4,
       cellInner: {
         width: styleguide.gridbase * 4,
-        alignItems: "center",
-        justifyContent: "center",
+        alignItems: 'center',
+        justifyContent: 'center',
       },
     },
     [GridColumns.DragAnchor]: {
-      cursor: "grab",
+      cursor: 'grab',
       opacity: 0,
       // gridColumn: GridColumns.DragAnchor,
     },
@@ -138,30 +135,30 @@ const useStyles = makeStyles(
     },
     [GridColumns.Title]: {
       // gridColumn: GridColumns.Title,
-      width: "100%",
-      cursor: "pointer",
-      position: "relative",
+      width: '100%',
+      cursor: 'pointer',
+      position: 'relative',
     },
     titleContainer: {
-      position: "absolute",
+      position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      alignItems: "center",
+      alignItems: 'center',
       basedOn: [layout.row],
     },
     [GridColumns.Expander]: {
       // gridColumn: GridColumns.Expander,
-      cursor: "pointer",
+      cursor: 'pointer',
     },
     expanderIcon: {
       ...styleguide.transition.short,
-      transitionProperty: "transform",
-      transform: "rotate(90deg)",
+      transitionProperty: 'transform',
+      transform: 'rotate(90deg)',
     },
     expanderIconExpanded: {
-      transform: "rotate(270deg)",
+      transform: 'rotate(270deg)',
     },
     [GridColumns.ContentIndicator]: {
       // gridColumn: GridColumns.ContentIndicator,
@@ -171,20 +168,20 @@ const useStyles = makeStyles(
       // gridColumn: GridColumns.Workspace,
       width: styleguide.gridbase * 10,
       padding: [0, styleguide.gridbase * 0.5],
-      boxSizing: "border-box",
+      boxSizing: 'border-box',
     },
     wsIndicatorButton: {
-      alignItems: "flex-start",
+      alignItems: 'flex-start',
     },
     wsIndicator: {
       width: styleguide.gridbase * 10,
-      boxSizing: "border-box",
-      textAlign: "start",
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      userSelect: "none",
-      backgroundColor: "var(--ws-background)",
+      boxSizing: 'border-box',
+      textAlign: 'start',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      userSelect: 'none',
+      backgroundColor: 'var(--ws-background)',
       padding: [0, styleguide.gridbase * 0.5, styleguide.gridbase * 0.25],
       height: styleguide.gridbase * 2,
       lineHeight: `${styleguide.gridbase * 2}px`,
@@ -207,7 +204,7 @@ const useStyles = makeStyles(
     },
     [GridColumns.DueDate]: {
       padding: [0, styleguide.gridbase * 0.5],
-      whiteSpace: "nowrap",
+      whiteSpace: 'nowrap',
       // basedOn: [layout.row],
     },
     dueDateIcon: {
@@ -223,7 +220,7 @@ const useStyles = makeStyles(
     pinOff: {
       opacity: 0,
       ...styleguide.transition.short,
-      transitionProperty: "opacity",
+      transitionProperty: 'opacity',
     },
     pinOffOver: {
       opacity: 1,
@@ -233,24 +230,24 @@ const useStyles = makeStyles(
       // basedOn: [layout.row, layout.centerCenter],
     },
     nowrap: {
-      whiteSpace: "nowrap",
+      whiteSpace: 'nowrap',
     },
     titleEditor: {
-      width: "100%",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
+      width: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
     },
     titleText: {
       lineHeight: `${styleguide.gridbase * 3}px`,
       basedOn: [useTypographyStyles.text],
     },
     fillRow: {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       // gridColumn: `${GridColumns.Type}/-1`,
     },
     border: {
       height: 1,
-      boxSizing: "border-box",
+      boxSizing: 'border-box',
       gridColumn: `${GridColumns.Type}/-1`,
       borderBottom: `1px solid ${theme.primary.p2}`,
       boxShadow: theme.shadows.z2,
@@ -262,13 +259,13 @@ const useStyles = makeStyles(
       backgroundColor: theme.mono.m1,
       opacity: 0,
       ...styleguide.transition.short,
-      transitionProperty: "opacity",
+      transitionProperty: 'opacity',
     },
     visibleOnHover: {
       opacity: 0,
     },
     backdrop: {
-      position: "absolute",
+      position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
@@ -276,7 +273,7 @@ const useStyles = makeStyles(
     },
   }),
 
-  "item_1cda8c"
+  'item_1cda8c'
 );
 
 export { useStyles as useRowStyles };
@@ -335,14 +332,14 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     const styles = useStyles();
     const gridStyles = useGridStyles();
     const [isMouseOver, setIsMouseOver] = useState(false);
-    const { childCards } = usePartialVertex(note, ["childCards"]);
+    const { childCards } = usePartialVertex(note, ['childCards']);
     const onMouseOver = useCallback(() => setIsMouseOver(true), []);
     const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
     const onClickImpl: MouseEventHandler = (e) => {
       e.stopPropagation();
       onClick(note);
     };
-    const view = usePartialView("notesExpandOverride", "notesExpandBase");
+    const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
     const hasOverride = view.notesExpandOverride.has(note.key);
     const isExpanded =
@@ -423,12 +420,7 @@ export function DraftItemRow({
   };
 
   const onKeyDown: KeyboardEventHandler<HTMLTableRowElement> = (e) => {
-    if (
-      isHotkeyActive(e, {
-        metaKeys: [],
-        key: "Escape",
-      })
-    ) {
+    if (e.key === 'Escape') {
       e.stopPropagation();
       onCancel();
     }
@@ -460,7 +452,7 @@ export function DraftItemRow({
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
-  const { isChecked } = usePartialVertex(note, ["isChecked"]);
+  const { isChecked } = usePartialVertex(note, ['isChecked']);
   return (
     <div
       className={cn(
@@ -481,7 +473,7 @@ const ExpanderCell = ({
   toggleExpanded: () => void;
 }) => {
   const styles = useStyles();
-  const { childCards } = usePartialVertex(note, ["childCards"]);
+  const { childCards } = usePartialVertex(note, ['childCards']);
 
   return (
     <Cell
@@ -502,7 +494,7 @@ const ExpanderCell = ({
 
 const ContentIndicatorCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
-  const { bodyPreview } = usePartialVertex(note, ["bodyPreview"]);
+  const { bodyPreview } = usePartialVertex(note, ['bodyPreview']);
 
   return (
     <td
@@ -527,12 +519,12 @@ const AssigneesCell = ({
   const styles = useStyles();
   const logger = useLogger();
   const { assignees, workspace } = usePartialVertex(note, [
-    "assignees",
-    "workspace",
+    'assignees',
+    'workspace',
   ]);
   const { assignees: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ["assignees"]
+    ['assignees']
   );
   const workspaces = useMemo(
     () => [workspace?.manager as VertexManager<Workspace>],
@@ -563,11 +555,11 @@ const AssigneesCell = ({
           assignees={managers}
           className={cn(styles.assignee)}
           size="small"
-          source={"list"}
+          source={'list'}
         />
       ))}
       <AssignButton
-        source={"list"}
+        source={'list'}
         cardManager={note}
         users={userManagers}
         assignees={managers}
@@ -586,11 +578,11 @@ const TagsCell = ({
 }) => {
   const styles = useStyles();
   const logger = useLogger();
-  const { tags, workspace } = usePartialVertex(note, ["tags", "workspace"]);
+  const { tags, workspace } = usePartialVertex(note, ['tags', 'workspace']);
   const managers = useMemo(() => {
     const result = [];
     for (const [parent, child] of tags) {
-      if (parent instanceof Tag && parent.name?.toLowerCase() === "status") {
+      if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
         continue;
       }
       result.push(child.manager);
@@ -608,10 +600,10 @@ const TagsCell = ({
     (tag: Tag) => {
       note.getVertexProxy().tags.delete(tag.parentTag || tag);
       logger.log({
-        severity: "INFO",
-        event: "MetadataChanged",
-        source: "list",
-        type: "tag",
+        severity: 'EVENT',
+        event: 'MetadataChanged',
+        source: 'list',
+        type: 'tag',
         vertex: note.key,
         removed: tag.key,
       });
@@ -626,9 +618,9 @@ const TagsCell = ({
       const prevTag = tags.get(parent);
       tags.set(parent, tag);
       logger.log({
-        severity: "INFO",
-        event: "MetadataChanged",
-        type: "tag",
+        severity: 'EVENT',
+        event: 'MetadataChanged',
+        type: 'tag',
         vertex: note.key,
         added: tag.key,
         removed: prevTag?.key,
@@ -666,7 +658,7 @@ const TypeCell = ({
   isDraft?: boolean;
 }) => {
   const styles = useStyles();
-  const noteType = usePartialVertex(note, ["type"]).type;
+  const noteType = usePartialVertex(note, ['type']).type;
   const isActionable = noteType === NoteType.Task;
 
   return (
@@ -683,7 +675,7 @@ const TypeCell = ({
 };
 
 const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
-  const partialNote = usePartialVertex(note, ["isChecked"]);
+  const partialNote = usePartialVertex(note, ['isChecked']);
   return (
     <CheckBox
       name={note.key}
@@ -730,34 +722,36 @@ function TitleCell({
   isDraft?: boolean;
 }) {
   const styles = useStyles();
-  const { editor, plugins, handlers } = useTitleEditor(note, TitleNode);
-  useEffect(() => {
-    if (!isDraft) {
-      return;
-    }
+  const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
+  // const { editor, plugins, handlers } = useTitleEditor(note, TitleNode);
+  // useEffect(() => {
+  //   if (!isDraft) {
+  //     return;
+  //   }
 
-    let cancelled = false;
-    setTimeout(() => {
-      if (cancelled) {
-        return;
-      }
-      ReactEditor.focus(editor);
-    }, 0);
+  //   let cancelled = false;
+  //   setTimeout(() => {
+  //     if (cancelled) {
+  //       return;
+  //     }
+  //     ReactEditor.focus(editor);
+  //   }, 0);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [isDraft, editor]);
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, [isDraft, editor]);
   return (
     <Cell className={cn(styles.title)} onClick={isDraft ? undefined : onClick}>
       <div className={cn(styles.titleContainer)}>
-        <Slate editor={editor} {...handlers}>
+        {/* <Slate editor={editor} {...handlers}>
           <Editable
             className={cn(styles.titleEditor, !isDraft && styles.nowrap)}
             {...plugins}
             readOnly={!isDraft}
           />
-        </Slate>
+        </Slate> */}
+        <Text>{titlePlaintext}</Text>
       </div>
     </Cell>
   );
@@ -774,14 +768,14 @@ function WorkspaceIndicatorComponent({
   workspace,
 }: WorkspaceIndicatorButtonProps) {
   const styles = useStyles();
-  const { name } = usePartialVertex(workspace, ["name"]);
+  const { name } = usePartialVertex(workspace, ['name']);
   const color = useWorkspaceColor(workspace);
   const strings = useStrings();
   const style = useMemo<any>(
     () => ({
-      "--ws-background": color.background,
-      "--ws-active": color.active,
-      "--ws-inactive": color.inactive,
+      '--ws-background': color.background,
+      '--ws-active': color.active,
+      '--ws-inactive': color.inactive,
     }),
     [color]
   );
@@ -804,7 +798,7 @@ const WorkspaceCell = ({
 }) => {
   const styles = useStyles();
   const logger = useLogger();
-  const { workspace } = usePartialVertex(note, ["workspace"]);
+  const { workspace } = usePartialVertex(note, ['workspace']);
   const wsManager = workspace?.manager as VertexManager<Workspace>;
   const toastController = useToastController();
   const strings = useStrings();
@@ -814,7 +808,7 @@ const WorkspaceCell = ({
       const proxy = note.getVertexProxy();
       proxy.workspace = workspace.getVertexProxy();
     } else {
-      moveCard(note, workspace, note.graph, logger, "list");
+      moveCard(note, workspace, note.graph, logger, 'list');
     }
     if (onWorkspaceMoved) {
       onWorkspaceMoved(note);
@@ -834,7 +828,7 @@ const WorkspaceCell = ({
     >
       <WorkspaceIndicator
         menuClassName={cn(styles.wsIndicatorButton)}
-        workspace={isDraft ? null : wsManager}
+        workspace={isDraft ? undefined : wsManager}
         isExpanded={false}
         setWorkspace={setWorkspace}
         validateMove={!isDraft}
@@ -851,8 +845,8 @@ const WorkspaceCell = ({
 const DateCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const { dueDate, isChecked } = usePartialVertex(note, [
-    "dueDate",
-    "isChecked",
+    'dueDate',
+    'isChecked',
   ]);
   let content = null;
   const isLate = dueDate instanceof Date && dueDate < new Date() && !isChecked;
@@ -883,7 +877,7 @@ const PinCell = ({
   isChild?: boolean;
 }) => {
   const styles = useStyles();
-  const { isPinned } = usePartialVertex(note, ["isPinned"]);
+  const { isPinned } = usePartialVertex(note, ['isPinned']);
 
   const togglePin = () => {
     const proxy = note.getVertexProxy();
@@ -913,7 +907,7 @@ const MenuCell = ({
   isMouseOver,
 }: {
   note: VertexManager<Note>;
-  isMouseOver: boolean;
+  isMouseOver?: boolean;
 }) => {
   const styles = useStyles();
 

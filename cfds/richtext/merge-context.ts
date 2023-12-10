@@ -4,7 +4,6 @@ import {
   DIFF_EQUAL,
   DIFF_INSERT,
 } from '../../external/diff-match-patch.ts';
-import { assert } from '../../base/error.ts';
 import { kDMP } from '../base/defs.ts';
 import {
   CoreOptions,
@@ -40,22 +39,26 @@ export interface PatchCommand {
  * needs to be created.
  */
 export class MergeContext {
-  private readonly _origValues: Iterable<FlatRepAtom>;
+  private _origValues: readonly FlatRepAtom[];
   private readonly _deletions: Set<number>;
   private readonly _insertions: Dictionary<number, FlatRepAtom[]>;
   private readonly _eqOpts?: CoreOptions;
-  private _finalized: boolean;
+  private _result: readonly FlatRepAtom[] | undefined;
 
   constructor(origValues: Iterable<FlatRepAtom>, eqOpts?: CoreOptions) {
-    this._origValues = origValues;
+    this._origValues = Array.from(origValues);
     this._deletions = new Set();
     this._insertions = new Map();
     this._eqOpts = eqOpts;
-    this._finalized = false;
+  }
+
+  get origValues(): readonly FlatRepAtom[] {
+    return this._origValues;
   }
 
   delete(index: number): void {
     this._deletions.add(index);
+    this._result = undefined;
   }
 
   deleteRange(start: number, end: number): void {
@@ -72,6 +75,7 @@ export class MergeContext {
     } else {
       insertions.set(index, this.mergeValues(curValue, value));
     }
+    this._result = undefined;
   }
 
   apply(change: RichTextChange): void {
@@ -91,20 +95,56 @@ export class MergeContext {
     }
   }
 
-  *finalize(): Generator<FlatRepAtom> {
-    assert(!this._finalized);
+  /**
+   * Returns the current atom at the given index, or undefined if the index is
+   * out of bounds of the result.
+   *
+   * NOTE: This is an O(Max(N, E)) operation where N is the original rep, and E
+   * are the number of edits. Internally, each call to this method must
+   * recalculate the final result in order to determine the value at the given
+   * index.
+   *
+   * @param idx The index to get.
+   * @returns The atom at the specified index.
+   */
+  at<T extends FlatRepAtom>(idx: number): T | undefined {
+    return this.finalize()[idx] as T;
+  }
+
+  findLastBefore(
+    searchEndIdx: number,
+    selector: (atom: FlatRepAtom) => boolean
+  ): FlatRepAtom | undefined {
+    let result: FlatRepAtom | undefined;
+    let idx = 0;
+    for (const atom of this.finalize()) {
+      if (selector(atom)) {
+        result = atom;
+      }
+      if (++idx === searchEndIdx) {
+        break;
+      }
+    }
+    return result;
+  }
+
+  finalize(): readonly FlatRepAtom[] {
+    if (this._result) {
+      return this._result;
+    }
     const deletions = this._deletions;
     const insertions = this._insertions;
+    const result: FlatRepAtom[] = [];
     let idx = 0;
     for (const origAtom of this._origValues) {
       const insertedValues = insertions.get(idx);
       if (insertedValues !== undefined) {
         for (const v of insertedValues) {
-          yield v;
+          result.push(v);
         }
       }
       if (!deletions.has(idx)) {
-        yield origAtom;
+        result.push(origAtom);
       }
       ++idx;
     }
@@ -112,10 +152,11 @@ export class MergeContext {
     const insertedValues = insertions.get(idx);
     if (insertedValues !== undefined) {
       for (const v of insertedValues) {
-        yield v;
+        result.push(v);
       }
     }
-    this._finalized = true;
+    this._result = result;
+    return result;
   }
 
   private boxValueIfNeeded(

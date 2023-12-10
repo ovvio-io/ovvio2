@@ -246,11 +246,11 @@ export class Note extends ContentVertex {
         let childV: Note;
         if (!oldRefs.has(key)) {
           if (graph.hasVertex(key)) {
-            //This was a deleted task.
+            // This was a deleted task.
             childV = graph.getVertex<Note>(key);
             childV.isDeleted = 0;
           } else {
-            //New Task
+            // New Task
             childV = graph.createVertex(
               NS_NOTES,
               {
@@ -264,7 +264,7 @@ export class Note extends ContentVertex {
             );
           }
         } else {
-          //Existing task
+          // Existing task
           childV = graph.getVertex<Note>(key);
         }
         childV.titleRT = rt;
@@ -442,13 +442,6 @@ export class Note extends ContentVertex {
     this.titleRT = initRichText();
   }
 
-  get plaintextTitle(): string {
-    if (!this._cachedPlaintextTitle) {
-      this._cachedPlaintextTitle = treeToPlaintext(this.titleRT.root);
-    }
-    return this._cachedPlaintextTitle;
-  }
-
   private get titleRT(): RichText {
     if (!this._cachedTitleRT) {
       this._cachedTitleRT = reconstructRichText(
@@ -498,6 +491,26 @@ export class Note extends ContentVertex {
       this._cachedPlaintextTitle = treeToPlaintext(this.titleRT.root);
     }
     return this._cachedPlaintextTitle;
+  }
+
+  set titlePlaintext(str: string) {
+    const updatedRT: RichText = {
+      root: {
+        children: [
+          {
+            tagName: 'p',
+            children: [
+              {
+                text: str,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const finalRT = projectPointers(this.titleRT, updatedRT, () => true);
+    this.titleRT = finalRT;
+    this._cachedPlaintextTitle = undefined;
   }
 
   get parentNote(): Note | undefined {

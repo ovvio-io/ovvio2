@@ -18,6 +18,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
   private readonly _root: ElementNode;
   private readonly _keys: Dictionary<CoreValue, NodeKey>;
   private readonly _counts: Dictionary<CoreValue, number>;
+  private readonly _nodeByKey: Dictionary<string, CoreValue>;
 
   constructor(root: ElementNode) {
     this._root = root;
@@ -26,6 +27,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
       (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
       (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts)
     );
+    this._nodeByKey = new Map();
     for (const [node] of dfs(root)) {
       this.keyFor(node);
     }
@@ -33,6 +35,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
 
   keyFor(node: CoreValue): NodeKey {
     const keys = this._keys;
+    const nodeByKey = this._nodeByKey;
     let nodeKey = keys.get(node);
     if (nodeKey === undefined) {
       const counts = this._counts;
@@ -46,6 +49,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
       }
       keys.set(node, nodeKey);
       counts.set(node, idx + 1);
+      nodeByKey.set(nodeKey.id, node);
     }
     return nodeKey;
   }
@@ -68,5 +72,9 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
       }
     }
     return true;
+  }
+
+  nodeFromKey(key: string): CoreValue | undefined {
+    return this._nodeByKey.get(key);
   }
 }

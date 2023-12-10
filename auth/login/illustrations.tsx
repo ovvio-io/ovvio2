@@ -4,7 +4,7 @@ interface LoginIllustrationProps {
   className?: string;
 }
 
-const MASK_ALPHA_STYLE: any = { 'mask-type': 'alpha' };
+const MASK_ALPHA_STYLE: any = { maskType: 'alpha' };
 
 export const LoginIllustration = ({ className }: LoginIllustrationProps) => (
   <svg

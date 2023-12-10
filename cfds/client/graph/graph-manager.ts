@@ -217,18 +217,24 @@ export class GraphManager
 
     const repo = plumbing.repo;
     plumbing.loadingPromise = (async () => {
-      const commits = await backup.loadCommits();
-      await repo.persistCommits(commits);
-      if (plumbing.client) {
-        await plumbing.client.sync();
+      if (backup) {
+        const commits = await backup.loadCommits();
+        if (commits instanceof Array) {
+          await repo.persistCommits(commits);
+        } else {
+          console.log(`Unexpected IDB result: ${commits}`);
+        }
+      } else {
+        console.log(`Backup disabled for repo: ${id}`);
       }
       // Load all keys from this repo
       for (const key of repo.keys()) {
-        this.getVertexManager(key);
+        if (id.startsWith('/user')) debugger;
+        this.getVertexManager(key).touch();
       }
       plumbing.active = true;
       plumbing.loadingFinished = true;
-      plumbing.client?.startSyncing();
+      // plumbing.client?.startSyncing();
     })();
     return plumbing.loadingPromise;
   }
@@ -236,7 +242,24 @@ export class GraphManager
   async syncRepository(id: string): Promise<void> {
     const { client } = this.plumbingForRepository(id);
     await this.loadRepository(id);
-    return client && client.isOnline ? client.sync() : Promise.resolve();
+    if (client && client.isOnline) {
+      await client.sync();
+      // client.startSyncing();
+    }
+  }
+
+  startSyncing(repoId: string): void {
+    this.plumbingForRepository(repoId).client?.startSyncing();
+  }
+
+  async prepareRepositoryForUI(repoId: string): Promise<void> {
+    await this.loadRepository(repoId);
+    const repo = this.repository(repoId);
+    if (repo.numberOfCommits() <= 0) {
+      await this.syncRepository(repoId);
+    } else {
+      this.startSyncing(repoId);
+    }
   }
 
   private plumbingForRepository(id: string): RepositoryPlumbing {
@@ -246,7 +269,7 @@ export class GraphManager
       const repo = new Repository(new MemRepoStorage(), this.trustPool);
       plumbing = {
         repo,
-        backup: new IDBRepositoryBackup(id),
+        backup: new IDBRepositoryBackup(id, repo),
         // Data repo starts inactive. Everything else starts active.
         active: !id.startsWith('/data/'),
       };
@@ -254,7 +277,7 @@ export class GraphManager
         if (plumbing?.loadingFinished !== true) {
           return;
         }
-        plumbing!.backup?.persistCommits(id, [c]);
+        plumbing!.backup?.persistCommits([c]);
         if (c.session === this.trustPool.currentSession.id) {
           plumbing!.client?.touch();
         }
@@ -336,6 +359,10 @@ export class GraphManager
 
   repositoryIsActive(id: string): boolean {
     return this._repoById.get(id)?.active === true;
+  }
+
+  repositoryFinishedLoading(id: string): boolean {
+    return this.plumbingForRepository(id).loadingFinished === true;
   }
 
   setRepositoryIsActive(id: string, flag: boolean): void {

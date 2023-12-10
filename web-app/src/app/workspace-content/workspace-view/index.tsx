@@ -4,13 +4,11 @@ import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import Toolbar, { useStyles as toolbarStyles } from './toolbar/index.tsx';
 import { layout } from '../../../../../styles/index.ts';
 import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx';
-import NoteView from './note-editor/index.tsx';
-import { CardsDisplay } from './cards-display/index.tsx';
-import { EmptyState } from './empty-state/index.tsx';
 import {
   usePartialGlobalView,
   usePartialView,
 } from '../../../core/cfds/react/graph.tsx';
+import { EmptyState } from './empty-state/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {

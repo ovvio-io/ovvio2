@@ -3,6 +3,7 @@ import {
   deserializeDate,
   kDayMs,
   kMinuteMs,
+  kSecondMs,
   serializeDate,
 } from '../base/date.ts';
 import {
@@ -325,6 +326,16 @@ export async function encodeSession(
 }
 
 export async function decodeSession(
+  session: EncodedOwnedSession
+): Promise<OwnedSession>;
+
+export async function decodeSession(session: EncodedSession): Promise<Session>;
+
+export async function decodeSession(
+  session: EncodedSession | EncodedOwnedSession
+): Promise<Session | OwnedSession>;
+
+export async function decodeSession(
   session: EncodedSession | EncodedOwnedSession
 ): Promise<Session | OwnedSession> {
   const publicKey = await crypto.subtle.importKey(
@@ -412,8 +423,18 @@ export async function verifyRequestSignature(
   return await verifyData(session, sig);
 }
 
+let sessionIdsCache: Map<string, string> = new Map();
+setInterval(() => {
+  sessionIdsCache = new Map();
+}, 10 * kSecondMs);
+
 export function sessionIdFromSignature(sig: string): string {
-  return decodeSignature(sig).sessionId;
+  let id = sessionIdsCache.get(sig);
+  if (!id) {
+    id = decodeSignature(sig).sessionId;
+    sessionIdsCache.set(sig, id);
+  }
+  return id;
 }
 
 /**
@@ -495,41 +516,55 @@ export class TrustPool {
   async addSession(s: Session, commit: Commit): Promise<boolean> {
     let updated = false;
     if (await this.verifySession(commit)) {
-      const newExpiration = s.expiration.getTime();
-      const existingSession = this._sessions.get(s.id);
-      if (
-        !existingSession ||
-        existingSession.expiration.getTime() < newExpiration
-      ) {
-        this._sessions.set(s.id, s);
-        updated = true;
-      }
-      if (s.owner === 'root') {
-        const roots = this.roots;
-        let found = false;
-        for (let i = 0; i < roots.length; ++i) {
-          if (roots[i].id === s.id) {
-            found = true;
-            if (roots[i].expiration.getTime() < newExpiration) {
-              roots[i] = s;
-            }
-            break;
+      updated = this.addSessionUnsafe(s);
+    }
+    return updated;
+  }
+
+  /**
+   * Adds the given session to the trust pool, without verifying its origin
+   * commit. Be very careful to only use this method for verified sessions.
+   *
+   * @param s The session to add to this trust pool.
+   * @returns Whether the session has been added or not.
+   */
+  addSessionUnsafe(s: Session): boolean {
+    let updated = false;
+    const newExpiration = s.expiration.getTime();
+    const existingSession = this._sessions.get(s.id);
+    if (
+      !existingSession ||
+      existingSession.expiration.getTime() < newExpiration ||
+      (!existingSession.owner && s.owner)
+    ) {
+      this._sessions.set(s.id, s);
+      updated = true;
+    }
+    if (s.owner === 'root') {
+      const roots = this.roots;
+      let found = false;
+      for (let i = 0; i < roots.length; ++i) {
+        if (roots[i].id === s.id) {
+          found = true;
+          if (roots[i].expiration.getTime() < newExpiration) {
+            roots[i] = s;
           }
-        }
-        if (!found) {
-          roots.push(s);
+          break;
         }
       }
-      if (
-        s.id === this.currentSession.id &&
-        ((s.owner && !this.currentSession.owner) ||
-          s.expiration.getTime() > this.currentSession.expiration.getTime())
-      ) {
-        this._currentSession = {
-          ...s,
-          privateKey: this.currentSession.privateKey,
-        };
+      if (!found) {
+        roots.push(s);
       }
+    }
+    if (
+      s.id === this.currentSession.id &&
+      ((s.owner && !this.currentSession.owner) ||
+        s.expiration.getTime() > this.currentSession.expiration.getTime())
+    ) {
+      this._currentSession = {
+        ...s,
+        privateKey: this.currentSession.privateKey,
+      };
     }
     if (updated && this._changeCallback) {
       this._changeCallback();

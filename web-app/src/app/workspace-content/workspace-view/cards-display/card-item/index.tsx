@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Editable, RenderElementProps, Slate } from 'slate-react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -8,7 +7,6 @@ import {
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
-import { useTitleEditor } from '../../../../../core/slate/index.tsx';
 import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
@@ -26,6 +24,7 @@ import { CardTags } from './card-tag-view.tsx';
 import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -161,7 +160,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface TitleElementProps extends RenderElementProps {
+interface TitleElementProps {
   className?: string;
 }
 
@@ -184,13 +183,12 @@ function Title({
   card: VertexManager<Note>;
   source: UISource;
 }) {
-  const { editor, plugins, handlers } = useTitleEditor(card, TitleNode, source);
+  const styles = useStyles();
+  const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
 
   return (
     <div>
-      <Slate editor={editor} {...handlers}>
-        <Editable {...plugins} readOnly={true} />
-      </Slate>
+      <Text className={cn(styles.titleText)}>{titlePlaintext}</Text>
     </div>
   );
 }
@@ -264,30 +262,33 @@ export function StatusCheckbox({
   const styles = useStyles();
   const theme = useTheme();
   const logger = useLogger();
-  const pCard = usePartialVertex(card, ['tags', 'workspace', 'type', 'status']);
-  if (pCard.type !== NoteType.Task || pCard.status !== 'Done') {
+  const pCard = usePartialVertex(card, [
+    'tags',
+    'workspace',
+    'type',
+    'isChecked',
+  ]);
+  if (pCard.type !== NoteType.Task || !pCard.isChecked) {
     return <div className={cn(styles.checkboxPlaceholder, styles.status)} />;
   }
 
-  const isDone = pCard.status === 'Done';
-
   const onChange = useCallback(() => {
-    pCard.status = pCard.status === 'Done' ? 'ToDo' : 'Done';
+    pCard.isChecked = !pCard.isChecked;
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'MetadataChanged',
       type: 'status',
       vertex: pCard.key,
-      status: pCard.status,
+      status: pCard.isChecked ? NoteStatus.Checked : NoteStatus.Unchecked,
       source,
     });
-  }, [pCard, logger, source, isDone]);
+  }, [pCard, logger, source, pCard.isChecked]);
 
   return (
     <div className={cn(styles.status)}>
       <CheckBox
         color={theme.background.text}
-        checked={isDone}
+        checked={pCard.isChecked}
         onChange={onChange}
         name="status"
       />
@@ -314,14 +315,14 @@ export const CardItem = React.forwardRef(function CardItemView(
     'childCards',
     'tags',
     'type',
-    'status',
+    'isChecked',
   ]);
   const { childCards } = pCard;
   const [expanded, setExpanded] = useState(false);
   const style = useAnimateHeight(childListRef, expanded);
   const [isInHover, setIsInHover] = useState(false);
   const isTask = pCard.type === NoteType.Task;
-  const isDone = pCard.status === 'Done';
+  const isDone = pCard.isChecked;
   const logger = useLogger();
 
   const onMouseEnter = useCallback(() => {
@@ -337,7 +338,7 @@ export const CardItem = React.forwardRef(function CardItemView(
   const onClick = useCallback(() => {
     documentRouter.goTo(card);
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'Navigation',
       type: 'open',
       source,

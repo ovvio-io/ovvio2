@@ -46,8 +46,8 @@ export interface RefRow extends UnknownRow {
  * "refs": All edges in the graph defined by the "heads" table.
  */
 export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
-  private _allCommitsCache: string[] | undefined;
-  private _allCommitsCacheTs: number = 0;
+  private readonly _commitsCache: Map<string, Commit>;
+  private _allCommitsCacheTs = 0;
 
   readonly db: Database;
   constructor(readonly path?: string) {
@@ -56,6 +56,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       const dir = dirname(path);
       Deno.mkdirSync(dir, { recursive: true });
     }
+    this._commitsCache = new Map();
     const db = new Database(path || ':memory:', { create: true });
     this.db = db;
     db.exec('PRAGMA journal_mode = WAL;');
@@ -82,6 +83,10 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       dst TINYTEXT NOT NULL,
       PRIMARY KEY (src, dst)
     );`);
+    // Prefetch all commits
+    for (const id of this.allCommitsIds()) {
+      this.getCommit(id);
+    }
   }
 
   get countStatement(): Statement {
@@ -158,39 +163,41 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   }
 
   getCommit(id: string): Commit | undefined {
+    if (this._commitsCache.has(id)) {
+      return this._commitsCache.get(id);
+    }
     const row = this.getCommitStatement.get<CommitRow>({ id });
-    return row
+    const commit = row
       ? new Commit({
           decoder: new JSONCyclicalDecoder(JSON.parse(row.json)),
         })
       : undefined;
+    if (commit) {
+      this._commitsCache.set(id, commit);
+    }
+    return commit;
   }
 
   allCommitsIds(): Iterable<string> {
-    if (
-      this._allCommitsCache &&
-      performance.now() - this._allCommitsCacheTs <= ALL_COMMITS_CACHE_MS
-    ) {
-      return this._allCommitsCache;
+    if (performance.now() - this._allCommitsCacheTs <= ALL_COMMITS_CACHE_MS) {
+      return Array.from(this._commitsCache.keys());
     }
     const statement = this.db.prepare(`SELECT id FROM commits;`).bind();
     const result: string[] = [];
     for (const { id } of statement) {
       result.push(id);
+      this.getCommit(id);
     }
-    this._allCommitsCache = result;
     this._allCommitsCacheTs = performance.now();
     return result;
   }
 
   *commitsForKey(key: string): Generator<Commit> {
     const statement = this.db
-      .prepare(`SELECT json FROM commits WHERE key = '${key}';`)
+      .prepare(`SELECT id FROM commits WHERE key = '${key}';`)
       .bind();
-    for (const { json } of statement) {
-      yield new Commit({
-        decoder: new JSONCyclicalDecoder(JSON.parse(json)),
-      });
+    for (const { id } of statement) {
+      yield this.getCommit(id)!;
     }
   }
 
