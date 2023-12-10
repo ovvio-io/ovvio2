@@ -86,7 +86,6 @@ async function processMessage(
         );
         openRepositories.set(repoId, repo);
       }
-      console.log(`Loading all commits from ${repoId}...`);
       // Load all commits from disk
       let commitCount = 0;
       for (const batch of slices(repo.commits(), 1000)) {
@@ -104,7 +103,6 @@ async function processMessage(
         count: commitCount,
         requestId: msg.requestId,
       } as LoadingFinishedMessage);
-      console.log(`Done. Loaded ${commitCount} commits from ${repoId}`);
       if (repoId === 'sys/dir') {
         let ws: string[] = [];
         for (const key of repo.keys()) {
@@ -113,7 +111,6 @@ async function processMessage(
             ws.push(key);
           }
         }
-        console.log(`WORKER: Workspaces in sys/dir: ${ws}`);
       }
       break;
     }

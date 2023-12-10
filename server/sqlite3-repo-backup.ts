@@ -1,6 +1,4 @@
-import * as path from 'std/path/mod.ts';
 import { ServerServices } from '../net/server/server.ts';
-import { getBaseURL } from '../net/server/utils.ts';
 import { Repository, RepositoryType } from '../repo/repo.ts';
 import {
   CommitsMessage,
@@ -86,7 +84,6 @@ export class SQLite3RepoBackup {
 
   private async onWorkerReady(msg: WorkerReadyMessage): Promise<void> {
     const trustPool = this.services.trustPool;
-    debugger;
     for (const encodedSession of msg.rootSessions) {
       trustPool.addSessionUnsafe(await decodeSession(encodedSession));
     }
@@ -94,7 +91,6 @@ export class SQLite3RepoBackup {
       trustPool.addSessionUnsafe(await decodeSession(encodedSession));
     }
     await this.open('sys', 'dir');
-    debugger;
   }
 
   open(type: RepositoryType, id: string): Promise<void> {

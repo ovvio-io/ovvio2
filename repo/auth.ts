@@ -25,13 +25,10 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     if (commit.key === session.id) {
       userKey = session.owner;
     } else {
-      const commitSignerSessionRecord = repo.valueForKey(
+      const commitSignerSession = repo.trustPool.getSession(
         sessionIdFromSignature(commit.signature)
       );
-      userKey =
-        commitSignerSessionRecord.scheme.namespace === SchemeNamespace.SESSIONS
-          ? commitSignerSessionRecord.get<string>('owner')
-          : undefined;
+      userKey = commitSignerSession?.owner;
     }
     // Anonymous session
     if (!userKey) {
@@ -117,15 +114,13 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     if (!commit.signature) {
       return false;
     }
-    const commitSignerSessionRecord = sysDir.valueForKey(
+    const commitSignerSession = sysDir.trustPool.getSession(
       sessionIdFromSignature(commit.signature)
     );
-    if (
-      commitSignerSessionRecord.scheme.namespace !== SchemeNamespace.SESSIONS
-    ) {
+    if (!commitSignerSession) {
       return false;
     }
-    const userKey = commitSignerSessionRecord.get<string>('owner');
+    const userKey = commitSignerSession.owner;
     // Anonymous session
     if (!userKey) {
       return false;
@@ -167,11 +162,12 @@ export function createUserAuthorizer<ST extends RepoStorage<ST>>(
     if (!commit.signature) {
       return false;
     }
-    const commitSignerSessionRecord = sysDir.valueForKey(
+    const commitSignerSession = sysDir.trustPool.getSession(
       sessionIdFromSignature(commit.signature)
     );
-    return (
-      userKey === 'root' || userKey === commitSignerSessionRecord.get('owner')
-    );
+    if (!commitSignerSession) {
+      return false;
+    }
+    return userKey === 'root' || userKey === commitSignerSession.owner;
   };
 }

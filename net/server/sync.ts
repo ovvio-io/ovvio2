@@ -87,11 +87,7 @@ export class SyncService extends BaseService<ServerServices> {
     this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
       const repo = this._repositories.get(repoId);
       if (repo) {
-        debugger;
         repo.persistCommits(commits).then((persisted) => {
-          console.log(
-            `Persisted ${persisted.length} commits from backup to ${repoId}`
-          );
           if (repoId === 'sys/dir') {
             let ws: string[] = [];
             for (const key of repo.keys()) {
@@ -409,7 +405,6 @@ export async function setupTrustPool(
     const record = sysDir.valueForKey(key);
     if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
       const session = await sessionFromRecord(record);
-      // debugger;
       await trustPool.addSession(session, sysDir.headForKey(key)!);
     }
   }
