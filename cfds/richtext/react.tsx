@@ -32,7 +32,7 @@ const useStyles = makeStyles(() => ({
   taskCheckbox: {
     marginTop: styleguide.gridbase * 2,
     marginBottom: styleguide.gridbase * 2,
-    marginRight: styleguide.gridbase * 2,
+    marginInlineEnd: styleguide.gridbase * 2,
   },
 }));
 
