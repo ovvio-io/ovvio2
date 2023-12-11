@@ -2,6 +2,7 @@ import React, { CSSProperties } from 'react';
 import { IconButton } from '../../../../../styles/components/buttons.tsx';
 import { H4 } from '../../../../../styles/components/typography.tsx';
 import IconClose from '../../../../../styles/components/icons/IconClose.tsx';
+import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 
 interface IconVectorProps {
   color: 'done' | 'notDone';
@@ -69,13 +70,13 @@ export interface MultiSelectionProps {
   currentStepIndex: number;
 }
 
-export const MultiSelection: React.FC<MultiSelectionProps> = ({
+export const Wizard: React.FC<MultiSelectionProps> = ({
   onClose,
   currentStepIndex,
 }) => {
-  const multiselectionStyle: CSSProperties = {
+  const wizardStyle: CSSProperties = {
     top: '0px',
-    right: '7px',
+    right: '0px',
     height: '64px',
     position: 'absolute',
     width: '100%',
@@ -113,13 +114,13 @@ export const MultiSelection: React.FC<MultiSelectionProps> = ({
     fontSize: '10px',
     letterSpacing: '-0.1px',
     fontWeight: '400',
-    left: '-8px',
+    left: '0px',
   };
 
   const steps = ['Members', 'Workspaces', 'Assign'];
 
   return (
-    <div style={multiselectionStyle}>
+    <div style={wizardStyle}>
       <IconButton onClick={onClose}>
         <IconClose />
       </IconButton>
@@ -157,4 +158,4 @@ export const MultiSelection: React.FC<MultiSelectionProps> = ({
   );
 };
 
-export default MultiSelection;
+export default Wizard;

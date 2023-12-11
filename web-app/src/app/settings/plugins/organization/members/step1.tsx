@@ -3,10 +3,11 @@ import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
-import { ChooseWsButton } from '../../../components/settings-buttons.tsx';
+import {
+  ChooseWsButton,
+  UserPill,
+} from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
-import { AssigneePill } from '../../../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
-import { RaisedButton } from '../../../../../../../styles/components/buttons.tsx';
 
 type Step1Props = {
   setStep: (step: number) => void;
@@ -37,10 +38,7 @@ export const Step1: React.FC<Step1Props> = ({
     flexWrap: 'wrap',
     maxWidth: '400px',
     gap: '4px',
-  };
-  const tableHeader: CSSProperties = {
-    display: 'flex',
-    padding: '34px 0px 0px 0px',
+    marginBottom: '11px',
   };
 
   const handleRowSelect = (user: User) => {
@@ -52,25 +50,23 @@ export const Step1: React.FC<Step1Props> = ({
   };
 
   return (
-    <div style={HeaderContainerStyle}>
-      <div style={FunctionsHeader}>
-        <div>Choose members to assign</div>
-        {selectedUsers && (
-          <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
-        )}
-      </div>
-      <div style={ChosenMembersContainer}>
-        {selectedUsers.map((user: User, index: number) => (
-          <AssigneePill key={user.key} user={user.manager} />
-        ))}
-        <RaisedButton>TTT</RaisedButton>
-      </div>
-      <div style={ChosenMembersContainer}>
-        {selectedUsers.map((user: User) => (
-          <AssigneePill key={user.key} user={user.manager} />
-        ))}
-      </div>
-      <div style={tableHeader}>
+    <div>
+      <div style={HeaderContainerStyle}>
+        <div style={FunctionsHeader}>
+          <div>Choose members to assign</div>
+          {selectedUsers && (
+            <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+          )}
+        </div>
+        <div style={ChosenMembersContainer}>
+          {selectedUsers.map((user: User) => (
+            <UserPill
+              user={user}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
+            />
+          ))}
+        </div>
         <Bold>Org. Members</Bold>
       </div>
       <UserTable

@@ -20,14 +20,11 @@ import {
 } from '../components/settings-buttons.tsx';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { IconSelect } from './IconSelect.tsx';
-import MultiSelection from '../components/multi-selection.tsx';
+import MultiSelection from '../components/wizard.tsx';
 import { IconCheck } from '../components/icon-check.tsx';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { AssigneePill } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
-import {
-  Button,
-  RaisedButton,
-} from '../../../../../styles/components/buttons.tsx';
+import { RaisedButton } from '../../../../../styles/components/buttons.tsx';
 import MembersTabContent from './organization/members/base.tsx';
 
 export interface SettingsTabPlugin {
