@@ -280,9 +280,9 @@ export class GraphManager
           return;
         }
         plumbing!.backup?.persistCommits([c]);
-        if (c.session === this.trustPool.currentSession.id) {
-          plumbing!.client?.touch();
-        }
+        // if (c.session === this.trustPool.currentSession.id) {
+        //   plumbing!.client?.touch();
+        // }
         if (!c.key) {
           return;
         }
@@ -298,11 +298,12 @@ export class GraphManager
           repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
         ) {
           const mgr = this.getVertexManager(c.key);
-          if (c.session === this.trustPool.currentSession.id) {
-            mgr.touch();
-          } else {
+          if (c.session !== this.trustPool.currentSession.id) {
             mgr.commit();
           }
+          // else {
+          //   mgr.touch();
+          // }
         }
 
         // Any kind of activity needs to reset the sync timer. This causes

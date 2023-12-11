@@ -16,6 +16,7 @@ import {
   isElementNode,
   isTextNode,
   pathToNode,
+  treeToPlaintext,
 } from '../cfds/richtext/tree.ts';
 import {
   RenderContext,
@@ -99,6 +100,7 @@ const useStyles = makeStyles(() => ({
     outline: 'none',
     cursor: 'text',
     boxSizing: 'border-box',
+    overflowY: 'scroll',
   },
 }));
 
@@ -307,7 +309,7 @@ export const RichTextEditor = forwardRef<
       editorId,
       baseDirection,
     };
-  }, [partialNote, selectionId, editorId, baseDirection]);
+  }, [partialNote, partialNote.body, selectionId, editorId, baseDirection]);
 
   useImperativeHandle(
     ref,
@@ -328,7 +330,6 @@ export const RichTextEditor = forwardRef<
 
   const onSelectionChanged = useCallback(
     (event: Event) => {
-      // debugger;
       const editorDivNode = editorDivRef.current;
       if (!editorDivNode || document.activeElement !== editorDivNode) {
         return;
@@ -445,7 +446,6 @@ export const RichTextEditor = forwardRef<
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      debugger;
       const state = note.getVertexProxy().body;
       if (event.key === 'Backspace' || event.key === 'Delete') {
         event.stopPropagation();

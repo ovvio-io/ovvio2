@@ -233,34 +233,41 @@ export class Repository<
    *
    * @param commits An iterable of commits.
    *
-   * @returns The LCA commit or undefined if no common ancestor exists.
-   *          Also returns the scheme to be used for this merge.
+   * @returns A tuple of 3 values:
+   *          1. The commits to include in the merge. Commits with broken
+   *             ancestry path are skipped from the merge if a common base can't
+   *             be found.
    *
-   * @throws ServiceUnavailable if the commit graph is incomplete.
+   *          2. The base commit (LCA) to use for the merge, or undefined if
+   *             one can't be found.
+   *
+   *          3. The scheme to use for the merge.
    */
-  findMergeBase(commits: Iterable<Commit>): [Commit | undefined, Scheme] {
+  findMergeBase(
+    commits: Iterable<Commit>
+  ): [commits: Commit[], base: Commit | undefined, scheme: Scheme] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
-    let noBase = false;
+    const includedCommits: Commit[] = [];
     for (const c of commits) {
       if (!result) {
         result = c;
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      if (!noBase) {
-        result = this._findMergeBase(result, c);
-        if (!result) {
-          noBase = true;
-        }
+      const newBase = this._findMergeBase(result, c);
+      if (!newBase) {
+        continue;
       }
+      result = newBase;
+      includedCommits.push(c);
       const s = this.recordForCommit(c).scheme;
       assert(scheme.isNull || scheme.namespace === s.namespace); // Sanity check
       if (s.version > (scheme?.version || 0)) {
         scheme = s;
       }
     }
-    return [result, scheme];
+    return [includedCommits, result, scheme];
   }
 
   /**
@@ -449,7 +456,11 @@ export class Repository<
         const roots = commitsToMerge.filter((c) => c.parents.length === 0);
         commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
         // Find the base for our N-way merge
-        const [lca, scheme] = this.findMergeBase(commitsToMerge);
+        let lca: Commit | undefined, scheme: Scheme;
+        [commitsToMerge, lca, scheme] = this.findMergeBase(commitsToMerge);
+        if (commitsToMerge.length === 0) {
+          throw serviceUnavailable();
+        }
         // If no LCA is found then we're dealing with concurrent writers who all
         // created of the same key unaware of each other.
         // Use the null record as a base in this case.

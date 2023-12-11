@@ -232,7 +232,6 @@ export class AuthEndpoint implements Endpoint {
         return responseForError('AccessDenied');
       }
       const signerRecord = fetchSessionById(services, signerId);
-      debugger;
       if (!signerRecord) {
         return responseForError('AccessDenied');
       }

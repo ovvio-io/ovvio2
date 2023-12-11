@@ -7,6 +7,7 @@ import {
   mutationPackAppend,
   mutationPackIsEmpty,
   mutationPackOptimize,
+  mutationPackHasLocal,
 } from './mutations.ts';
 import { RichText } from '../../richtext/tree.ts';
 import {
@@ -100,6 +101,8 @@ export class VertexManager<V extends Vertex = Vertex>
   private _record: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
+  private _localMutationsCount = 0;
+  private _commitPromise: Promise<void> | undefined;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -263,7 +266,19 @@ export class VertexManager<V extends Vertex = Vertex>
    * This method commits any pending local edits, and merges any pending remote
    * edits. NOP if nothing needs to be done.
    */
-  async commit(): Promise<void> {
+  commit(): Promise<void> {
+    if (!this._commitPromise) {
+      const promise = this._commitImpl().finally(() => {
+        if (this._commitPromise === promise) {
+          this._commitPromise = undefined;
+        }
+      });
+      this._commitPromise = promise;
+    }
+    return this._commitPromise;
+  }
+
+  private async _commitImpl(): Promise<void> {
     if (this.isLocal) {
       return;
     }
@@ -276,11 +291,16 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
+      const startChangeCount = this._localMutationsCount;
       const updated = await repo.setValueForKey(this.key, this.record);
-      if (updated) {
-        this.touch();
+      if (this._localMutationsCount !== startChangeCount) {
+        this.scheduleCommitIfNeeded();
+      } else {
+        if (updated) {
+          this.touch();
+        }
+        this._commitDelayTimer.unschedule();
       }
-      this._commitDelayTimer.unschedule();
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
         this.scheduleCommitIfNeeded();
@@ -478,6 +498,9 @@ export class VertexManager<V extends Vertex = Vertex>
       added: addedEdges,
       removed: removedEdges,
     };
+    if (mutationPackHasLocal(mutations)) {
+      ++this._localMutationsCount;
+    }
     // Broadcast the mutations of our vertex
     this.emit(EVENT_DID_CHANGE, mutations, refsChange);
     // Let our vertex a chance to apply side effects
