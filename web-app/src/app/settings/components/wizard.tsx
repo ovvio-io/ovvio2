@@ -1,8 +1,7 @@
 import React, { CSSProperties } from 'react';
-import { IconButton } from '../../../../../styles/components/buttons.tsx';
+import { Button } from '../../../../../styles/components/buttons.tsx';
 import { H4 } from '../../../../../styles/components/typography.tsx';
-import IconClose from '../../../../../styles/components/icons/IconClose.tsx';
-import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
+import { styleguide } from '../../../../../styles/styleguide.ts';
 
 interface IconVectorProps {
   color: 'done' | 'notDone';
@@ -116,14 +115,22 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     fontWeight: '400',
     left: '0px',
   };
+  const closeIcon: CSSProperties = {
+    paddingRight: styleguide.gridbase * 4,
+    paddingLeft: styleguide.gridbase * 2,
+  };
 
   const steps = ['Members', 'Workspaces', 'Assign'];
 
   return (
     <div style={wizardStyle}>
-      <IconButton onClick={onClose}>
-        <IconClose />
-      </IconButton>
+      <Button onClick={onClose} style={closeIcon}>
+        <img
+          key="CloseCircleWhiteSettings"
+          src="/icons/editor/icon/Close-circle-white.svg"
+          onClick={onClose}
+        />
+      </Button>
       <H4>Assign to workspaces</H4>
 
       <div style={wizardContainerStyle}>

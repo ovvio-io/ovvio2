@@ -26,7 +26,7 @@ export const Step1: React.FC<Step1Props> = ({
   };
   const HeaderContainerStyle: CSSProperties = {
     padding: '50px 0px 24px',
-    maxWidth: '900px',
+    maxWidth: '800px',
   };
   const FunctionsHeader: CSSProperties = {
     display: 'flex',

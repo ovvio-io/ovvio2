@@ -15,9 +15,10 @@ export const useStyles = makeStyles(() => ({
     alignItems: 'center',
     gap: '8px',
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    width: '711px',
+    width: '772px',
     borderRadius: '2px',
     backgroundColor: '#FFF',
+    zIndex: '10',
   },
   hoverableRow: {
     ':hover': {
@@ -42,6 +43,13 @@ export const useStyles = makeStyles(() => ({
     height: '17px',
     flexDirection: 'column',
     justifyContent: 'center',
+  },
+  iconContainer: {
+    position: 'absolute',
+    left: '-71px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: '-10',
   },
 }));
 
@@ -76,6 +84,14 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
     isHoverable,
   }) => {
     const styles = useStyles();
+    const [isRowHovered, setIsRowHovered] = useState(false);
+
+    const handleMouseEnter = () => {
+      setIsRowHovered(true);
+    };
+    const handleMouseLeave = () => {
+      setIsRowHovered(false);
+    };
     return (
       <div
         className={cn(
@@ -84,7 +100,17 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
           isSelected && styles.selectedRow
         )}
         onClick={() => onRowSelect(ws)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
+        <div className={styles.iconContainer}>
+          {isHoverable && isRowHovered && (
+            <img
+              key="HoveredRowSettings"
+              src="/icons/editor/icon/hover-select.svg"
+            />
+          )}
+        </div>
         <Text className={cn(styles.firstColumnStyle)}>{ws.name}</Text>
         <TextSm className={cn(styles.otherColumnStyle)}>
           {getUserNames(ws.users)}
@@ -100,7 +126,7 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
       alignItems: 'center',
       gap: '8px',
       boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-      width: '711px',
+      width: '772px',
       borderRadius: '2px',
       backgroundColor: '#FFF',
       justifyContent: 'flex-start',
@@ -116,6 +142,25 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
     },
     scrollContainerStyle: {
       maxHeight: '700px',
+    },
+    tableContainer: {
+      width: '843px',
+      display: 'flex',
+      position: 'relative',
+    },
+    tableContent: {
+      flex: 1,
+    },
+    iconSelectOutside: {
+      position: 'absolute',
+      left: '-30px',
+      width: '71px',
+    },
+    rowContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      position: 'relative',
+      width: '843px',
     },
   }));
   const styles = useStyles2();
@@ -138,31 +183,43 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
       .join(', ');
   };
   return (
-    <div>
-      {showSearch && (
-        <div className={cn(styles.searchRowStyle)}>
-          <div style={{ marginRight: '4px' }}>
-            <IconSearch />
+    <div className={isHoverable ? cn(styles.tableContainer) : undefined}>
+      <div className={cn(styles.tableContent)}>
+        {showSearch && (
+          <div className={cn(styles.searchRowStyle)}>
+            <div style={{ marginRight: '4px' }}>
+              <IconSearch />
+            </div>
+            <Text>
+              <input
+                type="text"
+                placeholder="Search workspace"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className={styles.InputTextStyle}
+              />
+            </Text>
           </div>
-          <Text>
-            <input
-              type="text"
-              placeholder="Search workspace"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className={styles.InputTextStyle}
-            />
-          </Text>
+        )}
+        <div className={cn(styles.scrollContainerStyle)}>
+          {filteredWorkspaces.map((ws: Workspace) => (
+            <div key={ws.key} className={cn(styles.rowContainer)}>
+              {selectedWorkspaces.includes(ws) && (
+                <div className={cn(styles.iconSelectOutside)}>
+                  <img
+                    key="SelectedRowSettings"
+                    src="/icons/editor/icon/hover-select2.svg"
+                  />
+                </div>
+              )}
+              <RowInTable
+                ws={ws}
+                isSelected={showSelection && selectedWorkspaces.includes(ws)}
+                isHoverable={isHoverable && !selectedWorkspaces.includes(ws)}
+              />
+            </div>
+          ))}
         </div>
-      )}
-      <div className={cn(styles.scrollContainerStyle)}>
-        {filteredWorkspaces.map((ws: Workspace) => (
-          <RowInTable
-            ws={ws}
-            isSelected={showSelection && selectedWorkspaces.includes(ws)}
-            isHoverable={isHoverable && !selectedWorkspaces.includes(ws)}
-          />
-        ))}
       </div>
     </div>
   );

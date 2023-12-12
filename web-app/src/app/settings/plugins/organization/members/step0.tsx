@@ -28,7 +28,7 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
     justifyContent: 'space-between',
     alignItems: 'baseline',
     padding: '50px 0px 24px',
-    maxWidth: '900px',
+    maxWidth: '802px',
   };
 
   const handleAssignClick = () => {
@@ -40,7 +40,7 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
       <div style={HeaderContainerStyle}>
         <Bold>Org. Members</Bold>
         <div style={step0ContainerStyle}>
-          <AssignButton onAssignClick={handleAssignClick} />
+          <AssignButton onAssignClick={handleAssignClick} blue={true} />
           <EditButton />
         </div>
       </div>

@@ -3,7 +3,6 @@ import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
-import { IconSelect } from '../plugins/IconSelect.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 
 export const useStyles = makeStyles(() => ({
@@ -13,9 +12,10 @@ export const useStyles = makeStyles(() => ({
     alignItems: 'center',
     gap: '8px',
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    width: '875px',
+    width: '772px',
     borderRadius: '2px',
     backgroundColor: '#FFF',
+    zIndex: '10',
   },
   hoverableRow: {
     ':hover': {
@@ -41,6 +41,13 @@ export const useStyles = makeStyles(() => ({
     flexDirection: 'column',
     justifyContent: 'center',
   },
+  iconContainer: {
+    position: 'absolute',
+    left: '-71px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: '-10',
+  },
 }));
 type UserTableProps = {
   users: User[];
@@ -64,13 +71,21 @@ const UserTable: React.FC<UserTableProps> = ({
     isSelected: boolean;
     isHoverable: boolean;
   };
-
   const RowInTable: React.FC<RowInTableProps> = ({
     user,
     isSelected,
     isHoverable,
   }) => {
     const styles = useStyles();
+    const [isRowHovered, setIsRowHovered] = useState(false);
+
+    const handleMouseEnter = () => {
+      setIsRowHovered(true);
+    };
+    const handleMouseLeave = () => {
+      setIsRowHovered(false);
+    };
+
     return (
       <div
         className={cn(
@@ -79,7 +94,17 @@ const UserTable: React.FC<UserTableProps> = ({
           isSelected && styles.selectedRow
         )}
         onClick={() => onRowSelect(user)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
+        <div className={styles.iconContainer}>
+          {isHoverable && isRowHovered && (
+            <img
+              key="HoveredRowSettings"
+              src="/icons/editor/icon/hover-select.svg"
+            />
+          )}
+        </div>
         <Text className={cn(styles.firstColumnStyle)}>{user.name}</Text>
         <TextSm className={cn(styles.otherColumnStyle)}>{user.email}</TextSm>
         <TextSm className={cn(styles.otherColumnStyle)}>{'ph1'}</TextSm>
@@ -96,7 +121,7 @@ const UserTable: React.FC<UserTableProps> = ({
       alignItems: 'center',
       gap: '8px',
       boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-      width: '875px',
+      width: '772px',
       borderRadius: '2px',
       backgroundColor: '#FFF',
       justifyContent: 'flex-start',
@@ -112,6 +137,26 @@ const UserTable: React.FC<UserTableProps> = ({
     },
     scrollContainerStyle: {
       maxHeight: '700px',
+    },
+    tableContainer: {
+      width: '843px',
+      display: 'flex',
+      position: 'relative',
+      // right: '71px',
+    },
+    tableContent: {
+      flex: 1,
+    },
+    iconSelectOutside: {
+      position: 'absolute',
+      left: '-30px',
+      width: '71px',
+    },
+    rowContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      position: 'relative',
+      width: '843px',
     },
   }));
 
@@ -129,11 +174,9 @@ const UserTable: React.FC<UserTableProps> = ({
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
-
   return (
-    <div>
-      <div>{isHoverable && <IconSelect />}</div>
-      <div>
+    <div className={isHoverable ? cn(styles.tableContainer) : undefined}>
+      <div className={cn(styles.tableContent)}>
         {showSearch && (
           <div className={cn(styles.searchRowStyle)}>
             <div style={{ marginRight: '4px' }}>
@@ -152,15 +195,26 @@ const UserTable: React.FC<UserTableProps> = ({
         )}
         <div className={cn(styles.scrollContainerStyle)}>
           {filteredUsers.map((user: User) => (
-            <RowInTable
-              user={user}
-              isSelected={showSelection && selectedUsers.includes(user)}
-              isHoverable={isHoverable && !selectedUsers.includes(user)}
-            />
+            <div key={user.key} className={cn(styles.rowContainer)}>
+              {selectedUsers.includes(user) && (
+                <div className={cn(styles.iconSelectOutside)}>
+                  <img
+                    key="SelectedRowSettings"
+                    src="/icons/editor/icon/hover-select2.svg"
+                  />
+                </div>
+              )}
+              <RowInTable
+                user={user}
+                isSelected={showSelection && selectedUsers.includes(user)}
+                isHoverable={isHoverable && !selectedUsers.includes(user)}
+              />
+            </div>
           ))}
         </div>
       </div>
     </div>
   );
 };
+
 export default UserTable;

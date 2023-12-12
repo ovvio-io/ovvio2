@@ -5,10 +5,7 @@ import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { useTypographyStyles } from '../../../../../styles/components/typography.tsx';
 import { layout } from '../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../styles/responsive.ts';
-import { IconArchive } from '../../../../../styles/components/new-icons/icon-archive.tsx';
 import { Button } from '../../../../../styles/components/buttons.tsx';
-import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
-import { IconPersonalInfo } from '../../../../../styles/components/new-icons/icon-personal-info.tsx';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
@@ -29,6 +26,22 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.row],
     borderRadius: '37px',
     border: ' 1px solid var(--primary-p-5, #8BC5EE)',
+  },
+  blue: {
+    background: '#3184DD',
+    border: 'none',
+    ':hover': {
+      boxShadow: theme.shadows.z2,
+      background: theme.primary.p10,
+    },
+  },
+  textWhite: {
+    color: '#FFFF',
+    padding: [0, styleguide.gridbase],
+    basedOn: [useTypographyStyles.button],
+    [MediaQueries.TabletAndMobile]: {
+      display: 'none',
+    },
   },
   text: {
     color: '#1960CF',
@@ -78,7 +91,6 @@ const ComposeInternalButtonChooseWs = React.forwardRef(
       <div className={cn(styles.compose, className)} ref={ref}>
         <img
           key="AssignInSettings"
-          // className={cn(styles.icon)}
           src="/icons/editor/icon/Archive.svg"
           onClick={() => {}}
         />{' '}
@@ -98,7 +110,6 @@ const ComposeInternalButtonAssign = React.forwardRef(
       <div className={cn(styles.compose, className)} ref={ref}>
         <img
           key="AssignInSettings"
-          // className={cn(styles.icon)}
           src="/icons/editor/icon/Archive.svg"
           onClick={() => {}}
         />
@@ -107,17 +118,40 @@ const ComposeInternalButtonAssign = React.forwardRef(
     );
   }
 );
+const ComposeInternalButtonAssignBlue = React.forwardRef(
+  (
+    { className }: { className?: string },
+    ref: React.ForwardedRef<HTMLDivElement>
+  ) => {
+    const styles = useStyles();
+    return (
+      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
+        <img
+          key="AssignWhiteInSettings"
+          src="/icons/editor/icon/Archive-white.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.textWhite)}>{'Assign to Workspaces'}</span>
+      </div>
+    );
+  }
+);
 
 interface AssignButtonProps {
   onAssignClick?: () => void;
+  blue: boolean;
 }
 
-export function AssignButton({ onAssignClick }: AssignButtonProps) {
+export function AssignButton({ onAssignClick, blue }: AssignButtonProps) {
   const [container, setContainer] = useState<HTMLDivElement | null>();
 
   return (
     <Button onClick={onAssignClick}>
-      <ComposeInternalButtonAssign ref={(div) => setContainer(div)} />
+      {blue ? (
+        <ComposeInternalButtonAssignBlue ref={(div) => setContainer(div)} />
+      ) : (
+        <ComposeInternalButtonAssign ref={(div) => setContainer(div)} />
+      )}
     </Button>
   );
 }
@@ -129,14 +163,13 @@ const ComposeInternalButtonEdit = React.forwardRef(
   ) => {
     const styles = useStyles();
     return (
-      <div className={cn(styles.compose, className)} ref={ref}>
+      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
         <img
           key="EditUserSettings"
-          // className={cn(styles.icon)}
-          src="/icons/editor/icon/Compose.svg"
+          src="/icons/editor/icon/Compose-white.svg"
           onClick={() => {}}
         />
-        <span className={cn(styles.text)}>{'Edit'}</span>
+        <span className={cn(styles.textWhite)}>{'Edit'}</span>
       </div>
     );
   }
