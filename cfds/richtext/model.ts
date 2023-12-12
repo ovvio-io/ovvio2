@@ -6,15 +6,15 @@ import {
 import { ElementNode, isTextNode, RichTextValue, TextNode } from './tree.ts';
 import { WritingDirection } from '../../base/string.ts';
 
-export type MarkupNode =
+export type MarkupElement =
   | ParagraphNode
   | Header1Node
   | Header2Node
   | UnorderedListNode
   | OrderedListNode
   | ListItemNode
-  | RefNode
-  | TextNode;
+  | RefNode;
+export type MarkupNode = MarkupElement | TextNode;
 // | TableNode
 // | TableRowNode
 // | TableCellNode

@@ -433,7 +433,10 @@ export function pathToNode<T extends ElementNode>(
   return undefined;
 }
 
-export function findLastTextNode(root: ElementNode, notEmpty = false) {
+export function findLastTextNode(
+  root: ElementNode,
+  notEmpty = false
+): TextNode | undefined {
   let textNode: TextNode | undefined;
   for (const [node] of dfs(root)) {
     if (isTextNode(node) && (notEmpty === false || node.text.length > 0)) {
@@ -441,4 +444,16 @@ export function findLastTextNode(root: ElementNode, notEmpty = false) {
     }
   }
   return textNode;
+}
+
+export function findFirstTextNode(
+  root: ElementNode,
+  notEmpty = false
+): TextNode | undefined {
+  for (const [node] of dfs(root)) {
+    if (isTextNode(node) && (notEmpty === false || node.text.length > 0)) {
+      return node;
+    }
+  }
+  return undefined;
 }

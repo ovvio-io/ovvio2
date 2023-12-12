@@ -154,10 +154,14 @@ const ltrChars =
   '\u2C00-\uFB1C\uFDFE-\uFE6F\uFEFD-\uFFFF';
 const rtlChars = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const dirRegex = new RegExp(`^[^${ltrChars}]*[${rtlChars}]`);
-const ltrRegex = new RegExp(`[${ltrChars}]*`);
+const notLtrRegex = /(\W|[0-9])+/u;
 
 export function isRTL(s: string): boolean {
   return dirRegex.test(s);
+}
+
+export function isLTR(s: string): boolean {
+  return !notLtrRegex.test(s);
 }
 
 export type WritingDirection = 'ltr' | 'rtl' | 'auto';
@@ -166,18 +170,15 @@ export function resolveWritingDirection(
   str: string,
   base: WritingDirection = 'auto'
 ): WritingDirection {
-  if (base !== 'auto') {
-    return base;
-  }
   for (const char of str) {
     if (isRTL(char)) {
       return 'rtl';
     }
-    if (isRTL(char)) {
+    if (isLTR(char)) {
       return 'ltr';
     }
   }
-  return 'auto';
+  return base;
 }
 
 const kEmailRegex = /^[\w-+\.]+@([\w-]+\.)+[\w-]{2,4}$/;
