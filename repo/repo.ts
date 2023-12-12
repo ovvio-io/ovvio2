@@ -411,6 +411,29 @@ export class Repository<
     return head;
   }
 
+  /**
+   * This method finds and returns the head for the given key. If a merge is
+   * needed, it'll be attempted automatically.
+   *
+   * @param key The key to search for.
+   *
+   * @param session The caller's session id. Used to ensure internal consistency
+   *                for this session.
+   *
+   * @param pendingCommit A commit that's yet to be persisted to the repository,
+   *                      but will be persisted immediately after this call.
+   *                      It'll be taken into account as if it's already part
+   *                      of the commit graph.
+   *
+   * @param merge Whether to perform a merge when needed, or force a read-only
+   *              read that won't generate any new commits.
+   *
+   * @returns The head commit, or undefined if no commit can be found for this
+   *          key. Note that while this method may return undefined, some
+   *          commits may still be present for this key. This happens when these
+   *          commits are delta commits, and their base isn't present thus
+   *          rendering them unreadable.
+   */
   headForKey(
     key: string | null,
     session?: string,
@@ -421,7 +444,6 @@ export class Repository<
     if (!session) {
       session = this.trustPool.currentSession.id;
     }
-
     const cacheEntry = this._cachedHeadsByKey.get(key);
     if (
       cacheEntry &&
@@ -535,13 +557,23 @@ export class Repository<
       // it wrote last.
       for (const c of leaves) {
         if (c.session === session) {
-          return this.cacheHeadForKey(key, c);
+          const head = this.cacheHeadForKey(key, c);
+          if (head) {
+            return head;
+          }
         }
       }
-      // No session was provided. Return the last globally written value.
-      return this.cacheHeadForKey(key, leaves[0]);
     }
-    return this.cacheHeadForKey(key, result);
+    // No match found. Find the last written value we can handle safely
+    for (const c of Array.from(this.commitsForKey(key)).sort(
+      compareCommitsDesc
+    )) {
+      const head = this.cacheHeadForKey(key, c);
+      if (head) {
+        return head;
+      }
+    }
+    return undefined;
   }
 
   valueForKey(
