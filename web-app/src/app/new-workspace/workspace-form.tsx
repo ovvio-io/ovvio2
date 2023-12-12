@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NS_USERS, NS_WORKSPACE } from '../../../../cfds/base/scheme-types.ts';
+import {
+  NS_USERS,
+  NS_WORKSPACE,
+  SchemeNamespace,
+} from '../../../../cfds/base/scheme-types.ts';
+import { CoreObject } from '../../../../base/core-types/base.ts';
 import { Record } from '../../../../cfds/base/record.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
@@ -17,6 +22,7 @@ import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { uniqueId } from '../../../../base/common.ts';
 import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
+import { Repository } from '../../../../repo/repo.ts';
 
 const useStyles = makeStyles((theme) => ({
   input: {
@@ -40,19 +46,63 @@ type CreateWorkspaceOptions = {
 function duplicateWorkspace(
   name: string,
   graph: GraphManager,
-  src: VertexManager<Workspace>
+  src: VertexManager<Workspace>,
+  initialData: CoreObject
 ): VertexManager<Workspace> {
-  const subGraph = graph.exportSubGraph(src.key, 1, [NS_USERS], (r: Record) => {
-    if (r.scheme.namespace === NS_WORKSPACE) {
-      r.set('name', name);
-    }
-    if (r.scheme.hasField('createdBy')) {
-      r.set('createdBy', graph.rootKey);
-    }
-  });
+  // const subGraph = graph.exportSubGraph(src.key, 1, [NS_USERS], (r: Record) => {
+  //   if (r.scheme.namespace === NS_WORKSPACE) {
+  //     r.set('name', name);
+  //   }
+  //   if (r.scheme.hasField('createdBy')) {
+  //     r.set('createdBy', graph.rootKey);
+  //   }
+  // });
+  // debugger;
+  // const data = graph.importSubGraph(subGraph, false);
+  // return data[0] as VertexManager<Workspace>;
 
-  const data = graph.importSubGraph(subGraph, false);
-  return data[0] as VertexManager<Workspace>;
+  const newWs = graph.createVertex<Workspace>(SchemeNamespace.WORKSPACE, {
+    ...src.record.cloneData(),
+    ...initialData,
+  });
+  const srcRepo = graph.repository(Repository.id('data', src.key));
+  const recordByNamespace = new Map<SchemeNamespace, [string, Record][]>();
+  const rewriteKeys = new Map<string, string>();
+  rewriteKeys.set(src.key, newWs.key);
+  debugger;
+  for (const k of srcRepo.keys()) {
+    const record = srcRepo.valueForKey(k);
+    let entries = recordByNamespace.get(record.scheme.namespace);
+    if (!entries) {
+      entries = [];
+      recordByNamespace.set(record.scheme.namespace, entries);
+    }
+    entries.push([k, record]);
+    rewriteKeys.set(k, uniqueId());
+  }
+  const dstRepo = graph.repository(Repository.id('data', newWs.key));
+  // Copy notes and reset their assignees
+  for (const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
+    []) {
+    record.delete('assignees');
+    record.rewriteRefs(rewriteKeys);
+    dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
+  }
+  // Copy everything else
+  for (const ns of recordByNamespace.keys()) {
+    if (ns === SchemeNamespace.NOTES) {
+      continue;
+    }
+    for (const [oldKey, record] of recordByNamespace.get(ns)!) {
+      record.rewriteRefs(rewriteKeys);
+      dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
+    }
+  }
+  // Finally initialize the graph itself
+  for (const newKey of rewriteKeys.values()) {
+    graph.getVertexManager(newKey);
+  }
+  return newWs.manager;
 }
 
 function createNewWorkspace(
@@ -61,13 +111,14 @@ function createNewWorkspace(
   opts: CreateWorkspaceOptions = {}
 ): VertexManager<Workspace> {
   const { copyFrom } = opts;
-  if (copyFrom) {
-    return duplicateWorkspace(name, graphManager, copyFrom);
-  }
-  return graphManager.createVertex<Workspace>(NS_WORKSPACE, {
+  const data = {
     name,
     users: new Set([graphManager.rootKey]),
-  }).manager;
+  };
+  if (copyFrom) {
+    return duplicateWorkspace(name, graphManager, copyFrom, data);
+  }
+  return graphManager.createVertex<Workspace>(NS_WORKSPACE, data).manager;
 }
 
 export interface WorkspaceFormProps {
@@ -132,7 +183,9 @@ export function WorkspaceForm({
         {workspacesQuery.count > 0 && (
           <DuplicateWorkspaceView
             className={cn(styles.input)}
-            allWorkspaces={workspacesQuery.results}
+            allWorkspaces={workspacesQuery.results.filter((mgr) =>
+              graph.repositoryReady(Repository.id('data', mgr.key))
+            )}
             setWorkspace={setDuplicateWs}
             workspace={duplicateWs}
           />
