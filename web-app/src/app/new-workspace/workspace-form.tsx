@@ -99,10 +99,7 @@ function duplicateWorkspace(
       dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
     }
   }
-  // Finally initialize the graph itself
-  // for (const newKey of rewriteKeys.values()) {
-  //   graph.getVertexManager(newKey);
-  // }
+  // Finally initialize the new repo and sync it
   graph.prepareRepositoryForUI(newRepoId);
   return newWs.manager;
 }
