@@ -80,7 +80,8 @@ function duplicateWorkspace(
     entries.push([k, record]);
     rewriteKeys.set(k, uniqueId());
   }
-  const dstRepo = graph.repository(Repository.id('data', newWs.key));
+  const newRepoId = Repository.id('data', newWs.key);
+  const dstRepo = graph.repository(newRepoId);
   // Copy notes and reset their assignees
   for (const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
     []) {
@@ -99,9 +100,10 @@ function duplicateWorkspace(
     }
   }
   // Finally initialize the graph itself
-  for (const newKey of rewriteKeys.values()) {
-    graph.getVertexManager(newKey);
-  }
+  // for (const newKey of rewriteKeys.values()) {
+  //   graph.getVertexManager(newKey);
+  // }
+  graph.prepareRepositoryForUI(newRepoId);
   return newWs.manager;
 }
 
