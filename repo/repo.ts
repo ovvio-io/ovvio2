@@ -588,7 +588,7 @@ export class Repository<
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
-    await this.persistCommits([signedCommit]);
+    this.persistVerifiedCommits([signedCommit]);
     return true;
   }
 
@@ -680,9 +680,6 @@ export class Repository<
     if (batch.length > 0) {
       ArrayUtils.append(result, this.persistVerifiedCommits(batch));
     }
-    for (const c of result) {
-      this._cachedHeadsByKey.delete(c.key);
-    }
     return result;
   }
 
@@ -706,22 +703,15 @@ export class Repository<
   }
 
   private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
-    const batchSize = 50;
     const result: Commit[] = [];
-    let batch: Commit[] = [];
-
-    for (const verifiedCommit of commits) {
-      batch.push(verifiedCommit);
-      if (batch.length >= batchSize) {
-        ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
-        batch = [];
-      }
-    }
-    if (batch.length > 0) {
+    for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
     for (const c of result) {
       this._runUpdatesOnNewCommit(c);
+    }
+    for (const c of result) {
+      this._cachedHeadsByKey.delete(c.key);
     }
     return result;
   }
