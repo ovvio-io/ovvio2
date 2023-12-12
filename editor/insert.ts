@@ -91,13 +91,11 @@ export function handleNewline(
     }
   }
 
-  if (prevElement !== undefined) {
-    const taskNode = pathToNode(document.root, prevElement)?.find(
+  const taskNode =
+    prevElement &&
+    pathToNode(document.root, prevElement)?.find(
       (node) => node.tagName === 'ref'
     );
-    if (taskNode) {
-    }
-  }
 
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
   const isEmptyElement =
@@ -126,18 +124,21 @@ export function handleNewline(
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
   let startDepth = prevDepthMarker ? prevDepthMarker.depthMarker - 1 : 0;
-  if (isEmptyElement && prevElement?.tagName !== 'p') {
+  if (
+    isEmptyElement &&
+    (prevElement?.tagName !== 'p' || taskNode !== undefined)
+  ) {
     startDepth = 0;
     // When clearing the beginning of the document, create a paragraph instead
-
     const origValues = mergeCtx.origValues;
     const emptyElementDepth = mergeCtx.at<DepthMarker>(end! - 1)!.depthMarker;
     mergeCtx.deleteRange(end! - 3, end! + 1);
+    const desiredDepth = taskNode ? 0 : emptyElementDepth - 1;
     for (let idx = end! - 4; idx >= 0; --idx) {
       const atom = origValues[idx];
       if (
         isDepthMarker(atom) &&
-        (atom.depthMarker <= 0 || atom.depthMarker >= emptyElementDepth - 1)
+        (atom.depthMarker <= 0 || atom.depthMarker <= desiredDepth)
       ) {
         break;
       }
@@ -178,23 +179,18 @@ export function handleNewline(
       atomsToInsert.splice(0, 0, { text: '' });
     }
 
-    if (prevElement !== undefined) {
-      const taskNode = pathToNode(document.root, prevElement)?.find(
-        (node) => node.tagName === 'ref'
-      );
-      if (taskNode) {
-        atomsToInsert = (
-          [
-            { depthMarker: 0 },
-            kElementSpacer,
-            {
-              tagName: 'ref',
-              ref: uniqueId(),
-              type: 'inter-doc',
-            },
-          ] as FlatRepAtom[]
-        ).concat(atomsToInsert);
-      }
+    if (taskNode && !isEmptyElement) {
+      atomsToInsert = (
+        [
+          { depthMarker: 0 },
+          kElementSpacer,
+          {
+            tagName: 'ref',
+            ref: uniqueId(),
+            type: 'inter-doc',
+          },
+        ] as FlatRepAtom[]
+      ).concat(atomsToInsert);
     }
     mergeCtx.insert(end!, atomsToInsert);
     didSetSelection = true;
