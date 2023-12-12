@@ -181,9 +181,6 @@ function replaceTask(
           children: [],
         },
         { depthMarker: buffer[2].depthMarker + 1 },
-        {
-          text: '',
-        },
       ],
     ];
   }

@@ -8,6 +8,8 @@ import {
   kEntryPointsNames,
   EntryPointName,
 } from './net/server/static-assets.ts';
+import { hash as md5Hash } from './external/md5.ts';
+import { ReadonlyJSONObject } from './base/interfaces.ts';
 
 const EXCLUDED_IMPORTS = [
   'react-reconciler',
@@ -72,6 +74,48 @@ function baseUrlFromUrl(url: string): string {
     url = url.substring(0, url.length - 1);
   }
   return url;
+}
+
+interface CacheEntry extends ReadonlyJSONObject {
+  readonly origURL: string;
+  readonly resolvedURL: string;
+  readonly data: string;
+}
+const gGetCache: Map<string, CacheEntry> = new Map();
+async function getTextFromURL(url: string): Promise<CacheEntry> {
+  let result = gGetCache.get(url);
+  if (result) {
+    return result;
+  }
+
+  const cacheDir = path.join(
+    await getRepositoryPath(),
+    'node_modules',
+    'ovvio-cache'
+  );
+  const cacheFilePath = path.join(cacheDir, md5Hash(url));
+  try {
+    result = JSON.parse(await Deno.readTextFile(cacheFilePath)) as CacheEntry;
+    if (result) {
+      gGetCache.set(url, result);
+      return result;
+    }
+  } catch (_: unknown) {}
+
+  const resp = await retry(async () => {
+    const r = await fetch(url);
+    assert(r.status === 200, `Failed downloading ${url}`);
+    return r;
+  }, 5 * 1000);
+  result = {
+    origURL: url,
+    resolvedURL: resp.url,
+    data: await resp.text(),
+  };
+  gGetCache.set(url, result);
+  await Deno.mkdir(cacheDir, { recursive: true });
+  await Deno.writeTextFile(cacheFilePath, JSON.stringify(result));
+  return result;
 }
 
 /**
@@ -140,13 +184,9 @@ export async function createOvvioImportPlugin(): Promise<esbuild.Plugin> {
         }
 
         if (url.startsWith('https://')) {
-          const resp = await retry(async () => {
-            const r = await fetch(url!);
-            assert(r.status === 200, `Failed downloading ${url}`);
-            return r;
-          }, 5 * 1000);
+          const resp = await getTextFromURL(url!);
           return {
-            path: resp.url,
+            path: resp.resolvedURL,
             namespace: 'ovvio',
           };
         }
@@ -154,15 +194,10 @@ export async function createOvvioImportPlugin(): Promise<esbuild.Plugin> {
       build.onLoad({ filter, namespace: 'ovvio' }, async (args) => {
         const url = args.path;
         assert(url.startsWith('https://'), 'Unsupported URL');
-        const resp = await retry(async () => {
-          const r = await fetch(url);
-          assert(r.status === 200, `Failed downloading ${url}`);
-          return r;
-        }, 5 * 1000);
-        const text = await resp.text();
+        const resp = await getTextFromURL(url);
         return {
-          contents: text,
-          loader: loaderForFile(url),
+          contents: resp.data,
+          loader: loaderForFile(resp.resolvedURL),
         };
       });
     },

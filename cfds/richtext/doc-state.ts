@@ -12,11 +12,24 @@ import {
   Point,
   PointerType,
   isElementNode,
+  pathToNode,
+  findLastTextNode,
+  findFirstTextNode,
 } from './tree.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { TreeKeys } from './tree-keys.ts';
-import { PointerValue, projectPointers } from './flat-rep.ts';
+import {
+  PointerValue,
+  flattenRichText,
+  projectPointers,
+  reconstructRichText,
+} from './flat-rep.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
+import {
+  WritingDirection,
+  resolveWritingDirection,
+} from '../../base/string.ts';
+import { MarkupElement, MarkupNode } from './model.ts';
 
 export interface Range extends CoreObject {
   anchor: Point;
@@ -72,6 +85,11 @@ export function docToRT(doc: RichText | UnkeyedDocument): RichText {
   return result;
 }
 
+export function docClone(doc: Document): Document {
+  return docFromRT(
+    reconstructRichText(flattenRichText(docToRT(doc), true, false))
+  );
+}
 export function isDocument(doc: UnkeyedDocument): doc is Document {
   return doc.nodeKeys instanceof TreeKeys;
 }
@@ -84,28 +102,6 @@ export function unkeyedDocToDoc(doc: UnkeyedDocument): Document {
     ...doc,
     nodeKeys: new TreeKeys(doc.root),
   };
-}
-
-function findLastTextNode(rt: RichText): TextNode {
-  let textNode: TextNode | undefined;
-  for (const [node] of dfs(rt.root)) {
-    if (isTextNode(node)) {
-      textNode = node;
-    }
-  }
-  if (textNode === undefined) {
-    notReached('No text nodes found in tree');
-  }
-  return textNode;
-}
-
-function findFirstTextNode(rt: RichText): TextNode {
-  for (const [node] of dfs(rt.root)) {
-    if (isTextNode(node)) {
-      return node;
-    }
-  }
-  notReached('No text nodes found in tree');
 }
 
 export function composeRanges(rt: RichText): DocumentRanges {
@@ -126,7 +122,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
         if (ptr.type === 'anchor') {
           if (ptr.dir === PointerDirection.Forward) {
             if (lastTextNode === undefined) {
-              lastTextNode = findLastTextNode(rt);
+              lastTextNode = findLastTextNode(rt.root)!;
             }
             range = {
               anchor: {
@@ -141,7 +137,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
             };
           } else if (ptr.dir === PointerDirection.Backward) {
             if (firstTextNode === undefined) {
-              firstTextNode = findFirstTextNode(rt);
+              firstTextNode = findFirstTextNode(rt.root)!;
             }
             range = {
               anchor: {
@@ -159,7 +155,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
           assert(ptr.type === 'focus');
           if (ptr.dir === PointerDirection.Backward) {
             if (lastTextNode === undefined) {
-              lastTextNode = findLastTextNode(rt);
+              lastTextNode = findLastTextNode(rt.root)!;
             }
             range = {
               anchor: {
@@ -174,7 +170,7 @@ export function composeRanges(rt: RichText): DocumentRanges {
             };
           } else if (ptr.dir === PointerDirection.Forward) {
             if (firstTextNode === undefined) {
-              firstTextNode = findFirstTextNode(rt);
+              firstTextNode = findFirstTextNode(rt.root)!;
             }
             range = {
               anchor: {
@@ -369,29 +365,41 @@ export function findEndOfDocument(document: Document): TextNode | ElementNode {
   return lastTextNode || lastParent;
 }
 
-// interface ProjectionContext {
-//   diff: Diff[];
-//   offsetsMap1: OrderedMap<TreeNode, number>;
-//   offsetsMap2: OrderedMap<TreeNode, number>;
-// }
+export function writingDirectionAtTextNode(
+  doc: Document,
+  node: TextNode,
+  baseDirection: WritingDirection = 'auto'
+): WritingDirection {
+  const focusPath = pathToNode<MarkupElement>(doc.root, node);
+  if (!focusPath) {
+    return baseDirection;
+  }
+  for (let i = focusPath.length - 1; i >= 0; --i) {
+    const node = focusPath[i];
+    if (node.dir && node.dir !== 'auto') {
+      return node.dir;
+    }
+  }
+  const dir = resolveWritingDirection(node.text);
+  return dir === 'auto' ? baseDirection : dir;
+}
 
-// /**
-//  * Converts a pointer from source to destination documents based on a given
-//  * projection context.
-//  *
-//  * @param ctx The projection context
-//  * @param ptr The pointer to project.
-//  * @returns A projected pointer
-//  */
-// function projectPoint(ctx: ProjectionContext, ptr: Point): Point {
-//   // Convert the relative pointer to an absolute index
-//   let targetOffset = pointToAbsOffset(ctx.offsetsMap1, ptr);
-//   // Project the index based on the previously computed diff(src -> dst)
-//   targetOffset = kDMP.diff_xIndex(ctx.diff, targetOffset);
-//   // Convert back to offset relative to dst doc
-//   const result = pointFromAbsOffset(ctx.offsetsMap2, targetOffset);
-//   if (ptr.isLocal) {
-//     result.isLocal = true;
-//   }
-//   return result;
-// }
+export function writingDirectionAtNode(
+  doc: Document,
+  node: MarkupNode,
+  baseDirection: WritingDirection = 'auto'
+): WritingDirection {
+  if (!isTextNode(node)) {
+    const path = pathToNode<MarkupElement>(doc.root, node)!;
+    for (const parent of path) {
+      const dir = writingDirectionAtNode(doc, parent, baseDirection);
+      if (dir !== 'auto') {
+        return dir;
+      }
+    }
+  }
+  const textNode = isTextNode(node) ? node : findFirstTextNode(node, true);
+  return textNode
+    ? writingDirectionAtTextNode(doc, textNode, baseDirection)
+    : baseDirection;
+}

@@ -320,7 +320,6 @@ export abstract class BaseClient<
     // changes received from server).
     let i = 0;
     do {
-      console.log(`Sync cycle ${i}/${cycleCount}`);
       await this.sendSyncMessage();
       ++i;
     } while (!this.closed && i < cycleCount);

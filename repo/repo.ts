@@ -233,34 +233,41 @@ export class Repository<
    *
    * @param commits An iterable of commits.
    *
-   * @returns The LCA commit or undefined if no common ancestor exists.
-   *          Also returns the scheme to be used for this merge.
+   * @returns A tuple of 3 values:
+   *          1. The commits to include in the merge. Commits with broken
+   *             ancestry path are skipped from the merge if a common base can't
+   *             be found.
    *
-   * @throws ServiceUnavailable if the commit graph is incomplete.
+   *          2. The base commit (LCA) to use for the merge, or undefined if
+   *             one can't be found.
+   *
+   *          3. The scheme to use for the merge.
    */
-  findMergeBase(commits: Iterable<Commit>): [Commit | undefined, Scheme] {
+  findMergeBase(
+    commits: Iterable<Commit>
+  ): [commits: Commit[], base: Commit | undefined, scheme: Scheme] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
-    let noBase = false;
+    const includedCommits: Commit[] = [];
     for (const c of commits) {
       if (!result) {
         result = c;
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      if (!noBase) {
-        result = this._findMergeBase(result, c);
-        if (!result) {
-          noBase = true;
-        }
+      const newBase = this._findMergeBase(result, c);
+      if (!newBase) {
+        continue;
       }
+      result = newBase;
+      includedCommits.push(c);
       const s = this.recordForCommit(c).scheme;
       assert(scheme.isNull || scheme.namespace === s.namespace); // Sanity check
       if (s.version > (scheme?.version || 0)) {
         scheme = s;
       }
     }
-    return [result, scheme];
+    return [includedCommits, result, scheme];
   }
 
   /**
@@ -404,6 +411,29 @@ export class Repository<
     return head;
   }
 
+  /**
+   * This method finds and returns the head for the given key. If a merge is
+   * needed, it'll be attempted automatically.
+   *
+   * @param key The key to search for.
+   *
+   * @param session The caller's session id. Used to ensure internal consistency
+   *                for this session.
+   *
+   * @param pendingCommit A commit that's yet to be persisted to the repository,
+   *                      but will be persisted immediately after this call.
+   *                      It'll be taken into account as if it's already part
+   *                      of the commit graph.
+   *
+   * @param merge Whether to perform a merge when needed, or force a read-only
+   *              read that won't generate any new commits.
+   *
+   * @returns The head commit, or undefined if no commit can be found for this
+   *          key. Note that while this method may return undefined, some
+   *          commits may still be present for this key. This happens when these
+   *          commits are delta commits, and their base isn't present thus
+   *          rendering them unreadable.
+   */
   headForKey(
     key: string | null,
     session?: string,
@@ -414,7 +444,6 @@ export class Repository<
     if (!session) {
       session = this.trustPool.currentSession.id;
     }
-
     const cacheEntry = this._cachedHeadsByKey.get(key);
     if (
       cacheEntry &&
@@ -440,7 +469,6 @@ export class Repository<
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     let result: Commit | undefined;
-
     if (merge) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
@@ -450,7 +478,11 @@ export class Repository<
         const roots = commitsToMerge.filter((c) => c.parents.length === 0);
         commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
         // Find the base for our N-way merge
-        const [lca, scheme] = this.findMergeBase(commitsToMerge);
+        let lca: Commit | undefined, scheme: Scheme;
+        [commitsToMerge, lca, scheme] = this.findMergeBase(commitsToMerge);
+        if (commitsToMerge.length === 0) {
+          throw serviceUnavailable();
+        }
         // If no LCA is found then we're dealing with concurrent writers who all
         // created of the same key unaware of each other.
         // Use the null record as a base in this case.
@@ -525,13 +557,23 @@ export class Repository<
       // it wrote last.
       for (const c of leaves) {
         if (c.session === session) {
-          return this.cacheHeadForKey(key, c);
+          const head = this.cacheHeadForKey(key, c);
+          if (head) {
+            return head;
+          }
         }
       }
-      // No session was provided. Return the last globally written value.
-      return this.cacheHeadForKey(key, leaves[0]);
     }
-    return this.cacheHeadForKey(key, result);
+    // No match found. Find the last written value we can handle safely
+    for (const c of Array.from(this.commitsForKey(key)).sort(
+      compareCommitsDesc
+    )) {
+      const head = this.cacheHeadForKey(key, c);
+      if (head) {
+        return head;
+      }
+    }
+    return undefined;
   }
 
   valueForKey(
@@ -578,7 +620,7 @@ export class Repository<
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
-    await this.persistCommits([signedCommit]);
+    this.persistVerifiedCommits([signedCommit]);
     return true;
   }
 
@@ -670,9 +712,6 @@ export class Repository<
     if (batch.length > 0) {
       ArrayUtils.append(result, this.persistVerifiedCommits(batch));
     }
-    for (const c of result) {
-      this._cachedHeadsByKey.delete(c.key);
-    }
     return result;
   }
 
@@ -696,22 +735,15 @@ export class Repository<
   }
 
   private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
-    const batchSize = 50;
     const result: Commit[] = [];
-    let batch: Commit[] = [];
-
-    for (const verifiedCommit of commits) {
-      batch.push(verifiedCommit);
-      if (batch.length >= batchSize) {
-        ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
-        batch = [];
-      }
-    }
-    if (batch.length > 0) {
+    for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
     for (const c of result) {
       this._runUpdatesOnNewCommit(c);
+    }
+    for (const c of result) {
+      this._cachedHeadsByKey.delete(c.key);
     }
     return result;
   }

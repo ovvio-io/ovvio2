@@ -10,6 +10,7 @@ import {
 import { brandLightTheme as theme } from '../../styles/theme.tsx';
 import { styleguide } from '../../styles/styleguide.ts';
 import { CoreValue } from '../../base/core-types/base.ts';
+import { writingDirectionAtNode } from './doc-state.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -32,7 +33,7 @@ const useStyles = makeStyles(() => ({
   taskCheckbox: {
     marginTop: styleguide.gridbase * 2,
     marginBottom: styleguide.gridbase * 2,
-    marginRight: styleguide.gridbase * 2,
+    marginInlineEnd: styleguide.gridbase * 2,
   },
 }));
 
@@ -105,12 +106,9 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
     );
   }
   let children: JSX.Element[] | undefined;
-  let dir: WritingDirection = node.dir || 'auto';
+  const dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
   if (isElementNode(node)) {
     children = node.children.map((n) => {
-      if (dir === 'auto' && isTextNode(n)) {
-        dir = resolveWritingDirection(n.text);
-      }
       return (
         <EditorNode
           node={n as MarkupNode}
@@ -178,6 +176,7 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir !== ctx.baseDirection ? dir : undefined}
+          style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
         >
           {children}
         </li>

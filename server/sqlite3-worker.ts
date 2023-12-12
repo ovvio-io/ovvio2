@@ -124,9 +124,6 @@ async function processMessage(
             return new Commit({ decoder });
           })
         );
-        console.log(
-          `Worker persisted ${persistedCommits.length} commits to ${msg.repoId}`
-        );
       }
       break;
     }

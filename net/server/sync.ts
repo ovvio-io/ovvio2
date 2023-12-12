@@ -96,7 +96,6 @@ export class SyncService extends BaseService<ServerServices> {
                 ws.push(key);
               }
             }
-            console.log(`Workspaces in sys/dir: ${ws}`);
           }
         });
       }
