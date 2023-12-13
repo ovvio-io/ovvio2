@@ -54,7 +54,7 @@ export interface ActiveFiltersViewProps {
   className?: string;
 }
 
-function CloseIcon({ onClick }: { onClick?: () => void }) {
+export function CloseIcon({ onClick }: { onClick?: () => void }) {
   const theme = useTheme();
   const styles = useStyles();
   return (
@@ -79,7 +79,7 @@ function CloseIcon({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function AssigneePill({ user }: { user: VertexManager<User> }) {
+export function AssigneePill({ user }: { user: VertexManager<User> }) {
   const styles = useStyles();
   const { name } = usePartialVertex(user, ['name']);
   const view = usePartialView('selectedAssignees');
@@ -94,7 +94,7 @@ function AssigneePill({ user }: { user: VertexManager<User> }) {
   );
 }
 
-function TagPill({ tagId }: { tagId: TagId }) {
+export function TagPill({ tagId }: { tagId: TagId }) {
   const styles = useStyles();
   const view = usePartialView('selectedTagIds');
   const [parent, child] = decodeTagId(tagId);

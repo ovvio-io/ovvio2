@@ -240,6 +240,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     padding: styleguide.gridbase * 4,
     basedOn: [layout.row],
+    fontFamily: 'Poppins',
   },
   headerImage: {
     width: styleguide.gridbase * 6,
