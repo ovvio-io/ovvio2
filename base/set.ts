@@ -41,7 +41,10 @@ export function intersects<T>(s1: Set<T>, s2: Set<T>): boolean {
   return false;
 }
 
-export function difference<T>(s1: Set<T>, s2: Set<T>): Set<T> {
+export function difference<T>(
+  s1: Set<T> | Iterable<T>,
+  s2: Set<T> | Iterable<T>
+): Set<T> {
   if (!(s1 instanceof Set)) {
     s1 = new Set(s1);
   }
@@ -50,12 +53,12 @@ export function difference<T>(s1: Set<T>, s2: Set<T>): Set<T> {
   }
   const result = new Set<T>();
   for (const v of s1) {
-    if (!s2.has(v)) {
+    if (!(s2 as Set<T>).has(v)) {
       result.add(v);
     }
   }
   for (const v of s2) {
-    if (!s1.has(v)) {
+    if (!(s1 as Set<T>).has(v)) {
       result.add(v);
     }
   }

@@ -1,6 +1,7 @@
 import { join as joinPath } from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import { mapIterable } from '../../base/common.ts';
+import * as SetUtils from '../../base/set.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
@@ -83,19 +84,22 @@ export class SyncService extends BaseService<ServerServices> {
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
     await setupTrustPool(trustPool, sysDir);
+    let loadedSysDir = false;
     // Setup backup service
     this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
       const repo = this._repositories.get(repoId);
       if (repo) {
         repo.persistCommits(commits).then((persisted) => {
-          if (repoId === 'sys/dir') {
-            let ws: string[] = [];
-            for (const key of repo.keys()) {
-              const r = repo.valueForKey(key);
-              if (r.scheme.namespace === SchemeNamespace.WORKSPACE) {
-                ws.push(key);
-              }
-            }
+          // When initially loading sys/dir, only records created by root and
+          // operators are allowed to enter the repo. We then run one more
+          // persist attempt on any rejected commits, which will now be allowed
+          // since records exist properly.
+          if (repoId === 'sys/dir' && !loadedSysDir) {
+            loadedSysDir = true;
+            const notPersisted = Array.from(
+              SetUtils.subtract(commits, persisted)
+            );
+            repo.persistCommits(notPersisted);
           }
         });
       }
