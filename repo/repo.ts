@@ -4,7 +4,12 @@ import * as SetUtils from '../base/set.ts';
 import * as ArrayUtils from '../base/array.ts';
 import { Dictionary } from '../base/collections/dict.ts';
 import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
-import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
+import {
+  Commit,
+  commitContentsIsRecord,
+  DeltaContents,
+  commitContentsIsDelta,
+} from './commit.ts';
 import { concatChanges, DataChanges } from '../cfds/base/object.ts';
 import { Record as CFDSRecord } from '../cfds/base/record.ts';
 import { assert } from '../base/error.ts';
@@ -618,6 +623,12 @@ export class Repository<
       parents: head?.id,
     });
     commit = this.deltaCompressIfNeeded(commit);
+    if (
+      commitContentsIsDelta(commit.contents) &&
+      commit.contents.edit.isEmpty
+    ) {
+      return false;
+    }
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
     this.persistVerifiedCommits([signedCommit]);
