@@ -49,8 +49,7 @@ import { findFirstTextNode } from '../cfds/richtext/utils.ts';
 import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
-
-const HEADER_HEIGHT = styleguide.gridbase * 24;
+import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -524,40 +523,6 @@ export const RichTextEditor = forwardRef<
   );
 });
 
-interface HeaderTitleProps {
-  note: VertexManager<Note>;
-  onEnter: () => void;
-}
-
-const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
-  function HeaderTitle({ note, onEnter }: HeaderTitleProps, ref) {
-    const styles = useStyles();
-    const partialVertex = usePartialVertex(note, ['titlePlaintext']);
-    const baseDirection = resolveWritingDirection(partialVertex.titlePlaintext);
-    return (
-      <input
-        key="EditorTitle"
-        ref={ref}
-        className={cn(styles.titleInput)}
-        type="text"
-        dir={baseDirection === 'rtl' ? 'rtl' : undefined}
-        value={partialVertex.titlePlaintext}
-        onChange={(e) => {
-          partialVertex.titlePlaintext = (e.target as HTMLInputElement).value;
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            onEnter();
-          }
-        }}
-        autoFocus
-      />
-    );
-  }
-);
-
 export interface NoteEditorProps {
   note?: VertexManager<Note>;
 }
@@ -570,33 +535,11 @@ export interface NoteEditorURLParams
 
 function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   const styles = useStyles();
-  const titleInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<RichTextEditorRef>(null);
   const navigate = useNavigate();
   const trustPool = useTrustPool();
 
-  const [didFocus, setDidFocus] = useState(false);
-
-  useEffect(() => {
-    if (didFocus) {
-      return;
-    }
-    let timeout: number | undefined = setTimeout(() => {
-      if (titleInputRef.current) {
-        titleInputRef.current.focus();
-        setDidFocus(true);
-      }
-      timeout = undefined;
-    }, 50);
-    return () => {
-      if (timeout) {
-        clearTimeout(timeout);
-        timeout = undefined;
-      }
-    };
-  }, [didFocus, setDidFocus, titleInputRef]);
-
-  const onTitleEnter = useCallback(() => {
+  const onFocusOnEditor = useCallback(() => {
     const doc = docClone(note.getVertexProxy().body);
     const node = findEndOfDocument(doc);
     if (isTextNode(node)) {
@@ -623,24 +566,11 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
 
   return (
     <div className={cn(styles.mainContainer)} key="EditorContainer">
-      <div className={cn(styles.header)} key="EditorHeader">
-        <div className={cn(styles.headerMainActions)} key="EditorHeaderActions">
-          <img
-            key="ExitEditorAction"
-            className={cn(styles.headerMainActionButton)}
-            src="/icons/editor/icon/close-circle.svg"
-            onClick={() => {
-              navigate('/');
-            }}
-          />
-        </div>
-        <HeaderTitle
-          key="EditorHeader"
-          ref={titleInputRef}
-          note={note}
-          onEnter={onTitleEnter}
-        />
-      </div>
+      <EditorHeader
+        key="EditorHeader"
+        note={note}
+        onFocusOnEditor={onFocusOnEditor}
+      />
       <RichTextEditor key="EditorBody" ref={editorRef} note={note} />
     </div>
   );
