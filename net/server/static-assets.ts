@@ -76,11 +76,15 @@ export class StaticAssetsEndpoint implements Endpoint {
       return Promise.resolve(new Response(null, { status: 404 }));
     }
 
+    const headers: Record<string, string> = {
+      'content-type': asset.contentType,
+    };
+    if (asset.contentType.startsWith('image/')) {
+      headers['cache-control'] = 'Cache-Control: public, max-age=3600';
+    }
     return Promise.resolve(
       new Response(asset.data, {
-        headers: {
-          'content-type': asset.contentType,
-        },
+        headers,
       })
     );
   }
