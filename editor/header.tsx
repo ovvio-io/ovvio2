@@ -45,6 +45,8 @@ const useStyles = makeStyles(() => ({
     border: 'none',
     cursor: 'text',
     whiteSpace: 'pre-wrap',
+    paddingBottom: styleguide.gridbase,
+    textOverflow: 'ellipsis',
   },
 }));
 
@@ -66,6 +68,7 @@ export const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
         type="text"
         dir={baseDirection === 'rtl' ? 'rtl' : undefined}
         value={partialVertex.titlePlaintext}
+        placeholder={'Name your note'}
         onChange={(e) => {
           partialVertex.titlePlaintext = (e.target as HTMLInputElement).value;
         }}
