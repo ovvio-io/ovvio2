@@ -69,6 +69,7 @@ export abstract class BaseClient<
   private _ready: boolean;
   private _scheduled: boolean;
   private _closed = false;
+  private _pendingSyncPromise: Promise<void> | undefined;
 
   constructor(serverUrl: string, syncConfig: SyncConfig) {
     super();
@@ -193,7 +194,21 @@ export abstract class BaseClient<
     return this;
   }
 
-  private async sendSyncMessage(): Promise<void> {
+  private sendSyncMessage(): Promise<void> {
+    let result = this._pendingSyncPromise;
+    if (!result) {
+      const promise = this._sendSyncMessageImpl().finally(() => {
+        if (this._pendingSyncPromise === promise) {
+          this._pendingSyncPromise = undefined;
+        }
+      });
+      result = promise;
+      this._pendingSyncPromise = result;
+    }
+    return result;
+  }
+
+  private async _sendSyncMessageImpl(): Promise<void> {
     if (this.closed) {
       return;
     }
@@ -293,6 +308,7 @@ export abstract class BaseClient<
     if (this.closed) {
       return;
     }
+
     if (persistedCount > 0 || this.needsReplication()) {
       this.touch();
     }
