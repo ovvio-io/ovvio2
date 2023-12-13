@@ -100,6 +100,7 @@ const useStyles = makeStyles(() => ({
     cursor: 'text',
     boxSizing: 'border-box',
     overflowY: 'scroll',
+    scrollBehavior: 'instant',
   },
 }));
 
@@ -277,6 +278,13 @@ function setBrowserSelectionToDocument(
     ) {
       selection.removeAllRanges();
       selection.addRange(range);
+      (
+        selection.focusNode?.parentElement as Element | undefined
+      )?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
     }
   }
 }
