@@ -1,16 +1,28 @@
-import React, { useRef, useImperativeHandle, useEffect } from 'react';
+import React, { useEffect, useImperativeHandle, useRef } from 'react';
 import { Document } from './doc-state.ts';
-import { TreeNode, isElementNode, isTextNode } from './tree.ts';
-import { MarkupNode, RefNode } from './model.ts';
-import { makeStyles, cn } from '../../styles/css-objects/index.ts';
 import {
-  WritingDirection,
+  ElementNode,
+  isElementNode,
+  isTextNode,
+  pathToNode,
+  TextNode,
+  TreeNode,
+} from './tree.ts';
+import { isRefNode, MarkupNode, RefNode } from './model.ts';
+import { cn, makeStyles } from '../../styles/css-objects/index.ts';
+import {
   resolveWritingDirection,
+  WritingDirection,
 } from '../../base/string.ts';
 import { brandLightTheme as theme } from '../../styles/theme.tsx';
 import { styleguide } from '../../styles/styleguide.ts';
 import { CoreValue } from '../../base/core-types/base.ts';
 import { writingDirectionAtNode } from './doc-state.ts';
+import { CheckBox } from '../../components/task.tsx';
+import { usePartialVertex } from '../../web-app/src/core/cfds/react/vertex.ts';
+import { VertexManager } from '../client/graph/vertex-manager.ts';
+import { Note } from '../client/graph/vertices/note.ts';
+import { useGraphManager } from '../../web-app/src/core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -35,6 +47,10 @@ const useStyles = makeStyles(() => ({
     marginBottom: styleguide.gridbase * 2,
     marginInlineEnd: styleguide.gridbase * 2,
   },
+  checkedTaskText: {
+    textDecoration: 'line-through',
+    color: theme.mono.m10,
+  },
 }));
 
 export interface RichTextRef {
@@ -51,16 +67,18 @@ export interface RenderContext {
 
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
+  task: VertexManager<Note>;
   className?: string;
   dir?: WritingDirection;
 }>;
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    { children, className, dir, id }: TaskElementProps,
-    ref
+    { children, className, dir, id, task }: TaskElementProps,
+    ref,
   ) {
     const styles = useStyles();
+    const partialTask = usePartialVertex(task, ['isChecked']);
     return (
       <div
         className={cn(styles.taskElement, className)}
@@ -70,15 +88,44 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         id={id}
         data-ovv-key={id}
       >
-        <img
-          className={cn(styles.taskCheckbox)}
-          src="/icons/design-system/checkbox/not-selected.svg"
+        <CheckBox
+          value={partialTask.isChecked}
+          onChange={(value) => partialTask.isChecked = value}
         />
         {children}
       </div>
     );
-  }
+  },
 );
+
+interface EditorSpanProps {
+  node: TextNode;
+  ctx: RenderContext;
+}
+
+function EditorSpan({ node, ctx }: EditorSpanProps) {
+  const styles = useStyles();
+  const graph = useGraphManager();
+  const htmlId = domIdFromNodeKey(ctx, node);
+  const path = pathToNode(ctx.doc.root, node);
+  const taskElement = path?.find((element) => isRefNode(element)) as
+    | RefNode
+    | undefined;
+  const partialTask = usePartialVertex<Note>(taskElement?.ref, ['isChecked']);
+  return (
+    <span
+      className={cn(
+        node.text.length === 0 && styles.emptySpan,
+        partialTask?.isChecked && styles.checkedTaskText,
+      )}
+      key={ctx.doc.nodeKeys.keyFor(node).id}
+      id={htmlId}
+      data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+    >
+      {node.text}
+    </span>
+  );
+}
 
 type EditorNodeProps = React.PropsWithChildren<{
   node: MarkupNode;
@@ -91,19 +138,11 @@ export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
 
 export function EditorNode({ node, ctx }: EditorNodeProps) {
   const styles = useStyles();
+  const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
 
   if (isTextNode(node)) {
-    return (
-      <span
-        className={cn(node.text.length === 0 && styles.emptySpan)}
-        key={ctx.doc.nodeKeys.keyFor(node).id}
-        id={htmlId}
-        data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-      >
-        {node.text}
-      </span>
-    );
+    return <EditorSpan node={node} ctx={ctx} />;
   }
   let children: JSX.Element[] | undefined;
   const dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
@@ -186,6 +225,7 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
       return (
         <TaskElement
           id={ctx.doc.nodeKeys.keyFor(node).id}
+          task={graph.getVertexManager<Note>(node.ref)}
           dir={dir !== ctx.baseDirection ? dir : undefined}
         >
           {children}

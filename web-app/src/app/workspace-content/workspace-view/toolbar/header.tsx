@@ -2,11 +2,11 @@ import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../../../../../styles/components/buttons.tsx';
 import Menu, {
-  MenuItemStyle,
   MenuItem,
+  MenuItemStyle,
 } from '../../../../../../styles/components/menu.tsx';
 import { useTypographyStyles } from '../../../../../../styles/components/typography.tsx';
-import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
+import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../styles/styleguide.ts';
 import {
@@ -112,7 +112,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
         className={className}
         popupClassName={cn(styles.menu)}
         renderButton={() => <IconAvatar />}
-        position="bottom"
+        position='bottom'
       >
         <MenuItem onClick={openSettings}>Settings</MenuItem>
         <MenuItem>Sign out of Ovvio</MenuItem>
@@ -188,7 +188,7 @@ export default function OvvioHeader({ className }: OvvioHeaderProps) {
 
   const ovvioHeaderClicked = useCallback(() => {
     logger.log({
-      severity: 'INFO',
+      severity: 'EVENT',
       event: 'Click',
       source: 'toolbar:logo',
     });

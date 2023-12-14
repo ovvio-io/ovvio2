@@ -178,7 +178,7 @@ export function EditorHeader({ note, onFocusOnEditor }: EditorHeaderProps) {
         <img
           key='ExitEditorAction'
           className={cn(styles.headerMainActionButton)}
-          src='/icons/editor/icon/close-circle.svg'
+          src='/icons/editor/close-circle.svg'
           onClick={() => {
             navigate('/');
           }}
