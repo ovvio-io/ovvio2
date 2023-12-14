@@ -1,3 +1,4 @@
+import { filterIterable } from './common.ts';
 import { deepEqual, isImmutable } from './comparisons.ts';
 
 export function intersection<T>(s1: Set<T>, s2: Set<T>): Set<T> {
@@ -43,7 +44,7 @@ export function intersects<T>(s1: Set<T>, s2: Set<T>): boolean {
 
 export function difference<T>(
   s1: Set<T> | Iterable<T>,
-  s2: Set<T> | Iterable<T>
+  s2: Set<T> | Iterable<T>,
 ): Set<T> {
   if (!(s1 instanceof Set)) {
     s1 = new Set(s1);
@@ -83,7 +84,7 @@ export function subtract<T>(v1: Iterable<T>, v2: Iterable<T>): Set<T> {
 
 export function* subtractIter<T>(
   v1: Iterable<T>,
-  v2: Iterable<T>
+  v2: Iterable<T>,
 ): Generator<T> {
   const s2 = v2 instanceof Set ? v2 : new Set(v2);
 
@@ -97,7 +98,7 @@ export function* subtractIter<T>(
 export function equals<T>(
   v1: Iterable<T>,
   v2: Iterable<T>,
-  filter?: (v: T) => boolean
+  filter?: (v: T) => boolean,
 ): boolean {
   const s1 = v1 instanceof Set ? v1 : new Set(v1);
   const s2 = v2 instanceof Set ? v2 : new Set(v2);
@@ -133,7 +134,7 @@ export function equals<T>(
 export function union<T>(
   i1: Iterable<T> | undefined,
   i2: Iterable<T> | undefined,
-  inPlace = false
+  inPlace = false,
 ): Set<T> {
   let result: Set<T>;
   if (inPlace) {
@@ -160,7 +161,7 @@ export function union<T>(
 
 export function* unionIter<T>(
   i1: Iterable<T> | undefined,
-  i2: Iterable<T> | undefined
+  i2: Iterable<T> | undefined,
 ) {
   if (i1 === undefined || i2 === undefined) {
     const iter = i1 !== undefined ? i1 : i2;
@@ -234,7 +235,7 @@ export function deleteAll<T>(s: Set<T>, iterable: Iterable<T>): Set<T> {
 
 export function from<T>(
   iterable: Iterable<T>,
-  mapper?: (v: T) => any
+  mapper?: (v: T) => any,
 ): Set<any> {
   // Shortcut - if no mapper was given, fall back to the native constructor
   if (!mapper) {
@@ -374,7 +375,7 @@ export function subtractByValue<T>(s1: Set<T>, s2: Set<T>): Set<T> {
 export function unionByValue<T>(
   i1: Iterable<T>,
   i2: Iterable<T>,
-  inPlace = false
+  inPlace = false,
 ): Set<T> {
   const result = inPlace && i1 instanceof Set ? i1 : new Set(i1);
   for (const v of i2) {
@@ -409,4 +410,8 @@ export function toggleMembership<T>(s1: Set<T>, v: T): boolean {
     s1.add(v);
     return true;
   }
+}
+
+export function filter<T>(s: Set<T>, filter: (v: T) => boolean) {
+  return new Set(filterIterable(s, filter));
 }
