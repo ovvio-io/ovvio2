@@ -37,7 +37,8 @@ export const Step1: React.FC<Step1Props> = ({
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
-    maxWidth: '400px',
+    maxWidth: '800px',
+    height: '29px',
     gap: '4px',
     marginBottom: '11px',
   };
