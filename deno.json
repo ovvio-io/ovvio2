@@ -9,5 +9,6 @@
     "lineWidth": 80,
     "indentWidth": 2,
     "singleQuote": true
-  }
+  },
+  "unstable": ["byonm"]
 }
