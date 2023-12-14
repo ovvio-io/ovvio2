@@ -40,7 +40,7 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 3,
     width: styleguide.gridbase * 40,
     outline: 'none',
-    fontFamily: '\'Poppins\', \'Heebo\', sans-serif',
+    fontFamily: "'Poppins', 'Heebo', sans-serif",
     fontSize: '30px',
     fontWeight: '600',
     lineHeight: styleguide.gridbase * 3,
@@ -69,11 +69,14 @@ const useStyles = makeStyles(() => ({
   breadCrumbsSlash: {
     position: 'relative',
     top: '2px',
-    marginRight: styleguide.gridbase,
+    marginRight: styleguide.gridbase / 2,
+    marginLeft: styleguide.gridbase / 2,
   },
   breadCrumbsTitle: {
-    fontSize: '20px',
+    fontSize: '13px',
     color: theme.mono.m10,
+    position: 'relative',
+    top: '1px',
   },
 }));
 
