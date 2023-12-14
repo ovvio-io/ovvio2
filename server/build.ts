@@ -1,10 +1,10 @@
 import yargs from 'yargs';
 import {
-  S3Client,
-  PutObjectRequest,
   PutObjectCommand,
-} from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
+  PutObjectRequest,
+  S3Client,
+} from 'npm:@aws-sdk/client-s3';
+import { Upload } from 'npm:@aws-sdk/lib-storage';
 import * as path from 'std/path/mod.ts';
 import { defaultAssetsBuild } from './generate-statc-assets.ts';
 import { VCurrent } from '../base/version-number.ts';
@@ -68,7 +68,7 @@ async function putS3Object(uploadPath: string): Promise<boolean> {
     ACL: 'public-read',
   };
   console.log(
-    `Uploading atomically ${uploadPath} \u{02192} ${req.Bucket}/${req.Key}`
+    `Uploading atomically ${uploadPath} \u{02192} ${req.Bucket}/${req.Key}`,
   );
   const resp = await client.send(new PutObjectCommand(req));
   return resp.ETag !== undefined && resp.ETag.length > 0;
@@ -76,14 +76,14 @@ async function putS3Object(uploadPath: string): Promise<boolean> {
 
 export function outputFileName(
   target: BuildTarget,
-  deployment: boolean
+  deployment: boolean,
 ): string {
   return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}`;
 }
 
 async function hashFile(
   inputFilePath: string,
-  outputFilePath?: string
+  outputFilePath?: string,
 ): Promise<void> {
   const file = await Deno.readFile(inputFilePath);
   console.log(`Generating SHA-512 checksum for ${inputFilePath}...`);
@@ -102,10 +102,10 @@ async function build(
   repoPath: string,
   upload: boolean,
   linux: boolean,
-  target: BuildTarget
+  target: BuildTarget,
 ): Promise<void> {
   console.log(
-    `Generating ${target} executable for ${linux ? 'linux' : Deno.build.os}...`
+    `Generating ${target} executable for ${linux ? 'linux' : Deno.build.os}...`,
   );
   const fileName = outputFileName(target, linux);
   const outputDir = path.join(repoPath, 'build');
@@ -128,7 +128,7 @@ async function build(
     compileArgs.push(path.join(repoPath, 'server', 'run-server.ts'));
   } else {
     compileArgs.push(
-      path.join(repoPath, 'server-control', 'server-control.ts')
+      path.join(repoPath, 'server-control', 'server-control.ts'),
     );
   }
   const compileLocalCmd = new Deno.Command('deno', {
@@ -159,7 +159,8 @@ async function main(): Promise<void> {
     .option('linux', {
       type: 'boolean',
       default: false,
-      description: `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
+      description:
+        `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
     })
     .parse();
   console.log(`Building based on version ${tuple4ToString(VCurrent)}`);
@@ -177,7 +178,7 @@ async function main(): Promise<void> {
     repoPath,
     args?.upload === true,
     args?.linux === true,
-    controlBuild ? 'control' : 'server'
+    controlBuild ? 'control' : 'server',
   );
 }
 
