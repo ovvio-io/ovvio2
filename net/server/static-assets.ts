@@ -1,10 +1,12 @@
 import { walk } from 'std/fs/walk.ts';
 import { exists } from 'std/fs/mod.ts';
 import { extname } from 'std/path/mod.ts';
-import { ServerServices, Endpoint } from './server.ts';
+import { Endpoint, ServerServices } from './server.ts';
 import { getRequestPath } from './utils.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
+
+const STATIC_ASSETS_CACHE_DURATION_SEC = 86400;
 
 export const kEntryPointsNames = ['web-app', 'org-admin'] as const;
 export type EntryPointName = (typeof kEntryPointsNames)[number];
@@ -45,7 +47,7 @@ export class StaticAssetsEndpoint implements Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     return req.method === 'GET';
   }
@@ -53,7 +55,7 @@ export class StaticAssetsEndpoint implements Endpoint {
   processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     let path = getRequestPath(req);
 
@@ -69,8 +71,9 @@ export class StaticAssetsEndpoint implements Endpoint {
       return Promise.resolve(new Response(null, { status: 404 }));
     }
 
-    const epRelativePath =
-      ep === EntryPointDefault ? path : path.substring(ep.length + 1);
+    const epRelativePath = ep === EntryPointDefault
+      ? path
+      : path.substring(ep.length + 1);
     const asset = staticEP[epRelativePath] || staticEP['/index.html'];
     if (!asset) {
       return Promise.resolve(new Response(null, { status: 404 }));
@@ -80,12 +83,13 @@ export class StaticAssetsEndpoint implements Endpoint {
       'content-type': asset.contentType,
     };
     if (asset.contentType.startsWith('image/')) {
-      headers['cache-control'] = 'Cache-Control: public, max-age=3600';
+      headers['cache-control'] =
+        `Cache-Control: public, max-age=${STATIC_ASSETS_CACHE_DURATION_SEC}`;
     }
     return Promise.resolve(
       new Response(asset.data, {
         headers,
-      })
+      }),
     );
   }
 }
@@ -98,12 +102,14 @@ export async function compileAssetsDirectory(
     if (!(await exists(dir))) {
       continue;
     }
-    for await (const { path } of walk(dir, {
-      includeDirs: false,
-      includeSymlinks: false,
-      followSymlinks: false,
-      exts: kValidFileExtensions,
-    })) {
+    for await (
+      const { path } of walk(dir, {
+        includeDirs: false,
+        includeSymlinks: false,
+        followSymlinks: false,
+        exts: kValidFileExtensions,
+      })
+    ) {
       const ext = extname(path).substring(1) as keyof typeof ContentTypeMapping;
       const key = path.substring(dir.length).toLowerCase();
       result[key] = {
@@ -134,9 +140,11 @@ export function staticAssetsFromJS(assets: ReadonlyJSONObject): StaticAssets {
   const result: Record<string, StaticEntryPoint> = {};
   for (const [ep, encodedEp] of Object.entries(assets)) {
     const entry: StaticEntryPoint = {};
-    for (const [path, asset] of Object.entries(
-      encodedEp as ReadonlyJSONObject
-    )) {
+    for (
+      const [path, asset] of Object.entries(
+        encodedEp as ReadonlyJSONObject,
+      )
+    ) {
       entry[path] = {
         data: decodeBase64((asset as ReadonlyJSONObject).data as string),
         contentType: (asset as ReadonlyJSONObject).contentType as ContentType,
