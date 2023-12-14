@@ -6,26 +6,33 @@ import { useTypographyStyles } from '../../../../../styles/components/typography
 import { layout } from '../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../styles/responsive.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
-import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
+import { useVertexByKey } from '../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
-    background: '#FFF',
     height: styleguide.gridbase * 4,
     boxSizing: 'border-box',
     padding: [0, styleguide.gridbase],
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
-    ':hover': {
-      boxShadow: theme.shadows.z2,
-      background: theme.primary.p1,
-    },
     alignItems: 'center',
     basedOn: [layout.row],
     borderRadius: '37px',
     border: ' 1px solid var(--primary-p-5, #8BC5EE)',
+  },
+  available: {
+    background: theme.primary.p1,
+    cursor: 'pointer',
+    ':hover': {
+      boxShadow: theme.shadows.z2,
+      background: theme.primary.p2,
+    },
+  },
+  disabled: {
+    background: '#FFF',
+    cursor: 'not-allowed',
   },
   blue: {
     background: '#3184DD',
@@ -80,25 +87,6 @@ const useStyles = makeStyles(() => ({
     background: '#FFAF',
   },
 }));
-
-const ComposeInternalButtonChooseWs = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <div className={cn(styles.compose, className)} ref={ref}>
-        <img
-          key="AssignInSettings"
-          src="/icons/editor/icon/Archive.svg"
-          onClick={() => {}}
-        />{' '}
-        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
-      </div>
-    );
-  }
-);
 
 const ComposeInternalButtonAssign = React.forwardRef(
   (
@@ -176,51 +164,68 @@ const ComposeInternalButtonEdit = React.forwardRef(
 );
 interface ChooseWsButtonProps {
   onChooseWsClick?: () => void;
+  disable: boolean;
 }
 
-export function ChooseWsButton({ onChooseWsClick }: ChooseWsButtonProps) {
-  const [container, setContainer] = useState<HTMLDivElement | null>();
+export function ChooseWsButton({
+  onChooseWsClick,
+  disable,
+}: ChooseWsButtonProps) {
+  const isDisabled = disable;
+  const styles = useStyles();
 
   return (
-    <Button onClick={onChooseWsClick}>
-      <ComposeInternalButtonChooseWs ref={(div) => setContainer(div)} />
+    <Button
+      onClick={isDisabled ? undefined : onChooseWsClick}
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+    >
+      <div>
+        <img
+          key="AssignInSettings"
+          src="/icons/editor/icon/Archive.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
+      </div>{' '}
     </Button>
   );
 }
 
 interface AssignWsButtonProps {
   AssignWsClick?: () => void;
+  disable: boolean;
 }
 
-export function AssignWsButton({ AssignWsClick }: AssignWsButtonProps) {
-  const [container, setContainer] = useState<HTMLDivElement | null>();
+export function AssignWsButton({
+  AssignWsClick,
+  disable,
+}: AssignWsButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
 
   return (
-    <Button onClick={AssignWsClick}>
-      <ComposeInternalButtonAssignWs ref={(div) => setContainer(div)} />
-    </Button>
-  );
-}
-
-const ComposeInternalButtonAssignWs = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <div className={cn(styles.compose, className)} ref={ref}>
+    <Button
+      onClick={isDisabled ? undefined : AssignWsClick}
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+    >
+      <div>
         <img
           key="InviteUserSettings"
-          // className={cn(styles.icon)}
           src="/icons/editor/icon/Invite.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.text)}>{'Assign'}</span>
-      </div>
-    );
-  }
-);
+      </div>{' '}
+    </Button>
+  );
+}
+
 export function EditButton() {
   const [container, setContainer] = useState<HTMLDivElement | null>();
 
@@ -232,9 +237,9 @@ export function EditButton() {
 }
 
 type UserPillProps = {
-  user: User;
-  selectedUsers: User[];
-  setSelectedUsers: (users: User[]) => void;
+  user: string;
+  selectedUsers: Set<string>;
+  setSelectedUsers: (users: Set<string>) => void;
 };
 
 export const UserPill: React.FC<UserPillProps> = ({
@@ -243,21 +248,19 @@ export const UserPill: React.FC<UserPillProps> = ({
   setSelectedUsers,
 }) => {
   const styles = useStyles();
-  const { name } = usePartialVertex(user, ['name']);
 
   useEffect(() => {}, [selectedUsers]);
 
   const removeUserPill = () => {
-    if (selectedUsers.length > 1) {
-      setSelectedUsers((prevSelectedUsers) => {
-        return prevSelectedUsers.filter((u: User) => u.key !== user.key);
-      });
-    }
+    const newSelectedUsers = new Set(selectedUsers);
+    newSelectedUsers.delete(user);
+    setSelectedUsers(newSelectedUsers);
   };
+  const userName: User = useVertexByKey(user);
 
   return (
     <div className={cn(styles.filterPill)}>
-      <span className={cn(styles.filterText)}>{name}</span>
+      <span className={cn(styles.filterText)}>{userName.name}</span>
       <CloseIcon
         onClick={() => {
           removeUserPill();

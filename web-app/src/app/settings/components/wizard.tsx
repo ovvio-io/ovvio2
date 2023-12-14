@@ -19,8 +19,8 @@ export const IconVector: React.FC<IconVectorProps> = ({ color }) => {
       <path
         d="M1 1H57"
         stroke={color === 'done' ? '#FFF' : '#ABD4EE'}
-        stroke-width="2"
-        stroke-linecap="round"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -34,6 +34,15 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
   color,
   stepNumber,
 }) => {
+  const textStyles = {
+    fontFamily: 'Poppins',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: '600',
+    lineHeight: '21px',
+    letterSpacing: '0.087px',
+  };
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -56,7 +65,8 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
         stroke={color === 'done' ? '#FFF' : '#ABD4EE'}
         fill={color === 'done' ? '#FFF' : '#ABD4EE'}
         strokeWidth="0.5px"
-        dy=".3em"
+        dy="0.38em"
+        style={textStyles}
       >
         {stepNumber}
       </text>
@@ -85,7 +95,6 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     alignItems: 'center',
     justifyContent: 'flex-start',
   };
-
   const wizardContainerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'row',
@@ -94,7 +103,6 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     position: 'relative',
     left: '150px',
   };
-
   const ellipseContainerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'row',
@@ -107,6 +115,10 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     flexDirection: 'column',
   };
 
+  const closeIcon: CSSProperties = {
+    paddingRight: styleguide.gridbase * 4,
+    paddingLeft: styleguide.gridbase * 2,
+  };
   const labelStyle: CSSProperties = {
     position: 'relative',
     marginTop: '4px',
@@ -114,10 +126,6 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     letterSpacing: '-0.1px',
     fontWeight: '400',
     left: '0px',
-  };
-  const closeIcon: CSSProperties = {
-    paddingRight: styleguide.gridbase * 4,
-    paddingLeft: styleguide.gridbase * 2,
   };
 
   const steps = ['Members', 'Workspaces', 'Assign'];
@@ -136,9 +144,16 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
       <div style={wizardContainerStyle}>
         {steps.map((step, index) => {
           const isLabelActive = currentStepIndex >= index + 1;
+          const stepName = step;
           const dynamicLabelStyle = {
             ...labelStyle,
             color: isLabelActive ? '#FFF' : '#ABD4EE',
+            left:
+              stepName === 'Members'
+                ? '-6px'
+                : stepName === 'Workspaces'
+                ? '-13px'
+                : '0px',
           };
 
           return (

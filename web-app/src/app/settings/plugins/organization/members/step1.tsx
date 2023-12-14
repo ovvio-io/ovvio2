@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useEffect, useRef } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
@@ -11,9 +11,10 @@ import UserTable from '../../../components/user-table.tsx';
 
 type Step1Props = {
   setStep: (step: number) => void;
-  selectedUsers: User[];
-  setSelectedUsers: (user: User[]) => void;
+  selectedUsers: Set<string>;
+  setSelectedUsers: (users: Set<string>) => void;
 };
+
 export const Step1: React.FC<Step1Props> = ({
   setStep,
   selectedUsers,
@@ -41,13 +42,17 @@ export const Step1: React.FC<Step1Props> = ({
     marginBottom: '11px',
   };
 
-  const handleRowSelect = (user: User) => {
-    if (selectedUsers.includes(user)) {
-      setSelectedUsers(selectedUsers.filter((u) => u !== user));
+  const handleRowSelect = (user: string) => {
+    const updatedSelectedUsers = new Set(selectedUsers);
+    if (updatedSelectedUsers.has(user)) {
+      updatedSelectedUsers.delete(user);
     } else {
-      setSelectedUsers([...selectedUsers, user]);
+      updatedSelectedUsers.add(user);
     }
+    setSelectedUsers(updatedSelectedUsers);
   };
+
+  const UserPillKey = 'UserPillKey_';
 
   return (
     <div>
@@ -55,12 +60,16 @@ export const Step1: React.FC<Step1Props> = ({
         <div style={FunctionsHeader}>
           <div>Choose members to assign</div>
           {selectedUsers && (
-            <ChooseWsButton onChooseWsClick={handleChooseWsClick} />
+            <ChooseWsButton
+              onChooseWsClick={handleChooseWsClick}
+              disable={selectedUsers.size === 0}
+            />
           )}
         </div>
         <div style={ChosenMembersContainer}>
-          {selectedUsers.map((user: User) => (
+          {[...selectedUsers].map((user: string) => (
             <UserPill
+              key={UserPillKey + user}
               user={user}
               selectedUsers={selectedUsers}
               setSelectedUsers={setSelectedUsers}
@@ -75,7 +84,7 @@ export const Step1: React.FC<Step1Props> = ({
         showSelection={true}
         selectedUsers={selectedUsers}
         showSearch={true}
-        isHoverable={true}
+        isEditable={true}
       />
     </div>
   );
