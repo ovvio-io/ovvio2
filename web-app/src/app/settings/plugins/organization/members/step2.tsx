@@ -1,6 +1,9 @@
-import React, { CSSProperties, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  useVertexByKey,
+  useVertices,
+} from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
 import {
@@ -12,8 +15,8 @@ import WorkspaceTable from '../../../components/workspace-table.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
-  selectedUsers: User[];
-  setSelectedUsers: (user: User[]) => void;
+  selectedUsers: Set<string>;
+  setSelectedUsers: (users: Set<string>) => void;
 };
 
 export const Step2: React.FC<Step2Props> = ({
@@ -26,9 +29,12 @@ export const Step2: React.FC<Step2Props> = ({
   const workspaces = useVertices(workspacesQuery.results) as Workspace[];
 
   const handleAssignWsClick = () => {
-    selectedWorkspaces.map((ws: Workspace) =>
-      selectedUsers.map((user: User) => ws.users.add(user))
-    );
+    selectedWorkspaces.forEach((ws: Workspace) => {
+      selectedUsers.forEach((user: string) => {
+        const u: User = useVertexByKey(user);
+        ws.users.add(u);
+      });
+    });
     setStep(3);
   };
 
@@ -44,7 +50,8 @@ export const Step2: React.FC<Step2Props> = ({
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
-    maxWidth: '400px',
+    maxWidth: '800px',
+    height: '29px',
     gap: '4px',
     marginBottom: '11px',
   };
@@ -57,18 +64,30 @@ export const Step2: React.FC<Step2Props> = ({
     }
   };
 
+  useEffect(() => {
+    if (selectedUsers.size === 0) {
+      setStep(1);
+    }
+  }, [selectedUsers, selectedUsers.size, setStep]);
+
+  const UserPillKey = 'UserPillKey';
+
   return (
     <div>
       <div style={HeaderContainerStyle}>
         <div style={FunctionsHeader}>
           <div>Choose workspaces to assign</div>
           {selectedWorkspaces && (
-            <AssignWsButton AssignWsClick={handleAssignWsClick} />
+            <AssignWsButton
+              AssignWsClick={handleAssignWsClick}
+              disable={selectedWorkspaces.length === 0}
+            />
           )}
         </div>
         <div style={ChosenMembersContainer}>
-          {selectedUsers.map((user: User) => (
+          {[...selectedUsers].map((user: string) => (
             <UserPill
+              key={UserPillKey + user}
               user={user}
               selectedUsers={selectedUsers}
               setSelectedUsers={setSelectedUsers}
@@ -84,7 +103,7 @@ export const Step2: React.FC<Step2Props> = ({
         selectedUsers={selectedUsers}
         selectedWorkspaces={selectedWorkspaces}
         showSearch={true}
-        isHoverable={true}
+        isEditable={true}
       />
     </div>
   );

@@ -35,6 +35,9 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
     setStep(1);
   };
 
+  const handleAssignClick2 = () => {
+    setStep(2);
+  };
   return (
     <div>
       <div style={HeaderContainerStyle}>
@@ -48,9 +51,9 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
         users={users}
         onRowSelect={() => {}}
         showSelection={false}
-        selectedUsers={[]}
+        selectedUsers={new Set<string>()}
         showSearch={false}
-        isHoverable={false}
+        isEditable={false}
       />
     </div>
   );

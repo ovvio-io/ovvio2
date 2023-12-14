@@ -121,7 +121,11 @@ function TabView({ category }: any) {
   };
 
   const tabElements: React.ReactElement[] = tabsForCategory.map((plugin) => {
-    return <TabButton value={plugin.title}>{strings[plugin.title]}</TabButton>;
+    return (
+      <TabButton key={plugin.title} value={plugin.title}>
+        {strings[plugin.title]}
+      </TabButton>
+    );
   });
 
   return (

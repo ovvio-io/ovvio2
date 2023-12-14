@@ -5,57 +5,138 @@ import { IconSearch } from '../../../../../styles/components/new-icons/icon-sear
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 
-export const useStyles = makeStyles(() => ({
-  row: {
-    display: 'flex',
-    padding: '12px 16px',
-    alignItems: 'center',
-    gap: '8px',
-    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    width: '772px',
-    borderRadius: '2px',
-    backgroundColor: '#FFF',
-    zIndex: '10',
-  },
-  hoverableRow: {
-    ':hover': {
-      backgroundColor: '#FBF6EF',
+type RowInTableProps = {
+  user: User;
+  onRowSelect: (user: string) => void;
+  isSelected: boolean;
+  isEditable: boolean;
+};
+const RowInTable: React.FC<RowInTableProps> = ({
+  user,
+  onRowSelect,
+  isSelected,
+  isEditable,
+}) => {
+  const useStyles = makeStyles(() => ({
+    rowContainer: {
+      position: 'relative',
+      left: '-71px',
+      width: '843px',
     },
-  },
-  selectedRow: {
-    backgroundColor: '#F5F9FB',
-    border: '1px solid #CCE3ED',
-    hover: 'none',
-  },
-  firstColumnStyle: {
-    display: 'flex',
-    width: '200px',
-    height: '20px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  otherColumnStyle: {
-    display: 'flex',
-    width: '176px',
-    height: '17px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  iconContainer: {
-    position: 'absolute',
-    left: '-71px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    zIndex: '-10',
-  },
-}));
+    rowRight: {
+      display: 'flex',
+      position: 'relative',
+      left: '71px',
+      padding: '12px 16px',
+      marginBottom: '1px',
+      alignItems: 'center',
+      gap: '8px',
+      boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
+      width: '772px',
+      borderRadius: '2px',
+      backgroundColor: '#FFF',
+    },
+    hoverableRow: {
+      ':hover': {
+        backgroundColor: '#FBF6EF',
+      },
+    },
+    rowLeft: {
+      position: 'absolute',
+      width: '71px',
+      left: '40px',
+      top: '9px',
+    },
+    rowLeftHover: {
+      left: '0px',
+    },
+    selectHover: {
+      position: 'absolute',
+      width: '71px',
+      left: '10px',
+      top: '9px',
+    },
+    selectedRow: {
+      backgroundColor: '#F5F9FB',
+      border: '1px solid #CCE3ED',
+      boxSizing: 'border-box',
+      height: '44px',
+      width: '805px',
+      hover: 'none',
+    },
+    firstColumnStyle: {
+      display: 'flex',
+      width: '200px',
+      height: '20px',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    },
+    otherColumnStyle: {
+      display: 'flex',
+      width: '176px',
+      height: '17px',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    },
+  }));
+
+  const styles = useStyles();
+  const [isRowHovered, setIsRowHovered] = useState(false);
+
+  const handleMouseEnter = () => {
+    setIsRowHovered(true);
+  };
+  const handleMouseLeave = () => {
+    setIsRowHovered(false);
+  };
+
+  return (
+    <div
+      className={cn(styles.rowContainer)}
+      onClick={() => onRowSelect(user.key)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {isEditable && isRowHovered && (
+        <div className={cn(styles.rowLeft, styles.rowLeftHover)}>
+          <img
+            key="HoveredRowSettings"
+            src="/icons/editor/icon/hover-select.svg"
+          />
+        </div>
+      )}
+      {isSelected && (
+        <div className={cn(styles.rowLeft)}>
+          <img
+            key="SelectedRowSettings"
+            src="/icons/editor/icon/hover-select2.svg"
+          />
+        </div>
+      )}
+      <div
+        className={cn(
+          styles.rowRight,
+          isEditable && styles.hoverableRow,
+          isSelected && styles.selectedRow
+        )}
+      >
+        <Text className={cn(styles.firstColumnStyle)}>{user.name}</Text>
+        <TextSm className={cn(styles.otherColumnStyle)}>{user.email}</TextSm>
+        <TextSm className={cn(styles.otherColumnStyle)}>{'ph1'}</TextSm>
+        <TextSm className={cn(styles.otherColumnStyle)}>{'ph2'}</TextSm>
+        <TextSm className={cn(styles.otherColumnStyle)}>{'ph3'}</TextSm>
+      </div>
+    </div>
+  );
+};
+
 type UserTableProps = {
   users: User[];
-  onRowSelect: (user: User) => void;
+  onRowSelect: (user: string) => void;
   showSelection: boolean;
-  selectedUsers: User[];
+  selectedUsers: Set<string>;
   showSearch: boolean;
-  isHoverable: boolean;
+  isEditable: boolean;
 };
 
 const UserTable: React.FC<UserTableProps> = ({
@@ -64,60 +145,13 @@ const UserTable: React.FC<UserTableProps> = ({
   showSelection,
   selectedUsers,
   showSearch,
-  isHoverable,
+  isEditable,
 }) => {
-  type RowInTableProps = {
-    user: User;
-    isSelected: boolean;
-    isHoverable: boolean;
-  };
-  const RowInTable: React.FC<RowInTableProps> = ({
-    user,
-    isSelected,
-    isHoverable,
-  }) => {
-    const styles = useStyles();
-    const [isRowHovered, setIsRowHovered] = useState(false);
-
-    const handleMouseEnter = () => {
-      setIsRowHovered(true);
-    };
-    const handleMouseLeave = () => {
-      setIsRowHovered(false);
-    };
-
-    return (
-      <div
-        className={cn(
-          styles.row,
-          isHoverable && styles.hoverableRow,
-          isSelected && styles.selectedRow
-        )}
-        onClick={() => onRowSelect(user)}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <div className={styles.iconContainer}>
-          {isHoverable && isRowHovered && (
-            <img
-              key="HoveredRowSettings"
-              src="/icons/editor/icon/hover-select.svg"
-            />
-          )}
-        </div>
-        <Text className={cn(styles.firstColumnStyle)}>{user.name}</Text>
-        <TextSm className={cn(styles.otherColumnStyle)}>{user.email}</TextSm>
-        <TextSm className={cn(styles.otherColumnStyle)}>{'ph1'}</TextSm>
-        <TextSm className={cn(styles.otherColumnStyle)}>{'ph2'}</TextSm>
-        <TextSm className={cn(styles.otherColumnStyle)}>{'ph3'}</TextSm>
-      </div>
-    );
-  };
-
   const useStyles2 = makeStyles(() => ({
     searchRowStyle: {
       display: 'flex',
       padding: '12px 16px',
+      marginBottom: '1px',
       alignItems: 'center',
       gap: '8px',
       boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
@@ -135,34 +169,20 @@ const UserTable: React.FC<UserTableProps> = ({
       fontSize: '13px',
       letterSpacing: '0.075px',
     },
-    scrollContainerStyle: {
-      maxHeight: '700px',
-    },
     tableContainer: {
       width: '843px',
       display: 'flex',
       position: 'relative',
-      // right: '71px',
     },
     tableContent: {
       flex: 1,
-    },
-    iconSelectOutside: {
-      position: 'absolute',
-      left: '-30px',
-      width: '71px',
-    },
-    rowContainer: {
-      display: 'flex',
-      alignItems: 'center',
-      position: 'relative',
-      width: '843px',
     },
   }));
 
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const userKey = 'SettingUser_';
 
   useEffect(() => {
     if (users) {
@@ -175,7 +195,7 @@ const UserTable: React.FC<UserTableProps> = ({
     setSearchTerm(event.target.value);
   };
   return (
-    <div className={isHoverable ? cn(styles.tableContainer) : undefined}>
+    <div className={isEditable ? cn(styles.tableContainer) : undefined}>
       <div className={cn(styles.tableContent)}>
         {showSearch && (
           <div className={cn(styles.searchRowStyle)}>
@@ -193,25 +213,15 @@ const UserTable: React.FC<UserTableProps> = ({
             </Text>
           </div>
         )}
-        <div className={cn(styles.scrollContainerStyle)}>
-          {filteredUsers.map((user: User) => (
-            <div key={user.key} className={cn(styles.rowContainer)}>
-              {selectedUsers.includes(user) && (
-                <div className={cn(styles.iconSelectOutside)}>
-                  <img
-                    key="SelectedRowSettings"
-                    src="/icons/editor/icon/hover-select2.svg"
-                  />
-                </div>
-              )}
-              <RowInTable
-                user={user}
-                isSelected={showSelection && selectedUsers.includes(user)}
-                isHoverable={isHoverable && !selectedUsers.includes(user)}
-              />
-            </div>
-          ))}
-        </div>
+        {filteredUsers.map((user: User) => (
+          <RowInTable
+            key={userKey + user.key}
+            user={user}
+            onRowSelect={onRowSelect}
+            isSelected={showSelection && selectedUsers.has(user.key)}
+            isEditable={isEditable && !selectedUsers.has(user.key)}
+          />
+        ))}
       </div>
     </div>
   );
