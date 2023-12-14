@@ -323,7 +323,7 @@ export class Repository<
     const c1Ancestors = new Set<string>(parents1);
     const c2Ancestors = new Set<string>(parents2);
 
-    while (parents1.size > 0 && parents2.size > 0) {
+    while (parents1.size > 0 || parents2.size > 0) {
       SetUtils.update(
         c1Ancestors,
         SetUtils.filter(parents1, (id) => this.hasCommit(id)),
