@@ -74,7 +74,7 @@ export function EditCardAction({
       {...props}
       onClick={openItem}
       IconComponent={IconOpen}
-      text="Open"
+      text='Open'
     />
   );
 }
@@ -97,7 +97,7 @@ export function EditDueDateAction({
       {...props}
       onClick={onClick}
       IconComponent={IconAddDueDate}
-      text="Add Due Date"
+      text='Add Due Date'
     />
   );
 }
@@ -118,7 +118,7 @@ export function ViewInNoteAction({
       source: 'menu:note:view-in-parent',
       vertex: pCard.key,
     });
-    navigate(`${pCard.workspace.key}/${pCard.parentNote!.key}`);
+    navigate(`${pCard.workspace.key}/notes/${pCard.parentNote!.key}`);
   }, [pCard, logger, navigate]);
 
   if (!pCard.parentNote) {
@@ -130,7 +130,7 @@ export function ViewInNoteAction({
       {...props}
       onClick={openNote}
       IconComponent={IconViewNote}
-      text="View In Note"
+      text='View In Note'
     />
   );
 }
@@ -189,7 +189,7 @@ export function DeleteCardAction({
         });
       }
     },
-    [setOpen, logger, card, source]
+    [setOpen, logger, card, source],
   );
 
   const onDeleteClick = useCallback(() => {
@@ -224,7 +224,7 @@ export function DeleteCardAction({
         {...props}
         onClick={onOpen}
         IconComponent={IconDelete}
-        text="Delete"
+        text='Delete'
       />
       <Dialog
         open={open}
@@ -281,7 +281,7 @@ export function DuplicateCardAction({
       {...props}
       onClick={onDuplicate}
       IconComponent={IconDuplicate}
-      text="Duplicate"
+      text='Duplicate'
     />
   );
 }
