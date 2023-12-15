@@ -313,7 +313,6 @@ export function* applyShortcuts(
         for (const f of detectors) {
           const replacement = f(buffer.slice(offset));
           if (replacement) {
-            debugger;
             for (let i = 0; i < offset; ++i) {
               yield buffer[i];
             }

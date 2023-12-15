@@ -7,18 +7,16 @@ import { styleguide } from '../styles/styleguide.ts';
 const useStyles = makeStyles(() => ({
   taskCheckbox: {
     cursor: 'pointer',
-    marginTop: styleguide.gridbase * 2,
-    marginBottom: styleguide.gridbase * 2,
-    marginInlineEnd: styleguide.gridbase * 2,
   },
 }));
 
 export interface CheckBoxProps {
   value: boolean;
   onChange: (value: boolean) => void;
+  className?: string;
 }
 
-export function CheckBox({ value, onChange }: CheckBoxProps) {
+export function CheckBox({ value, onChange, className }: CheckBoxProps) {
   const styles = useStyles();
   const src = `/icons/design-system/checkbox/${
     value ? '' : 'not-'
@@ -29,7 +27,7 @@ export function CheckBox({ value, onChange }: CheckBoxProps) {
 
   return (
     <img
-      className={cn(styles.taskCheckbox)}
+      className={cn(styles.taskCheckbox, className)}
       src={src}
       onClick={onClick}
     />

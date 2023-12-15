@@ -134,6 +134,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         data-ovv-key={id}
       >
         <CheckBox
+          className={cn(styles.taskCheckbox)}
           value={partialTask.isChecked}
           onChange={(value) => partialTask.isChecked = value}
         />
@@ -186,19 +187,19 @@ function EditorSpan({ node, ctx }: EditorSpanProps) {
       break;
 
     case 'ref':
-      ArrayUtils.append(classNames, [
-        styles.p,
-        styles.taskText,
-        partialTask?.isChecked === true
-          ? styles.checkedTaskText
-          : styles.uncheckedTaskText,
-      ]);
-      break;
-
     case 'p':
     default:
       classNames.push(styles.p);
       break;
+  }
+
+  if (partialTask) {
+    ArrayUtils.append(classNames, [
+      styles.taskText,
+      partialTask?.isChecked === true
+        ? styles.checkedTaskText
+        : styles.uncheckedTaskText,
+    ]);
   }
   return (
     <span
