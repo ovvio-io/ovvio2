@@ -47,9 +47,20 @@ const useStyles = makeStyles(() => ({
     marginBottom: styleguide.gridbase * 2,
     marginInlineEnd: styleguide.gridbase * 2,
   },
-  checkedTaskText: {
-    textDecoration: 'line-through',
+  taskText: {
     color: theme.mono.m10,
+    fontSize: '13px',
+    lineHeight: '18px',
+    transition:
+      `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
+    textDecoration: 'line-through',
+    textDecorationColor: 'transparent',
+  },
+  uncheckedTaskText: {
+    textDecorationColor: 'transparent',
+  },
+  checkedTaskText: {
+    textDecorationColor: theme.mono.m10,
   },
 }));
 
@@ -116,7 +127,10 @@ function EditorSpan({ node, ctx }: EditorSpanProps) {
     <span
       className={cn(
         node.text.length === 0 && styles.emptySpan,
-        partialTask?.isChecked && styles.checkedTaskText,
+        styles.taskText,
+        partialTask?.isChecked === true
+          ? styles.checkedTaskText
+          : styles.uncheckedTaskText,
       )}
       key={ctx.doc.nodeKeys.keyFor(node).id}
       id={htmlId}
