@@ -42,6 +42,17 @@ const useStyles = makeStyles(() => ({
     borderTop: '1px solid',
     borderColor: theme.primary.p2,
     display: 'flex',
+    transition:
+      `background-color ${styleguide.transition.duration.short}ms ease-out`,
+  },
+  focusedTask: {
+    backgroundColor: theme.primary.p1,
+  },
+  unfocusedTask: {
+    backgroundColor: 'transparent',
+    ':hover': {
+      backgroundColor: theme.secondary.s1,
+    },
   },
   taskCheckbox: {
     marginTop: styleguide.gridbase * 2,
@@ -115,18 +126,23 @@ type TaskElementProps = React.PropsWithChildren<{
   task: VertexManager<Note>;
   className?: string;
   dir?: WritingDirection;
+  focused?: boolean;
 }>;
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    { children, className, dir, id, task }: TaskElementProps,
+    { children, className, dir, id, task, focused }: TaskElementProps,
     ref,
   ) {
     const styles = useStyles();
     const partialTask = usePartialVertex(task, ['isChecked']);
     return (
       <div
-        className={cn(styles.taskElement, className)}
+        className={cn(
+          styles.taskElement,
+          className,
+          focused ? styles.focusedTask : styles.unfocusedTask,
+        )}
         ref={ref}
         dir={dir}
         key={id}
@@ -243,6 +259,11 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
       );
     });
   }
+
+  const focusNode = ctx.doc.ranges &&
+    ctx.doc.ranges[ctx.selectionId].focus.node;
+  const focusPath = focusNode && pathToNode(ctx.doc.root, focusNode);
+  const elementInFocusPath = focusPath?.includes(node) === true;
 
   switch (node.tagName) {
     case 'h1':
@@ -361,6 +382,7 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
           id={ctx.doc.nodeKeys.keyFor(node).id}
           task={graph.getVertexManager<Note>(node.ref)}
           dir={dir !== ctx.baseDirection ? dir : undefined}
+          focused={elementInFocusPath}
         >
           {children}
         </TaskElement>
