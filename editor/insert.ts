@@ -1,19 +1,19 @@
 import {
-  docToRT,
   docFromRT,
+  docToRT,
   findEndOfDocument,
 } from '../cfds/richtext/doc-state.ts';
 import {
-  IndexedPointerValue,
-  filteredPointersRep,
-  flattenRichText,
   DepthMarker,
+  filteredPointersRep,
+  FlatRepAtom,
+  flattenRichText,
+  IndexedPointerValue,
   isDepthMarker,
   kElementSpacer,
-  reconstructRichText,
-  projectPointers,
-  FlatRepAtom,
   PointerValue,
+  projectPointers,
+  reconstructRichText,
 } from '../cfds/richtext/flat-rep.ts';
 import { MergeContext } from '../cfds/richtext/merge-context.ts';
 import { STICKY_ELEMENT_TAGS } from '../cfds/richtext/model.ts';
@@ -33,7 +33,7 @@ import { expirationForSelection } from './editor.tsx';
 
 export function handleNewline(
   document: Document,
-  selectionId: string
+  selectionId: string,
 ): Document {
   const selection = document.ranges && document.ranges[selectionId];
   if (!selection) {
@@ -46,8 +46,8 @@ export function handleNewline(
       (ptr) => {
         return true;
       },
-      pointers
-    )
+      pointers,
+    ),
   );
   let start, end: number | undefined;
   for (const [idx, ptr] of pointers) {
@@ -91,15 +91,14 @@ export function handleNewline(
     }
   }
 
-  const taskNode =
-    prevElement &&
+  const taskNode = prevElement &&
     pathToNode(document.root, prevElement)?.find(
-      (node) => node.tagName === 'ref'
+      (node) => node.tagName === 'ref',
     );
 
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
-  const isEmptyElement =
-    isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
+  const isEmptyElement = isAtEndOfElement &&
+    isDepthMarker(mergeCtx.at(end! - 1));
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -113,13 +112,13 @@ export function handleNewline(
     const finalRt = projectPointers(
       docToRT(document),
       rtWithDeletions,
-      (ptr) => true
+      (ptr) => true,
     );
     return docFromRT(finalRt);
   }
   let didSetSelection = false;
-  const prevElementIsSticky =
-    prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
+  const prevElementIsSticky = prevElement &&
+    STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
   const focusPath = pathToNode(document.root, selection.focus.node);
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
@@ -152,12 +151,12 @@ export function handleNewline(
       },
       kElementSpacer,
       ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
-      prevElement
+        prevElement
         ? prevElement
         : {
-            children: [],
-            tagName: 'p',
-          },
+          children: [],
+          tagName: 'p',
+        },
       {
         depthMarker: startDepth + 1,
       },
@@ -200,7 +199,7 @@ export function handleNewline(
   const finalRt = projectPointers(
     docToRT(document),
     rtWithDeletions,
-    (ptr) => !didSetSelection || ptr.key !== selectionId
+    (ptr) => !didSetSelection || ptr.key !== selectionId,
   );
   return docFromRT(finalRt);
 }
@@ -208,7 +207,7 @@ export function handleNewline(
 export function handleInsertTextInputEvent(
   document: Document,
   event: InputEvent | KeyboardEvent,
-  selectionId: string
+  selectionId: string,
 ): Document {
   let insertData = '';
   if (event instanceof KeyboardEvent) {
@@ -252,8 +251,7 @@ export function handleInsertTextInputEvent(
   } else {
     const textNode = selection.focus.node;
     const text = textNode.text;
-    textNode.text =
-      text.substring(0, selection.focus.offset) +
+    textNode.text = text.substring(0, selection.focus.offset) +
       insertData +
       text.substring(selection.focus.offset);
     if (
@@ -266,10 +264,9 @@ export function handleInsertTextInputEvent(
     selection.anchor.offset += insertData.length;
     selection.focus.offset += insertData.length;
   }
-
   // Run any shortcuts
   result = docFromRT(
-    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true)))
+    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true))),
   );
   return result;
 }

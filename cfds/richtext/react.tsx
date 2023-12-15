@@ -1,4 +1,5 @@
 import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import * as ArrayUtils from '../../base/array.ts';
 import { Document } from './doc-state.ts';
 import {
   ElementNode,
@@ -8,7 +9,7 @@ import {
   TextNode,
   TreeNode,
 } from './tree.ts';
-import { isRefNode, MarkupNode, RefNode } from './model.ts';
+import { isRefNode, MarkupElement, MarkupNode, RefNode } from './model.ts';
 import { cn, makeStyles } from '../../styles/css-objects/index.ts';
 import {
   resolveWritingDirection,
@@ -49,8 +50,6 @@ const useStyles = makeStyles(() => ({
   },
   taskText: {
     color: theme.mono.m10,
-    fontSize: '13px',
-    lineHeight: '18px',
     transition:
       `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
     textDecoration: 'line-through',
@@ -61,6 +60,41 @@ const useStyles = makeStyles(() => ({
   },
   checkedTaskText: {
     textDecorationColor: theme.mono.m10,
+  },
+  p: {
+    fontWeight: '400',
+    fontSize: '13px',
+    lineHeight: '18px',
+  },
+  h1: {
+    fontWeight: '600',
+    fontSize: '34px',
+    lineHeight: '45px',
+  },
+  h2: {
+    fontWeight: '600',
+    fontSize: '30px',
+    lineHeight: '32px',
+  },
+  h3: {
+    fontWeight: '600',
+    fontSize: '18px',
+    lineHeight: '24px',
+  },
+  h4: {
+    fontWeight: '400',
+    fontSize: '18px',
+    lineHeight: '24px',
+  },
+  h5: {
+    fontWeight: '400',
+    fontSize: '16px',
+    lineHeight: '22px',
+  },
+  h6: {
+    fontWeight: '400',
+    fontSize: '14px',
+    lineHeight: '21px',
   },
 }));
 
@@ -118,20 +152,57 @@ function EditorSpan({ node, ctx }: EditorSpanProps) {
   const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
-  const path = pathToNode(ctx.doc.root, node);
+  const path = pathToNode<MarkupElement>(ctx.doc.root, node)!;
   const taskElement = path?.find((element) => isRefNode(element)) as
     | RefNode
     | undefined;
   const partialTask = usePartialVertex<Note>(taskElement?.ref, ['isChecked']);
-  return (
-    <span
-      className={cn(
-        node.text.length === 0 && styles.emptySpan,
+  const classNames: (string | undefined | boolean | null)[] = [
+    node.text.length === 0 && styles.emptySpan,
+  ];
+  switch (path[path.length - 1]!.tagName) {
+    case 'h1':
+      classNames.push(styles.h1);
+      break;
+
+    case 'h2':
+      classNames.push(styles.h2);
+      break;
+
+    case 'h3':
+      classNames.push(styles.h3);
+      break;
+
+    case 'h4':
+      classNames.push(styles.h4);
+      break;
+
+    case 'h5':
+      classNames.push(styles.h5);
+      break;
+
+    case 'h6':
+      classNames.push(styles.h6);
+      break;
+
+    case 'ref':
+      ArrayUtils.append(classNames, [
+        styles.p,
         styles.taskText,
         partialTask?.isChecked === true
           ? styles.checkedTaskText
           : styles.uncheckedTaskText,
-      )}
+      ]);
+      break;
+
+    case 'p':
+    default:
+      classNames.push(styles.p);
+      break;
+  }
+  return (
+    <span
+      className={cn(...classNames)}
       key={ctx.doc.nodeKeys.keyFor(node).id}
       id={htmlId}
       data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
@@ -195,6 +266,54 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
         >
           {children}
         </h2>
+      );
+
+    case 'h3':
+      return (
+        <h3
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          id={htmlId}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
+        >
+          {children}
+        </h3>
+      );
+
+    case 'h4':
+      return (
+        <h4
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          id={htmlId}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
+        >
+          {children}
+        </h4>
+      );
+
+    case 'h5':
+      return (
+        <h5
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          id={htmlId}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
+        >
+          {children}
+        </h5>
+      );
+
+    case 'h6':
+      return (
+        <h6
+          key={ctx.doc.nodeKeys.keyFor(node).id}
+          id={htmlId}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          dir={dir !== ctx.baseDirection ? dir : undefined}
+        >
+          {children}
+        </h6>
       );
 
     case 'ol':
