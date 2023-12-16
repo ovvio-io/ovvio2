@@ -50,6 +50,7 @@ import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { prettyJSON, uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
+import { useUndoContext } from './undo.ts';
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -321,6 +322,7 @@ export const RichTextEditor = forwardRef<
       baseDirection,
     };
   }, [partialNote, partialNote.body, selectionId, editorId, baseDirection]);
+  const undoContext = useUndoContext(note, 'body', true);
 
   useImperativeHandle(
     ref,
@@ -477,13 +479,18 @@ export const RichTextEditor = forwardRef<
       }
       if (
         event.key === 'z' &&
-        (event.ctrlKey || event.metaKey || event.shiftKey)
+        (event.ctrlKey || event.metaKey)
       ) {
         event.stopPropagation();
         event.preventDefault();
+        if (event.shiftKey) {
+          undoContext.redo();
+        } else {
+          undoContext.undo();
+        }
       }
     },
-    [note],
+    [note, undoContext],
   );
 
   const onPaste = useCallback(
