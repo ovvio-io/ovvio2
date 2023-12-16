@@ -1,35 +1,35 @@
 import { CoreObject } from '../../base/core-types/index.ts';
 import {
-  RichText,
-  Pointer,
-  ElementNode,
-  TextNode,
-  isPointer,
   dfs,
-  TreeNode,
-  isTextNode,
-  PointerDirection,
-  Point,
-  PointerType,
-  isElementNode,
-  pathToNode,
-  findLastTextNode,
+  ElementNode,
   findFirstTextNode,
+  findLastTextNode,
+  isElementNode,
+  isPointer,
+  isTextNode,
+  pathToNode,
+  Point,
+  Pointer,
+  PointerDirection,
+  PointerType,
+  RichText,
+  TextNode,
+  TreeNode,
 } from './tree.ts';
 import { assert, notReached } from '../../base/error.ts';
 import { TreeKeys } from './tree-keys.ts';
 import {
-  PointerValue,
   flattenRichText,
+  PointerValue,
   projectPointers,
   reconstructRichText,
 } from './flat-rep.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import {
-  WritingDirection,
   resolveWritingDirection,
+  WritingDirection,
 } from '../../base/string.ts';
-import { MarkupElement, MarkupNode } from './model.ts';
+import { isRefNode, MarkupElement, MarkupNode } from './model.ts';
 
 export interface Range extends CoreObject {
   anchor: Point;
@@ -87,7 +87,7 @@ export function docToRT(doc: RichText | UnkeyedDocument): RichText {
 
 export function docClone(doc: Document): Document {
   return docFromRT(
-    reconstructRichText(flattenRichText(docToRT(doc), true, false))
+    reconstructRichText(flattenRichText(docToRT(doc), true, false)),
   );
 }
 export function isDocument(doc: UnkeyedDocument): doc is Document {
@@ -253,16 +253,15 @@ export function decomposeRanges(doc: UnkeyedDocument): Set<Pointer> {
     // }
     const anchorNodeOffset = nodesToIndexes.get(range.anchor.node)!;
     const focusNodeOffset = nodesToIndexes.get(range.focus.node)!;
-    const dir =
-      anchorNodeOffset < focusNodeOffset
-        ? PointerDirection.Forward
-        : anchorNodeOffset > focusNodeOffset
-        ? PointerDirection.Backward
-        : range.anchor.offset < range.focus.offset
-        ? PointerDirection.Forward
-        : range.anchor.offset > range.focus.offset
-        ? PointerDirection.Backward
-        : PointerDirection.None;
+    const dir = anchorNodeOffset < focusNodeOffset
+      ? PointerDirection.Forward
+      : anchorNodeOffset > focusNodeOffset
+      ? PointerDirection.Backward
+      : range.anchor.offset < range.focus.offset
+      ? PointerDirection.Forward
+      : range.anchor.offset > range.focus.offset
+      ? PointerDirection.Backward
+      : PointerDirection.None;
     result.add(buildRangePointer(key, range, 'anchor', dir));
     result.add(buildRangePointer(key, range, 'focus', dir));
   }
@@ -273,7 +272,7 @@ function buildRangePointer(
   key: string,
   range: Range,
   type: PointerType,
-  dir: PointerDirection
+  dir: PointerDirection,
 ): Pointer {
   const result: Pointer = {
     key,
@@ -310,19 +309,19 @@ export interface RangeFilter {
 export function projectRanges(
   src: UnkeyedDocument,
   dst: UnkeyedDocument,
-  filter: (ptr: PointerValue) => boolean
+  filter: (ptr: PointerValue) => boolean,
 ): Document {
   if (src.ranges === undefined) {
     return unkeyedDocToDoc(dst);
   }
   return unkeyedDocToDoc(
-    docFromRT(projectPointers(docToRT(src), docToRT(dst), filter))
+    docFromRT(projectPointers(docToRT(src), docToRT(dst), filter)),
   );
 }
 
 function nodePathToIndexPath(
   root: ElementNode,
-  nodePath: readonly ElementNode[]
+  nodePath: readonly ElementNode[],
 ): number[] {
   const result: number[] = [];
   let parent: ElementNode = root;
@@ -337,7 +336,7 @@ function nodePathToIndexPath(
 
 export function pointToPath(
   document: UnkeyedDocument,
-  point: Point
+  point: Point,
 ): { path: number[]; offset: number } {
   for (const [node, _depth, path] of dfs(document.root)) {
     if (node === point.node) {
@@ -368,7 +367,7 @@ export function findEndOfDocument(document: Document): TextNode | ElementNode {
 export function writingDirectionAtTextNode(
   doc: Document,
   node: TextNode,
-  baseDirection: WritingDirection = 'auto'
+  baseDirection: WritingDirection = 'auto',
 ): WritingDirection {
   const focusPath = pathToNode<MarkupElement>(doc.root, node);
   if (!focusPath) {
@@ -387,10 +386,21 @@ export function writingDirectionAtTextNode(
 export function writingDirectionAtNode(
   doc: Document,
   node: MarkupNode,
-  baseDirection: WritingDirection = 'auto'
+  baseDirection: WritingDirection = 'auto',
 ): WritingDirection {
   if (!isTextNode(node)) {
     const path = pathToNode<MarkupElement>(doc.root, node)!;
+    if (!path.length && isRefNode(node)) {
+      const root = doc.root;
+      const idx = root.children.indexOf(node);
+      // debugger;
+      if (idx > 0) {
+        const maybePrevRef = root.children[idx - 1];
+        if (isRefNode(maybePrevRef)) {
+          return writingDirectionAtNode(doc, maybePrevRef, baseDirection);
+        }
+      }
+    }
     for (const parent of path) {
       const dir = writingDirectionAtNode(doc, parent, baseDirection);
       if (dir !== 'auto') {
