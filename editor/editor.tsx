@@ -555,7 +555,17 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   const styles = useStyles();
   const editorRef = useRef<RichTextEditorRef>(null);
   const navigate = useNavigate();
-  const trustPool = useTrustPool();
+
+  useEffect(() => {
+    const proxy = note.getVertexProxy();
+    const selectionId = note.graph.selectionId;
+    let body = proxy.body;
+    if (body.ranges && body.ranges[selectionId]) {
+      body = docClone(body);
+      delete body.ranges![selectionId];
+      proxy.body = body;
+    }
+  }, []);
 
   const onFocusOnEditor = useCallback(() => {
     const doc = docClone(note.getVertexProxy().body);
