@@ -1,28 +1,28 @@
 import React, {
+  forwardRef,
   useCallback,
+  useEffect,
+  useImperativeHandle,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-  useMemo,
 } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
-  PointerDirection,
-  TextNode,
   dfs,
   isElementNode,
   isTextNode,
   pathToNode,
+  PointerDirection,
+  TextNode,
   treeToPlaintext,
 } from '../cfds/richtext/tree.ts';
 import {
+  domIdFromNodeKey,
   RenderContext,
   RichTextRef,
   RichTextRenderer,
-  domIdFromNodeKey,
 } from '../cfds/richtext/react.tsx';
 import {
   docClone,
@@ -32,7 +32,7 @@ import {
 } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
 import { useTrustPool } from '../auth/react.tsx';
-import { makeStyles, cn } from '../styles/css-objects/index.ts';
+import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { resolveWritingDirection } from '../base/string.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
@@ -119,8 +119,8 @@ export function expirationForSelection(): Date {
 
 function handleTextInputEvent(
   document: Document,
-  event: InputEvent | KeyboardEvent,
-  selectionId: string
+  event: InputEvent | KeyboardEvent | ClipboardEvent,
+  selectionId: string,
 ): Document {
   if (event instanceof KeyboardEvent) {
     if (event.code === 'Space') {
@@ -129,6 +129,8 @@ function handleTextInputEvent(
     if (event.key === 'Backspace' || event.key === 'Delete') {
       return deleteCurrentSelection(document, selectionId);
     }
+  } else if (event instanceof ClipboardEvent) {
+    return handleInsertTextInputEvent(document, event, selectionId);
   } else {
     if (event.type === 'textInput') {
       return handleInsertTextInputEvent(document, event, selectionId);
@@ -145,7 +147,7 @@ function handleTextInputEvent(
 function handleTabPressed(
   doc: Document,
   event: KeyboardEvent,
-  selectionId: string
+  selectionId: string,
 ): Document | undefined {
   const selection = doc.ranges && doc.ranges[selectionId];
   if (!selection || selection.anchor.node !== selection.focus.node) {
@@ -184,7 +186,7 @@ function handleTabPressed(
 }
 function setBrowserSelectionToDocument(
   ctx: RenderContext,
-  editorDivNode: HTMLDivElement | undefined | null
+  editorDivNode: HTMLDivElement | undefined | null,
 ): void {
   const selection = getSelection();
   if (!editorDivNode || document.activeElement !== editorDivNode) {
@@ -210,8 +212,8 @@ function setBrowserSelectionToDocument(
     const range = document.createRange();
     let offsetShift = 0;
     let desiredStartOffset = cfdsRange.anchor.offset;
-    const origAnchorNode: HTMLElement | null | undefined =
-      document.getElementById(domIdFromNodeKey(ctx, cfdsRange.anchor.node));
+    const origAnchorNode: HTMLElement | null | undefined = document
+      .getElementById(domIdFromNodeKey(ctx, cfdsRange.anchor.node));
     if (!origAnchorNode) {
       return;
     }
@@ -219,7 +221,7 @@ function setBrowserSelectionToDocument(
     if (anchorNode instanceof Text && anchorNode.data.length === 0) {
       const newAnchor = anchorNode.parentNode as unknown as ChildNode;
       const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
-        anchorNode
+        anchorNode,
       );
       if (cfdsRange.dir === PointerDirection.Backward) {
         desiredStartOffset = origAnchorIdx + 1;
@@ -228,8 +230,9 @@ function setBrowserSelectionToDocument(
       }
       anchorNode = newAnchor as HTMLElement;
     }
-    const realAnchorNode =
-      anchorNode.childNodes.length > 0 ? anchorNode.childNodes[0] : anchorNode;
+    const realAnchorNode = anchorNode.childNodes.length > 0
+      ? anchorNode.childNodes[0]
+      : anchorNode;
     if (cfdsRange.dir === PointerDirection.Backward) {
       range.setEnd(realAnchorNode, desiredStartOffset);
       offsetShift = range.endOffset - desiredStartOffset;
@@ -239,7 +242,7 @@ function setBrowserSelectionToDocument(
     }
 
     let focusNode: ChildNode | null = document.getElementById(
-      domIdFromNodeKey(ctx, cfdsRange.focus.node)
+      domIdFromNodeKey(ctx, cfdsRange.focus.node),
     );
     if (!focusNode) {
       focusNode = origAnchorNode;
@@ -248,14 +251,15 @@ function setBrowserSelectionToDocument(
       focusNode = focusNode.parentNode as unknown as ChildNode;
     }
     if (focusNode) {
-      const realFocusNode =
-        focusNode.childNodes.length > 0 ? focusNode.childNodes[0] : focusNode;
+      const realFocusNode = focusNode.childNodes.length > 0
+        ? focusNode.childNodes[0]
+        : focusNode;
       if (cfdsRange.dir === PointerDirection.Backward) {
         const offset = state.ranges![selectionId].focus.offset + offsetShift;
         if (focusNode instanceof Text && offset === focusNode.data.length) {
           const parent = focusNode.parentNode!;
           const indexInParent = Array.from(parent.childNodes).indexOf(
-            focusNode
+            focusNode,
           );
           focusNode = parent as unknown as ChildNode;
           if (cfdsRange.dir === PointerDirection.Backward) {
@@ -327,12 +331,12 @@ export const RichTextEditor = forwardRef<
         },
       };
     },
-    [editorDivRef.current]
+    [editorDivRef.current],
   );
 
   useLayoutEffect(
     () => setBrowserSelectionToDocument(ctx, editorDivRef.current),
-    [partialNote, selectionId, editorDivRef.current, ctx]
+    [partialNote, selectionId, editorDivRef.current, ctx],
   );
 
   const onSelectionChanged = useCallback(
@@ -361,7 +365,7 @@ export const RichTextEditor = forwardRef<
             (selectionAnchorNode instanceof Text
               ? selectionAnchorNode.parentNode!
               : selectionAnchorNode) as HTMLElement
-          ).dataset.ovvKey!
+          ).dataset.ovvKey!,
         );
         if (!anchorNode) {
           setBrowserSelectionToDocument(ctx, editorDivRef.current);
@@ -373,7 +377,7 @@ export const RichTextEditor = forwardRef<
             (selectionFocusNode instanceof Text
               ? selectionFocusNode.parentNode!
               : selectionFocusNode) as HTMLElement
-          ).dataset.ovvKey!
+          ).dataset.ovvKey!,
         );
         if (anchorNode || focusNode) {
           if (!state.ranges) {
@@ -433,7 +437,7 @@ export const RichTextEditor = forwardRef<
         debugger;
       }
     },
-    [note, ctx]
+    [note, ctx],
   );
 
   const onBeforeInput = useCallback(
@@ -444,11 +448,11 @@ export const RichTextEditor = forwardRef<
       const updatedBody = handleTextInputEvent(
         state,
         event.nativeEvent as InputEvent,
-        selectionId
+        selectionId,
       );
       note.getVertexProxy().body = updatedBody;
     },
-    [note]
+    [note],
   );
 
   const onKeyDown = useCallback(
@@ -460,7 +464,7 @@ export const RichTextEditor = forwardRef<
         note.getVertexProxy().body = handleTextInputEvent(
           state,
           event.nativeEvent,
-          selectionId
+          selectionId,
         );
       }
       if (event.key === 'Tab') {
@@ -479,15 +483,21 @@ export const RichTextEditor = forwardRef<
         event.preventDefault();
       }
     },
-    [note]
+    [note],
   );
 
   const onPaste = useCallback(
     (event: React.ClipboardEvent<HTMLDivElement>) => {
       event.stopPropagation();
       event.preventDefault();
+      const state = note.getVertexProxy().body;
+      note.getVertexProxy().body = handleTextInputEvent(
+        state,
+        event.nativeEvent,
+        selectionId,
+      );
     },
-    [note]
+    [note],
   );
 
   useEffect(() => {
@@ -573,13 +583,13 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, [editorRef.current?.contenteditable]);
 
   return (
-    <div className={cn(styles.mainContainer)} key="EditorContainer">
+    <div className={cn(styles.mainContainer)} key='EditorContainer'>
       <EditorHeader
-        key="EditorHeader"
+        key='EditorHeader'
         note={note}
         onFocusOnEditor={onFocusOnEditor}
       />
-      <RichTextEditor key="EditorBody" ref={editorRef} note={note} />
+      <RichTextEditor key='EditorBody' ref={editorRef} note={note} />
     </div>
   );
 }
@@ -594,7 +604,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
     : undefined;
   const graph = useGraphManager();
   const [repoLoaded, setRepoLoaded] = useState(
-    repoId ? graph.repositoryFinishedLoading(repoId) : false
+    repoId ? graph.repositoryFinishedLoading(repoId) : false,
   );
   const navigate = useNavigate();
 

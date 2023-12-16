@@ -206,11 +206,13 @@ export function handleNewline(
 
 export function handleInsertTextInputEvent(
   document: Document,
-  event: InputEvent | KeyboardEvent,
+  event: InputEvent | KeyboardEvent | ClipboardEvent,
   selectionId: string,
 ): Document {
   let insertData = '';
-  if (event instanceof KeyboardEvent) {
+  if (event instanceof ClipboardEvent) {
+    insertData = event.clipboardData?.getData('text/plain') || '';
+  } else if (event instanceof KeyboardEvent) {
     insertData = event.key;
   } else {
     insertData = event.data || '';
