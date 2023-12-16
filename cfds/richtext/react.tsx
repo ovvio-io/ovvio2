@@ -42,6 +42,7 @@ const useStyles = makeStyles(() => ({
     borderTop: '1px solid',
     borderColor: theme.primary.p2,
     display: 'flex',
+    alignItems: 'flex-start',
     transition:
       `background-color ${styleguide.transition.duration.short}ms ease-out`,
   },
@@ -60,17 +61,25 @@ const useStyles = makeStyles(() => ({
     marginInlineEnd: styleguide.gridbase * 2,
   },
   taskText: {
+    overflowWrap: 'break-word',
     color: theme.mono.m10,
     transition:
       `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
-    textDecoration: 'line-through',
     textDecorationColor: 'transparent',
+    position: 'relative',
+    top: '-3px',
   },
   uncheckedTaskText: {
     textDecorationColor: 'transparent',
   },
   checkedTaskText: {
+    textDecoration: 'line-through',
     textDecorationColor: theme.mono.m10,
+  },
+  focusedTaskText: {
+    borderBottom: 'solid',
+    borderBottomSize: '1px',
+    borderBottomColor: theme.primary.p8,
   },
   p: {
     fontWeight: '400',
@@ -163,9 +172,10 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
 interface EditorSpanProps {
   node: TextNode;
   ctx: RenderContext;
+  focused?: boolean;
 }
 
-function EditorSpan({ node, ctx }: EditorSpanProps) {
+function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
@@ -215,6 +225,7 @@ function EditorSpan({ node, ctx }: EditorSpanProps) {
       partialTask?.isChecked === true
         ? styles.checkedTaskText
         : styles.uncheckedTaskText,
+      focused && styles.focusedTaskText,
     ]);
   }
   return (
@@ -244,8 +255,12 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
   const htmlId = domIdFromNodeKey(ctx, node);
 
   if (isTextNode(node)) {
-    return <EditorSpan node={node} ctx={ctx} />;
+    const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
+    const focused = selection &&
+      (selection.anchor.node === node || selection.focus.node === node);
+    return <EditorSpan node={node} ctx={ctx} focused={focused} />;
   }
+
   let children: JSX.Element[] | undefined;
   const dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
   if (isElementNode(node)) {
