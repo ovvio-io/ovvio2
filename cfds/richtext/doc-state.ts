@@ -390,10 +390,11 @@ export function writingDirectionAtNode(
 ): WritingDirection {
   if (!isTextNode(node)) {
     const path = pathToNode<MarkupElement>(doc.root, node)!;
+    // For tasks, look at the previous task and copy its direction, meaning
+    // first tasks dictates the direction.
     if (!path.length && isRefNode(node)) {
       const root = doc.root;
       const idx = root.children.indexOf(node);
-      // debugger;
       if (idx > 0) {
         const maybePrevRef = root.children[idx - 1];
         if (isRefNode(maybePrevRef)) {
