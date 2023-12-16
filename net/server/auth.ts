@@ -1,11 +1,11 @@
 import {
-  EncodedSession,
-  OwnedSession,
-  SESSION_CRYPTO_KEY_GEN_PARAMS,
-  Session,
   decodeSignature,
-  encodeSession,
+  EncodedSession,
   encodedSessionFromRecord,
+  encodeSession,
+  OwnedSession,
+  Session,
+  SESSION_CRYPTO_KEY_GEN_PARAMS,
   sessionFromRecord,
   sessionIdFromSignature,
   sessionToRecord,
@@ -24,10 +24,10 @@ import { getBaseURL, getRequestPath } from './utils.ts';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
-import { ServerError, Code, accessDenied } from '../../cfds/base/errors.ts';
+import { accessDenied, Code, ServerError } from '../../cfds/base/errors.ts';
 import { copyToClipboard } from '../../base/development.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
-import { MemRepoStorage, RepoStorage, Repository } from '../../repo/repo.ts';
+import { MemRepoStorage, Repository, RepoStorage } from '../../repo/repo.ts';
 import { SysDirIndexes } from './sync.ts';
 
 export const kAuthEndpointPaths = [
@@ -54,7 +54,7 @@ export class AuthEndpoint implements Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     const path = getRequestPath<AuthEndpointPath>(req);
     if (!kAuthEndpointPaths.includes(path)) {
@@ -77,7 +77,7 @@ export class AuthEndpoint implements Endpoint {
   async processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     const path = getRequestPath<AuthEndpointPath>(req);
     const method = req.method as HTTPMethod;
@@ -102,7 +102,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async createNewSession(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     let publicKey: CryptoKey | undefined;
     try {
@@ -116,7 +116,7 @@ export class AuthEndpoint implements Endpoint {
         jwk,
         SESSION_CRYPTO_KEY_GEN_PARAMS,
         true,
-        ['verify']
+        ['verify'],
       );
     } catch (e: any) {
       return responseForError('InvalidPublicKey');
@@ -136,7 +136,7 @@ export class AuthEndpoint implements Endpoint {
       JSON.stringify({
         session: encodedSession,
         roots: fetchEncodedRootSessions(services.sync.getSysDir()),
-      })
+      }),
     );
     resp.headers.set('Content-Type', 'application/json');
     return resp;
@@ -144,7 +144,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async sendTemporaryLoginEmail(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     const smtp = services.email;
     const body = await req.json();
@@ -211,7 +211,8 @@ export class AuthEndpoint implements Endpoint {
         //   username: userRecord.get('name') || 'Anonymous',
         //   orgname: services.organizationId,
         // }),
-        html: `<html><body><div>Click on this link to login to Ovvio: <a href="${clickURL}">here</a></body></html>`,
+        html:
+          `<html><body><div>Click on this link to login to Ovvio: <a href="${clickURL}">here</a></body></html>`,
       });
     }
     return new Response('OK', { status: 200 });
@@ -219,7 +220,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async loginWithToken(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     const encodedToken = new URL(req.url).searchParams.get('t');
     if (!encodedToken) {
@@ -273,7 +274,7 @@ export class AuthEndpoint implements Endpoint {
 
 export async function persistSession(
   services: ServerServices,
-  session: Session | OwnedSession
+  session: Session | OwnedSession,
 ): Promise<void> {
   const repo = services.sync.getRepository('sys', 'dir');
   const record = await sessionToRecord(session);
@@ -281,7 +282,7 @@ export async function persistSession(
 }
 
 export function fetchEncodedRootSessions(
-  sysDir: Repository<MemRepoStorage, SysDirIndexes>
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): EncodedSession[] {
   const result: EncodedSession[] = [];
   const rootSessions = sysDir.indexes!.rootSessions;
@@ -297,7 +298,7 @@ export function fetchEncodedRootSessions(
 
 function fetchUserByEmail(
   services: ServerServices,
-  email: string
+  email: string,
 ): [key: string | undefined, record: Record | undefined] {
   email = normalizeEmail(email);
   const repo = services.sync.getSysDir();
@@ -319,7 +320,7 @@ function fetchUserByEmail(
 
 export function fetchSessionById(
   services: ServerServices,
-  sessionId: string
+  sessionId: string,
 ): Record | undefined {
   const record = services.sync.getSysDir().valueForKey(sessionId);
   assert(record.isNull || record.scheme.namespace === SchemeNamespace.SESSIONS);
@@ -328,7 +329,7 @@ export function fetchSessionById(
 
 export function fetchUserById(
   services: ServerServices,
-  userId: string
+  userId: string,
 ): Record | undefined {
   const record = services.sync.getSysDir().valueForKey(userId);
   assert(record.isNull || record.scheme.namespace === SchemeNamespace.USERS);
@@ -350,20 +351,19 @@ export type Role = 'operator' | 'anonymous';
 export async function requireSignedUser(
   services: ServerServices,
   requestOrSignature: Request | string,
-  role?: Role
+  role?: Role,
 ): Promise<
   [userId: string, userRecord: Record | undefined, userSession: Session]
 > {
-  const signature =
-    typeof requestOrSignature === 'string'
-      ? requestOrSignature
-      : requestOrSignature.headers.get('x-ovvio-sig');
+  const signature = typeof requestOrSignature === 'string'
+    ? requestOrSignature
+    : requestOrSignature.headers.get('x-ovvio-sig');
   if (!signature) {
     throw accessDenied();
   }
   const signerSessionRecord = fetchSessionById(
     services,
-    sessionIdFromSignature(signature)
+    sessionIdFromSignature(signature),
   );
   if (signerSessionRecord === undefined) {
     throw accessDenied();
