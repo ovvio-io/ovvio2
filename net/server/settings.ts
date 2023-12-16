@@ -1,10 +1,10 @@
 import * as path from 'std/path/mod.ts';
 import {
-  EncodedSession,
-  OwnedSession,
   decodeSession,
+  EncodedSession,
   encodeSession,
   generateSession,
+  OwnedSession,
 } from '../../auth/session.ts';
 import { ServerServices } from './server.ts';
 import { BaseService } from './service.ts';
@@ -16,6 +16,7 @@ import {
 } from '../../base/core-types/encoding/json.ts';
 import { JSONObject } from '../../base/interfaces.ts';
 import { SimpleTimer } from '../../base/timer.ts';
+import { kDayMs } from '../../base/date.ts';
 
 export interface SMTPSettings extends JSONObject {
   hostname: string;
@@ -42,7 +43,7 @@ export class SettingsService extends BaseService<ServerServices> {
       100,
       false,
       () => this.reloadSettingsFromDisk(),
-      'SettingsReload'
+      'SettingsReload',
     );
   }
 
@@ -84,6 +85,9 @@ export class SettingsService extends BaseService<ServerServices> {
     if (!session) {
       session = await generateSession('root');
       updatedSettings = true;
+    } else {
+      session.expiration = new Date(Date.now() + 30 * kDayMs);
+      updatedSettings = true;
     }
     this._settings = {
       session,
@@ -112,8 +116,16 @@ export class SettingsService extends BaseService<ServerServices> {
   }
 
   get session(): OwnedSession {
-    assert(this._settings !== undefined);
-    return this._settings.session;
+    const settings = this._settings;
+    assert(settings !== undefined);
+    const session = settings.session;
+    if (Math.abs(Date.now() - session.expiration.getTime()) < 3 * kDayMs) {
+      console.log(
+        `Current session is about to expire. Exiting to force an update.`,
+      );
+      Deno.exit(1);
+    }
+    return session;
   }
 
   get smtp(): SMTPSettings | undefined {
@@ -137,7 +149,7 @@ export class SettingsService extends BaseService<ServerServices> {
     };
     await Deno.writeTextFile(
       this.jsonFilePath,
-      prettyJSON(JSONEncoder.toJS(encodedSettings))
+      prettyJSON(JSONEncoder.toJS(encodedSettings)),
     );
   }
 }
