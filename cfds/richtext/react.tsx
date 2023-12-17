@@ -389,7 +389,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   }
 
   let children: JSX.Element[] | undefined;
-  const dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
+  let dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
   if (isElementNode(node)) {
     children = node.children.map((n) => {
       return (
@@ -409,6 +409,10 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const elementInFocusPath = focusPath?.includes(node) === true;
   const isChildOfRoot = ctx.doc.root.children.includes(node);
 
+  if (!dir) {
+    dir = ctx.baseDirection || 'auto';
+  }
+
   switch (node.tagName) {
     case 'h1':
       return (
@@ -416,7 +420,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h1>
@@ -428,7 +432,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h2>
@@ -440,7 +444,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h3>
@@ -452,7 +456,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h4>
@@ -464,7 +468,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h5>
@@ -476,7 +480,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </h6>
@@ -489,7 +493,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           start={node.start}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </ol>
@@ -501,7 +505,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
         >
           {children}
         </ul>
@@ -513,7 +517,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           key={ctx.doc.nodeKeys.keyFor(node).id}
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
           style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
         >
           {children}
@@ -525,7 +529,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
         <TaskElement
           id={ctx.doc.nodeKeys.keyFor(node).id}
           task={graph.getVertexManager<Note>(node.ref)}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
           focused={elementInFocusPath}
         >
           {children}
@@ -538,7 +542,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
         <ParagraphElementNode
           id={ctx.doc.nodeKeys.keyFor(node).id}
           htmlId={htmlId}
-          dir={dir !== ctx.baseDirection ? dir : undefined}
+          dir={dir}
           onNewTask={() => {
             const newDoc = docClone(ctx.doc);
             const newNode = newDoc.nodeKeys.nodeFromKey(
