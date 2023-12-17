@@ -42,10 +42,9 @@ import { handleInsertTextInputEvent } from './insert.ts';
 import { deleteCurrentSelection } from './delete.ts';
 import { notReached } from '../base/error.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
-import { findFirstTextNode } from '../cfds/richtext/utils.ts';
-import { kMinuteMs, kSecondMs } from '../base/date.ts';
+import { kSecondMs } from '../base/date.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
-import { prettyJSON, uniqueId } from '../base/common.ts';
+import { uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
 
@@ -528,6 +527,14 @@ export const RichTextEditor = forwardRef<
       document.removeEventListener('selectionchange', onSelectionChanged);
   }, [onSelectionChanged]);
 
+  const onBlur = useCallback(() => {
+    const body = docClone(partialNote.body);
+    if (body.ranges) {
+      delete body.ranges[selectionId];
+      partialNote.body = body;
+    }
+  }, [partialNote, selectionId]);
+
   return (
     <div
       id={editorId}
@@ -539,6 +546,7 @@ export const RichTextEditor = forwardRef<
       onBeforeInput={onBeforeInput}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
+      onBlur={onBlur}
     >
       <RichTextRenderer ctx={ctx} onChange={(doc) => partialNote.body = doc} />
     </div>
