@@ -1,6 +1,6 @@
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as ArrayUtils from '../../base/array.ts';
-import { Document } from './doc-state.ts';
+import { docClone, Document } from './doc-state.ts';
 import {
   ElementNode,
   isElementNode,
@@ -17,13 +17,14 @@ import {
 } from '../../base/string.ts';
 import { brandLightTheme as theme } from '../../styles/theme.tsx';
 import { styleguide } from '../../styles/styleguide.ts';
-import { CoreValue } from '../../base/core-types/base.ts';
+import { CoreObject, CoreValue } from '../../base/core-types/base.ts';
 import { writingDirectionAtNode } from './doc-state.ts';
 import { CheckBox } from '../../components/task.tsx';
 import { usePartialVertex } from '../../web-app/src/core/cfds/react/vertex.ts';
 import { VertexManager } from '../client/graph/vertex-manager.ts';
 import { Note } from '../client/graph/vertices/note.ts';
 import { useGraphManager } from '../../web-app/src/core/cfds/react/graph.tsx';
+import { uniqueId } from '../../base/common.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -45,6 +46,11 @@ const useStyles = makeStyles(() => ({
     alignItems: 'flex-start',
     transition:
       `background-color ${styleguide.transition.duration.short}ms ease-out`,
+  },
+  taskTextElement: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: `calc(100% - 34px - ${styleguide.gridbase * 3}px)`,
   },
   focusedTask: {
     backgroundColor: theme.primary.p1,
@@ -77,9 +83,17 @@ const useStyles = makeStyles(() => ({
     textDecorationColor: theme.mono.m10,
   },
   focusedTaskText: {
-    borderBottom: 'solid',
-    borderBottomSize: '1px',
-    borderBottomColor: theme.primary.p8,
+    // borderBottom: 'solid',
+    // borderBottomSize: '1px',
+    // borderBottomColor: theme.primary.p8,
+  },
+  focusedTaskUnderline: {
+    backgroundColor: theme.primary.p8,
+    width: '100%',
+    height: '1px',
+    position: 'relative',
+    bottom: styleguide.gridbase * 2,
+    transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
   },
   p: {
     fontWeight: '400',
@@ -116,18 +130,42 @@ const useStyles = makeStyles(() => ({
     fontSize: '14px',
     lineHeight: '21px',
   },
+  newTaskHint: {
+    backgroundColor: theme.mono.m0,
+    borderRadius: 2,
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
+    position: 'relative',
+    left: -styleguide.gridbase * 5,
+    top: styleguide.gridbase * 3,
+    transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
+    width: styleguide.gridbase * 3,
+    height: styleguide.gridbase * 3,
+    display: 'flex',
+    alignItmes: 'center',
+    alignContent: 'center',
+  },
+  paragraphElement: {
+    overflow: 'visible',
+    display: 'flex',
+    alignItems: 'flex-start',
+  },
 }));
-
-export interface RichTextRef {
-  anchorNode: HTMLElement | null;
-  focusNode: HTMLElement | null;
-}
 
 export interface RenderContext {
   doc: Document;
   selectionId: string;
   editorId: string;
   baseDirection?: WritingDirection;
+  onNewTask?: () => void;
+}
+
+interface TaskElementButtonsProps {
+  task: VertexManager<Note>;
+}
+
+function TaskElementButtons({ task }: TaskElementButtonsProps) {
+  const styles = useStyles();
+  return <div></div>;
 }
 
 type TaskElementProps = React.PropsWithChildren<{
@@ -163,7 +201,14 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
           value={partialTask.isChecked}
           onChange={(value) => partialTask.isChecked = value}
         />
-        {children}
+        <div className={cn(styles.taskTextElement)}>
+          {children}
+          <div
+            className={cn(styles.focusedTaskUnderline)}
+            style={{ opacity: focused ? 1 : 0 }}
+          >
+          </div>
+        </div>
       </div>
     );
   },
@@ -240,16 +285,54 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   );
 }
 
+type ParagraphElementNode = React.PropsWithChildren<{
+  id: string;
+  htmlId: string;
+  dir?: WritingDirection;
+  onNewTask?: () => void;
+  showNewTaskHint?: boolean;
+}>;
+
+function ParagraphElementNode(
+  { id, htmlId, dir, onNewTask, showNewTaskHint, children }:
+    ParagraphElementNode,
+) {
+  const styles = useStyles();
+  const [hover, setHover] = useState(false);
+  return (
+    <p
+      key={id}
+      id={htmlId}
+      data-ovv-key={id}
+      dir={dir}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {showNewTaskHint && (
+        <div
+          className={cn(styles.newTaskHint)}
+          onClick={onNewTask}
+          style={{ opacity: hover ? 1 : 0 }}
+        >
+          <img src='/icons/design-system/checkbox/selected.svg' />
+        </div>
+      )}
+      {children}
+    </p>
+  );
+}
+
 type EditorNodeProps = React.PropsWithChildren<{
   node: MarkupNode;
   ctx: RenderContext;
+  onChange: (doc: Document) => void;
 }>;
 
 export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
   return `${ctx.editorId}/${ctx.doc.nodeKeys.keyFor(node).id}`;
 }
 
-export function EditorNode({ node, ctx }: EditorNodeProps) {
+export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
@@ -257,7 +340,7 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
   if (isTextNode(node)) {
     const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
     const focused = selection &&
-      (selection.anchor.node === node || selection.focus.node === node);
+      (selection.anchor?.node === node || selection.focus?.node === node);
     return <EditorSpan node={node} ctx={ctx} focused={focused} />;
   }
 
@@ -270,15 +353,17 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
           node={n as MarkupNode}
           ctx={ctx}
           key={ctx.doc.nodeKeys.keyFor(node).id}
+          onChange={onChange}
         />
       );
     });
   }
 
-  const focusNode = ctx.doc.ranges &&
+  const focusNode = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId] &&
     ctx.doc.ranges[ctx.selectionId].focus.node;
   const focusPath = focusNode && pathToNode(ctx.doc.root, focusNode);
   const elementInFocusPath = focusPath?.includes(node) === true;
+  const isChildOfRoot = ctx.doc.root.children.includes(node);
 
   switch (node.tagName) {
     case 'h1':
@@ -406,32 +491,41 @@ export function EditorNode({ node, ctx }: EditorNodeProps) {
     case 'p':
     default:
       return (
-        <p
-          key={ctx.doc.nodeKeys.keyFor(node).id}
-          id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+        <ParagraphElementNode
+          id={ctx.doc.nodeKeys.keyFor(node).id}
+          htmlId={htmlId}
           dir={dir !== ctx.baseDirection ? dir : undefined}
+          onNewTask={() => {
+            const newDoc = docClone(ctx.doc);
+            const newNode = newDoc.nodeKeys.nodeFromKey(
+              ctx.doc.nodeKeys.keyFor(node).id,
+            )! as MarkupElement;
+            (newNode as CoreObject).tagName = 'ref';
+            (newNode as CoreObject).ref = uniqueId();
+            (newNode as CoreObject).type = 'inter-doc';
+            onChange(newDoc);
+          }}
+          showNewTaskHint={isChildOfRoot}
         >
           {children}
-        </p>
+        </ParagraphElementNode>
       );
   }
 }
 
 export interface RichTextRendererProps {
   ctx: RenderContext;
+  onChange: (doc: Document) => void;
 }
 
-export function RichTextRenderer({ ctx }: RichTextRendererProps) {
-  // const styles = useStyles();
-  // const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
-
+export function RichTextRenderer({ ctx, onChange }: RichTextRendererProps) {
   return ctx.doc.root.children.map((node) => {
     return (
       <EditorNode
         node={node as MarkupNode}
         ctx={ctx}
         key={ctx.doc.nodeKeys.keyFor(node).id}
+        onChange={onChange}
       />
     );
   });

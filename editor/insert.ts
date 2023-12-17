@@ -43,7 +43,7 @@ export function handleNewline(
   const mergeCtx = new MergeContext(
     filteredPointersRep(
       flattenRichText(docToRT(document), true),
-      (ptr) => {
+      (_ptr) => {
         return true;
       },
       pointers,
@@ -112,7 +112,7 @@ export function handleNewline(
     const finalRt = projectPointers(
       docToRT(document),
       rtWithDeletions,
-      (ptr) => true,
+      (_ptr) => true,
     );
     return docFromRT(finalRt);
   }

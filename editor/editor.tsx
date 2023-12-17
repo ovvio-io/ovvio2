@@ -16,12 +16,10 @@ import {
   pathToNode,
   PointerDirection,
   TextNode,
-  treeToPlaintext,
 } from '../cfds/richtext/tree.ts';
 import {
   domIdFromNodeKey,
   RenderContext,
-  RichTextRef,
   RichTextRenderer,
 } from '../cfds/richtext/react.tsx';
 import {
@@ -31,7 +29,6 @@ import {
   findEndOfDocument,
 } from '../cfds/richtext/doc-state.ts';
 import { Document } from '../cfds/richtext/doc-state.ts';
-import { useTrustPool } from '../auth/react.tsx';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { resolveWritingDirection } from '../base/string.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
@@ -543,7 +540,7 @@ export const RichTextEditor = forwardRef<
       onKeyDown={onKeyDown}
       onPaste={onPaste}
     >
-      <RichTextRenderer ctx={ctx} />
+      <RichTextRenderer ctx={ctx} onChange={(doc) => partialNote.body = doc} />
     </div>
   );
 });
