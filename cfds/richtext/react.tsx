@@ -1,11 +1,20 @@
-import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import * as ArrayUtils from '../../base/array.ts';
 import { docClone, Document } from './doc-state.ts';
 import {
   ElementNode,
+  findLastTextNode,
+  findNode,
   isElementNode,
   isTextNode,
   pathToNode,
+  PointerDirection,
   TextNode,
   TreeNode,
 } from './tree.ts';
@@ -135,7 +144,7 @@ const useStyles = makeStyles(() => ({
     borderRadius: 2,
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
     position: 'relative',
-    left: -styleguide.gridbase * 5,
+    // left: -styleguide.gridbase * 5,
     top: styleguide.gridbase * 3,
     transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
     width: styleguide.gridbase * 3,
@@ -171,18 +180,48 @@ function TaskElementButtons({ task }: TaskElementButtonsProps) {
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
   task: VertexManager<Note>;
+  ctx: RenderContext;
   className?: string;
   dir?: WritingDirection;
   focused?: boolean;
+  onChange: (doc: Document) => void;
 }>;
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    { children, className, dir, id, task, focused }: TaskElementProps,
+    { children, className, dir, id, task, ctx, focused, onChange }:
+      TaskElementProps,
     ref,
   ) {
     const styles = useStyles();
     const partialTask = usePartialVertex(task, ['isChecked']);
+    const onClick = useCallback(() => {
+      const doc = docClone(ctx.doc);
+      const refNode = findNode(
+        doc.root,
+        (n) => isRefNode(n) && n.ref === task.key,
+      );
+      if (refNode) {
+        const textNode = findLastTextNode(refNode[0] as ElementNode);
+        if (textNode) {
+          if (!doc.ranges) {
+            doc.ranges = {};
+          }
+          doc.ranges[ctx.selectionId] = {
+            anchor: {
+              node: textNode,
+              offset: textNode.text.length,
+            },
+            focus: {
+              node: textNode,
+              offset: textNode.text.length,
+            },
+            dir: PointerDirection.None,
+          };
+          onChange(doc);
+        }
+      }
+    }, [ctx, task]);
     return (
       <div
         className={cn(
@@ -195,6 +234,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         key={id}
         id={id}
         data-ovv-key={id}
+        onClick={onClick}
       >
         <CheckBox
           className={cn(styles.taskCheckbox)}
@@ -312,7 +352,11 @@ function ParagraphElementNode(
         <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
-          style={{ opacity: hover ? 1 : 0 }}
+          style={{
+            opacity: hover ? 1 : 0,
+            left: dir === 'rtl' ? '0px' : `${-styleguide.gridbase * 5}px`,
+            right: dir === 'rtl' ? `${-styleguide.gridbase * 5}px` : '0px',
+          }}
         >
           <img src='/icons/design-system/checkbox/selected.svg' />
         </div>

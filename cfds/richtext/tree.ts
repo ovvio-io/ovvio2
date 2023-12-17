@@ -455,3 +455,15 @@ export function findFirstTextNode(
   }
   return undefined;
 }
+
+export function findNode<T extends TreeNode>(
+  root: ElementNode,
+  predicate: (node: T) => boolean,
+): [T, number, T[]] | undefined {
+  for (const [node, depth, path] of dfs(root)) {
+    if (predicate(node as T)) {
+      return [node as T, depth, path as T[]];
+    }
+  }
+  return undefined;
+}
