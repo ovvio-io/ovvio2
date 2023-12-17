@@ -671,7 +671,7 @@ const TypeCell = ({
         ? <IconNewTask />
         : isActionable
         ? <ItemCheckbox note={note} />
-        : <IconNote />}
+        : <img src='/icons/list/note.svg' />}
     </Cell>
   );
 };
