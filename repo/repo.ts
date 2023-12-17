@@ -7,7 +7,7 @@ import {
 } from '../auth/session.ts';
 import * as ArrayUtils from '../base/array.ts';
 import { Dictionary } from '../base/collections/dict.ts';
-import { filterIterable, mapIterable } from '../base/common.ts';
+import { filterIterable } from '../base/common.ts';
 import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
 import { assert } from '../base/error.ts';
 import * as SetUtils from '../base/set.ts';
@@ -167,9 +167,9 @@ export class Repository<
     const { authorizer } = this;
     const commits = this.storage.commitsForKey(key);
     for (const c of commits) {
-      if (!this._commitsCache.has(c.id)) {
-        this._runUpdatesOnNewCommit(c);
-      }
+      // if (!this._commitsCache.has(c.id)) {
+      //   this._runUpdatesOnNewCommit(c);
+      // }
       if (
         !session ||
         session.id === this.trustPool.currentSession.id ||
@@ -374,7 +374,6 @@ export class Repository<
         assert(result.checksum === contents.edit.srcChecksum);
         result.patch(contents.edit.changes);
         assert(result.checksum === contents.edit.dstChecksum);
-        result = result;
       }
       result.checksum;
       this._cachedRecordForCommit.set(c.id, result);
@@ -388,24 +387,22 @@ export class Repository<
   ): Commit | undefined {
     // Look for a commit with a full value, so we don't crash on a later read
     while (head) {
-      try {
-        this.recordForCommit(head);
+      if (
+        commitContentsIsRecord(head.contents) ||
+        this.hasCommit(head.contents.base)
+      ) {
         break;
-      } catch (e) {
-        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
-          throw e; // Unknown error. Rethrow.
+      }
+      let found = false;
+      for (const p of head.parents) {
+        if (this.hasCommit(p)) {
+          head = this.getCommit(p);
+          found = true;
+          break;
         }
-        let found = false;
-        for (const p of head.parents) {
-          if (this.hasCommit(p)) {
-            head = this.getCommit(p);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          head = undefined;
-        }
+      }
+      if (!found) {
+        head = undefined;
       }
     }
     if (head) {
@@ -697,6 +694,9 @@ export class Repository<
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
     const authorizer = this.authorizer;
+    commits = Array.from(commits).sort((c1, c2) =>
+      c1.timestamp.getTime() - c2.timestamp.getTime()
+    );
     for (const c of commits) {
       if (await this.trustPool.verify(c)) {
         if (authorizer) {
@@ -749,16 +749,16 @@ export class Repository<
     return result || SchemeNamespace.Null;
   }
 
-  private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
+  persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
     const result: Commit[] = [];
     for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
     for (const c of result) {
-      this._runUpdatesOnNewCommit(c);
+      this._cachedHeadsByKey.delete(c.key);
     }
     for (const c of result) {
-      this._cachedHeadsByKey.delete(c.key);
+      this._runUpdatesOnNewCommit(c);
     }
     return result;
   }

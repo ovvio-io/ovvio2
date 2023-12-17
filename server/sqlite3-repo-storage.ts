@@ -1,5 +1,5 @@
 import { Database, Statement } from 'sqlite3';
-import { resolve as resolvePath, dirname } from 'std/path/mod.ts';
+import { dirname, resolve as resolvePath } from 'std/path/mod.ts';
 import { Repository, RepoStorage } from '../repo/repo.ts';
 import {
   JSONCyclicalDecoder,
@@ -69,6 +69,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       json TEXT NOT NULL
     );`);
     db.exec(`CREATE INDEX IF NOT EXISTS commitsByKey ON commits (key);`);
+    db.exec(`CREATE INDEX IF NOT EXISTS commitsByKey ON commits (ts);`);
     // NOTE: The `heads` table holds the full JSON record for simplicity so we
     // don't have to deal with delta compression when reading.
     db.exec(`CREATE TABLE IF NOT EXISTS heads (
@@ -101,7 +102,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
 
   get putCommitStatement(): Statement {
     return this.db.prepare(
-      `INSERT INTO commits (id, key, ts, json) VALUES (:id, :key, :ts, :json);`
+      `INSERT INTO commits (id, key, ts, json) VALUES (:id, :key, :ts, :json);`,
     );
   }
   get getHeadStatement(): Statement {
@@ -110,13 +111,13 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
 
   get updateHeadStatement(): Statement {
     return this.db.prepare(
-      `INSERT OR REPLACE INTO heads (key, commitId, ns, ts, json) VALUES (:key, :commitId, :ns, :ts, :json)`
+      `INSERT OR REPLACE INTO heads (key, commitId, ns, ts, json) VALUES (:key, :commitId, :ns, :ts, :json)`,
     );
   }
 
   get putRefStatement(): Statement {
     return this.db.prepare(
-      `INSERT OR IGNORE INTO refs (src, dst) VALUES (:src, :dst);`
+      `INSERT OR IGNORE INTO refs (src, dst) VALUES (:src, :dst);`,
     );
   }
 
@@ -127,7 +128,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   private putCommitInTxn(
     commits: Iterable<Commit>,
     repo: Repository<SQLiteRepoStorage>,
-    outCommits: Commit[]
+    outCommits: Commit[],
   ): number {
     let persistedCount = 0;
     // First, check we haven't already persisted this commit
@@ -169,8 +170,8 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     const row = this.getCommitStatement.get<CommitRow>({ id });
     const commit = row
       ? new Commit({
-          decoder: new JSONCyclicalDecoder(JSON.parse(row.json)),
-        })
+        decoder: new JSONCyclicalDecoder(JSON.parse(row.json)),
+      })
       : undefined;
     if (commit) {
       this._commitsCache.set(id, commit);
@@ -182,7 +183,10 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     if (performance.now() - this._allCommitsCacheTs <= ALL_COMMITS_CACHE_MS) {
       return Array.from(this._commitsCache.keys());
     }
-    const statement = this.db.prepare(`SELECT id FROM commits;`).bind();
+    const statement = this.db.prepare(
+      `SELECT id FROM commits ORDER BY ts DESC;`,
+    )
+      .bind();
     const result: string[] = [];
     for (const { id } of statement) {
       result.push(id);
@@ -207,7 +211,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
 
   persistCommits(
     commits: Iterable<Commit>,
-    repo: Repository<SQLiteRepoStorage>
+    repo: Repository<SQLiteRepoStorage>,
   ): Iterable<Commit> {
     const startTime = performance.now();
     const persistedCommits: Commit[] = [];
@@ -263,8 +267,8 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
     const row = this.getHeadStatement.get<HeadRow>({ key });
     return row
       ? new CFDSRecord({
-          decoder: new JSONCyclicalDecoder(JSON.parse(row.json as string)),
-        })
+        decoder: new JSONCyclicalDecoder(JSON.parse(row.json as string)),
+      })
       : undefined;
   }
 
@@ -276,7 +280,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
   protected updateHead(
     repo: Repository<SQLiteRepoStorage>,
     oldHead: Commit | undefined,
-    newHead: Commit
+    newHead: Commit,
   ): void {
     try {
       const headRecord = oldHead
@@ -293,7 +297,7 @@ export class SQLiteRepoStorage implements RepoStorage<SQLiteRepoStorage> {
       });
       const deletedRefs = SetUtils.subtract(
         headRecord.refs,
-        newHeadRecord.refs
+        newHeadRecord.refs,
       );
       const addedRefs = SetUtils.subtract(newHeadRecord.refs, headRecord.refs);
       // Update refs table

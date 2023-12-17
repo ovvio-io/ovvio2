@@ -12,20 +12,19 @@ import { log } from '../../logging/log.ts';
 import {
   Authorizer,
   EVENT_NEW_COMMIT,
+  kRepositoryTypes,
   MemRepoStorage,
   Repository,
   RepositoryIndexes,
   RepositoryType,
-  kRepositoryTypes,
 } from '../../repo/repo.ts';
 import { getOvvioConfig } from '../../server/config.ts';
 import { SQLiteLogStorage } from '../../server/sqlite3-log-storage.ts';
-import { SQLiteRepoStorage } from '../../server/sqlite3-repo-storage.ts';
 import {
   BaseClient,
-  syncConfigGetCycles,
   kSyncConfigClient,
   kSyncConfigServer,
+  syncConfigGetCycles,
 } from '../base-client.ts';
 import { LogClient } from '../log-client.ts';
 import { SyncMessage } from '../message.ts';
@@ -36,15 +35,15 @@ import { getRequestPath } from './utils.ts';
 import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
-  TrustPool,
   decodeSession,
   generateRequestSignature,
   sessionFromRecord,
+  TrustPool,
 } from '../../auth/session.ts';
 import {
   createSysDirAuthorizer,
-  createWorkspaceAuthorizer,
   createUserAuthorizer,
+  createWorkspaceAuthorizer,
 } from '../../repo/auth.ts';
 import { fetchEncodedRootSessions, requireSignedUser } from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
@@ -89,19 +88,18 @@ export class SyncService extends BaseService<ServerServices> {
     this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
       const repo = this._repositories.get(repoId);
       if (repo) {
-        repo.persistCommits(commits).then((persisted) => {
-          // When initially loading sys/dir, only records created by root and
-          // operators are allowed to enter the repo. We then run one more
-          // persist attempt on any rejected commits, which will now be allowed
-          // since records exist properly.
-          if (repoId === 'sys/dir' && !loadedSysDir) {
-            loadedSysDir = true;
-            const notPersisted = Array.from(
-              SetUtils.subtract(commits, persisted)
-            );
-            repo.persistCommits(notPersisted);
-          }
-        });
+        const persisted = repo.persistVerifiedCommits(commits);
+        // When initially loading sys/dir, only records created by root and
+        // operators are allowed to enter the repo. We then run one more
+        // persist attempt on any rejected commits, which will now be allowed
+        // since records exist properly.
+        if (repoId === 'sys/dir' && !loadedSysDir) {
+          loadedSysDir = true;
+          const notPersisted = Array.from(
+            SetUtils.subtract(commits, persisted),
+          );
+          repo.persistCommits(notPersisted);
+        }
       }
     });
     await this._backup.open('sys', 'dir'); // Load /sys/dir from backup
@@ -111,8 +109,8 @@ export class SyncService extends BaseService<ServerServices> {
     type: RepositoryType,
     id: string,
     indexes?: (
-      repo: Repository<MemRepoStorage, RepositoryIndexes<MemRepoStorage>>
-    ) => RepositoryIndexes<MemRepoStorage>
+      repo: Repository<MemRepoStorage, RepositoryIndexes<MemRepoStorage>>,
+    ) => RepositoryIndexes<MemRepoStorage>,
   ): Repository<MemRepoStorage> {
     const repoId = Repository.id(type, id);
     assert(!this._repositories.has(repoId));
@@ -121,7 +119,7 @@ export class SyncService extends BaseService<ServerServices> {
       case 'sys':
         assert(id === 'dir'); // Sanity check
         authorizer = createSysDirAuthorizer(
-          () => this.services.settings.operatorEmails
+          () => this.services.settings.operatorEmails,
         );
         break;
 
@@ -129,7 +127,7 @@ export class SyncService extends BaseService<ServerServices> {
         authorizer = createWorkspaceAuthorizer(
           () => this.services.settings.operatorEmails,
           this.getRepository('sys', 'dir'),
-          id
+          id,
         );
         break;
 
@@ -141,7 +139,7 @@ export class SyncService extends BaseService<ServerServices> {
       new MemRepoStorage(),
       this.services.trustPool,
       authorizer,
-      indexes
+      indexes,
     );
     this._repositories.set(repoId, repo);
     const replicas = this.services.replicas;
@@ -151,7 +149,7 @@ export class SyncService extends BaseService<ServerServices> {
         new RepoClient(
           repo!,
           new URL(`/${type}/` + id, baseServerUrl).toString(),
-          kSyncConfigServer
+          kSyncConfigServer,
         ).startSyncing()
       );
       this._clientsForRepo.set(repoId, clients);
@@ -165,7 +163,7 @@ export class SyncService extends BaseService<ServerServices> {
 
   getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
     type: RepositoryType,
-    id: string
+    id: string,
   ): Repository<MemRepoStorage, T> {
     const repoId = Repository.id(type, id);
     let repo = this._repositories.get(repoId);
@@ -175,13 +173,14 @@ export class SyncService extends BaseService<ServerServices> {
           return {
             users: new RepositoryIndex(
               r,
-              (key, record) => record.scheme.namespace === SchemeNamespace.USERS
+              (_key, record) =>
+                record.scheme.namespace === SchemeNamespace.USERS,
             ),
             rootSessions: new RepositoryIndex(
               r,
-              (key, record) =>
+              (_key, record) =>
                 record.scheme.namespace === SchemeNamespace.SESSIONS &&
-                record.get('owner') === 'root'
+                record.get('owner') === 'root',
             ),
           };
         });
@@ -200,7 +199,7 @@ export class SyncService extends BaseService<ServerServices> {
     let storage = this._logs.get(id);
     if (!storage) {
       storage = new SQLiteLogStorage(
-        joinPath(this.services.dir, 'logs', id + '.logs')
+        joinPath(this.services.dir, 'logs', id + '.logs'),
       );
       this._logs.set(id, storage);
       const replicas = this.services.replicas;
@@ -210,7 +209,7 @@ export class SyncService extends BaseService<ServerServices> {
           new LogClient(
             storage!,
             new URL('/logs/' + id, baseServerUrl).toString(),
-            kSyncConfigServer
+            kSyncConfigServer,
           ).startSyncing()
         );
         this._clientsForLog.set(id, clients);
@@ -258,7 +257,7 @@ export class SyncEndpoint implements Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     if (req.method !== 'POST') {
       return false;
@@ -273,13 +272,13 @@ export class SyncEndpoint implements Endpoint {
   async processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     if (!req.body) {
       return Promise.resolve(
         new Response(null, {
           status: 400,
-        })
+        }),
       );
     }
     const path = getRequestPath(req).split('/');
@@ -294,7 +293,7 @@ export class SyncEndpoint implements Endpoint {
     const [userId, userRecord, userSession] = await requireSignedUser(
       services,
       msg.signature,
-      'anonymous'
+      'anonymous',
     );
     let resp: Response;
     switch (cmd) {
@@ -318,14 +317,14 @@ export class SyncEndpoint implements Endpoint {
                 syncService
                   .getRepository(storageType, resourceId)
                   .commits(userSession),
-                (c) => [c.id, c]
+                (c) => [c.id, c],
               ),
             () =>
               syncService
                 .getRepository(storageType, resourceId)
                 .numberOfCommits(userSession),
             syncService.clientsForRepo(resourceId),
-            true
+            true,
           );
         }
         // else if (storageType === 'log') {
@@ -363,13 +362,14 @@ export class SyncEndpoint implements Endpoint {
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
     replicas: Iterable<BaseClient<T>> | undefined,
-    includeMissing: boolean
+    includeMissing: boolean,
   ): Promise<Response> {
-    // TODO: Auth + Permissions
-    if ((await persistValues(msg.values)) > 0 && replicas) {
-      // Sync changes with replicas
-      for (const c of replicas) {
-        c.touch();
+    if (msg.values.length > 0) {
+      if ((await persistValues(msg.values)) > 0 && replicas) {
+        // Sync changes with replicas
+        for (const c of replicas) {
+          c.touch();
+        }
       }
     }
 
@@ -381,7 +381,7 @@ export class SyncEndpoint implements Endpoint {
       syncConfigGetCycles(kSyncConfigClient),
       await generateRequestSignature(services.settings.session),
       // Don't return new commits to old clients
-      includeMissing && msg.buildVersion >= getOvvioConfig().version
+      includeMissing && msg.buildVersion >= getOvvioConfig().version,
     );
 
     return new Response(
@@ -390,14 +390,14 @@ export class SyncEndpoint implements Endpoint {
         headers: {
           'content-type': 'application/json; charset=utf-8',
         },
-      }
+      },
     );
   }
 }
 
 export async function setupTrustPool(
   trustPool: TrustPool,
-  sysDir: Repository<MemRepoStorage, SysDirIndexes>
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): Promise<void> {
   fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
     const session = await decodeSession(encodedSesion);

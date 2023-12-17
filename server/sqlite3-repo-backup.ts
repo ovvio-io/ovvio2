@@ -19,7 +19,7 @@ import { kSecondMs } from '../base/date.ts';
 
 export type PersistCommitsCallback = (
   repoId: string,
-  commits: Commit[]
+  commits: Commit[],
 ) => void;
 
 export class SQLite3RepoBackup {
@@ -29,7 +29,7 @@ export class SQLite3RepoBackup {
 
   constructor(
     readonly services: ServerServices,
-    readonly persistCallback: PersistCommitsCallback
+    readonly persistCallback: PersistCommitsCallback,
   ) {
     this._openRepoResolveFunctions = new Map();
     this._worker = new Worker(new URL(`./sqlite3-worker.ts`, import.meta.url), {
@@ -43,10 +43,10 @@ export class SQLite3RepoBackup {
             msg.repoId,
             msg.commits.map((obj) => {
               const decoder = new JSONCyclicalDecoder(
-                obj as ReadonlyJSONObject
+                obj as ReadonlyJSONObject,
               );
               return new Commit({ decoder });
-            })
+            }),
           );
           break;
         }
