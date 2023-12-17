@@ -148,7 +148,7 @@ export class SyncService extends BaseService<ServerServices> {
       const clients = this.services.replicas.map((baseServerUrl) =>
         new RepoClient(
           repo!,
-          new URL(`/${type}/` + id, baseServerUrl).toString(),
+          new URL(`/${type}/${id}/sync`, baseServerUrl).toString(),
           kSyncConfigServer,
         ).startSyncing()
       );

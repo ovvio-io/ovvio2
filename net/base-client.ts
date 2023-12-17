@@ -32,10 +32,10 @@ export const kSyncConfigServer: SyncConfig = {
 
 export function syncConfigGetCycles(
   config: SyncConfig,
-  actualSyncFreqMs = 0
+  actualSyncFreqMs = 0,
 ): number {
   return Math.floor(
-    config.syncDurationMs / Math.max(actualSyncFreqMs, config.minSyncFreqMs)
+    config.syncDurationMs / Math.max(actualSyncFreqMs, config.minSyncFreqMs),
   );
 }
 
@@ -56,7 +56,7 @@ export interface BaseClientStorage {
  * Storage and encoding of values are left for concrete subclasses.
  */
 export abstract class BaseClient<
-  ValueType extends SyncValueType
+  ValueType extends SyncValueType,
 > extends EventEmitter {
   private readonly _timer: EaseInOutSineTimer;
   private readonly _serverUrl: string;
@@ -92,10 +92,10 @@ export abstract class BaseClient<
         }
       },
       true,
-      'Sync timer'
+      'Sync timer',
     );
     this._syncFreqAvg = new MovingAverage(
-      syncConfigGetCycles(this.syncConfig) * 2
+      syncConfigGetCycles(this.syncConfig) * 2,
     );
     this._previousServerSize = 0;
     this._ready = false;
