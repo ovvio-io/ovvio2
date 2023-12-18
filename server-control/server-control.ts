@@ -1,5 +1,5 @@
 import * as path from 'std/path/mod.ts';
-import * as ArrayUtils from '../base/array.ts';
+import { encodeBase64Url } from 'std/encoding/base64url.ts';
 import { kSecondMs } from '../base/date.ts';
 import { sleep } from '../base/time.ts';
 import { EC2MetadataToken, getTenantId } from './ec2.ts';
@@ -12,8 +12,10 @@ const HEALTH_CHECK_FREQ_MS = kSecondMs;
 const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
 const SERVER_STARTUP_TIMEOUT_MS = kSecondMs;
 
-const SERVER_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gz`;
-const CONTROL_ARCHIVE_URL = `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gz`;
+const SERVER_ARCHIVE_URL =
+  `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gz`;
+const CONTROL_ARCHIVE_URL =
+  `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gz`;
 
 const ec2MetadataToken = new EC2MetadataToken();
 
@@ -80,7 +82,7 @@ function filenameFromURL(url: string, suffix?: string): string {
 async function _startChildServerProcess(
   settings: ServerControlSettings,
   idx: number,
-  replicas: string[]
+  replicas: string[],
 ): Promise<Deno.ChildProcess | undefined> {
   // We match the port to the index of the process
   const port = 9000 + idx;
@@ -88,7 +90,7 @@ async function _startChildServerProcess(
   const existingPid = await processIdForPort(port);
   if (existingPid !== -1) {
     console.log(
-      `Killing zombie process (pid ${existingPid}) listening on port ${port}`
+      `Killing zombie process (pid ${existingPid}) listening on port ${port}`,
     );
     Deno.kill(existingPid, 'SIGKILL');
   }
@@ -104,8 +106,9 @@ async function _startChildServerProcess(
     settings.dataDir,
   ];
   if (replicas) {
-    args.push('-r');
-    ArrayUtils.append(args, replicas);
+    args.push('--b64replicas');
+    const encodedReplicas = encodeBase64Url(JSON.stringify(replicas || []));
+    args.push(encodedReplicas);
   }
   const cmd = new Deno.Command('nice', {
     args,
@@ -165,10 +168,10 @@ async function _startChildServerProcess(
 }
 
 async function startServerProcesses(
-  settings: ServerControlSettings
+  settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 1; //navigator.hardwareConcurrency;
+  const processCount = 4; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {
@@ -191,20 +194,21 @@ async function startServerProcesses(
       child.status.then(terminationCallback);
     }
     serverProcesses.push(child);
+    await sleep(5 * kSecondMs);
   }
   return serverProcesses;
 }
 
 async function verifyBuffer(
   buffer: Uint8Array,
-  expectedChecksum: Uint8Array
+  expectedChecksum: Uint8Array,
 ): Promise<boolean> {
   const actualChecksum = new Uint8Array(
-    await crypto.subtle.digest('SHA-512', buffer)
+    await crypto.subtle.digest('SHA-512', buffer),
   );
   if (actualChecksum.length !== expectedChecksum.length) {
     console.log(
-      `Checksums differ in length: expected ${expectedChecksum.length} got ${actualChecksum.length}`
+      `Checksums differ in length: expected ${expectedChecksum.length} got ${actualChecksum.length}`,
     );
     return false;
   }
@@ -229,7 +233,7 @@ async function verifyBuffer(
  */
 async function updateBinary(
   archiveURL: string,
-  outputDir: string
+  outputDir: string,
 ): Promise<boolean> {
   try {
     await Deno.mkdir(outputDir, { recursive: true });
@@ -278,7 +282,7 @@ async function updateBinary(
     console.log(`Updated checksum written to ${archivePath}.sha512`);
 
     console.log(
-      `Decompressing ${archivePath} into ${serverBinaryPath}.tmp ...`
+      `Decompressing ${archivePath} into ${serverBinaryPath}.tmp ...`,
     );
     await decompressFile(archivePath, serverBinaryPath + '.tmp');
     await Deno.chmod(serverBinaryPath + '.tmp', 0o555);
@@ -310,11 +314,11 @@ async function updateBinary(
  */
 async function updateServerBinary(
   settings: ServerControlSettings,
-  childProcesses: (Deno.ChildProcess | undefined)[] = []
+  childProcesses: (Deno.ChildProcess | undefined)[] = [],
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const success = await updateBinary(
     SERVER_ARCHIVE_URL,
-    settings.serverBinaryDir
+    settings.serverBinaryDir,
   );
   if (success) {
     // Try to stop all existing processes gracefully
@@ -356,7 +360,7 @@ async function updateControlBinary(): Promise<void> {
   const success = await updateBinary(CONTROL_ARCHIVE_URL, workingDir);
   if (success) {
     console.log(
-      'Control binary successfully updated. Exiting and letting systemd restart the updated binary...'
+      'Control binary successfully updated. Exiting and letting systemd restart the updated binary...',
     );
     Deno.exit(0);
   }
@@ -372,12 +376,12 @@ async function updateControlBinary(): Promise<void> {
 async function updateJSONFile(
   url: string,
   localPath: string,
-  localFileName?: string
+  localFileName?: string,
 ): Promise<boolean> {
   try {
     const jsonFilePath = path.join(
       localPath,
-      localFileName || filenameFromURL(url)
+      localFileName || filenameFromURL(url),
     );
     const etagFilePath = jsonFilePath + '.etag';
     let requestInit: RequestInit | undefined;
@@ -408,7 +412,7 @@ async function updateJSONFile(
     } catch (_: unknown) {}
     await Deno.writeTextFile(
       jsonFilePath,
-      JSON.stringify({ ...existingJSONData, ...updatedJSON })
+      JSON.stringify({ ...existingJSONData, ...updatedJSON }),
     );
     console.log(`Updated JSON file at ${jsonFilePath}`);
     const etag = resp.headers.get('etag');
@@ -452,7 +456,7 @@ async function main(): Promise<void> {
       await updateJSONFile(
         serverSettingsURL,
         settings.dataDir,
-        'settings.json'
+        'settings.json',
       );
     }
     childProcesses = await updateServerBinary(settings, childProcesses);

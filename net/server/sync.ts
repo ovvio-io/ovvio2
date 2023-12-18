@@ -11,7 +11,6 @@ import { NormalizedLogEntry } from '../../logging/entry.ts';
 import { log } from '../../logging/log.ts';
 import {
   Authorizer,
-  EVENT_NEW_COMMIT,
   kRepositoryTypes,
   MemRepoStorage,
   Repository,
@@ -45,7 +44,11 @@ import {
   createUserAuthorizer,
   createWorkspaceAuthorizer,
 } from '../../repo/auth.ts';
-import { fetchEncodedRootSessions, requireSignedUser } from './auth.ts';
+import {
+  fetchEncodedRootSessions,
+  persistSession,
+  requireSignedUser,
+} from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 import { SQLite3RepoBackup } from '../../server/sqlite3-repo-backup.ts';
 import { RepositoryIndex } from '../../repo/index.ts';
@@ -78,6 +81,10 @@ export class SyncService extends BaseService<ServerServices> {
     this._clientsForLog = new Map();
   }
 
+  get ready(): boolean {
+    return this._backup !== undefined && this._backup.ready;
+  }
+
   async setup(services: ServerServices): Promise<void> {
     super.setup(services);
     const sysDir = this.getSysDir();
@@ -98,11 +105,13 @@ export class SyncService extends BaseService<ServerServices> {
           const notPersisted = Array.from(
             SetUtils.subtract(commits, persisted),
           );
-          repo.persistCommits(notPersisted);
+          repo.persistVerifiedCommits(notPersisted);
         }
       }
     });
-    await this._backup.open('sys', 'dir'); // Load /sys/dir from backup
+    this._loadBackupForRepo('sys', 'dir');
+    // Publish our root session to clients so we claim our authority
+    await persistSession(services, services.settings.session);
   }
 
   setupRepository(
@@ -154,11 +163,51 @@ export class SyncService extends BaseService<ServerServices> {
       );
       this._clientsForRepo.set(repoId, clients);
     }
-    this._backup?.open(type, id);
-    repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+    repo.attach('NewCommit', (c: Commit) => {
       this._backup?.persistCommits(repoId, [c]);
+      const clients = this._clientsForRepo.get(repoId);
+      if (clients) {
+        for (const c of clients) {
+          c.touch();
+        }
+      }
     });
+    this._loadBackupForRepo(type, id);
     return repo;
+  }
+
+  private async _loadBackupForRepo(
+    type: RepositoryType,
+    id: string,
+  ): Promise<void> {
+    const backup = this._backup;
+    if (backup) {
+      const repoId = Repository.id(type, id);
+      const repo = this._repositories.get(repoId)!;
+      repo.mute();
+      await backup.open(type, id);
+      const indexes = repo.indexes;
+      if (indexes) {
+        for (const idx of Object.values(indexes)) {
+          idx.scanRepo();
+        }
+      }
+      const trustPool = this.services.trustPool;
+      let loaded = false;
+      do {
+        loaded = false;
+        for (const key of repo.keys()) {
+          const record = repo.valueForKey(key);
+          if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+            loaded = loaded || await trustPool.addSession(
+              await sessionFromRecord(record),
+              repo.headForKey(key)!,
+            );
+          }
+        }
+      } while (loaded);
+      repo.unmute();
+    }
   }
 
   getRepository<T extends RepositoryIndexes<MemRepoStorage>>(

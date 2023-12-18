@@ -104,6 +104,9 @@ export class AuthEndpoint implements Endpoint {
     services: ServerServices,
     req: Request,
   ): Promise<Response> {
+    if (!services.sync.ready) {
+      return Promise.resolve(new Response(null, { status: 503 }));
+    }
     let publicKey: CryptoKey | undefined;
     try {
       const body = await req.json();
@@ -179,7 +182,6 @@ export class AuthEndpoint implements Endpoint {
     }
 
     const [userKey, userRecord] = fetchUserByEmail(services, email);
-
     // TODO (ofri): Rate limit this call
 
     // We unconditionally generate the signed token so this call isn't

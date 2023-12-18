@@ -85,7 +85,7 @@ export class SettingsService extends BaseService<ServerServices> {
     if (!session) {
       session = await generateSession('root');
       updatedSettings = true;
-    } else {
+    } else if (session.expiration.getTime() - Date.now() < 15 * kDayMs) {
       session.expiration = new Date(Date.now() + 30 * kDayMs);
       updatedSettings = true;
     }

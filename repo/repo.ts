@@ -1,4 +1,4 @@
-import EventEmitter from 'eventemitter3';
+import { Emitter } from '../base/emitter.ts';
 import {
   Session,
   sessionFromRecord,
@@ -28,7 +28,8 @@ import { RepositoryIndex } from './index.ts';
 import { repositoryForRecord } from './resolver.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
-export const EVENT_NEW_COMMIT = 'NewCommit';
+
+type RepositoryEvent = 'NewCommit';
 
 export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
 export type RepositoryType = (typeof kRepositoryTypes)[number];
@@ -63,7 +64,7 @@ export type RepositoryIndexes<T extends RepoStorage<T>> = Record<
 export class Repository<
   ST extends RepoStorage<ST>,
   IT extends RepositoryIndexes<ST> = RepositoryIndexes<ST>,
-> extends EventEmitter {
+> extends Emitter<RepositoryEvent> {
   readonly storage: ST;
   readonly trustPool: TrustPool;
   readonly indexes?: IT;
@@ -788,7 +789,7 @@ export class Repository<
       }
     }
     // Notify everyone else
-    this.emit(EVENT_NEW_COMMIT, commit);
+    this.emit('NewCommit', commit);
   }
 
   private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {

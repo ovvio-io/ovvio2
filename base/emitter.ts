@@ -10,9 +10,10 @@ export class Emitter<T extends string> {
   private readonly _callbacks: Map<string, EmitterCallback[]>;
   private readonly _delayedEmissionTimer?: Timer;
   private _pendingEmissions: [event: string, args: unknown[]][];
+  private _isMuted = false;
 
   constructor(
-    delayedEmissionTimerConstructor?: (callback: TimerCallback) => Timer
+    delayedEmissionTimerConstructor?: (callback: TimerCallback) => Timer,
   ) {
     this._suspendCallbacks = [];
     this._resumeCallbacks = [];
@@ -46,6 +47,9 @@ export class Emitter<T extends string> {
     e: E,
     ...args: unknown[]
   ): void {
+    if (this._isMuted) {
+      return '';
+    }
     let callbacks: EmitterCallback[] | undefined;
     if (e === 'EmitterSuspended') {
       callbacks = this._suspendCallbacks;
@@ -65,14 +69,13 @@ export class Emitter<T extends string> {
   // deno-lint-ignore ban-types
   attach<C extends Function, E extends T | EmitterEvent>(
     e: E,
-    c: C
+    c: C,
   ): () => void {
     const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
-      const arr =
-        e === 'EmitterSuspended'
-          ? this._suspendCallbacks
-          : this._resumeCallbacks;
+      const arr = e === 'EmitterSuspended'
+        ? this._suspendCallbacks
+        : this._resumeCallbacks;
       if (!arr.includes(callback)) {
         arr.push(callback);
       }
@@ -98,10 +101,9 @@ export class Emitter<T extends string> {
   detach<C extends Function, E extends T | EmitterEvent>(e: E, c: C): void {
     const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
-      const arr =
-        e === 'EmitterSuspended'
-          ? this._suspendCallbacks
-          : this._resumeCallbacks;
+      const arr = e === 'EmitterSuspended'
+        ? this._suspendCallbacks
+        : this._resumeCallbacks;
       const idx = arr.indexOf(callback);
       if (idx >= 0) {
         arr.splice(idx, 1);
@@ -138,4 +140,12 @@ export class Emitter<T extends string> {
   protected suspend(): void {}
 
   protected resume(): void {}
+
+  mute(): void {
+    this._isMuted = true;
+  }
+
+  unmute(): void {
+    this._isMuted = false;
+  }
 }

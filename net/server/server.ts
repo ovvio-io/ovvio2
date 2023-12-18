@@ -1,10 +1,11 @@
 import yargs from 'yargs';
 import * as path from 'std/path/mod.ts';
+import { decodeBase64Url } from 'std/encoding/base64url.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import {
-  LogStream,
-  Logger,
   log,
+  Logger,
+  LogStream,
   newLogger,
   setGlobalLoggerStreams,
 } from '../../logging/log.ts';
@@ -20,17 +21,16 @@ import { SettingsService } from './settings.ts';
 import { BaseService } from './service.ts';
 import { TrustPool } from '../../auth/session.ts';
 import { EmailService } from './email.ts';
-import { CORSMiddleware, CORSEndpoint } from './cors.ts';
+import { CORSEndpoint, CORSMiddleware } from './cors.ts';
 import { SQLiteLogStream } from '../../logging/sqlite-log-stream.ts';
 import { ServerError } from '../../cfds/base/errors.ts';
 import { LogsEndpoint } from './logs.ts';
 import { sleep } from '../../base/time.ts';
 import { kSecondMs } from '../../base/date.ts';
 
-/**
- * CLI arguments consumed by our server.
- */
-interface Arguments {
+export const ENV_REPLICAS = 'REPLICAS';
+
+interface BaseServerContext {
   // Full path to data directory
   readonly dir: string;
   readonly replicas: string[];
@@ -39,8 +39,15 @@ interface Arguments {
   readonly sesRegion?: string;
 }
 
+/**
+ * CLI arguments consumed by our server.
+ */
+interface Arguments extends BaseServerContext {
+  readonly b64replicas?: string;
+}
+
 // Stuff that's shared to all organizations served by this server
-export interface ServerContext extends Arguments {
+export interface ServerContext extends BaseServerContext {
   readonly settings: SettingsService;
   readonly prometheusLogStream: PrometheusLogStream;
   // readonly sqliteLogStream: SQLiteLogStream;
@@ -69,12 +76,12 @@ export interface Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean;
   processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response>;
 }
 
@@ -90,13 +97,13 @@ export interface Middleware {
   shouldProcess?: (
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ) => Promise<Response | undefined>;
   didProcess?: (
     services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
-    resp: Response
+    resp: Response,
   ) => Promise<Response>;
 }
 
@@ -148,6 +155,12 @@ export class Server {
           description:
             'A list of replica URLs which this server will sync with',
         })
+        .option('b64replicas', {
+          alias: 'r64',
+          type: 'string',
+          default: [],
+          description: 'A base64 url encoded JSON array of replicas',
+        })
         .option('silent', {
           type: 'boolean',
           default: false,
@@ -163,7 +176,7 @@ export class Server {
             'An AWS region to use for sending emails with SES. Defaults to us-east-1.',
         })
         .demandOption(
-          ['dir']
+          ['dir'],
           // 'Please provide a local directory for this server'
         )
         // .demandOption(['app'], 'Please provide')
@@ -182,13 +195,23 @@ export class Server {
     }
     setGlobalLoggerStreams(logStreams);
     const sesRegion = args?.sesRegion || 'us-east-1';
+    let replicas: string[] = [];
+    if (args?.b64replicas?.length || 0 > 0) {
+      const decoder = new TextDecoder();
+      replicas = JSON.parse(
+        decoder.decode(decodeBase64Url(args?.b64replicas!)),
+      );
+    }
+    // const envReplicasStr = Deno.env.get(ENV_REPLICAS);
+    // const envReplicas = envReplicasStr &&
+    //   JSON.parse(decoder.decode(decodeBase64Url(envReplicasStr)));
     this._baseContext = {
       settings: settingsService,
       // trustPool: new TrustPool(settingsService.session, []),
       prometheusLogStream: prometeusLogStream,
       // sqliteLogStream,
       dir: args!.dir,
-      replicas: args?.replicas || [],
+      replicas: replicas || args?.replicas,
       port: args?.port || 8080,
       email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
@@ -227,7 +250,7 @@ export class Server {
     await this._baseContext.settings.start();
     (this._baseContext as any).trustPool = new TrustPool(
       this._baseContext.settings.session,
-      []
+      [],
     );
   }
 
@@ -243,7 +266,7 @@ export class Server {
         sync: new SyncService(),
         trustPool: new TrustPool(
           baseTrustPool.currentSession,
-          baseTrustPool.roots
+          baseTrustPool.roots,
         ),
       };
 
@@ -251,8 +274,6 @@ export class Server {
       services.sync.setup(services);
       // <<< Add any new service.setup() calls here >>>
 
-      // Publish our root session to clients so we claim our authority
-      await persistSession(services, services.settings.session);
       this._servicesByOrg.set(orgId, services);
     }
     return services;
@@ -268,7 +289,7 @@ export class Server {
 
   async processRequest(
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     if (req.url === 'http://AWSALB/healthy') {
       return new Response(null, { status: 200 });
@@ -386,7 +407,7 @@ export class Server {
         },
         signal: this._abortController.signal,
       },
-      this.processRequest.bind(this)
+      this.processRequest.bind(this),
     );
     if (this._baseContext.silent === true) {
       console.log('STARTED');
