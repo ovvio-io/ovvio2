@@ -15,6 +15,7 @@ interface Arguments {
   upload?: boolean;
   linux?: boolean;
   control?: boolean;
+  both?: boolean;
 }
 
 type BuildTarget = 'server' | 'control';
@@ -50,7 +51,7 @@ async function uploadToS3(uploadPath: string): Promise<void> {
   });
 
   const dot = new TextEncoder().encode('.');
-  parallelUploads3.on('httpUploadProgress', (progress) => {
+  parallelUploads3.on('httpUploadProgress', (_progress) => {
     Deno.stdout.write(dot);
   });
 
@@ -93,7 +94,9 @@ async function hashFile(
   }
   try {
     await Deno.remove(outputFilePath, { recursive: true });
-  } catch (_: unknown) {}
+  } catch (_: unknown) {
+    //
+  }
   await Deno.writeFile(outputFilePath, new Uint8Array(checksum));
   console.log(`Checksum written successfully to ${outputFilePath}`);
 }
@@ -125,6 +128,7 @@ async function build(
   }
   if (target === 'server') {
     compileArgs.push('--unstable');
+    compileArgs.push('--allow-ffi');
     compileArgs.push(path.join(repoPath, 'server', 'run-server.ts'));
   } else {
     compileArgs.push(
@@ -162,6 +166,11 @@ async function main(): Promise<void> {
       description:
         `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
     })
+    .option('both', {
+      type: 'boolean',
+      default: false,
+      description: `If supplied, will build both server and control binaries`,
+    })
     .parse();
   console.log(`Building based on version ${tuple4ToString(VCurrent)}`);
   const repoPath = await getRepositoryPath();
@@ -174,12 +183,29 @@ async function main(): Promise<void> {
   if (!controlBuild) {
     await defaultAssetsBuild();
   }
-  await build(
-    repoPath,
-    args?.upload === true,
-    args?.linux === true,
-    controlBuild ? 'control' : 'server',
-  );
+  if (args?.both === true) {
+    await Promise.all([
+      build(
+        repoPath,
+        args?.upload === true,
+        args?.linux === true,
+        'server',
+      ),
+      build(
+        repoPath,
+        args?.upload === true,
+        args?.linux === true,
+        'control',
+      ),
+    ]);
+  } else {
+    await build(
+      repoPath,
+      args?.upload === true,
+      args?.linux === true,
+      controlBuild ? 'control' : 'server',
+    );
+  }
 }
 
 if (import.meta.main) {
