@@ -3,6 +3,7 @@ import { Step0 } from './step0.tsx';
 import { Step1 } from './step1.tsx';
 import { Step2 } from './step2.tsx';
 import Wizard from '../../../components/wizard.tsx';
+import { Edit } from './edit.tsx';
 
 export default function MembersTabContent() {
   const [step, setStep] = useState(0);
@@ -15,10 +16,12 @@ export default function MembersTabContent() {
 
   return (
     <div>
-      {step > 0 && (
+      {step > 0 && step < 5 && (
         <Wizard onClose={handleCloseWizard} currentStepIndex={step} />
       )}
       {step === 0 && <Step0 setStep={setStep} />}
+      {step === 5 && <Edit setStep={setStep} onClose={handleCloseWizard} />}
+
       {step === 1 && (
         <Step1
           setStep={setStep}

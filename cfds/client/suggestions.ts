@@ -77,7 +77,8 @@ type SuggestionEntry<T> = [dist: number, value: T];
 export function suggestResults<T>(
   userInput: string,
   values: T[],
-  getValue: (v: T) => string = (v) => v as unknown as string
+  getValue: (v: T) => string = (v) => v as unknown as string,
+  maxOutput?: number
 ): T[] {
   // const matchThreshold = 0.3;
   const entries: SuggestionEntry<T>[] = [];
@@ -87,8 +88,11 @@ export function suggestResults<T>(
       entries.push([dist, v]);
     }
   }
+  {
+    maxOutput = maxOutput ? maxOutput : MIN_SUGGESTIONS;
+  }
   return entries
     .sort((e1, e2) => e2[0] - e1[0])
-    .slice(0, MIN_SUGGESTIONS)
+    .slice(0, maxOutput)
     .map((e) => e[1]);
 }

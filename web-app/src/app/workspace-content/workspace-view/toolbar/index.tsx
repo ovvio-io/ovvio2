@@ -1,13 +1,13 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import { layout, styleguide } from "../../../../../../styles/index.ts";
-import Layer from "../../../../../../styles/components/layer.tsx";
-import { cn, makeStyles } from "../../../../../../styles/css-objects/index.ts";
-import { MediaQueries } from "../../../../../../styles/responsive.ts";
-import { isServerSide } from "../../../../../../styles/utils/ssr.ts";
-import ChangesIndicator from "./changes-indicator/index.tsx";
-import { ToolbarMenu } from "./header.tsx";
-import { IconNotification } from "../../../../../../styles/components/new-icons/icon-notification.tsx";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { layout, styleguide } from '../../../../../../styles/index.ts';
+import Layer from '../../../../../../styles/components/layer.tsx';
+import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
+import { MediaQueries } from '../../../../../../styles/responsive.ts';
+import { isServerSide } from '../../../../../../styles/utils/ssr.ts';
+import ChangesIndicator from './changes-indicator/index.tsx';
+import { ToolbarMenu } from './header.tsx';
+import { IconNotification } from '../../../../../../styles/components/new-icons/icon-notification.tsx';
 
 export const TOOLBAR_HEIGHT = styleguide.gridbase * 10;
 
@@ -15,9 +15,9 @@ const useStyles = makeStyles((theme) => ({
   toolbar: {
     height: TOOLBAR_HEIGHT,
     backgroundColor: theme.background[0],
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "flex-end",
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
     padding: [0, styleguide.gridbase * 2],
     paddingLeft: 0,
     flexShrink: 0,
@@ -34,17 +34,17 @@ const useStyles = makeStyles((theme) => ({
       width: styleguide.gridbase * 38,
     },
     [MediaQueries.TabletAndMobile]: {
-      flex: "1 1 auto",
+      flex: '1 1 auto',
     },
   },
   item: {
     marginRight: styleguide.gridbase * 2,
-    ":last-child": {
+    ':last-child': {
       marginRight: 0,
     },
   },
   externalContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     basedOn: [layout.row],
   },
   shareBtn: {
@@ -60,9 +60,9 @@ const useStyles = makeStyles((theme) => ({
 
 type ToolbarProps = React.PropsWithChildren<{ className?: string }>;
 
-const TOOLBAR_RIGHT_ID = "toolbar_00827f";
-const TOOLBAR_LEFT_ID = "toolbar_fe702c";
-const TOOLBAR_CENTER_ID = "toolbar_a86e6b";
+const TOOLBAR_RIGHT_ID = 'toolbar_00827f';
+const TOOLBAR_LEFT_ID = 'toolbar_fe702c';
+const TOOLBAR_CENTER_ID = 'toolbar_a86e6b';
 
 export default function Toolbar({ children }: ToolbarProps) {
   const styles = useStyles();
@@ -81,10 +81,7 @@ export default function Toolbar({ children }: ToolbarProps) {
           {children}
           <div className={cn(layout.flexSpacer)} />
           <ChangesIndicator />
-          <div
-            className={cn(styles.externalContainer)}
-            id={TOOLBAR_RIGHT_ID} // for the notfications
-          />
+          <div className={cn(styles.externalContainer)} id={TOOLBAR_RIGHT_ID} />
           <IconNotification />
           <ToolbarMenu className={cn(styles.menu)} />
         </div>
@@ -130,7 +127,7 @@ export function ToolbarCenterItem({
   );
 }
 
-type Side = "left" | "right" | "center";
+type Side = 'left' | 'right' | 'center';
 const SIDE_TO_ID: Record<Side, string> = {
   left: TOOLBAR_LEFT_ID,
   right: TOOLBAR_RIGHT_ID,

@@ -226,12 +226,54 @@ export function AssignWsButton({
   );
 }
 
-export function EditButton() {
-  const [container, setContainer] = useState<HTMLDivElement | null>();
+interface EditSaveButtonProps {
+  onSaveEditClick?: () => void;
+  disable: boolean;
+}
+
+export function EditSaveButton({
+  onSaveEditClick,
+  disable,
+}: EditSaveButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
 
   return (
-    <Button onClick={() => ''}>
-      <ComposeInternalButtonEdit ref={(div) => setContainer(div)} />
+    <Button
+      onClick={isDisabled ? undefined : onSaveEditClick}
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+    >
+      <div>
+        <img
+          key="CheckEditSettings"
+          src="/icons/editor/icon/Check.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.text)}>{'Save changes'}</span>
+      </div>{' '}
+    </Button>
+  );
+}
+interface EditButtonProps {
+  onEditClick?: () => void;
+}
+
+export function EditButton({ onEditClick }: EditButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onEditClick} className={cn(styles.compose, styles.blue)}>
+      <div>
+        <img
+          key="EditUserSettings"
+          src="/icons/editor/icon/Compose-white.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.textWhite)}>{'Edit'}</span>
+      </div>
     </Button>
   );
 }
