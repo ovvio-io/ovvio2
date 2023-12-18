@@ -1,6 +1,7 @@
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useMemo, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
+  usePartialVertex,
   useVertexByKey,
   useVertices,
 } from '../../../../../core/cfds/react/vertex.ts';
@@ -28,11 +29,17 @@ export const Step2: React.FC<Step2Props> = ({
   const workspacesQuery = useSharedQuery('workspaces');
   const workspaces = useVertices(workspacesQuery.results) as Workspace[];
 
+  const usersData = new Map<string, User>();
+  selectedUsers.forEach((user) => {
+    const userData: User = useVertexByKey(user);
+    usersData.set(user, userData);
+  });
+
   const handleAssignWsClick = () => {
-    selectedWorkspaces.forEach((ws: Workspace) => {
-      selectedUsers.forEach((user: string) => {
-        const u: User = useVertexByKey(user);
-        ws.users.add(u);
+    selectedWorkspaces.forEach((ws) => {
+      selectedUsers.forEach((user) => {
+        const u = usersData.get(user);
+        if (u) ws.users.add(u);
       });
     });
     setStep(3);

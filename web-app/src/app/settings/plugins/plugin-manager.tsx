@@ -94,14 +94,10 @@ function TabView({ category }: any) {
   }, [routeTab, view]);
 
   const setSelected = useCallback(
-    (tabId: TabId | SettingsTabId) => {
+    (tabId: SettingsTabId) => {
       try {
-        if (isSettingsTabId(tabId)) {
-          view.selectedSettingsTabId = tabId;
-          navigate(`/settings/${category}/${strings[tabId]}`);
-        } else {
-          view.selectedTabId = tabId;
-        }
+        view.selectedSettingsTabId = tabId;
+        navigate(`/settings/${category}/${strings[tabId]}`);
       } catch (error) {
         console.error('Error setting selectedTabId:', error);
       }

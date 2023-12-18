@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React from 'react';
 import { Route, RouterProvider } from 'react-router';
 import { createBrowserRouter } from 'react-router-dom';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
@@ -13,6 +13,7 @@ import { Settings } from './settings/index.tsx';
 import { CategorySettings } from './settings/category-settings.tsx';
 import { App } from '../../../styles/components/app.tsx';
 import { NoteEditor } from '../../../editor/editor.tsx';
+import TabView from './settings/plugins/plugin-manager.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
@@ -27,6 +28,11 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'hidden',
     // width: `calc(100% - ${WORKSPACE_BAR_WIDTH}px)`,
     basedOn: [layout.column, layout.flexSpacer],
+  },
+  ws: {
+    basedOn: [layout.row],
+    height: '100%',
+    zIndex: 1,
   },
 }));
 
@@ -53,6 +59,19 @@ function Root({ style, children }: RootProps) {
   );
 }
 
+function SettingsWs({ style, children }: RootProps) {
+  const styles = useStyles();
+
+  return (
+    <div className={styles.ws}>
+      <WorkspacesBar />
+      <div className={cn(styles.content)}>
+        <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
+      </div>
+    </div>
+  );
+}
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -68,7 +87,6 @@ const router = createBrowserRouter([
       <CreateWorkspaceView //TODO: CHECK line 78-88 in comment
         source="bar:workspace"
         // onWorkspaceCreated={(wsId: VertexId<Workspace>) => {
-
         //   workspacesQuery.forEach((ws) => (ws.selected = ws.key === wsKey));
         //   // Depending on exact timings, our query may miss
         //   // the newly created workspace. Ensure it's always
@@ -91,12 +109,21 @@ const router = createBrowserRouter([
     path: `/_explorer`,
     element: <RepoExplorer />,
   },
-
   {
     path: '/settings/:category/:tab',
     element: (
       <Settings style={lightTheme}>
         <CategorySettings />
+      </Settings>
+    ),
+  },
+  {
+    path: '/settings/workspaces-infoS/:tab',
+    element: (
+      <Settings style={lightTheme}>
+        <SettingsWs style={lightTheme}>
+          <TabView category={'workspaces-info'} />
+        </SettingsWs>
       </Settings>
     ),
   },

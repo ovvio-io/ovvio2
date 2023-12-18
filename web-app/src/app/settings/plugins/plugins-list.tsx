@@ -5,6 +5,7 @@ import { usePartialRootUser } from '../../../core/cfds/react/graph.tsx';
 import SettingsField from '../components/settings-field.tsx';
 import { cn } from '../../../../../styles/css-objects/index.ts';
 import MembersTabContent from './organization/members/base.tsx';
+import { WsGeneralSettings } from './my-workspaces/ws-general.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -25,7 +26,7 @@ export const tabPlugins: SettingsTabPlugin[] = [
   },
   {
     title: 'general-workspaces',
-    render: () => <GeneralOrgTabContent />,
+    render: () => <WsGeneralSettings />,
     category: 'workspaces-info',
   },
   {
