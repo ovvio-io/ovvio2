@@ -232,6 +232,13 @@ export const kSettingsTabIds = [
   'roles-details',
 ] as const;
 
+export const kWsSettingsTabIds = [
+  // --------------------------------- NEW 19/12
+  'General',
+  'Tags',
+  'Roles & Details',
+] as const;
+
 export type TabId = (typeof kTabIds)[number];
 
 export type SettingsTabId = (typeof kSettingsTabIds)[number];

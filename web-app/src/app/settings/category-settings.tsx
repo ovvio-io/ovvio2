@@ -5,7 +5,7 @@ import TabView from './plugins/plugin-manager.tsx';
 import { useParams } from 'react-router';
 import { createUseStrings } from '../../core/localization/index.tsx';
 import localization from './settings.strings.json' assert { type: 'json' };
-import { DisplayBar } from '../workspace-content/workspace-view/cards-display/display-bar/index.tsx';
+import { WorkspacesBar } from '../workspaces-bar/index.tsx';
 
 const useStrings = createUseStrings(localization);
 
@@ -25,7 +25,7 @@ export function CategorySettings(props: CategorySettingsProps) {
       <div className={cn(styles.bar, className)}>
         {category === 'workspaces-info' ? (
           <div className={styles.wsBar}>
-            {/* <WorkspacesBar key={'wssettingsbar'} /> */}
+            <WorkspacesBar key={'wssettingsbar'} ofSettings={true} />
             <div>
               <div className={cn(styles.dialogHeader)}>
                 {strings[category]}
