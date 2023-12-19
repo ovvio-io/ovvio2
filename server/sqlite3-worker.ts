@@ -10,8 +10,8 @@ import {
 import { slices } from '../base/array.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import {
-  JSONCyclicalEncoder,
   JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
 import { assert } from '../base/error.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
@@ -19,23 +19,21 @@ import { SerialScheduler } from '../base/serial-scheduler.ts';
 import { Record } from '../cfds/base/record.ts';
 import { SchemeNamespace } from '../cfds/base/scheme-types.ts';
 import { setGlobalLoggerStreams } from '../logging/log.ts';
-import { kSyncConfigServer } from '../net/base-client.ts';
-import { RepoClient } from '../net/repo-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { Repository } from '../repo/repo.ts';
 import { SQLiteRepoStorage } from './sqlite3-repo-storage.ts';
 import {
-  SQLite3WorkerMessage,
   LoadingFinishedMessage,
+  SQLite3WorkerMessage,
   WorkerReadyMessage,
 } from './sqlite3-worker-messages.ts';
 
 function fetchEncodedRootSessions(
-  sysDir: Repository<SQLiteRepoStorage>
+  sysDir: Repository<SQLiteRepoStorage>,
 ): EncodedSession[] {
   const db = sysDir.storage.db;
   const statement = db.prepare(
-    `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`
+    `SELECT json FROM heads WHERE ns = 'sessions' AND json->'$.d'->>'$.owner' = 'root';`,
   );
   const encodedRecord = statement.all();
   const result: EncodedSession[] = [];
@@ -52,7 +50,7 @@ function fetchEncodedRootSessions(
 
 async function setupTrustPool(
   trustPool: TrustPool,
-  sysDir: Repository<SQLiteRepoStorage>
+  sysDir: Repository<SQLiteRepoStorage>,
 ): Promise<void> {
   // First, load all root sessions
   fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
@@ -73,16 +71,17 @@ async function processMessage(
   openRepositories: Map<string, Repository<SQLiteRepoStorage>>,
   msg: SQLite3WorkerMessage,
   trustPool: TrustPool,
-  baseDir: string
+  baseDir: string,
 ): Promise<void> {
   switch (msg.msg) {
     case 'openRepo': {
       const repoId = Repository.id(msg.type, msg.id);
+      console.log(`WORKER: ${msg.msg}/${repoId}`);
       let repo = openRepositories.get(repoId);
       if (!repo) {
         repo = new Repository(
           new SQLiteRepoStorage(path.join(baseDir, msg.type, msg.id + '.repo')),
-          trustPool
+          trustPool,
         );
         openRepositories.set(repoId, repo);
       }
@@ -103,26 +102,18 @@ async function processMessage(
         count: commitCount,
         requestId: msg.requestId,
       } as LoadingFinishedMessage);
-      if (repoId === 'sys/dir') {
-        let ws: string[] = [];
-        for (const key of repo.keys()) {
-          const r = repo.valueForKey(key);
-          if (r.scheme.namespace === SchemeNamespace.WORKSPACE) {
-            ws.push(key);
-          }
-        }
-      }
       break;
     }
 
     case 'commits': {
       const repo = openRepositories.get(msg.repoId);
+      console.log(`WORKER: ${msg.msg}/${msg.repoId}`);
       if (repo) {
-        const persistedCommits = await repo.persistCommits(
+        await repo.persistCommits(
           msg.commits.map((obj) => {
             const decoder = new JSONCyclicalDecoder(obj as ReadonlyJSONObject);
             return new Commit({ decoder });
-          })
+          }),
         );
       }
       break;
@@ -134,7 +125,7 @@ function onMessage(
   openRepositories: Map<string, Repository<SQLiteRepoStorage>>,
   event: MessageEvent<SQLite3WorkerMessage>,
   trustPool: TrustPool,
-  baseDir: string
+  baseDir: string,
 ): void {
   const data = coreValueClone(event.data);
   SerialScheduler.get('sqlite3worker').run(() =>
@@ -166,7 +157,7 @@ async function main(): Promise<void> {
       baseDir = msg.baseDir;
       sysDir = new Repository(
         new SQLiteRepoStorage(path.join(baseDir, 'sys', 'dir.repo')),
-        trustPool
+        trustPool,
       );
       openRepositories.set(Repository.id('sys', 'dir'), sysDir);
       await setupTrustPool(trustPool, sysDir);
@@ -175,10 +166,10 @@ async function main(): Promise<void> {
       const readyMsg: WorkerReadyMessage = {
         msg: 'workerReady',
         rootSessions: await Promise.all(
-          trustPool.roots.map((s) => encodeSession(s))
+          trustPool.roots.map((s) => encodeSession(s)),
         ),
         trustedSessions: await Promise.all(
-          trustPool.trustedSessions.map((s) => encodeSession(s))
+          trustPool.trustedSessions.map((s) => encodeSession(s)),
         ),
       };
       postMessage(readyMsg);

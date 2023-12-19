@@ -19,19 +19,27 @@ import { kSecondMs } from '../base/date.ts';
 
 export type PersistCommitsCallback = (
   repoId: string,
-  commits: Commit[]
+  commits: Commit[],
 ) => void;
 
 export class SQLite3RepoBackup {
+  private readonly _openPromises: Map<string, Promise<void>>;
   private readonly _openRepoResolveFunctions: Map<string, () => void>;
+  private readonly _readyPromise: Promise<void>;
+  private _readyPromiseResolve!: () => void;
   private readonly _worker: Worker;
   private _nextRequestId = 0;
+  private _ready = false;
 
   constructor(
     readonly services: ServerServices,
-    readonly persistCallback: PersistCommitsCallback
+    readonly persistCallback: PersistCommitsCallback,
   ) {
+    this._openPromises = new Map();
     this._openRepoResolveFunctions = new Map();
+    this._readyPromise = new Promise<void>((res) => {
+      this._readyPromiseResolve = res;
+    });
     this._worker = new Worker(new URL(`./sqlite3-worker.ts`, import.meta.url), {
       type: 'module',
     });
@@ -43,10 +51,10 @@ export class SQLite3RepoBackup {
             msg.repoId,
             msg.commits.map((obj) => {
               const decoder = new JSONCyclicalDecoder(
-                obj as ReadonlyJSONObject
+                obj as ReadonlyJSONObject,
               );
               return new Commit({ decoder });
-            })
+            }),
           );
           break;
         }
@@ -63,6 +71,7 @@ export class SQLite3RepoBackup {
         }
 
         case 'workerReady': {
+          this._readyPromiseResolve();
           this.onWorkerReady(msg);
           break;
         }
@@ -71,6 +80,10 @@ export class SQLite3RepoBackup {
     sleep(kSecondMs).then(() => {
       this.initWorker();
     });
+  }
+
+  get ready(): boolean {
+    return this._ready;
   }
 
   private async initWorker(): Promise<void> {
@@ -91,25 +104,36 @@ export class SQLite3RepoBackup {
       trustPool.addSessionUnsafe(await decodeSession(encodedSession));
     }
     await this.open('sys', 'dir');
+    this._ready = true;
   }
 
-  open(type: RepositoryType, id: string): Promise<void> {
-    let resolve: () => void;
-    const result = new Promise<void>((res) => {
-      resolve = res;
-    });
+  async open(type: RepositoryType, id: string): Promise<void> {
+    await this._readyPromise;
     const repoId = Repository.id(type, id);
-    const requestId = this._nextRequestId++;
-    const key = `${requestId}/${repoId}`;
-    this._openRepoResolveFunctions.set(key, resolve!);
-    const msg: OpenRepositoryMessage = {
-      msg: 'openRepo',
-      type,
-      id,
-      requestId,
-    };
-    this._worker.postMessage(msg);
-    return result;
+    let promise = this._openPromises.get(repoId);
+    if (!promise) {
+      let resolve: () => void;
+      promise = new Promise<void>((res) => {
+        resolve = res;
+      });
+      const requestId = this._nextRequestId++;
+      const key = `${requestId}/${repoId}`;
+      this._openRepoResolveFunctions.set(key, () => {
+        if (this._openPromises.get(repoId) === promise) {
+          this._openPromises.delete(repoId);
+        }
+        resolve!();
+      });
+      const msg: OpenRepositoryMessage = {
+        msg: 'openRepo',
+        type,
+        id,
+        requestId,
+      };
+      this._worker.postMessage(msg);
+      this._openPromises.set(repoId, promise);
+    }
+    return promise;
   }
 
   persistCommits(repoId: string, commits: Commit[]): void {

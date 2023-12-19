@@ -25,13 +25,9 @@ import {
   SharedQueryName,
   SharedQueryType,
 } from './shared-queries.ts';
-import { VertexSourceEvent, VertexSource } from './vertex-source.ts';
+import { VertexSource, VertexSourceEvent } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
-import {
-  EVENT_NEW_COMMIT,
-  MemRepoStorage,
-  Repository,
-} from '../../../repo/repo.ts';
+import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
 import { Commit } from '../../../repo/commit.ts';
 import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
 import { RepoClient } from '../../../net/repo-client.ts';
@@ -48,8 +44,8 @@ import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
 import {
   OwnedSession,
-  TrustPool,
   sessionFromRecord,
+  TrustPool,
 } from '../../../auth/session.ts';
 
 // We consider only commits from the last 30 days to be "hot", and load them
@@ -83,7 +79,7 @@ export enum CacheLoadingStatus {
 
 export type StatusChangedCallback = (
   status: ClientStatus,
-  graph: GraphManager
+  graph: GraphManager,
 ) => void;
 
 interface RepositoryPlumbing {
@@ -95,10 +91,8 @@ interface RepositoryPlumbing {
   active: boolean;
 }
 
-export class GraphManager
-  extends Emitter<VertexSourceEvent | 'status-changed'>
-  implements VertexSource
-{
+export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
+  implements VertexSource {
   readonly sharedQueriesManager: SharedQueriesManager;
   private readonly _trustPool: TrustPool;
   private readonly _adjList: AdjacencyList;
@@ -128,7 +122,7 @@ export class GraphManager
     this._repoById = new Map();
     this._openQueries = new HashMap<string, [QueryOptions, Query]>(
       coreValueHash,
-      coreValueEquals
+      coreValueEquals,
     );
     this._baseServerUrl = baseServerUrl;
 
@@ -223,7 +217,12 @@ export class GraphManager
       if (backup) {
         const commits = await backup.loadCommits();
         if (commits instanceof Array) {
-          await repo.persistCommits(commits);
+          repo.allowMerge = false;
+          try {
+            await repo.persistCommits(commits);
+          } finally {
+            repo.allowMerge = true;
+          }
         } else {
           console.log(`Unexpected IDB result: ${commits}`);
         }
@@ -275,7 +274,7 @@ export class GraphManager
         // Data repo starts inactive. Everything else starts active.
         active: !id.startsWith('/data/'),
       };
-      repo.on(EVENT_NEW_COMMIT, (c: Commit) => {
+      repo.attach('NewCommit', (c: Commit) => {
         if (plumbing?.loadingFinished !== true) {
           return;
         }
@@ -318,7 +317,7 @@ export class GraphManager
           repo,
           // serveAddr/repoId/sync
           appendPathComponent(this._baseServerUrl, id, 'sync'),
-          kSyncConfigClient
+          kSyncConfigClient,
         );
         plumbing.client = client;
         client.on(EVENT_STATUS_CHANGED, () => {
@@ -350,7 +349,7 @@ export class GraphManager
   }
 
   repositoryForKey(
-    key: string
+    key: string,
   ): [string | undefined, Repository<MemRepoStorage> | undefined] {
     for (const [id, { repo }] of this._repoById) {
       if (repo.hasKey(key)) {
@@ -422,13 +421,13 @@ export class GraphManager
     namespace: SchemeNamespace,
     initialData: CoreObject,
     key?: string,
-    local = false
+    local = false,
   ): T {
     return this._createVertIfNeeded<T>(
       key || uniqueId(),
       namespace,
       initialData,
-      local
+      local,
     ).getVertexProxy();
   }
 
@@ -439,7 +438,7 @@ export class GraphManager
         vInfo.key || uniqueId(),
         vInfo.namespace,
         vInfo.initialData,
-        false
+        false,
       );
 
       vManagers.push(newV);
@@ -451,11 +450,11 @@ export class GraphManager
   getVertexManager<V extends Vertex = Vertex>(key: string): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>
+    key: VertexId<V>,
   ): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>
+    key: VertexId<V>,
   ): VertexManager<V> {
     return this._createVertIfNeeded<V>(VertexIdGetKey(key));
   }
@@ -463,7 +462,7 @@ export class GraphManager
   query<
     IT extends Vertex = Vertex,
     OT extends IT = IT,
-    GT extends CoreValue = CoreValue
+    GT extends CoreValue = CoreValue,
   >(options: QueryOptions<IT, OT, GT>): Query<IT, OT, GT> {
     const name = options.name;
     if (typeof name === 'undefined') {
@@ -481,19 +480,19 @@ export class GraphManager
     key: string,
     ns?: SchemeNamespace,
     initialData?: CoreObject,
-    local = false
+    local = false,
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
     if (mgr === undefined) {
-      const scheme =
-        ns !== undefined ? SchemeManager.instance.getScheme(ns) : undefined;
-      const record =
-        scheme !== undefined
-          ? new Record({
-              scheme: scheme,
-              data: initialData!,
-            })
-          : undefined;
+      const scheme = ns !== undefined
+        ? SchemeManager.instance.getScheme(ns)
+        : undefined;
+      const record = scheme !== undefined
+        ? new Record({
+          scheme: scheme,
+          data: initialData!,
+        })
+        : undefined;
       mgr = new VertexManager(this, key, record, local);
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
@@ -506,19 +505,19 @@ export class GraphManager
     mgr.attach(
       EVENT_DID_CHANGE,
       (pack: MutationPack, refsChange: RefsChange, RefsChange: RefsChange) =>
-        this._vertexDidChange(key, pack, refsChange)
+        this._vertexDidChange(key, pack, refsChange),
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
     mgr.reportInitialFields(
-      mgr.repository?.headForKey(mgr.key)?.session === session.id
+      mgr.repository?.headForKey(mgr.key)?.session === session.id,
     );
   }
 
   private _vertexDidChange(
     key: string,
     pack: MutationPack,
-    refsChange: RefsChange
+    refsChange: RefsChange,
   ): void {
     const pendingMutations = this._pendingMutations;
     pack = mutationPackAppend(pendingMutations.get(key), pack);
@@ -531,7 +530,7 @@ export class GraphManager
   private _processPendingMutations(): void {
     if (this._pendingMutations.size > 0) {
       const mutations: [VertexManager, MutationPack][] = new Array(
-        this._pendingMutations.size
+        this._pendingMutations.size,
       );
       let i = 0;
       for (const [key, mut] of this._pendingMutations) {
@@ -597,7 +596,7 @@ export class GraphManager
     srcKey: string,
     distance: number,
     excludeNs: string[] = [],
-    editRecord: (r: Record) => void = () => {}
+    editRecord: (r: Record) => void = () => {},
   ): ReadonlyJSONObject {
     const rootKey = this.rootKey;
     const result: JSONObject = {};
@@ -665,7 +664,7 @@ export class GraphManager
    */
   importSubGraph(
     encodedGraph: ReadonlyJSONObject,
-    local: boolean
+    local: boolean,
   ): VertexManager[] {
     const vertManagers = this._vertManagers;
     const decodedGraph = this.decodeGraph(encodedGraph);

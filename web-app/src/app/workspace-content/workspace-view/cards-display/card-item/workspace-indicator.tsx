@@ -122,7 +122,7 @@ function WorkspaceIndicatorButton({
   readOnly,
 }: WorkspaceIndicatorButtonProps) {
   const styles = useStyles();
-  const { name } = usePartialVertex(workspace, ['name']);
+  const { name } = usePartialVertex<Workspace>(workspace, ['name']);
   const ref = useRef(null);
   const style = useAnimateWidth(ref, isExpanded);
   const theme = useTheme();

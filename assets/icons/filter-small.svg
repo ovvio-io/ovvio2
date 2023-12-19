@@ -1,0 +1,11 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle opacity="0.6" cx="1.75" cy="1.75" r="1.75" transform="matrix(-4.37114e-08 -1 -1 4.37114e-08 15 12.375)" stroke="#262626" stroke-width="2"/>
+<path opacity="0.6" d="M13.25 15L13.25 12.375" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.6" d="M13.25 8.875L13.25 1" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle opacity="0.6" cx="1.75" cy="1.75" r="1.75" transform="matrix(-4.37114e-08 -1 -1 4.37114e-08 4.5 12.375)" stroke="#262626" stroke-width="2"/>
+<path opacity="0.6" d="M2.75 15L2.75 12.375" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.6" d="M2.75 8.875L2.75 1" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle opacity="0.6" cx="1.75" cy="1.75" r="1.75" transform="matrix(-4.37114e-08 -1 -1 4.37114e-08 9.75 7.125)" stroke="#262626" stroke-width="2"/>
+<path opacity="0.6" d="M8 15L8 7.125" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path opacity="0.6" d="M8 3.625L8 1" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

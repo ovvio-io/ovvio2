@@ -3,23 +3,23 @@ import { Scheme } from '../../base/scheme.ts';
 import { GraphManager } from './graph-manager.ts';
 import {
   MutationPack,
-  mutationPackIter,
   mutationPackAppend,
-  mutationPackIsEmpty,
-  mutationPackOptimize,
   mutationPackHasLocal,
+  mutationPackIsEmpty,
+  mutationPackIter,
+  mutationPackOptimize,
 } from './mutations.ts';
 import { RichText } from '../../richtext/tree.ts';
 import {
+  Clonable,
   Comparable,
   CoreObject,
   CoreValue,
-  coreValueEquals,
   coreValueClone,
+  CoreValueCloneOpts,
+  coreValueEquals,
   Equatable,
   ReadonlyCoreObject,
-  Clonable,
-  CoreValueCloneOpts,
 } from '../../../base/core-types/index.ts';
 import vertexBuilder from './vertices/vertex-builder.ts';
 import { SimpleTimer } from '../../../base/timer.ts';
@@ -75,7 +75,7 @@ export interface VertexBuilder {
     manager: VertexManager,
     record: Record,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ): Vertex;
 }
 
@@ -92,8 +92,7 @@ export type VertexManagerEvent =
 
 export class VertexManager<V extends Vertex = Vertex>
   extends Emitter<VertexManagerEvent>
-  implements Comparable<VertexManager>, Equatable<VertexManager>
-{
+  implements Comparable<VertexManager>, Equatable<VertexManager> {
   private readonly _graph: GraphManager;
   private readonly _key: string;
   private readonly _vertexConfig: VertexConfig;
@@ -112,7 +111,7 @@ export class VertexManager<V extends Vertex = Vertex>
     graph: GraphManager,
     key: string,
     initialState?: Record,
-    local?: boolean
+    local?: boolean,
   ) {
     super();
     this._graph = graph;
@@ -181,7 +180,7 @@ export class VertexManager<V extends Vertex = Vertex>
       return false;
     }
     const res = !this.record.isEqual(
-      repo.valueForKey(this.key, undefined, undefined, false)
+      repo.valueForKey(this.key, undefined, undefined, false),
     );
     return res;
   }
@@ -350,7 +349,7 @@ export class VertexManager<V extends Vertex = Vertex>
       this,
       this.record,
       this._vertex,
-      this._vertexConfig
+      this._vertexConfig,
     );
     this.rebuildVertexProxy();
   }
@@ -374,14 +373,17 @@ export class VertexManager<V extends Vertex = Vertex>
         } else if (this.scheme.hasField(prop)) {
           assert(
             this.scheme.isRequiredField(prop) === false,
-            `Attempting to delete required field '${prop} of '${this.namespace}'`
+            `Attempting to delete required field '${prop} of '${this.namespace}'`,
           );
           success = target.record.delete(prop);
         } else {
           success = delete target[prop as keyof T];
         }
         if (success) {
-          const mut = target.onUserUpdatedField([prop, true, oldValue]);
+          let mut: MutationPack = [prop, true, oldValue];
+          if (this.scheme.hasField(prop)) {
+            mut = target.onUserUpdatedField(mut);
+          }
           this.vertexDidMutate(mut, dynamicFields);
           // Trigger sync on persistent prop updates
           if (this.scheme.hasField(prop)) {
@@ -405,7 +407,10 @@ export class VertexManager<V extends Vertex = Vertex>
 
         target[prop as keyof T] = value;
 
-        const mut = target.onUserUpdatedField([prop, true, oldValue]);
+        let mut: MutationPack = [prop, true, oldValue];
+        if (this.scheme.hasField(prop)) {
+          mut = target.onUserUpdatedField(mut);
+        }
         this.vertexDidMutate(mut, dynamicFields);
         // Trigger sync on persistent prop updates
         // if (this.scheme.hasField(prop)) {
@@ -454,7 +459,7 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   vertexDidMutate(
     mutations: MutationPack,
-    dynamicFields?: DynamicFieldsSnapshot
+    dynamicFields?: DynamicFieldsSnapshot,
   ): void {
     mutations = mutationPackOptimize(mutations);
     const vertex = this.getVertex();
@@ -522,7 +527,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
   private mutationsForDynamicFields(
     outMutations: MutationPack,
-    snapshot: DynamicFieldsSnapshot
+    snapshot: DynamicFieldsSnapshot,
   ): MutationPack {
     if (snapshot.hasPendingChanges !== this.hasPendingChanges) {
       outMutations = mutationPackAppend(outMutations, [
@@ -586,8 +591,10 @@ export class VertexManager<V extends Vertex = Vertex>
           newRecValue &&
           vertex.record.scheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
         ) {
-          newRecValue = projectPointers(oldRecValue, newRecValue, (ptr) =>
-            this.graph.ptrFilterFunc(ptr.key)
+          newRecValue = projectPointers(
+            oldRecValue,
+            newRecValue,
+            (ptr) => this.graph.ptrFilterFunc(ptr.key),
           );
         }
         vertex.record.set(fieldName, newRecValue);
@@ -627,7 +634,7 @@ export class VertexManager<V extends Vertex = Vertex>
     for (const key of vertex.getLocalFields()) {
       if (onlyFields && !onlyFields.includes(key)) continue;
       local[key] = coreValueClone(
-        vertex[key as keyof Vertex] as unknown as CoreValue
+        vertex[key as keyof Vertex] as unknown as CoreValue,
       );
     }
 
@@ -662,7 +669,7 @@ function getDeleteMethodName(prop: string): string {
 function projectRichTextPointers(
   srcRec: Record,
   dstRec: Record,
-  filter: (ptr: PointerValue) => boolean
+  filter: (ptr: PointerValue) => boolean,
 ): void {
   const srcScheme = srcRec.scheme;
   for (const [fieldName, type] of Object.entries(dstRec.scheme.getFields())) {
@@ -760,14 +767,13 @@ class SetProxy<T> implements Clonable, Equatable, RecordValueWrapper<Set<T>> {
 }
 
 class DictionaryProxy<K, V>
-  implements Clonable, Equatable, RecordValueWrapper<Dictionary<K, V>>
-{
+  implements Clonable, Equatable, RecordValueWrapper<Dictionary<K, V>> {
   readonly _target: Dictionary<K, V>;
   private readonly _didMutateCallback: DidMutateCallback<Dictionary<K, V>>;
 
   constructor(
     target: Dictionary<K, V>,
-    callback: DidMutateCallback<Dictionary<K, V>>
+    callback: DidMutateCallback<Dictionary<K, V>>,
   ) {
     this._target = target;
     this._didMutateCallback = callback;
@@ -806,7 +812,7 @@ class DictionaryProxy<K, V>
     if (
       !coreValueEquals(
         target.get(key) as unknown as CoreValue,
-        value as unknown as CoreValue
+        value as unknown as CoreValue,
       )
     ) {
       const oldValue = new Map(target);

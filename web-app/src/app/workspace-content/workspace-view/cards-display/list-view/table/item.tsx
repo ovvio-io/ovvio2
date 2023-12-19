@@ -1,10 +1,10 @@
 import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  MouseEventHandler,
   KeyboardEventHandler,
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
 import { formatTimeDiff } from '../../../../../../../../base/date.ts';
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
@@ -18,23 +18,23 @@ import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/wo
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
 import IconDelete from '../../../../../../../../styles/components/icons/IconDelete.tsx';
 import IconNote from '../../../../../../../../styles/components/icons/IconNote.tsx';
-import CheckBox from '../../../../../../../../styles/components/inputs/CheckBox.tsx';
+import { CheckBox } from '../../../../../../../../components/task.tsx';
 import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
 import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
 import {
-  IconDueDate,
   DueDateState,
+  IconDueDate,
 } from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { useToastController } from '../../../../../../../../styles/components/toast/index.tsx';
 import {
-  useTypographyStyles,
   TextSm,
+  useTypographyStyles,
 } from '../../../../../../../../styles/components/typography.tsx';
 import {
-  makeStyles,
   cn,
+  makeStyles,
 } from '../../../../../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { layout } from '../../../../../../../../styles/layout.ts';
@@ -47,8 +47,8 @@ import {
   format,
 } from '../../../../../../core/localization/index.tsx';
 import {
-  Assignee,
   AssignButton,
+  Assignee,
 } from '../../../../../../shared/card/assignees-view.tsx';
 import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
 import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
@@ -58,8 +58,8 @@ import { assignNote } from '../../../../../../shared/utils/assignees.ts';
 import { moveCard } from '../../../../../../shared/utils/move.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import {
-  WorkspaceIndicatorButtonProps,
   WorkspaceIndicator,
+  WorkspaceIndicatorButtonProps,
 } from '../../card-item/workspace-indicator.tsx';
 import { GridColumns, useGridStyles } from './grid.tsx';
 import localization from '../list.strings.json' assert { type: 'json' };
@@ -271,9 +271,11 @@ const useStyles = makeStyles(
       right: 0,
       bottom: 0,
     },
+    checkbox: {
+      margin: styleguide.gridbase * 2,
+    },
   }),
-
-  'item_1cda8c'
+  'item_1cda8c',
 );
 
 export { useStyles as useRowStyles };
@@ -327,7 +329,7 @@ export function Cell({
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
   function (
     { onWorkspaceMoved, note, isChild, onClick = () => {}, attributes },
-    ref
+    ref,
   ) {
     const styles = useStyles();
     const gridStyles = useGridStyles();
@@ -342,8 +344,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
     const hasOverride = view.notesExpandOverride.has(note.key);
-    const isExpanded =
-      (view.notesExpandBase && !hasOverride) ||
+    const isExpanded = (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
 
     return (
@@ -354,31 +355,34 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           onMouseOver={onMouseOver}
           onMouseLeave={onMouseLeave}
         >
-          {/* <div className={cn(styles[GridColumns.DragAnchor])} {...attributes}>
+          {
+            /* <div className={cn(styles[GridColumns.DragAnchor])} {...attributes}>
           ::
-        </div> */}
-          {isChild ? (
-            <React.Fragment>
-              <Cell className={cn(styles.childPadding)} />
-              <Cell className={cn(styles[GridColumns.Title])}>
-                <table className={cn(gridStyles.table)}>
-                  <TypeCell note={note} />
-                  <TitleCell note={note} onClick={onClickImpl} />
-                </table>
-              </Cell>
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <TypeCell note={note} />
-              <TitleCell note={note} onClick={onClickImpl} />
-            </React.Fragment>
-          )}
+        </div> */
+          }
+          {isChild
+            ? (
+              <React.Fragment>
+                <Cell className={cn(styles.childPadding)} />
+                <Cell className={cn(styles[GridColumns.Title])}>
+                  <table className={cn(gridStyles.table)}>
+                    <TypeCell note={note} />
+                    <TitleCell note={note} onClick={onClickImpl} />
+                  </table>
+                </Cell>
+              </React.Fragment>
+            )
+            : (
+              <React.Fragment>
+                <TypeCell note={note} />
+                <TitleCell note={note} onClick={onClickImpl} />
+              </React.Fragment>
+            )}
           <ExpanderCell
             note={note}
             isExpanded={isExpanded}
             toggleExpanded={() =>
-              view.setNoteExpandOverride(note.key, !hasOverride)
-            }
+              view.setNoteExpandOverride(note.key, !hasOverride)}
           />
           <ContentIndicatorCell note={note} />
           <WorkspaceCell note={note} onWorkspaceMoved={onWorkspaceMoved} />
@@ -401,7 +405,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           ))}
       </React.Fragment>
     );
-  }
+  },
 );
 
 export function DraftItemRow({
@@ -457,7 +461,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        isChecked && styles.doneIndicatorActive
+        isChecked && styles.doneIndicatorActive,
       )}
     />
   );
@@ -484,7 +488,7 @@ const ExpanderCell = ({
         <IconArrowDown
           className={cn(
             styles.expanderIcon,
-            isExpanded && styles.expanderIconExpanded
+            isExpanded && styles.expanderIconExpanded,
           )}
         />
       )}
@@ -501,7 +505,7 @@ const ContentIndicatorCell = ({ note }: { note: VertexManager<Note> }) => {
       className={cn(
         styles.cell,
         styles.iconCell,
-        styles[GridColumns.ContentIndicator]
+        styles[GridColumns.ContentIndicator],
       )}
     >
       {!!bodyPreview.trim().length && <IconContent />}
@@ -524,24 +528,24 @@ const AssigneesCell = ({
   ]);
   const { assignees: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['assignees']
+    ['assignees'],
   );
   const workspaces = useMemo(
     () => [workspace?.manager as VertexManager<Workspace>],
-    [workspace?.manager]
+    [workspace?.manager],
   );
 
   const userManagers = useMemo(
     () =>
       Array.from(wsAssignees || []).map(
-        (x) => x.manager as VertexManager<User>
+        (x) => x.manager as VertexManager<User>,
       ),
-    [wsAssignees]
+    [wsAssignees],
   );
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
-    [assignees]
+    [assignees],
   );
 
   return (
@@ -554,7 +558,7 @@ const AssigneesCell = ({
           users={userManagers}
           assignees={managers}
           className={cn(styles.assignee)}
-          size="small"
+          size='small'
           source={'list'}
         />
       ))}
@@ -593,7 +597,7 @@ const TagsCell = ({
   for (const [p, c] of tags) {
     tagsMng.set(
       p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>
+      c.manager as VertexManager<Tag>,
     );
   }
   const onDelete = useCallback(
@@ -608,7 +612,7 @@ const TagsCell = ({
         removed: tag.key,
       });
     },
-    [note, logger]
+    [note, logger],
   );
   const onTag = useCallback(
     (tag: Tag) => {
@@ -626,14 +630,14 @@ const TagsCell = ({
         removed: prevTag?.key,
       });
     },
-    [note, logger]
+    [note, logger],
   );
   return (
     <Cell className={cn(styles[GridColumns.Tags])}>
       {managers.map((x) => (
         <TagView
           className={cn(styles.tag)}
-          showMenu="hover"
+          showMenu='hover'
           key={x.key}
           tag={x}
           onSelected={onTag}
@@ -663,23 +667,22 @@ const TypeCell = ({
 
   return (
     <Cell className={cn(styles.iconCell, styles[GridColumns.Type])}>
-      {isDraft ? (
-        <IconNewTask />
-      ) : isActionable ? (
-        <ItemCheckbox note={note} />
-      ) : (
-        <IconNote />
-      )}
+      {isDraft
+        ? <IconNewTask />
+        : isActionable
+        ? <ItemCheckbox note={note} />
+        : <img src='/icons/list/note.svg' />}
     </Cell>
   );
 };
 
 const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
+  const styles = useStyles();
   const partialNote = usePartialVertex(note, ['isChecked']);
   return (
     <CheckBox
-      name={note.key}
-      checked={partialNote.isChecked}
+      className={cn(styles.checkbox)}
+      value={partialNote.isChecked}
       onChange={() => (partialNote.isChecked = !partialNote.isChecked)}
     />
   );
@@ -688,7 +691,7 @@ const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: { className?: string },
-    ref: React.ForwardedRef<HTMLSpanElement>
+    ref: React.ForwardedRef<HTMLSpanElement>,
   ) => {
     const styles = useStyles();
     return (
@@ -698,18 +701,18 @@ const TitleNode = React.forwardRef(
         {...props}
       />
     );
-  }
+  },
 );
 const DraftTitleNode = React.forwardRef(
   (
     { className, ...props }: { className?: string },
-    ref: React.ForwardedRef<HTMLSpanElement>
+    ref: React.ForwardedRef<HTMLSpanElement>,
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  }
+  },
 );
 
 function TitleCell({
@@ -744,13 +747,15 @@ function TitleCell({
   return (
     <Cell className={cn(styles.title)} onClick={isDraft ? undefined : onClick}>
       <div className={cn(styles.titleContainer)}>
-        {/* <Slate editor={editor} {...handlers}>
+        {
+          /* <Slate editor={editor} {...handlers}>
           <Editable
             className={cn(styles.titleEditor, !isDraft && styles.nowrap)}
             {...plugins}
             readOnly={!isDraft}
           />
-        </Slate> */}
+        </Slate> */
+        }
         <Text>{titlePlaintext}</Text>
       </div>
     </Cell>
@@ -769,7 +774,7 @@ function WorkspaceIndicatorComponent({
 }: WorkspaceIndicatorButtonProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
-  const color = useWorkspaceColor(workspace);
+  const color = useWorkspaceColor(workspace!);
   const strings = useStrings();
   const style = useMemo<any>(
     () => ({
@@ -777,7 +782,7 @@ function WorkspaceIndicatorComponent({
       '--ws-active': color.active,
       '--ws-inactive': color.inactive,
     }),
-    [color]
+    [color],
   );
 
   return (
@@ -832,11 +837,9 @@ const WorkspaceCell = ({
         isExpanded={false}
         setWorkspace={setWorkspace}
         validateMove={!isDraft}
-        ButtonComponent={
-          isDraft
-            ? WorkspaceDraftIndicatorComponent
-            : WorkspaceIndicatorComponent
-        }
+        ButtonComponent={isDraft
+          ? WorkspaceDraftIndicatorComponent
+          : WorkspaceIndicatorComponent}
       />
     </Cell>
   );
@@ -888,13 +891,15 @@ const PinCell = ({
     <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
       {!isChild && (
         <Button onClick={togglePin}>
-          {/* {isPinned ? (
+          {
+            /* {isPinned ? (
             <IconPinOn />
           ) : (
             <IconPinOff
               className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
             />
-          )} */}
+          )} */
+          }
           <IconPin on={isPinned} visible={isMouseOver} />
         </Button>
       )}
@@ -916,10 +921,10 @@ const MenuCell = ({
       className={cn(
         styles.iconCell,
         styles.visibleOnHover,
-        styles[GridColumns.Menu]
+        styles[GridColumns.Menu],
       )}
     >
-      <CardMenuView visible={isMouseOver} cardManager={note} source="list" />
+      <CardMenuView visible={isMouseOver} cardManager={note} source='list' />
     </Cell>
   );
 };

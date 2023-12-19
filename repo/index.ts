@@ -1,4 +1,4 @@
-import { EVENT_NEW_COMMIT, RepoStorage, Repository } from './repo.ts';
+import { Repository, RepoStorage } from './repo.ts';
 import { Record } from '../cfds/base/record.ts';
 import { Commit } from './commit.ts';
 import { coreValueCompare } from '../base/core-types/comparable.ts';
@@ -9,7 +9,7 @@ export type SortDescriptor = (
   key1: string | null,
   record1: Record,
   key2: string | null,
-  record2: Record
+  record2: Record,
 ) => number;
 
 export class RepositoryIndex<T extends RepoStorage<T>> {
@@ -21,11 +21,11 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
     readonly repo: Repository<T>,
     readonly predicate: Predicate,
     readonly sortDescriptor: SortDescriptor = (k1, _r1, k2, _r2) =>
-      coreValueCompare(k1, k2)
+      coreValueCompare(k1, k2),
   ) {
     this._headIdForKey = new Map();
     this._includedKeys = new Set();
-    repo.on(EVENT_NEW_COMMIT, (c: Commit) => this.onNewCommit(c));
+    repo.attach('NewCommit', (c: Commit) => this.onNewCommit(c));
   }
 
   private onNewCommit(commit: Commit): void {
@@ -104,5 +104,15 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
       }
     }
     return result;
+  }
+
+  scanRepo(): void {
+    const repo = this.repo;
+    for (const key of repo.keys()) {
+      const head = repo.headForKey(key)!;
+      if (head) {
+        this.onNewCommit(head);
+      }
+    }
   }
 }

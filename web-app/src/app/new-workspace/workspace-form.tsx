@@ -44,10 +44,9 @@ type CreateWorkspaceOptions = {
 };
 
 function duplicateWorkspace(
-  name: string,
   graph: GraphManager,
   src: VertexManager<Workspace>,
-  initialData: CoreObject
+  initialData: CoreObject,
 ): VertexManager<Workspace> {
   // const subGraph = graph.exportSubGraph(src.key, 1, [NS_USERS], (r: Record) => {
   //   if (r.scheme.namespace === NS_WORKSPACE) {
@@ -83,8 +82,10 @@ function duplicateWorkspace(
   const newRepoId = Repository.id('data', newWs.key);
   const dstRepo = graph.repository(newRepoId);
   // Copy notes and reset their assignees
-  for (const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
-    []) {
+  for (
+    const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
+      []
+  ) {
     record.delete('assignees');
     record.rewriteRefs(rewriteKeys);
     dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
@@ -107,15 +108,26 @@ function duplicateWorkspace(
 function createNewWorkspace(
   name: string,
   graphManager: GraphManager,
-  opts: CreateWorkspaceOptions = {}
+  opts: CreateWorkspaceOptions = {},
 ): VertexManager<Workspace> {
   const { copyFrom } = opts;
   const data = {
     name,
     users: new Set([graphManager.rootKey]),
   };
+  delete data.isTemplate;;
   if (copyFrom) {
-    return duplicateWorkspace(name, graphManager, copyFrom, data);
+    for (let i = 0; i < 10; ++i) {
+      const ws = duplicateWorkspace(
+        graphManager,
+        copyFrom,
+        {
+          ...data,
+          name: name + `-${i + 1}`,
+        },
+      );
+    }
+    return duplicateWorkspace(graphManager, copyFrom, data);
   }
   return graphManager.createVertex<Workspace>(NS_WORKSPACE, data).manager;
 }
@@ -163,7 +175,7 @@ export function WorkspaceForm({
       id: flowId,
     });
     graph.sharedQueriesManager.workspaces.forEach(
-      (ws) => (ws.selected = ws.key === wsResult.key)
+      (ws) => (ws.selected = ws.key === wsResult.key),
     );
     wsResult.getVertexProxy().selected = true;
     onWorkspaceCreated(wsResult);
@@ -190,7 +202,7 @@ export function WorkspaceForm({
           />
         )}
         <TextField
-          placeholder="Name your workspace"
+          placeholder='Name your workspace'
           value={name}
           onChange={(e: any) => setName(e.currentTarget.value)}
           className={cn(styles.input)}

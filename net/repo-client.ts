@@ -31,7 +31,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
       repo.numberOfCommits(session),
       this.previousServerSize,
       this.syncCycles,
-      await generateRequestSignature(repo.trustPool.currentSession)
+      await generateRequestSignature(repo.trustPool.currentSession),
     );
   }
 
@@ -43,5 +43,14 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
 
   protected async persistPeerValues(values: Commit[]): Promise<number> {
     return (await this.repo.persistCommits(values)).length;
+  }
+
+  async sync(): Promise<void> {
+    this.repo.allowMerge = false;
+    try {
+      await super.sync();
+    } finally {
+      this.repo.allowMerge = true;
+    }
   }
 }

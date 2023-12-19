@@ -8,12 +8,20 @@ import {
 import { OrderedListNode } from './model.ts';
 import { isElementNode, isTextNode } from './tree.ts';
 
-const STREAM_DETECTION_SIZE = 6;
+type ReplacerFunction = (
+  buffer: readonly FlatRepAtom[],
+) => FlatRepAtom[] | undefined;
 
-function replaceH1(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
-  if (buffer.length < 5) {
-    return;
-  }
+const ShortcutsByLength: Record<number, ReplacerFunction[]> = {
+  5: [replaceH1, replaceUL, replaceTask],
+  6: [replaceH2, replaceOL],
+  7: [replaceH3],
+  8: [replaceH4],
+  9: [replaceH5],
+  10: [replaceH6],
+};
+
+function replaceH1(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -24,26 +32,20 @@ function replaceH1(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
     buffer[4].text === ' '
   ) {
     return [
-      5,
-      [
-        buffer[0],
-        {
-          children: [],
-          tagName: 'h1',
-        },
-        buffer[2],
-        {
-          text: '',
-        },
-      ],
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h1',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
     ];
   }
 }
 
-function replaceH2(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
-  if (buffer.length < 6) {
-    return;
-  }
+function replaceH2(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -56,26 +58,144 @@ function replaceH2(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
     buffer[5].text === ' '
   ) {
     return [
-      6,
-      [
-        buffer[0],
-        {
-          children: [],
-          tagName: 'h2',
-        },
-        buffer[2],
-        {
-          text: '',
-        },
-      ],
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h2',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
     ];
   }
 }
 
-function replaceUL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
-  if (buffer.length < 5) {
-    return;
+function replaceH3(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
+  if (
+    isElementSpacer(buffer[0]) &&
+    isElementNode(buffer[1]) &&
+    isDepthMarker(buffer[2]) &&
+    isTextNode(buffer[3]) &&
+    buffer[3].text === '#' &&
+    isTextNode(buffer[4]) &&
+    buffer[4].text === '#' &&
+    isTextNode(buffer[5]) &&
+    buffer[5].text === '#' &&
+    isTextNode(buffer[6]) &&
+    buffer[6].text === ' '
+  ) {
+    return [
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h3',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
+    ];
   }
+}
+
+function replaceH4(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
+  if (
+    isElementSpacer(buffer[0]) &&
+    isElementNode(buffer[1]) &&
+    isDepthMarker(buffer[2]) &&
+    isTextNode(buffer[3]) &&
+    buffer[3].text === '#' &&
+    isTextNode(buffer[4]) &&
+    buffer[4].text === '#' &&
+    isTextNode(buffer[5]) &&
+    buffer[5].text === '#' &&
+    isTextNode(buffer[6]) &&
+    buffer[6].text === '#' &&
+    isTextNode(buffer[7]) &&
+    buffer[7].text === ' '
+  ) {
+    return [
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h4',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
+    ];
+  }
+}
+
+function replaceH5(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
+  if (
+    isElementSpacer(buffer[0]) &&
+    isElementNode(buffer[1]) &&
+    isDepthMarker(buffer[2]) &&
+    isTextNode(buffer[3]) &&
+    buffer[3].text === '#' &&
+    isTextNode(buffer[4]) &&
+    buffer[4].text === '#' &&
+    isTextNode(buffer[5]) &&
+    buffer[5].text === '#' &&
+    isTextNode(buffer[6]) &&
+    buffer[6].text === '#' &&
+    isTextNode(buffer[7]) &&
+    buffer[7].text === '#' &&
+    isTextNode(buffer[8]) &&
+    buffer[8].text === ' '
+  ) {
+    return [
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h5',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
+    ];
+  }
+}
+
+function replaceH6(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
+  if (
+    isElementSpacer(buffer[0]) &&
+    isElementNode(buffer[1]) &&
+    isDepthMarker(buffer[2]) &&
+    isTextNode(buffer[3]) &&
+    buffer[3].text === '#' &&
+    isTextNode(buffer[4]) &&
+    buffer[4].text === '#' &&
+    isTextNode(buffer[5]) &&
+    buffer[5].text === '#' &&
+    isTextNode(buffer[6]) &&
+    buffer[6].text === '#' &&
+    isTextNode(buffer[7]) &&
+    buffer[7].text === '#' &&
+    isTextNode(buffer[8]) &&
+    buffer[8].text === '#' &&
+    isTextNode(buffer[9]) &&
+    buffer[9].text === ' '
+  ) {
+    return [
+      buffer[0],
+      {
+        children: [],
+        tagName: 'h6',
+      },
+      buffer[2],
+      {
+        text: '',
+      },
+    ];
+  }
+}
+
+function replaceUL(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -86,31 +206,25 @@ function replaceUL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
     buffer[4].text === ' '
   ) {
     return [
-      5,
-      [
-        buffer[0],
-        {
-          children: [],
-          tagName: 'ul',
-        },
-        buffer[2],
-        {
-          tagName: 'li',
-          children: [],
-        },
-        { depthMarker: buffer[2].depthMarker + 1 },
-        {
-          text: '',
-        },
-      ],
+      buffer[0],
+      {
+        children: [],
+        tagName: 'ul',
+      },
+      buffer[2],
+      {
+        tagName: 'li',
+        children: [],
+      },
+      { depthMarker: buffer[2].depthMarker + 1 },
+      {
+        text: '',
+      },
     ];
   }
 }
 
-function replaceOL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
-  if (buffer.length < 6) {
-    return;
-  }
+function replaceOL(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -131,30 +245,24 @@ function replaceOL(buffer: FlatRepAtom[]): [number, FlatRepAtom[]] | undefined {
       ol.start = parseInt(buffer[3].text);
     }
     return [
-      6,
-      [
-        buffer[0],
-        ol,
-        buffer[2],
-        {
-          tagName: 'li',
-          children: [],
-        },
-        { depthMarker: buffer[2].depthMarker + 1 },
-        {
-          text: '',
-        },
-      ],
+      buffer[0],
+      ol,
+      buffer[2],
+      {
+        tagName: 'li',
+        children: [],
+      },
+      { depthMarker: buffer[2].depthMarker + 1 },
+      {
+        text: '',
+      },
     ];
   }
 }
 
 function replaceTask(
-  buffer: FlatRepAtom[]
-): [number, FlatRepAtom[]] | undefined {
-  if (buffer.length < 5) {
-    return;
-  }
+  buffer: readonly FlatRepAtom[],
+): FlatRepAtom[] | undefined {
   if (
     isElementSpacer(buffer[0]) &&
     isElementNode(buffer[1]) &&
@@ -165,45 +273,59 @@ function replaceTask(
     buffer[4].text === ' '
   ) {
     return [
-      5,
-      [
-        buffer[0],
-        {
-          tagName: 'ref',
-          type: 'inter-doc',
-          ref: uniqueId(),
-          children: [],
-        },
-        buffer[2],
-        kElementSpacer,
-        {
-          tagName: 'p',
-          children: [],
-        },
-        { depthMarker: buffer[2].depthMarker + 1 },
-      ],
+      buffer[0],
+      {
+        tagName: 'ref',
+        type: 'inter-doc',
+        ref: uniqueId(),
+        children: [],
+      },
+      buffer[2],
+      kElementSpacer,
+      {
+        tagName: 'p',
+        children: [],
+      },
+      { depthMarker: buffer[2].depthMarker + 1 },
     ];
   }
 }
 
 export function* applyShortcuts(
-  flatRep: Iterable<FlatRepAtom>
+  flatRep: Iterable<FlatRepAtom>,
 ): Generator<FlatRepAtom> {
   const buffer: FlatRepAtom[] = [];
+  const detectionSizes = Object.keys(ShortcutsByLength).map((k) => parseInt(k))
+    .sort((a, b) => a - b);
+  const minDetectionSize = detectionSizes[0];
+  const maxDetectionSize = detectionSizes[detectionSizes.length - 1];
   for (const atom of flatRep) {
     buffer.push(atom);
-    const replacement =
-      replaceH1(buffer) ||
-      replaceH2(buffer) ||
-      replaceUL(buffer) ||
-      replaceOL(buffer) ||
-      replaceTask(buffer);
-    if (replacement) {
-      for (const a of replacement[1]) {
-        yield a;
+    const bufferLen = buffer.length;
+    if (bufferLen >= minDetectionSize) {
+      for (
+        let size = Math.min(maxDetectionSize, bufferLen);
+        size >= minDetectionSize;
+        --size
+      ) {
+        const offset = buffer.length - size;
+        const detectors = ShortcutsByLength[size] || [];
+        for (const f of detectors) {
+          const replacement = f(buffer.slice(offset));
+          if (replacement) {
+            for (let i = 0; i < offset; ++i) {
+              yield buffer[i];
+            }
+            for (const atom of replacement) {
+              yield atom;
+            }
+            buffer.splice(0, size + offset);
+            break;
+          }
+        }
       }
-      buffer.splice(0, replacement[0]);
-    } else if (buffer.length === STREAM_DETECTION_SIZE) {
+    }
+    if (buffer.length === maxDetectionSize) {
       yield buffer[0];
       buffer.shift();
     }

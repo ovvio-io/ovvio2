@@ -1,29 +1,35 @@
-import EventEmitter from 'eventemitter3';
-import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
-import * as SetUtils from '../base/set.ts';
-import * as ArrayUtils from '../base/array.ts';
-import { Dictionary } from '../base/collections/dict.ts';
-import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
-import { Commit, commitContentsIsRecord, DeltaContents } from './commit.ts';
-import { concatChanges, DataChanges } from '../cfds/base/object.ts';
-import { Record as CFDSRecord } from '../cfds/base/record.ts';
-import { assert } from '../base/error.ts';
-import { Edit } from '../cfds/base/edit.ts';
-import { log } from '../logging/log.ts';
-import { SchemeNamespace, kRecordIdField } from '../cfds/base/scheme-types.ts';
-import { Scheme } from '../cfds/base/scheme.ts';
-import { repositoryForRecord } from './resolver.ts';
+import { Emitter } from '../base/emitter.ts';
 import {
   Session,
-  TrustPool,
   sessionFromRecord,
   signCommit,
+  TrustPool,
 } from '../auth/session.ts';
+import * as ArrayUtils from '../base/array.ts';
+import { Dictionary } from '../base/collections/dict.ts';
 import { filterIterable } from '../base/common.ts';
+import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
+import { assert } from '../base/error.ts';
+import * as SetUtils from '../base/set.ts';
+import { Edit } from '../cfds/base/edit.ts';
+import { Code, ServerError, serviceUnavailable } from '../cfds/base/errors.ts';
+import { concatChanges, DataChanges } from '../cfds/base/object.ts';
+import { Record as CFDSRecord } from '../cfds/base/record.ts';
+import { kRecordIdField, SchemeNamespace } from '../cfds/base/scheme-types.ts';
+import { Scheme } from '../cfds/base/scheme.ts';
+import { log } from '../logging/log.ts';
+import {
+  Commit,
+  commitContentsIsDelta,
+  commitContentsIsRecord,
+  DeltaContents,
+} from './commit.ts';
 import { RepositoryIndex } from './index.ts';
+import { repositoryForRecord } from './resolver.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
-export const EVENT_NEW_COMMIT = 'NewCommit';
+
+type RepositoryEvent = 'NewCommit';
 
 export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
 export type RepositoryType = (typeof kRepositoryTypes)[number];
@@ -42,7 +48,7 @@ export type Authorizer<ST extends RepoStorage<ST>> = (
   repo: Repository<ST>,
   commit: Commit,
   session: Session,
-  write: boolean
+  write: boolean,
 ) => boolean;
 
 interface CachedHead {
@@ -57,8 +63,8 @@ export type RepositoryIndexes<T extends RepoStorage<T>> = Record<
 
 export class Repository<
   ST extends RepoStorage<ST>,
-  IT extends RepositoryIndexes<ST> = RepositoryIndexes<ST>
-> extends EventEmitter {
+  IT extends RepositoryIndexes<ST> = RepositoryIndexes<ST>,
+> extends Emitter<RepositoryEvent> {
   readonly storage: ST;
   readonly trustPool: TrustPool;
   readonly indexes?: IT;
@@ -68,11 +74,13 @@ export class Repository<
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
   private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
 
+  allowMerge = true;
+
   constructor(
     storage: ST,
     trustPool: TrustPool,
     authorizer?: Authorizer<ST>,
-    indexes?: (repo: Repository<ST, IT>) => IT
+    indexes?: (repo: Repository<ST, IT>) => IT,
   ) {
     super();
     this.storage = storage;
@@ -148,8 +156,8 @@ export class Repository<
 
   *commits(session?: Session): Generator<Commit> {
     const { authorizer } = this;
-    const checkAuth =
-      session && session.id !== this.trustPool.currentSession.id && authorizer;
+    const checkAuth = session &&
+      session.id !== this.trustPool.currentSession.id && authorizer;
     for (const id of this.storage.allCommitsIds()) {
       const commit = this.getCommit(id);
       if (!checkAuth || authorizer(this, this.getCommit(id), session, false)) {
@@ -162,9 +170,9 @@ export class Repository<
     const { authorizer } = this;
     const commits = this.storage.commitsForKey(key);
     for (const c of commits) {
-      if (!this._commitsCache.has(c.id)) {
-        this._runUpdatesOnNewCommit(c);
-      }
+      // if (!this._commitsCache.has(c.id)) {
+      //   this._runUpdatesOnNewCommit(c);
+      // }
       if (
         !session ||
         session.id === this.trustPool.currentSession.id ||
@@ -179,7 +187,7 @@ export class Repository<
   leavesForKey(
     key: string | null,
     session?: Session,
-    pendingCommit?: Commit
+    pendingCommit?: Commit,
   ): Commit[] {
     const childrenPerCommit = new Map<string, Set<Commit>>();
     for (const c of this.commitsForKey(key, session)) {
@@ -200,7 +208,7 @@ export class Repository<
 
   private _setChildrenPerCommit(
     c: Commit,
-    childrenPerCommit: Map<string, Set<Commit>>
+    childrenPerCommit: Map<string, Set<Commit>>,
   ): void {
     for (const p of c.parents) {
       let children = childrenPerCommit.get(p);
@@ -219,8 +227,10 @@ export class Repository<
       session.id !== this.trustPool.currentSession.id &&
       authorizer
     ) {
-      return filterIterable(this.storage.allKeys(), (key) =>
-        authorizer(this, this.headForKey(key, session.id)!, session, false)
+      return filterIterable(
+        this.storage.allKeys(),
+        (key) =>
+          authorizer(this, this.headForKey(key, session.id)!, session, false),
       );
     }
     return this.storage.allKeys();
@@ -244,7 +254,7 @@ export class Repository<
    *          3. The scheme to use for the merge.
    */
   findMergeBase(
-    commits: Iterable<Commit>
+    commits: Iterable<Commit>,
   ): [commits: Commit[], base: Commit | undefined, scheme: Scheme] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
@@ -272,26 +282,30 @@ export class Repository<
 
   /**
    * Given two commits, this method finds the base from which to perform a 3 way
-   * merge for c1 and c2. The algorithm is based on a simple Lowest Common
-   * Ancestor between the two, but rather than pick the actual LCA from the
-   * graph, we choose the first time ancestors agree on a common value.
+   * merge for c1 and c2. This is a simple iterative LCA implementation based on
+   * the assumption of a DAG (if it's not, something is terribly broken).
+   *
+   * NOTE: This method ignores any broken branches and treats them as the end
+   *       of the chain. This has a few effects:
+   *
+   *       1. A band actor can't bring the entire system to a freeze by not
+   *          sending part of the graph.
+   *
+   *       2. The system is much more responsive by not waiting for the full
+   *          graph to be available.
+   *
+   *       3. A slow party may have some of its edits reverted if not acting
+   *          fast enough during concurrent editing.
    *
    * @param c1 First commit.
    * @param c2 Second commit.
-   * @param c1Ancestors Internal c1 path for recursion.
-   * @param c2Ancestors Internal c2 path for recursion.
    *
    * @returns The base for a 3-way merge between c1 and c2, or undefined if no
    *          such base can be found.
-   *
-   * @throws ServiceUnavailable if the commit graph is incomplete and cannot be
-   *         traversed.
    */
   private _findMergeBase(
     c1: Commit,
     c2: Commit,
-    c1Ancestors?: Set<string>,
-    c2Ancestors?: Set<string>
   ): Commit | undefined {
     if (!c1.parents.length || !c2.parents.length || c1.key !== c2.key) {
       return undefined;
@@ -305,56 +319,51 @@ export class Repository<
     if (c2.parents.includes(c1.id)) {
       return c1;
     }
-    if (!c1Ancestors) {
-      c1Ancestors = new Set();
-    }
-    if (!c2Ancestors) {
-      c2Ancestors = new Set();
-    }
-    for (const parentId of c1.parents) {
-      const parent = this.getCommit(parentId);
-      const checksum = parent.contentsChecksum;
-      if (c2Ancestors.has(checksum)) {
-        return parent;
-      }
-      c1Ancestors.add(checksum);
-    }
-    for (const parentId of c2.parents) {
-      const parent = this.getCommit(parentId);
-      const checksum = parent.contentsChecksum;
-      if (c1Ancestors.has(checksum)) {
-        return parent;
-      }
-      c2Ancestors.add(checksum);
-    }
-    for (const p of c1.parents) {
-      const r = this._findMergeBase(
-        this.getCommit(p),
-        c2,
+    let parents1 = new Set<string>(c1.parents);
+    let parents2 = new Set<string>(c2.parents);
+    parents1.add(c1.id);
+    parents2.add(c2.id);
+    const c1Ancestors = new Set<string>(parents1);
+    const c2Ancestors = new Set<string>(parents2);
+
+    while (parents1.size > 0 || parents2.size > 0) {
+      SetUtils.update(
         c1Ancestors,
-        c2Ancestors
+        SetUtils.filter(parents1, (id) => this.hasCommit(id)),
       );
-      if (r) {
-        return r;
-      }
-    }
-    for (const p of c2.parents) {
-      const r = this._findMergeBase(
-        c1,
-        this.getCommit(p),
-        c1Ancestors,
-        c2Ancestors
+      SetUtils.update(
+        c2Ancestors,
+        SetUtils.filter(parents2, (id) => this.hasCommit(id)),
       );
-      if (r) {
-        return r;
+      const bases = SetUtils.intersection(c1Ancestors, c2Ancestors);
+      if (bases.size > 0) {
+        return Array.from(bases).map((id) => this.getCommit(id)).sort(
+          compareCommitsDesc,
+        )[0];
       }
+      const newParents1 = new Set<string>();
+      for (const parentId of parents1) {
+        if (this.hasCommit(parentId)) {
+          const parent = this.getCommit(parentId);
+          SetUtils.update(newParents1, parent.parents);
+        }
+      }
+      const newParents2 = new Set<string>();
+      for (const parentId of parents2) {
+        if (this.hasCommit(parentId)) {
+          const parent = this.getCommit(parentId);
+          SetUtils.update(newParents2, parent.parents);
+        }
+      }
+      parents1 = newParents1;
+      parents2 = newParents2;
     }
     return undefined;
   }
 
   recordForCommit(c: Commit | string): CFDSRecord {
     let result = this._cachedRecordForCommit.get(
-      typeof c === 'string' ? c : c.id
+      typeof c === 'string' ? c : c.id,
     );
     if (!result) {
       if (typeof c === 'string') {
@@ -368,7 +377,6 @@ export class Repository<
         assert(result.checksum === contents.edit.srcChecksum);
         result.patch(contents.edit.changes);
         assert(result.checksum === contents.edit.dstChecksum);
-        result = result;
       }
       result.checksum;
       this._cachedRecordForCommit.set(c.id, result);
@@ -378,28 +386,26 @@ export class Repository<
 
   private cacheHeadForKey(
     key: string | null,
-    head: Commit | undefined
+    head: Commit | undefined,
   ): Commit | undefined {
     // Look for a commit with a full value, so we don't crash on a later read
     while (head) {
-      try {
-        this.recordForCommit(head);
+      if (
+        commitContentsIsRecord(head.contents) ||
+        this.hasCommit(head.contents.base)
+      ) {
         break;
-      } catch (e) {
-        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
-          throw e; // Unknown error. Rethrow.
+      }
+      let found = false;
+      for (const p of head.parents) {
+        if (this.hasCommit(p)) {
+          head = this.getCommit(p);
+          found = true;
+          break;
         }
-        let found = false;
-        for (const p of head.parents) {
-          if (this.hasCommit(p)) {
-            head = this.getCommit(p);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          head = undefined;
-        }
+      }
+      if (!found) {
+        head = undefined;
       }
     }
     if (head) {
@@ -438,7 +444,7 @@ export class Repository<
     key: string | null,
     session?: string,
     pendingCommit?: Commit,
-    merge = true
+    merge = true,
   ): Commit | undefined {
     assert(!pendingCommit || pendingCommit.key === key);
     if (!session) {
@@ -455,21 +461,22 @@ export class Repository<
     const leaves = this.leavesForKey(
       key,
       session ? this.trustPool.getSession(session) : undefined,
-      pendingCommit
+      pendingCommit,
     );
     if (leaves.length < 1) {
       // No commit history found. Return the null record as a starting point
       return undefined;
     }
     // Filter out any commits with equal records
-    let commitsToMerge =
-      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
+    let commitsToMerge = commitsWithUniqueRecords(leaves).sort(
+      coreValueCompare,
+    );
     // If our leaves converged on a single value, we can simply return it.
     if (commitsToMerge.length === 1) {
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     let result: Commit | undefined;
-    if (merge) {
+    if (merge && this.allowMerge) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
       // rely on our patch to come up with a nice result. A better way may be to
@@ -508,7 +515,7 @@ export class Repository<
           }
           changes = concatChanges(
             changes,
-            nullRecord.diff(record, c.session === session)
+            nullRecord.diff(record, c.session === session),
           );
         }
         // Second, compute a compound diff from our base to all unique records
@@ -521,7 +528,7 @@ export class Repository<
           }
           changes = concatChanges(
             changes,
-            base.diff(record, c.session === session)
+            base.diff(record, c.session === session),
           );
         }
         // Patch, and we're done.
@@ -532,12 +539,12 @@ export class Repository<
             key,
             contents: base,
             parents: leaves.map((c) => c.id),
-          })
+          }),
         );
         signCommit(this.trustPool.currentSession, mergeCommit).then(
           (signedCommit) => {
             this.persistVerifiedCommits([signedCommit]);
-          }
+          },
         );
         return this.cacheHeadForKey(key, mergeCommit);
       } catch (e) {
@@ -565,9 +572,11 @@ export class Repository<
       }
     }
     // No match found. Find the last written value we can handle safely
-    for (const c of Array.from(this.commitsForKey(key)).sort(
-      compareCommitsDesc
-    )) {
+    for (
+      const c of Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      )
+    ) {
       const head = this.cacheHeadForKey(key, c);
       if (head) {
         return head;
@@ -580,7 +589,7 @@ export class Repository<
     key: string | null,
     session?: string,
     pendingCommit?: Commit,
-    merge = true
+    merge = true,
   ): CFDSRecord {
     const head = this.headForKey(key, session, pendingCommit, merge);
     return head ? this.recordForCommit(head) : CFDSRecord.nullRecord();
@@ -598,7 +607,7 @@ export class Repository<
    */
   async setValueForKey(
     key: string | null,
-    value: CFDSRecord
+    value: CFDSRecord,
   ): Promise<boolean> {
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
@@ -618,6 +627,12 @@ export class Repository<
       parents: head?.id,
     });
     commit = this.deltaCompressIfNeeded(commit);
+    if (
+      commitContentsIsDelta(commit.contents) &&
+      commit.contents.edit.isEmpty
+    ) {
+      return false;
+    }
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
     this.persistVerifiedCommits([signedCommit]);
@@ -640,7 +655,7 @@ export class Repository<
       });
       const deltaLength = JSON.stringify(edit.toJS()).length;
       const fullLength = JSON.stringify(
-        fullCommit.contents.record.toJS()
+        fullCommit.contents.record.toJS(),
       ).length;
       // Only if our delta format is small enough relative to the full format,
       // then it's worth switching to it
@@ -682,6 +697,9 @@ export class Repository<
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
     const authorizer = this.authorizer;
+    commits = Array.from(commits).sort((c1, c2) =>
+      c1.timestamp.getTime() - c2.timestamp.getTime()
+    );
     for (const c of commits) {
       if (await this.trustPool.verify(c)) {
         if (authorizer) {
@@ -734,16 +752,16 @@ export class Repository<
     return result || SchemeNamespace.Null;
   }
 
-  private persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
+  persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
     const result: Commit[] = [];
     for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
     }
     for (const c of result) {
-      this._runUpdatesOnNewCommit(c);
+      this._cachedHeadsByKey.delete(c.key);
     }
     for (const c of result) {
-      this._cachedHeadsByKey.delete(c.key);
+      this._runUpdatesOnNewCommit(c);
     }
     return result;
   }
@@ -758,7 +776,7 @@ export class Repository<
           commit.key,
           undefined,
           undefined,
-          false
+          false,
         );
         if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
           sessionFromRecord(headRecord).then((session) => {
@@ -773,7 +791,7 @@ export class Repository<
       }
     }
     // Notify everyone else
-    this.emit(EVENT_NEW_COMMIT, commit);
+    this.emit('NewCommit', commit);
   }
 
   private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {

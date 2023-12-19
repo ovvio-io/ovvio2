@@ -63,8 +63,8 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     // Derive the scheme either from the existing record (update) or from the
     // new commit (create).
     const namespace = record.isNull
-      ? repo.recordForCommit(commit).scheme?.namespace
-      : commit.scheme?.namespace;
+      ? commit.scheme?.namespace
+      : record.scheme.namespace;
     // Per-namespace breakdown of permissions
     switch (namespace) {
       // Read-write access to members only

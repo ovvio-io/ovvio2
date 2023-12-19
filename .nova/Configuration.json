@@ -1,0 +1,11 @@
+{
+  "apexskier.typescript.config.formatDocumentOnSave" : "true",
+  "deno.lint" : true,
+  "deno.suggest.autoImports" : true,
+  "deno.suggest.completeFunctionCalls" : true,
+  "deno.suggest.imports.autoDiscover" : true,
+  "deno.suggest.names" : true,
+  "deno.suggest.path" : true,
+  "deno.unstable" : true,
+  "jaydenseric.deno.formatOnSave" : true
+}

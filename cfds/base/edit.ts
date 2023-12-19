@@ -70,6 +70,10 @@ export class Edit implements Encodable, Equatable, Clonable {
     }
   }
 
+  get isEmpty(): boolean {
+    return this.srcChecksum === this.dstChecksum;
+  }
+
   clone(): Edit {
     return new Edit({
       srcChecksum: this.srcChecksum,

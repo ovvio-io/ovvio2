@@ -10,6 +10,10 @@ export type MarkupElement =
   | ParagraphNode
   | Header1Node
   | Header2Node
+  | Header3Node
+  | Header4Node
+  | Header5Node
+  | Header6Node
   | UnorderedListNode
   | OrderedListNode
   | ListItemNode
@@ -40,6 +44,22 @@ export interface Header1Node extends ElementNode, NodeWithDirection {
 
 export interface Header2Node extends ElementNode, NodeWithDirection {
   readonly tagName: 'h2';
+}
+
+export interface Header3Node extends ElementNode, NodeWithDirection {
+  readonly tagName: 'h3';
+}
+
+export interface Header4Node extends ElementNode, NodeWithDirection {
+  readonly tagName: 'h4';
+}
+
+export interface Header5Node extends ElementNode, NodeWithDirection {
+  readonly tagName: 'h5';
+}
+
+export interface Header6Node extends ElementNode, NodeWithDirection {
+  readonly tagName: 'h6';
 }
 
 export interface UnorderedListNode extends ElementNode, NodeWithDirection {
