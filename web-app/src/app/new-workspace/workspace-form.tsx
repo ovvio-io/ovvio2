@@ -115,6 +115,7 @@ function createNewWorkspace(
     name,
     users: new Set([graphManager.rootKey]),
   };
+  delete data.isTemplate;;
   if (copyFrom) {
     for (let i = 0; i < 10; ++i) {
       const ws = duplicateWorkspace(
@@ -125,7 +126,6 @@ function createNewWorkspace(
           name: name + `-${i + 1}`,
         },
       );
-      debugger;
     }
     return duplicateWorkspace(graphManager, copyFrom, data);
   }
