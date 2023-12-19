@@ -144,7 +144,6 @@ const useStyles = makeStyles(() => ({
     borderRadius: 2,
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
     position: 'relative',
-    // left: -styleguide.gridbase * 5,
     top: styleguide.gridbase * 3,
     transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
     width: styleguide.gridbase * 3,
@@ -349,7 +348,7 @@ function ParagraphElementNode(
       onMouseLeave={() => setHover(false)}
     >
       {showNewTaskHint && (
-        <div
+        <span
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
           style={{
@@ -359,7 +358,7 @@ function ParagraphElementNode(
           }}
         >
           <img src='/icons/design-system/checkbox/selected.svg' />
-        </div>
+        </span>
       )}
       {children}
     </p>
