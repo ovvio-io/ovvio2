@@ -217,7 +217,12 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       if (backup) {
         const commits = await backup.loadCommits();
         if (commits instanceof Array) {
-          await repo.persistCommits(commits);
+          repo.allowMerge = false;
+          try {
+            await repo.persistCommits(commits);
+          } finally {
+            repo.allowMerge = true;
+          }
         } else {
           console.log(`Unexpected IDB result: ${commits}`);
         }

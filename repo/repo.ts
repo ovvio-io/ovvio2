@@ -74,6 +74,8 @@ export class Repository<
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
   private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
 
+  allowMerge = true;
+
   constructor(
     storage: ST,
     trustPool: TrustPool,
@@ -474,7 +476,7 @@ export class Repository<
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     let result: Commit | undefined;
-    if (merge) {
+    if (merge && this.allowMerge) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
       // rely on our patch to come up with a nice result. A better way may be to
