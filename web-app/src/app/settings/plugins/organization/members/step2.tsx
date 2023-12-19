@@ -1,7 +1,6 @@
 import React, { CSSProperties, useEffect, useMemo, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
-  usePartialVertex,
   useVertexByKey,
   useVertices,
 } from '../../../../../core/cfds/react/vertex.ts';
@@ -30,8 +29,11 @@ export const Step2: React.FC<Step2Props> = ({
   const workspaces = useVertices(workspacesQuery.results) as Workspace[];
 
   const usersData = new Map<string, User>();
+
+  //TODO: fix remove userPill bug.
   selectedUsers.forEach((user) => {
     const userData: User = useVertexByKey(user);
+    debugger;
     usersData.set(user, userData);
   });
 
@@ -75,9 +77,9 @@ export const Step2: React.FC<Step2Props> = ({
     if (selectedUsers.size === 0) {
       setStep(1);
     }
-  }, [selectedUsers, selectedUsers.size, setStep]);
+  }, [selectedUsers, setStep]);
 
-  const UserPillKey = 'UserPillKey';
+  const UserPillKey = 'UserPillKey1_';
 
   return (
     <div>
