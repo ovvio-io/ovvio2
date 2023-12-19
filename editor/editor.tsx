@@ -47,6 +47,7 @@ import { coreValueEquals } from '../base/core-types/equals.ts';
 import { uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
+import { onArrowUp } from './caret.ts';
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -483,6 +484,15 @@ export const RichTextEditor = forwardRef<
           undoContext.redo();
         } else {
           undoContext.undo();
+        }
+      }
+      if (event.key === 'ArrowUp') {
+        const doc = onArrowUp(state, selectionId);
+        debugger;
+        if (doc) {
+          event.stopPropagation();
+          event.preventDefault();
+          note.getVertexProxy().body = doc;
         }
       }
     },
