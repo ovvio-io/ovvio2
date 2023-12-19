@@ -126,7 +126,7 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
           <Button onClick={onClose} style={closeIcon}>
             <img
               key="CloseCircleWhiteSettings"
-              src="/icons/editor/icon/Close-circle-white.svg"
+              src="/icons/settings/Close-circle-white.svg"
               onClick={onClose}
             />
           </Button>

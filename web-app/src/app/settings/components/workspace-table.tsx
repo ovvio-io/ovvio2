@@ -106,7 +106,7 @@ const RowInTable: React.FC<RowInTableProps> = ({
         <div className={cn(styles.rowLeft, styles.rowLeftHover)}>
           <img
             key="HoveredRowSettings"
-            src="/icons/editor/icon/hover-select.svg"
+            src="/icons/settings/hover-select.svg"
           />
         </div>
       )}
@@ -114,7 +114,7 @@ const RowInTable: React.FC<RowInTableProps> = ({
         <div className={cn(styles.rowLeft)}>
           <img
             key="SelectedRowSettings"
-            src="/icons/editor/icon/hover-select2.svg"
+            src="/icons/settings/hover-select2.svg"
           />
         </div>
       )}
