@@ -98,7 +98,7 @@ const ComposeInternalButtonAssign = React.forwardRef(
       <div className={cn(styles.compose, className)} ref={ref}>
         <img
           key="AssignInSettings"
-          src="/icons/editor/icon/Archive.svg"
+          src="/icons/settings/Archive.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
@@ -116,7 +116,7 @@ const ComposeInternalButtonAssignBlue = React.forwardRef(
       <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
         <img
           key="AssignWhiteInSettings"
-          src="/icons/editor/icon/Archive-white.svg"
+          src="/icons/settings/Archive-white.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.textWhite)}>{'Assign to Workspaces'}</span>
@@ -154,7 +154,7 @@ const ComposeInternalButtonEdit = React.forwardRef(
       <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
         <img
           key="EditUserSettings"
-          src="/icons/editor/icon/Compose-white.svg"
+          src="/icons/settings/Compose-white.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.textWhite)}>{'Edit'}</span>
@@ -185,7 +185,7 @@ export function ChooseWsButton({
       <div>
         <img
           key="AssignInSettings"
-          src="/icons/editor/icon/Archive.svg"
+          src="/icons/settings/Archive.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
@@ -217,7 +217,7 @@ export function AssignWsButton({
       <div>
         <img
           key="InviteUserSettings"
-          src="/icons/editor/icon/Invite.svg"
+          src="/icons/settings/Invite.svg"
           onClick={() => {}}
         />
         <span className={cn(styles.text)}>{'Assign'}</span>
@@ -226,12 +226,54 @@ export function AssignWsButton({
   );
 }
 
-export function EditButton() {
-  const [container, setContainer] = useState<HTMLDivElement | null>();
+interface EditSaveButtonProps {
+  onSaveEditClick?: () => void;
+  disable: boolean;
+}
+
+export function EditSaveButton({
+  onSaveEditClick,
+  disable,
+}: EditSaveButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
 
   return (
-    <Button onClick={() => ''}>
-      <ComposeInternalButtonEdit ref={(div) => setContainer(div)} />
+    <Button
+      onClick={isDisabled ? undefined : onSaveEditClick}
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+    >
+      <div>
+        <img
+          key="CheckEditSettings"
+          src="/icons/settings/Check.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.text)}>{'Save changes'}</span>
+      </div>{' '}
+    </Button>
+  );
+}
+interface EditButtonProps {
+  onEditClick?: () => void;
+}
+
+export function EditButton({ onEditClick }: EditButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onEditClick} className={cn(styles.compose, styles.blue)}>
+      <div>
+        <img
+          key="EditUserSettings"
+          src="/icons/settings/Compose-white.svg"
+          onClick={() => {}}
+        />
+        <span className={cn(styles.textWhite)}>{'Edit'}</span>
+      </div>
     </Button>
   );
 }

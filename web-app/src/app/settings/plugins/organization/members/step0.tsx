@@ -27,24 +27,24 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    padding: '50px 0px 24px',
+    padding: '50px 0px 29px',
     maxWidth: '802px',
   };
 
   const handleAssignClick = () => {
     setStep(1);
   };
-
-  const handleAssignClick2 = () => {
-    setStep(2);
+  const handleEditClick = () => {
+    setStep(5);
   };
+
   return (
     <div>
       <div style={HeaderContainerStyle}>
         <Bold>Org. Members</Bold>
         <div style={step0ContainerStyle}>
           <AssignButton onAssignClick={handleAssignClick} blue={true} />
-          <EditButton />
+          <EditButton onEditClick={handleEditClick} />
         </div>
       </div>
       <UserTable

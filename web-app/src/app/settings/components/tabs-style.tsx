@@ -11,16 +11,22 @@ export const tabsStyles = makeStyles(() => ({
     background: 'var(--secondary-secondary-s-0, #FFFBF5)',
     overflow: 'auto',
   },
+  wsBar: {
+    basedOn: [layout.row],
+    zIndex: 1,
+    height: '100vh',
+    overflow: 'auto',
+  },
   bar: {
     justifyContent: 'flex-end',
     alignItems: 'stretch',
     boxSizing: 'border-box',
-    basedOn: [layout.column],
+    basedOn: [layout.column, layout.flexSpacer], //check what layout.flexSpacer does
   },
   barRow: {
     padding: ['40px', 0],
     height: styleguide.gridbase * 5,
-    basedOn: [layout.column],
+    basedOn: [layout.column, layout.flexSpacer],
   },
   viewRow: {
     borderBottom: `${theme.supporting.O1} 1px solid`,
