@@ -297,7 +297,6 @@ export const UserPill: React.FC<UserPillProps> = ({
     newSelectedUsers.delete(user);
     setSelectedUsers(newSelectedUsers);
   };
-  console.log('UserPill name- ', userName);
   return (
     <div className={cn(styles.filterPill)}>
       <span className={cn(styles.filterText)}>{userName.name}</span>

@@ -28,12 +28,12 @@ const useStyles = makeStyles(() => ({
     fontSize: '10px',
     // font-style: normal;
     // font-weight: 400;
-    lineHight: '14px', /* 140% */
+    lineHight: '14px' /* 140% */,
   },
 }));
 
 export interface WorkspaceIndicatorProps {
-  workspace: VertexManager<Workspace>;
+  workspace: VertexManager<Workspace> | Workspace;
 }
 
 export function WorkspaceIndicator({ workspace }: WorkspaceIndicatorProps) {

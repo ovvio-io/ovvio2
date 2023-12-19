@@ -140,7 +140,6 @@ export interface SettingsBarCategoriesProps {
 const useStrings = createUseStrings(localization);
 
 function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
-  const styles = useStyles();
   const strings = useStrings();
   const navigate = useNavigate();
   const view = usePartialView('selectedSettingsTabId');
@@ -182,6 +181,7 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   //     );
   //   }
   // };
+  const styles = useStyles();
 
   const categoryElements = Object.keys(categories).map((category) => {
     return (
@@ -195,7 +195,10 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
         onClick={() => navigateToCategory(category)}
       >
         <div className={cn(styles.actionIcon)}>
-          <IconPersonalInfo />
+          <img
+            key="SelectedRowSettings"
+            src={`/icons/settings/${strings[category + 'Bar']}.svg`}
+          />
         </div>
         <div className={cn(styles.actionText)}>{strings[category]}</div>
       </div>

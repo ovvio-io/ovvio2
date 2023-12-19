@@ -12,6 +12,7 @@ import {
 } from '../../../components/settings-buttons.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import WorkspaceTable from '../../../components/workspace-table.tsx';
+import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
@@ -33,7 +34,6 @@ export const Step2: React.FC<Step2Props> = ({
   //TODO: fix remove userPill bug.
   selectedUsers.forEach((user) => {
     const userData: User = useVertexByKey(user);
-    debugger;
     usersData.set(user, userData);
   });
 
@@ -48,7 +48,7 @@ export const Step2: React.FC<Step2Props> = ({
   };
 
   const HeaderContainerStyle: CSSProperties = {
-    padding: '50px 0px 29px',
+    padding: '50px 0px 8px',
     maxWidth: '800px',
   };
   const FunctionsHeader: CSSProperties = {
@@ -63,6 +63,15 @@ export const Step2: React.FC<Step2Props> = ({
     height: '29px',
     gap: '4px',
     marginBottom: '11px',
+  };
+
+  const WorkspaceIndicatorContainer: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    maxWidth: '800px',
+    height: '29px',
+    gap: '4px',
+    marginBottom: '8px',
   };
 
   const handleRowSelect = (ws: Workspace) => {
@@ -104,6 +113,11 @@ export const Step2: React.FC<Step2Props> = ({
           ))}
         </div>
         <Bold>My Workspaces</Bold>
+        <div style={WorkspaceIndicatorContainer}>
+          {[...selectedWorkspaces].map((ws: Workspace) => (
+            <WorkspaceIndicator key={ws.key} workspace={ws} />
+          ))}
+        </div>
       </div>
       <WorkspaceTable
         workspaces={workspaces}
