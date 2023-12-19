@@ -26,6 +26,10 @@ import {
 } from './commit.ts';
 import { RepositoryIndex } from './index.ts';
 import { repositoryForRecord } from './resolver.ts';
+import {
+  AdjacencyList,
+  SimpleAdjacencyList,
+} from '../cfds/client/graph/adj-list.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -73,6 +77,7 @@ export class Repository<
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
   private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
+  private readonly _adjList: AdjacencyList;
 
   allowMerge = true;
 
@@ -90,6 +95,7 @@ export class Repository<
     this._commitsCache = new Map();
     this._nsForKey = new Map();
     this._cachedRecordForCommit = new Map();
+    this._adjList = new SimpleAdjacencyList();
     if (indexes) {
       this.indexes = indexes(this);
     }
@@ -189,21 +195,32 @@ export class Repository<
     session?: Session,
     pendingCommit?: Commit,
   ): Commit[] {
-    const childrenPerCommit = new Map<string, Set<Commit>>();
-    for (const c of this.commitsForKey(key, session)) {
-      this._setChildrenPerCommit(c, childrenPerCommit);
-    }
-    if (pendingCommit) {
-      assert(pendingCommit.key === key); // Sanity check
-      this._setChildrenPerCommit(pendingCommit, childrenPerCommit);
-    }
+    const adjList = this._adjList;
     const result: Commit[] = [];
-    for (const c of this.commitsForKey(key)) {
-      if (!childrenPerCommit.has(c.id)) {
+    for (const c of this.commitsForKey(key, session)) {
+      if (!adjList.hasInEdges(c.id)) {
         result.push(c);
       }
     }
+    if (pendingCommit && !adjList.hasInEdges(pendingCommit.id)) {
+      result.push(pendingCommit);
+    }
     return result;
+    // for (const c of this.commitsForKey(key, session)) {
+    // const childrenPerCommit = new Map<string, Set<Commit>>();
+    //   this._setChildrenPerCommit(c, childrenPerCommit);
+    // }
+    // if (pendingCommit) {
+    //   assert(pendingCommit.key === key); // Sanity check
+    //   this._setChildrenPerCommit(pendingCommit, childrenPerCommit);
+    // }
+    // const result: Commit[] = [];
+    // for (const c of this.commitsForKey(key)) {
+    //   if (!childrenPerCommit.has(c.id)) {
+    //     result.push(c);
+    //   }
+    // }
+    // return result;
   }
 
   private _setChildrenPerCommit(
@@ -704,7 +721,9 @@ export class Repository<
       if (await this.trustPool.verify(c)) {
         if (authorizer) {
           const session = this.trustPool.getSession(c.session);
-          assert(session !== undefined);
+          if (!session) {
+            continue;
+          }
           if (authorizer(this, c, session, true)) {
             yield c;
           }
@@ -753,9 +772,15 @@ export class Repository<
   }
 
   persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
+    const adjList = this._adjList;
     const result: Commit[] = [];
     for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
+      for (const c of batch) {
+        for (const p of c.parents) {
+          adjList.addEdge(c.id, p, 'parent');
+        }
+      }
     }
     for (const c of result) {
       this._cachedHeadsByKey.delete(c.key);
