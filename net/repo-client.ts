@@ -46,11 +46,12 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   }
 
   async sync(): Promise<void> {
+    const allowMerge = this.repo.allowMerge;
     this.repo.allowMerge = false;
     try {
       await super.sync();
     } finally {
-      this.repo.allowMerge = true;
+      this.repo.allowMerge = allowMerge;
     }
   }
 }
