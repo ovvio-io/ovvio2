@@ -15,7 +15,6 @@ import { SettingsTabPlugin } from '../plugins/plugins-list.tsx';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
 import { usePartialView } from '../../../core/cfds/react/graph.tsx';
-import { IconPersonalInfo } from '../../../../../styles/components/new-icons/icon-personal-info.tsx';
 import HelpCenter from '../../workspaces-bar/actions.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
@@ -35,14 +34,7 @@ const useStyles = makeStyles(() => ({
   categories: {
     height: '90%',
   },
-  help: {
-    // flexShrink: 0,
-    // width: '90vw',
-    // maxWidth: EXPANDED_WIDTH,
-    // height: '40%',
-    // ...styleguide.transition.standard,
-    // transitionProperty: 'width',
-  },
+  help: {},
   header: {
     width: '100%',
     flexShrink: 0,
@@ -156,7 +148,6 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
 
   const navigateToCategory = (category: string) => {
     const categoryTabs = categories[category];
-    //TODO: needs to fix the memory of tab view when switching categories.
     console.log('VIEW -', view.selectedSettingsTabId);
     if (categoryTabs && categoryTabs.length > 0) {
       navigate(`/settings/${category}/${strings[categoryTabs[0].title]}`);

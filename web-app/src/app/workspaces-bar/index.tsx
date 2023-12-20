@@ -530,6 +530,7 @@ function IconUngroupWithColor(props) {
 interface WorkspaceToggleViewProps {
   onSelectAll: () => void;
   onUnselectAll: () => void;
+  ofSettings: boolean | undefined;
   query: Query<Workspace, Workspace, WorkspaceGID>;
 }
 
@@ -537,6 +538,7 @@ function WorkspaceToggleView({
   query,
   onSelectAll,
   onUnselectAll,
+  ofSettings,
 }: WorkspaceToggleViewProps) {
   const strings = useStrings();
   const styles = useStyles();
@@ -625,26 +627,28 @@ function WorkspaceToggleView({
           </Menu>
         </div>
       )}
-      <div className={cn(styles.toggleActions)}>
-        <TextSm
-          onClick={onSelectAll}
-          className={cn(
-            styles.toggleViewButton,
-            selectedRatio === 1 && styles.toggleViewButtonDisabled
-          )}
-        >
-          Select All
-        </TextSm>
-        <TextSm
-          onClick={onUnselectAll}
-          className={cn(
-            styles.toggleViewButton,
-            selectedRatio === 0 && styles.toggleViewButtonDisabled
-          )}
-        >
-          Unselect All
-        </TextSm>
-      </div>
+      {!ofSettings && (
+        <div className={cn(styles.toggleActions)}>
+          <TextSm
+            onClick={onSelectAll}
+            className={cn(
+              styles.toggleViewButton,
+              selectedRatio === 1 && styles.toggleViewButtonDisabled
+            )}
+          >
+            Select All
+          </TextSm>
+          <TextSm
+            onClick={onUnselectAll}
+            className={cn(
+              styles.toggleViewButton,
+              selectedRatio === 0 && styles.toggleViewButtonDisabled
+            )}
+          >
+            Unselect All
+          </TextSm>
+        </div>
+      )}
     </div>
   );
 }
@@ -1256,7 +1260,6 @@ function WorkspaceBarInternal({
                 </Button>
               </div>
             )}
-
             <WorkspaceToggleView
               // selectedRatio={
               //   query.count && view.selectedWorkspaces.size / query.count
@@ -1264,6 +1267,7 @@ function WorkspaceBarInternal({
               query={query}
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
+              ofSettings={ofSettings}
             />
           </div>
           <WorkspacesList query={query} />
