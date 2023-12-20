@@ -156,6 +156,12 @@ export class SyncService extends BaseService<ServerServices> {
       indexes,
     );
     this._repositories.set(repoId, repo);
+    const backup = new JSONLogRepoBackup(
+      joinPath(this.services.dir, type, id + '.repo'),
+      this.services.serverId,
+    );
+    this._backupForRepo.set(repoId, backup);
+    this.loadRepoFromBackup(repoId, repo, backup);
     const replicas = this.services.replicas;
     if (replicas.length > 0) {
       assert(!this._clientsForRepo.has(repoId)); // Sanity check
@@ -168,12 +174,6 @@ export class SyncService extends BaseService<ServerServices> {
       );
       this._clientsForRepo.set(repoId, clients);
     }
-    const backup = new JSONLogRepoBackup(
-      joinPath(this.services.dir, type, id + '.repo'),
-      this.services.serverId,
-    );
-    this._backupForRepo.set(repoId, backup);
-    this.loadRepoFromBackup(repoId, repo, backup);
     // this._loadRepo(type, id);
     return repo;
   }
