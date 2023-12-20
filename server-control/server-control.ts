@@ -106,6 +106,9 @@ async function _startChildServerProcess(
     settings.dataDir,
   ];
   if (replicas) {
+    // if (idx !== 0) {
+    //   args.push('--follower');
+    // }
     args.push('--b64replicas');
     const encodedReplicas = encodeBase64Url(JSON.stringify(replicas || []));
     args.push(encodedReplicas);
@@ -194,7 +197,7 @@ async function startServerProcesses(
       child.status.then(terminationCallback);
     }
     serverProcesses.push(child);
-    await sleep(5 * kSecondMs);
+    await sleep(1 * kSecondMs);
   }
   return serverProcesses;
 }
