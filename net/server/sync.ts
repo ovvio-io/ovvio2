@@ -50,8 +50,10 @@ import {
   requireSignedUser,
 } from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
-import { SQLite3RepoBackup } from '../../server/sqlite3-repo-backup.ts';
+// import { SQLite3RepoBackup } from '../../server/sqlite3-repo-backup.ts';
 import { RepositoryIndex } from '../../repo/index.ts';
+import { JSONLogRepoBackup } from '../../server/json-log-repo-backup.ts';
+// import { LMDBRepoBackup } from '../../server/lmdb-repo-backup.ts';
 
 export interface SysDirIndexes extends RepositoryIndexes<MemRepoStorage> {
   users: RepositoryIndex<MemRepoStorage>;
@@ -71,7 +73,8 @@ export class SyncService extends BaseService<ServerServices> {
 
   private readonly _logs: Dictionary<string, SQLiteLogStorage>;
   private readonly _clientsForLog: Dictionary<string, LogClient[]>;
-  private _backup: SQLite3RepoBackup | undefined;
+  private readonly _backupForRepo: Dictionary<string, JSONLogRepoBackup>;
+  // private _backup: SQLite3RepoBackup | undefined;
 
   constructor() {
     super();
@@ -79,10 +82,12 @@ export class SyncService extends BaseService<ServerServices> {
     this._clientsForRepo = new Map();
     this._logs = new Map();
     this._clientsForLog = new Map();
+    this._backupForRepo = new Map();
   }
 
   get ready(): boolean {
-    return this._backup !== undefined && this._backup.ready;
+    // return this._backup !== undefined && this._backup.ready;
+    return true;
   }
 
   async setup(services: ServerServices): Promise<void> {
@@ -90,26 +95,26 @@ export class SyncService extends BaseService<ServerServices> {
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
     await setupTrustPool(trustPool, sysDir);
-    let loadedSysDir = false;
+    // let loadedSysDir = false;
     // Setup backup service
-    this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
-      const repo = this._repositories.get(repoId);
-      if (repo) {
-        const persisted = repo.persistVerifiedCommits(commits);
-        // When initially loading sys/dir, only records created by root and
-        // operators are allowed to enter the repo. We then run one more
-        // persist attempt on any rejected commits, which will now be allowed
-        // since records exist properly.
-        if (repoId === 'sys/dir' && !loadedSysDir) {
-          loadedSysDir = true;
-          const notPersisted = Array.from(
-            SetUtils.subtract(commits, persisted),
-          );
-          repo.persistVerifiedCommits(notPersisted);
-        }
-      }
-    });
-    this._loadBackupForRepo('sys', 'dir');
+    // this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
+    //   const repo = this._repositories.get(repoId);
+    //   if (repo) {
+    //     const persisted = repo.persistVerifiedCommits(commits);
+    //     // When initially loading sys/dir, only records created by root and
+    //     // operators are allowed to enter the repo. We then run one more
+    //     // persist attempt on any rejected commits, which will now be allowed
+    //     // since records exist properly.
+    //     if (repoId === 'sys/dir' && !loadedSysDir) {
+    //       loadedSysDir = true;
+    //       const notPersisted = Array.from(
+    //         SetUtils.subtract(commits, persisted),
+    //       );
+    //       repo.persistVerifiedCommits(notPersisted);
+    //     }
+    //   }
+    // });
+    // this._loadRepo('sys', 'dir');
     // Publish our root session to clients so we claim our authority
     await persistSession(services, services.settings.session);
   }
@@ -151,6 +156,12 @@ export class SyncService extends BaseService<ServerServices> {
       indexes,
     );
     this._repositories.set(repoId, repo);
+    const backup = new JSONLogRepoBackup(
+      joinPath(this.services.dir, type, id + '.repo'),
+      this.services.serverId,
+    );
+    this._backupForRepo.set(repoId, backup);
+    this.loadRepoFromBackup(repoId, repo, backup);
     const replicas = this.services.replicas;
     if (replicas.length > 0) {
       assert(!this._clientsForRepo.has(repoId)); // Sanity check
@@ -163,52 +174,76 @@ export class SyncService extends BaseService<ServerServices> {
       );
       this._clientsForRepo.set(repoId, clients);
     }
+    // this._loadRepo(type, id);
+    return repo;
+  }
+
+  private loadRepoFromBackup(
+    repoId: string,
+    repo: Repository<MemRepoStorage>,
+    backup: JSONLogRepoBackup,
+  ): void {
+    repo.allowMerge = false;
+    for (const c of backup.open()) {
+      repo.persistVerifiedCommits([c]);
+    }
+    repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
-      this._backup?.persistCommits(repoId, [c]);
       const clients = this._clientsForRepo.get(repoId);
+      backup.appendCommits([c]);
       if (clients) {
         for (const c of clients) {
           c.touch();
         }
       }
     });
-    this._loadBackupForRepo(type, id);
-    return repo;
   }
 
-  private async _loadBackupForRepo(
-    type: RepositoryType,
-    id: string,
-  ): Promise<void> {
-    const backup = this._backup;
-    if (backup) {
-      const repoId = Repository.id(type, id);
-      const repo = this._repositories.get(repoId)!;
-      repo.mute();
-      await backup.open(type, id);
-      const indexes = repo.indexes;
-      if (indexes) {
-        for (const idx of Object.values(indexes)) {
-          idx.scanRepo();
-        }
-      }
-      const trustPool = this.services.trustPool;
-      let loaded = false;
-      do {
-        loaded = false;
-        for (const key of repo.keys()) {
-          const record = repo.valueForKey(key);
-          if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-            loaded = loaded || await trustPool.addSession(
-              await sessionFromRecord(record),
-              repo.headForKey(key)!,
-            );
-          }
-        }
-      } while (loaded);
-      repo.unmute();
-    }
-  }
+  //   private async _loadRepo(type: RepositoryType, id: string): Promise<void> {
+  //     if (this.services.follower === true) {
+  //       const repoId = Repository.id(type, id);
+  //       const clients = this._clientsForRepo.get(repoId);
+  //       if (clients) {
+  //         await clients[0].sync();
+  //       }
+  //     } else {
+  //       await this._loadBackupForRepo(type, id);
+  //     }
+  //   }
+  //
+  //   private async _loadBackupForRepo(
+  //     type: RepositoryType,
+  //     id: string,
+  //   ): Promise<void> {
+  //     const backup = this._backup;
+  //     if (backup) {
+  //       const repoId = Repository.id(type, id);
+  //       const repo = this._repositories.get(repoId)!;
+  //       repo.mute();
+  //       await backup.open(type, id);
+  //       const indexes = repo.indexes;
+  //       if (indexes) {
+  //         for (const idx of Object.values(indexes)) {
+  //           idx.scanRepo();
+  //         }
+  //       }
+  //       const trustPool = this.services.trustPool;
+  //       let loaded = false;
+  //       do {
+  //         loaded = false;
+  //         for (const key of repo.keys()) {
+  //           const record = repo.valueForKey(key);
+  //           if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
+  //             loaded = loaded || await trustPool.addSession(
+  //               await sessionFromRecord(record),
+  //               repo.headForKey(key)!,
+  //             );
+  //           }
+  //         }
+  //       } while (loaded);
+  //       repo.unmute();
+  //     }
+  //   }
 
   getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
     type: RepositoryType,

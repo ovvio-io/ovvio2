@@ -88,6 +88,7 @@ interface RepositoryPlumbing {
   backup?: IDBRepositoryBackup;
   loadingPromise?: Promise<void>;
   loadingFinished?: true;
+  syncFinished?: true;
   active: boolean;
 }
 
@@ -241,10 +242,12 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   }
 
   async syncRepository(id: string): Promise<void> {
-    const { client } = this.plumbingForRepository(id);
+    const plumbing = this.plumbingForRepository(id);
+    const client = plumbing.client;
     await this.loadRepository(id);
     if (client && client.isOnline) {
       await client.sync();
+      plumbing.syncFinished = true;
       // client.startSyncing();
     }
   }
@@ -298,7 +301,11 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         ) {
           const mgr = this.getVertexManager(c.key);
           if (c.session !== this.trustPool.currentSession.id) {
-            mgr.commit();
+            if (plumbing.syncFinished) {
+              mgr.commit();
+            } else {
+              mgr.touch();
+            }
           }
           // else {
           //   mgr.touch();
@@ -434,14 +441,19 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
     const vManagers: VertexManager<T>[] = [];
     for (const vInfo of vInfos) {
-      const newV = this._createVertIfNeeded<T>(
-        vInfo.key || uniqueId(),
-        vInfo.namespace,
-        vInfo.initialData,
-        false,
-      );
+      let mgr = this._vertManagers.get(vInfo.key!);
+      if (mgr === undefined) {
+        const record = new Record({
+          scheme: SchemeManager.instance.getScheme(vInfo.namespace)!,
+          data: vInfo.initialData!,
+        });
+        mgr = new VertexManager(this, vInfo.key!, record);
+      }
 
-      vManagers.push(newV);
+      vManagers.push(mgr as VertexManager<T>);
+    }
+    for (const mgr of vManagers) {
+      this._setupVertexManager(mgr);
     }
     const vertices = vManagers.map((v) => v.getVertexProxy());
     return vertices;

@@ -24,6 +24,7 @@ export interface AdjacencyList {
   uniqueEdges(vertKey: string, fieldName?: string): Generator<string>;
   hasVertex(key: string): boolean;
   hasEdge(src: string, dst: string, fieldName?: string): boolean;
+  hasInEdges(vertKey: string): boolean;
 }
 
 export class SimpleAdjacencyList implements AdjacencyList {
@@ -37,6 +38,11 @@ export class SimpleAdjacencyList implements AdjacencyList {
 
   get isEmpty(): boolean {
     return this._inEdges.size === 0 && this._outEdges.size === 0;
+  }
+
+  hasInEdges(vertKey: string): boolean {
+    const set = this._inEdges.get(vertKey);
+    return set !== undefined && set.size > 0;
   }
 
   addEdge(src: string, dst: string, fieldName: string): boolean {
@@ -61,7 +67,7 @@ export class SimpleAdjacencyList implements AdjacencyList {
           vertex: src,
           fieldName,
         }),
-      `addEdge failed. src: ${src}, dest: ${dst}, fieldName: ${fieldName}`
+      `addEdge failed. src: ${src}, dest: ${dst}, fieldName: ${fieldName}`,
     );
     return success;
   }
@@ -77,9 +83,9 @@ export class SimpleAdjacencyList implements AdjacencyList {
           inSet?.delete({
             vertex: src,
             fieldName,
-          })
+          }),
         ),
-      `deleteEdge failed. src: ${src}, dest: ${dst}, fieldName: ${fieldName}`
+      `deleteEdge failed. src: ${src}, dest: ${dst}, fieldName: ${fieldName}`,
     );
     return success;
   }
@@ -223,7 +229,7 @@ export class SimpleAdjacencyList implements AdjacencyList {
 function* filterEdges(
   vertKey: string,
   fieldName: string | undefined,
-  dict: Dictionary<string, HashSet<Edge>>
+  dict: Dictionary<string, HashSet<Edge>>,
 ): Generator<Edge> {
   const edges = dict.get(vertKey);
   if (edges === undefined) {

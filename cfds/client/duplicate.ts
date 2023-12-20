@@ -6,11 +6,11 @@ import { NS_NOTES } from '../base/scheme-types.ts';
 import { isRefMarker, RefType } from '../richtext/model.ts';
 import {
   dfs,
+  findLastTextNode,
   isRichText,
   isTextNode,
   RichText,
   TextNode,
-  findLastTextNode,
 } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
 import { Note } from './graph/vertices/note.ts';
@@ -36,7 +36,7 @@ const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
 export function duplicateCard(
   graph: GraphManager,
   rootKey: string,
-  opts: DuplicateCardOptions = {}
+  opts: DuplicateCardOptions = {},
 ): Note | undefined {
   opts = {
     ...DEFAULT_DUPLICATE_OPTS,
@@ -46,6 +46,7 @@ export function duplicateCard(
 
   const outRecords: { [s: string]: CoreObject } = {};
   const newRootKey = deepDuplicateImpl(graph, rootKey, outRecords, undefined);
+  debugger;
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
@@ -94,7 +95,7 @@ function deepDuplicateImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
-  parentNoteNewKey?: string
+  parentNoteNewKey?: string,
 ) {
   const root = graph.getVertex<Note>(rootKey);
 
@@ -116,7 +117,7 @@ function deepDuplicateImpl(
           graph,
           oldTaskKey,
           outRecords,
-          newKey
+          newKey,
         );
         node.ref = newTaskKey;
       }
