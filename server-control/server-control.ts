@@ -174,7 +174,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = navigator.hardwareConcurrency;
+  const processCount = 1; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {
