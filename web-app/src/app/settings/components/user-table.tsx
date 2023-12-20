@@ -446,7 +446,7 @@ const UserTable: React.FC<UserTableProps> = ({
         {/* <div className={styles.scrollTable}> */}
         {filteredUsers.map((user: User) => (
           <TableRow
-            key={user.key} //              key={userKey + user.key} ?
+            key={user.key}
             user={user}
             onRowSelect={onRowSelect}
             isSelected={showSelection && selectedUsers.has(user.key)}
