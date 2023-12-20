@@ -35,7 +35,6 @@ const useStyles = makeStyles(() => ({
   categories: {
     height: '90%',
   },
-
   help: {
     // flexShrink: 0,
     // width: '90vw',
@@ -181,8 +180,8 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   //     );
   //   }
   // };
-  const styles = useStyles();
 
+  const styles = useStyles();
   const categoryElements = Object.keys(categories).map((category) => {
     return (
       <div

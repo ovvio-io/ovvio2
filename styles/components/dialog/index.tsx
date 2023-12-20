@@ -67,7 +67,7 @@ const backdropHide = keyframes(
 const useStyles = makeStyles(
   (theme) => ({
     backdrop: {
-      backgroundColor: 'rgba(8, 25, 43, 0.2)',
+      backgroundColor: '#FFFBF5',
       position: 'absolute',
       top: 0,
       left: 0,
@@ -75,6 +75,8 @@ const useStyles = makeStyles(
       bottom: 0,
       basedOn: [layout.column, layout.centerCenter],
       animation: `${backdropShow} 0.15s linear backwards`,
+      fill: '#FFFBF5',
+      opacity: 0.9,
     },
     backdropHide: {
       animation: `${backdropHide} 0.15s linear both`,
@@ -106,7 +108,7 @@ const useStyles = makeStyles(
     actions: {
       marginTop: styleguide.gridbase * 2,
       alignItems: 'center',
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
       basedOn: [layout.row],
       '& > button': {
         marginLeft: styleguide.gridbase * 2,
@@ -237,7 +239,10 @@ export function Dialog({
           >
             {onClose && (
               <IconButton className={cn(styles.closeBtn)} onClick={onClose}>
-                <IconClose />
+                <img
+                  key="closeCircleDialog"
+                  src="/icons/Editor/Close-circle.svg"
+                />
               </IconButton>
             )}
             {children}

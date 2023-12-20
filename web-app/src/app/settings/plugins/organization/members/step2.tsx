@@ -18,14 +18,18 @@ type Step2Props = {
   setStep: (step: number) => void;
   selectedUsers: Set<string>;
   setSelectedUsers: (users: Set<string>) => void;
+  selectedWorkspaces: Workspace[];
+  setSelectedWorkspaces: (workspaces: Workspace[]) => void;
 };
 
 export const Step2: React.FC<Step2Props> = ({
   setStep,
   selectedUsers,
   setSelectedUsers,
+  selectedWorkspaces,
+  setSelectedWorkspaces,
 }) => {
-  const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
+  // const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
   const workspacesQuery = useSharedQuery('workspaces');
   const workspaces = useVertices(workspacesQuery.results) as Workspace[];
 

@@ -7,6 +7,11 @@ import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
+import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
+import { useWorkspaceColor } from '../../../shared/workspace-icon/index.tsx';
+import { styleguide } from '../../../../../styles/styleguide.ts';
+import { layout } from '../../../../../styles/layout.ts';
 
 type RowInTableProps = {
   ws: Workspace;
@@ -81,6 +86,22 @@ const RowInTable: React.FC<RowInTableProps> = ({
       flexDirection: 'column',
       justifyContent: 'center',
     },
+    toggleColorColumnStyle: {
+      display: 'flex',
+      width: '32px',
+      height: '17px',
+      flexDirection: 'column',
+      justifyContent: 'center',
+    },
+    itemToggle: {
+      marginLeft: styleguide.gridbase * 0.5,
+      height: styleguide.gridbase * 2,
+      width: styleguide.gridbase * 2,
+      borderRadius: styleguide.gridbase,
+      flexShrink: 0,
+      background: 'var(--ws-inactive)',
+      basedOn: [layout.column, layout.centerCenter],
+    },
   }));
   const styles = useStyles();
   const [isRowHovered, setIsRowHovered] = useState(false);
@@ -95,6 +116,20 @@ const RowInTable: React.FC<RowInTableProps> = ({
   const handleMouseLeave = () => {
     setIsRowHovered(false);
   };
+  interface WorkspaceColorProps {
+    workspace: Workspace;
+  }
+  function WorkspaceColor({ workspace }: WorkspaceColorProps) {
+    const styles = useStyles();
+    const { name } = usePartialVertex(workspace, ['name']);
+    const color = useWorkspaceColor(workspace)?.background || 'transparent';
+    return (
+      <div
+        className={cn(styles.itemToggle)}
+        style={{ backgroundColor: color }}
+      ></div>
+    );
+  }
   return (
     <div
       className={cn(styles.rowContainer)}
@@ -126,6 +161,9 @@ const RowInTable: React.FC<RowInTableProps> = ({
         )}
       >
         <Text className={cn(styles.firstColumnStyle)}>{ws.name}</Text>
+        <TextSm className={cn(styles.toggleColorColumnStyle)}>
+          {<WorkspaceColor workspace={ws} />}
+        </TextSm>
         <TextSm className={cn(styles.otherColumnStyle)}>
           {getUserNames(ws.users)}
         </TextSm>
