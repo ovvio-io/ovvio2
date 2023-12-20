@@ -88,6 +88,7 @@ interface RepositoryPlumbing {
   backup?: IDBRepositoryBackup;
   loadingPromise?: Promise<void>;
   loadingFinished?: true;
+  syncFinished?: true;
   active: boolean;
 }
 
@@ -241,10 +242,12 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   }
 
   async syncRepository(id: string): Promise<void> {
-    const { client } = this.plumbingForRepository(id);
+    const plumbing = this.plumbingForRepository(id);
+    const client = plumbing.client;
     await this.loadRepository(id);
     if (client && client.isOnline) {
       await client.sync();
+      plumbing.syncFinished = true;
       // client.startSyncing();
     }
   }
@@ -298,7 +301,11 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         ) {
           const mgr = this.getVertexManager(c.key);
           if (c.session !== this.trustPool.currentSession.id) {
-            mgr.commit();
+            if (plumbing.syncFinished) {
+              mgr.commit();
+            } else {
+              mgr.touch();
+            }
           }
           // else {
           //   mgr.touch();
