@@ -102,6 +102,7 @@ async function _startChildServerProcess(
     path.join(settings.serverBinaryDir, binaryFileName),
     '--silent',
     `--port=${port}`,
+    `--serverId=${idx}`,
     '-d',
     settings.dataDir,
   ];
