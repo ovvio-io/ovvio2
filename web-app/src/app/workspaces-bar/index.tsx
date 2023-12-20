@@ -66,6 +66,7 @@ import { IconTemplateSet } from '../../../../styles/components/new-icons/icon-te
 import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-template-unset.tsx';
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
+import propTypes1581 from 'https://esm.sh/prop-types@15.8.1';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -456,6 +457,7 @@ function WorkspaceCheckbox({ toggled }: { toggled: boolean }) {
 
 export interface WorkspacesBarProps {
   className?: string;
+  ofSettings?: boolean;
 }
 
 function CheckIcon() {
@@ -1074,7 +1076,7 @@ function shouldAutoSelectWorkspace(
   return false;
 }
 
-function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
+function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
   const graph = useGraphManager();
   const view = usePartialGlobalView('workspaceGrouping');
   const partialUser = usePartialRootUser(
@@ -1103,15 +1105,23 @@ function WorkspaceBarWrapper({ className }: WorkspacesBarProps) {
     ])
   );
 
-  return <WorkspaceBarInternal className={className} query={query} />;
+  return (
+    <WorkspaceBarInternal
+      className={className}
+      query={query}
+      ofSettings={ofSettings}
+    />
+  );
 }
 
 function WorkspaceBarInternal({
   className,
   query,
+  ofSettings,
 }: {
   className?: string;
   query: Query<Workspace, Workspace, WorkspaceGID>;
+  ofSettings?: boolean;
 }) {
   const styles = useStyles();
   const logger = useLogger();
@@ -1219,29 +1229,34 @@ function WorkspaceBarInternal({
           )}
         >
           <div className={cn(styles.header)}>
-            <div className={cn(styles.logoContainer)}>
-              <LogoIcon className={cn(styles.logoIcon)} />
-              {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
-              {!view.workspaceBarCollapsed && (
-                <LogoText className={cn(styles.logoText)} />
-              )}
-              {/* {!view.workspaceBarCollapsed && (
-                <img src="/Logo_precise_open.png" alt="logo-ful" />
-              )} */}
-              <div className={cn(layout.flexSpacer)} />
-              <Button
-                className={cn(styles.openBarButton)}
-                onClick={() => {
-                  view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
-                }}
-              >
-                <CollapseIcon
-                  className={
-                    view.workspaceBarCollapsed ? styles.rotated : undefined
-                  }
-                />
-              </Button>
-            </div>
+            {ofSettings ? (
+              <div className={cn(styles.logoContainer)}></div>
+            ) : (
+              <div className={cn(styles.logoContainer)}>
+                <LogoIcon className={cn(styles.logoIcon)} />
+                {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
+                {!view.workspaceBarCollapsed && (
+                  <LogoText className={cn(styles.logoText)} />
+                )}
+                {/* {!view.workspaceBarCollapsed && (
+              <img src="/Logo_precise_open.png" alt="logo-ful" />
+            )} */}
+                <div className={cn(layout.flexSpacer)} />
+                <Button
+                  className={cn(styles.openBarButton)}
+                  onClick={() => {
+                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
+                  }}
+                >
+                  <CollapseIcon
+                    className={
+                      view.workspaceBarCollapsed ? styles.rotated : undefined
+                    }
+                  />
+                </Button>
+              </div>
+            )}
+
             <WorkspaceToggleView
               // selectedRatio={
               //   query.count && view.selectedWorkspaces.size / query.count
@@ -1252,7 +1267,7 @@ function WorkspaceBarInternal({
             />
           </div>
           <WorkspacesList query={query} />
-          <WorkspaceBarActions />
+          <WorkspaceBarActions ofSettings={ofSettings} />
         </div>
       )}
     </Layer>

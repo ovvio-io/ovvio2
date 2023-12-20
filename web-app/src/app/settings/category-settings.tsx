@@ -25,7 +25,7 @@ export function CategorySettings(props: CategorySettingsProps) {
       <div className={cn(styles.bar, className)}>
         {category === 'workspaces-info' ? (
           <div className={styles.wsBar}>
-            <WorkspacesBar key={'wssettingsbar'} />
+            <WorkspacesBar key={'wssettingsbar'} ofSettings={true} />
             <div>
               <div className={cn(styles.dialogHeader)}>
                 {strings[category]}

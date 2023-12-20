@@ -48,7 +48,7 @@ const useStyles = makeStyles(() => ({
   },
   group: {
     height: '24px',
-    left: '10px',
+    left: '12px',
     position: 'relative',
     top: '8px',
     width: '26px',
@@ -112,7 +112,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
         className={className}
         popupClassName={cn(styles.menu)}
         renderButton={() => <IconAvatar />}
-        position='bottom'
+        position="bottom"
       >
         <MenuItem onClick={openSettings}>Settings</MenuItem>
         <MenuItem>Sign out of Ovvio</MenuItem>

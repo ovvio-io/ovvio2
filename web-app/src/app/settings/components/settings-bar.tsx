@@ -16,6 +16,7 @@ import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
 import { usePartialView } from '../../../core/cfds/react/graph.tsx';
 import { IconPersonalInfo } from '../../../../../styles/components/new-icons/icon-personal-info.tsx';
+import HelpCenter from '../../workspaces-bar/actions.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -30,6 +31,17 @@ const useStyles = makeStyles(() => ({
     boxShadow: theme.shadows.z4,
     backgroundColor: theme.colors.background,
     basedOn: [layout.column],
+  },
+  categories: {
+    height: '90%',
+  },
+  help: {
+    // flexShrink: 0,
+    // width: '90vw',
+    // maxWidth: EXPANDED_WIDTH,
+    // height: '40%',
+    // ...styleguide.transition.standard,
+    // transitionProperty: 'width',
   },
   header: {
     width: '100%',
@@ -127,11 +139,11 @@ export interface SettingsBarCategoriesProps {
 const useStrings = createUseStrings(localization);
 
 function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
-  const styles = useStyles();
   const strings = useStrings();
   const navigate = useNavigate();
-  const { category: currentCategory } = useParams<{ category: string }>();
+  const view = usePartialView('selectedSettingsTabId');
   const tabPlugins = PluginManager.getTabPlugins();
+  const { category: currentCategory } = useParams<{ category: string }>();
 
   const categories = tabPlugins.reduce<CategoryMap>((acc, plugin) => {
     const category = plugin.category;
@@ -141,8 +153,6 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
     acc[category].push(plugin);
     return acc;
   }, {});
-
-  const view = usePartialView('selectedSettingsTabId');
 
   const navigateToCategory = (category: string) => {
     const categoryTabs = categories[category];
@@ -171,6 +181,7 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   //   }
   // };
 
+  const styles = useStyles();
   const categoryElements = Object.keys(categories).map((category) => {
     return (
       <div
@@ -183,14 +194,19 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
         onClick={() => navigateToCategory(category)}
       >
         <div className={cn(styles.actionIcon)}>
-          <IconPersonalInfo />
+          <img
+            key="SelectedRowSettings"
+            src={`/icons/settings/${strings[category + 'Bar']}.svg`}
+          />
         </div>
         <div className={cn(styles.actionText)}>{strings[category]}</div>
       </div>
     );
   });
 
-  return <div className={cn(styles.root, className)}>{categoryElements}</div>;
+  return (
+    <div className={cn(styles.categories, className)}>{categoryElements}</div>
+  );
 }
 
 export function SettingsBar({ className }: { className?: string }) {
@@ -202,9 +218,13 @@ export function SettingsBar({ className }: { className?: string }) {
         <div style={style} className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
             <BackButton />
+
             <LabelSm>Settings</LabelSm>
           </div>
           <SettingsBarCategories />
+          <div className={cn(styles.help)}>
+            <HelpCenter />
+          </div>
         </div>
       )}
     </Layer>

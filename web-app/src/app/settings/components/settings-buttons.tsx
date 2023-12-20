@@ -290,16 +290,13 @@ export const UserPill: React.FC<UserPillProps> = ({
   setSelectedUsers,
 }) => {
   const styles = useStyles();
-
-  useEffect(() => {}, [selectedUsers]);
+  const userName: User = useVertexByKey(user);
 
   const removeUserPill = () => {
     const newSelectedUsers = new Set(selectedUsers);
     newSelectedUsers.delete(user);
     setSelectedUsers(newSelectedUsers);
   };
-  const userName: User = useVertexByKey(user);
-
   return (
     <div className={cn(styles.filterPill)}>
       <span className={cn(styles.filterText)}>{userName.name}</span>

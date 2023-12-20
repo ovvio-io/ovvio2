@@ -13,7 +13,10 @@
       "workspaces-infoS": "Workspace Settings",
       "workspaces-info": "My Workspaces",
       "organization-info": "Organization",
-      "organization-infoS": "Organization Settings"
+      "organization-infoS": "Organization Settings",
+      "organization-infoBar": "OrganizationIcon",
+      "personal-infoBar": "Personal-Info",
+      "workspaces-infoBar": "My-Workspaces"
     }
   }
   
