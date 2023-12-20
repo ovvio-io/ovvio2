@@ -35,6 +35,7 @@ interface BaseServerContext {
   readonly dir: string;
   readonly replicas: string[];
   readonly port: number;
+  readonly serverId: number;
   readonly silent?: boolean;
   readonly sesRegion?: string;
 }
@@ -166,6 +167,13 @@ export class Server {
           default: false,
           description: 'Disables metric logging to stdout',
         })
+        .option('serverId', {
+          alias: 'sid',
+          type: 'number',
+          default: 0,
+          description:
+            'The server id of this process when running multiple servers on a single machine',
+        })
         .option('dir', {
           alias: 'd',
           description:
@@ -195,7 +203,7 @@ export class Server {
     }
     setGlobalLoggerStreams(logStreams);
     const sesRegion = args?.sesRegion || 'us-east-1';
-    let replicas: string[] = [];
+    let replicas: string[] | undefined;
     if (args?.b64replicas?.length || 0 > 0) {
       const decoder = new TextDecoder();
       replicas = JSON.parse(
@@ -211,8 +219,9 @@ export class Server {
       prometheusLogStream: prometeusLogStream,
       // sqliteLogStream,
       dir: args!.dir,
-      replicas: replicas || args?.replicas,
+      replicas: replicas || args?.replicas || [],
       port: args?.port || 8080,
+      serverId: args?.serverId || 0,
       email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
       silent: args?.silent === true,
@@ -273,7 +282,6 @@ export class Server {
       // Setup all services in the correct order of dependencies
       services.sync.setup(services);
       // <<< Add any new service.setup() calls here >>>
-
       this._servicesByOrg.set(orgId, services);
     }
     return services;

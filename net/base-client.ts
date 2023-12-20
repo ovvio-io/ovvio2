@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
-import { retry, sleep } from '../base/time.ts';
+import { retry } from '../base/time.ts';
 import { log } from '../logging/log.ts';
 import {
   JSONCyclicalDecoder,
@@ -26,8 +26,8 @@ export const kSyncConfigClient: SyncConfig = {
 
 export const kSyncConfigServer: SyncConfig = {
   minSyncFreqMs: 100,
-  maxSyncFreqMs: 60000,
-  syncDurationMs: 300,
+  maxSyncFreqMs: 3000,
+  syncDurationMs: 1500,
 };
 
 export function syncConfigGetCycles(
@@ -331,9 +331,6 @@ export abstract class BaseClient<
     // We need to do a minimum number of successful sync cycles in order to make
     // sure everything is sync'ed. Also need to make sure we don't have any
     // local commits that our peer doesn't have (local changes or peer recovery).
-    //
-    // Alternative algorithm: Wait for 2 consecutive cycles that are empty (no
-    // changes received from server).
     let i = 0;
     do {
       await this.sendSyncMessage();

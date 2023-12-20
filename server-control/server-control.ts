@@ -102,10 +102,14 @@ async function _startChildServerProcess(
     path.join(settings.serverBinaryDir, binaryFileName),
     '--silent',
     `--port=${port}`,
+    `--serverId=${idx}`,
     '-d',
     settings.dataDir,
   ];
   if (replicas) {
+    // if (idx !== 0) {
+    //   args.push('--follower');
+    // }
     args.push('--b64replicas');
     const encodedReplicas = encodeBase64Url(JSON.stringify(replicas || []));
     args.push(encodedReplicas);
@@ -171,7 +175,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = navigator.hardwareConcurrency;
+  const processCount = 1; //navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {
@@ -194,7 +198,7 @@ async function startServerProcesses(
       child.status.then(terminationCallback);
     }
     serverProcesses.push(child);
-    await sleep(5 * kSecondMs);
+    await sleep(1 * kSecondMs);
   }
   return serverProcesses;
 }

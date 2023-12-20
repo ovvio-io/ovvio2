@@ -76,7 +76,7 @@ async function processMessage(
   switch (msg.msg) {
     case 'openRepo': {
       const repoId = Repository.id(msg.type, msg.id);
-      console.log(`WORKER: ${msg.msg}/${repoId}`);
+      // console.log(`WORKER: ${msg.msg}/${repoId}`);
       let repo = openRepositories.get(repoId);
       if (!repo) {
         repo = new Repository(
@@ -107,7 +107,7 @@ async function processMessage(
 
     case 'commits': {
       const repo = openRepositories.get(msg.repoId);
-      console.log(`WORKER: ${msg.msg}/${msg.repoId}`);
+      // console.log(`WORKER: ${msg.msg}/${msg.repoId}`);
       if (repo) {
         await repo.persistCommits(
           msg.commits.map((obj) => {

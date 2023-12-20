@@ -147,6 +147,7 @@ export class SettingsService extends BaseService<ServerServices> {
       ...settings,
       session: await encodeSession(settings.session),
     };
+    await Deno.mkdir(path.dirname(this.jsonFilePath), { recursive: true });
     await Deno.writeTextFile(
       this.jsonFilePath,
       prettyJSON(JSONEncoder.toJS(encodedSettings)),

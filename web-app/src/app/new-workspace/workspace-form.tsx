@@ -48,27 +48,16 @@ function duplicateWorkspace(
   src: VertexManager<Workspace>,
   initialData: CoreObject,
 ): VertexManager<Workspace> {
-  // const subGraph = graph.exportSubGraph(src.key, 1, [NS_USERS], (r: Record) => {
-  //   if (r.scheme.namespace === NS_WORKSPACE) {
-  //     r.set('name', name);
-  //   }
-  //   if (r.scheme.hasField('createdBy')) {
-  //     r.set('createdBy', graph.rootKey);
-  //   }
-  // });
-  // debugger;
-  // const data = graph.importSubGraph(subGraph, false);
-  // return data[0] as VertexManager<Workspace>;
-
-  const newWs = graph.createVertex<Workspace>(SchemeNamespace.WORKSPACE, {
+  const data = {
     ...src.record.cloneData(),
     ...initialData,
-  });
+  };
+  delete data.isTemplate;
+  const newWs = graph.createVertex<Workspace>(SchemeNamespace.WORKSPACE, data);
   const srcRepo = graph.repository(Repository.id('data', src.key));
   const recordByNamespace = new Map<SchemeNamespace, [string, Record][]>();
   const rewriteKeys = new Map<string, string>();
   rewriteKeys.set(src.key, newWs.key);
-  debugger;
   for (const k of srcRepo.keys()) {
     const record = srcRepo.valueForKey(k);
     let entries = recordByNamespace.get(record.scheme.namespace);
@@ -115,9 +104,8 @@ function createNewWorkspace(
     name,
     users: new Set([graphManager.rootKey]),
   };
-  delete data.isTemplate;;
   if (copyFrom) {
-    for (let i = 0; i < 10; ++i) {
+    for (let i = 0; i < 100; ++i) {
       const ws = duplicateWorkspace(
         graphManager,
         copyFrom,
