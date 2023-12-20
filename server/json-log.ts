@@ -156,7 +156,7 @@ function appendBytes(
   dst: Uint8Array,
   dstOffset: number,
 ): Uint8Array {
-  if (dstOffset + srcLen < dst.byteLength) {
+  if (dstOffset + srcLen > dst.byteLength) {
     const newDst = new Uint8Array(
       Math.ceil((dstOffset + srcLen) * 2 / PAGE_SIZE) * PAGE_SIZE,
     );
