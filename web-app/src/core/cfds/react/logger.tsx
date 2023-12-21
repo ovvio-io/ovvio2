@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  openDB,
-  deleteDB,
   DBSchema,
+  deleteDB,
   IDBPDatabase,
+  openDB,
 } from 'https://esm.sh/idb@7.1.1/with-async-ittr';
 import {
   GlobalLogger,
@@ -13,9 +13,9 @@ import {
   resetGlobalLoggerStreams,
   setGlobalLoggerStreams,
 } from '../../../../../logging/log.ts';
-import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
+// import { LogClient, LogClientStorage } from '../../../../../net/log-client.ts';
 import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
-import { kSyncConfigClient } from '../../../../../net/base-client.ts';
+// import { kSyncConfigClient } from '../../../../../net/base-client.ts';
 import { LogStream } from '../../../../../logging/log.ts';
 import { ConsoleLogStream } from '../../../../../logging/console-stream.ts';
 import { OwnedSession } from '../../../../../auth/session.ts';
@@ -45,12 +45,13 @@ export function LoggerProvider({
       return;
     }
 
-    const storage = new LogClientIDBStorage(
-      '/logs/' + session.owner || 'anonymous'
-    );
-    const client = baseServerUrl
-      ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
-      : undefined;
+    // const storage = new LogClientIDBStorage(
+    //   '/logs/' + session.owner || 'anonymous',
+    // );
+    // const client = baseServerUrl
+    //   ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
+    //   : undefined;
+    const client: any | undefined = undefined;
     // Rather than using a different logger, we change the GlobalLogger's
     // streams to match the current user. This diverts logs from the entire
     // client stack rather than just UI stuff rendered with react.
@@ -64,7 +65,7 @@ export function LoggerProvider({
     const unloadHandler = () => {
       resetGlobalLoggerStreams();
       client?.close();
-      storage.close();
+      // storage.close();
     };
 
     addEventListener('unload', unloadHandler);
@@ -72,7 +73,7 @@ export function LoggerProvider({
       removeEventListener('unload', unloadHandler);
       // Log this session's end
       GlobalLogger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'SessionEnd',
       });
       // Reset our global logger to default mode
@@ -80,16 +81,15 @@ export function LoggerProvider({
       if (client) {
         client.sync().finally(() => {
           client.close();
-          storage.close();
+          // storage.close();
         });
       } else {
-        storage.close();
+        // storage.close();
       }
     };
   }, [session]);
-  return (
-    <loggerContext.Provider value={ctx}>{children}</loggerContext.Provider>
-  );
+  return <loggerContext.Provider value={ctx}>{children}
+  </loggerContext.Provider>;
 }
 
 export function useLogger(): Logger {
@@ -105,77 +105,77 @@ interface LogStorageSchema extends DBSchema {
   };
 }
 
-class LogClientIDBStorage implements LogClientStorage {
-  private _dbPromise: Promise<IDBPDatabase<LogStorageSchema>> | undefined;
-  constructor(readonly dbName: string) {
-    this.getDB(); // Start open of our DB as soon as possible
-  }
-
-  private getDB(): Promise<IDBPDatabase<LogStorageSchema>> {
-    if (this._dbPromise === undefined) {
-      this._dbPromise = openDB<LogStorageSchema>(this.dbName, K_DB_VERSION, {
-        upgrade(db) {
-          db.createObjectStore('logEntries', { keyPath: 'logId' });
-        },
-      });
-    }
-    return this._dbPromise;
-  }
-
-  async close(): Promise<boolean> {
-    if (undefined === this._dbPromise) {
-      return false;
-    }
-    const db = await this._dbPromise;
-    db.close();
-    this._dbPromise = undefined;
-    return true;
-  }
-
-  async delete(): Promise<void> {
-    await this.close();
-    await deleteDB(this.dbName);
-  }
-
-  async persistEntries(entries: NormalizedLogEntry[]): Promise<void> {
-    const db = await this.getDB();
-    const txn = db.transaction('logEntries', 'readwrite', {
-      durability: 'relaxed',
-    });
-    const store = txn.objectStore('logEntries');
-    const promises: Promise<void>[] = [];
-    for (const e of entries) {
-      promises.push(
-        (async () => {
-          try {
-            await store.put(e);
-          } catch (e) {
-            log({
-              severity: 'ERROR',
-              error: 'LoggerWriteFailed',
-              message: e.message,
-              trace: e.stack,
-              repo: this.dbName,
-              commit: e.logId,
-            });
-            throw e;
-          }
-        })()
-      );
-    }
-    for (const p of promises) {
-      await p;
-    }
-    await txn.done;
-  }
-
-  async *entries(): AsyncGenerator<NormalizedLogEntry> {
-    const db = await this.getDB();
-    const txn = db.transaction('logEntries', 'readonly', {
-      durability: 'relaxed',
-    });
-    for await (const e of txn.store) {
-      yield e.value;
-    }
-  }
-}
+// class LogClientIDBStorage implements LogClientStorage {
+//   private _dbPromise: Promise<IDBPDatabase<LogStorageSchema>> | undefined;
+//   constructor(readonly dbName: string) {
+//     this.getDB(); // Start open of our DB as soon as possible
+//   }
+//
+//   private getDB(): Promise<IDBPDatabase<LogStorageSchema>> {
+//     if (this._dbPromise === undefined) {
+//       this._dbPromise = openDB<LogStorageSchema>(this.dbName, K_DB_VERSION, {
+//         upgrade(db) {
+//           db.createObjectStore('logEntries', { keyPath: 'logId' });
+//         },
+//       });
+//     }
+//     return this._dbPromise;
+//   }
+//
+//   async close(): Promise<boolean> {
+//     if (undefined === this._dbPromise) {
+//       return false;
+//     }
+//     const db = await this._dbPromise;
+//     db.close();
+//     this._dbPromise = undefined;
+//     return true;
+//   }
+//
+//   async delete(): Promise<void> {
+//     await this.close();
+//     await deleteDB(this.dbName);
+//   }
+//
+//   async persistEntries(entries: NormalizedLogEntry[]): Promise<void> {
+//     const db = await this.getDB();
+//     const txn = db.transaction('logEntries', 'readwrite', {
+//       durability: 'relaxed',
+//     });
+//     const store = txn.objectStore('logEntries');
+//     const promises: Promise<void>[] = [];
+//     for (const e of entries) {
+//       promises.push(
+//         (async () => {
+//           try {
+//             await store.put(e);
+//           } catch (e) {
+//             log({
+//               severity: 'ERROR',
+//               error: 'LoggerWriteFailed',
+//               message: e.message,
+//               trace: e.stack,
+//               repo: this.dbName,
+//               commit: e.logId,
+//             });
+//             throw e;
+//           }
+//         })(),
+//       );
+//     }
+//     for (const p of promises) {
+//       await p;
+//     }
+//     await txn.done;
+//   }
+//
+//   async *entries(): AsyncGenerator<NormalizedLogEntry> {
+//     const db = await this.getDB();
+//     const txn = db.transaction('logEntries', 'readonly', {
+//       durability: 'relaxed',
+//     });
+//     for await (const e of txn.store) {
+//       yield e.value;
+//     }
+//   }
+// }

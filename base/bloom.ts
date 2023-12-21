@@ -1,7 +1,4 @@
-import {
-  encode as b64Encode,
-  decode as b64Decode,
-} from 'std/encoding/base64.ts';
+import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
 import { assert } from './error.ts';
 import { MurmurHash3 } from './hash.ts';
 import { CoreValue, Encodable, Encoder } from './core-types/base.ts';
@@ -14,16 +11,53 @@ import {
 } from './core-types/encoding/index.ts';
 import { ReadonlyJSONObject } from './interfaces.ts';
 
+const gBufferCache = new Map<number, Uint8Array[]>();
+
+function allocateBuffer(minBytes: number): Uint8Array {
+  for (const size of Array.from(gBufferCache.keys()).sort((x, y) => y - x)) {
+    if (size >= minBytes) {
+      const cachedBuffers = gBufferCache.get(size)!;
+      const buffer = cachedBuffers.pop() || new Uint8Array(minBytes);
+      if (cachedBuffers.length <= 0) {
+        gBufferCache.delete(size);
+      }
+      return buffer;
+    }
+  }
+  return new Uint8Array(minBytes);
+}
+
+function cacheBufferForReuse(buff: Uint8Array): void {
+  const size = buff.byteLength;
+  let arr = gBufferCache.get(size);
+  if (!arr) {
+    arr = [];
+    gBufferCache.set(size, arr);
+  }
+  arr.push(buff);
+}
+
 /**
  * A buffer that provides access to single bits by index.
  * Designed as storage for BloomFilter.
  */
 class BitField {
-  buffer: Uint8Array;
+  private _byteSize: number;
+  private _buffer: Uint8Array;
 
   constructor(size: number) {
-    const byteLength = Math.ceil(size / 8);
-    this.buffer = new Uint8Array(byteLength);
+    this._byteSize = Math.ceil(size / 8);
+    this._buffer = new Uint8Array(this._byteSize);
+  }
+
+  get buffer(): Uint8Array {
+    return this._buffer.subarray(0, this._byteSize);
+  }
+
+  set buffer(buf: Uint8Array) {
+    cacheBufferForReuse(this._buffer);
+    this._buffer = buf;
+    this._byteSize = buf.byteLength;
   }
 
   get bitSize() {
@@ -31,19 +65,19 @@ class BitField {
   }
 
   get byteSize() {
-    return this.buffer.byteLength;
+    return this._byteSize;
   }
 
   get(idx: number): boolean {
     const byteOffset = idx >> 3; // floor(idx / 8)
     const bitMask = 1 << idx % 8;
-    return (this.buffer[byteOffset] & bitMask) !== 0;
+    return (this._buffer[byteOffset] & bitMask) !== 0;
   }
 
   set(idx: number, value: boolean): void {
     const byteOffset = idx >> 3; // floor(idx / 8)
     const bitMask = 1 << idx % 8;
-    const buf = this.buffer;
+    const buf = this._buffer;
     if (value) {
       buf[byteOffset] = buf[byteOffset] | bitMask;
     } else {
@@ -53,6 +87,9 @@ class BitField {
 
   clear(): void {
     this.buffer.fill(0);
+  }
+  reuse(): void {
+    cacheBufferForReuse(this._buffer);
   }
 }
 
@@ -83,7 +120,7 @@ export class BloomFilter implements Encodable, Decodable {
   private _hashes: MurmurHash3[];
 
   constructor(
-    options: BloomFilterOptions | ConstructorDecoderConfig<EncodedBloomFilter>
+    options: BloomFilterOptions | ConstructorDecoderConfig<EncodedBloomFilter>,
   ) {
     if (isDecoderConfig(options)) {
       this._filter = new BitField(1);
@@ -95,7 +132,7 @@ export class BloomFilter implements Encodable, Decodable {
       if (m === undefined) {
         assert(fpr !== undefined);
         m = Math.ceil(
-          (size * Math.log(fpr!)) / Math.log(1 / Math.pow(2, Math.log(2)))
+          (size * Math.log(fpr!)) / Math.log(1 / Math.pow(2, Math.log(2))),
         );
       }
       if (k === undefined) {
@@ -173,22 +210,26 @@ export class BloomFilter implements Encodable, Decodable {
 
   serialize(
     encoder: Encoder<string, CoreValue, unknown, unknown>,
-    _options?: unknown
+    _options?: unknown,
   ): void {
-    encoder.set('d', b64Encode(this._filter.buffer));
+    encoder.set('d', encodeBase64(this._filter.buffer));
     encoder.set(
       's',
-      this._hashes.map((h) => h.seed)
+      this._hashes.map((h) => h.seed),
     );
   }
 
   deserialize(
     decoder: Decoder<string, DecodedValue>,
-    _options?: unknown
+    _options?: unknown,
   ): void {
-    this._filter.buffer = b64Decode(decoder.get('d')!);
+    this._filter.buffer = decodeBase64(decoder.get('d')!);
     this._hashes = decoder
       .get<number[]>('s')!
       .map((seed) => new MurmurHash3(seed));
+  }
+
+  reuse(): void {
+    this._filter.reuse();
   }
 }

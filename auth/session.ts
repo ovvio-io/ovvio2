@@ -408,6 +408,8 @@ interface RequestSignatureMetadata extends ReadonlyJSONObject {
   readonly ts: number;
 }
 
+const REQUEST_SIG_EXPIRATION_MS = 3 * kMinuteMs;
+
 export function generateRequestSignature(
   session: OwnedSession,
 ): Promise<string> {
@@ -416,22 +418,30 @@ export function generateRequestSignature(
     ts: Date.now(),
   });
 }
+let sessionIdsCache: Map<string, string> = new Map();
+let requestSigCache: Map<string, boolean> = new Map();
+setInterval(() => {
+  sessionIdsCache = new Map();
+  requestSigCache = new Map();
+}, 10 * kSecondMs);
 
 export async function verifyRequestSignature(
   session: Session,
   signature: string,
 ): Promise<boolean> {
-  const sig = decodeSignature<RequestSignatureMetadata>(signature);
-  if (Math.abs(Date.now() - sig.data.ts) > 3 * kMinuteMs) {
-    return false;
+  const cacheId = `${session.id}+${signature}`;
+  let result = requestSigCache.get(cacheId);
+  if (result !== undefined) {
+    return result;
   }
-  return await verifyData(session, sig);
+  result = false;
+  const sig = decodeSignature<RequestSignatureMetadata>(signature);
+  if (Math.abs(Date.now() - sig.data.ts) <= REQUEST_SIG_EXPIRATION_MS) {
+    result = await verifyData(session, sig);
+  }
+  requestSigCache.set(cacheId, result);
+  return result;
 }
-
-let sessionIdsCache: Map<string, string> = new Map();
-setInterval(() => {
-  sessionIdsCache = new Map();
-}, 10 * kSecondMs);
 
 export function sessionIdFromSignature(sig: string): string {
   let id = sessionIdsCache.get(sig);
