@@ -7,11 +7,11 @@ import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
-import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 import { useWorkspaceColor } from '../../../shared/workspace-icon/index.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
+import { Scroller } from '../../../core/react-utils/scrolling.tsx';
 
 type RowInTableProps = {
   ws: Workspace;
@@ -256,17 +256,24 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
             </Text>
           </div>
         )}
-        {filteredWorkspaces.map((ws: Workspace) => (
-          <RowInTable
-            key={ws.key + wsKey}
-            ws={ws}
-            onRowSelect={onRowSelect}
-            isSelected={showSelection && selectedWorkspaces.includes(ws)}
-            isEditable={isEditable && !selectedWorkspaces.includes(ws)}
-          />
-        ))}
+        <Scroller>
+          {(ref) => (
+            <div ref={ref}>
+              {filteredWorkspaces.map((ws: Workspace) => (
+                <RowInTable
+                  key={ws.key + wsKey}
+                  ws={ws}
+                  onRowSelect={onRowSelect}
+                  isSelected={showSelection && selectedWorkspaces.includes(ws)}
+                  isEditable={isEditable && !selectedWorkspaces.includes(ws)}
+                />
+              ))}
+            </div>
+          )}
+        </Scroller>
       </div>
     </div>
   );
 };
+//TODO: Scroller might be removed.
 export default WorkspaceTable;
