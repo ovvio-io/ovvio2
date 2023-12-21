@@ -11,33 +11,13 @@ import {
 import { MovingAverage } from '../base/math.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { VersionNumber } from '../base/version-number.ts';
-
-export interface SyncConfig {
-  minSyncFreqMs: number;
-  maxSyncFreqMs: number;
-  syncDurationMs: number;
-}
-
-export const kSyncConfigClient: SyncConfig = {
-  minSyncFreqMs: 300,
-  maxSyncFreqMs: 3000,
-  syncDurationMs: 2000,
-};
-
-export const kSyncConfigServer: SyncConfig = {
-  minSyncFreqMs: 100,
-  maxSyncFreqMs: 3000,
-  syncDurationMs: 1500,
-};
-
-export function syncConfigGetCycles(
-  config: SyncConfig,
-  actualSyncFreqMs = 0,
-): number {
-  return Math.floor(
-    config.syncDurationMs / Math.max(actualSyncFreqMs, config.minSyncFreqMs),
-  );
-}
+import {
+  SyncConfig,
+  syncConfigGetCycles,
+  SyncScheduler,
+} from './sync-scheduler.ts';
+import { RepositoryType } from '../repo/repo.ts';
+import { Commit } from '../repo/commit.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -59,8 +39,6 @@ export abstract class BaseClient<
   ValueType extends SyncValueType,
 > extends EventEmitter {
   private readonly _timer: EaseInOutSineTimer;
-  private readonly _serverUrl: string;
-  private readonly _syncConfig: SyncConfig;
   private readonly _syncFreqAvg: MovingAverage;
   private _previousServerFilter: BloomFilter | undefined;
   private _previousServerSize: number;
@@ -71,25 +49,26 @@ export abstract class BaseClient<
   private _closed = false;
   private _pendingSyncPromise: Promise<void> | undefined;
 
-  constructor(serverUrl: string, syncConfig: SyncConfig) {
+  constructor(
+    readonly storage: RepositoryType,
+    readonly id: string,
+    readonly syncConfig: SyncConfig,
+    readonly scheduler: SyncScheduler,
+  ) {
     super();
-    this._serverUrl = serverUrl;
-    this._syncConfig = syncConfig;
     this._timer = new EaseInOutSineTimer(
       syncConfig.minSyncFreqMs,
       syncConfig.maxSyncFreqMs,
       syncConfig.maxSyncFreqMs * 3,
-      async () => {
-        try {
-          await this.sendSyncMessage();
-        } catch (e) {
+      () => {
+        this.sendSyncMessage().catch((e) => {
           log({
             severity: 'INFO',
             error: 'UnknownSyncError',
             message: e.message,
             trace: e.stack,
           });
-        }
+        });
       },
       true,
       'Sync timer',
@@ -123,10 +102,6 @@ export abstract class BaseClient<
 
   get previousServerSize(): number {
     return this._previousServerSize;
-  }
-
-  get syncConfig(): SyncConfig {
-    return this._syncConfig;
   }
 
   get syncCycles(): number {
@@ -213,60 +188,20 @@ export abstract class BaseClient<
       return;
     }
     const startingStatus = this.status;
-    const syncConfig = this._syncConfig;
     const reqMsg = await this.buildSyncMessage();
-    const msg = JSONCyclicalEncoder.serialize(reqMsg);
-    let respText: string | undefined;
+
+    let syncResp: SyncMessage<ValueType>;
     try {
-      const start = performance.now();
-      respText = await retry(async () => {
-        const resp = await fetch(this._serverUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(msg),
-        });
-        return await resp.text();
-      }, syncConfig.minSyncFreqMs);
-
-      if (this.closed) {
-        return;
-      }
-
-      const syncDurationMs = performance.now() - start;
-      this._syncFreqAvg.addValue(syncDurationMs);
-      log({
-        severity: 'METRIC',
-        name: 'PeerResponseTime',
-        value: syncDurationMs,
-        unit: 'Milliseconds',
-        url: this._serverUrl,
-      });
-    } catch (e) {
-      log({
-        severity: 'INFO',
-        error: 'FetchError',
-        message: e.message,
-        trace: e.stack,
-        url: this._serverUrl,
-      });
-    }
-    //TODO: Prom instance
-
-    if (!respText) {
-      this._setIsOnline(false);
-      return;
-    }
-    let syncResp: typeof reqMsg;
-    try {
-      const json = JSON.parse(respText);
-      syncResp = new SyncMessage({ decoder: new JSONCyclicalDecoder(json) });
+      syncResp = await this.scheduler.send(
+        this.storage,
+        this.id,
+        reqMsg,
+      ) as typeof reqMsg;
     } catch (e) {
       log({
         severity: 'INFO',
         error: 'SerializeError',
-        value: respText,
+        value: e.message,
         message: e.message,
         trace: e.stack,
       });
@@ -326,7 +261,7 @@ export abstract class BaseClient<
    * communication (which rely on indefinite polling loop).
    */
   async sync(): Promise<void> {
-    const syncConfig = this._syncConfig;
+    const syncConfig = this.syncConfig;
     const cycleCount = syncConfigGetCycles(syncConfig) + 1;
     // We need to do a minimum number of successful sync cycles in order to make
     // sure everything is sync'ed. Also need to make sure we don't have any

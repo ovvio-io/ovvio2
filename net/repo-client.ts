@@ -1,15 +1,22 @@
-import { Repository, RepoStorage } from '../repo/repo.ts';
+import { Repository, RepositoryType, RepoStorage } from '../repo/repo.ts';
 import { SyncMessage } from './message.ts';
-import { BaseClient, SyncConfig } from './base-client.ts';
+import { BaseClient } from './base-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { mapIterable } from '../base/common.ts';
 import { generateRequestSignature } from '../auth/session.ts';
+import { SyncConfig, SyncScheduler } from './sync-scheduler.ts';
 
 export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   private readonly _repo: Repository<T>;
 
-  constructor(repo: Repository<T>, serverUrl: string, syncConfig: SyncConfig) {
-    super(serverUrl, syncConfig);
+  constructor(
+    repo: Repository<T>,
+    storage: RepositoryType,
+    id: string,
+    syncConfig: SyncConfig,
+    scheduler: SyncScheduler,
+  ) {
+    super(storage, id, syncConfig, scheduler);
     this._repo = repo;
     this.ready = true;
   }

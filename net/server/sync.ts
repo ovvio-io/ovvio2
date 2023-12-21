@@ -1,13 +1,11 @@
 import { join as joinPath } from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import { mapIterable } from '../../base/common.ts';
-import * as SetUtils from '../../base/set.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../../base/core-types/encoding/json.ts';
 import { assert } from '../../base/error.ts';
-import { NormalizedLogEntry } from '../../logging/entry.ts';
 import { log } from '../../logging/log.ts';
 import {
   Authorizer,
@@ -18,14 +16,7 @@ import {
   RepositoryType,
 } from '../../repo/repo.ts';
 import { getOvvioConfig } from '../../server/config.ts';
-import { SQLiteLogStorage } from '../../server/sqlite3-log-storage.ts';
-import {
-  BaseClient,
-  kSyncConfigClient,
-  kSyncConfigServer,
-  syncConfigGetCycles,
-} from '../base-client.ts';
-import { LogClient } from '../log-client.ts';
+import { BaseClient } from '../base-client.ts';
 import { SyncMessage } from '../message.ts';
 import { SyncValueType } from '../message.ts';
 import { RepoClient } from '../repo-client.ts';
@@ -36,6 +27,7 @@ import { Commit } from '../../repo/commit.ts';
 import {
   decodeSession,
   generateRequestSignature,
+  Session,
   sessionFromRecord,
   TrustPool,
 } from '../../auth/session.ts';
@@ -50,10 +42,32 @@ import {
   requireSignedUser,
 } from './auth.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
-// import { SQLite3RepoBackup } from '../../server/sqlite3-repo-backup.ts';
 import { RepositoryIndex } from '../../repo/index.ts';
-import { JSONLogRepoBackup } from '../../server/json-log-repo-backup.ts';
-// import { LMDBRepoBackup } from '../../server/lmdb-repo-backup.ts';
+import { JSONLogRepoBackup } from '../../repo/json-log-repo-backup.ts';
+import {
+  JSONArray,
+  JSONObject,
+  ReadonlyJSONObject,
+} from '../../base/interfaces.ts';
+import {
+  kSyncConfigServer,
+  syncConfigGetCycles,
+  SyncScheduler,
+} from '../sync-scheduler.ts';
+
+const gSyncSchedulers = new Map<string, SyncScheduler>();
+
+function syncSchedulerForURL(
+  url: string,
+  session: OwnedSession,
+): SyncScheduler {
+  let res = gSyncSchedulers.get(url);
+  if (!res) {
+    res = new SyncScheduler(url, kSyncConfigServer, session);
+    gSyncSchedulers.set(url, res);
+  }
+  return res;
+}
 
 export interface SysDirIndexes extends RepositoryIndexes<MemRepoStorage> {
   users: RepositoryIndex<MemRepoStorage>;
@@ -71,22 +85,16 @@ export class SyncService extends BaseService<ServerServices> {
   >;
   readonly name = 'sync';
 
-  private readonly _logs: Dictionary<string, SQLiteLogStorage>;
-  private readonly _clientsForLog: Dictionary<string, LogClient[]>;
   private readonly _backupForRepo: Dictionary<string, JSONLogRepoBackup>;
-  // private _backup: SQLite3RepoBackup | undefined;
 
   constructor() {
     super();
     this._repositories = new Map();
     this._clientsForRepo = new Map();
-    this._logs = new Map();
-    this._clientsForLog = new Map();
     this._backupForRepo = new Map();
   }
 
   get ready(): boolean {
-    // return this._backup !== undefined && this._backup.ready;
     return true;
   }
 
@@ -95,27 +103,6 @@ export class SyncService extends BaseService<ServerServices> {
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
     await setupTrustPool(trustPool, sysDir);
-    // let loadedSysDir = false;
-    // Setup backup service
-    // this._backup = new SQLite3RepoBackup(services, (repoId, commits) => {
-    //   const repo = this._repositories.get(repoId);
-    //   if (repo) {
-    //     const persisted = repo.persistVerifiedCommits(commits);
-    //     // When initially loading sys/dir, only records created by root and
-    //     // operators are allowed to enter the repo. We then run one more
-    //     // persist attempt on any rejected commits, which will now be allowed
-    //     // since records exist properly.
-    //     if (repoId === 'sys/dir' && !loadedSysDir) {
-    //       loadedSysDir = true;
-    //       const notPersisted = Array.from(
-    //         SetUtils.subtract(commits, persisted),
-    //       );
-    //       repo.persistVerifiedCommits(notPersisted);
-    //     }
-    //   }
-    // });
-    // this._loadRepo('sys', 'dir');
-    // Publish our root session to clients so we claim our authority
     await persistSession(services, services.settings.session);
   }
 
@@ -168,13 +155,17 @@ export class SyncService extends BaseService<ServerServices> {
       const clients = this.services.replicas.map((baseServerUrl) =>
         new RepoClient(
           repo!,
-          new URL(`/${type}/${id}/sync`, baseServerUrl).toString(),
+          type,
+          id,
           kSyncConfigServer,
+          syncSchedulerForURL(
+            `${baseServerUrl}/batchSync`,
+            this.services.trustPool.currentSession,
+          ),
         ).startSyncing()
       );
       this._clientsForRepo.set(repoId, clients);
     }
-    // this._loadRepo(type, id);
     return repo;
   }
 
@@ -198,52 +189,6 @@ export class SyncService extends BaseService<ServerServices> {
       }
     });
   }
-
-  //   private async _loadRepo(type: RepositoryType, id: string): Promise<void> {
-  //     if (this.services.follower === true) {
-  //       const repoId = Repository.id(type, id);
-  //       const clients = this._clientsForRepo.get(repoId);
-  //       if (clients) {
-  //         await clients[0].sync();
-  //       }
-  //     } else {
-  //       await this._loadBackupForRepo(type, id);
-  //     }
-  //   }
-  //
-  //   private async _loadBackupForRepo(
-  //     type: RepositoryType,
-  //     id: string,
-  //   ): Promise<void> {
-  //     const backup = this._backup;
-  //     if (backup) {
-  //       const repoId = Repository.id(type, id);
-  //       const repo = this._repositories.get(repoId)!;
-  //       repo.mute();
-  //       await backup.open(type, id);
-  //       const indexes = repo.indexes;
-  //       if (indexes) {
-  //         for (const idx of Object.values(indexes)) {
-  //           idx.scanRepo();
-  //         }
-  //       }
-  //       const trustPool = this.services.trustPool;
-  //       let loaded = false;
-  //       do {
-  //         loaded = false;
-  //         for (const key of repo.keys()) {
-  //           const record = repo.valueForKey(key);
-  //           if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-  //             loaded = loaded || await trustPool.addSession(
-  //               await sessionFromRecord(record),
-  //               repo.headForKey(key)!,
-  //             );
-  //           }
-  //         }
-  //       } while (loaded);
-  //       repo.unmute();
-  //     }
-  //   }
 
   getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
     type: RepositoryType,
@@ -279,33 +224,6 @@ export class SyncService extends BaseService<ServerServices> {
     return this.getRepository('sys', 'dir');
   }
 
-  getLog(id: string): SQLiteLogStorage {
-    let storage = this._logs.get(id);
-    if (!storage) {
-      storage = new SQLiteLogStorage(
-        joinPath(this.services.dir, 'logs', id + '.logs'),
-      );
-      this._logs.set(id, storage);
-      const replicas = this.services.replicas;
-      if (replicas.length > 0) {
-        assert(!this._clientsForLog.has(id)); // Sanity check
-        const clients = replicas.map((baseServerUrl) =>
-          new LogClient(
-            storage!,
-            new URL('/logs/' + id, baseServerUrl).toString(),
-            kSyncConfigServer,
-          ).startSyncing()
-        );
-        this._clientsForLog.set(id, clients);
-      }
-    }
-    return storage;
-  }
-
-  clientsForLog(id: string): LogClient[] {
-    return this._clientsForLog.get(id)!;
-  }
-
   clientsForRepo(id: string): RepoClient<MemRepoStorage>[] {
     return this._clientsForRepo.get(id)!;
   }
@@ -316,20 +234,10 @@ export class SyncService extends BaseService<ServerServices> {
         c.startSyncing();
       }
     }
-    for (const clients of this._clientsForLog.values()) {
-      for (const c of clients) {
-        c.startSyncing();
-      }
-    }
   }
 
   stop(): void {
     for (const clients of this._clientsForRepo.values()) {
-      for (const c of clients) {
-        c.stopSyncing();
-      }
-    }
-    for (const clients of this._clientsForLog.values()) {
       for (const c of clients) {
         c.stopSyncing();
       }
@@ -347,13 +255,17 @@ export class SyncEndpoint implements Endpoint {
       return false;
     }
     const path = getRequestPath(req).split('/');
+    debugger;
+    if (path.length === 2 && path[1] === 'batch-sync') {
+      return true;
+    }
     if (path.length !== 4 || ![...kRepositoryTypes, 'log'].includes(path[1])) {
       return false;
     }
     return true;
   }
 
-  async processRequest(
+  processRequest(
     services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
@@ -366,49 +278,100 @@ export class SyncEndpoint implements Endpoint {
       );
     }
     const path = getRequestPath(req).split('/');
+
+    debugger;
+    if (path.length === 3 && path[2] === 'sync') {
+      return this.processSingleSyncRequest(services, req, info);
+    }
+
+    if (path.length === 2 && path[1] === 'batch-sync') {
+      return this.processBatchSyncRequest(services, req, info);
+    }
+    return Promise.resolve(new Response(null, { status: 400 }));
+  }
+
+  async processBatchSyncRequest(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo,
+  ): Promise<Response> {
+    const encodedRequests = await req.json();
+    if (!(encodedRequests instanceof Array)) {
+      return Promise.resolve(new Response(null, { status: 400 }));
+    }
+    const sig = req.headers.get('X-Ovvio-Sig');
+    if (!sig) {
+      return Promise.resolve(new Response(null, { status: 400 }));
+    }
+    const [userId, userRecord, userSession] = await requireSignedUser(
+      services,
+      sig,
+      'anonymous',
+    );
+    const promises: Promise<void>[] = [];
+    const results: JSONArray = [];
+    for (const r of encodedRequests) {
+      const { storage, id, msg } = r;
+      if (!kRepositoryTypes.includes(storage as RepositoryType)) {
+        continue;
+      }
+      promises.push((async () => {
+        const res = await this.doSync(services, storage, id, userSession, msg);
+        results.push({
+          storage,
+          id,
+          res,
+        });
+      })());
+    }
+    await Promise.all(promises);
+    return new Response(JSON.stringify(results));
+  }
+
+  async processSingleSyncRequest(
+    services: ServerServices,
+    req: Request,
+    info: Deno.ServeHandlerInfo,
+  ): Promise<Response> {
+    const syncService = services.sync;
+    const path = getRequestPath(req).split('/');
     const storageType = path[1] as RepositoryType;
     const resourceId = path[2];
     const cmd = path[3];
-    const syncService = services.sync;
     const json = await req.json();
-    const msg = new SyncMessage<Commit | NormalizedLogEntry>({
-      decoder: new JSONCyclicalDecoder(json),
-    });
-    const [userId, userRecord, userSession] = await requireSignedUser(
-      services,
-      msg.signature,
-      'anonymous',
-    );
     let resp: Response;
     switch (cmd) {
-      case 'sync':
+      case 'sync': {
         if (
           storageType === 'data' ||
           storageType === 'sys' ||
           storageType === 'user'
         ) {
-          resp = await this.handleSyncRequest(
+          const sig = req.headers.get('X-Ovvio-Sig');
+          if (!sig) {
+            resp = new Response(null, { status: 400 });
+            break;
+          }
+          const [userId, userRecord, userSession] = await requireSignedUser(
             services,
-            msg as SyncMessage<Commit>,
-            async (values) =>
-              (
-                await syncService
-                  .getRepository(storageType, resourceId)
-                  .persistCommits(values)
-              ).length,
-            () =>
-              mapIterable(
-                syncService
-                  .getRepository(storageType, resourceId)
-                  .commits(userSession),
-                (c) => [c.id, c],
+            sig,
+            'anonymous',
+          );
+          resp = new Response(
+            JSON.stringify(
+              await this.doSync(
+                services,
+                storageType,
+                resourceId,
+                userSession,
+                json,
               ),
-            () =>
-              syncService
-                .getRepository(storageType, resourceId)
-                .numberOfCommits(userSession),
-            syncService.clientsForRepo(resourceId),
-            true,
+            ),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
           );
         }
         // else if (storageType === 'log') {
@@ -429,25 +392,62 @@ export class SyncEndpoint implements Endpoint {
         //   );
         // }
         break;
+      }
 
       default:
         // debugger;
         log({ severity: 'INFO', error: 'UnknownCommand', value: cmd });
         resp = new Response(null, { status: 400 });
-        break;
     }
     return resp!;
   }
 
-  private async handleSyncRequest<T extends SyncValueType>(
+  private async doSync<T extends SyncValueType>(
     services: ServerServices,
-    msg: SyncMessage<T>,
+    storageType: string,
+    resourceId: string,
+    userSession: Session,
+    json: JSONObject,
+  ): Promise<JSONObject> {
+    const syncService = services.sync;
+    return await this._handleSyncRequestAfterAuth(
+      services,
+      json,
+      async (values) =>
+        (
+          await syncService
+            .getRepository(storageType as RepositoryType, resourceId)
+            .persistCommits(values)
+        ).length,
+      () =>
+        mapIterable(
+          syncService
+            .getRepository(storageType as RepositoryType, resourceId)
+            .commits(userSession),
+          (c) => [c.id, c],
+        ),
+      () =>
+        syncService
+          .getRepository(storageType as RepositoryType, resourceId)
+          .numberOfCommits(userSession),
+      syncService.clientsForRepo(resourceId),
+      true,
+    );
+  }
+
+  private async _handleSyncRequestAfterAuth<T extends SyncValueType>(
+    services: ServerServices,
+    msgJSON: JSONObject,
     persistValues: (values: T[]) => Promise<number>,
     fetchAll: () => Iterable<[string, T]>,
     getLocalCount: () => number,
     replicas: Iterable<BaseClient<T>> | undefined,
     includeMissing: boolean,
-  ): Promise<Response> {
+  ): Promise<ReadonlyJSONObject> {
+    const msg = new SyncMessage<T>({
+      decoder: new JSONCyclicalDecoder(msgJSON),
+    });
+    const sigPromise = generateRequestSignature(services.settings.session);
     if (msg.values.length > 0) {
       if ((await persistValues(msg.values)) > 0 && replicas) {
         // Sync changes with replicas
@@ -462,20 +462,16 @@ export class SyncEndpoint implements Endpoint {
       fetchAll(),
       getLocalCount(),
       msg.size,
-      syncConfigGetCycles(kSyncConfigClient),
-      await generateRequestSignature(services.settings.session),
+      syncConfigGetCycles(kSyncConfigServer),
+      await sigPromise,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
     );
 
-    return new Response(
-      JSON.stringify(JSONCyclicalEncoder.serialize(syncResp)),
-      {
-        headers: {
-          'content-type': 'application/json; charset=utf-8',
-        },
-      },
-    );
+    const encodedResp = JSONCyclicalEncoder.serialize(syncResp);
+    msg.filter.reuse();
+    syncResp.filter.reuse();
+    return encodedResp;
   }
 }
 

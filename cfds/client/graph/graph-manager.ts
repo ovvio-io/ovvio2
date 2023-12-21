@@ -16,7 +16,7 @@ import {
   RefsChange,
   VertexManager,
 } from './vertex-manager.ts';
-import { NS_NOTES, SchemeNamespace } from '../../base/scheme-types.ts';
+import { SchemeNamespace } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
@@ -34,7 +34,6 @@ import { RepoClient } from '../../../net/repo-client.ts';
 import {
   ClientStatus,
   EVENT_STATUS_CHANGED,
-  kSyncConfigClient,
 } from '../../../net/base-client.ts';
 import { appendPathComponent } from '../../../base/string.ts';
 import { Query, QueryOptions } from './query.ts';
@@ -42,15 +41,11 @@ import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
+import { TrustPool } from '../../../auth/session.ts';
 import {
-  OwnedSession,
-  sessionFromRecord,
-  TrustPool,
-} from '../../../auth/session.ts';
-
-// We consider only commits from the last 30 days to be "hot", and load them
-// automatically
-const K_HOT_COMMITS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+  kSyncConfigClient,
+  SyncScheduler,
+} from '../../../net/sync-scheduler.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -105,6 +100,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _baseServerUrl: string | undefined;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
+  private readonly _syncScheduler: SyncScheduler | undefined;
   private _prevClientStatus: ClientStatus = 'offline';
 
   constructor(trustPool: TrustPool, baseServerUrl?: string) {
@@ -126,6 +122,13 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       coreValueEquals,
     );
     this._baseServerUrl = baseServerUrl;
+    if (baseServerUrl) {
+      this._syncScheduler = new SyncScheduler(
+        `${baseServerUrl}/batch-sync`,
+        kSyncConfigClient,
+        trustPool.currentSession,
+      );
+    }
 
     // Automatically init the directory as everything depends on its presence.
     this.repository('/sys/dir');
@@ -319,12 +322,14 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       });
       this._repoById.set(id, plumbing);
 
-      if (this._baseServerUrl) {
+      const [storage, resId] = Repository.parseId(id);
+      if (this._syncScheduler) {
         const client = new RepoClient(
           repo,
-          // serveAddr/repoId/sync
-          appendPathComponent(this._baseServerUrl, id, 'sync'),
+          storage,
+          resId,
           kSyncConfigClient,
+          this._syncScheduler,
         );
         plumbing.client = client;
         client.on(EVENT_STATUS_CHANGED, () => {

@@ -172,12 +172,12 @@ export class AuthEndpoint implements Endpoint {
     }
 
     // Make sure a session doesn't try to change its owner
-    if (requestingSession.get('owner') !== undefined) {
+    if (requestingSession.owner !== undefined) {
       return responseForError('AccessDenied');
     }
 
     // Verify it's actually this session who generated the request
-    if (!verifyData(await sessionFromRecord(requestingSession), sig, email)) {
+    if (!verifyData(requestingSession, sig, email)) {
       return responseForError('AccessDenied');
     }
 
@@ -234,12 +234,9 @@ export class AuthEndpoint implements Endpoint {
       if (!signerId) {
         return responseForError('AccessDenied');
       }
-      const signerRecord = fetchSessionById(services, signerId);
-      if (!signerRecord) {
-        return responseForError('AccessDenied');
-      }
-      const signerSession = await sessionFromRecord(signerRecord);
+      const signerSession = fetchSessionById(services, signerId);
       if (
+        !signerSession ||
         signerSession.owner !== 'root' || // Only root may sign login tokens
         !(await verifyData(signerSession, signature))
       ) {
@@ -251,15 +248,15 @@ export class AuthEndpoint implements Endpoint {
       if (!userRecord || userRecord.isNull) {
         return responseForError('AccessDenied');
       }
-      const sessionRecord = fetchSessionById(services, signature.data.s);
-      if (!sessionRecord) {
+      const session = fetchSessionById(services, signature.data.s);
+      if (!session) {
         return responseForError('AccessDenied');
       }
-      if (sessionRecord.get('owner') !== undefined) {
+      if (session.owner !== undefined) {
         return responseForError('AccessDenied');
       }
-      sessionRecord.set('owner', userKey);
-      repo.setValueForKey(signature.data!.s, sessionRecord);
+      session.owner = userKey;
+      repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return new Response(null, {
@@ -323,10 +320,8 @@ function fetchUserByEmail(
 export function fetchSessionById(
   services: ServerServices,
   sessionId: string,
-): Record | undefined {
-  const record = services.sync.getSysDir().valueForKey(sessionId);
-  assert(record.isNull || record.scheme.namespace === SchemeNamespace.SESSIONS);
-  return record.isNull ? undefined : record;
+): Session | undefined {
+  return services.trustPool.getSession(sessionId);
 }
 
 export function fetchUserById(
@@ -355,7 +350,7 @@ export async function requireSignedUser(
   requestOrSignature: Request | string,
   role?: Role,
 ): Promise<
-  [userId: string, userRecord: Record | undefined, userSession: Session]
+  [userId: string | null, userRecord: Record | undefined, userSession: Session]
 > {
   const signature = typeof requestOrSignature === 'string'
     ? requestOrSignature
@@ -363,28 +358,30 @@ export async function requireSignedUser(
   if (!signature) {
     throw accessDenied();
   }
-  const signerSessionRecord = fetchSessionById(
+  const signerSession = fetchSessionById(
     services,
     sessionIdFromSignature(signature),
   );
-  if (signerSessionRecord === undefined) {
+  if (signerSession === undefined) {
     throw accessDenied();
   }
-  const signerSession = await sessionFromRecord(signerSessionRecord);
   if (!(await verifyRequestSignature(signerSession, signature))) {
     throw accessDenied();
   }
-  const userId = signerSessionRecord.get<string>('owner');
-  // Disallow anonymous access
-  if (userId === undefined && role !== 'anonymous') {
+  const userId = signerSession.owner;
+  // Anonymous access
+  if (userId === undefined) {
+    if (role === 'anonymous') {
+      return [null, Record.nullRecord(), signerSession];
+    }
     throw accessDenied();
   }
   const userRecord = fetchUserById(services, userId);
-  if (userRecord === undefined && role !== 'anonymous') {
+  if (userRecord === undefined) {
     throw accessDenied();
   }
   if (role === 'operator') {
-    const email = userRecord!.get<string>('email');
+    const email = userRecord.get<string>('email');
     if (email === undefined || email.length <= 0) {
       throw accessDenied();
     }

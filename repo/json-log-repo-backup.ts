@@ -1,5 +1,5 @@
 import * as path from 'std/path/mod.ts';
-import { JSONLogFile } from './json-log.ts';
+import { JSONLogFile } from '../base/json-log.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,

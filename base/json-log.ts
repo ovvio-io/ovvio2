@@ -1,6 +1,6 @@
-import { assert } from '../base/error.ts';
-import { JSONObject } from '../base/interfaces.ts';
-import { SerialScheduler } from '../base/serial-scheduler.ts';
+import { assert } from './error.ts';
+import { JSONObject, ReadonlyJSONObject } from './interfaces.ts';
+import { SerialScheduler } from './serial-scheduler.ts';
 
 const FILE_READ_BUF_SIZE_BYTES = 1024 * 8; // 8KB
 const PAGE_SIZE = 4 * 1024; // 4KB
@@ -50,10 +50,6 @@ export class JSONLogFile {
     });
   }
 
-  // scan(): Promise<AsyncGenerator<JSONObject>> {
-  //   return this._scheduler.run(() => Promise.resolve(this._scanImpl()));
-  // }
-
   append(entries: readonly JSONObject[]): Promise<void> {
     assert(this.write, 'Attempting to write to a readonly log');
     return this._scheduler.run(async () => {
@@ -80,7 +76,7 @@ export class JSONLogFile {
     });
   }
 
-  private *scan(): Generator<JSONObject> {
+  *scan(): Generator<JSONObject> {
     const file = this._file;
     if (!file) {
       return;
@@ -146,6 +142,21 @@ export class JSONLogFile {
       file.truncateSync(lastGoodFileOffset);
     }
     this._didScan = true;
+  }
+  query(
+    predicate: (obj: ReadonlyJSONObject) => boolean,
+    limit = Number.MAX_SAFE_INTEGER,
+  ): JSONObject[] {
+    const result: JSONObject[] = [];
+    for (const obj of this.scan()) {
+      if (predicate(obj)) {
+        result.push(obj);
+        if (result.length === limit) {
+          break;
+        }
+      }
+    }
+    return result;
   }
 }
 

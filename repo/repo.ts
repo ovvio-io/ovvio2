@@ -105,6 +105,14 @@ export class Repository<
     return `${type}/${id}`;
   }
 
+  static parseId(id: string): [type: RepositoryType, id: string] {
+    while (id.startsWith('/')) {
+      id = id.substring(1);
+    }
+    const comps = id.split('/');
+    return [comps[0] as RepositoryType, comps[1]];
+  }
+
   static normalizeId(id: string): string {
     if (!id.startsWith('/')) {
       id = '/' + id;
