@@ -537,13 +537,13 @@ export const RichTextEditor = forwardRef<
       document.removeEventListener('selectionchange', onSelectionChanged);
   }, [onSelectionChanged]);
 
-  const onBlur = useCallback(() => {
-    const body = docClone(partialNote.body);
-    if (body.ranges) {
-      delete body.ranges[selectionId];
-      partialNote.body = body;
-    }
-  }, [partialNote, selectionId]);
+  // const onBlur = useCallback(() => {
+  //   const body = docClone(partialNote.body);
+  //   if (body.ranges) {
+  //     delete body.ranges[selectionId];
+  //     partialNote.body = body;
+  //   }
+  // }, [partialNote, selectionId]);
 
   return (
     <div
@@ -556,7 +556,7 @@ export const RichTextEditor = forwardRef<
       onBeforeInput={onBeforeInput}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
-      onBlur={onBlur}
+      // onBlur={onBlur}
     >
       <RichTextRenderer ctx={ctx} onChange={(doc) => partialNote.body = doc} />
     </div>
