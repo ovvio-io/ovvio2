@@ -177,17 +177,24 @@ function focusOnLastTextNode(
     if (!doc.ranges) {
       doc.ranges = {};
     }
-    doc.ranges[selectionId] = {
-      anchor: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      focus: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      dir: PointerDirection.None,
-    };
+    const curSelection = doc.ranges[selectionId];
+    if (
+      !curSelection ||
+      (curSelection.anchor.node !== textNode &&
+        curSelection.focus.node !== textNode)
+    ) {
+      doc.ranges[selectionId] = {
+        anchor: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        focus: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        dir: PointerDirection.None,
+      };
+    }
   }
 }
 

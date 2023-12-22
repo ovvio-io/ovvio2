@@ -7,50 +7,60 @@ import {
   isElementNode,
   isTextNode,
   pathToNode,
+  RichText,
   TextNode,
   TreeNode,
 } from '../cfds/richtext/tree.ts';
 import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
+import { flattenRichText } from '../cfds/richtext/flat-rep.ts';
 
-function findElementBefore(
-  root: ElementNode,
+function findElementNear(
+  rt: RichText,
   target: TreeNode,
-  targetDepth?: number,
-): [element: MarkupElement, path: readonly MarkupElement[]] | [
-  undefined,
-  undefined,
-] {
+  direction: 'before' | 'after',
+): MarkupElement | undefined {
+  debugger;
   if (!isElementNode(target)) {
-    const path = pathToNode(root, target);
+    const path = pathToNode(rt.root, target);
     if (!path) {
-      return [undefined, undefined];
+      return undefined;
     }
-    target = path[0];
+    target = path[path.length - 1];
   }
-
-  let result: ElementNode | undefined;
-  let resultPath: readonly ElementNode[] | undefined;
-  for (const [node, depth, path] of dfs(root)) {
-    if (node === target) {
-      break;
+  const atoms = Array.from(flattenRichText(rt, true, false));
+  const idx = atoms.indexOf(target);
+  if (idx < 0) {
+    return undefined;
+  }
+  if (direction === 'before') {
+    for (let j = idx - 1; j > 0; --j) {
+      const node = atoms[j];
+      if (
+        isElementNode(node) && node.children.length > 0 &&
+        !isElementNode(node.children[0])
+      ) {
+        return node as MarkupElement;
+      }
     }
-    if (
-      (targetDepth === undefined || depth === targetDepth) &&
-      isElementNode(node)
-    ) {
-      result = node as ElementNode;
-      resultPath = path;
+  } else {
+    for (let j = idx + 1; j < atoms.length; ++j) {
+      const node = atoms[j];
+      if (
+        isElementNode(node) && node.children.length > 0 &&
+        !isElementNode(node.children[0])
+      ) {
+        return node as MarkupElement;
+      }
     }
   }
-  return result
-    ? [result as MarkupElement, resultPath! as MarkupElement[]]
-    : [undefined, undefined];
+  return undefined;
 }
 
-export function onArrowUp(
+export function onArrowUpDown(
   doc: Document,
   selectionId: string,
+  arrow: 'up' | 'down',
 ): Document | undefined {
   doc = docClone(doc);
   if (!doc.ranges || !doc.ranges[selectionId]) {
@@ -60,9 +70,10 @@ export function onArrowUp(
   if (!coreValueEquals(selection.anchor, selection.focus)) {
     return;
   }
-  const [targetElement, _targetElementPath] = findElementBefore(
-    doc.root,
+  const targetElement = findElementNear(
+    doc,
     selection.anchor.node,
+    arrow === 'up' ? 'before' : 'after',
   );
   if (!targetElement) {
     return;
