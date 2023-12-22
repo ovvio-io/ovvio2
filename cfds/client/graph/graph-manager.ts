@@ -35,7 +35,6 @@ import {
   ClientStatus,
   EVENT_STATUS_CHANGED,
 } from '../../../net/base-client.ts';
-import { appendPathComponent } from '../../../base/string.ts';
 import { Query, QueryOptions } from './query.ts';
 import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
@@ -46,6 +45,7 @@ import {
   kSyncConfigClient,
   SyncScheduler,
 } from '../../../net/sync-scheduler.ts';
+import { MultiSerialScheduler } from '../../../base/serial-scheduler.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -217,42 +217,46 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     }
 
     const repo = plumbing.repo;
-    plumbing.loadingPromise = (async () => {
-      if (backup) {
-        const commits = await backup.loadCommits();
-        if (commits instanceof Array) {
-          repo.allowMerge = false;
-          try {
-            await repo.persistCommits(commits);
-          } finally {
-            repo.allowMerge = true;
+    plumbing.loadingPromise = MultiSerialScheduler.get('repoLoad').run(
+      async () => {
+        if (backup) {
+          const commits = await backup.loadCommits();
+          if (commits instanceof Array) {
+            repo.allowMerge = false;
+            try {
+              await repo.persistCommits(commits);
+            } finally {
+              repo.allowMerge = true;
+            }
+          } else {
+            console.log(`Unexpected IDB result: ${commits}`);
           }
         } else {
-          console.log(`Unexpected IDB result: ${commits}`);
+          console.log(`Backup disabled for repo: ${id}`);
         }
-      } else {
-        console.log(`Backup disabled for repo: ${id}`);
-      }
-      // Load all keys from this repo
-      for (const key of repo.keys()) {
-        this.getVertexManager(key).touch();
-      }
-      plumbing.active = true;
-      plumbing.loadingFinished = true;
-      // plumbing.client?.startSyncing();
-    })();
+        // Load all keys from this repo
+        for (const key of repo.keys()) {
+          this.getVertexManager(key).touch();
+        }
+        plumbing.active = true;
+        plumbing.loadingFinished = true;
+        // plumbing.client?.startSyncing();
+      },
+    );
     return plumbing.loadingPromise;
   }
 
-  async syncRepository(id: string): Promise<void> {
-    const plumbing = this.plumbingForRepository(id);
-    const client = plumbing.client;
-    await this.loadRepository(id);
-    if (client && client.isOnline) {
-      await client.sync();
-      plumbing.syncFinished = true;
-      // client.startSyncing();
-    }
+  syncRepository(id: string): Promise<void> {
+    return MultiSerialScheduler.get('RepoSync').run(async () => {
+      const plumbing = this.plumbingForRepository(id);
+      const client = plumbing.client;
+      await this.loadRepository(id);
+      if (client && client.isOnline) {
+        await client.sync();
+        plumbing.syncFinished = true;
+        // client.startSyncing();
+      }
+    });
   }
 
   startSyncing(repoId: string): void {

@@ -55,3 +55,41 @@ export class SerialScheduler {
     return result;
   }
 }
+
+export class MultiSerialScheduler {
+  private static readonly _namedSchedulers = new Map<
+    string,
+    MultiSerialScheduler
+  >();
+  private readonly _schedulers: SerialScheduler[];
+  private _runCount = 0;
+
+  static get(name: string): MultiSerialScheduler {
+    let scheduler = this._namedSchedulers.get(name);
+    if (!scheduler) {
+      scheduler = new this();
+      this._namedSchedulers.set(name, scheduler);
+    }
+    return scheduler;
+  }
+
+  get concurrency(): number {
+    return this._schedulers.length;
+  }
+
+  constructor(concurrency?: number) {
+    if (!concurrency) {
+      concurrency = navigator.hardwareConcurrency;
+    }
+    this._schedulers = [];
+    for (let i = 0; i < concurrency; ++i) {
+      this._schedulers.push(new SerialScheduler());
+    }
+  }
+
+  run<T>(fn: () => Promise<T>): Promise<T> {
+    const scheduler = this._schedulers[this._runCount];
+    this._runCount = (this._runCount + 1) % this._schedulers.length;
+    return scheduler.run(fn);
+  }
+}
