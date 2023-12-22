@@ -167,6 +167,30 @@ export interface RenderContext {
   onNewTask?: () => void;
 }
 
+function focusOnLastTextNode(
+  element: ElementNode,
+  doc: Document,
+  selectionId: string,
+): void {
+  const textNode = findLastTextNode(element);
+  if (textNode) {
+    if (!doc.ranges) {
+      doc.ranges = {};
+    }
+    doc.ranges[selectionId] = {
+      anchor: {
+        node: textNode,
+        offset: textNode.text.length,
+      },
+      focus: {
+        node: textNode,
+        offset: textNode.text.length,
+      },
+      dir: PointerDirection.None,
+    };
+  }
+}
+
 interface TaskElementButtonsProps {
   task: VertexManager<Note>;
 }
@@ -201,24 +225,8 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         (n) => isRefNode(n) && n.ref === task.key,
       );
       if (refNode) {
-        const textNode = findLastTextNode(refNode[0] as ElementNode);
-        if (textNode) {
-          if (!doc.ranges) {
-            doc.ranges = {};
-          }
-          doc.ranges[ctx.selectionId] = {
-            anchor: {
-              node: textNode,
-              offset: textNode.text.length,
-            },
-            focus: {
-              node: textNode,
-              offset: textNode.text.length,
-            },
-            dir: PointerDirection.None,
-          };
-          onChange(doc);
-        }
+        focusOnLastTextNode(refNode[0] as ElementNode, doc, ctx.selectionId);
+        onChange(doc);
       }
     }, [ctx, task]);
     return (
@@ -330,14 +338,24 @@ type ParagraphElementNode = React.PropsWithChildren<{
   dir?: WritingDirection;
   onNewTask?: () => void;
   showNewTaskHint?: boolean;
+  ctx: RenderContext;
+  onChange: (doc: Document) => void;
 }>;
 
 function ParagraphElementNode(
-  { id, htmlId, dir, onNewTask, showNewTaskHint, children }:
+  { id, htmlId, dir, onNewTask, showNewTaskHint, ctx, onChange, children }:
     ParagraphElementNode,
 ) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
+  const onClick = useCallback(() => {
+    const doc = docClone(ctx.doc);
+    const node = doc.nodeKeys.nodeFromKey(id);
+    if (isElementNode(node)) {
+      focusOnLastTextNode(node, doc, ctx.selectionId);
+      onChange(doc);
+    }
+  }, [ctx, onChange]);
   return (
     <p
       key={id}
@@ -346,6 +364,7 @@ function ParagraphElementNode(
       dir={dir}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={onClick}
     >
       {showNewTaskHint && (
         <span
@@ -530,6 +549,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           task={graph.getVertexManager<Note>(node.ref)}
           dir={dir}
           focused={elementInFocusPath}
+          onChange={onChange}
+          ctx={ctx}
         >
           {children}
         </TaskElement>
@@ -553,6 +574,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
             onChange(newDoc);
           }}
           showNewTaskHint={isChildOfRoot}
+          onChange={onChange}
+          ctx={ctx}
         >
           {children}
         </ParagraphElementNode>
