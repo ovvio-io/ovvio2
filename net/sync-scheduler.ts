@@ -68,7 +68,7 @@ export class SyncScheduler {
       syncConfigGetCycles(kSyncConfigClient) * 2,
     );
     this._pendingRequests = [];
-    this._intervalId = setInterval(() => this.sendPendingRequests(), 300);
+    this._intervalId = setInterval(() => this.sendPendingRequests(), 200);
   }
 
   get syncCycles(): number {
