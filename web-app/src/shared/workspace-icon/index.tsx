@@ -108,8 +108,14 @@ const COLOR_MAP: WorkspaceColor[] = [
   },
 ];
 
+const PERSONAL_WS_COLOR: WorkspaceColor = {
+  background: brandLightTheme.mono.m1,
+  inactive: brandLightTheme.mono.m3,
+  active: brandLightTheme.mono.m5,
+};
+
 export function useWorkspaceColor(
-  workspaceId: VertexId<Workspace> | null
+  workspaceId: VertexId<Workspace> | null,
 ): WorkspaceColor {
   const graph = useGraphManager();
   const partialSettings = usePartialUserSettings(['workspaceColors']);
@@ -118,6 +124,10 @@ export function useWorkspaceColor(
 
   if (!workspaceId) {
     return COLOR_MAP[0];
+  }
+
+  if (VertexIdGetKey(workspaceId) === `${graph.rootKey}-ws`) {
+    return PERSONAL_WS_COLOR;
   }
 
   const workspaceKey = VertexIdGetKey(workspaceId);
@@ -171,9 +181,7 @@ export default function WorkspaceIcon({
         backgroundColor: icon ? '#4f8df9' : color.active,
       }}
     >
-      {icon ? (
-        <img src={icon} className={cn(styles.wsIcon)} alt={ws.name} />
-      ) : (
+      {icon ? <img src={icon} className={cn(styles.wsIcon)} alt={ws.name} /> : (
         (ws.name || '')[0]
       )}
     </div>

@@ -24,7 +24,7 @@ export class Workspace extends BaseVertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ) {
     super(mgr, prevVertex, config);
     // if (prevVertex && prevVertex instanceof Workspace) {
@@ -43,6 +43,15 @@ export class Workspace extends BaseVertex {
   compare(other: Vertex): number {
     if (other instanceof Workspace) {
       const rootUser = this.graph.getRootVertex<User>();
+      const personalWsKey = `${this.graph.rootKey}-ws`;
+      if (this.key === personalWsKey) {
+        return -1;
+      }
+
+      if (other.key === personalWsKey) {
+        return 1;
+      }
+
       const pinnedWorkspaces = rootUser.pinnedWorkspaces;
       if (pinnedWorkspaces) {
         if (
@@ -93,6 +102,9 @@ export class Workspace extends BaseVertex {
   }
 
   set name(name: string) {
+    if (this.key === `${this.graph.rootKey}-ws`) {
+      return;
+    }
     this.record.set('name', name);
   }
 
@@ -109,7 +121,7 @@ export class Workspace extends BaseVertex {
   set users(users: Set<User>) {
     this.record.set(
       'users',
-      SetUtils.map(users, (u: User) => u.key)
+      SetUtils.map(users, (u: User) => u.key),
     );
   }
 
@@ -128,7 +140,7 @@ export class Workspace extends BaseVertex {
 
   usersDidMutate(
     local: boolean,
-    oldValue: Set<User> | undefined
+    oldValue: Set<User> | undefined,
   ): MutationPack {
     return ['assignees', local, this._computeAssignees(oldValue)];
   }
@@ -220,13 +232,14 @@ export class Workspace extends BaseVertex {
     const key = this.key;
     return Query.blocking(
       this.graph.sharedQueriesManager.tags,
-      (tag) => tag.workspace.key === key && !tag.parentTag
+      (tag) => tag.workspace.key === key && !tag.parentTag,
     ).map((mgr) => mgr.getVertexProxy());
   }
 
   get priorityTag(): Tag | undefined {
-    const mgr = Query.blocking<Tag>(this.parentTagsQuery, (tag) =>
-      kPriorityTagNames.includes(tag.name.toLowerCase())
+    const mgr = Query.blocking<Tag>(
+      this.parentTagsQuery,
+      (tag) => kPriorityTagNames.includes(tag.name.toLowerCase()),
     )[0];
     return mgr?.getVertexProxy<Tag>();
   }
@@ -237,7 +250,7 @@ export class Workspace extends BaseVertex {
       this.key,
       this.graph.sharedQueriesManager.tags,
       (tag) => tag.workspace.key === key,
-      { name: 'tagsQuery', sourceGroupId: this.key }
+      { name: 'tagsQuery', sourceGroupId: this.key },
     );
   }
 
@@ -246,7 +259,7 @@ export class Workspace extends BaseVertex {
       this.key,
       this.graph.sharedQueriesManager.tags,
       (tag) => tag.parentTag === undefined,
-      { name: 'parentTagsQuery', sourceGroupId: this.key }
+      { name: 'parentTagsQuery', sourceGroupId: this.key },
     );
   }
 
@@ -255,7 +268,7 @@ export class Workspace extends BaseVertex {
       this.key,
       this.parentTagsQuery,
       (tag) => tag.name.toLowerCase() === 'status',
-      { name: 'statusTagQuery' }
+      { name: 'statusTagQuery' },
     );
   }
 
@@ -265,7 +278,7 @@ export class Workspace extends BaseVertex {
       this.key,
       this.graph.sharedQueriesManager.notDeleted,
       (vert) => vert instanceof Note && vert.workspace.key === key,
-      { name: 'notesQuery', sourceGroupId: this.key }
+      { name: 'notesQuery', sourceGroupId: this.key },
     );
   }
 
@@ -274,7 +287,7 @@ export class Workspace extends BaseVertex {
       this.key,
       this.notesQuery,
       (note) => note.isPinned,
-      { name: 'pinnedNotesQuery' }
+      { name: 'pinnedNotesQuery' },
     );
   }
 }

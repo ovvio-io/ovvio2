@@ -8,14 +8,15 @@ import Menu, {
 import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
 import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
 import {
-  makeStyles,
   cn,
+  makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../../styles/layout.ts';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
 import { MediaQueries } from '../../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import {
+  useGraphManager,
   usePartialGlobalView,
   usePartialView,
 } from '../../../../../core/cfds/react/graph.tsx';
@@ -25,7 +26,9 @@ import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { createNewNote } from '../../../../../shared/card/create.ts';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
+import localization from '../cards-display.strings.json' assert {
+  type: 'json',
+};
 import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
 
 const useStyles = makeStyles(() => ({
@@ -62,7 +65,7 @@ const useStrings = createUseStrings(localization);
 const ComposeInternalButton = React.forwardRef(
   (
     { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const styles = useStyles();
     const strings = useStrings();
@@ -73,19 +76,19 @@ const ComposeInternalButton = React.forwardRef(
         <span className={cn(styles.text)}>{strings.compose}</span>
       </div>
     );
-  }
+  },
 );
 
 export function ComposeButton() {
-  const styles = useStyles();
+  // const styles = useStyles();
   const logger = useLogger();
   const docRouter = useDocumentRouter();
-  const view = usePartialGlobalView('selectedWorkspaces');
-  const workspaces = useVertices(view.selectedWorkspaces);
-  const [container, setContainer] = useState<HTMLDivElement | null>();
+  // const workspaces = useVertices(view.selectedWorkspaces);
+  const graph = useGraphManager();
+  // const [container, setContainer] = useState<HTMLDivElement | null>();
 
-  const createCard = (ws: Workspace) => {
-    const note = createNewNote(ws.graph, ws, {
+  const createCard = () => {
+    const note = createNewNote(graph, null, {
       type: NoteType.Note,
     });
 
@@ -99,32 +102,32 @@ export function ComposeButton() {
     docRouter.goTo(note);
   };
 
-  if (workspaces.length === 1) {
-    return (
-      <Button onClick={() => createCard(workspaces[0])}>
-        <ComposeInternalButton ref={(div) => setContainer(div)} />
-      </Button>
-    );
-  }
+  // if (workspaces.length === 1) {
   return (
-    <Menu
-      renderButton={() => (
-        <ComposeInternalButton ref={(div) => setContainer(div)} />
-      )}
-      position="right"
-      align="center"
-      direction="in"
-      popupClassName={cn(styles.workspacesList)}
-    >
-      <SelectWorkspaceMenu
-        value={null}
-        onChange={(ws) => createCard(ws.getVertexProxy())}
-      />
-      {workspaces.map((workspace) => (
-        <MenuItem key={workspace.key} onClick={() => createCard(workspace)}>
-          <WorkspaceItem workspace={workspace.manager} />
-        </MenuItem>
-      ))}
-    </Menu>
+    <Button onClick={() => createCard()}>
+      <ComposeInternalButton />
+    </Button>
   );
+  // }
+  // return (
+  //   <Menu
+  //     renderButton={() => (
+  //       <ComposeInternalButton ref={(div) => setContainer(div)} />
+  //     )}
+  //     position="right"
+  //     align="center"
+  //     direction="in"
+  //     popupClassName={cn(styles.workspacesList)}
+  //   >
+  //     <SelectWorkspaceMenu
+  //       value={null}
+  //       onChange={(ws) => createCard(ws.getVertexProxy())}
+  //     />
+  //     {workspaces.map((workspace) => (
+  //       <MenuItem key={workspace.key} onClick={() => createCard(workspace)}>
+  //         <WorkspaceItem workspace={workspace.manager} />
+  //       </MenuItem>
+  //     ))}
+  //   </Menu>
+  // );
 }
