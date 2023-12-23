@@ -123,7 +123,7 @@ export class View extends BaseVertex {
 
   parentWorkspaceGroupingDidMutate(
     origin: MutationOrigin,
-    oldValue: WorkspaceGrouping | undefined
+    oldValue: WorkspaceGrouping | undefined,
   ): MutationPack {
     return ['workspaceGrouping', origin, oldValue];
   }
@@ -183,7 +183,7 @@ export class View extends BaseVertex {
     } else {
       this.record.set(
         'selectedWorkspaces',
-        SetUtils.map(wss, (ws) => ws.key)
+        SetUtils.map(wss, (ws) => ws.key),
       );
     }
   }
@@ -198,7 +198,7 @@ export class View extends BaseVertex {
 
   parentSelectedWorkspacesDidMutate(
     origin: MutationOrigin,
-    oldValue: Set<Workspace> | undefined
+    oldValue: Set<Workspace> | undefined,
   ): MutationPack {
     return ['selectedWorkspaces', origin, oldValue];
   }
@@ -232,7 +232,7 @@ export class View extends BaseVertex {
 
   parentExpandedWorkspaceGroupsDidMutate(
     origin: MutationOrigin,
-    oldValue: Set<string> | undefined
+    oldValue: Set<string> | undefined,
   ): MutationPack {
     return ['expandedWorkspaceGroups', origin, oldValue];
   }
@@ -262,7 +262,7 @@ export class View extends BaseVertex {
 
   parentWorkspaceBarCollapsedDidMutate(
     origin: MutationOrigin,
-    oldValue: boolean | undefined
+    oldValue: boolean | undefined,
   ): MutationPack {
     return ['workspaceBarCollapsed', origin, oldValue];
   }
@@ -292,7 +292,7 @@ export class View extends BaseVertex {
 
   parentNoteTypeDidMutate(
     origin: MutationOrigin,
-    oldValue: NoteType | undefined
+    oldValue: NoteType | undefined,
   ): MutationPack {
     return ['noteType', origin, oldValue];
   }
@@ -305,7 +305,7 @@ export class View extends BaseVertex {
     if (s.size) {
       this.record.set(
         'selectedAssignees',
-        SetUtils.map(s, (u) => u.key)
+        SetUtils.map(s, (u) => u.key),
       );
     } else {
       this.record.delete('selectedAssignees');
@@ -484,19 +484,19 @@ export class View extends BaseVertex {
 
   deleteFromSet<K extends keyof this & 'selectedAssignees'>(
     fieldName: K,
-    selector: (v: User) => boolean
+    selector: (v: User) => boolean,
   ): void;
 
   deleteFromSet<K extends keyof this & 'selectedTagIds'>(
     fieldName: K,
-    selector: (v: TagId) => boolean
+    selector: (v: TagId) => boolean,
   ): void;
 
   deleteFromSet<
-    K extends keyof this & ('selectedAssignees' | 'selectedTagIds')
+    K extends keyof this & ('selectedAssignees' | 'selectedTagIds'),
   >(
     fieldName: K,
-    selector: ((v: TagId) => boolean) | ((v: User) => boolean)
+    selector: ((v: TagId) => boolean) | ((v: User) => boolean),
   ): void {
     const set = this.proxy[fieldName];
     const removed: (string | User)[] = [];
@@ -543,22 +543,22 @@ export const kFieldTriggersView: FieldTriggers<View> = {
   workspaceGrouping: triggerChildren(
     'parentWorkspaceGroupingDidMutate',
     'workspaceGrouping',
-    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' },
   ),
   selectedWorkspaces: triggerChildren(
     'parentSelectedWorkspacesDidMutate',
     'selectedWorkspaces',
-    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' },
   ),
   expandedWorkspaceGroups: triggerChildren(
     'parentExpandedWorkspaceGroupsDidMutate',
     'expandedWorkspaceGroups',
-    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' },
   ),
   workspaceBarCollapsed: triggerChildren(
     'parentWorkspaceBarCollapsedDidMutate',
     'workspaceBarCollapsed',
-    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' }
+    { namespace: SchemeNamespace.VIEWS, fieldName: 'parentView' },
   ),
   noteType: triggerChildren('parentNoteTypeDidMutate', 'noteType'),
 };
