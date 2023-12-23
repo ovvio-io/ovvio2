@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import Menu, {
-  MenuItem,
-} from '../../../../../../../styles/components/menu.tsx';
+// import Menu, {
+//   MenuItem,
+// } from '../../../../../../../styles/components/menu.tsx';
 import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
 import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
 import {
@@ -15,21 +14,16 @@ import { layout } from '../../../../../../../styles/layout.ts';
 import { brandLightTheme as theme } from '../../../../../../../styles/theme.tsx';
 import { MediaQueries } from '../../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import {
-  useGraphManager,
-  usePartialGlobalView,
-  usePartialView,
-} from '../../../../../core/cfds/react/graph.tsx';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
+import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
+// import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { createNewNote } from '../../../../../shared/card/create.ts';
 import localization from '../cards-display.strings.json' assert {
   type: 'json',
 };
-import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
+// import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {

@@ -13,8 +13,7 @@ const useStyles = makeStyles(() => ({
     borderStyle: 'solid',
     borderWidth: 1,
     color: theme.mono.m0,
-    margin: [0, 'auto'],
-    marginTop: styleguide.gridbase * 4,
+    padding: `${styleguide.gridbase / 2}px ${styleguide.gridbase}px`,
   },
   disabled: {
     borderColor: theme.primary.p5,
@@ -28,24 +27,30 @@ const useStyles = makeStyles(() => ({
     borderColor: theme.primary.p10,
     backgroundColor: theme.primary.p10,
   },
+  icon: {
+    marginInlineEnd: styleguide.gridbase / 2,
+  },
 }));
 
 export type ActionButtonMode = 'enabled' | 'disabled' | 'default';
 
-export type ActionButtonProps = React.PropsWithChildren<{
+export interface ActionButtonProps extends React.ComponentProps<'button'> {
   onClick?: () => void;
   mode?: ActionButtonMode;
   enabled?: boolean;
   className?: string;
-}>;
+  icon?: string;
+}
 
-export const ActionButton = React.forwardRef<HTMLButtonElement>(
+export const ActionButton = React.forwardRef(
   function ActionButton(
-    { onClick, enabled, mode, className, children }: ActionButtonProps,
-    ref,
+    props: ActionButtonProps,
+    ref: React.Ref<HTMLButtonElement>,
   ) {
     const styles = useStyles();
+    const { onClick, enabled, mode, className, children, icon } = props;
     let styleClass = styles.enabled;
+
     if (enabled === false || mode === 'disabled') {
       styleClass = styles.disabled;
     } else if (mode === 'default') {
@@ -61,10 +66,12 @@ export const ActionButton = React.forwardRef<HTMLButtonElement>(
     }, [enabled, mode, onClick]);
     return (
       <Button
+        {...props}
         className={cn(styles.base, styleClass, className)}
         ref={ref}
         onClick={onClickCallback}
       >
+        {icon && <img className={cn(styles.icon)} src={icon} />}
         {children}
       </Button>
     );

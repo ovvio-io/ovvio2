@@ -55,6 +55,8 @@ const useStyles = makeStyles(() => ({
   loginButton: {
     height: styleguide.gridbase * 4,
     width: styleguide.gridbase * 40,
+    margin: [0, 'auto'],
+    marginTop: styleguide.gridbase * 4,
   },
   errorTextContainer: {
     marginTop: styleguide.gridbase,

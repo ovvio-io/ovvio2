@@ -10,6 +10,7 @@ import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { Text, TextSm } from '../styles/components/typography.tsx';
 import { WorkspaceIndicator } from '../components/workspace-indicator.tsx';
+import { ActionButton } from '../components/action-button.tsx';
 
 export const HEADER_HEIGHT = styleguide.gridbase * 24;
 
@@ -28,6 +29,7 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     justifyContent: 'flex-end',
     width: styleguide.gridbase * 7,
+    alignItems: 'center',
   },
   headerMainActionButton: {
     cursor: 'pointer',
@@ -77,6 +79,9 @@ const useStyles = makeStyles(() => ({
     color: theme.mono.m10,
     position: 'relative',
     top: '1px',
+  },
+  shareButton: {
+    marginRight: styleguide.gridbase * 2,
   },
 }));
 
@@ -175,6 +180,12 @@ export function EditorHeader({ note, onFocusOnEditor }: EditorHeaderProps) {
     <div className={cn(styles.header)} key='EditorHeaderDiv'>
       <EditorBreadCrumbs note={note} />
       <div className={cn(styles.headerMainActions)} key='EditorHeaderActions'>
+        <ActionButton
+          className={cn(styles.shareButton)}
+          icon='/icons/editor/share.svg'
+        >
+          Publish
+        </ActionButton>
         <img
           key='ExitEditorAction'
           className={cn(styles.headerMainActionButton)}

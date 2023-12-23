@@ -113,9 +113,14 @@ export function CfdsClientProvider({
       lastUsedKey,
     );
   }
-  graphManager.createVertex(SchemeNamespace.WORKSPACE, {
-    name: 'My Personal Workspace',
-  }, `${graphManager.rootKey}-ws`);
+  graphManager.createVertex(
+    SchemeNamespace.WORKSPACE,
+    {
+      name: 'My Workspace',
+    },
+    `${graphManager.rootKey}-ws`,
+    true,
+  );
   // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
   const globalView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
