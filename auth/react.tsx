@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { retry } from '../base/time.ts';
 import { Logger } from '../logging/log.ts';
 import { createNewSession, getBaseURL } from '../net/rest-api.ts';
 import { loadAllSessions, storeSessionData } from './idb.ts';
-import { OwnedSession, TrustPool, generateKeyPair } from './session.ts';
+import { generateKeyPair, OwnedSession, TrustPool } from './session.ts';
 import { useLogger } from '../web-app/src/core/cfds/react/logger.tsx';
 import LoadingView from '../web-app/src/app/loading-view.tsx';
 import { LoginView } from './login/login.tsx';
@@ -52,7 +52,7 @@ interface CancelHandle {
 async function setupSession(
   logger: Logger,
   callback: (trustPool: TrustPool) => void,
-  cancelHandle: CancelHandle
+  cancelHandle: CancelHandle,
 ): Promise<void> {
   while (cancelHandle.cancelled !== true) {
     try {
@@ -63,7 +63,7 @@ async function setupSession(
           if (!currentSession) {
             const keys = await generateKeyPair();
             const [publicSession, serverRoots] = await createNewSession(
-              keys.publicKey
+              keys.publicKey,
             );
             if (publicSession) {
               currentSession = {
@@ -82,14 +82,14 @@ async function setupSession(
               storeSessionData(
                 pool.currentSession,
                 pool.roots,
-                pool.trustedSessions
+                pool.trustedSessions,
               );
-            }
+            },
           );
           return pool;
         },
         30000,
-        5000
+        5000,
       );
       if (session) {
         callback(session);
@@ -116,7 +116,7 @@ export function useMaybeTrustPool(): TrustPool | undefined {
       (p) => {
         setTrustPool(p);
       },
-      handle
+      handle,
     );
     return () => {
       handle.cancelled = true;
@@ -140,7 +140,7 @@ export type SessionProviderProps = React.PropsWithChildren<{
 }>;
 
 export async function loadEssentialRepositories(
-  graph: GraphManager
+  graph: GraphManager,
 ): Promise<void> {
   const sysDirId = Repository.id('sys', 'dir');
   await graph.loadRepository(sysDirId);
@@ -159,7 +159,7 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
   const baseUrl = getBaseURL();
   const graph = useMemo(
     () => (trustPool ? new GraphManager(trustPool, baseUrl) : undefined),
-    [trustPool, baseUrl]
+    [trustPool, baseUrl],
   );
   const [loading, setLoading] = useState(true);
 
@@ -182,8 +182,9 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
   if (!trustPool.currentSession.owner) {
     return <LoginView session={trustPool.currentSession} />;
   }
-  let banner =
-    trustPool.currentSession.owner !== 'root' ? null : (
+  const banner = trustPool.currentSession.owner !== 'root'
+    ? null
+    : (
       <div className={cn(styles.rootUserBanner)}>
         WARNING: Running as root user
       </div>
@@ -195,7 +196,8 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
           {banner}
           <div
             className={cn(
-              banner ? styles.contentsAreaWithBanner : styles.contentsArea
+              banner ? styles.contentsAreaWithBanner : styles.contentsArea,
+              className,
             )}
           >
             {children}
