@@ -198,14 +198,14 @@ function focusOnLastTextNode(
   }
 }
 
-interface TaskElementButtonsProps {
-  task: VertexManager<Note>;
-}
-
-function TaskElementButtons({ task }: TaskElementButtonsProps) {
-  const styles = useStyles();
-  return <div></div>;
-}
+// interface TaskElementButtonsProps {
+//   task: VertexManager<Note>;
+// }
+//
+// function TaskElementButtons({ task }: TaskElementButtonsProps) {
+//   const styles = useStyles();
+//   return <div></div>;
+// }
 
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
@@ -276,7 +276,6 @@ interface EditorSpanProps {
 
 function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   const styles = useStyles();
-  const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
   const path = pathToNode<MarkupElement>(ctx.doc.root, node)!;
   const taskElement = path?.find((element) => isRefNode(element)) as
@@ -374,7 +373,7 @@ function ParagraphElementNode(
       onClick={onClick}
     >
       {showNewTaskHint && (
-        <span
+        <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
           style={{
@@ -384,7 +383,7 @@ function ParagraphElementNode(
           }}
         >
           <img src='/icons/design-system/checkbox/selected.svg' />
-        </span>
+        </div>
       )}
       {children}
     </p>
@@ -402,7 +401,6 @@ export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
 }
 
 export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
-  const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
 
@@ -512,6 +510,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
       );
 
     case 'ol':
+      debugger;
       return (
         <ol
           key={ctx.doc.nodeKeys.keyFor(node).id}
