@@ -4,10 +4,7 @@ import { makeStyles, cn } from '../../../../../styles/css-objects/index.ts';
 import Toolbar, { useStyles as toolbarStyles } from './toolbar/index.tsx';
 import { layout } from '../../../../../styles/index.ts';
 import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx';
-import {
-  usePartialGlobalView,
-  usePartialView,
-} from '../../../core/cfds/react/graph.tsx';
+import { usePartialGlobalView } from '../../../core/cfds/react/graph.tsx';
 import { EmptyState } from './empty-state/index.tsx';
 
 const useStyles = makeStyles((theme) => ({

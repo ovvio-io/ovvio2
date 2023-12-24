@@ -184,6 +184,8 @@ export function CfdsClientProvider({
   notesView.onVertexChanged(changeCallback);
   tasksView.onVertexChanged(changeCallback);
   overviewView.onVertexChanged(changeCallback);
+  WsSettingsView.onVertexChanged(changeCallback); // ----------------------- NEW 19/12
+
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {

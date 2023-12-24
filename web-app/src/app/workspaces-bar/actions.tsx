@@ -137,7 +137,7 @@ export function WorkspaceBarActions({
           {view.workspaceBarCollapsed ? strings.addShort : strings.add}
         </div>
       </div>
-      {!ofSettings && <HelpCenter view={view} />}
+      {/* {!ofSettings && <HelpCenter view={view} />} */}
     </div>
   );
 }

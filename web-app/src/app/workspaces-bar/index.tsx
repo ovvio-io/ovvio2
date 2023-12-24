@@ -345,6 +345,11 @@ const useStyles = makeStyles(
       opacity: 1,
       padding: '0px 6px 0px 0px',
     },
+    collapsedSettings: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      padding: '16px',
+    },
   }),
 
   'workspaces-bar_881015'
@@ -545,7 +550,8 @@ function WorkspaceToggleView({
   const view = usePartialGlobalView(
     'workspaceGrouping',
     'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    'selectedWorkspaces',
+    'selectedSettingsWorkspaces' // ADDED 24.12
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
@@ -656,9 +662,11 @@ function WorkspaceToggleView({
 function WorkspaceListItem({
   workspace,
   groupId,
+  ofSettings,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
+  ofSettings: boolean | undefined;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -670,7 +678,8 @@ function WorkspaceListItem({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const view = usePartialGlobalView(
     'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    'selectedWorkspaces',
+    'selectedSettingsWorkspaces'
   );
   const user = usePartialVertex(useRootUser(), [
     'hiddenWorkspaces',
@@ -688,7 +697,10 @@ function WorkspaceListItem({
   const graph = useGraphManager();
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
-  const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
+
+  const isSelected = ofSettings
+    ? view.selectedSettingsWorkspaces.has(workspace.getVertexProxy())
+    : view.selectedWorkspaces.has(workspace.getVertexProxy());
 
   useEffect(() => {
     if (isSelected) {
@@ -711,6 +723,28 @@ function WorkspaceListItem({
     []
   );
 
+  // const setWorkspaceState = useCallback(
+  //   (state: 'template' | 'hidden' | 'pinned' | 'none') => {
+  //     const vert = workspace.getVertexProxy();
+  //     vert.isTemplate = state === 'template';
+  //     user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
+  //     user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
+  //     if (state === 'template' || state === 'hidden') {
+  //       const selectedSet = ofSettings
+  //         ? view.selectedSettingsWorkspaces
+  //         : view.selectedWorkspaces;
+  //       selectedSet.delete(vert);
+  //     }
+  //   },
+  //   [
+  //     user.hiddenWorkspaces,
+  //     user.pinnedWorkspaces,
+  //     view.selectedWorkspaces,
+  //     view.selectedSettingsWorkspaces,
+  //     workspace,
+  //     ofSettings,
+  //   ]
+  // );
   const setWorkspaceState = useCallback(
     (state: 'template' | 'hidden' | 'pinned' | 'none') => {
       const vert = workspace.getVertexProxy();
@@ -728,16 +762,46 @@ function WorkspaceListItem({
       workspace,
     ]
   );
+  // const toggleSelected = useCallback(() => {
+  //   const selectedWorkspaces = view.selectedWorkspaces;
+  //   const vert = workspace.getVertexProxy();
+  //   if (selectedWorkspaces.has(vert)) {
+  //     selectedWorkspaces.delete(vert);
+  //   } else {
+  //     selectedWorkspaces.add(vert);
+  //   }
+  // }, [view, workspace]);
+
+  // const toggleSelected = useCallback(() => {
+  //   const selectedWorkspaces = ofSettings
+  //     ? view.selectedSettingsWorkspaces
+  //     : view.selectedWorkspaces;
+  //   const vert = workspace.getVertexProxy();
+  //   if (selectedWorkspaces.has(vert)) {
+  //     selectedWorkspaces.delete(vert);
+  //   } else {
+  //     // Ensure that only one workspace can be selected in settings context
+  //     if (ofSettings) {
+  //       selectedWorkspaces.clear();
+  //     }
+  //     selectedWorkspaces.add(vert);
+  //   }
+  // }, [view, workspace, ofSettings]);
 
   const toggleSelected = useCallback(() => {
-    const selectedWorkspaces = view.selectedWorkspaces;
+    const selectedSet = ofSettings
+      ? view.selectedSettingsWorkspaces
+      : view.selectedWorkspaces;
     const vert = workspace.getVertexProxy();
-    if (selectedWorkspaces.has(vert)) {
-      selectedWorkspaces.delete(vert);
+    if (selectedSet.has(vert)) {
+      selectedSet.delete(vert);
     } else {
-      selectedWorkspaces.add(vert);
+      if (ofSettings) {
+        selectedSet.clear();
+      }
+      selectedSet.add(vert);
     }
-  }, [view, workspace]);
+  }, [view, workspace, ofSettings]);
 
   return (
     <div
@@ -757,7 +821,6 @@ function WorkspaceListItem({
           <div ref={textRef} className={cn(styles.itemText)}>
             {name}
           </div>
-
           <WorkspaceCheckbox toggled={isSelected} />
         </div>
       </Tooltip>
@@ -961,15 +1024,17 @@ function ExpanderIcon({ className }: { className?: string }) {
 
 interface WorkspaceListProps {
   query: Query<Workspace, Workspace, WorkspaceGID>;
+  ofSettings: boolean | undefined;
 }
 
-function WorkspacesList({ query }: WorkspaceListProps) {
+function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   const styles = useStyles();
   const strings = useStrings();
   const view = usePartialGlobalView(
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    'selectedWorkspaces',
+    'selectedSettingsWorkspaces' // ADDED 24.12
   );
 
   const toggleExpanded = useCallback(
@@ -1036,6 +1101,7 @@ function WorkspacesList({ query }: WorkspaceListProps) {
             }`}
             workspace={ws}
             groupId={gid}
+            ofSettings={ofSettings}
           />
         );
       }
@@ -1131,6 +1197,7 @@ function WorkspaceBarInternal({
   const logger = useLogger();
   const activeViewMgr = useActiveViewManager();
   const view = usePartialGlobalView(
+    'selectedSettingsWorkspaces', // ADDED 24.12
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
@@ -1234,7 +1301,20 @@ function WorkspaceBarInternal({
         >
           <div className={cn(styles.header)}>
             {ofSettings ? (
-              <div className={cn(styles.logoContainer)}></div>
+              <div className={cn(styles.collapsedSettings)}>
+                <Button
+                  className={cn(styles.openBarButton)}
+                  onClick={() => {
+                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
+                  }}
+                >
+                  <CollapseIcon
+                    className={
+                      view.workspaceBarCollapsed ? styles.rotated : undefined
+                    }
+                  />
+                </Button>
+              </div>
             ) : (
               <div className={cn(styles.logoContainer)}>
                 <LogoIcon className={cn(styles.logoIcon)} />
@@ -1270,7 +1350,7 @@ function WorkspaceBarInternal({
               ofSettings={ofSettings}
             />
           </div>
-          <WorkspacesList query={query} />
+          <WorkspacesList query={query} ofSettings={ofSettings} />
           <WorkspaceBarActions ofSettings={ofSettings} />
         </div>
       )}

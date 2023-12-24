@@ -6,13 +6,9 @@ import { useParams } from 'react-router';
 import { createUseStrings } from '../../core/localization/index.tsx';
 import localization from './settings.strings.json' assert { type: 'json' };
 import { WorkspacesBar } from '../workspaces-bar/index.tsx';
-import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
-import {
-  useGraphManager,
-  usePartialGlobalView,
-} from '../../core/cfds/react/graph.tsx';
+import { useGraphManager } from '../../core/cfds/react/graph.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { Workspace } from '../../../../cfds/client/graph/vertices/index.ts';
+import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { WorkspaceIndicator } from '../../../../components/workspace-indicator.tsx';
 
 const useStrings = createUseStrings(localization);
@@ -27,11 +23,10 @@ export function CategorySettings(props: CategorySettingsProps) {
   const styles = tabsStyles();
   const strings = useStrings();
   const { category } = useParams<{ category: string }>();
-  const view = usePartialGlobalView('selectedWorkspaces');
-  const ws = [...view.selectedWorkspaces][0];
-  // const graph = useGraphManager();
-  // const mgr = graph.getVertexManager('ViewTasks');
-  // const partial = usePartialVertex(mgr,['selectedWorkspace',...])
+  const graph = useGraphManager();
+  const mgr = graph.getVertexManager<View>('ViewWsSettings');
+  const partialView = usePartialVertex(mgr, ['selectedSettingsWorkspaces']);
+  const ws = [...partialView.selectedSettingsWorkspaces][0];
 
   return (
     <div className={styles.root}>
@@ -43,8 +38,6 @@ export function CategorySettings(props: CategorySettingsProps) {
               <div className={cn(styles.dialogHeader)}>
                 {strings[category]}
                 {/* {strings[category + 'S']} */}
-              </div>
-              <div>
                 {ws && <WorkspaceIndicator key={ws.key} workspace={ws} />}
               </div>
               <div className={cn(styles.barRow, styles.viewRow)}>

@@ -213,9 +213,7 @@ export function SettingsBar({ className }: { className?: string }) {
             <LabelSm>Settings</LabelSm>
           </div>
           <SettingsBarCategories />
-          <div className={cn(styles.help)}>
-            <HelpCenter />
-          </div>
+          <div className={cn(styles.help)}>{/* <HelpCenter /> */}</div>
         </div>
       )}
     </Layer>

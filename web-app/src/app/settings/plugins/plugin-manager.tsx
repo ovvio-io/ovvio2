@@ -79,7 +79,11 @@ function TabView({ category }: any) {
   const styles = useStyles();
   const strings = useStrings();
   const navigate = useNavigate();
-  const view = usePartialView('selectedSettingsTabId', 'selectedWorkspaces');
+  const view = usePartialView(
+    'selectedSettingsTabId',
+    'selectedWorkspaces',
+    'selectedSettingsWorkspaces'
+  );
   const { routeCategory, routeTab } = useParams<{
     routeCategory: string;
     routeTab: SettingsTabId;
@@ -145,7 +149,8 @@ function TabView({ category }: any) {
       >
         {tabElements}
       </TabsHeader>
-      {category === 'workspaces-info' && view.selectedWorkspaces.size < 1 ? (
+      {category === 'workspaces-info' &&
+      view.selectedSettingsWorkspaces.size < 1 ? (
         <EmptyState />
       ) : (
         renderSelectedTabContent()

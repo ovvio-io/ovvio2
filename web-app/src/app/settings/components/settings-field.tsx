@@ -44,7 +44,7 @@ interface SettingsFieldProps {
   title: string;
   titleType?: 'primary' | 'secondary';
   placeholder?: string;
-  value: string;
+  value: string | number | boolean;
   className?: string;
   toggle: 'editable' | 'duplicate' | 'label' | 'light';
 }
