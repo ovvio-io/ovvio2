@@ -1,8 +1,8 @@
 import React, {
-  useCallback,
-  useState,
   ChangeEvent,
   KeyboardEvent,
+  useCallback,
+  useState,
 } from 'react';
 import { LoginIllustration } from './illustrations.tsx';
 import { brandLightTheme as theme } from '../../styles/theme.tsx';
@@ -10,11 +10,13 @@ import { Button } from '../../styles/components/buttons.tsx';
 import TextField from '../../styles/components/inputs/TextField.tsx';
 import { LogoFullBlack } from '../../styles/components/logo.tsx';
 import { H2 } from '../../styles/components/texts.tsx';
-import { makeStyles, cn } from '../../styles/css-objects/index.ts';
+import { cn, makeStyles } from '../../styles/css-objects/index.ts';
 import { styleguide } from '../../styles/styleguide.ts';
 import { OwnedSession } from '../session.ts';
 import { sendLoginEmail } from '../../net/rest-api.ts';
 import { IconAlert } from '../../styles/components/new-icons/icon-alert.tsx';
+import { ActionButton } from '../../components/action-button.tsx';
+import { normalizeEmail } from '../../base/string.ts';
 
 const useStyles = makeStyles(() => ({
   centeredHeader: {
@@ -53,17 +55,8 @@ const useStyles = makeStyles(() => ({
   loginButton: {
     height: styleguide.gridbase * 4,
     width: styleguide.gridbase * 40,
-    boxSizing: 'border-box',
-    borderRadius: 20,
-    fontSize: 14,
-    fontWeight: 500,
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderColor: theme.primary.p9,
-    backgroundColor: theme.primary.p9,
     margin: [0, 'auto'],
     marginTop: styleguide.gridbase * 4,
-    color: theme.mono.m0,
   },
   errorTextContainer: {
     marginTop: styleguide.gridbase,
@@ -111,18 +104,19 @@ function LoginContents({
   const styles = useStyles();
   const [email, setEmail] = useState(initialValue);
   const onChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value),
-    [setEmail]
+    (event: ChangeEvent<HTMLInputElement>) =>
+      setEmail(normalizeEmail(event.target.value)),
+    [setEmail],
   );
   const onKeyUp = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
         const value = (event.target as HTMLInputElement).value;
-        setEmail(value);
+        setEmail(normalizeEmail(value));
         onClick(value);
       }
     },
-    [setEmail]
+    [setEmail],
   );
   return (
     <div className={cn(styles.contentsContainer)}>
@@ -134,7 +128,7 @@ function LoginContents({
         <div className={cn(styles.textFieldContainer)}>
           <TextField
             className={cn(styles.textField)}
-            placeholder="Email"
+            placeholder='Email'
             value={email}
             onChange={onChange}
             onKeyUp={onKeyUp}
@@ -149,12 +143,13 @@ function LoginContents({
             </div>
           )}
         </div>
-        <Button
+        <ActionButton
           className={cn(styles.loginButton)}
           onClick={() => onClick(email)}
+          mode={email?.length > 0 ? 'default' : 'disabled'}
         >
           Continue
-        </Button>
+        </ActionButton>
       </div>
     </div>
   );
@@ -200,7 +195,7 @@ export function LoginView({ session }: LoginViewProps) {
         setShowSuccess(false);
       }
     },
-    [setShowError, setShowSuccess]
+    [setShowError, setShowSuccess],
   );
   return (
     <div>
@@ -210,16 +205,16 @@ export function LoginView({ session }: LoginViewProps) {
       <div className={cn(styles.centeredHeader, styles.welcomeContainer)}>
         <H2>Welcome to Ovvio</H2>
       </div>
-      {showSuccess ? (
-        <LoginSuccess onClick={() => setShowSuccess(false)} />
-      ) : (
-        <LoginContents
-          session={session}
-          onClick={onClick}
-          showError={showError}
-          initialValue={email}
-        />
-      )}
+      {showSuccess
+        ? <LoginSuccess onClick={() => setShowSuccess(false)} />
+        : (
+          <LoginContents
+            session={session}
+            onClick={onClick}
+            showError={showError}
+            initialValue={email}
+          />
+        )}
     </div>
   );
 }

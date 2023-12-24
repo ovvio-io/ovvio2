@@ -1,27 +1,27 @@
 import {
-  SchemeDef,
+  AttachmentData,
+  DataType,
+  InviteStatus,
   ISchemeManagerRegister,
   NS_NOTES,
   NS_TAGS,
+  NS_USER_SETTINGS,
   NS_USERS,
+  NS_VIEWS,
   NS_WORKSPACE,
+  SchemeDef,
+  SchemeNamespace,
   TYPE_DATE,
   TYPE_MAP,
   TYPE_NUMBER,
   TYPE_REF,
+  TYPE_REF_MAP,
   TYPE_REF_SET,
+  TYPE_RICHTEXT_V3,
   // TYPE_RICHTEXT,
   TYPE_SET,
   TYPE_STR,
   TYPE_STR_SET,
-  InviteStatus,
-  AttachmentData,
-  DataType,
-  TYPE_RICHTEXT_V3,
-  SchemeNamespace,
-  TYPE_REF_MAP,
-  NS_VIEWS,
-  NS_USER_SETTINGS,
 } from './scheme-types.ts';
 import { initRichText } from '../richtext/tree.ts';
 import { isString } from '../../base/comparisons.ts';
@@ -85,7 +85,7 @@ const SCHEME_WORKSPACE_2 = SCHEME_WORKSPACE_1.derive(
       type: TYPE_REF,
     },
   },
-  ['owner']
+  ['owner'],
 );
 
 const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
@@ -246,7 +246,7 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
   selectedTab: TYPE_STR,
   noteType: TYPE_STR,
   workspaceGrouping: TYPE_STR,
-  selectedWorkspaces: TYPE_REF_SET,
+  selectedWorkspaces: TYPE_STR_SET,
   expandedWorkspaceGroups: TYPE_STR_SET,
   workspaceBarCollapsed: TYPE_NUMBER,
 
@@ -283,12 +283,12 @@ const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
-  SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
   SCHEME_NOTE_4 as NOTE_SCHEME,
+  SCHEME_SESSION_1 as SESSION_SCHEME,
   SCHEME_TAG_1 as TAG_SCHEME,
   SCHEME_USER_1 as USER_SCHEME,
   SCHEME_VIEW_1 as VIEW_SCHEME,
-  SCHEME_SESSION_1 as SESSION_SCHEME,
+  SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -296,7 +296,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     1,
     [SCHEME_WORKSPACE_1, SCHEME_USER_1, SCHEME_NOTE_1, SCHEME_TAG_1],
-    []
+    [],
   );
 
   //V2
@@ -321,7 +321,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
           data.tags = tagMap;
         }
       }
-    }
+    },
   );
 
   //V3
@@ -338,7 +338,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
       //       data.body = migrationToRichtextV3(data.body);
       //     }
       //   }
-    }
+    },
   );
 
   //V4
@@ -351,7 +351,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
         data.createdBy = data.owner;
         delete data.owner;
       }
-    }
+    },
   );
 
   //V5
@@ -359,7 +359,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
     5,
     [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_VIEW_1],
     [SchemeNamespace.TAGS, SchemeNamespace.USERS],
-    (namespace, data) => {}
+    (namespace, data) => {},
   );
 
   //V6
@@ -392,7 +392,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
       } else if (namespace === NS_NOTES) {
         delete data.status;
       }
-    }
+    },
   );
 
   //Next Version Here

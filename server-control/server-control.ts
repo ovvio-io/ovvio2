@@ -6,18 +6,30 @@ import { EC2MetadataToken, getTenantId } from './ec2.ts';
 import { tuple4ToString } from '../base/tuple.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { BuildTarget } from '../server/build.ts';
 
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
 const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
 const SERVER_STARTUP_TIMEOUT_MS = kSecondMs;
 
-const SERVER_ARCHIVE_URL =
-  `https://ovvio2-release.s3.amazonaws.com/ovvio-server-${Deno.build.os}.gz`;
-const CONTROL_ARCHIVE_URL =
-  `https://ovvio2-release.s3.amazonaws.com/ovvio-control-${Deno.build.os}.gz`;
+const ALPHA_TENANTS = ['localhost', 'sandbox'];
+const BETA_TENANTS = ['ovvio'];
 
 const ec2MetadataToken = new EC2MetadataToken();
+
+async function getArchiveURL(target: BuildTarget): Promise<string> {
+  const tenantId = await getTenantId(ec2MetadataToken);
+  let channel = '';
+  if (tenantId) {
+    if (ALPHA_TENANTS.includes(tenantId)) {
+      channel = '-alpha';
+    } else if (BETA_TENANTS.includes(tenantId)) {
+      channel = '-beta';
+    }
+  }
+  return `https://ovvio2-release.s3.amazonaws.com/ovvio-${target}-${Deno.build.os}${channel}.gz`;
+}
 
 async function getServerSettingsURL(): Promise<string | undefined> {
   const tenantId = await getTenantId(ec2MetadataToken);
@@ -95,7 +107,7 @@ async function _startChildServerProcess(
     Deno.kill(existingPid, 'SIGKILL');
   }
   // Start the server process
-  const binaryFileName = filenameFromURL(SERVER_ARCHIVE_URL, '.gz');
+  const binaryFileName = filenameFromURL(await getArchiveURL('server'), '.gz');
   const args = [
     '-n',
     '3',
@@ -175,7 +187,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 1; //navigator.hardwareConcurrency;
+  const processCount = navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {
@@ -321,7 +333,7 @@ async function updateServerBinary(
   childProcesses: (Deno.ChildProcess | undefined)[] = [],
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const success = await updateBinary(
-    SERVER_ARCHIVE_URL,
+    await getArchiveURL('server'),
     settings.serverBinaryDir,
   );
   if (success) {
@@ -361,7 +373,10 @@ function getScriptPath(): string {
 
 async function updateControlBinary(): Promise<void> {
   const workingDir = path.dirname(getScriptPath());
-  const success = await updateBinary(CONTROL_ARCHIVE_URL, workingDir);
+  const success = await updateBinary(
+    await getArchiveURL('control'),
+    workingDir,
+  );
   if (success) {
     console.log(
       'Control binary successfully updated. Exiting and letting systemd restart the updated binary...',

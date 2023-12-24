@@ -47,7 +47,7 @@ import { coreValueEquals } from '../base/core-types/equals.ts';
 import { uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
-import { onArrowUp } from './caret.ts';
+import { onKeyboardArrow } from './caret.ts';
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -320,6 +320,12 @@ export const RichTextEditor = forwardRef<
     };
   }, [partialNote, partialNote.body, selectionId, editorId, baseDirection]);
   const undoContext = useUndoContext(note, 'body', true);
+  let blockSelectionUpdate = false;
+
+  const updateSelectionToCurrentState = useCallback(() => {
+    blockSelectionUpdate = true;
+    setBrowserSelectionToDocument(ctx, editorDivRef.current);
+  }, [ctx, editorDivRef, editorDivRef.current]);
 
   useImperativeHandle(
     ref,
@@ -334,12 +340,16 @@ export const RichTextEditor = forwardRef<
   );
 
   useLayoutEffect(
-    () => setBrowserSelectionToDocument(ctx, editorDivRef.current),
-    [partialNote, selectionId, editorDivRef.current, ctx],
+    updateSelectionToCurrentState,
+    [partialNote, selectionId, updateSelectionToCurrentState],
   );
 
   const onSelectionChanged = useCallback(
     (event: Event) => {
+      if (blockSelectionUpdate) {
+        blockSelectionUpdate = false;
+        return;
+      }
       const editorDivNode = editorDivRef.current;
       if (!editorDivNode || document.activeElement !== editorDivNode) {
         return;
@@ -356,7 +366,7 @@ export const RichTextEditor = forwardRef<
       try {
         const selectionAnchorNode = selection.anchorNode;
         if (!selectionAnchorNode) {
-          setBrowserSelectionToDocument(ctx, editorDivRef.current);
+          updateSelectionToCurrentState();
           return;
         }
         let anchorNode = state.nodeKeys.nodeFromKey(
@@ -406,7 +416,7 @@ export const RichTextEditor = forwardRef<
             }
           }
           if (!isTextNode(anchorNode)) {
-            setBrowserSelectionToDocument(ctx, editorDivRef.current);
+            updateSelectionToCurrentState();
             return;
           }
           if (!isTextNode(focusNode)) {
@@ -427,7 +437,7 @@ export const RichTextEditor = forwardRef<
           };
           const result = docFromRT(docToRT(state));
           if (coreValueEquals(note.getVertexProxy().body, result)) {
-            setBrowserSelectionToDocument(ctx, editorDivRef.current);
+            updateSelectionToCurrentState();
           } else {
             note.getVertexProxy().body = result;
           }
@@ -436,7 +446,7 @@ export const RichTextEditor = forwardRef<
         debugger;
       }
     },
-    [note, ctx],
+    [note, ctx, updateSelectionToCurrentState],
   );
 
   const onBeforeInput = useCallback(
@@ -486,9 +496,16 @@ export const RichTextEditor = forwardRef<
           undoContext.undo();
         }
       }
-      if (event.key === 'ArrowUp') {
-        const doc = onArrowUp(state, selectionId);
-        debugger;
+      if (
+        event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' || event.key === 'ArrowRight'
+      ) {
+        const doc = onKeyboardArrow(
+          state,
+          selectionId,
+          event.key,
+          ctx.baseDirection || 'auto',
+        );
         if (doc) {
           event.stopPropagation();
           event.preventDefault();
@@ -496,7 +513,7 @@ export const RichTextEditor = forwardRef<
         }
       }
     },
-    [note, undoContext],
+    [note, undoContext, ctx],
   );
 
   const onPaste = useCallback(
@@ -537,13 +554,13 @@ export const RichTextEditor = forwardRef<
       document.removeEventListener('selectionchange', onSelectionChanged);
   }, [onSelectionChanged]);
 
-  const onBlur = useCallback(() => {
-    const body = docClone(partialNote.body);
-    if (body.ranges) {
-      delete body.ranges[selectionId];
-      partialNote.body = body;
-    }
-  }, [partialNote, selectionId]);
+  // const onBlur = useCallback(() => {
+  //   const body = docClone(partialNote.body);
+  //   if (body.ranges) {
+  //     delete body.ranges[selectionId];
+  //     partialNote.body = body;
+  //   }
+  // }, [partialNote, selectionId]);
 
   return (
     <div
@@ -556,7 +573,7 @@ export const RichTextEditor = forwardRef<
       onBeforeInput={onBeforeInput}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
-      onBlur={onBlur}
+      // onBlur={onBlur}
     >
       <RichTextRenderer ctx={ctx} onChange={(doc) => partialNote.body = doc} />
     </div>

@@ -1,6 +1,8 @@
 import { sessionIdFromSignature } from '../auth/session.ts';
 import { SchemeNamespace } from '../cfds/base/scheme-types.ts';
-import { Authorizer, RepoStorage, Repository } from './repo.ts';
+import { Authorizer, Repository, RepoStorage } from './repo.ts';
+
+const PERSONAL_WS_KEY_SUFFIX = '-ws';
 
 export type FetchOperatorEmails = () => readonly string[];
 
@@ -12,7 +14,7 @@ export type FetchOperatorEmails = () => readonly string[];
  * @returns An authorizer function for /sys/dir.
  */
 export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
-  fetchOperatorEmails: FetchOperatorEmails
+  fetchOperatorEmails: FetchOperatorEmails,
 ): Authorizer<ST> {
   // ATTENTION: We look at the session who signed the commit (source) for
   // determining permissions, rather than the session who transmits the commit
@@ -26,7 +28,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       userKey = session.owner;
     } else {
       const commitSignerSession = repo.trustPool.getSession(
-        sessionIdFromSignature(commit.signature)
+        sessionIdFromSignature(commit.signature),
       );
       userKey = commitSignerSession?.owner;
     }
@@ -45,13 +47,12 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     // Operator Access
     const record = repo.valueForKey(commit.key);
     const userRecord = repo.valueForKey(userKey);
-    const email =
-      userRecord.scheme.namespace === SchemeNamespace.USERS
-        ? userRecord.get<string>('email')
-        : undefined;
+    const email = userRecord.scheme.namespace === SchemeNamespace.USERS
+      ? userRecord.get<string>('email')
+      : undefined;
     const operatorEmails = fetchOperatorEmails();
-    const isOperator =
-      typeof email === 'string' && operatorEmails.includes(email);
+    const isOperator = typeof email === 'string' &&
+      operatorEmails.includes(email);
     if (isOperator) {
       return true;
     }
@@ -105,7 +106,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
 export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
   fetchOperatorEmails: FetchOperatorEmails,
   sysDir: Repository<ST>,
-  workspaceKey: string
+  workspaceKey: string,
 ): Authorizer<ST> {
   // ATTENTION: We look at the session who signed the commit (source) for
   // determining permissions, rather than the session who transmits the commit
@@ -115,7 +116,7 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
       return false;
     }
     const commitSignerSession = sysDir.trustPool.getSession(
-      sessionIdFromSignature(commit.signature)
+      sessionIdFromSignature(commit.signature),
     );
     if (!commitSignerSession) {
       return false;
@@ -130,12 +131,21 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
       return true;
     }
 
+    // Personal workspace is accessible only to its owner. Not even operators
+    // are allowed to touch it.
+    if (workspaceKey.endsWith(PERSONAL_WS_KEY_SUFFIX)) {
+      return userKey ===
+        workspaceKey.substring(
+          0,
+          workspaceKey.length - PERSONAL_WS_KEY_SUFFIX.length,
+        );
+    }
+
     // Operator Access
     const userRecord = sysDir.valueForKey(userKey);
-    const email =
-      userRecord.scheme.namespace === SchemeNamespace.USERS
-        ? userRecord.get<string>('email')
-        : undefined;
+    const email = userRecord.scheme.namespace === SchemeNamespace.USERS
+      ? userRecord.get<string>('email')
+      : undefined;
     const isOperator = email && fetchOperatorEmails().includes(email);
     if (isOperator) {
       return true;
@@ -143,17 +153,16 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
 
     // Full read-write for workspace members
     const workspaceRecord = sysDir.valueForKey(workspaceKey);
-    const users =
-      workspaceRecord.scheme.namespace === SchemeNamespace.WORKSPACE
-        ? workspaceRecord.get<Set<string>>('users')
-        : undefined;
+    const users = workspaceRecord.scheme.namespace === SchemeNamespace.WORKSPACE
+      ? workspaceRecord.get<Set<string>>('users')
+      : undefined;
     return users?.has(userKey) === true;
   };
 }
 
 export function createUserAuthorizer<ST extends RepoStorage<ST>>(
   sysDir: Repository<ST>,
-  userKey: string
+  userKey: string,
 ): Authorizer<ST> {
   // ATTENTION: We look at the session who signed the commit (source) for
   // determining permissions, rather than the session who transmits the commit
@@ -163,7 +172,7 @@ export function createUserAuthorizer<ST extends RepoStorage<ST>>(
       return false;
     }
     const commitSignerSession = sysDir.trustPool.getSession(
-      sessionIdFromSignature(commit.signature)
+      sessionIdFromSignature(commit.signature),
     );
     if (!commitSignerSession) {
       return false;

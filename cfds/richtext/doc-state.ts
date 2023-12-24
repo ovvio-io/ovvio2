@@ -90,6 +90,7 @@ export function docClone(doc: Document): Document {
     reconstructRichText(flattenRichText(docToRT(doc), true, false)),
   );
 }
+
 export function isDocument(doc: UnkeyedDocument): doc is Document {
   return doc.nodeKeys instanceof TreeKeys;
 }

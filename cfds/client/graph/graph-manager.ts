@@ -35,7 +35,6 @@ import {
   ClientStatus,
   EVENT_STATUS_CHANGED,
 } from '../../../net/base-client.ts';
-import { appendPathComponent } from '../../../base/string.ts';
 import { Query, QueryOptions } from './query.ts';
 import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
@@ -46,6 +45,7 @@ import {
   kSyncConfigClient,
   SyncScheduler,
 } from '../../../net/sync-scheduler.ts';
+import { MultiSerialScheduler } from '../../../base/serial-scheduler.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -104,7 +104,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   private _prevClientStatus: ClientStatus = 'offline';
 
   constructor(trustPool: TrustPool, baseServerUrl?: string) {
-    super();
+    super(undefined, true);
     this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
@@ -217,42 +217,46 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     }
 
     const repo = plumbing.repo;
-    plumbing.loadingPromise = (async () => {
-      if (backup) {
-        const commits = await backup.loadCommits();
-        if (commits instanceof Array) {
-          repo.allowMerge = false;
-          try {
-            await repo.persistCommits(commits);
-          } finally {
-            repo.allowMerge = true;
+    plumbing.loadingPromise = MultiSerialScheduler.get('repoLoad').run(
+      async () => {
+        if (backup) {
+          const commits = await backup.loadCommits();
+          if (commits instanceof Array) {
+            repo.allowMerge = false;
+            try {
+              await repo.persistCommits(commits);
+            } finally {
+              repo.allowMerge = true;
+            }
+          } else {
+            console.log(`Unexpected IDB result: ${commits}`);
           }
         } else {
-          console.log(`Unexpected IDB result: ${commits}`);
+          console.log(`Backup disabled for repo: ${id}`);
         }
-      } else {
-        console.log(`Backup disabled for repo: ${id}`);
-      }
-      // Load all keys from this repo
-      for (const key of repo.keys()) {
-        this.getVertexManager(key).touch();
-      }
-      plumbing.active = true;
-      plumbing.loadingFinished = true;
-      // plumbing.client?.startSyncing();
-    })();
+        // Load all keys from this repo
+        for (const key of repo.keys()) {
+          this.getVertexManager(key).touch();
+        }
+        plumbing.active = true;
+        plumbing.loadingFinished = true;
+        // plumbing.client?.startSyncing();
+      },
+    );
     return plumbing.loadingPromise;
   }
 
-  async syncRepository(id: string): Promise<void> {
-    const plumbing = this.plumbingForRepository(id);
-    const client = plumbing.client;
-    await this.loadRepository(id);
-    if (client && client.isOnline) {
-      await client.sync();
-      plumbing.syncFinished = true;
-      // client.startSyncing();
-    }
+  syncRepository(id: string): Promise<void> {
+    return MultiSerialScheduler.get('RepoSync').run(async () => {
+      const plumbing = this.plumbingForRepository(id);
+      const client = plumbing.client;
+      await this.loadRepository(id);
+      if (client && client.isOnline) {
+        await client.sync();
+        plumbing.syncFinished = true;
+        // client.startSyncing();
+      }
+    });
   }
 
   startSyncing(repoId: string): void {
@@ -357,7 +361,13 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       return false;
     }
     id = Repository.normalizeId(id);
-    return this._repoById.get(id)?.loadingFinished === true;
+    const plumbing = this.plumbingForRepository(id);
+    if (
+      plumbing?.loadingFinished === true && plumbing.repo.numberOfCommits() > 0
+    ) {
+      return true;
+    }
+    return plumbing?.syncFinished === true;
   }
 
   repositoryForKey(
@@ -493,6 +503,18 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     return query as unknown as Query<IT, OT, GT>;
   }
 
+  builtinVertexKeys(): string[] {
+    const rootKey = this.rootKey;
+    return [
+      'ViewGlobal',
+      'ViewTasks',
+      'ViewNotes',
+      'ViewOverview',
+      'ViewWsSettings',
+      `${rootKey}-ws`,
+    ];
+  }
+
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
     ns?: SchemeNamespace,
@@ -500,6 +522,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     local = false,
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
+
     if (mgr === undefined) {
       const scheme = ns !== undefined
         ? SchemeManager.instance.getScheme(ns)
@@ -510,9 +533,22 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
           data: initialData!,
         })
         : undefined;
-      mgr = new VertexManager(this, key, record, local);
+      mgr = new VertexManager(
+        this,
+        key,
+        record,
+        local,
+      );
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
+    } else if (mgr.scheme.isNull && initialData && ns) {
+      const scheme = SchemeManager.instance.getScheme(ns);
+      assert(scheme !== undefined);
+      const record = new Record({
+        scheme: scheme,
+        data: initialData!,
+      });
+      mgr.record = record;
     }
     return mgr as VertexManager<V>;
   }

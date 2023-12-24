@@ -1,10 +1,11 @@
-import { Timer, TimerCallback } from './timer.ts';
+import { NextEventLoopCycleTimer, Timer, TimerCallback } from './timer.ts';
 
 export type EmitterEvent = 'suspended' | 'resumed';
 
 export type EmitterCallback = () => void;
 
 export class Emitter<T extends string> {
+  readonly alwaysActive: boolean;
   private readonly _suspendCallbacks: EmitterCallback[];
   private readonly _resumeCallbacks: EmitterCallback[];
   private readonly _callbacks: Map<string, EmitterCallback[]>;
@@ -14,7 +15,9 @@ export class Emitter<T extends string> {
 
   constructor(
     delayedEmissionTimerConstructor?: (callback: TimerCallback) => Timer,
+    alwaysActive?: boolean,
   ) {
+    this.alwaysActive = Boolean(alwaysActive);
     this._suspendCallbacks = [];
     this._resumeCallbacks = [];
     this._callbacks = new Map();
@@ -28,10 +31,13 @@ export class Emitter<T extends string> {
       });
     }
     this._pendingEmissions = [];
+    if (this.alwaysActive) {
+      new NextEventLoopCycleTimer(() => this.resume()).schedule();
+    }
   }
 
   get isActive(): boolean {
-    return this._callbacks.size > 0;
+    return this.alwaysActive || this._callbacks.size > 0;
   }
 
   emit<E extends T | EmitterEvent>(e: E, ...args: unknown[]): void {
@@ -48,7 +54,7 @@ export class Emitter<T extends string> {
     ...args: unknown[]
   ): void {
     if (this._isMuted) {
-      return '';
+      return;
     }
     let callbacks: EmitterCallback[] | undefined;
     if (e === 'EmitterSuspended') {

@@ -20,8 +20,8 @@ export const emptyDoc = () => ({
 
 export function createNewNote(
   graph: GraphManager,
-  ws: VertexId<Workspace>,
-  data: CardData
+  ws: VertexId<Workspace> | null,
+  data: CardData,
 ): Note {
   const { type } = data;
   // const tagsMap = new Map(
@@ -29,6 +29,11 @@ export function createNewNote(
   //     ([p, t]) => [p.key, t.key]
   //   )
   // );
+
+  // Personal workspace
+  if (!ws) {
+    ws = `${graph.rootKey}-ws`;
+  }
 
   const baseData: CardData = {
     workspace: VertexIdGetKey(ws),

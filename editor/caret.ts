@@ -1,56 +1,67 @@
-import { resolveWritingDirection, WritingDirection } from '../base/string.ts';
-import { docClone, Document } from '../cfds/richtext/doc-state.ts';
 import {
-  dfs,
-  ElementNode,
-  findLastTextNode,
+  docClone,
+  Document,
+  writingDirectionAtNode,
+} from '../cfds/richtext/doc-state.ts';
+import {
   isElementNode,
   isTextNode,
   pathToNode,
+  RichText,
   TextNode,
   TreeNode,
 } from '../cfds/richtext/tree.ts';
 import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
+import { flattenRichText } from '../cfds/richtext/flat-rep.ts';
+import { WritingDirection } from '../base/string.ts';
 
-function findElementBefore(
-  root: ElementNode,
+function findNear<T extends MarkupNode>(
+  rt: RichText,
   target: TreeNode,
-  targetDepth?: number,
-): [element: MarkupElement, path: readonly MarkupElement[]] | [
-  undefined,
-  undefined,
-] {
+  predicate: (node: TreeNode) => boolean,
+  direction: 'before' | 'after',
+): T | undefined {
   if (!isElementNode(target)) {
-    const path = pathToNode(root, target);
+    const path = pathToNode(rt.root, target);
     if (!path) {
-      return [undefined, undefined];
+      return undefined;
     }
-    target = path[0];
+    target = path[path.length - 1];
   }
-
-  let result: ElementNode | undefined;
-  let resultPath: readonly ElementNode[] | undefined;
-  for (const [node, depth, path] of dfs(root)) {
-    if (node === target) {
-      break;
+  const atoms = Array.from(flattenRichText(rt, true, false));
+  const idx = atoms.indexOf(target);
+  if (idx < 0) {
+    return undefined;
+  }
+  if (direction === 'before') {
+    for (let j = idx - 1; j > 0; --j) {
+      const node = atoms[j];
+      if (predicate(node)) {
+        return node as T;
+      }
     }
-    if (
-      (targetDepth === undefined || depth === targetDepth) &&
-      isElementNode(node)
-    ) {
-      result = node as ElementNode;
-      resultPath = path;
+  } else {
+    for (let j = idx + 1; j < atoms.length; ++j) {
+      const node = atoms[j];
+      if (predicate(node)) {
+        return node as T;
+      }
     }
   }
-  return result
-    ? [result as MarkupElement, resultPath! as MarkupElement[]]
-    : [undefined, undefined];
+  return undefined;
 }
 
-export function onArrowUp(
+function upDownPredicate(node: TreeNode): boolean {
+  return isElementNode(node) && node.children.length > 0 &&
+    !isElementNode(node.children[0]);
+}
+
+export function onKeyboardArrow(
   doc: Document,
   selectionId: string,
+  arrow: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight',
+  baseDirection: WritingDirection,
 ): Document | undefined {
   doc = docClone(doc);
   if (!doc.ranges || !doc.ranges[selectionId]) {
@@ -60,32 +71,62 @@ export function onArrowUp(
   if (!coreValueEquals(selection.anchor, selection.focus)) {
     return;
   }
-  const [targetElement, _targetElementPath] = findElementBefore(
-    doc.root,
+  debugger;
+  const predicate = arrow === 'ArrowUp' || arrow === 'ArrowDown'
+    ? upDownPredicate
+    : isTextNode;
+  const focus = selection.focus.node;
+  if (writingDirectionAtNode(doc, focus, baseDirection) === 'rtl') {
+    if (arrow === 'ArrowLeft') {
+      arrow = 'ArrowRight';
+    } else if (arrow === 'ArrowRight') {
+      arrow = 'ArrowLeft';
+    }
+  }
+  if (arrow === 'ArrowRight' && selection.focus.offset < focus.text.length) {
+    return undefined;
+  }
+  if (arrow === 'ArrowLeft' && selection.focus.offset > 0) {
+    return undefined;
+  }
+  const target = findNear<MarkupElement>(
+    doc,
     selection.anchor.node,
+    predicate,
+    arrow === 'ArrowUp' || arrow === 'ArrowLeft' ? 'before' : 'after',
   );
-  if (!targetElement) {
+  if (!target) {
     return;
   }
+  let lastChild: TextNode | undefined = isTextNode(target) ? target : undefined;
   const desiredOffset = selection.anchor.offset;
   let len = 0;
-  let lastChild: TextNode | undefined;
-  for (const child of targetElement.children) {
-    if (isTextNode(child)) {
-      lastChild = child;
-      len += child.text.length;
-      if (len >= desiredOffset) {
-        selection.anchor.node = child;
-        selection.focus.node = child;
-        return doc;
+  if (isElementNode(target)) {
+    for (const child of target.children) {
+      if (isTextNode(child)) {
+        lastChild = child;
+        len += child.text.length;
+        if (len >= desiredOffset) {
+          selection.anchor.node = child;
+          selection.focus.node = child;
+          return doc;
+        }
       }
     }
   }
   if (lastChild) {
     selection.anchor.node = lastChild;
-    selection.anchor.offset = len;
     selection.focus.node = lastChild;
-    selection.focus.offset = len;
+    if (arrow === 'ArrowRight') {
+      selection.anchor.offset = 0;
+      selection.focus.offset = 0;
+    } else if (arrow === 'ArrowLeft') {
+      selection.anchor.offset = lastChild.text.length;
+      selection.focus.offset = lastChild.text.length;
+    } else {
+      selection.anchor.offset = len;
+      selection.focus.offset = len;
+    }
     return doc;
   }
 }

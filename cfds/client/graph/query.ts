@@ -32,7 +32,7 @@ export interface SortDescriptor<T extends Vertex = Vertex> {
 export type QueryResults<T extends Vertex = Vertex> = VertexManager<T>[];
 
 export type GroupByFunction<OT extends Vertex, GT extends CoreValue> = (
-  vertex: OT
+  vertex: OT,
 ) => GroupId<GT> | GroupId<GT>[];
 
 export interface GroupIdComparator<GT extends CoreValue> {
@@ -42,12 +42,12 @@ export interface GroupIdComparator<GT extends CoreValue> {
 export interface QueryOptions<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  GT extends CoreValue = CoreValue
-  // SRC extends VertexSource<VertexSourceEvent, GT> = VertexSource<
-  //   VertexSourceEvent,
-  //   GT
-  // >
-> {
+  GT extends CoreValue = CoreValue,
+> // SRC extends VertexSource<VertexSourceEvent, GT> = VertexSource<
+//   VertexSourceEvent,
+//   GT
+// >
+{
   source: VertexSource;
   predicate: Predicate<IT, OT>;
   name?: string;
@@ -58,6 +58,7 @@ export interface QueryOptions<
   waitForSource?: boolean;
   contentSensitive?: boolean;
   contentFields?: (keyof OT)[];
+  alwaysActive?: boolean;
 }
 
 // export const EVENT_QUERY_RESULTS_CHANGED = 'QueryResultsChanged';
@@ -75,13 +76,10 @@ const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
 export class Query<
-    IT extends Vertex = Vertex,
-    OT extends IT = IT,
-    GT extends CoreValue = CoreValue
-  >
-  extends Emitter<VertexSourceEvent>
-  implements VertexSource
-{
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue,
+> extends Emitter<VertexSourceEvent> implements VertexSource {
   readonly startTime: number;
   readonly source: VertexSource;
   readonly predicate: Predicate<IT, OT>;
@@ -89,7 +87,7 @@ export class Query<
   private readonly _sourceGroupId?: GroupId<GT>;
   private readonly _vertexChangedListener: (
     key: string,
-    mutations: MutationPack
+    mutations: MutationPack,
   ) => void;
   private readonly _vertexDeletedListener: (key: string) => void;
   private readonly _results: Map<GroupId<GT>, QueryStorage<OT>>;
@@ -123,10 +121,10 @@ export class Query<
     source: VertexSource,
     predicate: Predicate<IT, OT>,
     sortBy?: SortDescriptor<OT>,
-    name?: string
+    name?: string,
   ): Promise<QueryResults<OT>> {
     let resolve: (
-      value: QueryResults<OT> | PromiseLike<QueryResults<OT>>
+      value: QueryResults<OT> | PromiseLike<QueryResults<OT>>,
     ) => void;
     const promise = new Promise<QueryResults<OT>>((res) => (resolve = res));
     const query = new this({ source, predicate, sortBy, name });
@@ -154,7 +152,7 @@ export class Query<
   static blocking<IT extends Vertex = Vertex, OT extends IT = IT>(
     source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT, OT>,
-    sortDescriptor?: SortDescriptor<OT>
+    sortDescriptor?: SortDescriptor<OT>,
   ): QueryResults<OT> {
     const result: VertexManager<OT>[] = [];
     const graph = source instanceof GraphManager ? source : source.graph;
@@ -186,7 +184,7 @@ export class Query<
   static blockingCount<IT extends Vertex = Vertex>(
     source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
     predicate: Predicate<IT>,
-    limit?: number
+    limit?: number,
   ): number {
     let result = 0;
     const graph = source instanceof GraphManager ? source : source.graph;
@@ -202,7 +200,7 @@ export class Query<
   }
 
   constructor(opts: QueryOptions<IT, OT, GT>) {
-    super();
+    super(undefined, opts.alwaysActive);
     this.startTime = Date.now();
     this._id = ++gQueryId;
     this._vertexChangedListener = (key, mutations) =>
@@ -210,8 +208,10 @@ export class Query<
     this._vertexDeletedListener = (key) => this.vertexDeleted(key);
     // this._resultKeys = new Set();
     this._results = new Map();
-    this._clientsNotifyTimer = new SimpleTimer(300, false, () =>
-      this._notifyQueryChanged()
+    this._clientsNotifyTimer = new SimpleTimer(
+      300,
+      false,
+      () => this._notifyQueryChanged(),
     );
     this._isLoading = true;
     this.source = opts.source;
@@ -279,7 +279,7 @@ export class Query<
       .sort((mgr1, mgr2) =>
         (this._sortDescriptor || coreValueCompare)(
           mgr1.getVertexProxy(),
-          mgr2.getVertexProxy()
+          mgr2.getVertexProxy(),
         )
       );
   }
@@ -361,7 +361,7 @@ export class Query<
 
   groups(): GroupId<GT>[] {
     return Array.from(this._results.keys()).sort(
-      this._groupComparator || coreValueCompare
+      this._groupComparator || coreValueCompare,
     );
   }
 
@@ -434,8 +434,8 @@ export class Query<
     mapper: (
       vert: VertexManager<OT>,
       idx: number,
-      groupId: GroupId<GT>
-    ) => T = (vert) => vert as unknown as T
+      groupId: GroupId<GT>,
+    ) => T = (vert) => vert as unknown as T,
   ): T[] {
     const result: T[] = [];
     this.forEach((vert, idx, gid) => {
@@ -473,15 +473,13 @@ export class Query<
   /*****************************************/
 
   private diffGroupIds(
-    key: string
+    key: string,
   ): [added: GroupId<GT>[], removed: GroupId<GT>[]] {
     const mgr = this.graph.getVertexManager<OT>(key);
     const existingGroups = new Set<GroupId<GT>>(this.groupsForKey(key));
     const match = this.predicate(mgr.getVertexProxy());
     const newGroupIds = match
-      ? this._groupByFunc
-        ? this._groupByFunc(mgr.getVertexProxy())
-        : undefined
+      ? this._groupByFunc ? this._groupByFunc(mgr.getVertexProxy()) : undefined
       : [];
     const newIdsSet = new Set<GroupId<GT>>();
 
@@ -517,13 +515,12 @@ export class Query<
       if (!storage) {
         continue;
       }
-      const groupInLimit =
-        this._groupsLimit <= 0 ||
+      const groupInLimit = this._groupsLimit <= 0 ||
         sortedGroupIds.indexOf(groupId) < this._groupsLimit;
       if (storage.size === 1) {
         assert(storage.has(key)); // Sanity check
-        shouldNotify =
-          (results.delete(groupId) && groupInLimit) || shouldNotify;
+        shouldNotify = (results.delete(groupId) && groupInLimit) ||
+          shouldNotify;
       } else {
         shouldNotify = (storage.delete(key) && groupInLimit) || shouldNotify;
       }
@@ -538,8 +535,7 @@ export class Query<
           results.set(gid, storage);
           sortedGroupIds = this.groups();
         }
-        const groupInLimit =
-          this._groupsLimit <= 0 ||
+        const groupInLimit = this._groupsLimit <= 0 ||
           sortedGroupIds.indexOf(gid) < this._groupsLimit;
         shouldNotify = (storage.add(key) && groupInLimit) || shouldNotify;
       }
@@ -603,15 +599,13 @@ export class Query<
   protected *loadKeysFromSource(): Generator<void> {
     const startTime = performance.now();
     console.log(
-      `${performance.now()} Query ${
-        this.debugName
-      } starting source scan. Pending queries: ${kQueryQueue.size}`
+      `${performance.now()} Query ${this.debugName} starting source scan. Pending queries: ${kQueryQueue.size}`,
     );
     if (!this.isActive) {
       console.log(
         `${performance.now()} Query ${this.debugName} cancelled, took ${
           performance.now() - startTime
-        }ms. Pending queries: ${kQueryQueue.size}`
+        }ms. Pending queries: ${kQueryQueue.size}`,
       );
       return;
     }
@@ -620,7 +614,7 @@ export class Query<
         console.log(
           `${performance.now()} Query ${this.debugName} cancelled, took ${
             performance.now() - startTime
-          }ms. Pending queries: ${kQueryQueue.size}`
+          }ms. Pending queries: ${kQueryQueue.size}`,
         );
         return;
       }
@@ -629,11 +623,7 @@ export class Query<
     }
     const runningTime = performance.now() - startTime;
     console.log(
-      `${performance.now()} Query ${
-        this.debugName
-      } completed, took ${runningTime}ms and found ${
-        this.count
-      } results. Pending queries: ${kQueryQueue.size}`
+      `${performance.now()} Query ${this.debugName} completed, took ${runningTime}ms and found ${this.count} results. Pending queries: ${kQueryQueue.size}`,
     );
     this._isLoading = false;
     this.emit('loading-finished');
@@ -666,7 +656,7 @@ export class Query<
     const promise = this.scheduler.schedule(
       this.loadKeysFromSource(),
       SchedulerPriority.Normal,
-      `Query.SourceScan/${this.name}`
+      `Query.SourceScan/${this.name}`,
     );
     promise.finally(() => {
       if (this._scanSourcePromise === promise) {
@@ -682,7 +672,7 @@ export class Query<
     }
     // this._cachedSortedResults = undefined;
     console.log(
-      `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`
+      `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`,
     );
     this.emit('results-changed');
   }
@@ -691,20 +681,17 @@ export class Query<
 export interface QueryInputDefinition<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  GT extends CoreValue = CoreValue
+  GT extends CoreValue = CoreValue,
 > {
   query: Query<IT, OT, GT>;
   groupId?: GT;
 }
 
 export class UnionQuery<
-    IT extends Vertex = Vertex,
-    OT extends IT = IT,
-    GT extends CoreValue = CoreValue
-  >
-  extends Emitter<VertexSourceEvent>
-  implements VertexSource
-{
+  IT extends Vertex = Vertex,
+  OT extends IT = IT,
+  GT extends CoreValue = CoreValue,
+> extends Emitter<VertexSourceEvent> implements VertexSource {
   readonly sources: QueryInputDefinition<IT, OT, GT>[];
   private readonly _changeListeners: Map<
     Query<IT, OT, GT>,
@@ -716,7 +703,7 @@ export class UnionQuery<
   constructor(
     sources: Iterable<Query<IT, OT, GT> | QueryInputDefinition<IT, OT, GT>>,
     readonly name?: string,
-    readonly groupId?: GT
+    readonly groupId?: GT,
   ) {
     super();
     this._changeListeners = new Map();
@@ -775,9 +762,11 @@ export class UnionQuery<
 
   *keys(): Generator<string> {
     const processedKeys = new Set<string>();
-    for (const key of unionIter(
-      ...this.sources.map((src) => src.query.keys(src.groupId))
-    )) {
+    for (
+      const key of unionIter(
+        ...this.sources.map((src) => src.query.keys(src.groupId)),
+      )
+    ) {
       if (!processedKeys.has(key)) {
         processedKeys.add(key);
         yield key;
@@ -813,7 +802,7 @@ export class UnionQuery<
   }
 
   private changeListenerForQuery(
-    src: Query<IT, OT, GT>
+    src: Query<IT, OT, GT>,
   ): (key: string, pack: MutationPack) => void {
     let result = this._changeListeners.get(src);
     if (result === undefined) {
@@ -821,7 +810,7 @@ export class UnionQuery<
         this.emit(
           this.hasVertex(key) ? 'vertex-changed' : 'vertex-deleted',
           key,
-          pack
+          pack,
         );
       };
       this._changeListeners.set(src, result);

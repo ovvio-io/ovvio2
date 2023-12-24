@@ -167,14 +167,45 @@ export interface RenderContext {
   onNewTask?: () => void;
 }
 
-interface TaskElementButtonsProps {
-  task: VertexManager<Note>;
+function focusOnLastTextNode(
+  element: ElementNode,
+  doc: Document,
+  selectionId: string,
+): void {
+  const textNode = findLastTextNode(element);
+  if (textNode) {
+    if (!doc.ranges) {
+      doc.ranges = {};
+    }
+    const curSelection = doc.ranges[selectionId];
+    if (
+      !curSelection ||
+      (curSelection.anchor.node !== textNode &&
+        curSelection.focus.node !== textNode)
+    ) {
+      doc.ranges[selectionId] = {
+        anchor: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        focus: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        dir: PointerDirection.None,
+      };
+    }
+  }
 }
 
-function TaskElementButtons({ task }: TaskElementButtonsProps) {
-  const styles = useStyles();
-  return <div></div>;
-}
+// interface TaskElementButtonsProps {
+//   task: VertexManager<Note>;
+// }
+//
+// function TaskElementButtons({ task }: TaskElementButtonsProps) {
+//   const styles = useStyles();
+//   return <div></div>;
+// }
 
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
@@ -201,24 +232,8 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         (n) => isRefNode(n) && n.ref === task.key,
       );
       if (refNode) {
-        const textNode = findLastTextNode(refNode[0] as ElementNode);
-        if (textNode) {
-          if (!doc.ranges) {
-            doc.ranges = {};
-          }
-          doc.ranges[ctx.selectionId] = {
-            anchor: {
-              node: textNode,
-              offset: textNode.text.length,
-            },
-            focus: {
-              node: textNode,
-              offset: textNode.text.length,
-            },
-            dir: PointerDirection.None,
-          };
-          onChange(doc);
-        }
+        focusOnLastTextNode(refNode[0] as ElementNode, doc, ctx.selectionId);
+        onChange(doc);
       }
     }, [ctx, task]);
     return (
@@ -261,7 +276,6 @@ interface EditorSpanProps {
 
 function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   const styles = useStyles();
-  const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
   const path = pathToNode<MarkupElement>(ctx.doc.root, node)!;
   const taskElement = path?.find((element) => isRefNode(element)) as
@@ -330,14 +344,24 @@ type ParagraphElementNode = React.PropsWithChildren<{
   dir?: WritingDirection;
   onNewTask?: () => void;
   showNewTaskHint?: boolean;
+  ctx: RenderContext;
+  onChange: (doc: Document) => void;
 }>;
 
 function ParagraphElementNode(
-  { id, htmlId, dir, onNewTask, showNewTaskHint, children }:
+  { id, htmlId, dir, onNewTask, showNewTaskHint, ctx, onChange, children }:
     ParagraphElementNode,
 ) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
+  const onClick = useCallback(() => {
+    const doc = docClone(ctx.doc);
+    const node = doc.nodeKeys.nodeFromKey(id);
+    if (isElementNode(node)) {
+      focusOnLastTextNode(node, doc, ctx.selectionId);
+      onChange(doc);
+    }
+  }, [ctx, onChange]);
   return (
     <p
       key={id}
@@ -346,9 +370,10 @@ function ParagraphElementNode(
       dir={dir}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={onClick}
     >
       {showNewTaskHint && (
-        <span
+        <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
           style={{
@@ -358,7 +383,7 @@ function ParagraphElementNode(
           }}
         >
           <img src='/icons/design-system/checkbox/selected.svg' />
-        </span>
+        </div>
       )}
       {children}
     </p>
@@ -376,7 +401,6 @@ export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
 }
 
 export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
-  const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
 
@@ -486,6 +510,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
       );
 
     case 'ol':
+      debugger;
       return (
         <ol
           key={ctx.doc.nodeKeys.keyFor(node).id}
@@ -530,6 +555,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           task={graph.getVertexManager<Note>(node.ref)}
           dir={dir}
           focused={elementInFocusPath}
+          onChange={onChange}
+          ctx={ctx}
         >
           {children}
         </TaskElement>
@@ -553,6 +580,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
             onChange(newDoc);
           }}
           showNewTaskHint={isChildOfRoot}
+          onChange={onChange}
+          ctx={ctx}
         >
           {children}
         </ParagraphElementNode>

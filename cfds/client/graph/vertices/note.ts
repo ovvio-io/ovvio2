@@ -3,8 +3,8 @@ import { User } from './user.ts';
 import { ContentVertex } from './base.ts';
 import {
   AttachmentData,
-  NS_NOTES,
   NoteStatus,
+  NS_NOTES,
   SchemeNamespace,
   SortBy,
 } from '../../../base/scheme-types.ts';
@@ -29,8 +29,8 @@ import {
 } from '../vertex.ts';
 import { Tag } from './tag.ts';
 import {
-  MutationPack,
   MutationOrigin,
+  MutationPack,
   mutationPackAppend,
   mutationSourceIsUser,
 } from '../mutations.ts';
@@ -48,7 +48,7 @@ import {
   stripFormattingFilter,
 } from '../../../richtext/flat-rep.ts';
 import { treeToMarkdown } from '../../../richtext/markdown.ts';
-import { triggerParent, triggerChildren } from '../propagation-triggers.ts';
+import { triggerChildren, triggerParent } from '../propagation-triggers.ts';
 import { VertexManager } from '../vertex-manager.ts';
 import { SortDescriptor } from '../query.ts';
 import { coreObjectClone } from '../../../../base/core-types/clone.ts';
@@ -73,7 +73,7 @@ export class Note extends ContentVertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex instanceof Note) {
@@ -95,7 +95,7 @@ export class Note extends ContentVertex {
 
   parentNoteDidMutate(
     local: boolean,
-    oldValue: Note | undefined
+    oldValue: Note | undefined,
   ): MutationPack {
     return [
       ['parent', local, oldValue],
@@ -110,7 +110,7 @@ export class Note extends ContentVertex {
   set assignees(users: Set<User>) {
     this.record.set(
       'assignees',
-      SetUtils.map(users, (u) => u.key)
+      SetUtils.map(users, (u) => u.key),
     );
   }
 
@@ -120,7 +120,7 @@ export class Note extends ContentVertex {
 
   parentAssigneesDidMutate(
     origin: MutationOrigin,
-    oldValue: Set<User> | undefined
+    oldValue: Set<User> | undefined,
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
       return;
@@ -225,8 +225,8 @@ export class Note extends ContentVertex {
             return note.record.get('title') as RichText;
           },
           this.record.get('body') || initRichText(),
-          true
-        )
+          true,
+        ),
       );
     }
     return this._cachedBody;
@@ -235,8 +235,10 @@ export class Note extends ContentVertex {
   set body(rt: UnkeyedDocument) {
     // Take a snapshot of the out refs before changing the value
     const oldRefs = this.getBodyRefs();
-    rt = projectRanges(this.body, rt, (ptr) =>
-      this.graph.ptrFilterFunc(ptr.key)
+    rt = projectRanges(
+      this.body,
+      rt,
+      (ptr) => this.graph.ptrFilterFunc(ptr.key),
     );
     this._cachedBody = undefined;
     const graph = this.graph;
@@ -260,7 +262,7 @@ export class Note extends ContentVertex {
                 createdBy: this.createdBy?.key,
                 workspace: this.workspace.key,
               },
-              key
+              key,
             );
           }
         } else {
@@ -270,7 +272,7 @@ export class Note extends ContentVertex {
         childV.titleRT = rt;
       },
       docToRT(rt),
-      true
+      true,
     );
     this.record.set('body', updatedBody);
     this._cachedBody = undefined;
@@ -327,7 +329,7 @@ export class Note extends ContentVertex {
 
   private _invalidateBodyOnChildChange(
     local: boolean,
-    childKey: string
+    childKey: string,
   ): MutationPack {
     // The UI will typically first create the child task, then insert the ref
     // to the parent note's body. If we emit a mutation before the body actually
@@ -370,7 +372,7 @@ export class Note extends ContentVertex {
   childParentNoteDidMutate(
     local: boolean,
     oldValue: Note | undefined,
-    child: Note
+    child: Note,
   ): MutationPack {
     return this._invalidateChildCards(local);
   }
@@ -379,7 +381,7 @@ export class Note extends ContentVertex {
   childTitleDidMutate(
     local: boolean,
     oldValue: RichText,
-    child: Note
+    child: Note,
   ): MutationPack {
     return this._invalidateBodyOnChildChange(local, child.key);
   }
@@ -388,7 +390,7 @@ export class Note extends ContentVertex {
   childIsLoadingDidMutate(
     local: boolean,
     oldValue: RichText,
-    child: Note
+    child: Note,
   ): MutationPack {
     return this._invalidateBodyOnChildChange(local, child.key);
   }
@@ -411,7 +413,7 @@ export class Note extends ContentVertex {
 
   parentDueDateChanged(
     origin: MutationOrigin,
-    oldValue: Date | undefined
+    oldValue: Date | undefined,
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
       return;
@@ -449,9 +451,9 @@ export class Note extends ContentVertex {
           flattenRichText(
             this.record.get('title') || initRichText(),
             true,
-            false
-          )
-        )
+            false,
+          ),
+        ),
       );
     }
     return this._cachedTitleRT!;
@@ -466,10 +468,10 @@ export class Note extends ContentVertex {
       rt,
       (ptr) => this.graph.ptrFilterFunc(ptr.key),
       true,
-      true
+      true,
     );
     rt = reconstructRichText(
-      stripFormattingFilter(flattenRichText(rt, true, false))
+      stripFormattingFilter(flattenRichText(rt, true, false)),
     );
     this._cachedTitle = undefined;
     this._cachedTitleRT = undefined;
@@ -548,7 +550,7 @@ export class Note extends ContentVertex {
       this.type,
       this.record.get('status'),
       this.tags,
-      this.childCards
+      this.childCards,
     );
   }
 
@@ -570,7 +572,7 @@ export class Note extends ContentVertex {
 
   statusDidMutate(
     local: boolean,
-    oldValue: NoteStatus | undefined
+    oldValue: NoteStatus | undefined,
   ): MutationPack {
     const completionDate = this.completionDate;
     if (this.isChecked) {
@@ -607,8 +609,9 @@ export class Note extends ContentVertex {
 
   get tags(): Dictionary<Tag, Tag> {
     const map: Dictionary | undefined = this.record.get('tags');
-    const result: Dictionary<Tag, Tag> =
-      map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
+    const result: Dictionary<Tag, Tag> = map === undefined
+      ? new Map()
+      : keyDictToVertDict(this.graph, map);
     for (const [parent, child] of this.dynamicTags) {
       if (!result.has(parent)) {
         result.set(parent, child);
@@ -645,7 +648,7 @@ export class Note extends ContentVertex {
 
   parentNoteTypeDidMutate(
     local: boolean,
-    oldValue: NoteType | undefined
+    oldValue: NoteType | undefined,
   ): MutationPack {
     if ((oldValue || NoteType.Note) !== this.parentType) {
       return ['parentType', local, oldValue];
@@ -682,13 +685,13 @@ export class Note extends ContentVertex {
   childNoteIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Note
+    child: Note,
   ): MutationPack {
     if ((oldValue === 1) !== (child.isDeleted === 1)) {
       return mutationPackAppend(
         // TODO: Actually go and remove the RefMarkers from the rich text
         this._invalidateBodyOnChildChange(local, child.key),
-        this._invalidateChildCards(local)
+        this._invalidateChildCards(local),
       );
     }
   }
@@ -722,13 +725,13 @@ export class Note extends ContentVertex {
 
   childCardsDidMutate(
     local: boolean,
-    oldValue: Note[] | undefined
+    oldValue: Note[] | undefined,
   ): MutationPack {
     const oldChecked = computeCheckedForNote(
       this.type,
       this.status,
       this.tags,
-      oldValue
+      oldValue,
     );
     if (oldChecked !== this.isChecked) {
       return ['isChecked', local, oldChecked];
@@ -738,7 +741,7 @@ export class Note extends ContentVertex {
   childStatusDidMutate(
     local: boolean,
     oldValue: NoteStatus,
-    child: Note
+    child: Note,
   ): MutationPack {
     if (this.type === NoteType.Note) {
       return ['isChecked', local, oldValue];
@@ -755,7 +758,7 @@ function computeCheckedForNote(
   type: NoteType,
   status: NoteStatus | undefined,
   tags: Dictionary<Tag, Tag> | undefined,
-  childCards: Note[] | undefined
+  childCards: Note[] | undefined,
 ): boolean {
   if (status === NoteStatus.Checked) {
     return true;
@@ -786,7 +789,7 @@ function computeCheckedForNote(
           child.type,
           child.status,
           child.tags,
-          child.childCards
+          child.childCards,
         )
       ) {
         return false;
@@ -872,29 +875,29 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   title: triggerParent(
     'childTitleDidMutate',
     'Note_title',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
   isDeleted: triggerParent(
     'childNoteIsDeletedDidMutate',
     'Note_isDeleted',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
   parentNote: triggerParent(
     'childParentNoteDidMutate',
     'Note_parentNote',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
   type: triggerChildren(
     'parentNoteTypeDidMutate',
     'Note_type',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
   status: triggerParent(
     'childStatusDidMutate',
     'Note_status',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
   dueDate: triggerChildren('parentDueDateChanged', 'Note_dueDate', {
     namespace: SchemeNamespace.NOTES,
@@ -909,7 +912,7 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   assignees: triggerChildren(
     'parentAssigneesDidMutate',
     'Note_assignees',
-    SchemeNamespace.NOTES
+    SchemeNamespace.NOTES,
   ),
 };
 

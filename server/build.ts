@@ -16,9 +16,12 @@ interface Arguments {
   linux?: boolean;
   control?: boolean;
   both?: boolean;
+  beta?: boolean;
+  release?: boolean;
 }
 
-type BuildTarget = 'server' | 'control';
+export type BuildTarget = 'server' | 'control';
+export type BuildChannel = 'alpha' | 'beta';
 
 async function compressFile(srcPath: string, dstPath: string): Promise<void> {
   const src = await Deno.open(srcPath, { read: true, write: false });
@@ -78,8 +81,11 @@ async function putS3Object(uploadPath: string): Promise<boolean> {
 export function outputFileName(
   target: BuildTarget,
   deployment: boolean,
+  channel?: BuildChannel,
 ): string {
-  return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}`;
+  return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}${
+    channel ? '-' + channel : ''
+  }`;
 }
 
 async function hashFile(
@@ -106,11 +112,12 @@ async function build(
   upload: boolean,
   linux: boolean,
   target: BuildTarget,
+  channel?: BuildChannel,
 ): Promise<void> {
   console.log(
     `Generating ${target} executable for ${linux ? 'linux' : Deno.build.os}...`,
   );
-  const fileName = outputFileName(target, linux);
+  const fileName = outputFileName(target, linux, channel);
   const outputDir = path.join(repoPath, 'build');
   const binaryOutputPath = path.join(outputDir, fileName);
   Deno.chdir(repoPath);
@@ -171,6 +178,16 @@ async function main(): Promise<void> {
       default: false,
       description: `If supplied, will build both server and control binaries`,
     })
+    .option('beta', {
+      type: 'boolean',
+      default: false,
+      description: `If supplied, will generate beta channel build`,
+    })
+    .option('release', {
+      type: 'boolean',
+      default: false,
+      description: `If supplied, will generate release channel build`,
+    })
     .parse();
   console.log(`Building based on version ${tuple4ToString(VCurrent)}`);
   const repoPath = await getRepositoryPath();
@@ -183,6 +200,12 @@ async function main(): Promise<void> {
   if (!controlBuild) {
     await defaultAssetsBuild();
   }
+  let channel: BuildChannel | undefined;
+  if (args?.beta === true) {
+    channel = 'beta';
+  } else if (args?.release !== true) {
+    channel = 'alpha';
+  }
   if (args?.both === true) {
     await Promise.all([
       build(
@@ -190,12 +213,14 @@ async function main(): Promise<void> {
         args?.upload === true,
         args?.linux === true,
         'server',
+        channel,
       ),
       build(
         repoPath,
         args?.upload === true,
         args?.linux === true,
         'control',
+        channel,
       ),
     ]);
   } else {
@@ -204,6 +229,7 @@ async function main(): Promise<void> {
       args?.upload === true,
       args?.linux === true,
       controlBuild ? 'control' : 'server',
+      channel,
     );
   }
 }
