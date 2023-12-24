@@ -10,16 +10,8 @@ export function WsGeneralSettings() {
   const styles = tabsStyles();
   const graph = useGraphManager();
   const mgr = graph.getVertexManager<View>('ViewWsSettings');
-  const partialView = usePartialVertex(mgr, ['selectedSettingsWorkspaces']);
-  const ws = [...partialView.selectedSettingsWorkspaces][0];
-
-  // useEffect(() => {
-  //   console.log(
-  //     'Selected Workspace Changed:',
-  //     partialView.selectedSettingsWorkspaces
-  //   );
-  //   // Optional: force a state update if necessary
-  // }, [partialView.selectedSettingsWorkspaces]);
+  const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
+  const ws = [...partialView.selectedWorkspaces][0];
 
   return (
     <div className={cn(styles.barRow)}>

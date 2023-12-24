@@ -24,7 +24,7 @@ import { CoreValue } from '../../../../base/core-types/base.ts';
 export const kViewPropsGlobal: readonly (keyof View)[] = [
   'workspaceGrouping',
   'selectedWorkspaces',
-  'selectedSettingsWorkspaces', // new, added 24.12
+  // 'selectedSettingsWorkspaces', // new, added 24.12
   'expandedWorkspaceGroups',
   'workspaceBarCollapsed',
   'noteType',
@@ -206,32 +206,32 @@ export class View extends BaseVertex {
 
   // New, added 24.12 .------------------------------------------------------------v
 
-  get selectedSettingsWorkspaces(): Set<Workspace> {
-    if (this.parentView) {
-      return this.parentView.proxy.selectedSettingsWorkspaces;
-    }
-    return this.vertSetForField('selectedSettingsWorkspaces');
-  }
+  // get selectedSettingsWorkspaces(): Set<Workspace> {
+  //   if (this.parentView) {
+  //     return this.parentView.proxy.selectedSettingsWorkspaces;
+  //   }
+  //   return this.vertSetForField('selectedSettingsWorkspaces');
+  // }
 
-  set selectedSettingsWorkspaces(ws: Set<Workspace>) {
-    if (this.parentView) {
-      // If there's a parent view, delegate the operation to the parent view's proxy
-      this.parentView.proxy.selectedSettingsWorkspaces = ws;
-      return;
-    }
-    // Clear the current selection before setting the new one
-    if (ws.size > 0) {
-      const workspace = ws.values().next().value; // Get the first workspace from the set
-      this.record.set(
-        'selectedSettingsWorkspaces',
-        SetUtils.map(new Set([workspace]), (ws) => ws.key)
-      );
-    } else {
-      // If the incoming set is empty, clear the selection
-      this.record.delete('selectedSettingsWorkspaces');
-    }
-  }
-  //.------------------------------------------------------------\
+  // set selectedSettingsWorkspaces(ws: Set<Workspace>) {
+  //   if (this.parentView) {
+  //     // If there's a parent view, delegate the operation to the parent view's proxy
+  //     this.parentView.proxy.selectedSettingsWorkspaces = ws;
+  //     return;
+  //   }
+  //   // Clear the current selection before setting the new one
+  //   if (ws.size > 0) {
+  //     const workspace = ws.values().next().value; // Get the first workspace from the set
+  //     this.record.set(
+  //       'selectedSettingsWorkspaces',
+  //       SetUtils.map(new Set([workspace]), (ws) => ws.key)
+  //     );
+  //   } else {
+  //     // If the incoming set is empty, clear the selection
+  //     this.record.delete('selectedSettingsWorkspaces');
+  //   }
+  // }
+  // //.------------------------------------------------------------\
 
   get expandedWorkspaceGroups(): Set<string> {
     if (this.parentView) {

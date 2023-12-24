@@ -25,15 +25,15 @@ export function CategorySettings(props: CategorySettingsProps) {
   const { category } = useParams<{ category: string }>();
   const graph = useGraphManager();
   const mgr = graph.getVertexManager<View>('ViewWsSettings');
-  const partialView = usePartialVertex(mgr, ['selectedSettingsWorkspaces']);
-  const ws = [...partialView.selectedSettingsWorkspaces][0];
+  const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
+  const ws = [...partialView.selectedWorkspaces][0];
 
   return (
     <div className={styles.root}>
       <div className={cn(styles.bar, className)}>
         {category === 'workspaces-info' ? (
           <div className={styles.wsBar}>
-            <WorkspacesBar key={'wssettingsbar'} ofSettings={true} />
+            <WorkspacesBar key={'wsbar'} ofSettings={true} />
             <div>
               <div className={cn(styles.dialogHeader)}>
                 {strings[category]}

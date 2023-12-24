@@ -67,6 +67,7 @@ import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import propTypes1581 from 'https://esm.sh/prop-types@15.8.1';
+import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -550,8 +551,8 @@ function WorkspaceToggleView({
   const view = usePartialGlobalView(
     'workspaceGrouping',
     'workspaceBarCollapsed',
-    'selectedWorkspaces',
-    'selectedSettingsWorkspaces' // ADDED 24.12
+    'selectedWorkspaces'
+    // 'selectedSettingsWorkspaces' // ADDED 24.12
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
@@ -675,12 +676,17 @@ function WorkspaceListItem({
   ]);
   const styles = useStyles();
   const strings = useStrings();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const view = usePartialGlobalView(
+  // const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const graph = useGraphManager();
+  const mgr = ofSettings
+    ? graph.getVertexManager<View>('ViewWsSettings')
+    : graph.getVertexManager<View>('ViewGlobal');
+
+  const view = usePartialVertex(mgr, [
     'workspaceBarCollapsed',
     'selectedWorkspaces',
-    'selectedSettingsWorkspaces'
-  );
+  ]);
+
   const user = usePartialVertex(useRootUser(), [
     'hiddenWorkspaces',
     'pinnedWorkspaces',
@@ -694,13 +700,14 @@ function WorkspaceListItem({
     }),
     [color]
   );
-  const graph = useGraphManager();
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
 
-  const isSelected = ofSettings
-    ? view.selectedSettingsWorkspaces.has(workspace.getVertexProxy())
-    : view.selectedWorkspaces.has(workspace.getVertexProxy());
+  // let isSelected = false; // Initialize isSelected to false
+  // if (view.selectedWorkspaces && view.selectedWorkspaces.size > 0) {
+  //   isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
+  // }
+  const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
 
   useEffect(() => {
     if (isSelected) {
@@ -723,28 +730,6 @@ function WorkspaceListItem({
     []
   );
 
-  // const setWorkspaceState = useCallback(
-  //   (state: 'template' | 'hidden' | 'pinned' | 'none') => {
-  //     const vert = workspace.getVertexProxy();
-  //     vert.isTemplate = state === 'template';
-  //     user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
-  //     user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
-  //     if (state === 'template' || state === 'hidden') {
-  //       const selectedSet = ofSettings
-  //         ? view.selectedSettingsWorkspaces
-  //         : view.selectedWorkspaces;
-  //       selectedSet.delete(vert);
-  //     }
-  //   },
-  //   [
-  //     user.hiddenWorkspaces,
-  //     user.pinnedWorkspaces,
-  //     view.selectedWorkspaces,
-  //     view.selectedSettingsWorkspaces,
-  //     workspace,
-  //     ofSettings,
-  //   ]
-  // );
   const setWorkspaceState = useCallback(
     (state: 'template' | 'hidden' | 'pinned' | 'none') => {
       const vert = workspace.getVertexProxy();
@@ -760,17 +745,18 @@ function WorkspaceListItem({
       user.pinnedWorkspaces,
       view.selectedWorkspaces,
       workspace,
+      ofSettings,
     ]
   );
-  // const toggleSelected = useCallback(() => {
-  //   const selectedWorkspaces = view.selectedWorkspaces;
-  //   const vert = workspace.getVertexProxy();
-  //   if (selectedWorkspaces.has(vert)) {
-  //     selectedWorkspaces.delete(vert);
-  //   } else {
-  //     selectedWorkspaces.add(vert);
-  //   }
-  // }, [view, workspace]);
+  const toggleSelected = useCallback(() => {
+    const selectedWorkspaces = view.selectedWorkspaces;
+    const vert = workspace.getVertexProxy();
+    if (selectedWorkspaces.has(vert)) {
+      selectedWorkspaces.delete(vert);
+    } else {
+      selectedWorkspaces.add(vert);
+    }
+  }, [view, workspace]);
 
   // const toggleSelected = useCallback(() => {
   //   const selectedWorkspaces = ofSettings
@@ -788,20 +774,20 @@ function WorkspaceListItem({
   //   }
   // }, [view, workspace, ofSettings]);
 
-  const toggleSelected = useCallback(() => {
-    const selectedSet = ofSettings
-      ? view.selectedSettingsWorkspaces
-      : view.selectedWorkspaces;
-    const vert = workspace.getVertexProxy();
-    if (selectedSet.has(vert)) {
-      selectedSet.delete(vert);
-    } else {
-      if (ofSettings) {
-        selectedSet.clear();
-      }
-      selectedSet.add(vert);
-    }
-  }, [view, workspace, ofSettings]);
+  // const toggleSelected = useCallback(() => {
+  //   const selectedSet = ofSettings
+  //     ? view.selectedSettingsWorkspaces
+  //     : view.selectedWorkspaces;
+  //   const vert = workspace.getVertexProxy();
+  //   if (selectedSet.has(vert)) {
+  //     selectedSet.delete(vert);
+  //   } else {
+  //     if (ofSettings) {
+  //       selectedSet.clear();
+  //     }
+  //     selectedSet.add(vert);
+  //   }
+  // }, [view, workspace, ofSettings]);
 
   return (
     <div
@@ -1033,8 +1019,8 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   const view = usePartialGlobalView(
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'selectedWorkspaces',
-    'selectedSettingsWorkspaces' // ADDED 24.12
+    'selectedWorkspaces'
+    // 'selectedSettingsWorkspaces' // ADDED 24.12
   );
 
   const toggleExpanded = useCallback(
@@ -1197,7 +1183,7 @@ function WorkspaceBarInternal({
   const logger = useLogger();
   const activeViewMgr = useActiveViewManager();
   const view = usePartialGlobalView(
-    'selectedSettingsWorkspaces', // ADDED 24.12
+    // 'selectedSettingsWorkspaces', // ADDED 24.12
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',

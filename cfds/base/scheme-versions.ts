@@ -242,7 +242,7 @@ const SCHEME_VIEW_1 = SCHEME_BASE_1.derive(NS_VIEWS, {
 
   // Screen-level settings
   selectedSettingsTab: TYPE_STR, //ADDED 12.11
-  selectedSettingsWorkspaces: TYPE_STR, //ADDED 24.12
+  // selectedSettingsWorkspaces: TYPE_STR, //ADDED 24.12
   selectedTab: TYPE_STR,
   noteType: TYPE_STR,
   workspaceGrouping: TYPE_STR,
