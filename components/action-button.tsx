@@ -13,7 +13,7 @@ const useStyles = makeStyles(() => ({
     borderStyle: 'solid',
     borderWidth: 1,
     color: theme.mono.m0,
-    padding: `${styleguide.gridbase / 2}px ${styleguide.gridbase}px`,
+    padding: `${styleguide.gridbase / 2}px ${styleguide.gridbase * 2}px`,
   },
   disabled: {
     borderColor: theme.primary.p5,

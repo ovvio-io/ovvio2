@@ -4,13 +4,20 @@ import { resolveWritingDirection } from '../base/string.ts';
 import { formatTimeDiff } from '../base/date.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
-import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  useVertices,
+} from '../web-app/src/core/cfds/react/vertex.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { Text, TextSm } from '../styles/components/typography.tsx';
 import { WorkspaceIndicator } from '../components/workspace-indicator.tsx';
 import { ActionButton } from '../components/action-button.tsx';
+import Menu, { MenuItem } from '../styles/components/menu.tsx';
+import { WorkspaceItem } from '../web-app/src/app/new-workspace/workspaces-dropdown.tsx';
+import { SelectWorkspaceMenu } from '../web-app/src/app/workspace-content/workspace-view/cards-display/card-item/workspace-indicator.tsx';
+import { usePartialGlobalView } from '../web-app/src/core/cfds/react/graph.tsx';
 
 export const HEADER_HEIGHT = styleguide.gridbase * 24;
 
@@ -146,6 +153,40 @@ function EditorBreadCrumbs({ note }: EditorBreadCrumbsProps) {
   );
 }
 
+export interface PublishButtonProps {
+  note: VertexManager<Note>;
+}
+
+function PublishButton({ note }: PublishButtonProps) {
+  const styles = useStyles();
+  const partialNote = usePartialVertex(note, ['workspace']);
+
+  return partialNote.workspace.key.endsWith('-ws')
+    ? (
+      <Menu
+        renderButton={() => (
+          <ActionButton
+            className={cn(styles.shareButton)}
+            icon='/icons/editor/share.svg'
+          >
+            Publish
+          </ActionButton>
+        )}
+        position='bottom'
+        align='center'
+        direction='out'
+        // popupClassName={cn(styles.workspacesList)}
+      >
+        <SelectWorkspaceMenu
+          onChange={(ws) =>
+            note.getVertexProxy().workspace = ws.getVertexProxy()}
+          value={undefined}
+        />
+      </Menu>
+    )
+    : null;
+}
+
 export interface EditorHeaderProps {
   note: VertexManager<Note>;
   onFocusOnEditor: () => void;
@@ -180,12 +221,7 @@ export function EditorHeader({ note, onFocusOnEditor }: EditorHeaderProps) {
     <div className={cn(styles.header)} key='EditorHeaderDiv'>
       <EditorBreadCrumbs note={note} />
       <div className={cn(styles.headerMainActions)} key='EditorHeaderActions'>
-        <ActionButton
-          className={cn(styles.shareButton)}
-          icon='/icons/editor/share.svg'
-        >
-          Publish
-        </ActionButton>
+        <PublishButton note={note} />
         <img
           key='ExitEditorAction'
           className={cn(styles.headerMainActionButton)}

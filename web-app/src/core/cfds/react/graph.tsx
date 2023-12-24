@@ -119,7 +119,6 @@ export function CfdsClientProvider({
       name: 'My Workspace',
     },
     `${graphManager.rootKey}-ws`,
-    true,
   );
   // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
   const globalView = graphManager.createVertex<View>(

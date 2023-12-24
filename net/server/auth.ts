@@ -6,7 +6,6 @@ import {
   OwnedSession,
   Session,
   SESSION_CRYPTO_KEY_GEN_PARAMS,
-  sessionFromRecord,
   sessionIdFromSignature,
   sessionToRecord,
   signData,
@@ -24,10 +23,10 @@ import { getBaseURL, getRequestPath } from './utils.ts';
 import { Scheme } from '../../cfds/base/scheme.ts';
 import { normalizeEmail } from '../../base/string.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
-import { accessDenied, Code, ServerError } from '../../cfds/base/errors.ts';
+import { accessDenied } from '../../cfds/base/errors.ts';
 import { copyToClipboard } from '../../base/development.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
-import { MemRepoStorage, Repository, RepoStorage } from '../../repo/repo.ts';
+import { MemRepoStorage, Repository } from '../../repo/repo.ts';
 import { SysDirIndexes } from './sync.ts';
 
 export const kAuthEndpointPaths = [

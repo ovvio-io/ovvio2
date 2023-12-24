@@ -157,9 +157,35 @@ export class VertexManager<V extends Vertex = Vertex>
     return this._record;
   }
 
+  set record(newRecord: Record) {
+    const prevRecord = this.record;
+    if (prevRecord.isEqual(newRecord)) {
+      return;
+    }
+    const vert = this.getVertexProxy();
+    let pack: MutationPack;
+    for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
+      pack = mutationPackAppend(pack, [
+        fieldName,
+        false,
+        (vert as any)[fieldName],
+      ]);
+    }
+    const dynamicFields = this.captureDynamicFields();
+    this._record = newRecord;
+    this.rebuildVertex();
+    pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
+    if (!mutationPackIsEmpty(pack)) {
+      this.vertexDidMutate(pack, dynamicFields);
+    }
+  }
+
   get repositoryId(): string | undefined {
     const rec = this.record;
-    return rec.isNull ? undefined : repositoryForRecord(this.key, this.record);
+    const repo = rec.isNull
+      ? undefined
+      : repositoryForRecord(this.key, this.record);
+    return repo || this.graph.repositoryForKey(this.key)[0];
   }
 
   get repository(): Repository<MemRepoStorage> | undefined {
@@ -281,6 +307,9 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.isLocal) {
       return;
     }
+    if (this.graph.builtinVertexKeys().includes(this.key)) {
+      return;
+    }
     if (!this.graph.repositoryReady(this.repositoryId)) {
       this.touch();
       return;
@@ -317,27 +346,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const prevRecord = this.record;
-    const newRecord = repo.valueForKey(this.key);
-    if (prevRecord.isEqual(newRecord)) {
-      return;
-    }
-    const vert = this.getVertexProxy();
-    let pack: MutationPack;
-    for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
-      pack = mutationPackAppend(pack, [
-        fieldName,
-        (vert as any)[fieldName],
-        false,
-      ]);
-    }
-    const dynamicFields = this.captureDynamicFields();
-    this._record = newRecord;
-    this.rebuildVertex();
-    pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
-    if (!mutationPackIsEmpty(pack)) {
-      this.vertexDidMutate(pack, dynamicFields);
-    }
+    this.record = repo.valueForKey(this.key);
   }
 
   scheduleCommitIfNeeded(): void {

@@ -104,7 +104,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   private _prevClientStatus: ClientStatus = 'offline';
 
   constructor(trustPool: TrustPool, baseServerUrl?: string) {
-    super();
+    super(undefined, true);
     this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
@@ -361,7 +361,13 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       return false;
     }
     id = Repository.normalizeId(id);
-    return this._repoById.get(id)?.loadingFinished === true;
+    const plumbing = this.plumbingForRepository(id);
+    if (
+      plumbing?.loadingFinished === true && plumbing.repo.numberOfCommits() > 0
+    ) {
+      return true;
+    }
+    return plumbing?.syncFinished === true;
   }
 
   repositoryForKey(
@@ -497,6 +503,18 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     return query as unknown as Query<IT, OT, GT>;
   }
 
+  builtinVertexKeys(): string[] {
+    const rootKey = this.rootKey;
+    return [
+      'ViewGlobal',
+      'ViewTasks',
+      'ViewNotes',
+      'ViewOverview',
+      'ViewWsSettings',
+      `${rootKey}-ws`,
+    ];
+  }
+
   private _createVertIfNeeded<V extends Vertex = Vertex>(
     key: string,
     ns?: SchemeNamespace,
@@ -504,6 +522,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     local = false,
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
+
     if (mgr === undefined) {
       const scheme = ns !== undefined
         ? SchemeManager.instance.getScheme(ns)
@@ -514,9 +533,22 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
           data: initialData!,
         })
         : undefined;
-      mgr = new VertexManager(this, key, record, local);
+      mgr = new VertexManager(
+        this,
+        key,
+        record,
+        local,
+      );
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
+    } else if (mgr.scheme.isNull && initialData && ns) {
+      const scheme = SchemeManager.instance.getScheme(ns);
+      assert(scheme !== undefined);
+      const record = new Record({
+        scheme: scheme,
+        data: initialData!,
+      });
+      mgr.record = record;
     }
     return mgr as VertexManager<V>;
   }
