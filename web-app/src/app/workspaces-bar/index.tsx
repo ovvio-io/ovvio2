@@ -676,7 +676,7 @@ function WorkspaceListItem({
   ]);
   const styles = useStyles();
   const strings = useStrings();
-  // const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const graph = useGraphManager();
   const mgr = ofSettings
     ? graph.getVertexManager<View>('ViewWsSettings')
@@ -748,46 +748,26 @@ function WorkspaceListItem({
       ofSettings,
     ]
   );
+
   const toggleSelected = useCallback(() => {
     const selectedWorkspaces = view.selectedWorkspaces;
     const vert = workspace.getVertexProxy();
-    if (selectedWorkspaces.has(vert)) {
-      selectedWorkspaces.delete(vert);
+
+    if (ofSettings) {
+      if (!selectedWorkspaces.has(vert)) {
+        selectedWorkspaces.clear();
+        selectedWorkspaces.add(vert);
+      } else {
+        selectedWorkspaces.delete(vert);
+      }
     } else {
-      selectedWorkspaces.add(vert);
+      if (selectedWorkspaces.has(vert)) {
+        selectedWorkspaces.delete(vert);
+      } else {
+        selectedWorkspaces.add(vert);
+      }
     }
   }, [view, workspace]);
-
-  // const toggleSelected = useCallback(() => {
-  //   const selectedWorkspaces = ofSettings
-  //     ? view.selectedSettingsWorkspaces
-  //     : view.selectedWorkspaces;
-  //   const vert = workspace.getVertexProxy();
-  //   if (selectedWorkspaces.has(vert)) {
-  //     selectedWorkspaces.delete(vert);
-  //   } else {
-  //     // Ensure that only one workspace can be selected in settings context
-  //     if (ofSettings) {
-  //       selectedWorkspaces.clear();
-  //     }
-  //     selectedWorkspaces.add(vert);
-  //   }
-  // }, [view, workspace, ofSettings]);
-
-  // const toggleSelected = useCallback(() => {
-  //   const selectedSet = ofSettings
-  //     ? view.selectedSettingsWorkspaces
-  //     : view.selectedWorkspaces;
-  //   const vert = workspace.getVertexProxy();
-  //   if (selectedSet.has(vert)) {
-  //     selectedSet.delete(vert);
-  //   } else {
-  //     if (ofSettings) {
-  //       selectedSet.clear();
-  //     }
-  //     selectedSet.add(vert);
-  //   }
-  // }, [view, workspace, ofSettings]);
 
   return (
     <div
