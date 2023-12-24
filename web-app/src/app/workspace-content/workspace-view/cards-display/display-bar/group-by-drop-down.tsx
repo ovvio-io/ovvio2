@@ -7,8 +7,8 @@ import Menu, {
 } from '../../../../../../../styles/components/menu.tsx';
 import { IconGroup } from '../../../../../../../styles/components/new-icons/icon-group.tsx';
 import {
-  makeStyles,
   cn,
+  makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
@@ -18,7 +18,9 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import localization from '../cards-display.strings.json' assert { type: 'json' };
+import localization from '../cards-display.strings.json' assert {
+  type: 'json',
+};
 
 const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {
@@ -41,7 +43,7 @@ export function GroupByDropDown() {
     'groupBy',
     'pivot',
     'selectedWorkspaces',
-    'noteType'
+    'noteType',
   );
   const parentTagsByName = useSharedQuery('parentTagsByName');
   const parentNames = parentTagsByName.groups().filter((gid) => {
@@ -64,12 +66,9 @@ export function GroupByDropDown() {
     delete view.pivot;
   };
   const renderButton = useCallback(() => {
-    const content =
-      view.groupBy === 'tag' ? (
-        <Text>{view.pivot}</Text>
-      ) : (
-        <Text>{strings[view.groupBy]}</Text>
-      );
+    const content = view.groupBy === 'tag'
+      ? <Text>{view.pivot}</Text>
+      : <Text>{strings[view.groupBy]}</Text>;
 
     return (
       <div className={cn(styles.dropDownButton)}>
@@ -87,7 +86,7 @@ export function GroupByDropDown() {
   const setTag = useCallback(
     (tagName: string) => {
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'FilterChange',
         groupBy: 'tag',
         source: 'toolbar:groupBy',
@@ -96,16 +95,15 @@ export function GroupByDropDown() {
       view.groupBy = 'tag';
       view.pivot = tagName;
     },
-    [logger, view]
+    [logger, view],
   );
 
-  const parentNoteGrouping =
-    view.noteType === NoteType.Task ? (
-      <MenuItem onClick={() => setGroup('note')}>{strings.parentNote}</MenuItem>
-    ) : null;
+  const parentNoteGrouping = view.noteType === NoteType.Task
+    ? <MenuItem onClick={() => setGroup('note')}>{strings.parentNote}</MenuItem>
+    : null;
 
   return (
-    <Menu renderButton={renderButton} align="start">
+    <Menu renderButton={renderButton} align='start' position='bottom'>
       <MenuItem onClick={() => setGroup('workspace')}>
         {strings.workspace}
       </MenuItem>
@@ -116,9 +114,9 @@ export function GroupByDropDown() {
       {parentNoteGrouping}
       <SecondaryMenuItem text={strings.groupByTag}>
         {parentNames.map((name) =>
-          name === 'Status' ? null : (
-            <MenuItem onClick={() => setTag(name!)}>{name}</MenuItem>
-          )
+          name === 'Status'
+            ? null
+            : <MenuItem onClick={() => setTag(name!)}>{name}</MenuItem>
         )}
       </SecondaryMenuItem>
     </Menu>
