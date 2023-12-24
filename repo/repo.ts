@@ -133,8 +133,8 @@ export class Repository<
       let count = 0;
       for (const _ of this.commits(session)) {
         ++count;
-        return count;
       }
+      return count;
     }
     return this.storage.numberOfCommits();
   }
