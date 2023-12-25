@@ -6,7 +6,10 @@ import {
 } from '../../../../../cfds/base/scheme-types.ts';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
-import { usePartialView } from '../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialView,
+} from '../../../core/cfds/react/graph.tsx';
 import {
   TabButton,
   TabsHeader,
@@ -16,6 +19,8 @@ import { makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { useNavigate, useParams } from 'react-router';
 import { SettingsTabPlugin } from './plugins-list.tsx';
 import { EmptyState } from '../../workspace-content/workspace-view/empty-state/index.tsx';
+import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
+import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -79,11 +84,12 @@ function TabView({ category }: any) {
   const styles = useStyles();
   const strings = useStrings();
   const navigate = useNavigate();
-  const view = usePartialView(
-    'selectedSettingsTabId',
+  const graph = useGraphManager();
+  const mgr = graph.getVertexManager<View>('ViewWsSettings');
+  const view = usePartialVertex(mgr, [
     'selectedWorkspaces',
-    'selectedSettingsWorkspaces'
-  );
+    'selectedSettingsTabId',
+  ]);
   const { routeCategory, routeTab } = useParams<{
     routeCategory: string;
     routeTab: SettingsTabId;

@@ -8,7 +8,6 @@ import {
   UserPill,
 } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 
 type Step1Props = {
   setStep: (step: number) => void;

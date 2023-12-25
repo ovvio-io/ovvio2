@@ -37,7 +37,6 @@ export function CategorySettings(props: CategorySettingsProps) {
             <div>
               <div className={cn(styles.dialogHeader)}>
                 {strings[category]}
-                {/* {strings[category + 'S']} */}
                 {ws && <WorkspaceIndicator key={ws.key} workspace={ws} />}
               </div>
               <div className={cn(styles.barRow, styles.viewRow)}>

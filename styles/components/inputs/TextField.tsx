@@ -13,7 +13,7 @@ const useStyles = makeStyles(() => ({
     // lineHeight: 16,
     borderStyle: 'solid',
     borderWidth: 1,
-    borderColor: theme.primary.p9,
+    borderColor: theme.primary.p5,
     outline: 'none',
     fontFamily: FontFamily,
     padding: [styleguide.gridbase, styleguide.gridbase * 2],

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
@@ -6,9 +6,14 @@ import { useTypographyStyles } from '../../../../../styles/components/typography
 import { layout } from '../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../styles/responsive.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
-import { useVertexByKey } from '../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  useVertexByKey,
+} from '../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -267,11 +272,7 @@ export function EditButton({ onEditClick }: EditButtonProps) {
   return (
     <Button onClick={onEditClick} className={cn(styles.compose, styles.blue)}>
       <div>
-        <img
-          key="EditUserSettings"
-          src="/icons/settings/Compose-white.svg"
-          onClick={() => {}}
-        />
+        <img key="EditUserSettings" src="/icons/settings/Compose-white.svg" />
         <span className={cn(styles.textWhite)}>{'Edit'}</span>
       </div>
     </Button>
@@ -308,3 +309,52 @@ export const UserPill: React.FC<UserPillProps> = ({
     </div>
   );
 };
+
+interface DeleteWsButtonProps {
+  onDeleteClick: () => void;
+  disabled: boolean;
+  className: any;
+}
+
+export function DeleteWsButton({
+  onDeleteClick,
+  disabled,
+  className,
+}: DeleteWsButtonProps) {
+  const isDisabled = disabled;
+  const styles = useStyles();
+
+  return (
+    <Button
+      onClick={isDisabled ? undefined : onDeleteClick}
+      className={cn(
+        styles.compose,
+        className,
+
+        isDisabled ? styles.disabled : styles.available
+      )}
+    >
+      <div>
+        <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
+        <span className={cn(styles.text)}>{'Delete Workspace'}</span>
+      </div>{' '}
+    </Button>
+  );
+}
+
+interface AddUserButtonProps {
+  onAddClick?: () => void;
+}
+
+export function AddUserButton({ onAddClick }: AddUserButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onAddClick} className={cn(styles.compose, styles.blue)}>
+      <div>
+        <img key="AddUserSettings" src="/icons/settings/InviteWhite.svg" />
+        <span className={cn(styles.textWhite)}>{'Add'}</span>
+      </div>
+    </Button>
+  );
+}

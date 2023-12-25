@@ -21,7 +21,7 @@ export const tabsStyles = makeStyles(() => ({
     justifyContent: 'flex-end',
     alignItems: 'stretch',
     boxSizing: 'border-box',
-    basedOn: [layout.column, layout.flexSpacer], //check what layout.flexSpacer does
+    basedOn: [layout.column, layout.flexSpacer],
   },
   barRow: {
     padding: ['40px', 0],
@@ -42,11 +42,14 @@ export const tabsStyles = makeStyles(() => ({
     width: '100%',
     height: styleguide.gridbase * 14,
     boxSizing: 'border-box',
-    alignItems: 'center',
-    padding: [0, SIDES_PADDING],
-    basedOn: [layout.row],
+    padding: '32px 0px 0px 88px',
+    basedOn: [layout.column],
     fontWeight: '400',
     lineHeight: '24px',
     fontSize: '18px',
+  },
+  settingsFields: {
+    display: 'flex',
+    flexDirection: 'column',
   },
 }));

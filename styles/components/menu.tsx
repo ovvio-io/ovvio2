@@ -67,6 +67,7 @@ const useStyles = makeStyles((theme) => ({
   },
   actionText: {
     flexGrow: 1,
+    marginLeft: styleguide.gridbase,
   },
   menuButton: {
     userSelect: 'none',

@@ -65,8 +65,6 @@ import { IconHide } from '../../../../styles/components/new-icons/icon-hide.tsx'
 import { IconTemplateSet } from '../../../../styles/components/new-icons/icon-template-set.tsx';
 import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-template-unset.tsx';
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
-import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
-import propTypes1581 from 'https://esm.sh/prop-types@15.8.1';
 import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
@@ -702,11 +700,6 @@ function WorkspaceListItem({
   );
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
-
-  // let isSelected = false; // Initialize isSelected to false
-  // if (view.selectedWorkspaces && view.selectedWorkspaces.size > 0) {
-  //   isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
-  // }
   const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
 
   useEffect(() => {
@@ -1000,7 +993,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
     'selectedWorkspaces'
-    // 'selectedSettingsWorkspaces' // ADDED 24.12
   );
 
   const toggleExpanded = useCallback(
@@ -1021,6 +1013,21 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   if (!groups.includes('hidden')) {
     groups.push('hidden');
   }
+  // // Render "My Workspace" first
+  // const graph = useGraphManager();
+  // const personalWsKey = `${graph.rootKey}-ws`;
+  // const myWorkspace = query.vertices().find(ws => ws.key === personalWsKey);
+  // if (myWorkspace) {
+  //   contents.push(
+  //     <WorkspaceListItem
+  //       key={`wsbar/my-workspace/${myWorkspace.key}`}
+  //       workspace={myWorkspace}
+  //       groupId={null}
+  //       ofSettings={ofSettings}
+  //     />
+  //   );
+  //   contents.push(<div className={cn(styles.separator)} />); // Add the separator
+  // }
   for (const gid of query.groups()) {
     if (contents.length > 0) {
       contents.push(<div className={cn(styles.separator)} />);
@@ -1058,8 +1065,16 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         </Button>
       );
     }
+    const graph = useGraphManager();
+    const personalWsKey = `${graph.rootKey}-ws`;
+
     if (gid === 'pinned' || gid === null || expanded) {
-      for (const ws of rows) {
+      for (const ws of query.group(gid)) {
+        // Skip rendering "My Workspace" if ofSettings is true
+        if (ofSettings && ws.key === personalWsKey) {
+          continue;
+        }
+
         contents.push(
           <WorkspaceListItem
             key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
@@ -1070,6 +1085,27 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             ofSettings={ofSettings}
           />
         );
+
+        // // Render "My Workspace" first if ofSettings is false
+        // if (!ofSettings) {
+        //   const myWorkspaceVM = query
+        //     .vertices()
+        //     .find((ws) => ws.key === personalWsKey);
+        //   if (myWorkspaceVM) {
+        //     contents.push(
+        //       <WorkspaceListItem
+        //         key={`wsbar/my-workspace/${myWorkspaceVM.key}`}
+        //         workspace={myWorkspaceVM}
+        //         groupId={null}
+        //         ofSettings={ofSettings}
+        //       />
+        //     );
+        //   }
+        // }
+
+        if (ws.key === personalWsKey) {
+          contents.push(<div className={cn(styles.separator)} />);
+        }
       }
     }
   }
