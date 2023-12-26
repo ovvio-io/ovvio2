@@ -94,10 +94,12 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       }
     };
   }, [scrollToUser, setScrollToUser]);
+
   const handleSaveEditClick = () => {
     onSave();
     setStep(0);
   };
+
   const onSave = useCallback(() => {
     if (name !== null && email !== null) {
       if (name.trim() === '' || email.trim() === '') {

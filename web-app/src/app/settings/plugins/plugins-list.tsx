@@ -6,6 +6,9 @@ import SettingsField from '../components/settings-field.tsx';
 import { cn } from '../../../../../styles/css-objects/index.ts';
 import MembersTabContent from './organization/members/base.tsx';
 import { WsGeneralSettings } from './my-workspaces/ws-general.tsx';
+import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { useVertices } from '../../../core/cfds/react/vertex.ts';
+import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -109,12 +112,19 @@ export function DetailsTabContent() {
   );
 }
 export function GeneralOrgTabContent() {
+  const usersQuery = useSharedQuery('users');
+  const users = useVertices(usersQuery.results) as User[];
   const styles = tabsStyles();
+
   return (
     <div className={cn(styles.barRow)}>
       <SettingsField title="Org. Name" value="Ovvio" toggle="label" />
       <SettingsField title="Org. URL" value="www.ovvio.io" toggle="label" />
-      <SettingsField title="Members" value="356 users" toggle="label" />
+      <SettingsField
+        title="Members"
+        value={`${users.length} users`}
+        toggle="label"
+      />
     </div>
   );
 }

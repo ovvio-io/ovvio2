@@ -3,7 +3,10 @@ import { tabsStyles } from '../../components/tabs-style.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
 import SettingsField from '../../components/settings-field.tsx';
 import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
-import { usePartialVertex } from '../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  useVertices,
+} from '../../../../core/cfds/react/vertex.ts';
 import { View } from '../../../../../../cfds/client/graph/vertices/view.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
@@ -27,6 +30,10 @@ import SelectionButton, {
 } from '../../../../shared/selection-button/index.tsx';
 import { UISource } from '../../../../../../logging/client-events.ts';
 import { suggestResults } from '../../../../../../cfds/client/suggestions.ts';
+import { EmptyState } from '../../../workspace-content/workspace-view/empty-state/index.tsx';
+import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
+import UserTable from '../../components/user-table.tsx';
+import { IconMore } from '../../../../../../styles/components/new-icons/icon-more.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -136,10 +143,16 @@ const useStyles = makeStyles(() => ({
     width: '324px',
   },
 
+  hidden: {
+    display: 'none',
+  },
   //-----------------------------------------------------------------
   popup: {
     backgroundColor: theme.colors.background,
-    width: styleguide.gridbase * 16.5,
+    width: styleguide.gridbase * 21,
+    height: styleguide.gridbase * 20,
+    padding: '3px 2px 0px 2px',
+    flexShrink: 0,
     marginBottom: styleguide.gridbase * 2,
   },
 }));
@@ -153,38 +166,42 @@ export function WsGeneralSettings() {
   const wsV = usePartialVertex(ws);
   const wsManager = ws ? ws.manager : undefined;
 
-  const onWorkspaceDeleted = () => {
-    // closeDialog();
-  };
+  const onWorkspaceDeleted = () => {};
 
   return (
-    <div
-      className={cn(styles.barRow)}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        flexDirection: 'row',
-      }}
-    >
-      <div className={cn(styles.settingsFields)}>
-        <SettingsField
-          title="Workspace's Name"
-          toggle="editable"
-          value={wsV && wsV.name}
-          onChange={(newValue) => (wsV.name = newValue)}
-        />
-        <SettingsField
-          title="Description"
-          placeholder="Add a description of the project/client/etc."
-          toggle="editable"
-          value=""
-        />
-        <DeleteConfirmWsButton
-          wsMng={wsManager}
-          onDeleted={onWorkspaceDeleted}
-        />
-      </div>
-      <UsersList wsMng={wsManager} />
+    <div>
+      {wsManager ? (
+        <div
+          className={cn(styles.barRow)}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexDirection: 'row',
+          }}
+        >
+          <div className={cn(styles.settingsFields)}>
+            <SettingsField
+              title="Workspace's Name"
+              toggle="editable"
+              value={wsV && wsV.name}
+              onChange={(newValue) => (wsV.name = newValue)}
+            />
+            <SettingsField
+              title="Description"
+              placeholder="Add a description of the project/client/etc."
+              toggle="editable"
+              value=""
+            />
+            <DeleteConfirmWsButton
+              wsMng={wsManager}
+              onDeleted={onWorkspaceDeleted}
+            />
+          </div>
+          <UsersList wsMng={wsManager} />
+        </div>
+      ) : (
+        <EmptyState />
+      )}
     </div>
   );
 }
@@ -196,7 +213,24 @@ interface UserItemProps {
 }
 function UserItem({ user, userMng, removeUser }: UserItemProps) {
   const styles = useStyles();
+  const [showConfirmMenu, setShowConfirmMenu] = useState(false);
+  const confirmMenuRef = useRef(null);
+  const openConfirmMenu = () => {
+    // Open the menu using the ref
+    if (confirmMenuRef.current) {
+      confirmMenuRef.current.openMenu();
+    }
+    setShowConfirmMenu(true);
+  };
 
+  const renderButton = useCallback(
+    ({ isOpen }: { isOpen: boolean }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <img key="IconMoreSettings" src="/icons/settings/More.svg" />
+      </div>
+    ),
+    []
+  );
   interface ImageIconProps {
     width?: string;
     height?: string;
@@ -208,14 +242,24 @@ function UserItem({ user, userMng, removeUser }: UserItemProps) {
     return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
   };
 
-  const renderButton = useCallback(
-    ({ isOpen }: { isOpen: boolean }) => (
-      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
-        <img key="IconMoreSettings" src="/icons/settings/More.svg" />
-      </div>
-    ),
-    []
+  const renderRemoveConfirmMenu = () => (
+    <div className={showConfirmMenu ? '' : styles.hidden}>
+      <Menu
+        ref={confirmMenuRef}
+        renderButton={renderButton}
+        position="left"
+        align="start"
+        direction="out"
+      >
+        <div>
+          Remove from workspace?
+          <EditButton onEditClick={() => removeUser(userMng)} />
+          <EditButton onEditClick={() => setShowConfirmMenu(false)} />
+        </div>
+      </Menu>
+    </div>
   );
+
   return (
     <div className={cn(styles.user)}>
       <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
@@ -237,96 +281,97 @@ function UserItem({ user, userMng, removeUser }: UserItemProps) {
           text="Remove From Workspace"
           iconWidth="16px"
           iconHeight="16px"
-          onClick={() => removeUser(userMng)}
+          onClick={openConfirmMenu}
         />
       </Menu>
+      {renderRemoveConfirmMenu()}
     </div>
   );
 }
-// ------------------------------------------------------------------------------------
-interface RenderItemFunctionProps<T> {
-  item: T;
-  key?: string;
-}
 
-type RenderItemFunction<
-  T,
-  PT extends RenderItemFunctionProps<T> = RenderItemFunctionProps<T>
-> = (props: PT) => React.ReactNode;
+// function UserItem({ user, userMng, removeUser }: UserItemProps) {
+//   const styles = useStyles();
+
+//   interface ImageIconProps {
+//     width?: string;
+//     height?: string;
+//     src: string;
+//     alt?: string;
+//   }
+
+//   const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
+//     return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
+//   };
+
+//   const renderButton = useCallback(
+//     ({ isOpen }: { isOpen: boolean }) => (
+//       <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+//         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
+//       </div>
+//     ),
+//     []
+//   );
+//   return (
+//     <div className={cn(styles.user)}>
+//       <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
+//       <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
+//       <Menu
+//         renderButton={renderButton}
+//         position="left"
+//         align="start"
+//         direction="out"
+//       >
+//         <MenuAction
+//           IconComponent={(props: ImageIconProps) => (
+//             <ImageIcon
+//               {...props}
+//               src="/icons/settings/Delete.svg"
+//               alt="Delete"
+//             />
+//           )}
+//           text="Remove From Workspace"
+//           iconWidth="16px"
+//           iconHeight="16px"
+//           onClick={() => removeUser(userMng)}
+//         />
+//       </Menu>
+//     </div>
+//   );
+// }
+// ------------------------------------------------------------------------------------
 
 interface AddSelectionButtonProps<T> {
   className?: string;
-  children: MenuRenderButton;
-  onSelected: (item: T) => void;
-  trigger?: string;
-  getItems: (filter: string) => SelectionItem<T>[];
-  renderItem: RenderItemFunction<T>;
+  children?: MenuRenderButton;
+  onSelected?: (item: T) => void;
 }
 export default function AddSelectionButton<T>({
   className,
   children,
   onSelected,
-  renderItem,
-  getItems,
-  trigger = '',
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-
-  useEffect(() => {
-    if (users) {
-      const filtered = suggestResults(
-        searchTerm,
-        users,
-        (t) => t.name,
-        Number.MAX_SAFE_INTEGER
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [searchTerm, users]);
+  const usersQuery = useSharedQuery('users');
+  const users = useVertices(usersQuery.results) as User[];
 
   return (
     <Menu
-      renderButton={children}
+      renderButton={() => <AddUserButton />}
       position="right"
-      align="end"
+      align="start"
       direction="out"
       className={className}
-      style={style}
       popupClassName={cn(styles.popup)}
     >
-      <SelectionPopup
-        onSelected={onSelected}
-        trigger={trigger}
-        renderItem={renderItem}
-        getItems={getItems}
+      <UserTable
+        users={users}
+        onRowSelect={() => {}}
+        showSelection={false}
+        selectedUsers={new Set<string>()}
+        showSearch={true}
+        isEditable={false}
       />
     </Menu>
-  );
-}
-
-interface AddMemberToWsButtonProps {
-  workspaceManager: VertexManager<Workspace>;
-}
-
-export function AddMemberToWsButton({
-  workspaceManager,
-}: AddMemberToWsButtonProps) {
-  const styles = useStyles();
-  const inputRef = useRef();
-  const assignees = usePartialVertex(workspaceManager, ['assignees']); // check
-  const source: UISource = 'list';
-
-  const onClick = () => {
-    setIsDeleting(true);
-  };
-
-  return (
-    <div className={cn()}>
-      <AddSelectionButton source={source} onSelected={() => {}}>
-        {() => <EditButton />}{' '}
-      </AddSelectionButton>
-    </div>
   );
 }
 
@@ -428,11 +473,26 @@ function UsersList({ wsMng }: UsersListProps) {
     user.isDeleted = 1;
   };
 
+  // const removeUserStart = (userMng: VertexManager<User>) => {
+  //   return (
+  //     <Menu
+  //       renderButton={() => <IconMore />}
+  //       position="left"
+  //       align="start"
+  //       direction="out"
+  //     >
+  //       "Remove from workspace?"
+  //       <RemoveButton onClick={removeUser(userMng)} />
+  //       <CancleButton onClick={closeMenu} />
+  //     </Menu>
+  //   );
+  // };
+
   return (
     <div className={cn(styles.container)}>
       <div className={cn(styles.header)}>
         <div className={cn(styles.title)}>Workspace's members</div>
-        <AddUserButton />
+        <AddSelectionButton />
       </div>
       <div className={cn(styles.table)}>
         {Array.from(users).map((u: User) => (
