@@ -8,7 +8,6 @@ import { View } from '../../../../../../cfds/client/graph/vertices/view.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { User } from '../../../../../../cfds/client/graph/vertices/user.ts';
-import { IconMore } from '../../../../../../styles/components/new-icons/icon-more.tsx';
 import { brandLightTheme as theme } from '../../../../../../styles/theme.tsx';
 import Menu, {
   MenuAction,
@@ -171,7 +170,6 @@ export function WsGeneralSettings() {
           value={ws && ws.name}
           onChange={(newValue) => (ws.name = newValue)} //TODO: Fix
         />
-
         <SettingsField
           title="Description"
           placeholder="Add a description of the project/client/etc."

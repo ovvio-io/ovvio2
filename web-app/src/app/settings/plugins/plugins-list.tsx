@@ -60,19 +60,25 @@ export function GeneralTabContent() {
   const styles = tabsStyles();
   const userData = usePartialRootUser('name', 'email');
   return (
-    <div className={cn(styles.barRow)}>
-      <SettingsField
-        title="Full Name"
-        placeholder="Add you'r name"
-        value={userData.name}
-        toggle="editable"
-        onChange={(newValue) => (userData.name = newValue)}
-      />
-      <SettingsField
-        title="Email Address"
-        toggle="label"
-        value={userData.email}
-      />
+    <div>
+      <div className={cn(styles.barRow)}>
+        <SettingsField
+          title="Full Name"
+          placeholder="Add you'r name"
+          value={userData.name}
+          toggle="editable"
+          onChange={(newValue) => (userData.name = newValue)}
+        />
+        <SettingsField
+          title="Email Address"
+          toggle="label"
+          value={userData.email}
+        />
+      </div>
+      <div className={cn(styles.userId)}>
+        <div className={cn(styles.idTitleText)}>User I.D </div>
+        <div className={cn(styles.userIdText)}> {userData.key}</div>
+      </div>
     </div>
   );
 }
