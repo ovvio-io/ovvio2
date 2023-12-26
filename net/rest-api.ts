@@ -74,12 +74,16 @@ export async function sendJSONToURL(
   url: string,
   session: OwnedSession | undefined,
   json: JSONValue,
+  orgId?: string,
 ): Promise<Response> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
   if (session !== undefined) {
-    headers['X-Ovvio-Sig'] = await generateRequestSignature(session);
+    headers['x-ovvio-sig'] = await generateRequestSignature(session);
+  }
+  if (orgId) {
+    headers['x-org-id'] = orgId;
   }
   return await fetch(url, {
     method: 'POST',

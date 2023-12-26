@@ -63,6 +63,7 @@ export class SyncScheduler {
     readonly url: string,
     readonly syncConfig: SyncConfig,
     readonly session: OwnedSession,
+    readonly orgId?: string,
   ) {
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(kSyncConfigClient) * 2,
@@ -112,7 +113,12 @@ export class SyncScheduler {
     try {
       const start = performance.now();
       respText = await retry(async () => {
-        const resp = await sendJSONToURL(this.url, this.session, reqArr);
+        const resp = await sendJSONToURL(
+          this.url,
+          this.session,
+          reqArr,
+          this.orgId,
+        );
         return await resp.text();
       }, 3 * kSecondMs);
 

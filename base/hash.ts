@@ -11,9 +11,9 @@ import { randomInt } from './math.ts';
  * @param {string} str ASCII only
  * @param {number} seed Positive integer only
  * @return {number} 32-bit positive integer hash
- * 
+ *
  * Modified by Ofri Wolfus: Added TS types.
- * 
+ *
  * License:
 Copyright (c) 2011 Gary Court
 
@@ -30,21 +30,19 @@ export function murmurhash2_32_gc(str: string, seed: number): number {
     k;
 
   while (l >= 4) {
-    k =
-      (str.charCodeAt(i) & 0xff) |
+    k = (str.charCodeAt(i) & 0xff) |
       ((str.charCodeAt(++i) & 0xff) << 8) |
       ((str.charCodeAt(++i) & 0xff) << 16) |
       ((str.charCodeAt(++i) & 0xff) << 24);
 
-    k =
-      (k & 0xffff) * 0x5bd1e995 + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16);
+    k = (k & 0xffff) * 0x5bd1e995 +
+      ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16);
     k ^= k >>> 24;
-    k =
-      (k & 0xffff) * 0x5bd1e995 + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16);
+    k = (k & 0xffff) * 0x5bd1e995 +
+      ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16);
 
-    h =
-      ((h & 0xffff) * 0x5bd1e995 +
-        ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16)) ^
+    h = ((h & 0xffff) * 0x5bd1e995 +
+      ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16)) ^
       k;
 
     l -= 4;
@@ -54,12 +52,13 @@ export function murmurhash2_32_gc(str: string, seed: number): number {
   switch (l) {
     case 3:
       h ^= (str.charCodeAt(i + 2) & 0xff) << 16;
+      /* falls through */
     case 2:
       h ^= (str.charCodeAt(i + 1) & 0xff) << 8;
+      /* falls through */
     case 1:
       h ^= str.charCodeAt(i) & 0xff;
-      h =
-        (h & 0xffff) * 0x5bd1e995 +
+      h = (h & 0xffff) * 0x5bd1e995 +
         ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16);
   }
 
@@ -145,10 +144,13 @@ export class MurmurHash3 {
     switch (this.rem) {
       case 0:
         k1 ^= len > i ? key.charCodeAt(i++) & 0xffff : 0;
+        /* falls through */
       case 1:
         k1 ^= len > i ? (key.charCodeAt(i++) & 0xffff) << 8 : 0;
+        /* falls through */
       case 2:
         k1 ^= len > i ? (key.charCodeAt(i++) & 0xffff) << 16 : 0;
+        /* falls through */
       case 3:
         k1 ^= len > i ? (key.charCodeAt(i) & 0xff) << 24 : 0;
         k1 ^= len > i ? (key.charCodeAt(i++) & 0xff00) >> 8 : 0;
@@ -171,8 +173,7 @@ export class MurmurHash3 {
           break;
         }
 
-        k1 =
-          (key.charCodeAt(i++) & 0xffff) ^
+        k1 = (key.charCodeAt(i++) & 0xffff) ^
           ((key.charCodeAt(i++) & 0xffff) << 8) ^
           ((key.charCodeAt(i++) & 0xffff) << 16);
         top = key.charCodeAt(i++);
@@ -183,8 +184,10 @@ export class MurmurHash3 {
       switch (this.rem) {
         case 3:
           k1 ^= (key.charCodeAt(i + 2) & 0xffff) << 16;
+          /* falls through */
         case 2:
           k1 ^= (key.charCodeAt(i + 1) & 0xffff) << 8;
+          /* falls through */
         case 1:
           k1 ^= key.charCodeAt(i) & 0xffff;
       }

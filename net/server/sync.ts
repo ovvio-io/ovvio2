@@ -27,6 +27,7 @@ import { Commit } from '../../repo/commit.ts';
 import {
   decodeSession,
   generateRequestSignature,
+  OwnedSession,
   Session,
   sessionFromRecord,
   TrustPool,
@@ -60,10 +61,11 @@ const gSyncSchedulers = new Map<string, SyncScheduler>();
 function syncSchedulerForURL(
   url: string,
   session: OwnedSession,
+  orgId: string,
 ): SyncScheduler {
   let res = gSyncSchedulers.get(url);
   if (!res) {
-    res = new SyncScheduler(url, kSyncConfigServer, session);
+    res = new SyncScheduler(url, kSyncConfigServer, session, orgId);
     gSyncSchedulers.set(url, res);
   }
   return res;
@@ -161,6 +163,7 @@ export class SyncService extends BaseService<ServerServices> {
           syncSchedulerForURL(
             `${baseServerUrl}/batchSync`,
             this.services.trustPool.currentSession,
+            this.services.organizationId,
           ),
         ).startSyncing()
       );
@@ -347,7 +350,7 @@ export class SyncEndpoint implements Endpoint {
           storageType === 'sys' ||
           storageType === 'user'
         ) {
-          const sig = req.headers.get('X-Ovvio-Sig');
+          const sig = req.headers.get('x-ovvio-sig');
           if (!sig) {
             resp = new Response(null, { status: 400 });
             break;
