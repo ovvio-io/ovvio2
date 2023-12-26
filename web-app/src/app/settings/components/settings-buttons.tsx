@@ -311,12 +311,14 @@ export const UserPill: React.FC<UserPillProps> = ({
 };
 
 interface DeleteWsButtonProps {
-  onDeleteClick: () => void;
+  wsMng: VertexManager<Workspace>;
+  onDeleteClick: (ws: VertexManager<Workspace>) => void;
   disabled: boolean;
   className: any;
 }
 
 export function DeleteWsButton({
+  wsMng,
   onDeleteClick,
   disabled,
   className,
@@ -326,7 +328,8 @@ export function DeleteWsButton({
 
   return (
     <Button
-      onClick={isDisabled ? undefined : onDeleteClick}
+      onClick={() => onDeleteClick(wsMng)}
+      // onClick={isDisabled ? undefined : onDeleteClick}
       className={cn(
         styles.compose,
         className,

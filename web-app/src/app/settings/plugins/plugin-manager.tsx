@@ -1,15 +1,8 @@
 import React, { useCallback, useEffect } from 'react';
-import {
-  SettingsTabId,
-  TabId,
-  isSettingsTabId,
-} from '../../../../../cfds/base/scheme-types.ts';
+import { SettingsTabId } from '../../../../../cfds/base/scheme-types.ts';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
-import {
-  useGraphManager,
-  usePartialView,
-} from '../../../core/cfds/react/graph.tsx';
+import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 import {
   TabButton,
   TabsHeader,

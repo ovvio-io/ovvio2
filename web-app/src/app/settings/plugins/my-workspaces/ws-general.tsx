@@ -150,10 +150,13 @@ export function WsGeneralSettings() {
   const mgr = graph.getVertexManager<View>('ViewWsSettings');
   const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
   const ws = [...partialView.selectedWorkspaces][0];
-  // const ws = partialView.selectedWorkspaces;
-  const wsManager = graph.getVertexManager<Workspace>(ws);
-  //TODO: maybe put wsManager as state.
-  const onDelete = () => {};
+  const wsV = usePartialVertex(ws);
+  const wsManager = ws ? ws.manager : undefined;
+
+  const onWorkspaceDeleted = () => {
+    // closeDialog();
+  };
+
   return (
     <div
       className={cn(styles.barRow)}
@@ -167,8 +170,8 @@ export function WsGeneralSettings() {
         <SettingsField
           title="Workspace's Name"
           toggle="editable"
-          value={ws && ws.name}
-          onChange={(newValue) => (ws.name = newValue)} //TODO: Fix
+          value={wsV && wsV.name}
+          onChange={(newValue) => (wsV.name = newValue)}
         />
         <SettingsField
           title="Description"
@@ -177,19 +180,21 @@ export function WsGeneralSettings() {
           value=""
         />
         <DeleteConfirmWsButton
-          workspaceManager={wsManager}
-          onDelete={onDelete}
+          wsMng={wsManager}
+          onDeleted={onWorkspaceDeleted}
         />
       </div>
-      <UsersList workspaceManager={wsManager} />
+      <UsersList wsMng={wsManager} />
     </div>
   );
 }
 
 interface UserItemProps {
   user: User;
+  userMng: VertexManager<User>;
+  removeUser: (rec: VertexManager<User>) => void;
 }
-function UserItem({ user }: UserItemProps) {
+function UserItem({ user, userMng, removeUser }: UserItemProps) {
   const styles = useStyles();
 
   interface ImageIconProps {
@@ -232,6 +237,7 @@ function UserItem({ user }: UserItemProps) {
           text="Remove From Workspace"
           iconWidth="16px"
           iconHeight="16px"
+          onClick={() => removeUser(userMng)}
         />
       </Menu>
     </div>
@@ -327,29 +333,36 @@ export function AddMemberToWsButton({
 // ------------------------------------------------------------------------------------
 
 interface DeleteConfirmWsButtonProps {
-  workspaceManager: VertexManager<Workspace>;
-  onDelete: () => void;
+  wsMng: VertexManager<Workspace>;
+  onDeleted: () => void;
 }
 
 export function DeleteConfirmWsButton({
-  workspaceManager,
-  onDelete, // what should happen after the ws has been deleted?
+  wsMng,
+  onDeleted,
 }: DeleteConfirmWsButtonProps) {
   const styles = useStyles();
   const inputRef = useRef();
   const [name, setName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const partialWS = usePartialVertex(workspaceManager, ['name', 'isDeleted']);
+  const partialWS = usePartialVertex(wsMng, ['name', 'isDeleted']);
   const displayName = partialWS.name;
+  const canDelete = isDeleting && name === displayName;
 
   useEffect(() => {
     if (isDeleting && inputRef.current) {
       (inputRef.current as any).focus();
     }
-  }, [isDeleting, workspaceManager]);
+  }, [isDeleting, wsMng]);
 
-  const onClick = () => {
+  const deleteWs = (wsMng: VertexManager<Workspace>) => {
     setIsDeleting(true);
+    if (canDelete) {
+      //why do i need this if statement? without it it doesnt work and i dont know why.
+      const ws = wsMng.getVertexProxy();
+      ws.isDeleted = 1;
+      onDeleted();
+    }
   };
 
   return (
@@ -365,20 +378,56 @@ export function DeleteConfirmWsButton({
       )}
       <DeleteWsButton
         disabled={isDeleting && name !== displayName}
-        onDeleteClick={onClick}
+        onDeleteClick={deleteWs}
         className={cn(styles.deleteWsButton)}
+        wsMng={wsMng}
       />
     </div>
   );
 }
 
 interface UsersListProps {
-  workspaceManager: VertexManager<Workspace>;
+  wsMng: VertexManager<Workspace>;
 }
 
-function UsersList({ workspaceManager }: UsersListProps) {
+function UsersList({ wsMng }: UsersListProps) {
   const styles = useStyles();
-  const { users } = usePartialVertex(workspaceManager, ['users']);
+  const { users } = usePartialVertex(wsMng, ['users']);
+
+  // const [vToRemove, setVToRemove] = useState<VertexManager<User> | undefined>(
+  //   undefined
+  // );
+  // const [removeDisabled, setRemoveDisabled] = useState(false);
+
+  // const onRemoveStarting = (v: VertexManager<User | Invite>) => {
+  //   eventLogger.wsAction(
+  //     'WORKSPACE_REMOVE_USER_DIALOG_OPENED',
+  //     workspaceManager,
+  //     {
+  //       category: EventCategory.WS_SETTINGS,
+  //     }
+  //   );
+  //   setVToRemove(v);
+  // };
+
+  // const onRemoveClicked = () => {
+  //   if (vToRemove) {
+  //     setRemoveDisabled(true);
+  //     removeUser(vToRemove as VertexManager<User>);
+  //     setRemoveDisabled(false);
+  //     setVToRemove(undefined);
+  //   }
+  // };
+
+  // const onRemoveStarting = (v: VertexManager<User>) => {
+  //   setVToRemove(v);
+  // };
+
+  const removeUser = (userMng: VertexManager<User>) => {
+    const user = userMng.getVertexProxy();
+    user.isDeleted = 1;
+  };
+
   return (
     <div className={cn(styles.container)}>
       <div className={cn(styles.header)}>
@@ -388,7 +437,12 @@ function UsersList({ workspaceManager }: UsersListProps) {
       <div className={cn(styles.table)}>
         {Array.from(users).map((u: User) => (
           <div className={cn(styles.row)} key={u.key}>
-            <UserItem user={u} />
+            <UserItem
+              userMng={u.manager as VertexManager<User>}
+              user={u}
+              key={u.key}
+              removeUser={removeUser}
+            />
           </div>
         ))}
       </div>
