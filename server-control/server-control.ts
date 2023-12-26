@@ -187,7 +187,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = navigator.hardwareConcurrency;
+  const processCount = 1; // navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     for (let x = 0; x < processCount; ++x) {
@@ -315,6 +315,19 @@ async function updateBinary(
       try {
         await Deno.remove(etagFilePath, { recursive: true });
       } catch (_: unknown) {}
+    }
+    const alphaBinary = serverBinaryPath.endsWith('-alpha');
+    const betaBinary = serverBinaryPath.endsWith('-beta');
+    if (alphaBinary || betaBinary) {
+      const suffix = alphaBinary ? '-alpha' : '-beta';
+      const binaryLinkTarget = serverBinaryPath.substring(
+        0,
+        serverBinaryPath.length - suffix.length,
+      );
+      try {
+        await Deno.remove(binaryLinkTarget, { recursive: true });
+      } catch (_: unknown) {}
+      await Deno.symlink(serverBinaryPath, binaryLinkTarget);
     }
     return true;
   } catch (err: unknown) {
