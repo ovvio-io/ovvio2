@@ -26,10 +26,11 @@ Wait for certificate to be created
 5. Enter tenant id in _Name tag auto generation_
 6. Choose _2 Availability Zones_
 7. Choose _2 number of public subnets_
-8. Choose _NAT Gateways in 1 AZ_ as NAT is used only for installations during
+8. Choose _0 number of private subnets_
+9. Choose _NAT Gateways in 1 AZ_ as NAT is used only for installations during
    machine setup.
-9. Choose _VPC endpoints S3 Gateway_
-10. Add an additional tag named `OvvioTenantId` with the value of the tenant id
+10. Choose _VPC endpoints S3 Gateway_
+11. Add an additional tag named `OvvioTenantId` with the value of the tenant id
 
 Finally, wait for VPC to finish setting up.
 
@@ -76,13 +77,14 @@ Finally, wait for VPC to finish setting up.
 3. Name: `<tenant-id>`-s1, ...
 4. Amazon Linux
 5. Choose t3.medium as a starting point
-6. Create new private key per tenant called prod-`<tenant-id>`. 6.1 Store the
-   private key in 1Password
+6. Create new private key per tenant called prod-`<tenant-id>`
+   1. Store the private key in 1Password
 7. Choose correct VPC
 8. Choose correct subnet
 9. Auto-assign public IP: _YES_
 10. Select existing tenant internal security group
 11. Change the root volume to 64GB, encrypted with default KMS key
+    1. Delete on Termination: NO
 12. Under Advanced Details, select "ProdServer" IAM Role
 13. Termination Protection: Enable
 14. Stop Protection: Enable
@@ -112,8 +114,8 @@ Wait for instance to launch
 3. IP Addresses: Dualstack
 4. Choose correct VPC and assign to all subnets
 5. Set correct security group
-6. Add previously created target group to an HTTPS listener 6.1. Tag the
-   listener with `OvvioTenantId`
+6. Add previously created target group to an HTTPS listener
+   1. Tag the listener with `OvvioTenantId`
 7. Add tag named `OvvioTenantId` with the value of the tenant id
 
 Wait for ALB to be created

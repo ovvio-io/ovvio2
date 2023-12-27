@@ -1,15 +1,16 @@
-import { Severity, SeverityFromCode, NormalizedLogEntry } from './entry.ts';
+import { NormalizedLogEntry, Severity, SeverityFromCode } from './entry.ts';
 import { LogEntry, LogStream } from './log.ts';
 
 export class ConsoleLogStream implements LogStream {
   severity: Severity;
   constructor(severity: Severity | number = 'DEFAULT') {
-    this.severity =
-      typeof severity === 'number' ? SeverityFromCode(severity) : severity;
+    this.severity = typeof severity === 'number'
+      ? SeverityFromCode(severity)
+      : severity;
   }
 
   appendEntry(e: NormalizedLogEntry<LogEntry>): void {
-    let textLog = `[${e.timestamp.toISOString()}] `;
+    let textLog = `[${new Date(e.timestamp).toISOString()}] `;
     if (typeof e.message === 'string') {
       textLog += e.message + ': ';
     }

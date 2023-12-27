@@ -1,3 +1,4 @@
+import * as path from 'std/path/mod.ts';
 import { assert } from './error.ts';
 import { JSONObject, ReadonlyJSONObject } from './interfaces.ts';
 import { SerialScheduler } from './serial-scheduler.ts';
@@ -20,6 +21,8 @@ export class JSONLogFile {
       return;
     }
     if (this.write) {
+      const dirPath = path.dirname(this.path);
+      Deno.mkdirSync(dirPath, { recursive: true });
       this._file = Deno.openSync(this.path, {
         read: true,
         write: true,
@@ -32,7 +35,8 @@ export class JSONLogFile {
           write: false,
         });
       } catch (_: unknown) {
-        // Open failed. No worries.
+        // Open failed. No worries. We just count this as an empty log file.
+        return;
       }
     }
     for (const c of this.scan()) {

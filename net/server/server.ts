@@ -26,6 +26,7 @@ import { ServerError } from '../../cfds/base/errors.ts';
 import { LogsEndpoint } from './logs.ts';
 import { sleep } from '../../base/time.ts';
 import { kSecondMs } from '../../base/date.ts';
+import { JSONLogStream } from '../../logging/json-log-stream.ts';
 
 export const ENV_REPLICAS = 'REPLICAS';
 
@@ -190,13 +191,15 @@ export class Server {
         .parse();
     }
 
+    const serverId = args?.serverId || 0;
+    const dir = args!.dir;
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
-    // const sqliteLogStream = new SQLiteLogStream(
-    //   path.join(args!.dir, 'logs.sqlite')
-    // );
-    const logStreams: LogStream[] = [/*sqliteLogStream,*/ prometeusLogStream];
+    const logStreams: LogStream[] = [
+      // new JSONLogStream(path.join(dir, `log-${serverId}.jsonl`)),
+      prometeusLogStream,
+    ];
     if (args?.silent !== true) {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
@@ -217,10 +220,10 @@ export class Server {
       // trustPool: new TrustPool(settingsService.session, []),
       prometheusLogStream: prometeusLogStream,
       // sqliteLogStream,
-      dir: args!.dir,
+      dir,
       replicas: replicas || args?.replicas || [],
       port: args?.port || 8080,
-      serverId: args?.serverId || 0,
+      serverId,
       email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
       silent: args?.silent === true,
@@ -302,6 +305,7 @@ export class Server {
       return new Response(null, { status: 200 });
     }
     const orgId = organizationIdFromURL(req.url) || req.headers.get('x-org-id');
+
     if (!orgId) {
       log({
         severity: 'METRIC',
@@ -310,6 +314,9 @@ export class Server {
         value: 404,
         url: req.url,
         method: req.method as HTTPMethod,
+        message: `Organization ID not found. Hostname: ${
+          new URL(req.url).hostname
+        }`,
       });
       return new Response(null, {
         status: 404,
@@ -429,7 +436,16 @@ export class Server {
   }
 }
 
-const RESERVED_ORG_IDS = ['ovvio', 'debug', 'localhost'];
+const RESERVED_ORG_IDS = [
+  'me',
+  'team',
+  'us',
+  'user',
+  'profile',
+  'ovvio',
+  'debug',
+  'localhost',
+];
 
 function isValidOrgId(id: string): boolean {
   const len = id.length;

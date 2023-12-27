@@ -1,5 +1,4 @@
-import { CoreObject } from '../base/core-types/base.ts';
-import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 
 export type Severity =
   | 'EMERGENCY'
@@ -70,14 +69,14 @@ export function SeverityFromCode(code: number): Severity {
   }
 }
 
-export interface BaseLogEntry extends CoreObject {
+export interface BaseLogEntry extends JSONObject {
   severity: Severity;
   message?: string;
 }
 
-export interface TechnicalLogData extends CoreObject {
+export interface TechnicalLogData extends JSONObject {
   severityCode: number;
-  timestamp: Date; // ISO 8601 string
+  timestamp: number; // ISO 8601 string
   logId: string;
 
   t_denoVersion: string;
@@ -100,15 +99,16 @@ export interface GenericLogEntry extends BaseLogEntry {
   message: string;
 }
 
-export type NormalizedLogEntry<T extends BaseLogEntry = BaseLogEntry> = T &
-  TechnicalLogData;
+export type NormalizedLogEntry<T extends BaseLogEntry = BaseLogEntry> =
+  & T
+  & TechnicalLogData;
 
 export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
-  e: T
+  e: T,
 ): NormalizedLogEntry<T> {
   const res: NormalizedLogEntry<T> = e as unknown as NormalizedLogEntry<T>;
   res.severityCode = SeverityCodes[e.severity];
-  res.timestamp = new Date();
+  res.timestamp = Date.now();
   res.logId = uniqueId();
   if (typeof Deno !== 'undefined') {
     try {
