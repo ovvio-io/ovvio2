@@ -105,16 +105,14 @@ function createNewWorkspace(
     users: new Set([graphManager.rootKey]),
   };
   if (copyFrom) {
-    for (let i = 0; i < 100; ++i) {
-      const ws = duplicateWorkspace(
-        graphManager,
-        copyFrom,
-        {
-          ...data,
-          name: name + `-${i + 1}`,
-        },
-      );
-    }
+    const ws = duplicateWorkspace(
+      graphManager,
+      copyFrom,
+      {
+        ...data,
+        name: name + `-${i + 1}`,
+      },
+    );
     return duplicateWorkspace(graphManager, copyFrom, data);
   }
   return graphManager.createVertex<Workspace>(NS_WORKSPACE, data).manager;
