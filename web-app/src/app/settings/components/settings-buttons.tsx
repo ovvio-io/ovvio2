@@ -6,10 +6,7 @@ import { useTypographyStyles } from '../../../../../styles/components/typography
 import { layout } from '../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../styles/responsive.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
-import {
-  usePartialVertex,
-  useVertexByKey,
-} from '../../../core/cfds/react/vertex.ts';
+import { useVertexByKey } from '../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -188,14 +185,12 @@ export function ChooseWsButton({
         isDisabled ? styles.disabled : styles.available
       )}
     >
-      <div>
-        <img
-          key="AssignInSettings"
-          src="/icons/settings/Archive.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
-      </div>{' '}
+      <img
+        key="AssignInSettings"
+        src="/icons/settings/Archive.svg"
+        onClick={() => {}}
+      />
+      <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
     </Button>
   );
 }
@@ -220,14 +215,12 @@ export function AssignWsButton({
         isDisabled ? styles.disabled : styles.available
       )}
     >
-      <div>
-        <img
-          key="InviteUserSettings"
-          src="/icons/settings/Invite.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.text)}>{'Assign'}</span>
-      </div>{' '}
+      <img
+        key="InviteUserSettings"
+        src="/icons/settings/Invite.svg"
+        onClick={() => {}}
+      />
+      <span className={cn(styles.text)}>{'Assign'}</span>
     </Button>
   );
 }
@@ -252,14 +245,12 @@ export function EditSaveButton({
         isDisabled ? styles.disabled : styles.available
       )}
     >
-      <div>
-        <img
-          key="CheckEditSettings"
-          src="/icons/settings/Check.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.text)}>{'Save changes'}</span>
-      </div>{' '}
+      <img
+        key="CheckEditSettings"
+        src="/icons/settings/Check.svg"
+        onClick={() => {}}
+      />
+      <span className={cn(styles.text)}>{'Save changes'}</span>
     </Button>
   );
 }
@@ -272,10 +263,8 @@ export function EditButton({ onEditClick }: EditButtonProps) {
 
   return (
     <Button onClick={onEditClick} className={cn(styles.compose, styles.blue)}>
-      <div>
-        <img key="EditUserSettings" src="/icons/settings/Compose-white.svg" />
-        <span className={cn(styles.textWhite)}>{'Edit'}</span>
-      </div>
+      <img key="EditUserSettings" src="/icons/settings/Compose-white.svg" />
+      <span className={cn(styles.textWhite)}>{'Edit'}</span>
     </Button>
   );
 }
@@ -324,10 +313,8 @@ export function RemoveButton({ onRemove }: RemoveButtonProps) {
       className={cn(styles.compose, styles.blue)}
       style={{ marginBottom: '8px' }}
     >
-      <div>
-        <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
-        <span className={cn(styles.textWhite)}>{'Remove'}</span>
-      </div>
+      <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
+      <span className={cn(styles.textWhite)}>{'Remove'}</span>
     </Button>
   );
 }
@@ -341,13 +328,8 @@ export function CancelButton({ onCancel }: CancelButtonProps) {
 
   return (
     <Button onClick={onCancel} className={cn(styles.compose)}>
-      <div>
-        <img
-          key="CancelRemoveUserSettings"
-          src="/icons/settings/Close-big.svg"
-        />
-        <span className={cn(styles.text)}>{'Cancel,'}</span>
-      </div>
+      <img key="CancelRemoveUserSettings" src="/icons/settings/Close-big.svg" />
+      <span className={cn(styles.text)}>{'Cancel'}</span>
     </Button>
   );
 }
@@ -379,15 +361,8 @@ export function DeleteWsButton({
         isDisabled ? styles.disabled : styles.available
       )}
     >
-      <div>
-        <img
-          key="DeleteWsInSettings"
-          src="/icons/settings/Delete.svg"
-          style={{ marginTop: '4px' }}
-        />
-
-        <span className={cn(styles.text)}>{'Delete Workspace'}</span>
-      </div>{' '}
+      <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
+      <span className={cn(styles.text)}>{'Delete Workspace'}</span>
     </Button>
   );
 }
@@ -400,11 +375,12 @@ export function AddUserButton({ onAddClick }: AddUserButtonProps) {
   const styles = useStyles();
 
   return (
-    <Button onClick={onAddClick} className={cn(styles.compose, styles.blue)}>
-      <div>
-        <img key="AddUserSettings" src="/icons/settings/InviteWhite.svg" />
-        <span className={cn(styles.textWhite)}>{'Add'}</span>
-      </div>
+    <Button
+      onClick={() => onAddClick}
+      className={cn(styles.compose, styles.blue)}
+    >
+      <img key="AddUserSettings" src="/icons/settings/InviteWhite.svg" />
+      <span className={cn(styles.textWhite)}>{'Add'}</span>
     </Button>
   );
 }

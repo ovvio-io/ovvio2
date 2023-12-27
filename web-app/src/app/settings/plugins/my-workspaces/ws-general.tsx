@@ -13,10 +13,7 @@ import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manage
 import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { User } from '../../../../../../cfds/client/graph/vertices/user.ts';
 import { brandLightTheme as theme } from '../../../../../../styles/theme.tsx';
-import Menu, {
-  MenuAction,
-  MenuRenderButton,
-} from '../../../../../../styles/components/menu.tsx';
+import Menu, { MenuAction } from '../../../../../../styles/components/menu.tsx';
 import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import {
@@ -27,7 +24,7 @@ import {
 } from '../../components/settings-buttons.tsx';
 import TextField from '../../../../../../styles/components/inputs/TextField.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
-import UserTable from '../../components/user-table.tsx';
+import { MemberPicker } from '../../../../../../components/member-picker.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -141,11 +138,11 @@ const useStyles = makeStyles(() => ({
   },
   popup: {
     backgroundColor: theme.colors.background,
-    width: styleguide.gridbase * 21,
-    height: styleguide.gridbase * 20,
-    padding: '3px 2px 0px 2px',
+    maxWidth: styleguide.gridbase * 21,
+    maxHeight: styleguide.gridbase * 20,
+    // padding: '3px 2px 0px 2px',
     flexShrink: 0,
-    marginBottom: styleguide.gridbase * 2,
+    // marginBottom: styleguide.gridbase * 2,
   },
   confirmation: {
     display: 'flex',
@@ -159,7 +156,7 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     padding: '16px 0px 16px 0px',
     flexDirection: 'column',
-    width: '116px',
+    width: '180px',
   },
 }));
 
@@ -171,7 +168,6 @@ export function WsGeneralSettings() {
   const ws = [...partialView.selectedWorkspaces][0];
   const wsV = useVertex(ws);
   const wsManager = ws.manager;
-
   const onWorkspaceDeleted = () => {};
 
   return (
@@ -202,7 +198,7 @@ export function WsGeneralSettings() {
             onDeleted={onWorkspaceDeleted}
           />
         </div>
-        <UsersList wsMng={wsManager} />
+        <UsersList wsMng={wsManager} ws={ws} />
       </div>
     </div>
   );
@@ -215,15 +211,7 @@ interface UserItemProps {
 }
 function UserItem({ user, userMng, removeUser }: UserItemProps) {
   const styles = useStyles();
-  const [showConfirmMenu, setShowConfirmMenu] = useState(false);
-  const confirmMenuRef = useRef(null);
-  const openConfirmMenu = () => {
-    // Open the menu using the ref
-    if (confirmMenuRef.current) {
-      confirmMenuRef.current.openMenu();
-    }
-    setShowConfirmMenu(true);
-  };
+  const [removeUserStep, setRemoveUserStep] = useState('startRemove');
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
@@ -233,147 +221,121 @@ function UserItem({ user, userMng, removeUser }: UserItemProps) {
     ),
     []
   );
+
   interface ImageIconProps {
     width?: string;
     height?: string;
     src: string;
     alt?: string;
   }
+  useEffect(() => {
+    let timeoutId: number;
+
+    if (removeUserStep === 'removeProcessing') {
+      timeoutId = setTimeout(() => {
+        setRemoveUserStep('confirmRemove');
+      }, 10);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [removeUserStep]);
 
   const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
     return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
   };
 
-  const renderRemoveConfirmMenu = () => (
-    <div className={showConfirmMenu ? '' : styles.hidden}>
-      <Menu
-        ref={confirmMenuRef}
-        renderButton={renderButton}
-        position="left"
-        align="start"
-        direction="out"
-      >
-        <div className={cn(styles.confirmation)}>
-          Remove from workspace?
-          <div className={cn(styles.confirmationButtons)}>
-            <RemoveButton onRemove={() => removeUser(userMng)} />
-            <CancelButton onCancel={() => setShowConfirmMenu(false)} />
-          </div>
-        </div>
-      </Menu>
-    </div>
-  );
+  const removeUser1 = (userMng: VertexManager<User>) => {
+    removeUser(userMng);
+    setRemoveUserStep('startRemove');
+  };
 
   return (
     <div className={cn(styles.user)}>
       <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
       <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
-      <Menu
-        renderButton={renderButton}
-        position="left"
-        align="start"
-        direction="out"
-      >
-        <MenuAction
-          IconComponent={(props: ImageIconProps) => (
-            <ImageIcon
-              {...props}
-              src="/icons/settings/Delete.svg"
-              alt="Delete"
-            />
-          )}
-          text="Remove From Workspace"
-          iconWidth="16px"
-          iconHeight="16px"
-          onClick={openConfirmMenu}
-        />
-      </Menu>
-      {renderRemoveConfirmMenu()}
+      {removeUserStep === 'startRemove' ? (
+        <Menu
+          renderButton={renderButton}
+          position="left"
+          align="start"
+          direction="out"
+        >
+          <MenuAction
+            IconComponent={(props: ImageIconProps) => (
+              <ImageIcon
+                {...props}
+                src="/icons/settings/Delete.svg"
+                alt="Delete"
+              />
+            )}
+            text="Remove From Workspace"
+            iconWidth="16px"
+            iconHeight="16px"
+            onClick={() => {
+              setRemoveUserStep('removeProcessing');
+            }}
+          />
+        </Menu>
+      ) : removeUserStep === 'confirmRemove' ? (
+        <Menu
+          renderButton={renderButton}
+          position="left"
+          align="start"
+          direction="out"
+          openImmediately={true}
+        >
+          <div className={cn(styles.confirmation)}>
+            Remove from workspace?
+            <div className={cn(styles.confirmationButtons)}>
+              <RemoveButton onRemove={() => removeUser1(userMng)} />
+              <CancelButton onCancel={() => setRemoveUserStep('startRemove')} />
+            </div>
+          </div>
+        </Menu>
+      ) : null}
     </div>
   );
 }
-
-// function UserItem({ user, userMng, removeUser }: UserItemProps) {
-//   const styles = useStyles();
-
-//   interface ImageIconProps {
-//     width?: string;
-//     height?: string;
-//     src: string;
-//     alt?: string;
-//   }
-
-//   const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
-//     return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
-//   };
-
-//   const renderButton = useCallback(
-//     ({ isOpen }: { isOpen: boolean }) => (
-//       <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
-//         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
-//       </div>
-//     ),
-//     []
-//   );
-//   return (
-//     <div className={cn(styles.user)}>
-//       <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
-//       <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
-//       <Menu
-//         renderButton={renderButton}
-//         position="left"
-//         align="start"
-//         direction="out"
-//       >
-//         <MenuAction
-//           IconComponent={(props: ImageIconProps) => (
-//             <ImageIcon
-//               {...props}
-//               src="/icons/settings/Delete.svg"
-//               alt="Delete"
-//             />
-//           )}
-//           text="Remove From Workspace"
-//           iconWidth="16px"
-//           iconHeight="16px"
-//           onClick={() => removeUser(userMng)}
-//         />
-//       </Menu>
-//     </div>
-//   );
-// }
 // ------------------------------------------------------------------------------------
 
 interface AddSelectionButtonProps<T> {
   className?: string;
-  children?: MenuRenderButton;
-  onSelected?: (item: T) => void;
+  ws: Workspace;
 }
 export default function AddSelectionButton<T>({
   className,
-  children,
-  onSelected,
+  ws,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
+  const [isSearching, setIsSearching] = useState(false);
+
+  const onRowSelect = (user: User) => {
+    console.log('ws is ', ws, 'user is ', user);
+    ws.users.add;
+  };
 
   return (
     <Menu
-      renderButton={() => <AddUserButton />}
+      renderButton={() => (
+        <AddUserButton onAddClick={() => setIsSearching(true)} />
+      )}
       position="right"
       align="start"
       direction="out"
       className={className}
       popupClassName={cn(styles.popup)}
     >
-      <UserTable
+      <MemberPicker
         users={users}
-        onRowSelect={() => {}}
-        showSelection={false}
-        selectedUsers={new Set<string>()}
-        showSearch={true}
-        isEditable={false}
+        onRowSelect={onRowSelect}
+        setIsSearching={setIsSearching}
+        isSearching={isSearching}
       />
     </Menu>
   );
@@ -391,7 +353,7 @@ export function DeleteConfirmWsButton({
   onDeleted,
 }: DeleteConfirmWsButtonProps) {
   const styles = useStyles();
-  const inputRef = useRef();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const partialWS = usePartialVertex(wsMng, ['name', 'isDeleted']);
@@ -413,6 +375,21 @@ export function DeleteConfirmWsButton({
       onDeleted();
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setIsDeleting(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [inputRef]);
 
   return (
     <div className={cn(styles.deleteContainer)}>
@@ -437,66 +414,23 @@ export function DeleteConfirmWsButton({
 
 interface UsersListProps {
   wsMng: VertexManager<Workspace>;
+  ws: Workspace;
 }
 
-function UsersList({ wsMng }: UsersListProps) {
+function UsersList({ wsMng, ws }: UsersListProps) {
   const styles = useStyles();
   const { users } = usePartialVertex(wsMng, ['users']);
-
-  // const [vToRemove, setVToRemove] = useState<VertexManager<User> | undefined>(
-  //   undefined
-  // );
-  // const [removeDisabled, setRemoveDisabled] = useState(false);
-
-  // const onRemoveStarting = (v: VertexManager<User | Invite>) => {
-  //   eventLogger.wsAction(
-  //     'WORKSPACE_REMOVE_USER_DIALOG_OPENED',
-  //     workspaceManager,
-  //     {
-  //       category: EventCategory.WS_SETTINGS,
-  //     }
-  //   );
-  //   setVToRemove(v);
-  // };
-
-  // const onRemoveClicked = () => {
-  //   if (vToRemove) {
-  //     setRemoveDisabled(true);
-  //     removeUser(vToRemove as VertexManager<User>);
-  //     setRemoveDisabled(false);
-  //     setVToRemove(undefined);
-  //   }
-  // };
-
-  // const onRemoveStarting = (v: VertexManager<User>) => {
-  //   setVToRemove(v);
-  // };
 
   const removeUser = (userMng: VertexManager<User>) => {
     const user = userMng.getVertexProxy();
     user.isDeleted = 1;
   };
 
-  // const removeUserStart = (userMng: VertexManager<User>) => {
-  //   return (
-  //     <Menu
-  //       renderButton={() => <IconMore />}
-  //       position="left"
-  //       align="start"
-  //       direction="out"
-  //     >
-  //       "Remove from workspace?"
-  //       <RemoveButton onClick={removeUser(userMng)} />
-  //       <CancleButton onClick={closeMenu} />
-  //     </Menu>
-  //   );
-  // };
-
   return (
     <div className={cn(styles.container)}>
       <div className={cn(styles.header)}>
         <div className={cn(styles.title)}>Workspace's members</div>
-        <AddSelectionButton />
+        <AddSelectionButton ws={ws} />
       </div>
       <div className={cn(styles.table)}>
         {Array.from(users).map((u: User) => (

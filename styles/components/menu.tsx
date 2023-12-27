@@ -218,7 +218,7 @@ export const MenuItem = React.forwardRef<
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)} />}
+      {IconItem && <IconItem className={cn(styles.icon)} />}
       {children}
     </div>
   );
@@ -306,165 +306,130 @@ interface MenuProps {
   sizeByButton?: boolean;
   style?: {};
   isItemHovered?: boolean;
+  openImmediately?: boolean;
 }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
   return !!x;
 }
-const Menu = forwardRef(
-  (
-    {
-      children,
-      renderButton,
-      popupClassName,
-      backdropClassName,
-      className,
-      oneCellMenu,
-      align,
-      position,
-      direction,
-      onClick = () => {},
-      sizeByButton = false,
-      style = {},
-      isItemHovered,
-    }: MenuProps,
-    ref
-  ) => {
-    const styles = useStyles();
-    const [open, setOpen] = useState(false);
-    const anchor = useRef(null);
-    const backdrop = useRef(null);
-    const [minWidthStyle, setMinWidthStyle] = useState({});
-    const menuCtx = useContext(MenuContext);
 
-    //TODO: tell with Ofri about that.
-    useImperativeHandle(ref, () => ({
-      openMenu() {
-        setOpen(true);
-      },
-      closeMenu() {
-        setOpen(false);
-      },
-    }));
+export default function Menu({
+  children,
+  renderButton,
+  popupClassName,
+  backdropClassName,
+  className,
+  oneCellMenu,
+  align,
+  position,
+  direction,
+  onClick = () => {},
+  sizeByButton = false,
+  style = {},
+  isItemHovered,
+  openImmediately,
+}: MenuProps) {
+  const styles = useStyles();
+  const [open, setOpen] = useState(openImmediately ? true : false);
+  const anchor = useRef(null);
+  const backdrop = useRef(null);
+  const [minWidthStyle, setMinWidthStyle] = useState({});
+  const menuCtx = useContext(MenuContext);
 
-    // export default function Menu ({
-    //   children,
-    //   renderButton,
-    //   popupClassName,
-    //   backdropClassName,
-    //   className,
-    //   oneCellMenu,
-    //   align,
-    //   position,
-    //   direction,
-    //   onClick = () => {},
-    //   sizeByButton = false,
-    //   style = {},
-    //   isItemHovered,
-    // }: MenuProps) {
-    //   const styles = useStyles();
-    //   const [open, setOpen] = useState(false);
-    //   const anchor = useRef(null);
-    //   const backdrop = useRef(null);
-    //   const [minWidthStyle, setMinWidthStyle] = useState({});
-    //   const menuCtx = useContext(MenuContext);
-
-    const close = useCallback(
-      (e?: MouseEvent) => {
-        setOpen(false);
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        menuCtx.close();
-      },
-      [menuCtx]
-    );
-
-    const newContext = useMemo(
-      () => ({
-        close() {
-          close();
-        },
-        hasParent: true,
-      }),
-      [close]
-    );
-
-    const openMenu = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-      setOpen((x) => !x);
-      onClick();
-    };
-
-    useLayoutEffect(() => {
-      //TODO do we need minimum size of the menu to be set by the button that triggered it??
-      if (isElement(anchor.current) && sizeByButton) {
-        const width = (anchor.current as any).getBoundingClientRect().width;
-        setMinWidthStyle({ width: `${width}px` });
-      } else {
-        setMinWidthStyle({});
+  const close = useCallback(
+    (e?: MouseEvent) => {
+      setOpen(false);
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
       }
-    }, [children, sizeByButton]);
-    const content = (
-      <Popper
-        className={undefined}
-        anchor={anchor.current!}
-        open={open}
-        position={position!}
-        align={align}
-        direction={direction}
-      >
-        <div
-          className={cn(styles.dropDown, popupClassName)}
-          style={minWidthStyle}
-        >
-          <div className={styles.MenuContainer}>
-            {Children.toArray(children).map((child, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && <LineSeparator />}
-                {child}
-              </React.Fragment>
-            ))}
-          </div>
-          <Arrow
-            containerPosition={`${position!}ArrowContainer`}
-            position={position!}
-            shadowPosition={`${position!}Shadow`}
-            oneCellMenu={oneCellMenu}
-          />
-        </div>
-      </Popper>
-    );
+      menuCtx.close();
+    },
+    [menuCtx]
+  );
 
-    return (
-      <Button
-        className={cn(styles.menuButton, className)}
-        ref={anchor}
-        onClick={openMenu}
-        contentEditable={false}
-        style={style}
+  const newContext = useMemo(
+    () => ({
+      close() {
+        close();
+      },
+      hasParent: true,
+    }),
+    [close]
+  );
+
+  const openMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setOpen((x) => !x);
+    onClick();
+  };
+
+  useLayoutEffect(() => {
+    //TODO do we need minimum size of the menu to be set by the button that triggered it??
+    if (isElement(anchor.current) && sizeByButton) {
+      const width = (anchor.current as any).getBoundingClientRect().width;
+      setMinWidthStyle({ width: `${width}px` });
+    } else {
+      setMinWidthStyle({});
+    }
+  }, [children, sizeByButton]);
+  const content = (
+    <Popper
+      className={undefined}
+      anchor={anchor.current!}
+      open={open}
+      position={position!}
+      align={align}
+      direction={direction}
+    >
+      <div
+        className={cn(styles.dropDown, popupClassName)}
+        style={minWidthStyle}
       >
-        {renderButton({ close, isOpen: open })}
-        {open && (
-          <MenuContext.Provider value={newContext}>
-            {menuCtx.hasParent ? (
-              <>{content}</>
-            ) : (
-              <Backdrop
-                visible={open}
-                ref={backdrop}
-                className={cn(backdropClassName)}
-                onClick={close}
-              >
-                {content}
-              </Backdrop>
-            )}
-          </MenuContext.Provider>
-        )}
-      </Button>
-    );
-  }
-);
-export default Menu;
+        <div className={styles.MenuContainer}>
+          {Children.toArray(children).map((child, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && <LineSeparator />}
+              {child}
+            </React.Fragment>
+          ))}
+        </div>
+        <Arrow
+          containerPosition={`${position!}ArrowContainer`}
+          position={position!}
+          shadowPosition={`${position!}Shadow`}
+          oneCellMenu={oneCellMenu}
+        />
+      </div>
+    </Popper>
+  );
+
+  return (
+    <Button
+      className={cn(styles.menuButton, className)}
+      ref={anchor}
+      onClick={openMenu}
+      contentEditable={false}
+      style={style}
+    >
+      {renderButton({ close, isOpen: open })}
+      {open && (
+        <MenuContext.Provider value={newContext}>
+          {menuCtx.hasParent ? (
+            <>{content}</>
+          ) : (
+            <Backdrop
+              visible={open}
+              ref={backdrop}
+              className={cn(backdropClassName)}
+              onClick={close}
+            >
+              {content}
+            </Backdrop>
+          )}
+        </MenuContext.Provider>
+      )}
+    </Button>
+  );
+}

@@ -1,17 +1,16 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   User,
   Workspace,
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
-import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 import { useWorkspaceColor } from '../../../shared/workspace-icon/index.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
-import { Scroller } from '../../../core/react-utils/scrolling.tsx';
+import { SearchBar } from '../../../../../components/search-bar.tsx';
 
 type RowInTableProps = {
   ws: Workspace;
@@ -223,6 +222,7 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredWorkspaces, setFilteredWorkspaces] = useState<Workspace[]>([]);
+  const [isSearching, setIsSearching] = useState(showSearch ? true : false);
 
   useEffect(() => {
     if (workspaces) {
@@ -231,49 +231,30 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
     }
   }, [searchTerm, workspaces]);
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
   const wsKey = 'SettingWs_';
 
   return (
     <div className={isEditable ? cn(styles.tableContainer) : undefined}>
       <div className={cn(styles.tableContent)}>
         {showSearch && (
-          <div className={cn(styles.searchRowStyle)}>
-            <div style={{ marginRight: '4px' }}>
-              <IconSearch />
-            </div>
-            <Text>
-              <input
-                type="text"
-                placeholder="Search workspace"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className={styles.InputTextStyle}
-              />
-            </Text>
-          </div>
+          <SearchBar
+            workspaces={workspaces}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            isSearching={isSearching}
+          />
         )}
-        <Scroller>
-          {(ref) => (
-            <div ref={ref}>
-              {filteredWorkspaces.map((ws: Workspace) => (
-                <RowInTable
-                  key={ws.key + wsKey}
-                  ws={ws}
-                  onRowSelect={onRowSelect}
-                  isSelected={showSelection && selectedWorkspaces.includes(ws)}
-                  isEditable={isEditable && !selectedWorkspaces.includes(ws)}
-                />
-              ))}
-            </div>
-          )}
-        </Scroller>
+        {filteredWorkspaces.map((ws: Workspace) => (
+          <RowInTable
+            key={ws.key + wsKey}
+            ws={ws}
+            onRowSelect={onRowSelect}
+            isSelected={showSelection && selectedWorkspaces.includes(ws)}
+            isEditable={isEditable && !selectedWorkspaces.includes(ws)}
+          />
+        ))}
       </div>
     </div>
   );
 };
-//TODO: Scroller might be removed.
 export default WorkspaceTable;

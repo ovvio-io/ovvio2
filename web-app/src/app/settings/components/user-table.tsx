@@ -1,10 +1,10 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
-import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 import { IconMore } from '../../../../../styles/components/new-icons/icon-more.tsx';
+import { SearchBar } from '../../../../../components/search-bar.tsx';
 
 type EditableColumnProps = {
   index: number;
@@ -299,27 +299,6 @@ const UserTable: React.FC<UserTableProps> = ({
   role,
 }) => {
   const useStyles2 = makeStyles(() => ({
-    searchRowStyle: {
-      display: 'flex',
-      padding: '12px 16px',
-      marginBottom: '1px',
-      alignItems: 'center',
-      gap: '8px',
-      boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-      width: '772px',
-      borderRadius: '2px',
-      backgroundColor: '#FFF',
-      justifyContent: 'flex-start',
-      cursor: 'default',
-    },
-    InputTextStyle: {
-      flexGrow: 1,
-      border: 'none',
-      outline: 'none',
-      width: '100%',
-      fontSize: '13px',
-      letterSpacing: '0.075px',
-    },
     tableContainer: {
       width: '843px',
       display: 'flex',
@@ -377,6 +356,8 @@ const UserTable: React.FC<UserTableProps> = ({
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [newUser, setNewUser] = useState<boolean>();
+  const [isSearching, setIsSearching] = useState(showSearch ? true : false);
 
   useEffect(() => {
     if (users) {
@@ -390,11 +371,6 @@ const UserTable: React.FC<UserTableProps> = ({
     }
   }, [searchTerm, users]);
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-  const [newUser, setNewUser] = useState<boolean>();
-
   const handleNewMember = () => {
     setNewUser(true);
   };
@@ -403,18 +379,12 @@ const UserTable: React.FC<UserTableProps> = ({
     <div className={isEditable ? cn(styles.tableContainer) : undefined}>
       <div className={cn(styles.tableContent)}>
         {showSearch && (
-          <div className={cn(styles.searchRowStyle)}>
-            <div style={{ marginRight: '4px' }}>
-              <IconSearch />
-            </div>
-            <input
-              type="text"
-              placeholder="Search member"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className={styles.InputTextStyle}
-            />
-          </div>
+          <SearchBar
+            users={users}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            isSearching={isSearching}
+          />
         )}
         {editMode && (
           <div

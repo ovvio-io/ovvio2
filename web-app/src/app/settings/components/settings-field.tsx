@@ -75,9 +75,6 @@ const SettingsField: React.FC<SettingsFieldProps> = ({
     }
   }, [isEditing]);
 
-  console.log(`value = ${value}`);
-  debugger;
-
   const styles = useStyles();
   const renderValue = () => {
     switch (toggle) {
