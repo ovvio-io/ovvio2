@@ -26,6 +26,7 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.row],
     borderRadius: '37px',
     border: ' 1px solid var(--primary-p-5, #8BC5EE)',
+    display: 'flex',
   },
   available: {
     background: theme.primary.p1,
@@ -310,6 +311,47 @@ export const UserPill: React.FC<UserPillProps> = ({
   );
 };
 
+interface RemoveButtonProps {
+  onRemove?: () => void;
+}
+
+export function RemoveButton({ onRemove }: RemoveButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button
+      onClick={onRemove}
+      className={cn(styles.compose, styles.blue)}
+      style={{ marginBottom: '8px' }}
+    >
+      <div>
+        <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
+        <span className={cn(styles.textWhite)}>{'Remove'}</span>
+      </div>
+    </Button>
+  );
+}
+
+interface CancelButtonProps {
+  onCancel?: () => void;
+}
+
+export function CancelButton({ onCancel }: CancelButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onCancel} className={cn(styles.compose)}>
+      <div>
+        <img
+          key="CancelRemoveUserSettings"
+          src="/icons/settings/Close-big.svg"
+        />
+        <span className={cn(styles.text)}>{'Cancel,'}</span>
+      </div>
+    </Button>
+  );
+}
+
 interface DeleteWsButtonProps {
   wsMng: VertexManager<Workspace>;
   onDeleteClick: (ws: VertexManager<Workspace>) => void;
@@ -338,7 +380,12 @@ export function DeleteWsButton({
       )}
     >
       <div>
-        <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
+        <img
+          key="DeleteWsInSettings"
+          src="/icons/settings/Delete.svg"
+          style={{ marginTop: '4px' }}
+        />
+
         <span className={cn(styles.text)}>{'Delete Workspace'}</span>
       </div>{' '}
     </Button>

@@ -166,6 +166,10 @@ export function usePartialVertex<
     });
   }, [vertexMng, setResult, keys]);
 
+  if (vertexMng && result?.key !== vertexMng?.key) {
+    setResult(new Proxy(vertexMng.getVertexProxy(), {}));
+  }
+
   return result;
 }
 

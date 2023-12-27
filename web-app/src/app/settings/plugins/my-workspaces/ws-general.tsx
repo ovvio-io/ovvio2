@@ -5,6 +5,7 @@ import SettingsField from '../../components/settings-field.tsx';
 import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
+  useVertex,
   useVertices,
 } from '../../../../core/cfds/react/vertex.ts';
 import { View } from '../../../../../../cfds/client/graph/vertices/view.ts';
@@ -20,20 +21,13 @@ import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import {
   AddUserButton,
+  CancelButton,
   DeleteWsButton,
-  EditButton,
+  RemoveButton,
 } from '../../components/settings-buttons.tsx';
 import TextField from '../../../../../../styles/components/inputs/TextField.tsx';
-import SelectionButton, {
-  SelectionItem,
-  SelectionPopup,
-} from '../../../../shared/selection-button/index.tsx';
-import { UISource } from '../../../../../../logging/client-events.ts';
-import { suggestResults } from '../../../../../../cfds/client/suggestions.ts';
-import { EmptyState } from '../../../workspace-content/workspace-view/empty-state/index.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 import UserTable from '../../components/user-table.tsx';
-import { IconMore } from '../../../../../../styles/components/new-icons/icon-more.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -142,11 +136,9 @@ const useStyles = makeStyles(() => ({
     marginTop: '69px',
     width: '324px',
   },
-
   hidden: {
     display: 'none',
   },
-  //-----------------------------------------------------------------
   popup: {
     backgroundColor: theme.colors.background,
     width: styleguide.gridbase * 21,
@@ -154,6 +146,20 @@ const useStyles = makeStyles(() => ({
     padding: '3px 2px 0px 2px',
     flexShrink: 0,
     marginBottom: styleguide.gridbase * 2,
+  },
+  confirmation: {
+    display: 'flex',
+    padding: '8px 10px 10px ',
+    flexDirection: 'column',
+    alignItems: 'center',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
+  confirmationButtons: {
+    display: 'flex',
+    padding: '16px 0px 16px 0px',
+    flexDirection: 'column',
+    width: '116px',
   },
 }));
 
@@ -163,45 +169,41 @@ export function WsGeneralSettings() {
   const mgr = graph.getVertexManager<View>('ViewWsSettings');
   const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
   const ws = [...partialView.selectedWorkspaces][0];
-  const wsV = usePartialVertex(ws);
-  const wsManager = ws ? ws.manager : undefined;
+  const wsV = useVertex(ws);
+  const wsManager = ws.manager;
 
   const onWorkspaceDeleted = () => {};
 
   return (
     <div>
-      {wsManager ? (
-        <div
-          className={cn(styles.barRow)}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-          }}
-        >
-          <div className={cn(styles.settingsFields)}>
-            <SettingsField
-              title="Workspace's Name"
-              toggle="editable"
-              value={wsV && wsV.name}
-              onChange={(newValue) => (wsV.name = newValue)}
-            />
-            <SettingsField
-              title="Description"
-              placeholder="Add a description of the project/client/etc."
-              toggle="editable"
-              value=""
-            />
-            <DeleteConfirmWsButton
-              wsMng={wsManager}
-              onDeleted={onWorkspaceDeleted}
-            />
-          </div>
-          <UsersList wsMng={wsManager} />
+      <div
+        className={cn(styles.barRow)}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexDirection: 'row',
+        }}
+      >
+        <div className={cn(styles.settingsFields)}>
+          <SettingsField
+            title="Workspace's Name"
+            toggle="editable"
+            value={wsV && wsV.name}
+            onChange={(newValue) => (wsV.name = newValue)}
+          />
+          <SettingsField
+            title="Description"
+            placeholder="Add a description of the project/client/etc."
+            toggle="editable"
+            value=""
+          />
+          <DeleteConfirmWsButton
+            wsMng={wsManager}
+            onDeleted={onWorkspaceDeleted}
+          />
         </div>
-      ) : (
-        <EmptyState />
-      )}
+        <UsersList wsMng={wsManager} />
+      </div>
     </div>
   );
 }
@@ -251,10 +253,12 @@ function UserItem({ user, userMng, removeUser }: UserItemProps) {
         align="start"
         direction="out"
       >
-        <div>
+        <div className={cn(styles.confirmation)}>
           Remove from workspace?
-          <EditButton onEditClick={() => removeUser(userMng)} />
-          <EditButton onEditClick={() => setShowConfirmMenu(false)} />
+          <div className={cn(styles.confirmationButtons)}>
+            <RemoveButton onRemove={() => removeUser(userMng)} />
+            <CancelButton onCancel={() => setShowConfirmMenu(false)} />
+          </div>
         </div>
       </Menu>
     </div>
