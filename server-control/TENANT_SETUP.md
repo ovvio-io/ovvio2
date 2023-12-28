@@ -8,15 +8,6 @@ assume this account is being used.
 1. Create a new Hosted Zone named `<tenant id>`.ovvio.io
 2. Create NS record for new subdomain in main account Route53
 
-## AWC Certificate Manager
-
-1. Request Public Certificate
-2. DNS Validation
-3. RSA Algo
-4. Click Create Records in Route 53
-
-Wait for certificate to be created
-
 ## VPC
 
 1. Switch to the correct AWS region for this tenant.
@@ -27,9 +18,9 @@ Wait for certificate to be created
 6. Choose _2 Availability Zones_
 7. Choose _2 number of public subnets_
 8. Choose _0 number of private subnets_
-9. Choose _NAT Gateways in 1 AZ_ as NAT is used only for installations during
-   machine setup.
-10. Choose _VPC endpoints S3 Gateway_
+9. Choose _0 NAT Gateways_ as NAT is used only for installations during machine
+   setup.
+10. Choose _No endpoints_
 11. Add an additional tag named `OvvioTenantId` with the value of the tenant id
 
 Finally, wait for VPC to finish setting up.
@@ -57,7 +48,7 @@ Finally, wait for VPC to finish setting up.
 ### Configure Internal Security Group
 
 1. Edit the previously created internal group
-2. Add inbound rule to Allow All Traffic from ALB group
+2. Add inbound rule to Allow Custom TCP 9000-9100 from ALB group
 3. Add outbound rule to Allow All Traffic to Anywhere-IPv4
 
 ### Configure ALB Security Group
@@ -75,22 +66,23 @@ Finally, wait for VPC to finish setting up.
 1. Switch to the correct AWS region for this tenant.
 2. Go to Instances > Launch Instance
 3. Name: `<tenant-id>`-s1, ...
-4. Amazon Linux
-5. Choose t3.medium as a starting point
-6. Create new private key per tenant called prod-`<tenant-id>`
+4. Add new Tag: `OvvioTenantId` with the value of the tenant id
+5. Amazon Linux
+6. Choose t3.medium as a starting point
+7. Create new private key per tenant called prod-`<tenant-id>`
    1. Store the private key in 1Password
-7. Choose correct VPC
-8. Choose correct subnet
-9. Auto-assign public IP: _YES_
-10. Select existing tenant internal security group
-11. Change the root volume to 64GB, encrypted with default KMS key
+8. Choose correct VPC
+9. Choose correct subnet
+10. Auto-assign public IP: _YES_
+11. Select existing tenant internal security group
+12. Change the root volume to 64GB, encrypted with default KMS key
     1. Delete on Termination: NO
-12. Under Advanced Details, select "ProdServer" IAM Role
-13. Termination Protection: Enable
-14. Stop Protection: Enable
-15. Detailed Cloudwatch Monitoring: Enable
-16. Credit Specification: Unlimited
-17. Allow tags in metadata: Enable 18: Paste launch-script.sh to User data field
+13. Under Advanced Details, select "ProdServer" IAM Role
+14. Termination Protection: Enable
+15. Stop Protection: Enable
+16. Detailed Cloudwatch Monitoring: Enable
+17. Credit Specification: Unlimited
+18. Allow tags in metadata: Enable 18: Paste launch-script.sh to User data field
 
 Wait for instance to launch
 
@@ -98,7 +90,7 @@ Wait for instance to launch
 
 1. Go to Load Balancing > Target Groups > Create Target Group
 2. Target Type: Instances
-3. Target Group Name: `<tenant-id`-tg.
+3. Target Group Name: `<tenant-id>`-tg.
 4. Protocol: HTTP, Port 80
 5. Choose correct VPC
 6. IPv4
