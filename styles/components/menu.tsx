@@ -8,6 +8,8 @@ import React, {
   MouseEvent,
   Children,
   createContext,
+  useImperativeHandle,
+  forwardRef,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, cn } from '../css-objects/index.ts';
@@ -67,6 +69,7 @@ const useStyles = makeStyles((theme) => ({
   },
   actionText: {
     flexGrow: 1,
+    marginLeft: styleguide.gridbase,
   },
   menuButton: {
     userSelect: 'none',
@@ -215,7 +218,7 @@ export const MenuItem = React.forwardRef<
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {IconItem && <IconItem className={cn(styles.icon, styles.blueIcon)} />}
+      {IconItem && <IconItem className={cn(styles.icon)} />}
       {children}
     </div>
   );
@@ -303,6 +306,7 @@ interface MenuProps {
   sizeByButton?: boolean;
   style?: {};
   isItemHovered?: boolean;
+  openImmediately?: boolean;
 }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
@@ -323,9 +327,10 @@ export default function Menu({
   sizeByButton = false,
   style = {},
   isItemHovered,
+  openImmediately,
 }: MenuProps) {
   const styles = useStyles();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openImmediately ? true : false);
   const anchor = useRef(null);
   const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
@@ -354,8 +359,8 @@ export default function Menu({
   );
 
   const openMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+    // e.stopPropagation();
+    // e.preventDefault();
     setOpen((x) => !x);
     onClick();
   };

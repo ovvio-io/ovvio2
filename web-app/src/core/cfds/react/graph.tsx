@@ -146,9 +146,9 @@ export function CfdsClientProvider({
     true,
   ).manager;
 
-  const WsSettingsView = graphManager.createVertex<View>( // ----------------------- NEW 19/12
+  const wsSettingsView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
-    { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
+    { owner: graphManager.rootKey },
     'ViewWsSettings',
     true,
   ).manager;
@@ -188,6 +188,8 @@ export function CfdsClientProvider({
   notesView.onVertexChanged(changeCallback);
   tasksView.onVertexChanged(changeCallback);
   overviewView.onVertexChanged(changeCallback);
+  wsSettingsView.onVertexChanged(changeCallback); // ----------------------- NEW 19/12
+
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {

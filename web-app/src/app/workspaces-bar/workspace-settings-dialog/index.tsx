@@ -711,6 +711,7 @@ interface WorkspaceSettingsViewProps {
   closeDialog: () => void;
 }
 export function WorkspaceSettingsView({
+  // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
   workspaceManager,
   closeDialog,
 }: WorkspaceSettingsViewProps) {
@@ -886,6 +887,7 @@ export default function WorkspaceSettingsDialog({
   const eventLogger = useEventLogger();
 
   const [tab, setTab] = useState(TABS.WS_SETTINGS);
+
   useEffect(() => {
     setTab(TABS.WS_SETTINGS);
   }, [isOpen]);

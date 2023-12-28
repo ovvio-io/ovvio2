@@ -73,14 +73,12 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
   const [email, setEmail] = useState<string | null>(null);
   const [team, setTeam] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  // const [editComplete, setEditComplete] = useState<boolean>(true);
   const [scrollToUser, setScrollToUser] = useState<string | null>(null);
 
   useEffect(() => {
     let timeoutId: number | undefined = setTimeout(() => {
       console.log('ScrollToUser now - ', scrollToUser);
       timeoutId = undefined;
-      // debugger;
       if (scrollToUser) {
         const newUserRow = document.getElementById(
           `setting/org/<${scrollToUser}>`
@@ -96,10 +94,12 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       }
     };
   }, [scrollToUser, setScrollToUser]);
+
   const handleSaveEditClick = () => {
     onSave();
     setStep(0);
   };
+
   const onSave = useCallback(() => {
     if (name !== null && email !== null) {
       if (name.trim() === '' || email.trim() === '') {
@@ -109,7 +109,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
           name: name,
           email: normalizeEmail(email),
         });
-        // setEditComplete(true);
         console.log('newVert.key now - ', newVert.key);
 
         setScrollToUser(newVert.key);

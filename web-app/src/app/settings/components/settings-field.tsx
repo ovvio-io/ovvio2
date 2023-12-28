@@ -9,6 +9,7 @@ const useStyles = makeStyles(() => ({
   inputContainer: {
     display: 'flex',
     alignItems: 'center',
+    width: '380px',
   },
   title: {
     fontSize: '13px',
@@ -32,7 +33,7 @@ const useStyles = makeStyles(() => ({
     padding: [0, 0, '40px', 0],
   },
   editLine: {
-    width: '480px',
+    width: '380px',
     height: '1px',
     background: theme.primary.p8,
     margin: '5px 0px 0px 0px',
@@ -44,7 +45,7 @@ interface SettingsFieldProps {
   title: string;
   titleType?: 'primary' | 'secondary';
   placeholder?: string;
-  value: string;
+  value: string | number | boolean;
   className?: string;
   toggle: 'editable' | 'duplicate' | 'label' | 'light';
 }

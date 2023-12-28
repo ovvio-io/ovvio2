@@ -117,16 +117,16 @@ const router = createBrowserRouter([
       </Settings>
     ),
   },
-  {
-    path: '/settings/workspaces-infoS/:tab',
-    element: (
-      <Settings style={lightTheme}>
-        <SettingsWs style={lightTheme}>
-          <TabView category={'workspaces-info'} />
-        </SettingsWs>
-      </Settings>
-    ),
-  },
+  // {
+  //   path: '/settings/workspaces-infoS/:tab',
+  //   element: (
+  //     <Settings style={lightTheme}>
+  //       <SettingsWs style={lightTheme}>
+  //         <TabView category={'workspaces-info'} />
+  //       </SettingsWs>
+  //     </Settings>
+  //   ),
+  // },
 ]);
 
 export function AppView() {

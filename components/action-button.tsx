@@ -42,38 +42,36 @@ export interface ActionButtonProps extends React.ComponentProps<'button'> {
   icon?: string;
 }
 
-export const ActionButton = React.forwardRef(
-  function ActionButton(
-    props: ActionButtonProps,
-    ref: React.Ref<HTMLButtonElement>,
-  ) {
-    const styles = useStyles();
-    const { onClick, enabled, mode, className, children, icon } = props;
-    let styleClass = styles.enabled;
+export const ActionButton = React.forwardRef(function ActionButton(
+  props: ActionButtonProps,
+  ref: React.Ref<HTMLButtonElement>
+) {
+  const styles = useStyles();
+  const { onClick, enabled, mode, className, children, icon } = props;
+  let styleClass = styles.enabled;
 
+  if (enabled === false || mode === 'disabled') {
+    styleClass = styles.disabled;
+  } else if (mode === 'default') {
+    styleClass = styles.default;
+  }
+  const onClickCallback = useCallback(() => {
     if (enabled === false || mode === 'disabled') {
-      styleClass = styles.disabled;
-    } else if (mode === 'default') {
-      styleClass = styles.default;
+      return;
     }
-    const onClickCallback = useCallback(() => {
-      if (enabled === false || mode === 'disabled') {
-        return;
-      }
-      if (onClick) {
-        onClick();
-      }
-    }, [enabled, mode, onClick]);
-    return (
-      <Button
-        {...props}
-        className={cn(styles.base, styleClass, className)}
-        ref={ref}
-        onClick={onClickCallback}
-      >
-        {icon && <img className={cn(styles.icon)} src={icon} />}
-        {children}
-      </Button>
-    );
-  },
-);
+    if (onClick) {
+      onClick();
+    }
+  }, [enabled, mode, onClick]);
+  return (
+    <Button
+      {...props}
+      className={cn(styles.base, styleClass, className)}
+      ref={ref}
+      onClick={onClickCallback}
+    >
+      {icon && <img className={cn(styles.icon)} src={icon} />}
+      {children}
+    </Button>
+  );
+});
