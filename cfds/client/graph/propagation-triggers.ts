@@ -7,8 +7,8 @@ import { assert } from '../../../base/error.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
 import {
   Mutation,
-  MutationPack,
   MutationOrigin,
+  MutationPack,
   mutationPackIsEmpty,
 } from './mutations.ts';
 import { FieldChangeTrigger, Vertex } from './vertex.ts';
@@ -45,7 +45,7 @@ export interface NeighborDidMutateCallback {
 export function triggerParent<T extends Vertex>(
   vertCallback: keyof T,
   fieldName: string,
-  parentScheme?: SchemeNamespace
+  parentScheme?: SchemeNamespace,
 ): FieldChangeTrigger<T> {
   return wrapInName(
     '__t_parent_' + fieldName,
@@ -59,21 +59,23 @@ export function triggerParent<T extends Vertex>(
         const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
         assert(
           callback !== undefined,
-          `Parent mutation handler '${String(
-            vertCallback
-          )}' does not exist on vertex of type '${vert.namespace}'`
+          `Parent mutation handler '${
+            String(
+              vertCallback,
+            )
+          }' does not exist on vertex of type '${vert.namespace}'`,
         );
         const sideEffects = callback.call(
           parent,
           mutation[1],
           mutation[2],
-          vert
+          vert,
         );
         if (!mutationPackIsEmpty(sideEffects)) {
           parent.manager.vertexDidMutate(sideEffects);
         }
       }
-    }
+    },
   );
 }
 
@@ -100,7 +102,7 @@ export interface TriggerChildrenOptions<T extends Vertex> {
 export function triggerChildren<T extends Vertex>(
   vertCallback: keyof T,
   fieldName: string,
-  childSchemeOrOpts?: SchemeNamespace | TriggerChildrenOptions<T>
+  childSchemeOrOpts?: SchemeNamespace | TriggerChildrenOptions<T>,
 ): FieldChangeTrigger<T> {
   const opts: TriggerChildrenOptions<T> | undefined =
     (typeof childSchemeOrOpts === 'string'
@@ -126,24 +128,27 @@ export function triggerChildren<T extends Vertex>(
         }
         const callback: NeighborDidMutateCallback = (child as T)[
           vertCallback
-        ] as any;
-        assert(
-          callback !== undefined,
-          `Parent mutation handler '${String(
-            vertCallback
-          )}' does not exist on vertex of type '${vert.namespace}'`
-        );
+        ] as NeighborDidMutateCallback;
+        if (!callback) {
+          continue;
+        }
+        // assert(
+        //   callback !== undefined,
+        //   `Parent mutation handler '${String(
+        //     vertCallback
+        //   )}' does not exist on vertex of type '${vert.namespace}'`
+        // );
         const sideEffects = callback.call(
           child,
           mutation[1],
           mutation[2],
-          vert
+          vert,
         );
         if (!mutationPackIsEmpty(sideEffects)) {
           child.manager.vertexDidMutate(sideEffects);
         }
       }
-    }
+    },
   );
 }
 
@@ -157,7 +162,7 @@ export function triggerChildren<T extends Vertex>(
 export function triggerCompose<T extends Vertex>(
   t1: FieldChangeTrigger<T>,
   t2: FieldChangeTrigger<T>,
-  name: string
+  name: string,
 ): FieldChangeTrigger<T> {
   return wrapInName('__t_composite_' + name, (vert: T, mutation: Mutation) => {
     t1(vert, mutation);
@@ -167,7 +172,8 @@ export function triggerCompose<T extends Vertex>(
 
 function wrapInName<T extends Vertex>(
   name: string,
-  impl: FieldChangeTrigger<T>
+  // deno-lint-ignore no-unused-vars
+  impl: FieldChangeTrigger<T>,
 ): FieldChangeTrigger<T> {
   // eslint-disable-next-line no-eval
   return eval(`(function ${name}(v, m) {
