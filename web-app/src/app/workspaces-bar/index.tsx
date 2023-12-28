@@ -356,7 +356,7 @@ const useStyles = makeStyles(
 
 const useStrings = createUseStrings(localization);
 
-type WorkspaceSystemGID = 'pinned' | 'hidden' | 'templates';
+type WorkspaceSystemGID = 'myWorkspace' | 'pinned' | 'hidden' | 'templates';
 
 type WorkspaceGID = GroupId<VertexManager<User> | WorkspaceSystemGID>;
 
@@ -373,6 +373,8 @@ function WorkspaceGIDToString(gid: WorkspaceGID): string {
 
 function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | null {
   const user = ws.graph.getRootVertex<User>();
+  const personalWsKey = `${ws.graph.rootKey}-ws`;
+
   if (user.hiddenWorkspaces?.has(ws.key)) {
     return 'hidden';
   }
@@ -382,10 +384,14 @@ function systemGIDForWorkspace(ws: Workspace): WorkspaceSystemGID | null {
   if (ws.isTemplate) {
     return 'templates';
   }
+  if (ws.key === personalWsKey) {
+    return 'myWorkspace';
+  }
   return null;
 }
 
 const kWorkspaceGIDOrder: readonly (WorkspaceGID | 'groups')[] = [
+  'myWorkspace',
   'pinned',
   null,
   'groups',
@@ -724,9 +730,10 @@ function WorkspaceListItem({
   );
 
   const setWorkspaceState = useCallback(
-    (state: 'template' | 'hidden' | 'pinned' | 'none') => {
+    (state: 'myWorkspace' | 'template' | 'hidden' | 'pinned' | 'none') => {
       const vert = workspace.getVertexProxy();
       vert.isTemplate = state === 'template';
+      // vert.isMyWorkspace = state === ''
       user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
       user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
       if (state === 'template' || state === 'hidden') {
@@ -797,64 +804,80 @@ function WorkspaceListItem({
           </div>
         ) : (
           <React.Fragment>
-            <Button
-              className={cn(
-                styles.pinButton,
-                groupId === 'pinned' && styles.pinButtonPinned
-              )}
-              onClick={() =>
-                setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-              }
-            >
-              {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-            </Button>
-            <Menu
-              renderButton={renderButton}
-              direction="out"
-              position="right"
-              align="start"
-              // className={cn(styles.itemMenu)}
-            >
-              {!isTemplate && (
-                <MenuItem
-                  onClick={() =>
-                    setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
-                  }
-                >
-                  {groupId === 'hidden' ? (
-                    <IconShow color={IconColor.Primary} />
-                  ) : (
-                    <IconHide />
-                  )}
-                  {groupId === 'hidden'
-                    ? strings.showWorkspace
-                    : strings.hideWorkspace}
-                </MenuItem>
-              )}
-              {groupId !== 'hidden' && (
-                <MenuItem
-                  onClick={() =>
-                    setWorkspaceState(
-                      groupId === 'templates' ? 'none' : 'template'
-                    )
-                  }
-                >
-                  {groupId === 'templates' ? (
-                    <IconTemplateUnset />
-                  ) : (
-                    <IconTemplateSet />
-                  )}
+            {groupId === 'myWorkspace' && (
+              <Button>
+                <img
+                  key="MyWorkspacePersonalIcon"
+                  src="/icons/settings/Personal.svg"
+                />
+              </Button>
+            )}
 
-                  {groupId === 'templates'
-                    ? strings.unsetTemplate
-                    : strings.setTemplate}
+            {groupId !== 'myWorkspace' && (
+              <Button
+                className={cn(
+                  styles.pinButton,
+                  groupId === 'pinned' && styles.pinButtonPinned
+                )}
+                onClick={() =>
+                  setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+                }
+              >
+                {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+              </Button>
+            )}
+            {groupId !== 'myWorkspace' && (
+              <Menu
+                renderButton={renderButton}
+                direction="out"
+                position="right"
+                align="start"
+                // className={cn(styles.itemMenu)}
+              >
+                {!isTemplate && (
+                  <MenuItem
+                    onClick={() =>
+                      setWorkspaceState(
+                        groupId === 'hidden' ? 'none' : 'hidden'
+                      )
+                    }
+                  >
+                    {groupId === 'hidden' ? (
+                      <IconShow color={IconColor.Primary} />
+                    ) : (
+                      <IconHide />
+                    )}
+                    {groupId === 'hidden'
+                      ? strings.showWorkspace
+                      : strings.hideWorkspace}
+                  </MenuItem>
+                )}
+                {groupId !== 'hidden' && (
+                  <MenuItem
+                    onClick={() =>
+                      setWorkspaceState(
+                        groupId === 'templates' ? 'none' : 'template'
+                      )
+                    }
+                  >
+                    {groupId === 'templates' ? (
+                      <IconTemplateUnset />
+                    ) : (
+                      <IconTemplateSet />
+                    )}
+
+                    {groupId === 'templates'
+                      ? strings.unsetTemplate
+                      : strings.setTemplate}
+                  </MenuItem>
+                )}
+
+                <MenuItem onClick={() => setIsSettingsOpen(true)}>
+                  <IconSettings />
+                  {strings.workspaceSettings}
                 </MenuItem>
-              )}
-              <MenuItem onClick={() => setIsSettingsOpen(true)}>
-                <IconSettings />
-                {strings.workspaceSettings}
-              </MenuItem>
-            </Menu>
+              </Menu>
+            )}
           </React.Fragment>
         ))}
       {/* <WorkspaceSettingsDialog
@@ -1013,21 +1036,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   if (!groups.includes('hidden')) {
     groups.push('hidden');
   }
-  // // Render "My Workspace" first
-  // const graph = useGraphManager();
-  // const personalWsKey = `${graph.rootKey}-ws`;
-  // const myWorkspace = query.vertices().find(ws => ws.key === personalWsKey);
-  // if (myWorkspace) {
-  //   contents.push(
-  //     <WorkspaceListItem
-  //       key={`wsbar/my-workspace/${myWorkspace.key}`}
-  //       workspace={myWorkspace}
-  //       groupId={null}
-  //       ofSettings={ofSettings}
-  //     />
-  //   );
-  //   contents.push(<div className={cn(styles.separator)} />); // Add the separator
-  // }
   for (const gid of query.groups()) {
     if (contents.length > 0) {
       contents.push(<div className={cn(styles.separator)} />);
@@ -1036,7 +1044,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     const expanded = view.expandedWorkspaceGroups.has(
       WorkspaceGIDToString(gid)
     );
-    if (gid !== 'pinned' && gid !== null) {
+    if (gid !== 'pinned' && gid !== null && gid !== 'myWorkspace') {
       const selectedCount = SetUtils.intersectionSize(
         view.selectedWorkspaces,
         query.vertices(gid)
@@ -1068,7 +1076,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     const graph = useGraphManager();
     const personalWsKey = `${graph.rootKey}-ws`;
 
-    if (gid === 'pinned' || gid === null || expanded) {
+    if (gid === 'pinned' || gid === 'myWorkspace' || gid === null || expanded) {
       for (const ws of query.group(gid)) {
         // Skip rendering "My Workspace" if ofSettings is true
         if (ofSettings && ws.key === personalWsKey) {
@@ -1086,25 +1094,8 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           />
         );
 
-        // // Render "My Workspace" first if ofSettings is false
-        // if (!ofSettings) {
-        //   const myWorkspaceVM = query
-        //     .vertices()
-        //     .find((ws) => ws.key === personalWsKey);
-        //   if (myWorkspaceVM) {
-        //     contents.push(
-        //       <WorkspaceListItem
-        //         key={`wsbar/my-workspace/${myWorkspaceVM.key}`}
-        //         workspace={myWorkspaceVM}
-        //         groupId={null}
-        //         ofSettings={ofSettings}
-        //       />
-        //     );
-        //   }
-        // }
-
         if (ws.key === personalWsKey) {
-          contents.push(<div className={cn(styles.separator)} />);
+          // contents.push(<div className={cn(styles.separator)} />);
         }
       }
     }
@@ -1199,7 +1190,6 @@ function WorkspaceBarInternal({
   const logger = useLogger();
   const activeViewMgr = useActiveViewManager();
   const view = usePartialGlobalView(
-    // 'selectedSettingsWorkspaces', // ADDED 24.12
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',

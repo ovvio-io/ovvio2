@@ -67,6 +67,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }, [isSearching]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    // event.stopPropagation();
+    // event.preventDefault();
     setSearchTerm(event.target.value);
   };
 

@@ -21,6 +21,9 @@
     "unsetTemplate": "Unset as Template",
     "inDemo": "This is not available while in demo",
     "GoToHelpCenter": "Go To Help Center",
-    "GoToHelpCenterShort": "Help"
+    "GoToHelpCenterShort": "Help",
+    "myWorkspace": "My Workspace",
+    "myWorkspaceShort": "My Workspace"
+
   }
 }

@@ -206,10 +206,11 @@ export function WsGeneralSettings() {
 
 interface UserItemProps {
   user: User;
+  ws: Workspace;
   userMng: VertexManager<User>;
-  removeUser: (rec: VertexManager<User>) => void;
+  removeUser: (userMng: VertexManager<User>, ws: Workspace) => void;
 }
-function UserItem({ user, userMng, removeUser }: UserItemProps) {
+function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
   const styles = useStyles();
   const [removeUserStep, setRemoveUserStep] = useState('startRemove');
 
@@ -249,7 +250,7 @@ function UserItem({ user, userMng, removeUser }: UserItemProps) {
   };
 
   const removeUser1 = (userMng: VertexManager<User>) => {
-    removeUser(userMng);
+    removeUser(userMng, ws);
     setRemoveUserStep('startRemove');
   };
 
@@ -317,7 +318,7 @@ export default function AddSelectionButton<T>({
 
   const onRowSelect = (user: User) => {
     console.log('ws is ', ws, 'user is ', user);
-    ws.users.add;
+    ws.users.add(user);
   };
 
   return (
@@ -421,9 +422,9 @@ function UsersList({ wsMng, ws }: UsersListProps) {
   const styles = useStyles();
   const { users } = usePartialVertex(wsMng, ['users']);
 
-  const removeUser = (userMng: VertexManager<User>) => {
+  const removeUser = (userMng: VertexManager<User>, ws: Workspace) => {
     const user = userMng.getVertexProxy();
-    user.isDeleted = 1;
+    ws.users.delete(user);
   };
 
   return (
@@ -438,6 +439,7 @@ function UsersList({ wsMng, ws }: UsersListProps) {
             <UserItem
               userMng={u.manager as VertexManager<User>}
               user={u}
+              ws={ws}
               key={u.key}
               removeUser={removeUser}
             />
