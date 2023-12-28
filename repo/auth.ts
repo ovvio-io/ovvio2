@@ -16,17 +16,17 @@ export type FetchOperatorEmails = () => readonly string[];
 export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
   fetchOperatorEmails: FetchOperatorEmails,
 ): Authorizer<ST> {
-  // ATTENTION: We look at the session who signed the commit (source) for
-  // determining permissions, rather than the session who transmits the commit
-  // (transport).
+  // ATTENTION: We decide which session to look at based on the operation:
+  // For reads, we take the calling session while for writes we use the signer
+  // of the commit (so p2p replication works for others' commits).
   return (repo, commit, session, write: boolean) => {
     if (!commit.signature) {
       return false;
     }
     let userKey: string | undefined;
-    if (commit.key === session.id) {
+    if (commit.key === session.id || write === false) {
       userKey = session.owner;
-    } else {
+    } else if (write === true) {
       const commitSignerSession = repo.trustPool.getSession(
         sessionIdFromSignature(commit.signature),
       );
@@ -108,20 +108,22 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
   sysDir: Repository<ST>,
   workspaceKey: string,
 ): Authorizer<ST> {
-  // ATTENTION: We look at the session who signed the commit (source) for
-  // determining permissions, rather than the session who transmits the commit
-  // (transport).
+  // ATTENTION: We decide which session to look at based on the operation:
+  // For reads, we take the calling session while for writes we use the signer
+  // of the commit (so p2p replication works for others' commits).
   return (repo, commit, session, write: boolean) => {
     if (!commit.signature) {
       return false;
     }
-    const commitSignerSession = sysDir.trustPool.getSession(
-      sessionIdFromSignature(commit.signature),
-    );
-    if (!commitSignerSession) {
-      return false;
+    let userKey: string | undefined;
+    if (write === false) {
+      userKey = session.owner;
+    } else if (write === true) {
+      const commitSignerSession = repo.trustPool.getSession(
+        sessionIdFromSignature(commit.signature),
+      );
+      userKey = commitSignerSession?.owner;
     }
-    const userKey = commitSignerSession.owner;
     // Anonymous session
     if (!userKey) {
       return false;
@@ -162,21 +164,24 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
 
 export function createUserAuthorizer<ST extends RepoStorage<ST>>(
   sysDir: Repository<ST>,
-  userKey: string,
+  repoUserKey: string,
 ): Authorizer<ST> {
-  // ATTENTION: We look at the session who signed the commit (source) for
-  // determining permissions, rather than the session who transmits the commit
-  // (transport).
+  // ATTENTION: We decide which session to look at based on the operation:
+  // For reads, we take the calling session while for writes we use the signer
+  // of the commit (so p2p replication works for others' commits).
   return (repo, commit, session, write: boolean) => {
     if (!commit.signature) {
       return false;
     }
-    const commitSignerSession = sysDir.trustPool.getSession(
-      sessionIdFromSignature(commit.signature),
-    );
-    if (!commitSignerSession) {
-      return false;
+    let requestingUserKey: string | undefined;
+    if (write === false) {
+      requestingUserKey = session.owner;
+    } else if (write === true) {
+      const commitSignerSession = repo.trustPool.getSession(
+        sessionIdFromSignature(commit.signature),
+      );
+      requestingUserKey = commitSignerSession?.owner;
     }
-    return userKey === 'root' || userKey === commitSignerSession.owner;
+    return requestingUserKey === 'root' || requestingUserKey === repoUserKey;
   };
 }
