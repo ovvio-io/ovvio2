@@ -11,6 +11,7 @@ import { useWorkspaceColor } from '../../../shared/workspace-icon/index.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
 import { SearchBar } from '../../../../../components/search-bar.tsx';
+import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 
 type RowInTableProps = {
   ws: Workspace;
@@ -232,7 +233,8 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
   }, [searchTerm, workspaces]);
 
   const wsKey = 'SettingWs_';
-
+  const graph = useGraphManager();
+  const personalWsKey = `${graph.rootKey}-ws`;
   return (
     <div className={isEditable ? cn(styles.tableContainer) : undefined}>
       <div className={cn(styles.tableContent)}>
@@ -244,15 +246,18 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
             isSearching={isSearching}
           />
         )}
-        {filteredWorkspaces.map((ws: Workspace) => (
-          <RowInTable
-            key={ws.key + wsKey}
-            ws={ws}
-            onRowSelect={onRowSelect}
-            isSelected={showSelection && selectedWorkspaces.includes(ws)}
-            isEditable={isEditable && !selectedWorkspaces.includes(ws)}
-          />
-        ))}
+        {filteredWorkspaces.map(
+          (ws: Workspace) =>
+            ws.key !== personalWsKey && (
+              <RowInTable
+                key={ws.key + wsKey}
+                ws={ws}
+                onRowSelect={onRowSelect}
+                isSelected={showSelection && selectedWorkspaces.includes(ws)}
+                isEditable={isEditable && !selectedWorkspaces.includes(ws)}
+              />
+            )
+        )}
       </div>
     </div>
   );
