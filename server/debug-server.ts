@@ -10,7 +10,7 @@ import { getRepositoryPath } from '../base/development.ts';
 import { buildAssets } from './generate-statc-assets.ts';
 
 interface Arguments {
-  tenant?: string;
+  org?: string;
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {
@@ -49,9 +49,9 @@ async function openBrowser(): Promise<void> {
 
 async function main(): Promise<void> {
   const args: Arguments = yargs(Deno.args)
-    .option('tenant', {
+    .option('org', {
       description:
-        'The tenant id to connect to. Connects to local server if not provided (default).',
+        'The organization id to connect to. Connects to local server if not provided (default).',
     })
     .parse();
   console.log('Starting web-app bundling...');
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   Deno.addSignalListener('SIGTERM', () => {
     ctx.close();
   });
-  const serverURL = args.tenant ? `https://${args.tenant}.ovvio.io` : undefined;
+  const serverURL = args.org ? `https://${args.org}.ovvio.io` : undefined;
   const watcher = Deno.watchFs(await getRepositoryPath());
   const server = new Server();
   await server.setup();
@@ -71,17 +71,16 @@ async function main(): Promise<void> {
     console.log('Changes detected. Rebuilding static assets...');
     try {
       const config = getOvvioConfig();
-      const version =
-        serverURL === undefined
-          ? incrementBuildNumber(config.version)
-          : config.version;
+      const version = serverURL === undefined
+        ? incrementBuildNumber(config.version)
+        : config.version;
       (await server.servicesForOrganization('localhost')).staticAssets =
         await buildAssets(ctx, version, serverURL);
       config.version = version;
       console.log('Static assets updated.');
       if (serverURL !== undefined) {
         console.log(
-          `NOTICE: Automatic reload disabled when the --tenant flag is provided.`
+          `NOTICE: Automatic reload disabled when the --org flag is provided.`,
         );
       }
     } catch (e) {
