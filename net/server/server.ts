@@ -457,6 +457,10 @@ function isValidOrgId(id: string): boolean {
   }
   for (let i = 0; i < len; ++i) {
     const code = id.charCodeAt(i);
+    // Hyphens are allowed
+    if (code === 45) {
+      continue;
+    }
     // [0 -
     if (code < 48) {
       return false;
