@@ -311,7 +311,6 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     if (!this.graph.repositoryReady(this.repositoryId)) {
-      this.touch();
       return;
     }
     const repo = this.repository;
