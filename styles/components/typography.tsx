@@ -5,7 +5,7 @@ import { brandLightTheme as theme } from '../theme.tsx';
 
 export const FontFamily: readonly string[] = [
   "'Poppins'",
-  "'Heebo-Adjusted'",
+  "'Heebo'",
   'sans-serif',
 ];
 
