@@ -1,3 +1,10 @@
+@font-face  {
+  font-family: 'Heebo-Adjusted';
+  src: local(Heebo);
+  size-adjust: 110%;
+}
+
+
 html,
 body,
 #root {
@@ -5,7 +12,7 @@ body,
   padding: 0;
   width: 100vw;
   height: 100vh;
-  font-family: 'Poppins', 'Heebo', sans-serif;
+  font-family: 'Poppins', 'Heebo-Adjusted', sans-serif;
   overflow: hidden;
 }
 /* .layout-column {

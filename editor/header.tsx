@@ -49,7 +49,7 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 3,
     width: styleguide.gridbase * 40,
     outline: 'none',
-    fontFamily: "'Poppins', 'Heebo', sans-serif",
+    fontFamily: "'Poppins', 'Heebo-Adjusted', sans-serif",
     fontSize: '30px',
     fontWeight: '600',
     lineHeight: styleguide.gridbase * 3,
