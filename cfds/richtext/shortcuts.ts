@@ -15,10 +15,10 @@ type ReplacerFunction = (
 const ShortcutsByLength: Record<number, ReplacerFunction[]> = {
   5: [replaceH1, replaceUL, replaceTask],
   6: [replaceH2, replaceOL],
-  7: [replaceH3],
-  8: [replaceH4],
-  9: [replaceH5],
-  10: [replaceH6],
+  // 7: [replaceH3],
+  // 8: [replaceH4],
+  // 9: [replaceH5],
+  // 10: [replaceH6],
 };
 
 function replaceH1(buffer: readonly FlatRepAtom[]): FlatRepAtom[] | undefined {

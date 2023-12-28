@@ -41,9 +41,12 @@ const useStyles = makeStyles(() => ({
     height: '100%',
     whiteSpace: 'pre-wrap',
   },
+  zeroMargins: {
+    margin: 0,
+  },
   emptySpan: {
     display: 'inline-block',
-    minHeight: '1em',
+    minHeight: styleguide.gridbase * 3,
     minWidth: '1px',
   },
   taskElement: {
@@ -52,7 +55,7 @@ const useStyles = makeStyles(() => ({
     borderTop: '1px solid',
     borderColor: theme.primary.p2,
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     transition:
       `background-color ${styleguide.transition.duration.short}ms ease-out`,
   },
@@ -81,8 +84,8 @@ const useStyles = makeStyles(() => ({
     transition:
       `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
     textDecorationColor: 'transparent',
-    position: 'relative',
-    top: '-3px',
+    // position: 'relative',
+    // top: '-3px',
   },
   uncheckedTaskText: {
     textDecorationColor: 'transparent',
@@ -101,7 +104,7 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     height: '1px',
     position: 'relative',
-    bottom: styleguide.gridbase * 2,
+    // bottom: styleguide.gridbase / 2,
     transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
   },
   p: {
@@ -143,8 +146,8 @@ const useStyles = makeStyles(() => ({
     backgroundColor: theme.mono.m0,
     borderRadius: 2,
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    position: 'relative',
-    top: styleguide.gridbase * 3,
+    position: 'absolute',
+    translate: '0px -3px',
     transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
     width: styleguide.gridbase * 3,
     height: styleguide.gridbase * 3,
@@ -156,6 +159,22 @@ const useStyles = makeStyles(() => ({
     overflow: 'visible',
     display: 'flex',
     alignItems: 'flex-start',
+  },
+  h1Element: {
+    marginTop: 0,
+    marginBottom: styleguide.gridbase * 2,
+  },
+  h2Element: {
+    marginTop: 0,
+    marginBottom: styleguide.gridbase * 2,
+  },
+  listElement: {
+    marginTop: 0,
+    marginBottom: styleguide.gridbase * 2,
+  },
+  paragraphElementContainer: {
+    marginTop: 0,
+    marginBottom: styleguide.gridbase * 2,
   },
 }));
 
@@ -363,7 +382,7 @@ function ParagraphElementNode(
     }
   }, [ctx, onChange]);
   return (
-    <p
+    <div
       key={id}
       id={htmlId}
       data-ovv-key={id}
@@ -371,6 +390,10 @@ function ParagraphElementNode(
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
+      className={cn(
+        styles.paragraphElement,
+        showNewTaskHint && styles.paragraphElementContainer,
+      )}
     >
       {showNewTaskHint && (
         <div
@@ -378,15 +401,15 @@ function ParagraphElementNode(
           onClick={onNewTask}
           style={{
             opacity: hover ? 1 : 0,
-            left: dir === 'rtl' ? '0px' : `${-styleguide.gridbase * 5}px`,
-            right: dir === 'rtl' ? `${-styleguide.gridbase * 5}px` : '0px',
+            left: dir === 'rtl' ? '0px' : `${styleguide.gridbase * 6}px`,
+            right: dir === 'rtl' ? `${styleguide.gridbase * 6}px` : '0px',
           }}
         >
           <img src='/icons/design-system/checkbox/selected.svg' />
         </div>
       )}
       {children}
-    </p>
+    </div>
   );
 }
 
@@ -401,6 +424,7 @@ export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
 }
 
 export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
+  const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
 
@@ -444,6 +468,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h1Element)}
         >
           {children}
         </h1>
@@ -456,6 +481,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h2Element)}
         >
           {children}
         </h2>
@@ -468,6 +494,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h2Element)}
         >
           {children}
         </h3>
@@ -480,6 +507,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h2Element)}
         >
           {children}
         </h4>
@@ -492,6 +520,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h2Element)}
         >
           {children}
         </h5>
@@ -504,13 +533,13 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.h2Element)}
         >
           {children}
         </h6>
       );
 
     case 'ol':
-      debugger;
       return (
         <ol
           key={ctx.doc.nodeKeys.keyFor(node).id}
@@ -518,6 +547,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           start={node.start}
           dir={dir}
+          className={cn(styles.listElement)}
         >
           {children}
         </ol>
@@ -530,6 +560,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           id={htmlId}
           data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
           dir={dir}
+          className={cn(styles.listElement)}
         >
           {children}
         </ul>
