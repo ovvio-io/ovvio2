@@ -49,10 +49,15 @@ const useStyles = makeStyles(() => ({
     minHeight: styleguide.gridbase * 3,
     minWidth: '1px',
   },
+  firstTaskElement: {
+    borderTop: '1px solid',
+  },
+  lastTaskElement: {
+    marginBottom: styleguide.gridbase * 2,
+  },
   taskElement: {
     boxSizing: 'border-box',
     borderBottom: '1px solid',
-    borderTop: '1px solid',
     borderColor: theme.primary.p2,
     display: 'flex',
     alignItems: 'center',
@@ -454,7 +459,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     ctx.doc.ranges[ctx.selectionId].focus.node;
   const focusPath = focusNode && pathToNode(ctx.doc.root, focusNode);
   const elementInFocusPath = focusPath?.includes(node) === true;
-  const isChildOfRoot = ctx.doc.root.children.includes(node);
+  const indexInRoot = ctx.doc.root.children.indexOf(node);
+  const isChildOfRoot = indexInRoot >= 0;
 
   if (!dir) {
     dir = ctx.baseDirection || 'auto';
@@ -579,7 +585,20 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
         </li>
       );
 
-    case 'ref':
+    case 'ref': {
+      let isLastTask = false;
+      let isFirstTask = false;
+      if (isChildOfRoot) {
+        const rootChildren = ctx.doc.root.children;
+        const nextElement = rootChildren[indexInRoot + 1];
+        if (!isRefNode(nextElement)) {
+          isLastTask = true;
+        }
+        const prevElement = rootChildren[indexInRoot - 1];
+        if (!isRefNode(prevElement)) {
+          isFirstTask = true;
+        }
+      }
       return (
         <TaskElement
           id={ctx.doc.nodeKeys.keyFor(node).id}
@@ -588,10 +607,15 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           focused={elementInFocusPath}
           onChange={onChange}
           ctx={ctx}
+          className={cn(
+            isLastTask && styles.lastTaskElement,
+            isFirstTask && styles.firstTaskElement,
+          )}
         >
           {children}
         </TaskElement>
       );
+    }
 
     case 'p':
     default:
