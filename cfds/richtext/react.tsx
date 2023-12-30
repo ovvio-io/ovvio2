@@ -113,14 +113,14 @@ const useStyles = makeStyles(() => ({
     lineHeight: '18px',
   },
   h1: {
-    fontWeight: '600',
-    fontSize: '34px',
-    lineHeight: '45px',
+    fontWeight: '700',
+    fontSize: '18px',
+    lineHeight: '24px',
   },
   h2: {
-    fontWeight: '600',
-    fontSize: '30px',
-    lineHeight: '32px',
+    fontWeight: '400',
+    fontSize: '16px',
+    lineHeight: '22px',
   },
   h3: {
     fontWeight: '600',
