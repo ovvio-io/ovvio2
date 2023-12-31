@@ -448,7 +448,6 @@ export class SyncEndpoint implements Endpoint {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(msgJSON),
     });
-    const sigPromise = generateRequestSignature(services.settings.session);
     if (msg.values.length > 0) {
       if ((await persistValues(msg.values)) > 0 && replicas) {
         // Sync changes with replicas
