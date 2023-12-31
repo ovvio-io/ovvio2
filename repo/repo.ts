@@ -30,6 +30,8 @@ import {
   AdjacencyList,
   SimpleAdjacencyList,
 } from '../cfds/client/graph/adj-list.ts';
+import { RendezvoisHash } from '../base/rendezvous-hash.ts';
+import { kSecondMs } from '../base/date.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -64,6 +66,11 @@ export type RepositoryIndexes<T extends RepoStorage<T>> = Record<
   string,
   RepositoryIndex<T>
 >;
+
+export interface CommitGraph {
+  commit: Commit;
+  children: CommitGraph[];
+}
 
 export class Repository<
   ST extends RepoStorage<ST>,
@@ -198,37 +205,36 @@ export class Repository<
     }
   }
 
+  keyExists(key: string | null): boolean {
+    for (const c of this.storage.commitsForKey(key)) {
+      return true;
+    }
+    return false;
+  }
+
   leavesForKey(
     key: string | null,
     session?: Session,
-    pendingCommit?: Commit,
   ): Commit[] {
     const adjList = this._adjList;
-    const result: Commit[] = [];
+    const leavesBySession = new Map<string, Commit | null>();
     for (const c of this.commitsForKey(key, session)) {
       if (!adjList.hasInEdges(c.id)) {
+        const sessionId = c.session;
+        leavesBySession.set(
+          sessionId,
+          leavesBySession.has(sessionId) ? null : c,
+        );
+      }
+    }
+
+    const result: Commit[] = [];
+    for (const c of leavesBySession.values()) {
+      if (c) {
         result.push(c);
       }
     }
-    if (pendingCommit && !adjList.hasInEdges(pendingCommit.id)) {
-      result.push(pendingCommit);
-    }
     return result;
-    // for (const c of this.commitsForKey(key, session)) {
-    // const childrenPerCommit = new Map<string, Set<Commit>>();
-    //   this._setChildrenPerCommit(c, childrenPerCommit);
-    // }
-    // if (pendingCommit) {
-    //   assert(pendingCommit.key === key); // Sanity check
-    //   this._setChildrenPerCommit(pendingCommit, childrenPerCommit);
-    // }
-    // const result: Commit[] = [];
-    // for (const c of this.commitsForKey(key)) {
-    //   if (!childrenPerCommit.has(c.id)) {
-    //     result.push(c);
-    //   }
-    // }
-    // return result;
   }
 
   private _setChildrenPerCommit(
@@ -344,44 +350,44 @@ export class Repository<
     if (c2.parents.includes(c1.id)) {
       return c1;
     }
-    let parents1 = new Set<string>(c1.parents);
-    let parents2 = new Set<string>(c2.parents);
+    const parents1 = new Set<string>(c1.parents);
+    const parents2 = new Set<string>(c2.parents);
     parents1.add(c1.id);
     parents2.add(c2.id);
-    const c1Ancestors = new Set<string>(parents1);
-    const c2Ancestors = new Set<string>(parents2);
 
-    while (parents1.size > 0 || parents2.size > 0) {
-      SetUtils.update(
-        c1Ancestors,
-        SetUtils.filter(parents1, (id) => this.hasCommit(id)),
-      );
-      SetUtils.update(
-        c2Ancestors,
-        SetUtils.filter(parents2, (id) => this.hasCommit(id)),
-      );
-      const bases = SetUtils.intersection(c1Ancestors, c2Ancestors);
+    while (true) {
+      const bases = SetUtils.intersection(parents1, parents2);
       if (bases.size > 0) {
         return Array.from(bases).map((id) => this.getCommit(id)).sort(
           compareCommitsDesc,
         )[0];
       }
-      const newParents1 = new Set<string>();
-      for (const parentId of parents1) {
+      let updated = false;
+      for (const parentId of Array.from(parents1)) {
         if (this.hasCommit(parentId)) {
           const parent = this.getCommit(parentId);
-          SetUtils.update(newParents1, parent.parents);
+          for (const p of parent.parents) {
+            if (!parents1.has(p)) {
+              parents1.add(p);
+              updated = true;
+            }
+          }
         }
       }
-      const newParents2 = new Set<string>();
-      for (const parentId of parents2) {
+      for (const parentId of Array.from(parents2)) {
         if (this.hasCommit(parentId)) {
           const parent = this.getCommit(parentId);
-          SetUtils.update(newParents2, parent.parents);
+          for (const p of parent.parents) {
+            if (!parents2.has(p)) {
+              parents2.add(p);
+              updated = true;
+            }
+          }
         }
       }
-      parents1 = newParents1;
-      parents2 = newParents2;
+      if (!updated) {
+        break;
+      }
     }
     return undefined;
   }
@@ -451,11 +457,6 @@ export class Repository<
    * @param session The caller's session id. Used to ensure internal consistency
    *                for this session.
    *
-   * @param pendingCommit A commit that's yet to be persisted to the repository,
-   *                      but will be persisted immediately after this call.
-   *                      It'll be taken into account as if it's already part
-   *                      of the commit graph.
-   *
    * @param merge Whether to perform a merge when needed, or force a read-only
    *              read that won't generate any new commits.
    *
@@ -468,10 +469,8 @@ export class Repository<
   headForKey(
     key: string | null,
     session?: string,
-    pendingCommit?: Commit,
     merge = true,
   ): Commit | undefined {
-    assert(!pendingCommit || pendingCommit.key === key);
     if (!session) {
       session = this.trustPool.currentSession.id;
     }
@@ -486,7 +485,6 @@ export class Repository<
     const leaves = this.leavesForKey(
       key,
       session ? this.trustPool.getSession(session) : undefined,
-      pendingCommit,
     );
     if (leaves.length < 1) {
       // No commit history found. Return the null record as a starting point
@@ -500,8 +498,8 @@ export class Repository<
     if (commitsToMerge.length === 1) {
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
-    let result: Commit | undefined;
-    if (merge && this.allowMerge) {
+    const mergeLeaderSession = mergeLeaderFromLeaves(commitsToMerge) || session;
+    if (merge && this.allowMerge && mergeLeaderSession === session) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
       // rely on our patch to come up with a nice result. A better way may be to
@@ -566,6 +564,7 @@ export class Repository<
             parents: leaves.map((c) => c.id),
           }),
         );
+        debugger;
         signCommit(this.trustPool.currentSession, mergeCommit).then(
           (signedCommit) => {
             this.persistVerifiedCommits([signedCommit]);
@@ -578,45 +577,55 @@ export class Repository<
         }
       }
     }
-    if (!result) {
-      // Since we're dealing with a partial graph, some of our leaves may not
-      // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
-      // If we somehow temporarily lost c2 and c4, we would consider both c3
-      // and c1 as leaves. Therefore, we first sort all our leaves from
-      // newest to oldest.
-      leaves.sort(compareCommitsDesc);
-      // Preserve local consistency for the caller and return whichever value
-      // it wrote last.
-      for (const c of leaves) {
-        if (c.session === session) {
-          const head = this.cacheHeadForKey(key, c);
-          if (head) {
-            return head;
-          }
+    // Since we're dealing with a partial graph, some of our leaves may not
+    // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
+    // If we somehow temporarily lost c2 and c4, we would consider both c3
+    // and c1 as leaves. Therefore, we first sort all our leaves from
+    // newest to oldest.
+    leaves.sort(compareCommitsDesc);
+    // Preserve local consistency for the caller and return whichever value
+    // it wrote last.
+    for (const c of leaves) {
+      if (c.session === session) {
+        const head = this.cacheHeadForKey(key, c);
+        if (head) {
+          debugger;
+          console.log(`=== CHOSE LOCAL HEAD ===`);
+          return head;
+        }
+      }
+    }
+    // We're not part of the writers. Follow the leader so our view remains
+    // relatively stable.
+    for (const c of leaves) {
+      if (c.session === mergeLeaderSession) {
+        const head = this.cacheHeadForKey(key, c);
+        if (head) {
+          return head;
         }
       }
     }
     // No match found. Find the last written value we can handle safely
-    for (
-      const c of Array.from(this.commitsForKey(key)).sort(
-        compareCommitsDesc,
-      )
-    ) {
-      const head = this.cacheHeadForKey(key, c);
-      if (head) {
-        return head;
-      }
-    }
+    // for (
+    //   const c of Array.from(this.commitsForKey(key)).sort(
+    //     compareCommitsDesc,
+    //   )
+    // ) {
+    //   const head = this.cacheHeadForKey(key, c);
+    //   if (head) {
+    //     return head;
+    //   }
+    // }
+    debugger;
     return undefined;
   }
 
   valueForKey(
     key: string | null,
     session?: string,
-    pendingCommit?: Commit,
     merge = true,
   ): CFDSRecord {
-    const head = this.headForKey(key, session, pendingCommit, merge);
+    const head = this.headForKey(key, session, merge);
     return head ? this.recordForCommit(head) : CFDSRecord.nullRecord();
   }
 
@@ -640,11 +649,15 @@ export class Repository<
       return false;
     }
     const session = this.trustPool.currentSession;
-    const head = await this.headForKey(key);
+    const head = this.headForKey(key);
+    if (!head && this.keyExists(key)) {
+      throw serviceUnavailable();
+    }
     const headRecord = head ? this.recordForCommit(head) : undefined;
     if (headRecord?.isEqual(value)) {
       return false;
     }
+    debugger;
     let commit = new Commit({
       session: session.id,
       key,
@@ -717,7 +730,7 @@ export class Repository<
   }
 
   hasKey(key: string | null): boolean {
-    return this.headForKey(key, undefined, undefined, false) !== undefined;
+    return this.headForKey(key, undefined, false) !== undefined;
   }
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
@@ -734,10 +747,14 @@ export class Repository<
           }
           if (authorizer(this, c, session, true)) {
             yield c;
+          } else {
+            debugger;
           }
         } else {
           yield c;
         }
+      } else {
+        debugger;
       }
     }
   }
@@ -808,7 +825,6 @@ export class Repository<
         const headRecord = this.valueForKey(
           commit.key,
           undefined,
-          undefined,
           false,
         );
         if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
@@ -852,6 +868,27 @@ export class Repository<
     assert(result?.length > 0);
     return result;
   }
+  graphForKey(key: string | null): CommitGraph[] {
+    const commits = Array.from(this.commitsForKey(key));
+    const roots = commits.filter((c) => !c.parents || !c.parents.length);
+    const result: CommitGraph[] = [];
+    for (const r of roots) {
+      result.push(this.subGraphForCommit(r.id));
+    }
+    return result;
+  }
+  private subGraphForCommit(id: string): CommitGraph {
+    const adjList = this._adjList;
+    const root = this.getCommit(id);
+    const graph: CommitGraph = {
+      commit: root,
+      children: [],
+    };
+    for (const { vertex } of adjList.inEdges(root.id)) {
+      graph.children.push(this.subGraphForCommit(vertex));
+    }
+    return graph;
+  }
 }
 
 function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
@@ -874,6 +911,17 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
   }
   // Reverse order so we get descending timestamps
   return coreValueCompare(c2.timestamp, c1.timestamp);
+}
+
+function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
+  const hash = new RendezvoisHash();
+  const validSessionWindowTs = Date.now() - 5 * kSecondMs;
+  for (const c of leaves) {
+    if (c.timestamp.getTime() >= validSessionWindowTs) {
+      hash.addPeer(c.session);
+    }
+  }
+  return hash.peerForKey(leaves[0].key);
 }
 
 export class MemRepoStorage implements RepoStorage<MemRepoStorage> {

@@ -1,25 +1,29 @@
 import { murmur3 } from './hash.ts';
 
 export class RendezvoisHash {
-  private readonly _servers: Set<string>;
+  private readonly _peers: Set<string>;
 
-  constructor(servers?: Iterable<string>) {
-    this._servers = new Set(servers);
+  constructor(peers?: Iterable<string>) {
+    this._peers = new Set(peers);
   }
 
-  addServer(server: string): void {
-    this._servers.add(server);
+  addPeer(p: string): void {
+    this._peers.add(p);
   }
 
-  removeServer(s: string): void {
-    this._servers.delete(s);
+  removePeer(p: string): void {
+    this._peers.delete(p);
   }
 
-  serverForKey(key: string): string {
-    const servers = this._servers;
+  peerForKey(key: string | null): string | undefined {
+    const peers = this._peers;
+    if (!peers.size) {
+      return undefined;
+    }
     const entries: RendezvoisEntry[] = [];
-    for (const s of servers) {
-      entries.push([s, murmur3(`${s}/${key}`)]);
+    const normalizedKey = key === null ? 'null' : `"${key}"`;
+    for (const p of peers) {
+      entries.push([p, murmur3(`${p}/${normalizedKey}`)]);
     }
     entries.sort(compareRendezvoisEntries);
     return entries[0][0];
