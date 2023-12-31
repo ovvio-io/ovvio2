@@ -1,11 +1,11 @@
 import { assert } from './error.ts';
-import { encodeBase32, decodeBase32 } from 'std/encoding/base32.ts';
+import { decodeBase32, encodeBase32 } from 'std/encoding/base32.ts';
 
 export function splice(
   str: string,
   start: number,
   delCount: number,
-  newSubStr: string
+  newSubStr: string,
 ): string {
   return (
     str.slice(0, start) + newSubStr + str.slice(start + Math.abs(delCount))
@@ -79,7 +79,7 @@ export function fixedCharCodeAt(str: string, idx: number): number {
     const low = str.charCodeAt(idx + 1);
     assert(
       !isNaN(low),
-      'High surrogate not followed by low surrogate in fixedCharCodeAt()'
+      'High surrogate not followed by low surrogate in fixedCharCodeAt()',
     );
     return (hi - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000;
   }
@@ -167,9 +167,12 @@ export function isLTR(s: string): boolean {
 export type WritingDirection = 'ltr' | 'rtl' | 'auto';
 
 export function resolveWritingDirection(
-  str: string,
-  base: WritingDirection = 'auto'
+  str: string | undefined,
+  base: WritingDirection = 'auto',
 ): WritingDirection {
+  if (!str) {
+    return base;
+  }
   for (const char of str) {
     if (isRTL(char)) {
       return 'rtl';
@@ -198,7 +201,7 @@ export function normalizeEmail(email: string | undefined): string | undefined {
 }
 
 export function encodeBase32URL(
-  value: ArrayBuffer | Uint8Array | string
+  value: ArrayBuffer | Uint8Array | string,
 ): string {
   return encodeBase32(value).replace('=', '_').toLowerCase();
 }
