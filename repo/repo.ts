@@ -32,6 +32,7 @@ import {
 } from '../cfds/client/graph/adj-list.ts';
 import { RendezvoisHash } from '../base/rendezvous-hash.ts';
 import { kSecondMs } from '../base/date.ts';
+import { randomInt } from '../base/math.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -679,7 +680,11 @@ export class Repository<
 
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
     assert(commitContentsIsRecord(fullCommit.contents));
-    // return fullCommit;
+    // Periodically create a full commit to prevent all parties from being stuck
+    // to a specific commit.
+    if (randomInt(0, 20) === 0) {
+      return fullCommit;
+    }
     const key = fullCommit.key;
     const lastRecordCommit = this.lastRecordCommitForKey(key);
     let deltaCommit: Commit | undefined;
