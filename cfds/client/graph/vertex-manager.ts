@@ -102,6 +102,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _localMutationsCount = 0;
   private _commitPromise: Promise<void> | undefined;
+  private _hasLocalEdits = false;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -205,10 +206,11 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    const res = !this.record.isEqual(
-      repo.valueForKey(this.key, undefined, undefined, false),
-    );
-    return res;
+    // const res = !this.record.isEqual(
+    //   repo.valueForKey(this.key, undefined, false),
+    // );
+    // return res;
+    return this._hasLocalEdits;
   }
 
   get isRoot(): boolean {
@@ -327,6 +329,8 @@ export class VertexManager<V extends Vertex = Vertex>
           this.touch();
         }
         this._commitDelayTimer.unschedule();
+        this._hasLocalEdits = false;
+        this.vertexDidMutate(['hasPendingChanges', true, true]);
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
@@ -384,6 +388,7 @@ export class VertexManager<V extends Vertex = Vertex>
             `Attempting to delete required field '${prop} of '${this.namespace}'`,
           );
           success = target.record.delete(prop);
+          this._hasLocalEdits = true;
         } else {
           success = delete target[prop as keyof T];
         }
@@ -417,6 +422,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
         let mut: MutationPack = [prop, true, oldValue];
         if (this.scheme.hasField(prop)) {
+          this._hasLocalEdits = true;
           mut = target.onUserUpdatedField(mut);
         }
         this.vertexDidMutate(mut, dynamicFields);
@@ -766,7 +772,11 @@ class SetProxy<T> implements Clonable, Equatable, RecordValueWrapper<Set<T>> {
   }
 
   isEqual(other: any): boolean {
-    return other instanceof SetProxy && other._target === this._target;
+    if (other instanceof Set) {
+      return coreValueEquals(this._target, other);
+    }
+    return other instanceof SetProxy &&
+      coreValueEquals(other._target, this._target);
   }
 
   __wrappedValueForRecord() {
@@ -848,7 +858,11 @@ class DictionaryProxy<K, V>
   }
 
   isEqual(other: any): boolean {
-    return other instanceof DictionaryProxy && other._target === this._target;
+    if (other instanceof Map) {
+      return coreValueEquals(this._target, other);
+    }
+    return other instanceof DictionaryProxy &&
+      coreValueEquals(other._target, this._target);
   }
 
   __wrappedValueForRecord() {
