@@ -308,7 +308,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         ) {
           const mgr = this.getVertexManager(c.key);
           if (c.session !== this.trustPool.currentSession.id) {
-            if (plumbing.syncFinished) {
+            if (plumbing.syncFinished && mgr.hasPendingChanges) {
               mgr.commit();
             } else {
               mgr.touch();
