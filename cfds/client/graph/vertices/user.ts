@@ -5,6 +5,9 @@ import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { UserSettings } from './user-settings.ts';
 import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
+import { Dictionary } from '../../../../base/collections/dict.ts';
+
+export type UserMetadataKey = 'companyRoles' | 'comments';
 
 export class User extends BaseVertex {
   compare(other: Vertex): number {
@@ -97,7 +100,15 @@ export class User extends BaseVertex {
       NS_USER_SETTINGS,
       {},
       this.key + '_settings',
-      false
+      false,
     );
+  }
+
+  get metadata(): Dictionary<UserMetadataKey, string> {
+    return this.record.get('metadata') || new Map();
+  }
+
+  set metadata(d: Dictionary<UserMetadataKey, string>) {
+    this.record.set('metadata', d);
   }
 }
