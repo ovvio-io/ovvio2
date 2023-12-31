@@ -7,7 +7,7 @@ import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
 
-export type UserMetadataKey = 'companyRoles' | 'comments';
+export type UserMetadataKey = 'companyRoles' | 'comments' | 'team';
 
 export class User extends BaseVertex {
   compare(other: Vertex): number {
@@ -100,7 +100,7 @@ export class User extends BaseVertex {
       NS_USER_SETTINGS,
       {},
       this.key + '_settings',
-      false,
+      false
     );
   }
 

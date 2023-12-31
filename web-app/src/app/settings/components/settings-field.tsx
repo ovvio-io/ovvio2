@@ -42,6 +42,7 @@ const useStyles = makeStyles(() => ({
 
 interface SettingsFieldProps {
   onChange?: (newValue: string) => void;
+  saveMetadata?: () => void;
   title: string;
   titleType?: 'primary' | 'secondary';
   placeholder?: string;
@@ -58,6 +59,7 @@ const SettingsField: React.FC<SettingsFieldProps> = ({
   value,
   className,
   toggle,
+  saveMetadata,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +77,10 @@ const SettingsField: React.FC<SettingsFieldProps> = ({
     }
   }, [isEditing]);
 
+  const handleBlur = () => {
+    saveMetadata && saveMetadata();
+    setIsEditing(false);
+  };
   const styles = useStyles();
   const renderValue = () => {
     switch (toggle) {
@@ -89,7 +95,7 @@ const SettingsField: React.FC<SettingsFieldProps> = ({
                   type="text"
                   value={value}
                   onChange={handleChange}
-                  onBlur={() => setIsEditing(false)}
+                  onBlur={handleBlur}
                   style={{
                     border: 'none',
                     outline: 'none',
