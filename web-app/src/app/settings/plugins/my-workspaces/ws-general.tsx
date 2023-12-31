@@ -315,7 +315,6 @@ export default function AddSelectionButton<T>({
   const [isSearching, setIsSearching] = useState(false);
 
   const onRowSelect = (user: User) => {
-    console.log('ws is ', ws, 'user is ', user);
     ws.users.add(user);
   };
 

@@ -128,7 +128,6 @@ function TabView({ category }: any) {
     );
   });
 
-  // Set the first tab of the selected category as the default - TODO: exclude workspaces info.
   useEffect(() => {
     if (
       tabsForCategory.length > 0 &&
