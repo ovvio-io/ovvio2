@@ -82,6 +82,14 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
       case SchemeNamespace.USERS:
+        if (record.isNull) {
+          // Only operators are allowed to create users
+          return isOperator;
+        }
+        // Only operators are allowed to see other operators
+        if (operatorEmails.includes(record.get('email'))) {
+          return isOperator;
+        }
         return write === false || isOperator;
 
       // Readonly access to everyone

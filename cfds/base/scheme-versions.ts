@@ -136,7 +136,9 @@ const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
   },
 });
 
-const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {}, [
+const SCHEME_USER_2 = SCHEME_USER_1.derive(NS_USERS, {
+  metadata: TYPE_MAP,
+}, [
   'lastLoggedIn',
   'workspaces',
   'workspaceColors',
