@@ -261,6 +261,7 @@ export class Note extends ContentVertex {
                 type: NoteType.Task,
                 createdBy: this.createdBy?.key,
                 workspace: this.workspace.key,
+                assignees: new Set([this.graph.rootKey]),
               },
               key,
             );
