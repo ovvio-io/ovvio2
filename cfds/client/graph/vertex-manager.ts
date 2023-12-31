@@ -327,10 +327,10 @@ export class VertexManager<V extends Vertex = Vertex>
       } else {
         if (updated) {
           this.touch();
+          this._hasLocalEdits = false;
+          this.vertexDidMutate(['hasPendingChanges', true, true]);
         }
         this._commitDelayTimer.unschedule();
-        this._hasLocalEdits = false;
-        this.vertexDidMutate(['hasPendingChanges', true, true]);
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
