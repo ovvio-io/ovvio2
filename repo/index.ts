@@ -33,7 +33,7 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
     const key = commit.key;
     const prevHeadId = this._headIdForKey.get(key);
     const currentHead = this.repo.headForKey(key);
-    if (prevHeadId !== currentHead?.id) {
+    if (currentHead && prevHeadId !== currentHead?.id) {
       const prevRecord = prevHeadId
         ? repo.recordForCommit(prevHeadId)
         : Record.nullRecord();
