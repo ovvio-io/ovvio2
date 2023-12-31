@@ -149,7 +149,9 @@ function TabView({ category }: any) {
         {tabElements}
       </TabsHeader>
       {category === 'workspaces-info' && view.selectedWorkspaces.size < 1 ? (
-        <EmptyState />
+        <div>
+          <EmptyState />
+        </div>
       ) : (
         renderSelectedTabContent()
       )}

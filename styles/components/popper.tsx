@@ -164,9 +164,9 @@ function calcFn(fn: CalcFunction): GetPositionFn {
     const el = anchor;
     const rect = el.getBoundingClientRect();
     const points = {
-      top: rect.top,
+      top: rect.top + 3,
       left: rect.left,
-      right: window.innerWidth - (rect.left + rect.width),
+      right: window.innerWidth - (rect.left + rect.width - 12),
       bottom: window.innerHeight - (rect.top + rect.height),
     };
     return fn(el, rect, points);

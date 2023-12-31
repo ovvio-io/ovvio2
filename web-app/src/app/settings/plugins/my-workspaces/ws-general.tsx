@@ -139,10 +139,8 @@ const useStyles = makeStyles(() => ({
   popup: {
     backgroundColor: theme.colors.background,
     maxWidth: styleguide.gridbase * 21,
-    maxHeight: styleguide.gridbase * 20,
-    // padding: '3px 2px 0px 2px',
+    maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
-    // marginBottom: styleguide.gridbase * 2,
   },
   confirmation: {
     display: 'flex',
