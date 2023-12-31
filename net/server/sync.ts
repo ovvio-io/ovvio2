@@ -258,7 +258,6 @@ export class SyncEndpoint implements Endpoint {
       return false;
     }
     const path = getRequestPath(req).split('/');
-    debugger;
     if (path.length === 2 && path[1] === 'batch-sync') {
       return true;
     }
@@ -282,7 +281,6 @@ export class SyncEndpoint implements Endpoint {
     }
     const path = getRequestPath(req).split('/');
 
-    debugger;
     if (path.length === 3 && path[2] === 'sync') {
       return this.processSingleSyncRequest(services, req, info);
     }
