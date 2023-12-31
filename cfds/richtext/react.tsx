@@ -46,7 +46,7 @@ const useStyles = makeStyles(() => ({
   },
   emptySpan: {
     display: 'inline-block',
-    minHeight: styleguide.gridbase * 3,
+    minHeight: styleguide.gridbase * 2,
     minWidth: '1px',
   },
   firstTaskElement: {
