@@ -72,7 +72,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       case SchemeNamespace.WORKSPACE: {
         // Anyone is allowed to create a new workspace
         if (record.isNull) {
-          return true;
+          return write === true;
         }
         // Only members of an existing workspace are allowed to edit it
         const users = record.get<Set<string>>('users');
