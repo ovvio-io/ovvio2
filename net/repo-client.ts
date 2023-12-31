@@ -38,7 +38,6 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
       repo.numberOfCommits(session),
       this.previousServerSize,
       this.syncCycles,
-      await generateRequestSignature(repo.trustPool.currentSession),
     );
   }
 

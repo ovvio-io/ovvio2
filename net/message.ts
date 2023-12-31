@@ -223,7 +223,6 @@ export class SyncMessage<T extends SyncValueType>
     localSize: number,
     peerSize: number,
     expectedSyncCycles: number,
-    signature: string,
     includeMissing = true,
   ): SyncMessage<T> {
     const numberOfEntries = Math.max(1, localSize, peerSize);

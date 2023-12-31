@@ -464,7 +464,6 @@ export class SyncEndpoint implements Endpoint {
       getLocalCount(),
       msg.size,
       syncConfigGetCycles(kSyncConfigServer),
-      await sigPromise,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
     );

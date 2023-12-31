@@ -4,20 +4,15 @@ import { resolveWritingDirection } from '../base/string.ts';
 import { formatTimeDiff } from '../base/date.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
-import {
-  usePartialVertex,
-  useVertices,
-} from '../web-app/src/core/cfds/react/vertex.ts';
+import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { Text, TextSm } from '../styles/components/typography.tsx';
 import { WorkspaceIndicator } from '../components/workspace-indicator.tsx';
 import { ActionButton } from '../components/action-button.tsx';
-import Menu, { MenuItem } from '../styles/components/menu.tsx';
-import { WorkspaceItem } from '../web-app/src/app/new-workspace/workspaces-dropdown.tsx';
+import Menu from '../styles/components/menu.tsx';
 import { SelectWorkspaceMenu } from '../web-app/src/app/workspace-content/workspace-view/cards-display/card-item/workspace-indicator.tsx';
-import { usePartialGlobalView } from '../web-app/src/core/cfds/react/graph.tsx';
 
 export const HEADER_HEIGHT = styleguide.gridbase * 24;
 

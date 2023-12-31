@@ -6,8 +6,8 @@ import {
   makeStyles,
 } from '../../../../../../../styles/css-objects/index.ts';
 import {
-  typeFromCode,
   ErrorType,
+  typeFromCode,
 } from '../../../../../../../cfds/base/errors.ts';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';

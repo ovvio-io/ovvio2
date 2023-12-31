@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useState } from 'react';
 import * as ArrayUtils from '../../base/array.ts';
 import { docClone, Document } from './doc-state.ts';
 import {

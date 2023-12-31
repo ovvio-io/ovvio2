@@ -275,7 +275,7 @@ export abstract class BaseClient<
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
-    if (!serverFilter || this._previousServerSize !== this.getLocalSize()) {
+    if (!serverFilter /*|| this._previousServerSize !== this.getLocalSize()*/) {
       return true;
     }
     for (const id of this.localIds()) {

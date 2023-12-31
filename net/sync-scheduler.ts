@@ -22,7 +22,7 @@ export interface SyncConfig {
 export const kSyncConfigClient: SyncConfig = {
   minSyncFreqMs: 300,
   maxSyncFreqMs: 3000,
-  syncDurationMs: 2000,
+  syncDurationMs: 1000,
 };
 
 // export const kSyncConfigServer: SyncConfig = {
