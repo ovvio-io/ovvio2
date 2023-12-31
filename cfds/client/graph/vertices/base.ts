@@ -17,7 +17,7 @@ export class BaseVertex extends Vertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex instanceof BaseVertex) {
@@ -72,7 +72,7 @@ export class BaseVertex extends Vertex {
     if (!this._cachedSortStamp) {
       this._cachedSortStamp = this.record.get(
         'sortStamp',
-        OrderStamp.fromTimestamp(this.creationDate, this.key)
+        OrderStamp.fromTimestamp(this.creationDate, this.key),
       );
     }
     return this._cachedSortStamp!;
@@ -99,7 +99,7 @@ export class BaseVertex extends Vertex {
   parentDidMutate(
     local: boolean,
     oldValue: Vertex | undefined,
-    parent: Vertex
+    parent: Vertex,
   ): MutationPack {
     const prevIsDeleted = this.calcIsDeleted(oldValue?.isDeleted);
     if (prevIsDeleted !== this.isDeleted) {
@@ -111,7 +111,7 @@ export class BaseVertex extends Vertex {
   parentIsDeletedChanged(
     local: boolean,
     oldValue: number,
-    parent: Vertex
+    parent: Vertex,
   ): MutationPack {
     // Our parent's isDeleted affects us only when we're not explicitly deleted
     if (
@@ -189,7 +189,7 @@ export class ContentVertex extends BaseVertex {
 
   workspaceDidMutate(
     local: boolean,
-    oldValue: Workspace | undefined
+    oldValue: Workspace | undefined,
   ): MutationPack {
     if (this.parent?.isEqual(this.workspace)) {
       return ['parent', local, oldValue];
@@ -210,7 +210,7 @@ Vertex.registerFieldTriggers(BaseVertex, kFieldTriggersBase);
 const kFieldTriggersContent: FieldTriggers<ContentVertex> = {
   workspace: triggerChildren(
     'parentWorkspaceDidMutate',
-    'ContentVertex_workspace'
+    'ContentVertex_workspace',
   ),
 };
 
