@@ -359,8 +359,8 @@ export default function Menu({
   );
 
   const openMenu = (e: React.MouseEvent) => {
-    // e.stopPropagation();
-    // e.preventDefault();
+    e.stopPropagation();
+    e.preventDefault();
     setOpen((x) => !x);
     onClick();
   };

@@ -219,6 +219,10 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
     tableContent: {
       flex: 1,
     },
+    // scrollTable: {
+    //   overflowY: 'scroll',
+    //   overflowX: 'visible',
+    // },
   }));
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -246,18 +250,20 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
             isSearching={isSearching}
           />
         )}
-        {filteredWorkspaces.map(
-          (ws: Workspace) =>
-            ws.key !== personalWsKey && (
-              <RowInTable
-                key={ws.key + wsKey}
-                ws={ws}
-                onRowSelect={onRowSelect}
-                isSelected={showSelection && selectedWorkspaces.includes(ws)}
-                isEditable={isEditable && !selectedWorkspaces.includes(ws)}
-              />
-            )
-        )}
+        <div className={styles.scrollTable}>
+          {filteredWorkspaces.map(
+            (ws: Workspace) =>
+              ws.key !== personalWsKey && (
+                <RowInTable
+                  key={ws.key + wsKey}
+                  ws={ws}
+                  onRowSelect={onRowSelect}
+                  isSelected={showSelection && selectedWorkspaces.includes(ws)}
+                  isEditable={isEditable && !selectedWorkspaces.includes(ws)}
+                />
+              )
+          )}
+        </div>
       </div>
     </div>
   );

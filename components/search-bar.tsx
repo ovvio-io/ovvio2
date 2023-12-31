@@ -4,7 +4,6 @@ import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { Workspace } from '../cfds/client/graph/vertices/index.ts';
 
-//TODO: change to "SearchBar"
 export type SearchBarProps = {
   users?: User[];
   workspaces?: Workspace[];
