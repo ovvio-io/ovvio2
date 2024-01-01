@@ -3,11 +3,13 @@ import { SyncMessage } from './message.ts';
 import { BaseClient } from './base-client.ts';
 import { Commit } from '../repo/commit.ts';
 import { mapIterable } from '../base/common.ts';
-import { generateRequestSignature } from '../auth/session.ts';
 import { SyncConfig, SyncScheduler } from './sync-scheduler.ts';
+
+const COMMIT_SUBMIT_RETRY = 10;
 
 export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   private readonly _repo: Repository<T>;
+  private readonly _submitCount: Map<string, number>;
 
   constructor(
     repo: Repository<T>,
@@ -19,6 +21,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     super(storage, id, syncConfig, scheduler);
     this._repo = repo;
     this.ready = true;
+    this._submitCount = new Map();
   }
 
   get repo(): Repository<T> {
@@ -34,16 +37,40 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     const session = repo.trustPool.currentSession;
     return SyncMessage.build(
       this.previousServerFilter,
-      mapIterable(repo.commits(session), (c) => [c.id, c]),
+      this.valuesForMessage(),
       repo.numberOfCommits(session),
       this.previousServerSize,
       this.syncCycles,
     );
   }
 
+  private *valuesForMessage(): Generator<[string, Commit]> {
+    const repo = this.repo;
+    const counts = this._submitCount;
+    const session = repo.trustPool.currentSession;
+    for (const c of repo.commits(session)) {
+      if ((counts.get(c.id) || 0) < COMMIT_SUBMIT_RETRY) {
+        yield [c.id, c];
+      }
+    }
+  }
+
+  protected afterMessageSent(msg: SyncMessage<Commit>): void {
+    const counts = this._submitCount;
+    for (const commit of msg.values) {
+      const id = commit.id;
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+  }
+
   *localIds(): Generator<string> {
-    for (const c of this.repo.commits()) {
-      yield c.id;
+    const counts = this._submitCount;
+    const repo = this.repo;
+    const session = repo.trustPool.currentSession;
+    for (const c of repo.commits(session)) {
+      if ((counts.get(c.id) || 0) < COMMIT_SUBMIT_RETRY) {
+        yield c.id;
+      }
     }
   }
 

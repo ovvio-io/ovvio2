@@ -1,7 +1,6 @@
 import {
   AttachmentData,
   DataType,
-  InviteStatus,
   ISchemeManagerRegister,
   NS_NOTES,
   NS_TAGS,

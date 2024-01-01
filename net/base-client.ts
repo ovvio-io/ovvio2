@@ -223,6 +223,8 @@ export abstract class BaseClient<
       //
     }
 
+    this.afterMessageSent(reqMsg);
+
     let persistedCount = 0;
     if (syncResp.values.length) {
       const start = performance.now();
@@ -275,11 +277,8 @@ export abstract class BaseClient<
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
-    if (!serverFilter /*|| this._previousServerSize !== this.getLocalSize()*/) {
-      return true;
-    }
     for (const id of this.localIds()) {
-      if (!serverFilter.has(id)) {
+      if (!serverFilter || !serverFilter.has(id)) {
         return true;
       }
     }
@@ -297,5 +296,8 @@ export abstract class BaseClient<
     this.stopSyncing();
     this._closed = true;
     this._setIsOnline(false);
+  }
+
+  protected afterMessageSent(msg: SyncMessage<ValueType>): void {
   }
 }
