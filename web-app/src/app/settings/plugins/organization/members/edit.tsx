@@ -100,15 +100,25 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     setStep(0);
   };
 
+  const [metadata, setMetadata] = useState({
+    team: '',
+    companyRoles: '',
+    comments: '',
+  });
+
   const onSave = useCallback(() => {
     if (name !== null && email !== null) {
       if (name.trim() === '' || email.trim() === '') {
         console.log('Input is invalid');
       } else {
-        const newVert = graph.createVertex(SchemeNamespace.USERS, {
+        const metadataMap = new Map(Object.entries(metadata));
+
+        const newUser = {
           name: name,
           email: normalizeEmail(email),
-        });
+          metadata: metadataMap,
+        };
+        const newVert = graph.createVertex(SchemeNamespace.USERS, newUser);
         console.log('newVert.key now - ', newVert.key);
 
         setScrollToUser(newVert.key);
@@ -116,7 +126,7 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     } else {
       console.log('Name or email is null');
     }
-  }, [graph, name, email, setScrollToUser]);
+  }, [graph, name, email, metadata, setScrollToUser]);
 
   return (
     <div>
@@ -144,7 +154,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       </div>
       <UserTable
         users={users}
-        onRowSelect={() => {}}
         showSelection={false}
         selectedUsers={new Set<string>()}
         showSearch={true}
@@ -156,6 +165,8 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
         setRole={setRole}
         name={name}
         email={email}
+        metadata={metadata}
+        setMetadata={setMetadata}
         team={team}
         role={role}
       />

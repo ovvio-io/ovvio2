@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { SettingsTabId } from '../../../../../cfds/base/scheme-types.ts';
 import { tabsStyles } from '../components/tabs-style.tsx';
-import { usePartialRootUser } from '../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialRootUser,
+  useRootUser,
+} from '../../../core/cfds/react/graph.tsx';
 import SettingsField from '../components/settings-field.tsx';
 import { cn } from '../../../../../styles/css-objects/index.ts';
 import MembersTabContent from './organization/members/base.tsx';
 import { WsGeneralSettings } from './my-workspaces/ws-general.tsx';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../core/cfds/react/vertex.ts';
-import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
+import {
+  User,
+  UserMetadataKey,
+} from '../../../../../cfds/client/graph/vertices/user.ts';
+import { Dictionary } from '../../../../../base/collections/dict.ts';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -85,8 +93,40 @@ export function GeneralTabContent() {
     </div>
   );
 }
-
 export function DetailsTabContent() {
+  const rootUser = useRootUser();
+  const metaDataDictionary: Dictionary<UserMetadataKey, string> =
+    rootUser.getVertexProxy().metadata;
+
+  const [metadata, setMetadata] = useState({
+    team: metaDataDictionary ? metaDataDictionary.get('team') : '',
+    companyRoles: metaDataDictionary
+      ? metaDataDictionary.get('companyRoles')
+      : '',
+    comments: metaDataDictionary ? metaDataDictionary.get('comments') : '',
+  });
+
+  const handleMetadataChange = (key: string, value: string) => {
+    setMetadata((prevMetadata) => ({
+      ...prevMetadata,
+      [key]: value,
+    }));
+  };
+
+  const saveMetadata = useCallback(() => {
+    const updatedMetaDataDictionary =
+      metaDataDictionary instanceof Map
+        ? metaDataDictionary
+        : new Map<UserMetadataKey, string>();
+
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
+        updatedMetaDataDictionary.set(key as UserMetadataKey, value);
+      }
+    });
+    rootUser.getVertexProxy().metadata = updatedMetaDataDictionary;
+  }, [metadata, rootUser, metaDataDictionary]);
+
   const styles = tabsStyles();
   return (
     <div className={cn(styles.barRow)}>
@@ -94,19 +134,25 @@ export function DetailsTabContent() {
         title="Team"
         placeholder="Add team's name"
         toggle="editable"
-        value=""
+        value={metadata.team}
+        onChange={(newValue) => handleMetadataChange('team', newValue)}
+        saveMetadata={saveMetadata}
       />
       <SettingsField
         title="Company Roles"
-        placeholder=" Add member’s role/s in the company. Separate between roles by “;”"
+        placeholder="Add member’s role/s in the company. Separate between roles by “;”"
         toggle="editable"
-        value=""
+        value={metadata.companyRoles}
+        onChange={(newValue) => handleMetadataChange('companyRoles', newValue)}
+        saveMetadata={saveMetadata}
       />
       <SettingsField
         title="Comments"
         placeholder="Add free text"
         toggle="editable"
-        value=""
+        value={metadata.comments}
+        onChange={(newValue) => handleMetadataChange('comments', newValue)}
+        saveMetadata={saveMetadata}
       />
     </div>
   );

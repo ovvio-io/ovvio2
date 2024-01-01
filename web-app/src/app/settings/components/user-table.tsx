@@ -10,7 +10,7 @@ type EditableColumnProps = {
   index: number;
   placeholder: string;
   setCurrState: (s: string) => void;
-  value: string | null;
+  value: string | undefined;
 };
 const EditableColumn: React.FC<EditableColumnProps> = ({
   index,
@@ -78,6 +78,8 @@ type TableRowProps = {
   email?: string | null;
   team?: string | null;
   role?: string | null;
+  metadata?: { [key: string]: string }; // Assuming metadata is an object with string keys and values
+  setMetadata?: (metadata: { [key: string]: string }) => void;
 };
 const TableRow: React.FC<TableRowProps> = ({
   user,
@@ -91,6 +93,8 @@ const TableRow: React.FC<TableRowProps> = ({
   setRole,
   name,
   email,
+  metadata,
+  setMetadata,
   team,
   role,
 }) => {
@@ -182,6 +186,21 @@ const TableRow: React.FC<TableRowProps> = ({
     setIsRowHovered(false);
   };
 
+  const handleMetadataChange = (key, value) => {
+    setMetadata((prevMetadata) => ({
+      ...prevMetadata,
+      [key]: value,
+    }));
+    console.log(`Updating ${key} to: `, value);
+
+    // If setMetadata is coming from the parent component
+    setMetadata &&
+      setMetadata({
+        ...metadata,
+        [key]: value,
+      });
+  };
+
   return (
     <div
       className={cn(styles.rowContainer)}
@@ -218,9 +237,16 @@ const TableRow: React.FC<TableRowProps> = ({
         >
           <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
           <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
-          <div className={cn(styles.otherColumnStyle)}>{'Team'}</div>
-          <div className={cn(styles.otherColumnStyle)}>{'Role'}</div>
-          <div className={cn(styles.otherColumnStyle)}>{'Content'}</div>
+          <div className={cn(styles.otherColumnStyle)}>
+            {user.metadata.get('team')}
+          </div>
+          <div className={cn(styles.otherColumnStyle)}>
+            {user.metadata.get('companyRoles')}
+          </div>
+          <div className={cn(styles.otherColumnStyle)}>
+            {' '}
+            {user.metadata.get('comments')}
+          </div>
         </div>
       )}
       {addNewMember && setName && setEmail && setTeam && setRole && (
@@ -246,15 +272,17 @@ const TableRow: React.FC<TableRowProps> = ({
           />
           <EditableColumn
             index={3}
-            placeholder={'Team'}
-            setCurrState={setTeam}
-            value={team || ''}
+            placeholder="Roles"
+            value={metadata && metadata.companyRoles}
+            setCurrState={(value) =>
+              handleMetadataChange('companyRoles', value)
+            }
           />
           <EditableColumn
             index={4}
-            placeholder={'Role'}
-            setCurrState={setRole}
-            value={role || ''}
+            placeholder="Team"
+            value={metadata && metadata.team}
+            setCurrState={(value) => handleMetadataChange('team', value)}
           />
           <IconMore />
         </div> //iconMore will be changed to img
@@ -279,6 +307,8 @@ type UserTableProps = {
   email?: string | null;
   team?: string | null;
   role?: string | null;
+  metadata?: { [key: string]: string }; // Assuming metadata is an object with string keys and values
+  setMetadata?: (metadata: { [key: string]: string }) => void;
 };
 
 const UserTable: React.FC<UserTableProps> = ({
@@ -297,6 +327,8 @@ const UserTable: React.FC<UserTableProps> = ({
   email,
   team,
   role,
+  metadata,
+  setMetadata,
 }) => {
   const useStyles2 = makeStyles(() => ({
     tableContainer: {
@@ -409,6 +441,8 @@ const UserTable: React.FC<UserTableProps> = ({
             setRole={setRole}
             name={name}
             email={email}
+            metadata={metadata}
+            setMetadata={setMetadata}
             team={team}
             role={role}
           />
