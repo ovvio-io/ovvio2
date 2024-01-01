@@ -569,7 +569,7 @@ export class Repository<
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     const mergeLeaderSession = mergeLeaderFromLeaves(commitsToMerge) || session;
-    if (merge && this.allowMerge && mergeLeaderSession === session) {
+    if (merge && this.allowMerge /*&& mergeLeaderSession === session*/) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
       // rely on our patch to come up with a nice result. A better way may be to
