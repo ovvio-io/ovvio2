@@ -155,6 +155,9 @@ export async function signData(
   return encodeSignature(res);
 }
 
+let gCachedDataVerifications: Map<string, boolean> = new Map();
+setInterval(() => gCachedDataVerifications = new Map(), 10 * kSecondMs);
+
 /**
  * This is the lowest-level verification primitive. Given an expected signer,
  * an encoded signature string, and an optional external data, this function
@@ -198,8 +201,12 @@ export async function verifyData<T extends JSONValue>(
   }
   const encoder = new TextEncoder();
   const stableJSONString = stableStringify(container);
+  const cacheKey = `${expectedSigner.id}:${sig.signature}:${stableJSONString}`;
+  if (gCachedDataVerifications.has(cacheKey)) {
+    return gCachedDataVerifications.get(cacheKey)!;
+  }
   const buffer = encoder.encode(stableJSONString);
-  return await crypto.subtle.verify(
+  const result = await crypto.subtle.verify(
     {
       name: 'ECDSA',
       hash: { name: 'SHA-384' },
@@ -208,6 +215,8 @@ export async function verifyData<T extends JSONValue>(
     decodeBase32URL(sig.signature),
     buffer,
   );
+  gCachedDataVerifications.set(cacheKey, result);
+  return result;
 }
 
 /**
