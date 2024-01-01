@@ -81,6 +81,7 @@ export class Repository<
   readonly trustPool: TrustPool;
   readonly indexes?: IT;
   readonly authorizer?: Authorizer<ST>;
+  readonly allowedNamespaces: SchemeNamespace[];
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
@@ -89,15 +90,32 @@ export class Repository<
 
   allowMerge = true;
 
+  static namespacesForType(storage: RepositoryType): SchemeNamespace[] {
+    switch (storage) {
+      case 'sys':
+        return [
+          SchemeNamespace.WORKSPACE,
+          SchemeNamespace.USERS,
+          SchemeNamespace.SESSIONS,
+        ];
+      case 'data':
+        return [SchemeNamespace.NOTES, SchemeNamespace.TAGS];
+      case 'user':
+        return [SchemeNamespace.USER_SETTINGS, SchemeNamespace.VIEWS];
+    }
+  }
+
   constructor(
     storage: ST,
     trustPool: TrustPool,
+    allowedNamespaces: SchemeNamespace[],
     authorizer?: Authorizer<ST>,
     indexes?: (repo: Repository<ST, IT>) => IT,
   ) {
     super();
     this.storage = storage;
     this.trustPool = trustPool;
+    this.allowedNamespaces = allowedNamespaces;
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
     this._commitsCache = new Map();
@@ -207,7 +225,7 @@ export class Repository<
   }
 
   keyExists(key: string | null): boolean {
-    for (const c of this.storage.commitsForKey(key)) {
+    for (const _c of this.storage.commitsForKey(key)) {
       return true;
     }
     return false;
@@ -218,14 +236,14 @@ export class Repository<
     session?: Session,
   ): Commit[] {
     const adjList = this._adjList;
-    const leavesBySession = new Map<string, Commit | null>();
+    const leavesBySession = new Map<string, Commit>();
     for (const c of this.commitsForKey(key, session)) {
       if (!adjList.hasInEdges(c.id)) {
         const sessionId = c.session;
-        leavesBySession.set(
-          sessionId,
-          leavesBySession.has(sessionId) ? null : c,
-        );
+        const prevLeaf = leavesBySession.get(sessionId);
+        if (!prevLeaf || prevLeaf.timestamp.getTime() < c.timestamp.getTime()) {
+          leavesBySession.set(sessionId, c);
+        }
       }
     }
 
@@ -236,20 +254,6 @@ export class Repository<
       }
     }
     return result;
-  }
-
-  private _setChildrenPerCommit(
-    c: Commit,
-    childrenPerCommit: Map<string, Set<Commit>>,
-  ): void {
-    for (const p of c.parents) {
-      let children = childrenPerCommit.get(p);
-      if (!children) {
-        children = new Set();
-        childrenPerCommit.set(p, children);
-      }
-      children.add(c);
-    }
   }
 
   keys(session?: Session): Iterable<string> {
@@ -287,9 +291,15 @@ export class Repository<
    */
   findMergeBase(
     commits: Iterable<Commit>,
-  ): [commits: Commit[], base: Commit | undefined, scheme: Scheme] {
+  ): [
+    commits: Commit[],
+    base: Commit | undefined,
+    scheme: Scheme,
+    reachedRoot: boolean,
+  ] {
     let result: Commit | undefined;
     let scheme = Scheme.nullScheme();
+    let reachedRoot = false;
     const includedCommits: Commit[] = [];
     for (const c of commits) {
       if (!result) {
@@ -297,7 +307,8 @@ export class Repository<
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      const newBase = this._findMergeBase(result, c);
+      const [newBase, foundRoot] = this._findMergeBase(result, c);
+      reachedRoot = reachedRoot || foundRoot;
       if (!newBase) {
         continue;
       }
@@ -309,7 +320,7 @@ export class Repository<
         scheme = s;
       }
     }
-    return [includedCommits, result, scheme];
+    return [includedCommits, result, scheme, reachedRoot];
   }
 
   /**
@@ -338,35 +349,46 @@ export class Repository<
   private _findMergeBase(
     c1: Commit,
     c2: Commit,
-  ): Commit | undefined {
-    if (!c1.parents.length || !c2.parents.length || c1.key !== c2.key) {
-      return undefined;
+  ): [Commit | undefined, boolean] {
+    if (!c1.parents.length || !c2.parents.length) {
+      return [undefined, true];
+    }
+    if (c1.key !== c2.key) {
+      return [undefined, false];
     }
     if (c1.contentsChecksum === c2.contentsChecksum) {
-      return c1;
+      return [c1, false];
     }
     if (c1.parents.includes(c2.id)) {
-      return c2;
+      return [c2, false];
     }
     if (c2.parents.includes(c1.id)) {
-      return c1;
+      return [c1, false];
     }
     const parents1 = new Set<string>(c1.parents);
     const parents2 = new Set<string>(c2.parents);
     parents1.add(c1.id);
     parents2.add(c2.id);
 
+    let reachedRoot = false;
     while (true) {
       const bases = SetUtils.intersection(parents1, parents2);
       if (bases.size > 0) {
-        return Array.from(bases).map((id) => this.getCommit(id)).sort(
-          compareCommitsDesc,
-        )[0];
+        return [
+          Array.from(bases).map((id) => this.getCommit(id)).sort(
+            compareCommitsDesc,
+          )[0],
+          reachedRoot,
+        ];
       }
       let updated = false;
       for (const parentId of Array.from(parents1)) {
         if (this.hasCommit(parentId)) {
           const parent = this.getCommit(parentId);
+          if (parent.parents.length == 0) {
+            reachedRoot = true;
+            continue;
+          }
           for (const p of parent.parents) {
             if (!parents1.has(p)) {
               parents1.add(p);
@@ -378,6 +400,10 @@ export class Repository<
       for (const parentId of Array.from(parents2)) {
         if (this.hasCommit(parentId)) {
           const parent = this.getCommit(parentId);
+          if (parent.parents.length == 0) {
+            reachedRoot = true;
+            continue;
+          }
           for (const p of parent.parents) {
             if (!parents2.has(p)) {
               parents2.add(p);
@@ -390,7 +416,7 @@ export class Repository<
         break;
       }
     }
-    return undefined;
+    return [undefined, reachedRoot];
   }
 
   recordForCommit(c: Commit | string): CFDSRecord {
@@ -509,9 +535,11 @@ export class Repository<
         const roots = commitsToMerge.filter((c) => c.parents.length === 0);
         commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
         // Find the base for our N-way merge
-        let lca: Commit | undefined, scheme: Scheme;
-        [commitsToMerge, lca, scheme] = this.findMergeBase(commitsToMerge);
-        if (commitsToMerge.length === 0) {
+        let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
+        [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
+          commitsToMerge,
+        );
+        if (commitsToMerge.length === 0 && !foundRoot) {
           throw serviceUnavailable();
         }
         // If no LCA is found then we're dealing with concurrent writers who all
@@ -565,7 +593,6 @@ export class Repository<
             parents: leaves.map((c) => c.id),
           }),
         );
-        debugger;
         signCommit(this.trustPool.currentSession, mergeCommit).then(
           (signedCommit) => {
             this.persistVerifiedCommits([signedCommit]);
@@ -649,6 +676,7 @@ export class Repository<
     if (value.isNull) {
       return false;
     }
+    assert(this.allowedNamespaces.includes(value.scheme.namespace));
     const session = this.trustPool.currentSession;
     const head = this.headForKey(key);
     if (!head && this.keyExists(key)) {
@@ -658,7 +686,6 @@ export class Repository<
     if (headRecord?.isEqual(value)) {
       return false;
     }
-    debugger;
     let commit = new Commit({
       session: session.id,
       key,

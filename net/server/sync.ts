@@ -26,7 +26,6 @@ import { BaseService } from './service.ts';
 import { Commit } from '../../repo/commit.ts';
 import {
   decodeSession,
-  generateRequestSignature,
   OwnedSession,
   Session,
   sessionFromRecord,
@@ -141,6 +140,7 @@ export class SyncService extends BaseService<ServerServices> {
     const repo = new Repository(
       new MemRepoStorage(),
       this.services.trustPool,
+      Repository.namespacesForType(type),
       authorizer,
       indexes,
     );

@@ -277,7 +277,11 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     id = Repository.normalizeId(id);
     let plumbing = this._repoById.get(id);
     if (!plumbing) {
-      const repo = new Repository(new MemRepoStorage(), this.trustPool);
+      const repo = new Repository(
+        new MemRepoStorage(),
+        this.trustPool,
+        Repository.namespacesForType(Repository.parseId(id)[0]),
+      );
       plumbing = {
         repo,
         backup: new IDBRepositoryBackup(id, repo),
