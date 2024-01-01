@@ -438,13 +438,28 @@ export class Repository<
     const commits = Array.from(this.commitsForKey(c1.key)).sort(
       compareCommitsDesc,
     );
-    for (let i = commits.length - 1; i >= 0; --i) {
-      const candidate = commits[i];
-      if (candidate.timestamp.getTime() < minTs) {
+    for (const candidate of commits) {
+      if (
+        candidate.timestamp.getTime() < minTs &&
+        this.hasRecordForCommit(candidate)
+      ) {
         return [candidate, false];
       }
     }
     return [undefined, true];
+  }
+
+  hasRecordForCommit(c: Commit | string): boolean {
+    if (typeof c === 'string') {
+      if (!this.hasCommit(c)) {
+        return false;
+      }
+      c = this.getCommit(c);
+    }
+    if (commitContentsIsRecord(c.contents)) {
+      return true;
+    }
+    return this.hasRecordForCommit(c.contents.base);
   }
 
   recordForCommit(c: Commit | string): CFDSRecord {
