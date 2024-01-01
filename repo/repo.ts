@@ -569,7 +569,7 @@ export class Repository<
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
     const mergeLeaderSession = mergeLeaderFromLeaves(commitsToMerge) || session;
-    if (merge && this.allowMerge /*&& mergeLeaderSession === session*/) {
+    if (merge && this.allowMerge && mergeLeaderSession === session) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
       // rely on our patch to come up with a nice result. A better way may be to
@@ -656,16 +656,16 @@ export class Repository<
     leaves.sort(compareCommitsDesc);
     // Preserve local consistency for the caller and return whichever value
     // it wrote last.
-    for (const c of leaves) {
-      if (c.session === session) {
-        const head = this.cacheHeadForKey(key, c);
-        if (head) {
-          debugger;
-          console.log(`=== CHOSE LOCAL HEAD ===`);
-          return head;
-        }
-      }
-    }
+    // for (const c of leaves) {
+    //   if (c.session === session) {
+    //     const head = this.cacheHeadForKey(key, c);
+    //     if (head) {
+    //       debugger;
+    //       console.log(`=== CHOSE LOCAL HEAD ===`);
+    //       return head;
+    //     }
+    //   }
+    // }
     // We're not part of the writers. Follow the leader so our view remains
     // relatively stable.
     for (const c of leaves) {
@@ -677,16 +677,16 @@ export class Repository<
       }
     }
     // No match found. Find the last written value we can handle safely
-    // for (
-    //   const c of Array.from(this.commitsForKey(key)).sort(
-    //     compareCommitsDesc,
-    //   )
-    // ) {
-    //   const head = this.cacheHeadForKey(key, c);
-    //   if (head) {
-    //     return head;
-    //   }
-    // }
+    for (
+      const c of Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      )
+    ) {
+      const head = this.cacheHeadForKey(key, c);
+      if (head) {
+        return head;
+      }
+    }
     debugger;
     return undefined;
   }
@@ -990,9 +990,9 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
   const hash = new RendezvoisHash();
-  const validSessionWindowTs = Date.now() - 5 * kSecondMs;
+  const now = Date.now();
   for (const c of leaves) {
-    if (c.timestamp.getTime() >= validSessionWindowTs) {
+    if (Math.abs(now - c.timestamp.getTime()) >= 5 * kSecondMs) {
       hash.addPeer(c.session);
     }
   }
