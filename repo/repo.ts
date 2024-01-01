@@ -35,6 +35,7 @@ import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
+const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
 
 type RepositoryEvent = 'NewCommit';
 
@@ -307,8 +308,12 @@ export class Repository<
         scheme = this.recordForCommit(c).scheme;
         continue;
       }
-      const [newBase, foundRoot] = this._findMergeBase(result, c);
+      let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
       reachedRoot = reachedRoot || foundRoot;
+      if (!newBase && !foundRoot) {
+        [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
+        reachedRoot = reachedRoot || foundRoot;
+      }
       if (!newBase) {
         continue;
       }
@@ -346,7 +351,7 @@ export class Repository<
    * @returns The base for a 3-way merge between c1 and c2, or undefined if no
    *          such base can be found.
    */
-  private _findMergeBase(
+  private _findLCAMergeBase(
     c1: Commit,
     c2: Commit,
   ): [Commit | undefined, boolean] {
@@ -417,6 +422,29 @@ export class Repository<
       }
     }
     return [undefined, reachedRoot];
+  }
+
+  private _findChronologicalMergeBase(
+    c1: Commit,
+    c2: Commit,
+  ): [base: Commit | undefined, reachedRoot: boolean] {
+    if (Math.abs(c1.timestamp.getTime() - Date.now()) < MERGE_GRACE_PERIOD_MS) {
+      return [undefined, false];
+    }
+    if (Math.abs(c2.timestamp.getTime() - Date.now()) < MERGE_GRACE_PERIOD_MS) {
+      return [undefined, false];
+    }
+    const minTs = Math.min(c1.timestamp.getTime(), c2.timestamp.getTime());
+    const commits = Array.from(this.commitsForKey(c1.key)).sort(
+      compareCommitsDesc,
+    );
+    for (let i = commits.length - 1; i >= 0; --i) {
+      const candidate = commits[i];
+      if (candidate.timestamp.getTime() < minTs) {
+        return [candidate, false];
+      }
+    }
+    return [undefined, true];
   }
 
   recordForCommit(c: Commit | string): CFDSRecord {
