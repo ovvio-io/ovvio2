@@ -983,6 +983,7 @@ export class Repository<
           id: commit.id,
           name: `${commit.session}-${commit.timestamp.toLocaleString()}`,
           session: commit.session,
+          ts: commit.timestamp.getTime(),
         },
       });
       for (const p of commit.parents) {
