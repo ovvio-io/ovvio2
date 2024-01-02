@@ -1,3 +1,4 @@
+import { UserMetadataKey } from '../../cfds/client/graph/vertices/user.ts';
 import { HashMap } from './hash-map.ts';
 
 export interface ReadonlyDict<K = any, V = any> extends Iterable<[K, V]> {
@@ -62,4 +63,16 @@ export function dictEquals<K, T>(
 
 export function isDictionary<K, V>(val: any): val is Dictionary<K, V> {
   return val instanceof Map || val instanceof HashMap;
+}
+
+export function convertDictionaryToObject(
+  dict: Dictionary<UserMetadataKey, string>
+): { [key: string]: string } {
+  const obj: { [key: string]: string } = {};
+
+  for (const [key, value] of dict.entries()) {
+    obj[key as string] = value;
+  }
+
+  return obj;
 }

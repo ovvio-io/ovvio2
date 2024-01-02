@@ -1,7 +1,10 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+import {
+  User,
+  UserMetadataKey,
+} from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
   Bold,
   H4,
@@ -65,6 +68,11 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
   const [name, setName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [scrollToUser, setScrollToUser] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState({
+    team: '',
+    companyRoles: '',
+    comments: '',
+  });
 
   useEffect(() => {
     let timeoutId: number | undefined = setTimeout(() => {
@@ -90,12 +98,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     onSave();
     setStep(0);
   };
-
-  const [metadata, setMetadata] = useState({
-    team: '',
-    companyRoles: '',
-    comments: '',
-  });
 
   const handleSetMetadata = (newMetadata: { [key: string]: string }) => {
     setMetadata((prevMetadata) => ({
@@ -124,6 +126,32 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       console.log('Name or email is null');
     }
   }, [graph, name, email, metadata, setScrollToUser]);
+
+  const handleSaveUserEdit = (
+    userKey: string,
+    name: string,
+    email: string,
+    metadata: { [key: string]: string }
+  ) => {
+    if (name.trim() === '' || email.trim() === '') {
+      console.log('Input is invalid');
+      return;
+    }
+
+    const userVertex = graph.getVertex<User>(userKey);
+    if (userVertex) {
+      userVertex.name = name;
+      userVertex.email = normalizeEmail(email);
+      const metadataMap = new Map<UserMetadataKey, string>();
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (key === 'companyRoles' || key === 'comments' || key === 'team') {
+          metadataMap.set(key as UserMetadataKey, value);
+        }
+      });
+
+      userVertex.metadata = metadataMap;
+    }
+  };
 
   return (
     <div>
@@ -163,6 +191,7 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
         email={email}
         metadata={metadata}
         setMetadata={handleSetMetadata}
+        onSaveEdit={handleSaveUserEdit}
       />
     </div>
   );
