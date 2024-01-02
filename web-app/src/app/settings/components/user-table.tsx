@@ -50,12 +50,14 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
       inputRef.current.focus();
     }
   }, []);
+  const inputValue = value !== undefined ? value : '';
+
   return (
     <div>
       <input
         className={cn(styles.columnStyle)}
         placeholder={placeholder}
-        value={value}
+        value={inputValue}
         ref={inputRef}
         onChange={(event) => {
           setCurrState(event.target.value);
@@ -215,6 +217,7 @@ const TableRow: React.FC<TableRowProps> = ({
   const handleRowSelect = editMode
     ? (user?: string) => {
         setEditNow(true);
+        console.log('USER', user);
         !user && onRowSelect;
       }
     : onRowSelect;
@@ -487,8 +490,7 @@ const UserTable: React.FC<UserTableProps> = ({
   const handleRowClick = (userKey: string) => {
     if (!editMode) {
       onRowSelect(userKey);
-    }
-    if (editingUserId !== userKey) {
+    } else if (editingUserId !== userKey) {
       console.log('editingUserId NOT equal');
       setEditingUserId(userKey);
     } else {

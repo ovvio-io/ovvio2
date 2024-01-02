@@ -139,18 +139,21 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     }
 
     const userVertex = graph.getVertex<User>(userKey);
-    if (userVertex) {
-      userVertex.name = name;
-      userVertex.email = normalizeEmail(email);
-      const metadataMap = new Map<UserMetadataKey, string>();
-      Object.entries(metadata).forEach(([key, value]) => {
-        if (key === 'companyRoles' || key === 'comments' || key === 'team') {
-          metadataMap.set(key as UserMetadataKey, value);
-        }
-      });
-
-      userVertex.metadata = metadataMap;
+    if (!userVertex) {
+      console.log('User not found');
+      return;
     }
+
+    userVertex.name = name;
+    userVertex.email = normalizeEmail(email);
+    const metadataMap = new Map<UserMetadataKey, string>();
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
+        metadataMap.set(key as UserMetadataKey, value);
+      }
+    });
+
+    userVertex.metadata = metadataMap;
   };
 
   return (
