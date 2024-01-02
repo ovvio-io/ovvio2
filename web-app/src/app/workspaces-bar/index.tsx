@@ -426,6 +426,7 @@ const GROUP_BY: GroupByMapping = {
     }
     const res: WorkspaceGID[] = [];
     for (const u of ws.assignees) {
+      console.log('GroupByMapping', u);
       if (!u.isRoot) {
         res.push(u.manager);
       }
@@ -435,27 +436,49 @@ const GROUP_BY: GroupByMapping = {
     }
     return res;
   },
+
   Team: (ws: Workspace) => {
     const sysGID = systemGIDForWorkspace(ws);
     if (sysGID) {
       return sysGID;
     }
-    const res: WorkspaceGID[] = [];
-    // const role = ws.graph.getVertex<Role>('RoleTeamLeader');
-    // const teamLeaders = role.assignees;
-    const teamLeaders = new Set<User>();
+    const teams = new Set<WorkspaceGID>();
     for (const u of ws.assignees) {
-      if (teamLeaders.has(u) && !u.isRoot) {
-        res.push(u.manager);
+      const team = u.metadata.get('team');
+      if (team) {
+        teams.add(team as WorkspaceGID);
       }
     }
+
+    const res = Array.from(teams);
+
     if (res.length === 0) {
       res.push(null);
     }
+
     return res;
   },
 };
 
+// Team: (ws: Workspace) => {
+//   const sysGID = systemGIDForWorkspace(ws);
+//   if (sysGID) {
+//     return sysGID;
+//   }
+//   const res: WorkspaceGID[] = [];
+//   // const role = ws.graph.getVertex<Role>('RoleTeamLeader');
+//   // const teamLeaders = role.assignees;
+//   const teamLeaders = new Set<User>();
+//   for (const u of ws.assignees) {
+//     if (teamLeaders.has(u) && !u.isRoot) {
+//       res.push(u.manager);
+//     }
+//   }
+//   if (res.length === 0) {
+//     res.push(null);
+//   }
+//   return res;
+// },
 function WorkspaceCheckbox({ toggled }: { toggled: boolean }) {
   const styles = useStyles();
   return (
@@ -556,7 +579,6 @@ function WorkspaceToggleView({
     'workspaceGrouping',
     'workspaceBarCollapsed',
     'selectedWorkspaces'
-    // 'selectedSettingsWorkspaces' // ADDED 24.12
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
@@ -1078,11 +1100,10 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
 
     if (gid === 'pinned' || gid === 'myWorkspace' || gid === null || expanded) {
       for (const ws of query.group(gid)) {
-        // Skip rendering "My Workspace" if ofSettings is true
+        console.log('XXXXXXXX', gid, query.group(gid)); // --------------------------------
         if (ofSettings && ws.key === personalWsKey) {
           continue;
         }
-
         contents.push(
           <WorkspaceListItem
             key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
@@ -1093,7 +1114,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             ofSettings={ofSettings}
           />
         );
-
         if (ws.key === personalWsKey) {
           // contents.push(<div className={cn(styles.separator)} />);
         }

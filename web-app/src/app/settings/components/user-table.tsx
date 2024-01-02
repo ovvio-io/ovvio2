@@ -66,37 +66,29 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
 // ============================================================================================================
 type TableRowProps = {
   user?: User;
-  onRowSelect: (user: string) => void;
   isSelected: boolean;
   isEditable: boolean;
   addNewMember: boolean;
+  onRowSelect: (user: string) => void;
   setName?: (s: string) => void;
   setEmail?: (s: string) => void;
-  setTeam?: (s: string) => void;
-  setRole?: (s: string) => void;
   name?: string | null;
   email?: string | null;
-  team?: string | null;
-  role?: string | null;
-  metadata?: { [key: string]: string }; // Assuming metadata is an object with string keys and values
+  metadata?: { [key: string]: string };
   setMetadata?: (metadata: { [key: string]: string }) => void;
 };
 const TableRow: React.FC<TableRowProps> = ({
   user,
-  onRowSelect,
   isSelected,
   isEditable,
   addNewMember,
+  onRowSelect,
   setName,
   setEmail,
-  setTeam,
-  setRole,
   name,
   email,
   metadata,
   setMetadata,
-  team,
-  role,
 }) => {
   const useStyles = makeStyles(() => ({
     rowContainer: {
@@ -191,7 +183,6 @@ const TableRow: React.FC<TableRowProps> = ({
       ...prevMetadata,
       [key]: value,
     }));
-    console.log(`Updating ${key} to: `, value);
 
     // If setMetadata is coming from the parent component
     setMetadata &&
@@ -249,7 +240,7 @@ const TableRow: React.FC<TableRowProps> = ({
           </div>
         </div>
       )}
-      {addNewMember && setName && setEmail && setTeam && setRole && (
+      {addNewMember && setName && setEmail && (
         <div
           id={`setting/org/<undefined>`}
           className={cn(
@@ -271,18 +262,18 @@ const TableRow: React.FC<TableRowProps> = ({
             value={email || ''}
           />
           <EditableColumn
+            index={4}
+            placeholder="Team"
+            value={metadata && metadata.team}
+            setCurrState={(value) => handleMetadataChange('team', value)}
+          />
+          <EditableColumn
             index={3}
             placeholder="Roles"
             value={metadata && metadata.companyRoles}
             setCurrState={(value) =>
               handleMetadataChange('companyRoles', value)
             }
-          />
-          <EditableColumn
-            index={4}
-            placeholder="Team"
-            value={metadata && metadata.team}
-            setCurrState={(value) => handleMetadataChange('team', value)}
           />
           <IconMore />
         </div> //iconMore will be changed to img
@@ -293,42 +284,34 @@ const TableRow: React.FC<TableRowProps> = ({
 //============================================+++++++=====================================================
 type UserTableProps = {
   users: User[];
-  onRowSelect: (user: string) => void;
   showSelection: boolean;
+  onRowSelect: (user: string) => void;
   selectedUsers: Set<string>;
   showSearch: boolean;
   isEditable: boolean;
   editMode?: boolean;
   setName?: (s: string) => void;
   setEmail?: (s: string) => void;
-  setTeam?: (s: string) => void;
-  setRole?: (s: string) => void;
+  setMetadata?: (metadata: { [key: string]: string }) => void;
   name?: string | null;
   email?: string | null;
-  team?: string | null;
-  role?: string | null;
-  metadata?: { [key: string]: string }; // Assuming metadata is an object with string keys and values
-  setMetadata?: (metadata: { [key: string]: string }) => void;
+  metadata?: { [key: string]: string };
 };
 
 const UserTable: React.FC<UserTableProps> = ({
   users,
-  onRowSelect,
   showSelection,
   selectedUsers,
+  onRowSelect,
   showSearch,
   isEditable,
   editMode,
   setName,
   setEmail,
-  setTeam,
-  setRole,
+  setMetadata,
   name,
   email,
-  team,
-  role,
   metadata,
-  setMetadata,
 }) => {
   const useStyles2 = makeStyles(() => ({
     tableContainer: {
@@ -431,20 +414,16 @@ const UserTable: React.FC<UserTableProps> = ({
         )}
         {newUser && (
           <TableRow
-            onRowSelect={() => {}}
             isSelected={false}
             isEditable={false}
             addNewMember={true}
+            onRowSelect={() => {}}
             setName={setName}
             setEmail={setEmail}
-            setTeam={setTeam}
-            setRole={setRole}
             name={name}
             email={email}
             metadata={metadata}
             setMetadata={setMetadata}
-            team={team}
-            role={role}
           />
         )}
         {/* <div className={styles.scrollTable}> */}

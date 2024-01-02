@@ -1,11 +1,4 @@
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
@@ -71,8 +64,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
   const graph = useGraphManager();
   const [name, setName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [team, setTeam] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
   const [scrollToUser, setScrollToUser] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,6 +97,13 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     comments: '',
   });
 
+  const handleSetMetadata = (newMetadata: { [key: string]: string }) => {
+    setMetadata((prevMetadata) => ({
+      ...prevMetadata,
+      ...newMetadata,
+    }));
+  };
+
   const onSave = useCallback(() => {
     if (name !== null && email !== null) {
       if (name.trim() === '' || email.trim() === '') {
@@ -119,7 +117,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
           metadata: metadataMap,
         };
         const newVert = graph.createVertex(SchemeNamespace.USERS, newUser);
-        console.log('newVert.key now - ', newVert.key);
 
         setScrollToUser(newVert.key);
       }
@@ -155,20 +152,17 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       <UserTable
         users={users}
         showSelection={false}
+        onRowSelect={() => {}}
         selectedUsers={new Set<string>()}
         showSearch={true}
         isEditable={false}
         editMode={true}
         setName={setName}
         setEmail={setEmail}
-        setTeam={setTeam}
-        setRole={setRole}
         name={name}
         email={email}
         metadata={metadata}
-        setMetadata={setMetadata}
-        team={team}
-        role={role}
+        setMetadata={handleSetMetadata}
       />
     </div>
   );
