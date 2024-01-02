@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
-import { styleguide, layout } from '../../../../styles/index.ts';
+import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
+import { layout, styleguide } from '../../../../styles/index.ts';
 import { Note, Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
@@ -49,12 +49,10 @@ export default function TagsView({
   const styles = useStyles();
   const pCard = usePartialVertex(cardManager, ['tags', 'workspace']);
   const cardTags = pCard && Array.from(pCard.tags.values());
-  const tags =
-    (cardTags &&
-      cardTags.filter(
-        (t) =>
-          !t.isNull && !t.isDeleted && (!t.parentTag || !t.parentTag.isNull)
-      )) ||
+  const tags = (cardTags &&
+    cardTags.filter(
+      (t) => !t.isNull && !t.isDeleted && (!t.parentTag || !t.parentTag.isNull),
+    )) ||
     [];
   const logger = useLogger();
 
@@ -66,14 +64,14 @@ export default function TagsView({
       pCard.tags = newTags;
 
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'MetadataChanged',
         type: 'tag',
         vertex: pCard.key,
         removed: tag.key,
       });
     },
-    [pCard, logger]
+    [pCard, logger],
   );
 
   const onTagged = useCallback(
@@ -87,7 +85,7 @@ export default function TagsView({
       pCard.tags = newTags;
 
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'MetadataChanged',
         type: 'tag',
         vertex: pCard.key,
@@ -95,14 +93,14 @@ export default function TagsView({
         removed: currentSubtag?.key,
       });
     },
-    [pCard, logger]
+    [pCard, logger],
   );
 
   const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
   for (const [p, c] of pCard.tags) {
     tagsMng.set(
       p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>
+      c.manager as VertexManager<Tag>,
     );
   }
 

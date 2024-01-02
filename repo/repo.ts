@@ -33,6 +33,8 @@ import {
 import { RendezvoisHash } from '../base/rendezvous-hash.ts';
 import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
+import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { downloadJSON } from '../base/browser.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
@@ -88,6 +90,11 @@ export class Repository<
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
   private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
   private readonly _adjList: AdjacencyList;
+  private readonly _pendingMergePromises: Map<
+    string | null,
+    Promise<Commit | undefined>
+  >;
+  private readonly _mergeActiveByKey: Map<string | null, boolean>;
 
   allowMerge = true;
 
@@ -126,6 +133,8 @@ export class Repository<
     if (indexes) {
       this.indexes = indexes(this);
     }
+    this._pendingMergePromises = new Map();
+    this._mergeActiveByKey = new Map();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -438,13 +447,28 @@ export class Repository<
     const commits = Array.from(this.commitsForKey(c1.key)).sort(
       compareCommitsDesc,
     );
-    for (let i = commits.length - 1; i >= 0; --i) {
-      const candidate = commits[i];
-      if (candidate.timestamp.getTime() < minTs) {
+    for (const candidate of commits) {
+      if (
+        candidate.timestamp.getTime() < minTs &&
+        this.hasRecordForCommit(candidate)
+      ) {
         return [candidate, false];
       }
     }
     return [undefined, true];
+  }
+
+  hasRecordForCommit(c: Commit | string): boolean {
+    if (typeof c === 'string') {
+      if (!this.hasCommit(c)) {
+        return false;
+      }
+      c = this.getCommit(c);
+    }
+    if (commitContentsIsRecord(c.contents)) {
+      return true;
+    }
+    return this.hasRecordForCommit(c.contents.base);
   }
 
   recordForCommit(c: Commit | string): CFDSRecord {
@@ -546,92 +570,17 @@ export class Repository<
       return undefined;
     }
     // Filter out any commits with equal records
-    let commitsToMerge = commitsWithUniqueRecords(leaves).sort(
+    const uniqueCommits = commitsWithUniqueRecords(leaves).sort(
       coreValueCompare,
     );
     // If our leaves converged on a single value, we can simply return it.
-    if (commitsToMerge.length === 1) {
-      return this.cacheHeadForKey(key, commitsToMerge[0]);
+    if (uniqueCommits.length === 1) {
+      return this.cacheHeadForKey(key, uniqueCommits[0]);
     }
-    const mergeLeaderSession = mergeLeaderFromLeaves(commitsToMerge) || session;
-    if (merge && this.allowMerge && mergeLeaderSession === session) {
-      // At this point our leaves have more than one value. Try to merge them all
-      // to a single value. Currently we're simply doing a crude N-way merge and
-      // rely on our patch to come up with a nice result. A better way may be to
-      // do a recursive 3-way merge like git does.
-      try {
-        const roots = commitsToMerge.filter((c) => c.parents.length === 0);
-        commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
-        // Find the base for our N-way merge
-        let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
-        [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
-          commitsToMerge,
-        );
-        if (commitsToMerge.length === 0 && !foundRoot) {
-          throw serviceUnavailable();
-        }
-        // If no LCA is found then we're dealing with concurrent writers who all
-        // created of the same key unaware of each other.
-        // Use the null record as a base in this case.
-        const base = lca
-          ? this.recordForCommit(lca).clone()
-          : CFDSRecord.nullRecord();
-        // Upgrade base to merge scheme
-        if (!scheme.isNull) {
-          base.upgradeScheme(scheme);
-        }
-        // Compute all changes to be applied in this merge
-        let changes: DataChanges = {};
-        // First, handle any new roots that may have appeared as leaves.
-        // We transform them to diff format by computing a diff from null.
-        // Note that we start with these changes in order to let later changes
-        // override them as concurrent root creation is likely a temporary
-        // error.
-        const nullRecord = CFDSRecord.nullRecord();
-        for (const c of roots) {
-          const record = this.recordForCommit(c);
-          if (record.isNull) {
-            continue;
-          }
-          changes = concatChanges(
-            changes,
-            nullRecord.diff(record, c.session === session),
-          );
-        }
-        // Second, compute a compound diff from our base to all unique records
-        for (const c of commitsToMerge) {
-          const record = this.recordForCommit(c);
-          // Before computing the diff, upgrade the record to the scheme decided
-          // for this merge.
-          if (!scheme.isNull) {
-            record.upgradeScheme(scheme);
-          }
-          changes = concatChanges(
-            changes,
-            base.diff(record, c.session === session),
-          );
-        }
-        // Patch, and we're done.
-        base.patch(changes);
-        const mergeCommit = this.deltaCompressIfNeeded(
-          new Commit({
-            session,
-            key,
-            contents: base,
-            parents: leaves.map((c) => c.id),
-          }),
-        );
-        signCommit(this.trustPool.currentSession, mergeCommit).then(
-          (signedCommit) => {
-            this.persistVerifiedCommits([signedCommit]);
-          },
-        );
-        return this.cacheHeadForKey(key, mergeCommit);
-      } catch (e) {
-        if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
-          throw e; // Unknown error. Rethrow.
-        }
-      }
+    const mergeLeaderSession = mergeLeaderFromLeaves(leaves) ||
+      this.trustPool.currentSession.id;
+    if (merge && mergeLeaderSession === this.trustPool.currentSession.id) {
+      this.mergeIfNeeded(key);
     }
     // Since we're dealing with a partial graph, some of our leaves may not
     // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
@@ -645,35 +594,217 @@ export class Repository<
       if (c.session === session) {
         const head = this.cacheHeadForKey(key, c);
         if (head) {
-          debugger;
-          console.log(`=== CHOSE LOCAL HEAD ===`);
           return head;
         }
       }
     }
-    // We're not part of the writers. Follow the leader so our view remains
-    // relatively stable.
-    for (const c of leaves) {
-      if (c.session === mergeLeaderSession) {
+    // We're not part of the writers, and not the merge leader. Follow the
+    // leader so our view remains relatively stable.
+    if (mergeLeaderSession !== session) {
+      for (const c of leaves) {
+        if (c.session === mergeLeaderSession) {
+          const head = this.cacheHeadForKey(key, c);
+          if (head) {
+            return head;
+          }
+        }
+      }
+    }
+    // No match found. Find the newest commit we're able to read its record.
+    for (
+      const c of Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      )
+    ) {
+      const head = this.cacheHeadForKey(key, c);
+      if (head) {
+        return head;
+      }
+    }
+    // This shouldn't happen during normal operation, only while bootstrapping
+    // a repo
+    return undefined;
+  }
+
+  mergeIfNeeded(
+    key: string | null,
+  ): Promise<Commit | undefined> {
+    let result = this._pendingMergePromises.get(key);
+    if (!result) {
+      result = this._mergeIfNeededImpl(key);
+      result.finally(() => {
+        if (this._pendingMergePromises.get(key) === result) {
+          this._pendingMergePromises.delete(key);
+        }
+      });
+      this._pendingMergePromises.set(key, result);
+    }
+    return result;
+  }
+
+  private async _mergeIfNeededImpl(
+    key: string | null,
+  ): Promise<Commit | undefined> {
+    const prevMergeIsActive = this._mergeActiveByKey.get(key) || false;
+    try {
+      this._mergeActiveByKey.set(key, true);
+      const session = this.trustPool.currentSession.id;
+      const cacheEntry = this._cachedHeadsByKey.get(key);
+      if (
+        cacheEntry &&
+        cacheEntry.commit.session === session &&
+        performance.now() - cacheEntry.timestamp <= HEAD_CACHE_EXPIRATION_MS
+      ) {
+        return cacheEntry.commit;
+      }
+      const leaves = this.leavesForKey(
+        key,
+        session ? this.trustPool.getSession(session) : undefined,
+      );
+      if (leaves.length < 1) {
+        // No commit history found. Return the null record as a starting point
+        return undefined;
+      }
+      // Filter out any commits with equal records
+      let commitsToMerge = commitsWithUniqueRecords(leaves).sort(
+        coreValueCompare,
+      );
+      // If our leaves converged on a single value, we can simply return it.
+      if (commitsToMerge.length === 1) {
+        return this.cacheHeadForKey(key, commitsToMerge[0]);
+      }
+      // In order to keep merges simple and reduce conflicts and races,
+      // concurrent editors choose a soft leader amongst all currently active
+      // writers. Non-leaders will back off and not perform any merge commits,
+      // instead waiting for the leader(s) to merge.
+      const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || session;
+      if (
+        !prevMergeIsActive && this.allowMerge && mergeLeaderSession === session
+      ) {
+        // At this point our leaves have more than one value. Try to merge them all
+        // to a single value. Currently we're simply doing a crude N-way merge and
+        // rely on our patch to come up with a nice result. A better way may be to
+        // do a recursive 3-way merge like git does.
+        try {
+          const roots = commitsToMerge.filter((c) => c.parents.length === 0);
+          commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
+          // Find the base for our N-way merge
+          let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
+          [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
+            commitsToMerge,
+          );
+          if (commitsToMerge.length === 0 && !foundRoot) {
+            throw serviceUnavailable();
+          }
+          // If no LCA is found then we're dealing with concurrent writers who all
+          // created of the same key unaware of each other.
+          // Use the null record as a base in this case.
+          const base = lca
+            ? this.recordForCommit(lca).clone()
+            : CFDSRecord.nullRecord();
+          // Upgrade base to merge scheme
+          if (!scheme.isNull) {
+            base.upgradeScheme(scheme);
+          }
+          // Compute all changes to be applied in this merge
+          let changes: DataChanges = {};
+          // First, handle any new roots that may have appeared as leaves.
+          // We transform them to diff format by computing a diff from null.
+          // Note that we start with these changes in order to let later changes
+          // override them as concurrent root creation is likely a temporary
+          // error.
+          const nullRecord = CFDSRecord.nullRecord();
+          for (const c of roots) {
+            const record = this.recordForCommit(c);
+            if (record.isNull) {
+              continue;
+            }
+            changes = concatChanges(
+              changes,
+              nullRecord.diff(record, c.session === session),
+            );
+          }
+          // Second, compute a compound diff from our base to all unique records
+          for (const c of commitsToMerge) {
+            const record = this.recordForCommit(c);
+            // Before computing the diff, upgrade the record to the scheme decided
+            // for this merge.
+            if (!scheme.isNull) {
+              record.upgradeScheme(scheme);
+            }
+            changes = concatChanges(
+              changes,
+              base.diff(record, c.session === session),
+            );
+          }
+          // Patch, and we're done.
+          base.patch(changes);
+          // debugger;
+          const mergeCommit = this.deltaCompressIfNeeded(
+            new Commit({
+              session,
+              key,
+              contents: base,
+              parents: leaves.map((c) => c.id),
+            }),
+          );
+          const signedCommit = await signCommit(
+            this.trustPool.currentSession,
+            mergeCommit,
+          );
+          this.persistVerifiedCommits([signedCommit]);
+          return this.cacheHeadForKey(key, signedCommit);
+        } catch (e) {
+          if (
+            !(e instanceof ServerError && e.code === Code.ServiceUnavailable)
+          ) {
+            throw e; // Unknown error. Rethrow.
+          }
+        }
+      }
+      // Since we're dealing with a partial graph, some of our leaves may not
+      // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
+      // If we somehow temporarily lost c2 and c4, we would consider both c3
+      // and c1 as leaves. Therefore, we first sort all our leaves from
+      // newest to oldest.
+      leaves.sort(compareCommitsDesc);
+      // Preserve local consistency for the caller and return whichever value
+      // it wrote last.
+      for (const c of leaves) {
+        if (c.session === session) {
+          const head = this.cacheHeadForKey(key, c);
+          if (head) {
+            return head;
+          }
+        }
+      }
+      // We're not part of the writers, and not the merge leader. Follow the
+      // leader so our view remains relatively stable.
+      for (const c of leaves) {
+        if (c.session === mergeLeaderSession) {
+          const head = this.cacheHeadForKey(key, c);
+          if (head) {
+            return head;
+          }
+        }
+      }
+      // No match found. Find the newest commit we're able to read its record.
+      for (
+        const c of Array.from(this.commitsForKey(key)).sort(
+          compareCommitsDesc,
+        )
+      ) {
         const head = this.cacheHeadForKey(key, c);
         if (head) {
           return head;
         }
       }
+      return undefined;
+    } finally {
+      if (!prevMergeIsActive) {
+        this._mergeActiveByKey.delete(key);
+      }
     }
-    // No match found. Find the last written value we can handle safely
-    // for (
-    //   const c of Array.from(this.commitsForKey(key)).sort(
-    //     compareCommitsDesc,
-    //   )
-    // ) {
-    //   const head = this.cacheHeadForKey(key, c);
-    //   if (head) {
-    //     return head;
-    //   }
-    // }
-    debugger;
-    return undefined;
   }
 
   valueForKey(
@@ -706,7 +837,7 @@ export class Repository<
     }
     assert(this.allowedNamespaces.includes(value.scheme.namespace));
     const session = this.trustPool.currentSession;
-    const head = this.headForKey(key);
+    const head = await this.mergeIfNeeded(key);
     if (!head && this.keyExists(key)) {
       throw serviceUnavailable();
     }
@@ -885,7 +1016,6 @@ export class Repository<
         const headRecord = this.valueForKey(
           commit.key,
           undefined,
-          false,
         );
         if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
           sessionFromRecord(headRecord).then((session) => {
@@ -949,6 +1079,60 @@ export class Repository<
     }
     return graph;
   }
+
+  debugNetworkForKey(key: string | null): ReadonlyJSONObject {
+    const nodes: JSONObject[] = [];
+    const edges: JSONObject[] = [];
+    const knownCommits = new Set<string>();
+    const localCommits = new Set<string>();
+    for (const commit of this.commitsForKey(key)) {
+      localCommits.add(commit.id);
+      knownCommits.add(commit.id);
+      nodes.push({
+        data: {
+          id: commit.id,
+          name: `${commit.session}-${commit.timestamp.toLocaleString()}`,
+          session: commit.session,
+          ts: commit.timestamp.getTime(),
+        },
+      });
+      for (const p of commit.parents) {
+        knownCommits.add(p);
+        edges.push({
+          data: {
+            id: `${commit.id}-${p}`,
+            source: commit.id,
+            target: p,
+          },
+        });
+      }
+    }
+    for (const id of knownCommits) {
+      if (!localCommits.has(id)) {
+        nodes.push({
+          data: {
+            id,
+            name: `Missing-${id}`,
+            session: 'Missing',
+          },
+        });
+      }
+    }
+
+    return {
+      elements: {
+        nodes,
+        edges,
+      },
+    };
+  }
+
+  downloadDebugNetworkForKey(key: string | null): void {
+    downloadJSON(
+      `${key}-${new Date().toISOString()}.json`,
+      this.debugNetworkForKey(key),
+    );
+  }
 }
 
 function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
@@ -975,9 +1159,9 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
   const hash = new RendezvoisHash();
-  const validSessionWindowTs = Date.now() - 5 * kSecondMs;
+  const now = Date.now();
   for (const c of leaves) {
-    if (c.timestamp.getTime() >= validSessionWindowTs) {
+    if (Math.abs(now - c.timestamp.getTime()) <= 5 * kSecondMs) {
       hash.addPeer(c.session);
     }
   }
