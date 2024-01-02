@@ -33,6 +33,8 @@ import {
 import { RendezvoisHash } from '../base/rendezvous-hash.ts';
 import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
+import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { downloadJSON } from '../base/browser.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
@@ -568,7 +570,11 @@ export class Repository<
     if (commitsToMerge.length === 1) {
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
-    const mergeLeaderSession = mergeLeaderFromLeaves(commitsToMerge) || session;
+    // In order to keep merges simple and reduce conflicts and races,
+    // concurrent editors choose a soft leader amongst all currently active
+    // writers. Non-leaders will back off and not perform any merge commits,
+    // instead waiting for the leader(s) to merge.
+    const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || session;
     if (merge && this.allowMerge && mergeLeaderSession === session) {
       // At this point our leaves have more than one value. Try to merge them all
       // to a single value. Currently we're simply doing a crude N-way merge and
@@ -628,6 +634,7 @@ export class Repository<
         }
         // Patch, and we're done.
         base.patch(changes);
+        // debugger;
         const mergeCommit = this.deltaCompressIfNeeded(
           new Commit({
             session,
@@ -656,18 +663,16 @@ export class Repository<
     leaves.sort(compareCommitsDesc);
     // Preserve local consistency for the caller and return whichever value
     // it wrote last.
-    // for (const c of leaves) {
-    //   if (c.session === session) {
-    //     const head = this.cacheHeadForKey(key, c);
-    //     if (head) {
-    //       debugger;
-    //       console.log(`=== CHOSE LOCAL HEAD ===`);
-    //       return head;
-    //     }
-    //   }
-    // }
-    // We're not part of the writers. Follow the leader so our view remains
-    // relatively stable.
+    for (const c of leaves) {
+      if (c.session === session) {
+        const head = this.cacheHeadForKey(key, c);
+        if (head) {
+          return head;
+        }
+      }
+    }
+    // We're not part of the writers, and not the merge leader. Follow the
+    // leader so our view remains relatively stable.
     for (const c of leaves) {
       if (c.session === mergeLeaderSession) {
         const head = this.cacheHeadForKey(key, c);
@@ -676,7 +681,7 @@ export class Repository<
         }
       }
     }
-    // No match found. Find the last written value we can handle safely
+    // No match found. Find the newest commit we're able to read its record.
     for (
       const c of Array.from(this.commitsForKey(key)).sort(
         compareCommitsDesc,
@@ -964,6 +969,59 @@ export class Repository<
     }
     return graph;
   }
+
+  debugNetworkForKey(key: string | null): ReadonlyJSONObject {
+    const nodes: JSONObject[] = [];
+    const edges: JSONObject[] = [];
+    const knownCommits = new Set<string>();
+    const localCommits = new Set<string>();
+    for (const commit of this.commitsForKey(key)) {
+      localCommits.add(commit.id);
+      knownCommits.add(commit.id);
+      nodes.push({
+        data: {
+          id: commit.id,
+          name: `${commit.session}-${commit.timestamp.toLocaleString()}`,
+          session: commit.session,
+        },
+      });
+      for (const p of commit.parents) {
+        knownCommits.add(p);
+        edges.push({
+          data: {
+            id: `${commit.id}-${p}`,
+            source: commit.id,
+            target: p,
+          },
+        });
+      }
+    }
+    for (const id of knownCommits) {
+      if (!localCommits.has(id)) {
+        nodes.push({
+          data: {
+            id,
+            name: `Missing-${id}`,
+            session: 'Missing',
+          },
+        });
+      }
+    }
+
+    return {
+      elements: {
+        nodes,
+        edges,
+      },
+    };
+  }
+
+  downloadDebugNetworkForKey(key: string | null): void {
+    downloadJSON(
+      `${key}-${new Date().toISOString()}.json`,
+      this.debugNetworkForKey(key),
+    );
+  }
 }
 
 function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
@@ -992,7 +1050,7 @@ function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
   const hash = new RendezvoisHash();
   const now = Date.now();
   for (const c of leaves) {
-    if (Math.abs(now - c.timestamp.getTime()) >= 5 * kSecondMs) {
+    if (Math.abs(now - c.timestamp.getTime()) <= 5 * kSecondMs) {
       hash.addPeer(c.session);
     }
   }
