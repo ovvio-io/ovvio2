@@ -286,6 +286,8 @@ export async function signCommit(
     timestamp: commit.timestamp,
     parents: commit.parents,
     signature,
+    mergeBase: commit.mergeBase,
+    mergeLeader: commit.mergeLeader,
   });
 }
 
