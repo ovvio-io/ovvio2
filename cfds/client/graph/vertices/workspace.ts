@@ -11,14 +11,35 @@ import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Query } from '../query.ts';
 import { Note } from './note.ts';
-import { Role } from './role.ts';
-import { MutationPack } from '../mutations.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
+import { JSONObject } from '../../../../base/interfaces.ts';
+import { downloadJSON } from '../../../../base/browser.ts';
+import { HashMap } from '../../../../base/collections/hash-map.ts';
+import { coreValueHash } from '../../../../base/core-types/encoding/hash.ts';
+import { coreValueEquals } from '../../../../base/core-types/equals.ts';
+import { GraphManager } from '../graph-manager.ts';
+import { normalizeEmail } from '../../../../base/string.ts';
+import { SchemeNamespace } from '../../../base/scheme-types.ts';
+import { Record } from '../../../base/record.ts';
 
-// function nop(_: unknown): void {}
+export interface UserAlias extends JSONObject {
+  name?: string;
+  email?: string;
+}
 
-const kPriorityTagNames = ['priority', 'דחיפות'];
+export interface EncodedRecords extends JSONObject {
+  [key: string]: JSONObject;
+}
+
+export interface EncodedWorkspace extends JSONObject {
+  key: string;
+  name: string;
+  users: UserAlias[];
+  tags: EncodedRecords;
+  notes: EncodedRecords;
+  isTemplate: boolean;
+}
 
 export class Workspace extends BaseVertex {
   constructor(
@@ -108,12 +129,6 @@ export class Workspace extends BaseVertex {
     this.record.set('name', name);
   }
 
-  /** @deprecated */
-  selected: boolean = false;
-  clearSelected() {
-    this.selected = false;
-  }
-
   get users(): Set<User> {
     return this.vertSetForField('users');
   }
@@ -123,26 +138,6 @@ export class Workspace extends BaseVertex {
       'users',
       SetUtils.map(users, (u: User) => u.key),
     );
-  }
-
-  get assignees(): Set<User> {
-    return this._computeAssignees(this.vertSetForField<User>('users'));
-  }
-
-  private _computeAssignees(users: Set<User> | undefined): Set<User> {
-    if (!users || users.size === 0 || !this.graph.hasVertex('Unassignable')) {
-      return users || new Set();
-    }
-    const unassignable = this.graph.getVertex<Role>('Unassignable').users;
-    const remainder = SetUtils.subtract(users, unassignable);
-    return remainder.size > 0 ? remainder : users;
-  }
-
-  usersDidMutate(
-    local: boolean,
-    oldValue: Set<User> | undefined,
-  ): MutationPack {
-    return ['assignees', local, this._computeAssignees(oldValue)];
   }
 
   clearUsers(): void {
@@ -230,18 +225,10 @@ export class Workspace extends BaseVertex {
 
   get parentTags(): Tag[] {
     const key = this.key;
-    return Query.blocking(
+    return Query.blocking<Tag, Tag, string>(
       this.graph.sharedQueriesManager.tags,
       (tag) => tag.workspace.key === key && !tag.parentTag,
     ).map((mgr) => mgr.getVertexProxy());
-  }
-
-  get priorityTag(): Tag | undefined {
-    const mgr = Query.blocking<Tag>(
-      this.parentTagsQuery,
-      (tag) => kPriorityTagNames.includes(tag.name.toLowerCase()),
-    )[0];
-    return mgr?.getVertexProxy<Tag>();
   }
 
   get tagsQuery(): Query<Tag, Tag> {
@@ -290,4 +277,137 @@ export class Workspace extends BaseVertex {
       { name: 'pinnedNotesQuery' },
     );
   }
+
+  static createFromJSON(
+    graph: GraphManager,
+    encodedWs: EncodedWorkspace,
+  ): Workspace {
+    const aliasToUserMap = new HashMap<UserAlias, string>(
+      coreValueHash,
+      coreValueEquals,
+    );
+    const users = graph.sharedQuery('users').vertices();
+    // First, match users by email
+    for (const alias of encodedWs.users) {
+      if (!alias.email) {
+        continue;
+      }
+      const email = normalizeEmail(alias.email);
+      for (const u of users) {
+        if (u.email === email) {
+          aliasToUserMap.set(alias, u.key);
+          break;
+        }
+      }
+    }
+    // Next, match any remaining users by name
+    for (const alias of encodedWs.users) {
+      if (!alias.name || aliasToUserMap.has(alias)) {
+        continue;
+      }
+      const name = alias.name.toLowerCase().trim();
+      for (const u of users) {
+        1;
+        if (u.name.toLowerCase().trim() === name) {
+          aliasToUserMap.set(alias, u.key);
+          break;
+        }
+      }
+    }
+    const wsMembers = new Set(aliasToUserMap.values());
+    wsMembers.add(graph.rootKey);
+    const workspace = graph.createVertex<Workspace>(SchemeNamespace.WORKSPACE, {
+      name: encodedWs.name,
+      users: wsMembers,
+      createdBy: graph.rootKey,
+    }, encodedWs.key);
+    for (const [tagKey, encodedTag] of Object.entries(encodedWs.tags)) {
+      const record = Record.fromJS(encodedTag);
+      graph.createVertex<Tag>(
+        SchemeNamespace.TAGS,
+        record.cloneData(),
+        tagKey,
+      );
+    }
+    for (const [noteKey, encodedNote] of Object.entries(encodedWs.notes)) {
+      const assignees: string[] = [];
+      // deno-lint-ignore no-explicit-any
+      for (const alias of (encodedNote.d as any).assignees?.__v || []) {
+        if (aliasToUserMap.has(alias)) {
+          assignees.push(aliasToUserMap.get(alias)!);
+        }
+      }
+      // deno-lint-ignore no-explicit-any
+      (encodedNote.d as any).assignees = {
+        __t: 'S',
+        __v: assignees,
+      };
+      const record = Record.fromJS(encodedNote);
+      graph.createVertex<Tag>(
+        SchemeNamespace.NOTES,
+        record.cloneData(),
+        noteKey,
+      );
+    }
+    return workspace;
+  }
+
+  exportToJSON(): EncodedWorkspace {
+    const userToAliasMap = new Map<string, UserAlias>();
+    this.users.forEach((u) => userToAliasMap.set(u.key, aliasForUser(u)));
+    const encodedTags: EncodedRecords = {};
+    this.graph.sharedQueriesManager.tags.group(this.key).forEach((mgr) => {
+      const res = mgr.record.toJS();
+      // deno-lint-ignore no-explicit-any
+      delete (res.d as any).createdBy;
+      encodedTags[mgr.key] = res;
+    });
+    const encodedNotes: EncodedRecords = {};
+    this.graph.sharedQueriesManager.notDeleted
+      .group(this.key)
+      .filter((mgr) => mgr.getVertexProxy() instanceof Note)
+      .forEach((mgr) => {
+        const json = mgr.record.toJS();
+        const userAliases: UserAlias[] = [];
+        // deno-lint-ignore no-explicit-any
+        for (const key of (json.d as any).assignees?.__v || []) {
+          if (userToAliasMap.has(key)) {
+            userAliases.push(userToAliasMap.get(key)!);
+          }
+        }
+        // deno-lint-ignore no-explicit-any
+        (json.d as any).assignees = {
+          __t: 'S',
+          __v: userAliases,
+        };
+        encodedNotes[mgr.key] = json;
+      });
+    return {
+      key: this.key,
+      name: this.name,
+      users: Array.from(userToAliasMap.values()),
+      tags: encodedTags,
+      notes: encodedNotes,
+      isTemplate: this.isTemplate,
+    };
+  }
+
+  downloadJSON(): void {
+    downloadJSON(
+      `${this.name}-${
+        new Date().toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })
+      }.json`,
+      this.exportToJSON(),
+    );
+  }
+}
+
+function aliasForUser(u: User): UserAlias {
+  return {
+    name: u.name,
+    email: u.email,
+  };
 }

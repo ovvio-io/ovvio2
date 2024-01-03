@@ -149,13 +149,18 @@ export class Query<
    *
    * @returns An array of VertexManager instances.
    */
-  static blocking<IT extends Vertex = Vertex, OT extends IT = IT>(
-    source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
+  static blocking<
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue,
+  >(
+    source: VertexSource,
     predicate: Predicate<IT, OT>,
     sortDescriptor?: SortDescriptor<OT>,
   ): QueryResults<OT> {
     const result: VertexManager<OT>[] = [];
-    const graph = source instanceof GraphManager ? source : source.graph;
+    const graph =
+      (source instanceof GraphManager ? source : source.graph) as GraphManager;
     for (const key of source.keys()) {
       const vert = graph.getVertex<IT>(key);
       if (predicate(vert)) {

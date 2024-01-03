@@ -100,7 +100,7 @@ export class User extends BaseVertex {
       NS_USER_SETTINGS,
       {},
       this.key + '_settings',
-      false
+      false,
     );
   }
 
