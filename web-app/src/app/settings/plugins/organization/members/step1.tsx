@@ -43,14 +43,16 @@ export const Step1: React.FC<Step1Props> = ({
     marginBottom: '11px',
   };
 
-  const handleRowSelect = (user: string) => {
-    const updatedSelectedUsers = new Set(selectedUsers);
-    if (updatedSelectedUsers.has(user)) {
-      updatedSelectedUsers.delete(user);
-    } else {
-      updatedSelectedUsers.add(user);
+  const handleRowSelect = (user?: string) => {
+    if (user) {
+      const updatedSelectedUsers = new Set(selectedUsers);
+      if (updatedSelectedUsers.has(user)) {
+        updatedSelectedUsers.delete(user);
+      } else {
+        updatedSelectedUsers.add(user);
+      }
+      setSelectedUsers(updatedSelectedUsers);
     }
-    setSelectedUsers(updatedSelectedUsers);
   };
 
   const UserPillKey = 'UserPillKey_';
@@ -86,6 +88,7 @@ export const Step1: React.FC<Step1Props> = ({
         selectedUsers={selectedUsers}
         showSearch={true}
         isEditable={true}
+        editMode={false}
       />
     </div>
   );

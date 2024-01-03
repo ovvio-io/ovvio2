@@ -352,8 +352,7 @@ export function DeleteWsButton({
 
   return (
     <Button
-      onClick={() => onDeleteClick(wsMng)}
-      // onClick={isDisabled ? undefined : onDeleteClick}
+      onClick={!isDisabled ? () => onDeleteClick(wsMng) : undefined}
       className={cn(
         styles.compose,
         className,

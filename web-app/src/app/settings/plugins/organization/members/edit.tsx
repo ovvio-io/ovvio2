@@ -1,14 +1,10 @@
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+import {
+  User,
+  UserMetadataKey,
+} from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
   Bold,
   H4,
@@ -71,9 +67,12 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
   const graph = useGraphManager();
   const [name, setName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [team, setTeam] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
   const [scrollToUser, setScrollToUser] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState({
+    team: '',
+    companyRoles: '',
+    comments: '',
+  });
 
   useEffect(() => {
     let timeoutId: number | undefined = setTimeout(() => {
@@ -100,11 +99,12 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
     setStep(0);
   };
 
-  const [metadata, setMetadata] = useState({
-    team: '',
-    companyRoles: '',
-    comments: '',
-  });
+  const handleSetMetadata = (newMetadata: { [key: string]: string }) => {
+    setMetadata((prevMetadata) => ({
+      ...prevMetadata,
+      ...newMetadata,
+    }));
+  };
 
   const onSave = useCallback(() => {
     if (name !== null && email !== null) {
@@ -119,7 +119,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
           metadata: metadataMap,
         };
         const newVert = graph.createVertex(SchemeNamespace.USERS, newUser);
-        console.log('newVert.key now - ', newVert.key);
 
         setScrollToUser(newVert.key);
       }
@@ -127,6 +126,35 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       console.log('Name or email is null');
     }
   }, [graph, name, email, metadata, setScrollToUser]);
+
+  const handleSaveUserEdit = (
+    userKey: string,
+    name: string,
+    email: string,
+    metadata: { [key: string]: string }
+  ) => {
+    if (name.trim() === '' || email.trim() === '') {
+      console.log('Input is invalid');
+      return;
+    }
+
+    const userVertex = graph.getVertex<User>(userKey);
+    if (!userVertex) {
+      console.log('User not found');
+      return;
+    }
+
+    userVertex.name = name;
+    userVertex.email = normalizeEmail(email);
+    const metadataMap = new Map<UserMetadataKey, string>();
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
+        metadataMap.set(key as UserMetadataKey, value);
+      }
+    });
+
+    userVertex.metadata = metadataMap;
+  };
 
   return (
     <div>
@@ -155,20 +183,18 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       <UserTable
         users={users}
         showSelection={false}
+        onRowSelect={() => {}}
         selectedUsers={new Set<string>()}
         showSearch={true}
         isEditable={false}
         editMode={true}
         setName={setName}
         setEmail={setEmail}
-        setTeam={setTeam}
-        setRole={setRole}
         name={name}
         email={email}
         metadata={metadata}
-        setMetadata={setMetadata}
-        team={team}
-        role={role}
+        setMetadata={handleSetMetadata}
+        onSaveEdit={handleSaveUserEdit}
       />
     </div>
   );

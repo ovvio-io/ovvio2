@@ -17,6 +17,7 @@ import {
   UserMetadataKey,
 } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { Dictionary } from '../../../../../base/collections/dict.ts';
+import { WsTagsSettings } from './my-workspaces/ws-tags.tsx';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -42,7 +43,7 @@ export const tabPlugins: SettingsTabPlugin[] = [
   },
   {
     title: 'tags',
-    render: () => <DetailsTabContent />,
+    render: () => <WsTagsSettings />,
     category: 'workspaces-info',
   },
   {

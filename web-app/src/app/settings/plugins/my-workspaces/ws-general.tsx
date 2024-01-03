@@ -303,10 +303,12 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
 
 interface AddSelectionButtonProps<T> {
   className?: string;
+  existUsers: Set<User>;
   ws: Workspace;
 }
 export default function AddSelectionButton<T>({
   className,
+  existUsers,
   ws,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
@@ -317,6 +319,13 @@ export default function AddSelectionButton<T>({
   const onRowSelect = (user: User) => {
     ws.users.add(user);
   };
+
+  const usersSet = new Set(users);
+
+  const newUsersSet = new Set(
+    [...usersSet].filter((user) => !existUsers.has(user))
+  );
+  const newUsersArray = Array.from(newUsersSet);
 
   return (
     <Menu
@@ -330,7 +339,7 @@ export default function AddSelectionButton<T>({
       popupClassName={cn(styles.popup)}
     >
       <MemberPicker
-        users={users}
+        users={newUsersArray}
         onRowSelect={onRowSelect}
         setIsSearching={setIsSearching}
         isSearching={isSearching}
@@ -346,33 +355,19 @@ interface DeleteConfirmWsButtonProps {
   onDeleted: () => void;
 }
 
-export function DeleteConfirmWsButton({
-  wsMng,
-  onDeleted,
-}: DeleteConfirmWsButtonProps) {
+export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
   const styles = useStyles();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState('');
+  const [inputName, setInputName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const partialWS = usePartialVertex(wsMng, ['name', 'isDeleted']);
   const displayName = partialWS.name;
-  const canDelete = isDeleting && name === displayName;
 
   useEffect(() => {
     if (isDeleting && inputRef.current) {
       (inputRef.current as any).focus();
     }
   }, [isDeleting, wsMng]);
-
-  const deleteWs = (wsMng: VertexManager<Workspace>) => {
-    setIsDeleting(true);
-    if (canDelete) {
-      //why do i need this if statement? without it it doesnt work and i dont know why.
-      const ws = wsMng.getVertexProxy();
-      ws.isDeleted = 1;
-      onDeleted();
-    }
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -389,19 +384,37 @@ export function DeleteConfirmWsButton({
     };
   }, [inputRef]);
 
+  const deleteWs = useCallback(
+    (wsMng: VertexManager<Workspace>) => {
+      setIsDeleting(true);
+      if (inputName === displayName) {
+        const ws = wsMng.getVertexProxy();
+        ws.isDeleted = 1;
+      } else {
+        console.log("Name doesn't match");
+      }
+      if (inputName !== '') {
+        setIsDeleting(false);
+      }
+      setInputName('');
+    },
+    [inputName, displayName, setInputName, setIsDeleting, wsMng]
+  );
+
   return (
     <div className={cn(styles.deleteContainer)}>
       {isDeleting && (
         <TextField
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
+          value={inputName}
+          onChange={(e) => setInputName(e.currentTarget.value)}
           className={cn(styles.deleteConfirmation)}
           placeholder="Type workspace name to confirm"
           ref={inputRef}
         />
       )}
       <DeleteWsButton
-        disabled={isDeleting && name !== displayName}
+        key="DeleteWsButton"
+        disabled={isDeleting && inputName !== displayName}
         onDeleteClick={deleteWs}
         className={cn(styles.deleteWsButton)}
         wsMng={wsMng}
@@ -428,7 +441,7 @@ function UsersList({ wsMng, ws }: UsersListProps) {
     <div className={cn(styles.container)}>
       <div className={cn(styles.header)}>
         <div className={cn(styles.title)}>Workspace's members</div>
-        <AddSelectionButton ws={ws} />
+        <AddSelectionButton ws={ws} existUsers={users} />
       </div>
       <div className={cn(styles.table)}>
         {Array.from(users).map((u: User) => (

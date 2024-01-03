@@ -37,7 +37,7 @@ export function useRootUser(): VertexManager<User> {
   const key = graph.rootKey;
   const user = useMemo<VertexManager<User>>(
     () => graph && graph.getVertexManager<User>(key),
-    [graph, key],
+    [graph, key]
   );
   return user;
 }
@@ -64,12 +64,12 @@ export function useUserSettings(): UserSettings {
 }
 
 export function usePartialUserSettings<K extends keyof UserSettings>(
-  keys?: K[],
+  keys?: K[]
 ) {
   const u = usePartialCurrentUser(['settings']);
   return usePartialVertex(
     u.settings.manager as VertexManager<UserSettings>,
-    keys || [],
+    keys || []
   );
 }
 
@@ -110,7 +110,7 @@ export function CfdsClientProvider({
       {
         owner: graphManager.rootKey,
       },
-      lastUsedKey,
+      lastUsedKey
     );
   }
   graphManager.createVertex(
@@ -118,39 +118,39 @@ export function CfdsClientProvider({
     {
       name: 'My Workspace',
     },
-    `${graphManager.rootKey}-ws`,
+    `${graphManager.rootKey}-ws`
   );
   // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
   const globalView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey },
     'ViewGlobal',
-    true,
+    true
   );
   const tasksView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewTasks',
-    true,
+    true
   ).manager;
   const notesView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewNotes',
-    true,
+    true
   ).manager;
   const overviewView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewOverview',
-    true,
+    true
   ).manager;
 
   const wsSettingsView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey },
     'ViewWsSettings',
-    true,
+    true
   ).manager;
 
   const lastUsed = graphManager.getVertex<View>(lastUsedKey);
@@ -169,11 +169,12 @@ export function CfdsClientProvider({
   const timeoutCallback = () => {
     saveViewTimeout = undefined;
     const globalView = graphManager.getVertex<View>('ViewGlobal');
-    const activeView = globalView.selectedTabId === 'notes'
-      ? notesView
-      : globalView.selectedTabId === 'overview'
-      ? overviewView
-      : tasksView;
+    const activeView =
+      globalView.selectedTabId === 'notes'
+        ? notesView
+        : globalView.selectedTabId === 'overview'
+        ? overviewView
+        : tasksView;
     graphManager
       .getVertex<View>(lastUsedKey)
       .update(kViewPersistentProps, globalView, activeView.getVertexProxy());
@@ -188,7 +189,6 @@ export function CfdsClientProvider({
   notesView.onVertexChanged(changeCallback);
   tasksView.onVertexChanged(changeCallback);
   overviewView.onVertexChanged(changeCallback);
-  // wsSettingsView.onVertexChanged(changeCallback); // ----------------------- NEW 19/12
 
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
@@ -216,7 +216,7 @@ export function CfdsClientProvider({
     () => ({
       graphManager: graphManager,
     }),
-    [graphManager],
+    [graphManager]
   );
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;
@@ -242,6 +242,6 @@ export function useActiveViewManager(): VertexManager<View> {
       ? 'ViewNotes'
       : selectedTabId === 'overview'
       ? 'ViewOverview'
-      : 'ViewTasks',
+      : 'ViewTasks'
   );
 }

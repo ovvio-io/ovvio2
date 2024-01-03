@@ -211,6 +211,7 @@ export const kGroupBy = [
   'dueDate',
   'note',
   'tag',
+  'team',
 ] as const;
 
 export type GroupBy = (typeof kGroupBy)[number];
