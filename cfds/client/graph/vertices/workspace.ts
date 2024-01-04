@@ -320,6 +320,7 @@ export class Workspace extends BaseVertex {
       name: encodedWs.name,
       users: wsMembers,
       createdBy: graph.rootKey,
+      isTemplate: encodedWs.isTemplate,
     }, encodedWs.key);
     for (const [tagKey, encodedTag] of Object.entries(encodedWs.tags)) {
       const record = Record.fromJS(encodedTag);
