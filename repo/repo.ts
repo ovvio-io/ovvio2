@@ -314,8 +314,11 @@ export class Repository<
     const includedCommits: Commit[] = [];
     for (const c of commits) {
       if (!result) {
-        result = c;
-        scheme = this.recordForCommit(c).scheme;
+        if (this.hasRecordForCommit(c)) {
+          result = c;
+          scheme = this.recordForCommit(c).scheme;
+          includedCommits.push(c);
+        }
         continue;
       }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
@@ -503,7 +506,12 @@ export class Repository<
           // If any of the checksums didn't match, we create a new commit that
           // reverts the bad one we've just found. While discarding data, this
           // allows parties to continue their work without being stuck.
-          this.createMergeCommit(c.parents.map((id) => this.getCommit(id)));
+          this.createMergeCommit(
+            c.parents.map((id) => this.getCommit(id)),
+            undefined,
+            undefined,
+            c.id,
+          );
         }
         // assert(result.checksum === contents.edit.srcChecksum);
         // result.patch(contents.edit.changes);
@@ -649,6 +657,8 @@ export class Repository<
   private async createMergeCommit(
     commitsToMerge: Commit[],
     parents?: string[],
+    mergeLeader?: string,
+    revert?: string,
   ): Promise<Commit | undefined> {
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
@@ -724,6 +734,8 @@ export class Repository<
           contents: base,
           parents: parents || commitsToMerge.map((c) => c.id),
           mergeBase: lca?.id,
+          mergeLeader,
+          revert,
         }),
       );
       const signedCommit = await signCommit(
@@ -800,6 +812,7 @@ export class Repository<
         const mergeCommit = await this.createMergeCommit(
           commitsToMerge,
           leaves.map((c) => c.id),
+          mergeLeaderSession,
         );
         if (mergeCommit) {
           return mergeCommit;
@@ -940,6 +953,7 @@ export class Repository<
           parents: fullCommit.parents,
           mergeBase: fullCommit.mergeBase,
           mergeLeader: fullCommit.mergeLeader,
+          revert: fullCommit.revert,
         });
         log({
           severity: 'METRIC',
@@ -1142,6 +1156,7 @@ export class Repository<
           mergeBase: commit.mergeBase || null,
           mergeLeader: commit.mergeLeader || null,
           checksum: commit.contentsChecksum,
+          revert: commit.revert,
         },
       });
       for (const p of commit.parents) {

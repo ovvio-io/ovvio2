@@ -288,6 +288,7 @@ export async function signCommit(
     signature,
     mergeBase: commit.mergeBase,
     mergeLeader: commit.mergeLeader,
+    revert: commit.revert,
   });
 }
 

@@ -33,6 +33,10 @@ export interface DeltaContents extends ReadonlyCoreObject {
 
 export type CommitContents = RecordContents | DeltaContents;
 
+// NOTE: When adding fields to a commit, support must also be explicitly added
+// in:
+// 1. /auth/session.ts > signCommit()
+// 2. /repo/repo.ts -> Repository.deltaCompressIfNeeded()
 export interface CommitConfig {
   id?: string;
   session: string;
@@ -44,6 +48,7 @@ export interface CommitConfig {
   signature?: string;
   mergeBase?: string;
   mergeLeader?: string;
+  revert?: string;
 }
 
 export interface CommitSerializeOptions {
@@ -61,6 +66,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _signature?: string;
   private _mergeBase?: string;
   private _mergeLeader?: string;
+  private _revert?: string;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -95,6 +101,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       this._signature = config.signature;
       this._mergeBase = config.mergeBase;
       this._mergeLeader = config.mergeLeader;
+      this._revert = config.revert;
     }
   }
 
@@ -151,6 +158,10 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._mergeLeader;
   }
 
+  get revert(): string | undefined {
+    return this._revert;
+  }
+
   serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
@@ -175,6 +186,9 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     if (this.mergeLeader) {
       encoder.set('ml', this.mergeLeader);
     }
+    if (this.revert) {
+      encoder.set('revert', this.mergeLeader);
+    }
   }
 
   deserialize(decoder: Decoder): void {
@@ -188,6 +202,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._signature = decoder.get<string | undefined>('sig');
     this._mergeBase = decoder.get<string | undefined>('mb');
     this._mergeLeader = decoder.get<string | undefined>('ml');
+    this._revert = decoder.get<string | undefined>('revert');
   }
 
   isEqual(other: Commit): boolean {
