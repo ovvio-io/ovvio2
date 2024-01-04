@@ -155,6 +155,7 @@ export interface PublishButtonProps {
 function PublishButton({ note }: PublishButtonProps) {
   const styles = useStyles();
   const partialNote = usePartialVertex(note, ['workspace']);
+  const navigate = useNavigate();
 
   return partialNote.workspace.key.endsWith('-ws')
     ? (
@@ -173,8 +174,12 @@ function PublishButton({ note }: PublishButtonProps) {
         // popupClassName={cn(styles.workspacesList)}
       >
         <SelectWorkspaceMenu
-          onChange={(ws) =>
-            note.getVertexProxy().workspace = ws.getVertexProxy()}
+          onChange={(ws) => {
+            note.getVertexProxy().workspace = ws.getVertexProxy();
+            navigate(
+              `/${note.getVertexProxy().workspace.key}/notes/${note.key}`,
+            );
+          }}
           value={undefined}
         />
       </Menu>
