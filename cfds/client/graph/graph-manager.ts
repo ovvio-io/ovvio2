@@ -355,6 +355,10 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     return plumbing;
   }
 
+  getSysDir(): Repository<MemRepoStorage> {
+    return this.repository(Repository.id('sys', 'dir'));
+  }
+
   repository(id: string): Repository<MemRepoStorage> {
     this.loadRepository(id);
     return this.plumbingForRepository(id).repo;

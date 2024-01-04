@@ -42,6 +42,8 @@ export interface CommitConfig {
   timestamp?: Date;
   buildVersion?: VersionNumber;
   signature?: string;
+  mergeBase?: string;
+  mergeLeader?: string;
 }
 
 export interface CommitSerializeOptions {
@@ -57,6 +59,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _timestamp!: Date;
   private _contents!: CommitContents;
   private _signature?: string;
+  private _mergeBase?: string;
+  private _mergeLeader?: string;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -82,11 +86,15 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       this._parents = Array.from(parents);
       this._timestamp = config.timestamp || new Date();
       this._contents = commitContentsClone(contents);
+      // Actively ensure nobody tries to mutate our record. Commits must be
+      // immutable.
       if (commitContentsIsRecord(this._contents)) {
         this._contents.record.lock();
       }
       this._buildVersion = config.buildVersion || getOvvioConfig().version;
       this._signature = config.signature;
+      this._mergeBase = config.mergeBase;
+      this._mergeLeader = config.mergeLeader;
     }
   }
 
@@ -136,6 +144,12 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   get signature(): string | undefined {
     return this._signature;
   }
+  get mergeBase(): string | undefined {
+    return this._mergeBase;
+  }
+  get mergeLeader(): string | undefined {
+    return this._mergeLeader;
+  }
 
   serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
@@ -155,6 +169,12 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     if (this._signature && opts?.signed !== false) {
       encoder.set('sig', this._signature);
     }
+    if (this.mergeBase) {
+      encoder.set('mb', this.mergeBase);
+    }
+    if (this.mergeLeader) {
+      encoder.set('ml', this.mergeLeader);
+    }
   }
 
   deserialize(decoder: Decoder): void {
@@ -166,6 +186,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._parents = decoder.get<string[]>('p');
     this._contents = commitContentsDeserialize(decoder.getDecoder('c'));
     this._signature = decoder.get<string | undefined>('sig');
+    this._mergeBase = decoder.get<string | undefined>('mb');
+    this._mergeLeader = decoder.get<string | undefined>('ml');
   }
 
   isEqual(other: Commit): boolean {
@@ -195,7 +217,7 @@ export function commitContentsIsRecord(c: CommitContents): c is RecordContents {
 
 export function commitContentsSerialize(
   c: CommitContents,
-  encoder: Encoder
+  encoder: Encoder,
 ): void {
   if (commitContentsIsRecord(c)) {
     encoder.set('r', c.record.toJS());
@@ -207,8 +229,10 @@ export function commitContentsSerialize(
 
 export function commitContentsDeserialize(decoder: Decoder): CommitContents {
   if (decoder.has('r')) {
+    const record = new Record({ decoder: decoder.getDecoder('r') });
+    record.lock();
     return {
-      record: new Record({ decoder: decoder.getDecoder('r') }),
+      record: record,
     };
   } else {
     return {

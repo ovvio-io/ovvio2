@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../../../../../styles/components/buttons.tsx';
 import Menu, {
@@ -18,6 +18,7 @@ import { usePartialVertices } from '../../../../core/cfds/react/vertex.ts';
 import { isWindowsOS } from '../../../../utils.ts';
 import { useLogger } from '../../../../core/cfds/react/logger.tsx';
 import { brandLightTheme as theme } from '../../../../../../styles/theme.tsx';
+import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
 
 const useStyles = makeStyles(() => ({
   headerRoot: {
@@ -89,6 +90,15 @@ const useStyles = makeStyles(() => ({
     top: '0',
     whiteSpace: 'nowrap',
   },
+  uploadWorkspaceInput: {
+    opacity: 0,
+    position: 'absolute',
+    top: -1000,
+    right: -1000,
+  },
+  uploadWorkspaceLabel: {
+    position: 'absolute',
+  },
 }));
 
 const isWindows = isWindowsOS();
@@ -101,23 +111,50 @@ export interface ToolbarMenuProps {
 export function ToolbarMenu({ className }: ToolbarMenuProps) {
   const styles = useStyles();
   const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const graph = useGraphManager();
 
   const openSettings = useCallback(() => {
     navigate('/settings/personal-info/General');
   }, [navigate]);
 
+  const onChange = useCallback(async () => {
+    if (!inputRef.current) {
+      return;
+    }
+    const files = inputRef.current.files;
+    if (!files || !files.length) {
+      return;
+    }
+    const json = JSON.parse(await files[0].text());
+    Workspace.createFromJSON(graph, json);
+  }, []);
+
   return (
-    <>
+    <div>
+      <input
+        ref={inputRef}
+        key='wsFileInput'
+        className={cn(styles.uploadWorkspaceInput)}
+        type='file'
+        accept='.json'
+        onChange={onChange}
+      />
       <Menu
         className={className}
         popupClassName={cn(styles.menu)}
         renderButton={() => <IconAvatar />}
-        position="bottom"
+        position='bottom'
       >
+        <MenuItem
+          onClick={() => inputRef.current?.click()}
+        >
+          Upload Workspace...
+        </MenuItem>
         <MenuItem onClick={openSettings}>Settings</MenuItem>
-        <MenuItem>Sign out of Ovvio</MenuItem>
+        {/* <MenuItem>Sign out of Ovvio</MenuItem> */}
       </Menu>
-    </>
+    </div>
   );
 }
 
@@ -160,48 +197,48 @@ function getInitials(name: string, email: string): string {
   return initials;
 }
 
-export default function OvvioHeader({ className }: OvvioHeaderProps) {
-  const styles = useStyles();
-  const graph = useGraphManager();
-  const { results } = useExistingQuery(graph.sharedQueriesManager.workspaces);
-  const navigate = useNavigate();
-  const logger = useLogger();
-  const workspaces = usePartialVertices(results, ['name', 'selected']);
-  const selected = workspaces.filter((x) => x.selected);
-
-  const title = (function () {
-    switch (selected.length) {
-      case workspaces.length: {
-        return 'AlWWWWl Workspaces';
-      }
-      case 0: {
-        return '';
-      }
-      case 1: {
-        return selected[0].name;
-      }
-      default: {
-        return 'Multiple Workspaces';
-      }
-    }
-  })();
-
-  const ovvioHeaderClicked = useCallback(() => {
-    logger.log({
-      severity: 'EVENT',
-      event: 'Click',
-      source: 'toolbar:logo',
-    });
-    navigate('/');
-  }, [logger, navigate]);
-
-  return (
-    <div className={cn(styles.headerRoot)}>
-      <div className={cn(styles.headerContent)}>
-        <Button className={cn(styles.headerText)} onClick={ovvioHeaderClicked}>
-          {title}
-        </Button>
-      </div>
-    </div>
-  );
-}
+// export default function OvvioHeader({ className }: OvvioHeaderProps) {
+//   const styles = useStyles();
+//   const graph = useGraphManager();
+//   const { results } = useExistingQuery(graph.sharedQueriesManager.workspaces);
+//   const navigate = useNavigate();
+//   const logger = useLogger();
+//   const workspaces = usePartialVertices(results, ['name']);
+//   // const selected = workspaces.filter((x) => x.selected);
+//
+//   const title = (function () {
+//     switch (selected.length) {
+//       case workspaces.length: {
+//         return 'AlWWWWl Workspaces';
+//       }
+//       case 0: {
+//         return '';
+//       }
+//       case 1: {
+//         return selected[0].name;
+//       }
+//       default: {
+//         return 'Multiple Workspaces';
+//       }
+//     }
+//   })();
+//
+//   const ovvioHeaderClicked = useCallback(() => {
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'Click',
+//       source: 'toolbar:logo',
+//     });
+//     navigate('/');
+//   }, [logger, navigate]);
+//
+//   return (
+//     <div className={cn(styles.headerRoot)}>
+//       <div className={cn(styles.headerContent)}>
+//         <Button className={cn(styles.headerText)} onClick={ovvioHeaderClicked}>
+//           {title}
+//         </Button>
+//       </div>
+//     </div>
+//   );
+// }

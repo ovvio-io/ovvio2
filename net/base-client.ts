@@ -2,12 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
-import { retry } from '../base/time.ts';
 import { log } from '../logging/log.ts';
-import {
-  JSONCyclicalDecoder,
-  JSONCyclicalEncoder,
-} from '../base/core-types/encoding/json.ts';
 import { MovingAverage } from '../base/math.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { VersionNumber } from '../base/version-number.ts';
@@ -17,7 +12,6 @@ import {
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
-import { Commit } from '../repo/commit.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -59,7 +53,7 @@ export abstract class BaseClient<
     this._timer = new EaseInOutSineTimer(
       syncConfig.minSyncFreqMs,
       syncConfig.maxSyncFreqMs,
-      syncConfig.maxSyncFreqMs * 3,
+      syncConfig.maxSyncFreqMs,
       () => {
         this.sendSyncMessage().catch((e) => {
           log({

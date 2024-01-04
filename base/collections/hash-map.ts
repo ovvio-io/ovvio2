@@ -43,7 +43,7 @@ export class HashSet<V> implements Iterable<V> {
   constructor(
     hash: HashFunction<V>,
     eq: EqualFunction<V>,
-    clone?: CloneFunction<V>
+    clone?: CloneFunction<V>,
   ) {
     this._map = new Map();
     this._hashFunc = hash;
@@ -69,7 +69,7 @@ export class HashSet<V> implements Iterable<V> {
 
     // Entry exists. Check if v already exists
     const eq = this._equalFunc;
-    for (let candidate of values) {
+    for (const candidate of values) {
       if (eq(candidate, v)) {
         return false;
       }
@@ -124,7 +124,7 @@ export class HashSet<V> implements Iterable<V> {
 
     // Entry exists. Search for a matching value.
     const eq = this._equalFunc;
-    for (let candidate of values) {
+    for (const candidate of values) {
       if (eq(candidate, v)) {
         return candidate;
       }
@@ -146,7 +146,7 @@ export class HashSet<V> implements Iterable<V> {
 
     // Entry exists. Search for a matching value.
     const eq = this._equalFunc;
-    for (let candidate of values) {
+    for (const candidate of values) {
       if (eq(candidate, v)) {
         return true;
       }
@@ -184,13 +184,13 @@ interface MapEntry<K, V> {
  * The API is consistent with Map so HashMap can be used as a drop-in
  * replacement.
  */
-export class HashMap<K = any, V = any> implements Dictionary<K, V> {
+export class HashMap<K, V> implements Dictionary<K, V> {
   private _set: HashSet<MapEntry<K, V>>;
 
   constructor(
     hash: HashFunction<K>,
     eq: EqualFunction<K>,
-    clone?: CloneFunction<K>
+    clone?: CloneFunction<K>,
   ) {
     let entryClone: CloneFunction<MapEntry<K, V>> | undefined;
     if (clone !== undefined) {
@@ -205,7 +205,7 @@ export class HashMap<K = any, V = any> implements Dictionary<K, V> {
     this._set = new HashSet(
       (entry) => hash(entry.key),
       (e1, e2) => eq(e1.key, e2.key),
-      entryClone
+      entryClone,
     );
   }
 

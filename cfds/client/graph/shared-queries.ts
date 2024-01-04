@@ -26,6 +26,7 @@ import { NOTE_SORT_BY, NoteType } from './vertices/note.ts';
 import { CoreValue } from '../../../base/core-types/base.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { VertexManager } from './vertex-manager.ts';
+import { VertexSource } from './vertex-source.ts';
 
 export type SharedQueryName =
   | 'notDeleted'
@@ -167,9 +168,12 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     GT extends CoreValue = CoreValue,
   >(
     key: string,
-    source: Query<any, IT> | UnionQuery<any, IT> | GraphManager,
+    source: VertexSource,
     predicate: Predicate<IT, OT>,
-    sortDescriptorOrOpts?: SortDescriptor<OT> | QueryOptions<IT, OT, GT>,
+    sortDescriptorOrOpts?:
+      | SortDescriptor<OT>
+      | QueryOptions<IT, OT, GT>
+      | Omit<QueryOptions<IT, OT, GT>, 'source' | 'predicate'>,
     name?: string,
   ): Query<IT, OT> {
     let queries = this._vertexQueries.get(key);

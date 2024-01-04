@@ -300,7 +300,7 @@ export class Repository<
    *          3. The scheme to use for the merge.
    */
   findMergeBase(
-    commits: Iterable<Commit>,
+    commits: Commit[],
   ): [
     commits: Commit[],
     base: Commit | undefined,
@@ -319,7 +319,7 @@ export class Repository<
       }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
       reachedRoot = reachedRoot || foundRoot;
-      if (!newBase && !foundRoot) {
+      if (!newBase) {
         [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
         reachedRoot = reachedRoot || foundRoot;
       }
@@ -333,6 +333,9 @@ export class Repository<
       if (s.version > (scheme?.version || 0)) {
         scheme = s;
       }
+    }
+    if (result && commits.includes(result)) {
+      result = undefined;
     }
     return [includedCommits, result, scheme, reachedRoot];
   }
@@ -450,6 +453,8 @@ export class Repository<
     for (const candidate of commits) {
       if (
         candidate.timestamp.getTime() < minTs &&
+        (candidate.session === c1.session ||
+          candidate.session === c2.session) &&
         this.hasRecordForCommit(candidate)
       ) {
         return [candidate, false];
@@ -696,6 +701,9 @@ export class Repository<
           if (commitsToMerge.length === 0 && !foundRoot) {
             throw serviceUnavailable();
           }
+          // if (lca && leaves.includes(lca) && foundRoot) {
+          //   debugger;
+          // }
           // If no LCA is found then we're dealing with concurrent writers who all
           // created of the same key unaware of each other.
           // Use the null record as a base in this case.
@@ -746,6 +754,8 @@ export class Repository<
               key,
               contents: base,
               parents: leaves.map((c) => c.id),
+              mergeBase: lca?.id,
+              mergeLeader: mergeLeaderSession,
             }),
           );
           const signedCommit = await signCommit(
@@ -895,6 +905,8 @@ export class Repository<
           key,
           contents: { base: lastRecordCommit.id, edit },
           parents: fullCommit.parents,
+          mergeBase: fullCommit.mergeBase,
+          mergeLeader: fullCommit.mergeLeader,
         });
         log({
           severity: 'METRIC',
@@ -1094,6 +1106,9 @@ export class Repository<
           name: `${commit.session}-${commit.timestamp.toLocaleString()}`,
           session: commit.session,
           ts: commit.timestamp.getTime(),
+          mergeBase: commit.mergeBase || null,
+          mergeLeader: commit.mergeLeader || null,
+          checksum: commit.contentsChecksum,
         },
       });
       for (const p of commit.parents) {

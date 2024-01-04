@@ -1,17 +1,17 @@
 import React, {
+  MouseEventHandler,
   useCallback,
+  useEffect,
   useMemo,
   useState,
-  useEffect,
-  MouseEventHandler,
 } from 'react';
 import { mapIterable } from '../../../../../../../../base/common.ts';
 import * as SetUtils from '../../../../../../../../base/set.ts';
 import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
 import { notReached } from '../../../../../../../../base/error.ts';
 import {
-  encodeTagId,
   decodeTagId,
+  encodeTagId,
 } from '../../../../../../../../cfds/base/scheme-types.ts';
 import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
@@ -19,8 +19,8 @@ import Layer from '../../../../../../../../styles/components/layer.tsx';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { useTypographyStyles } from '../../../../../../../../styles/components/typography.tsx';
 import {
-  makeStyles,
   cn,
+  makeStyles,
 } from '../../../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../../styles/styleguide.ts';
@@ -32,7 +32,7 @@ import {
 import { useSharedQuery } from '../../../../../../core/cfds/react/query.ts';
 import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../../core/localization/index.tsx';
-import { FilterCheckboxState, FilterCheckbox } from './filter-checkbox.tsx';
+import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
 
 const useStyles = makeStyles(
@@ -112,7 +112,7 @@ const useStyles = makeStyles(
       basedOn: [layout.column, layout.centerCenter],
     },
   }),
-  'filters_965b1f'
+  'filters_965b1f',
 );
 
 const useStrings = createUseStrings(localization);
@@ -161,11 +161,11 @@ function FilterBackdrop({
         onClick();
       }
     },
-    [onClick]
+    [onClick],
   );
 
   return createUniversalPortal(
-    <div style={style} className={styles.backdrop} onClick={click} />
+    <div style={style} className={styles.backdrop} onClick={click} />,
   );
 }
 
@@ -191,7 +191,7 @@ export function FiltersView({ className }: FiltersViewProps) {
               className={cn(
                 className,
                 styles.animator,
-                !view.showFilters && styles.hide
+                !view.showFilters && styles.hide,
               )}
               style={{ zIndex: style.zIndex + 1 }}
             >
@@ -217,7 +217,7 @@ function useUnifiedTagCategory(name: string): UnifiedTagDisplay {
 }
 
 function useTagSectionState(
-  parentName: string
+  parentName: string,
 ): [FilterCheckboxState, () => void] {
   const view = usePartialView('selectedTagIds');
   let [, ...values] = useUnifiedTagCategory(parentName);
@@ -228,12 +228,11 @@ function useTagSectionState(
         ++selectedCount;
       }
     }
-    const state: FilterCheckboxState =
-      selectedCount === values.length
-        ? 'on'
-        : selectedCount === 0
-        ? 'off'
-        : 'partial';
+    const state: FilterCheckboxState = selectedCount === values.length
+      ? 'on'
+      : selectedCount === 0
+      ? 'off'
+      : 'partial';
     return [
       state,
       () => {
@@ -263,7 +262,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
   }
 
   const toggleTag = useCallback(
-    (name) => {
+    (name: string) => {
       const id = encodeTagId(parentTagName, name);
       if (view.selectedTagIds.has(id)) {
         view.selectedTagIds.delete(id);
@@ -271,7 +270,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
         view.selectedTagIds.add(id);
       }
     },
-    [view, parentTagName]
+    [view, parentTagName],
   );
 
   return (
@@ -312,7 +311,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
   const [result, assignees]: [UnifiedAssignees, User[]] = useMemo(() => {
     const uniqueAssignees = new Set<User>();
     for (const ws of view.selectedWorkspaces) {
-      SetUtils.update(uniqueAssignees, ws.assignees);
+      SetUtils.update(uniqueAssignees, ws.users);
     }
     const assignees = Array.from(uniqueAssignees).sort((a, b) =>
       a.key === rootUser.key
@@ -332,7 +331,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
   useEffect(
     () =>
       view.deleteFromSet('selectedAssignees', (u) => !assignees.includes(u)),
-    [assignees, view]
+    [assignees, view],
   );
 
   return result;
@@ -370,7 +369,7 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
         if (selectedWorkspaces.has(t.workspace)) {
           SetUtils.update(
             values,
-            mapIterable(t.childTags, (tag) => tag.name)
+            mapIterable(t.childTags, (tag) => tag.name),
           );
         }
       }
