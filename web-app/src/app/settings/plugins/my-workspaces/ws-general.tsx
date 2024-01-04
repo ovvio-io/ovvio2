@@ -220,13 +220,6 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
     ),
     []
   );
-
-  interface ImageIconProps {
-    width?: string;
-    height?: string;
-    src: string;
-    alt?: string;
-  }
   useEffect(() => {
     let timeoutId: number;
 
@@ -242,6 +235,13 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
       }
     };
   }, [removeUserStep]);
+
+  interface ImageIconProps {
+    width?: string;
+    height?: string;
+    src: string;
+    alt?: string;
+  }
 
   const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
     return <img src={src} alt={alt || 'icon'} width={width} height={height} />;

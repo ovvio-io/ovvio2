@@ -366,7 +366,6 @@ export default function Menu({
   };
 
   useLayoutEffect(() => {
-    //TODO do we need minimum size of the menu to be set by the button that triggered it??
     if (isElement(anchor.current) && sizeByButton) {
       const width = (anchor.current as any).getBoundingClientRect().width;
       setMinWidthStyle({ width: `${width}px` });

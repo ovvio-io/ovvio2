@@ -171,7 +171,7 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
           {(inputRef) => (
             <div className={cn(styles.tableContent)} ref={inputRef}>
               {filteredUsers.map((user: User, index: number) => (
-                <>
+                <React.Fragment key={user.key}>
                   <div
                     key={user.key}
                     className={cn(styles.row, styles.hoverableRow, {
@@ -183,7 +183,7 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
                       {user ? user.name : null}
                     </div>
                   </div>
-                </>
+                </React.Fragment>
               ))}
             </div>
           )}

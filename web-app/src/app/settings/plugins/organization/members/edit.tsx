@@ -137,13 +137,11 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
       console.log('Input is invalid');
       return;
     }
-
     const userVertex = graph.getVertex<User>(userKey);
     if (!userVertex) {
       console.log('User not found');
       return;
     }
-
     userVertex.name = name;
     userVertex.email = normalizeEmail(email);
     const metadataMap = new Map<UserMetadataKey, string>();
@@ -152,7 +150,6 @@ export const Edit: React.FC<EditProps> = ({ setStep, onClose }) => {
         metadataMap.set(key as UserMetadataKey, value);
       }
     });
-
     userVertex.metadata = metadataMap;
   };
 

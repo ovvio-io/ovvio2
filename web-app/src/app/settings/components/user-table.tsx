@@ -7,6 +7,9 @@ import { IconMore } from '../../../../../styles/components/new-icons/icon-more.t
 import { SearchBar } from '../../../../../components/search-bar.tsx';
 import { convertDictionaryToObject } from '../../../../../base/collections/dict.ts';
 import { UserMetadataKey } from '../../../../../cfds/client/graph/vertices/user.ts';
+import Menu, { MenuItem } from '../../../../../styles/components/menu.tsx';
+import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
+import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
 
 type EditableColumnProps = {
   index: number;
@@ -214,40 +217,46 @@ const TableRow: React.FC<TableRowProps> = ({
     }
   };
 
-  const handleRowSelect = editMode
-    ? (user?: string) => {
-        setEditNow(true);
-        console.log('USER', user);
-        !user && onRowSelect;
-      }
-    : onRowSelect;
-
-  const enableEditing = () => {
-    setIsEditing(true);
+  const handleRowSelect = (user: string) => {
+    if (editMode) {
+      setEditNow(true);
+    } else if (user) {
+      onRowSelect(user);
+    }
   };
+
   const saveAndExitEditing = () => {
-    if (onSaveEdit && user && localName && localEmail && localMetadata)
+    if (
+      onSaveEdit &&
+      user &&
+      localName &&
+      localEmail &&
+      localMetadata !== undefined
+    ) {
       onSaveEdit(user.key, localName, localEmail, localMetadata);
+    }
     setEditNow(false);
     setIsEditing(false);
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isEditing &&
-        editNow &&
-        rowRef.current &&
-        !rowRef.current.contains(event.target as Node)
-      ) {
+      if (rowRef.current && !rowRef.current.contains(event.target as Node)) {
         saveAndExitEditing();
       }
     };
-    document.addEventListener('click', handleClickOutside);
+    if (editNow) {
+      document.addEventListener('click', handleClickOutside);
+    }
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isEditing, editNow]);
+  }, [isEditing, editNow, rowRef, saveAndExitEditing]);
+
+  const enableEditing = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setIsEditing(true);
+  };
 
   if (editNow) {
     return (
@@ -290,6 +299,21 @@ const TableRow: React.FC<TableRowProps> = ({
                 handleMetadataChange('companyRoles', value)
               }
             />
+            <Menu
+              renderButton={() => <IconMore />}
+              position="right"
+              align="start"
+              direction="out"
+            >
+              <MenuItem onClick={() => {}}>
+                <IconDuplicate />
+                Copy User ID
+              </MenuItem>
+              <MenuItem onClick={() => {}}>
+                <IconDelete />
+                Remove from Org.
+              </MenuItem>
+            </Menu>
             <IconMore />
           </div>
         )}
@@ -380,7 +404,7 @@ const TableRow: React.FC<TableRowProps> = ({
               }
             />
             <IconMore />
-          </div> //iconMore will be changed to img
+          </div>
         )}
       </div>
     );
@@ -485,19 +509,6 @@ const UserTable: React.FC<UserTableProps> = ({
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState<boolean>();
   const [isSearching, setIsSearching] = useState(showSearch ? true : false);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
-
-  const handleRowClick = (userKey: string) => {
-    if (!editMode) {
-      onRowSelect(userKey);
-    } else if (editingUserId !== userKey) {
-      console.log('editingUserId NOT equal');
-      setEditingUserId(userKey);
-    } else {
-      console.log('editingUserId YES equal');
-      setEditingUserId(null);
-    }
-  };
 
   useEffect(() => {
     if (users) {
@@ -558,7 +569,7 @@ const UserTable: React.FC<UserTableProps> = ({
           <TableRow
             key={user.key}
             user={user}
-            onRowSelect={() => handleRowClick(user.key)}
+            onRowSelect={() => onRowSelect(user.key)}
             isSelected={showSelection && selectedUsers.has(user.key)}
             isEditable={isEditable && !selectedUsers.has(user.key)}
             addNewMember={false}
