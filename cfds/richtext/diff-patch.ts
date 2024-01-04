@@ -25,7 +25,7 @@ import {
  * @param flatRep Input flat rep.
  */
 function* cleanCopyElementNodes(
-  flatRep: Iterable<FlatRepAtom>
+  flatRep: Iterable<FlatRepAtom>,
 ): Generator<FlatRepAtom> {
   for (const atom of flatRep) {
     if (isElementNode(atom)) {
@@ -40,7 +40,7 @@ function* cleanCopyElementNodes(
 
 export function* decodeStringDiff(
   diff: Diff[],
-  strRep: StringRep
+  strRep: StringRep,
 ): Generator<RichTextChange> {
   for (const cmd of MergeContext.diffToChanges(diff)) {
     let values: FlatRepAtom[] | undefined;
@@ -68,8 +68,8 @@ export function* decodeStringDiff(
       //    performance bottleneck of the previous implementation).
       values = Array.from(
         convertPtrsToValues(
-          cleanCopyElementNodes(reconstructTextNodes(strRep.decode(cmd.value)))
-        )
+          cleanCopyElementNodes(reconstructTextNodes(strRep.decode(cmd.value))),
+        ),
       );
     }
     const config: RichTextChangeConfig = {
@@ -89,7 +89,8 @@ export function* decodeStringDiff(
 export function diff(
   rt1: RichText,
   rt2: RichText,
-  local = true
+  local = true,
+  byCharacter = true,
 ): RichTextChange[] {
   if (coreValueEquals(rt1, rt2)) {
     return [];
@@ -99,8 +100,8 @@ export function diff(
   // const flatRt2 = Array.from(flattenRichText(rt2, local, true));
   // const str1 = strRep.encode(flatRt1);
   // const str2 = strRep.encode(flatRt2);
-  const str1 = strRep.encode(flattenRichText(rt1, local, true));
-  const str2 = strRep.encode(flattenRichText(rt2, local, true));
+  const str1 = strRep.encode(flattenRichText(rt1, local, byCharacter));
+  const str2 = strRep.encode(flattenRichText(rt2, local, byCharacter));
   const textDiffs = kDMP.diff_main(str1, str2, true);
   // if (textDiffs.length > 2) {
   //   kDMP.diff_cleanupSemantic(textDiffs);
@@ -111,13 +112,13 @@ export function diff(
 export function patch(
   base: RichText,
   changes: RichTextChange[],
-  local = true
+  local = true,
 ): RichText {
   //const flat = Array.from(flattenRichText(base, local));
 
   const mergeCtx = new MergeContext(
     flattenRichText(base, local),
-    kCoreValueTreeNodeOpts
+    kCoreValueTreeNodeOpts,
   );
   for (const c of changes) {
     mergeCtx.apply(c);

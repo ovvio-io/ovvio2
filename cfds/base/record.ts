@@ -2,20 +2,20 @@ import { assert } from '../../base/error.ts';
 import { isNoValue, isObject } from '../../base/comparisons.ts';
 import { Scheme } from './scheme.ts';
 import {
-  isValidData,
-  serialize,
-  equals as dataEqual,
-  deserialize,
   clone,
-  diff as objectDiff,
-  patch as objectPatch,
-  getRefs,
-  normalize as normalizeObject,
-  diffKeys,
   DataChanges,
+  deserialize,
+  diff as objectDiff,
+  diffKeys,
+  equals as dataEqual,
   gc,
+  getRefs,
+  isValidData,
   needGC,
+  normalize as normalizeObject,
+  patch as objectPatch,
   rewriteRefs,
+  serialize,
 } from './object.ts';
 import {
   ConstructorDecoderConfig,
@@ -148,7 +148,7 @@ export class Record implements ReadonlyRecord, Encodable {
   get<T = any>(key: string, defaultValue?: T): T {
     assert(
       this.scheme.hasField(key),
-      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
+      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`,
     );
     const data = this._data;
 
@@ -161,7 +161,7 @@ export class Record implements ReadonlyRecord, Encodable {
   has(key: string): boolean {
     assert(
       this.scheme.hasField(key),
-      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
+      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`,
     );
     return this._data.hasOwnProperty(key);
   }
@@ -170,7 +170,7 @@ export class Record implements ReadonlyRecord, Encodable {
     assert(!this._locked);
     assert(
       this.scheme.hasField(key),
-      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
+      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`,
     );
     if (isRecordValueWrapper(value)) {
       value = value.__wrappedValueForRecord();
@@ -195,7 +195,7 @@ export class Record implements ReadonlyRecord, Encodable {
     assert(!this._locked);
     assert(
       this.scheme.hasField(key),
-      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`
+      `Unknown field name '${key}' for scheme '${this.scheme.namespace}'`,
     );
     const success = delete this._data[key];
     this._invalidateCaches();
@@ -243,7 +243,7 @@ export class Record implements ReadonlyRecord, Encodable {
     this._invalidateCaches();
   }
 
-  diff(other: Record, local: boolean) {
+  diff(other: Record, local: boolean, byCharacter?: boolean) {
     assert(other instanceof Record);
 
     this.normalize();
@@ -252,6 +252,7 @@ export class Record implements ReadonlyRecord, Encodable {
     other.assertValidData();
     return objectDiff(other.scheme.getFields(), this._data, other._data, {
       local,
+      byCharacter,
     });
   }
 
@@ -308,7 +309,7 @@ export class Record implements ReadonlyRecord, Encodable {
 
   serialize(
     encoder: Encoder<string, CoreValue>,
-    options = { local: false }
+    options = { local: false },
   ): void {
     this.normalize();
     encoder.set('s', this.scheme);
@@ -345,7 +346,7 @@ export class Record implements ReadonlyRecord, Encodable {
 
   assertValidData() {
     const [valid, msg] = isValidData(this.scheme, this._data);
-    assert(<boolean>valid, <string>msg);
+    assert(<boolean> valid, <string> msg);
   }
 
   private _invalidateCaches() {

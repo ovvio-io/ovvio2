@@ -41,6 +41,7 @@ export function isRefValueType(type: ValueType): boolean {
 
 export interface ValueTypeOptions {
   local?: boolean;
+  byCharacter?: boolean;
 }
 
 export interface SerializeValueTypeOptions extends ChecksumEncoderOpts {
@@ -61,7 +62,7 @@ export interface IValueTypeOperations<T = any> {
     key: string,
     value: T,
     encoder: Encoder,
-    options?: SerializeValueTypeOptions
+    options?: SerializeValueTypeOptions,
   ): void;
 
   deserialize(value: DecodedValue, options?: ValueTypeOptions): T;
@@ -74,7 +75,7 @@ export interface IValueTypeOperations<T = any> {
    */
   valueAddedDiff(
     value2: T,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ): undefined | Change<EncodedChange> | Change<EncodedChange>[];
 
   /**
@@ -85,19 +86,19 @@ export interface IValueTypeOperations<T = any> {
    */
   valueRemovedDiff(
     value1: T,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ): undefined | Change<EncodedChange> | Change<EncodedChange>[];
 
   valueChangedDiff(
     value1: T,
     value2: T,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ): undefined | Change<EncodedChange> | Change<EncodedChange>[];
 
   patch(
     curValue: T | undefined,
     changes: Change<EncodedChange>[],
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ): T | undefined;
 
   fillRefs(refs: Set<string>, value: T): void;
@@ -112,14 +113,14 @@ export interface IValueTypeOperations<T = any> {
   rewriteRefs(
     keyMapping: Map<string, string>,
     value: T,
-    deleteRefs?: Set<string>
+    deleteRefs?: Set<string>,
   ): T | undefined;
 }
 
 const typeOperations: { [key: string]: IValueTypeOperations } = {};
 
 export function getTypeOperations<T = any>(
-  type: ValueType
+  type: ValueType,
 ): IValueTypeOperations<T> {
   const op = typeOperations[type];
   if (op === undefined) {
@@ -129,7 +130,7 @@ export function getTypeOperations<T = any>(
 }
 
 export function getTypeOperationsByValue(
-  value: CoreValue
+  value: CoreValue,
 ): IValueTypeOperations {
   for (const typeOP of Object.values(typeOperations)) {
     if (typeOP.validate(value)) {
@@ -169,7 +170,7 @@ export function valueTypeEquals<TValue>(
   type: ValueType,
   value1: TValue | undefined,
   value2: TValue | undefined,
-  options?: ValueTypeOptions
+  options?: ValueTypeOptions,
 ) {
   if (value1 === undefined && value2 !== undefined) {
     return false;

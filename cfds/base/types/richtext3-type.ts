@@ -18,14 +18,14 @@ import { diff, patch } from '../../richtext/diff-patch.ts';
 import { flattenRichText } from '../../richtext/flat-rep.ts';
 import { normalizeRichText } from '../../richtext/normalize/index.ts';
 import {
+  dfs,
   initRichText,
+  isExpiredPointer,
   isRichText,
-  RichText,
   onlyNoneLocal,
   purgeExpiredPointers,
-  isExpiredPointer,
+  RichText,
   treeAtomKeyFilterIgnoreText,
-  dfs,
 } from '../../richtext/tree.ts';
 import { CoreTypeOperations } from './core-type.ts';
 
@@ -42,7 +42,7 @@ export class RichText3TypeOperations extends CoreTypeOperations<RichText> {
   patch(
     curValue: RichText | undefined,
     changes: Change<EncodedChange>[],
-    _options?: ValueTypeOptions
+    _options?: ValueTypeOptions,
   ) {
     if (curValue === undefined) {
       curValue = initRichText();
@@ -69,7 +69,7 @@ export class RichText3TypeOperations extends CoreTypeOperations<RichText> {
     key: string,
     value: RichText,
     encoder: Encoder,
-    options?: SerializeValueTypeOptions
+    options?: SerializeValueTypeOptions,
   ): void {
     const local = options?.local === true; //default false
 
@@ -104,7 +104,7 @@ export class RichText3TypeOperations extends CoreTypeOperations<RichText> {
 
   valueRemovedDiff(
     value1: RichText,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ): Change<EncodedChange> | Change<EncodedChange>[] | undefined {
     const local = options?.local === true; //Default is false
 
@@ -116,10 +116,14 @@ export class RichText3TypeOperations extends CoreTypeOperations<RichText> {
   valueChangedDiff(
     value1: RichText,
     value2: RichText,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ) {
-    const local = options?.local === true; //Default is false
-    return diff(value1, value2, local);
+    return diff(
+      value1,
+      value2,
+      options?.local === true, // Default: false
+      options?.byCharacter !== false, // Default: true
+    );
   }
 
   isEmpty(_value: RichText): boolean {
@@ -165,7 +169,7 @@ export class RichText3TypeOperations extends CoreTypeOperations<RichText> {
   rewriteRefs(
     keyMapping: Map<string, string>,
     value: RichText,
-    deleteRefs?: Set<string>
+    deleteRefs?: Set<string>,
   ): RichText {
     for (const [node, _depth, path] of dfs(value.root, true)) {
       if (isRefMarker(node)) {

@@ -165,7 +165,9 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const vert = this.getVertexProxy();
     let pack: MutationPack;
-    for (const fieldName of Object.keys(prevRecord.diff(newRecord, true))) {
+    for (
+      const fieldName of Object.keys(prevRecord.diff(newRecord, true, false))
+    ) {
       pack = mutationPackAppend(pack, [
         fieldName,
         false,
