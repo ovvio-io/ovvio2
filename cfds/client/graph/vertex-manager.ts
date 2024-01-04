@@ -132,7 +132,7 @@ export class VertexManager<V extends Vertex = Vertex>
     this._record = initialState?.clone() || Record.nullRecord();
     this.rebuildVertex();
     if (hasInitialState) {
-      this.commit();
+      this.scheduleCommitIfNeeded();
     }
   }
 

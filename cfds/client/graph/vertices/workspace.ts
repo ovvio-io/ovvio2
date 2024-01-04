@@ -22,6 +22,7 @@ import { GraphManager } from '../graph-manager.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Record } from '../../../base/record.ts';
+import { Repository } from '../../../../repo/repo.ts';
 
 export interface UserAlias extends JSONObject {
   name?: string;
@@ -322,6 +323,7 @@ export class Workspace extends BaseVertex {
       createdBy: graph.rootKey,
       isTemplate: encodedWs.isTemplate ? 1 : 0,
     }, encodedWs.key);
+    graph.markRepositoryReady(Repository.id('data', workspace.key));
     for (const [tagKey, encodedTag] of Object.entries(encodedWs.tags)) {
       const record = Record.fromJS(encodedTag);
       graph.createVertex<Tag>(

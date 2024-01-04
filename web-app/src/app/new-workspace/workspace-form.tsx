@@ -69,6 +69,7 @@ function duplicateWorkspace(
     rewriteKeys.set(k, uniqueId());
   }
   const newRepoId = Repository.id('data', newWs.key);
+  graph.markRepositoryReady(newRepoId);
   const dstRepo = graph.repository(newRepoId);
   // Copy notes and reset their assignees
   for (
@@ -105,14 +106,6 @@ function createNewWorkspace(
     users: new Set([graphManager.rootKey]),
   };
   if (copyFrom) {
-    const ws = duplicateWorkspace(
-      graphManager,
-      copyFrom,
-      {
-        ...data,
-        name: name + `-${i + 1}`,
-      },
-    );
     return duplicateWorkspace(graphManager, copyFrom, data);
   }
   return graphManager.createVertex<Workspace>(NS_WORKSPACE, data).manager;

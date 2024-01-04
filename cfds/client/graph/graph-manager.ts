@@ -375,7 +375,25 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     ) {
       return true;
     }
-    return plumbing?.syncFinished === true;
+    return plumbing.repo.numberOfCommits() > 0
+      ? true
+      : plumbing?.syncFinished === true;
+  }
+
+  /**
+   * When creating a new repository and immediately populating it, it's
+   * sometimes needed to forcefully mark it ready and wait for sync to pick
+   * things up later.
+   */
+  markRepositoryReady(id: string | undefined): void {
+    if (!id) {
+      return;
+    }
+    id = Repository.normalizeId(id);
+    this.prepareRepositoryForUI(id);
+    const plumbing = this.plumbingForRepository(id);
+    plumbing.loadingFinished = true;
+    plumbing.syncFinished = true;
   }
 
   repositoryForKey(
