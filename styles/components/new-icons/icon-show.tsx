@@ -68,39 +68,39 @@ export function IconShow({
     //   />
     // </svg>
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="17"
-      height="11"
-      viewBox="0 0 17 11"
-      fill="none"
+      xmlns='http://www.w3.org/2000/svg'
+      width='17'
+      height='11'
+      viewBox='0 0 17 11'
+      fill='none'
     >
       <path
-        opacity="0.7"
-        d="M15.125 5.2C15.125 5.2 13.025 1 8.125 1C3.225 1 1.125 5.2 1.125 5.2"
-        stroke="#8C8C8C"
-        stroke-width="2"
-        stroke-linecap="round"
+        opacity='0.7'
+        d='M15.125 5.2C15.125 5.2 13.025 1 8.125 1C3.225 1 1.125 5.2 1.125 5.2'
+        stroke='#8C8C8C'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        opacity="0.7"
-        d="M15.125 5.20002C15.125 5.20002 13.025 9.40002 8.125 9.40002C3.225 9.40002 1.125 5.20002 1.125 5.20002"
-        stroke="#3F3F3F"
-        stroke-width="2"
-        stroke-linecap="round"
+        opacity='0.7'
+        d='M15.125 5.20002C15.125 5.20002 13.025 9.40002 8.125 9.40002C3.225 9.40002 1.125 5.20002 1.125 5.20002'
+        stroke='#3F3F3F'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        opacity="0.8"
-        d="M10.125 5.20001C10.125 6.30458 9.22957 7.20001 8.125 7.20001C7.02043 7.20001 6.125 6.30458 6.125 5.20001"
-        stroke="#8C8C8C"
-        stroke-width="2"
-        stroke-linecap="round"
+        opacity='0.8'
+        d='M10.125 5.20001C10.125 6.30458 9.22957 7.20001 8.125 7.20001C7.02043 7.20001 6.125 6.30458 6.125 5.20001'
+        stroke='#8C8C8C'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
       <path
-        opacity="0.7"
-        d="M10.125 5.20001C10.125 4.09544 9.22957 3.20001 8.125 3.20001C7.02043 3.20001 6.125 4.09544 6.125 5.20001"
-        stroke="#3F3F3F"
-        stroke-width="2"
-        stroke-linecap="round"
+        opacity='0.7'
+        d='M10.125 5.20001C10.125 4.09544 9.22957 3.20001 8.125 3.20001C7.02043 3.20001 6.125 4.09544 6.125 5.20001'
+        stroke='#3F3F3F'
+        strokeWidth='2'
+        strokeLinecap='round'
       />
     </svg>
   );

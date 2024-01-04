@@ -1028,6 +1028,7 @@ interface WorkspaceListProps {
 }
 
 function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
+  const graph = useGraphManager();
   const styles = useStyles();
   const strings = useStrings();
   const view = usePartialGlobalView(
@@ -1054,9 +1055,15 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   if (!groups.includes('hidden')) {
     groups.push('hidden');
   }
+  let separatorCount = 0;
   for (const gid of query.groups()) {
     if (contents.length > 0) {
-      contents.push(<div className={cn(styles.separator)} />);
+      contents.push(
+        <div
+          className={cn(styles.separator)}
+          key={`wsBar/sep/${++separatorCount}`}
+        />,
+      );
     }
     const rows = query.group(gid);
     const expanded = view.expandedWorkspaceGroups.has(
@@ -1089,12 +1096,9 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         </Button>,
       );
     }
-    const graph = useGraphManager();
     const personalWsKey = `${graph.rootKey}-ws`;
-
     if (gid === 'pinned' || gid === 'myWorkspace' || gid === null || expanded) {
       for (const ws of query.group(gid)) {
-        console.log('XXXXXXXX', gid, query.group(gid)); // --------------------------------
         if (ofSettings && ws.key === personalWsKey) {
           continue;
         }
@@ -1108,9 +1112,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             ofSettings={ofSettings}
           />,
         );
-        if (ws.key === personalWsKey) {
-          // contents.push(<div className={cn(styles.separator)} />);
-        }
       }
     }
   }
