@@ -35,6 +35,7 @@ import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
+import { delay } from '../base/time.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
@@ -313,8 +314,11 @@ export class Repository<
     const includedCommits: Commit[] = [];
     for (const c of commits) {
       if (!result) {
-        result = c;
-        scheme = this.recordForCommit(c).scheme;
+        if (this.hasRecordForCommit(c)) {
+          result = c;
+          scheme = this.recordForCommit(c).scheme;
+          includedCommits.push(c);
+        }
         continue;
       }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
@@ -487,13 +491,32 @@ export class Repository<
       if (commitContentsIsRecord(c.contents)) {
         result = c.contents.record;
       } else {
+        let revertCommit = false;
         const contents: DeltaContents = c.contents as DeltaContents;
         result = this.recordForCommit(contents.base).clone();
-        assert(result.checksum === contents.edit.srcChecksum);
-        result.patch(contents.edit.changes);
-        assert(result.checksum === contents.edit.dstChecksum);
+        if (result.checksum === contents.edit.srcChecksum) {
+          result.patch(contents.edit.changes);
+          if (result.checksum !== contents.edit.dstChecksum) {
+            revertCommit = true;
+          }
+        } else {
+          revertCommit = true;
+        }
+        if (revertCommit) {
+          // If any of the checksums didn't match, we create a new commit that
+          // reverts the bad one we've just found. While discarding data, this
+          // allows parties to continue their work without being stuck.
+          this.createMergeCommit(
+            c.parents.map((id) => this.getCommit(id)),
+            undefined,
+            undefined,
+            c.id,
+          );
+        }
+        // assert(result.checksum === contents.edit.srcChecksum);
+        // result.patch(contents.edit.changes);
+        // assert(result.checksum === contents.edit.dstChecksum);
       }
-      result.checksum;
       this._cachedRecordForCommit.set(c.id, result);
     }
     return result.clone();
@@ -631,6 +654,106 @@ export class Repository<
     return undefined;
   }
 
+  private async createMergeCommit(
+    commitsToMerge: Commit[],
+    parents?: string[],
+    mergeLeader?: string,
+    revert?: string,
+  ): Promise<Commit | undefined> {
+    const key = commitsToMerge[0].key;
+    const session = this.trustPool.currentSession.id;
+    try {
+      const roots = commitsToMerge.filter((c) => c.parents.length === 0);
+      commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
+      // Find the base for our N-way merge
+      let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
+      // When merging roots, we use the null record as the merge base
+      if (roots.length > 0) {
+        scheme = roots[0].scheme!;
+        foundRoot = true;
+      } else if (commitsToMerge.length === 1) {
+        // Special case: a single chain of commits.
+        scheme = this.recordForCommit(commitsToMerge[0]).scheme ||
+          Scheme.nullScheme();
+        foundRoot = false;
+      } else {
+        [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
+          commitsToMerge,
+        );
+      }
+      if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
+        throw serviceUnavailable();
+      }
+      // If no LCA is found then we're dealing with concurrent writers who all
+      // created of the same key unaware of each other.
+      // Use the null record as a base in this case.
+      const base = lca
+        ? this.recordForCommit(lca).clone()
+        : CFDSRecord.nullRecord();
+      // Upgrade base to merge scheme
+      if (!scheme.isNull) {
+        base.upgradeScheme(scheme);
+      }
+      // Compute all changes to be applied in this merge
+      let changes: DataChanges = {};
+      // First, handle any new roots that may have appeared as leaves.
+      // We transform them to diff format by computing a diff from null.
+      // Note that we start with these changes in order to let later changes
+      // override them as concurrent root creation is likely a temporary
+      // error.
+      const nullRecord = CFDSRecord.nullRecord();
+      for (const c of roots) {
+        const record = this.recordForCommit(c);
+        if (record.isNull) {
+          continue;
+        }
+        changes = concatChanges(
+          changes,
+          nullRecord.diff(record, c.session === session),
+        );
+      }
+      // Second, compute a compound diff from our base to all unique records
+      for (const c of commitsToMerge) {
+        const record = this.recordForCommit(c);
+        // Before computing the diff, upgrade the record to the scheme decided
+        // for this merge.
+        if (!scheme.isNull) {
+          record.upgradeScheme(scheme);
+        }
+        changes = concatChanges(
+          changes,
+          base.diff(record, c.session === session),
+        );
+      }
+      // Patch, and we're done.
+      base.patch(changes);
+      const mergeCommit = this.deltaCompressIfNeeded(
+        new Commit({
+          session,
+          key,
+          contents: base,
+          parents: parents || commitsToMerge.map((c) => c.id),
+          mergeBase: lca?.id,
+          mergeLeader,
+          revert,
+        }),
+      );
+      const signedCommit = await signCommit(
+        this.trustPool.currentSession,
+        mergeCommit,
+      );
+      this.persistVerifiedCommits([signedCommit]);
+      return this.cacheHeadForKey(key, signedCommit);
+    } catch (e) {
+      if (
+        !(e instanceof ServerError && e.code === Code.ServiceUnavailable)
+      ) {
+        debugger;
+        throw e; // Unknown error. Rethrow.
+      }
+    }
+  }
+
   mergeIfNeeded(
     key: string | null,
   ): Promise<Commit | undefined> {
@@ -671,7 +794,7 @@ export class Repository<
         return undefined;
       }
       // Filter out any commits with equal records
-      let commitsToMerge = commitsWithUniqueRecords(leaves).sort(
+      const commitsToMerge = commitsWithUniqueRecords(leaves).sort(
         coreValueCompare,
       );
       // If our leaves converged on a single value, we can simply return it.
@@ -686,90 +809,13 @@ export class Repository<
       if (
         !prevMergeIsActive && this.allowMerge && mergeLeaderSession === session
       ) {
-        // At this point our leaves have more than one value. Try to merge them all
-        // to a single value. Currently we're simply doing a crude N-way merge and
-        // rely on our patch to come up with a nice result. A better way may be to
-        // do a recursive 3-way merge like git does.
-        try {
-          const roots = commitsToMerge.filter((c) => c.parents.length === 0);
-          commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
-          // Find the base for our N-way merge
-          let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
-          [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
-            commitsToMerge,
-          );
-          if (commitsToMerge.length === 0 && !foundRoot) {
-            throw serviceUnavailable();
-          }
-          // if (lca && leaves.includes(lca) && foundRoot) {
-          //   debugger;
-          // }
-          // If no LCA is found then we're dealing with concurrent writers who all
-          // created of the same key unaware of each other.
-          // Use the null record as a base in this case.
-          const base = lca
-            ? this.recordForCommit(lca).clone()
-            : CFDSRecord.nullRecord();
-          // Upgrade base to merge scheme
-          if (!scheme.isNull) {
-            base.upgradeScheme(scheme);
-          }
-          // Compute all changes to be applied in this merge
-          let changes: DataChanges = {};
-          // First, handle any new roots that may have appeared as leaves.
-          // We transform them to diff format by computing a diff from null.
-          // Note that we start with these changes in order to let later changes
-          // override them as concurrent root creation is likely a temporary
-          // error.
-          const nullRecord = CFDSRecord.nullRecord();
-          for (const c of roots) {
-            const record = this.recordForCommit(c);
-            if (record.isNull) {
-              continue;
-            }
-            changes = concatChanges(
-              changes,
-              nullRecord.diff(record, c.session === session),
-            );
-          }
-          // Second, compute a compound diff from our base to all unique records
-          for (const c of commitsToMerge) {
-            const record = this.recordForCommit(c);
-            // Before computing the diff, upgrade the record to the scheme decided
-            // for this merge.
-            if (!scheme.isNull) {
-              record.upgradeScheme(scheme);
-            }
-            changes = concatChanges(
-              changes,
-              base.diff(record, c.session === session),
-            );
-          }
-          // Patch, and we're done.
-          base.patch(changes);
-          // debugger;
-          const mergeCommit = this.deltaCompressIfNeeded(
-            new Commit({
-              session,
-              key,
-              contents: base,
-              parents: leaves.map((c) => c.id),
-              mergeBase: lca?.id,
-              mergeLeader: mergeLeaderSession,
-            }),
-          );
-          const signedCommit = await signCommit(
-            this.trustPool.currentSession,
-            mergeCommit,
-          );
-          this.persistVerifiedCommits([signedCommit]);
-          return this.cacheHeadForKey(key, signedCommit);
-        } catch (e) {
-          if (
-            !(e instanceof ServerError && e.code === Code.ServiceUnavailable)
-          ) {
-            throw e; // Unknown error. Rethrow.
-          }
+        const mergeCommit = await this.createMergeCommit(
+          commitsToMerge,
+          leaves.map((c) => c.id),
+          mergeLeaderSession,
+        );
+        if (mergeCommit) {
+          return mergeCommit;
         }
       }
       // Since we're dealing with a partial graph, some of our leaves may not
@@ -907,6 +953,7 @@ export class Repository<
           parents: fullCommit.parents,
           mergeBase: fullCommit.mergeBase,
           mergeLeader: fullCommit.mergeLeader,
+          revert: fullCommit.revert,
         });
         log({
           severity: 'METRIC',
@@ -951,13 +998,13 @@ export class Repository<
           if (authorizer(this, c, session, true)) {
             yield c;
           } else {
-            debugger;
+            // debugger;
           }
         } else {
           yield c;
         }
       } else {
-        debugger;
+        // debugger;
       }
     }
   }
@@ -1109,6 +1156,7 @@ export class Repository<
           mergeBase: commit.mergeBase || null,
           mergeLeader: commit.mergeLeader || null,
           checksum: commit.contentsChecksum,
+          revert: commit.revert,
         },
       });
       for (const p of commit.parents) {

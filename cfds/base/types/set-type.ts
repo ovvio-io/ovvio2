@@ -16,7 +16,7 @@ export class SetTypeOperations extends CoreTypeOperations<
   patch(
     curValue: Set<ConcreteCoreValue> | undefined,
     changes: Change<EncodedChange>[],
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ) {
     for (const change of changes) {
       if (change instanceof FieldChange) {
@@ -32,7 +32,7 @@ export class SetTypeOperations extends CoreTypeOperations<
 
   private patchInsert(
     curValue: Set<ConcreteCoreValue> | undefined,
-    change: FieldChange<Set<ConcreteCoreValue>>
+    change: FieldChange<Set<ConcreteCoreValue>>,
   ) {
     curValue = curValue || new Set<ConcreteCoreValue>();
     return SetUtils.unionByValue(curValue, change.value);
@@ -40,7 +40,7 @@ export class SetTypeOperations extends CoreTypeOperations<
 
   private patchDelete(
     curValue: Set<ConcreteCoreValue> | undefined,
-    change: FieldChange<Set<ConcreteCoreValue>>
+    change: FieldChange<Set<ConcreteCoreValue>>,
   ) {
     if (curValue === undefined) return curValue;
 
@@ -61,7 +61,7 @@ export class SetTypeOperations extends CoreTypeOperations<
   rewriteRefs(
     keyMapping: Map<string, string>,
     value: Set<ConcreteCoreValue>,
-    deleteRefs?: Set<string>
+    deleteRefs?: Set<string>,
   ): Set<ConcreteCoreValue> {
     if (!this.isRef) {
       return value;
@@ -78,7 +78,7 @@ export class SetTypeOperations extends CoreTypeOperations<
   valueChangedDiff(
     value1: Set<ConcreteCoreValue>,
     value2: Set<ConcreteCoreValue>,
-    options?: ValueTypeOptions
+    options?: ValueTypeOptions,
   ) {
     const added = SetUtils.subtractByValue(value2, value1);
     const removed = SetUtils.subtractByValue(value1, value2);

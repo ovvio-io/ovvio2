@@ -24,6 +24,10 @@ export class EmailService extends BaseService<ServerServices> {
   }
 
   async send(message: EmailMessage): Promise<boolean> {
+    // Disable email sending on development machines
+    if (Deno.build.os === 'darwin') {
+      return false;
+    }
     const req: SendEmailCommandInput = {
       FromEmailAddress: 'system@ovvio.io',
       Destination: {

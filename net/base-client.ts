@@ -257,8 +257,8 @@ export abstract class BaseClient<
    * communication (which rely on indefinite polling loop).
    */
   async sync(): Promise<void> {
-    const syncConfig = this.syncConfig;
-    const cycleCount = syncConfigGetCycles(syncConfig) + 1;
+    // const syncConfig = this.syncConfig;
+    const cycleCount = this.syncCycles + 1;
     // We need to do a minimum number of successful sync cycles in order to make
     // sure everything is sync'ed. Also need to make sure we don't have any
     // local commits that our peer doesn't have (local changes or peer recovery).
@@ -266,7 +266,7 @@ export abstract class BaseClient<
     do {
       await this.sendSyncMessage();
       ++i;
-    } while (!this.closed && i < cycleCount);
+    } while (!this.closed && i <= cycleCount || this.needsReplication());
   }
 
   needsReplication(): boolean {
