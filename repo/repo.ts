@@ -695,10 +695,15 @@ export class Repository<
           commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
           // Find the base for our N-way merge
           let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
-          [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
-            commitsToMerge,
-          );
-          if (commitsToMerge.length === 0 && !foundRoot) {
+          if (commitsToMerge.length === 1) {
+            scheme = commitsToMerge[0].scheme || Scheme.nullScheme();
+            foundRoot = false;
+          } else {
+            [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
+              commitsToMerge,
+            );
+          }
+          if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
             throw serviceUnavailable();
           }
           // if (lca && leaves.includes(lca) && foundRoot) {
@@ -951,13 +956,13 @@ export class Repository<
           if (authorizer(this, c, session, true)) {
             yield c;
           } else {
-            debugger;
+            // debugger;
           }
         } else {
           yield c;
         }
       } else {
-        debugger;
+        // debugger;
       }
     }
   }
