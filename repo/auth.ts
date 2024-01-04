@@ -53,6 +53,8 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     const operatorEmails = fetchOperatorEmails();
     const isOperator = typeof email === 'string' &&
       operatorEmails.includes(email);
+
+    // Operators are granted root-level access-everything under /sys/dir
     if (isOperator) {
       return true;
     }
@@ -70,7 +72,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     switch (namespace) {
       // Read-write access to members only
       case SchemeNamespace.WORKSPACE: {
-        // Anyone is allowed to create a new workspace
+        // Anyone is allowed to create new workspaces
         if (record.isNull) {
           return write === true;
         }
@@ -83,16 +85,22 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // other operators.
       case SchemeNamespace.USERS:
         if (record.isNull) {
-          // Only operators are allowed to create users
-          return isOperator;
+          // Only root and operators are allowed to create users
+          return false;
         }
-        // Only operators are allowed to see other operators
+        // Operator users are invisible to all other users
         if (operatorEmails.includes(record.get('email'))) {
-          return isOperator;
+          return false;
         }
-        return write === false || isOperator;
+        // Users are allowed to update their own records
+        if (userKey === commit.key) {
+          return true;
+        }
+        // Readonly access for everyone else
+        return write === false;
 
-      // Readonly access to everyone
+      // Readonly access to everyone. Only root and operators are allowed to
+      // update sessions.
       case SchemeNamespace.SESSIONS:
         return write === false;
 
@@ -190,6 +198,7 @@ export function createUserAuthorizer<ST extends RepoStorage<ST>>(
       );
       requestingUserKey = commitSignerSession?.owner;
     }
+    // Access to personal repo is allowed only to its owner and root.
     return requestingUserKey === 'root' || requestingUserKey === repoUserKey;
   };
 }
