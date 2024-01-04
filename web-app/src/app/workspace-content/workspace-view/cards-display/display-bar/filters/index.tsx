@@ -405,7 +405,9 @@ function InternalFiltersView() {
     <div className={cn(styles.filtersView)}>
       <div className={cn(styles.section)}>
         <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {...assignees.map((assignee) => <AssigneeView user={assignee} />)}
+        {...assignees.map((assignee) => <AssigneeView
+          user={assignee.manager}
+        />)}
         {hasMore && (
           <div
             onClick={() => setShowMore((x) => !x)}
