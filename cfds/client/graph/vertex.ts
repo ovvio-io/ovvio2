@@ -1,17 +1,17 @@
 import { VertexManager } from './vertex-manager.ts';
 import { GraphManager } from './graph-manager.ts';
 import {
-  MutationPack,
-  mutationPackIsEmpty,
-  mutationPackGetFirst,
-  mutationPackAppend,
-  mutationPackDeleteFirst,
-  mutationPackClone,
   Mutation,
+  MutationPack,
+  mutationPackAppend,
+  mutationPackClone,
+  mutationPackDeleteFirst,
+  mutationPackGetFirst,
+  mutationPackIsEmpty,
   mutationPackIter,
 } from './mutations.ts';
 import { extractRefs as extractRefsFromRT } from '../../richtext/composer.ts';
-import { RichText, isRichText } from '../../richtext/tree.ts';
+import { isRichText, RichText } from '../../richtext/tree.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
 import { triggerChildren, triggerCompose } from './propagation-triggers.ts';
 import {
@@ -25,9 +25,9 @@ import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { ValueType } from '../../base/types/index.ts';
 import { isGenerator } from '../../../base/comparisons.ts';
 import {
-  ReadonlyDict,
   Dictionary,
   isDictionary,
+  ReadonlyDict,
 } from '../../../base/collections/dict.ts';
 
 /**
@@ -42,7 +42,7 @@ export const kNoRefsValue = {};
  */
 export type FieldChangeTrigger<T extends Vertex> = (
   src: T,
-  mutation: Mutation
+  mutation: Mutation,
 ) => void;
 
 export type MutableFieldTriggers<T extends Vertex> = {
@@ -60,7 +60,7 @@ type VertCls = {
   new (
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig
+    config: VertexConfig,
   ): Vertex;
 };
 
@@ -97,7 +97,7 @@ export class Vertex implements Comparable {
 
   static registerFieldTriggers(
     cls: VertCls,
-    triggers: FieldTriggers<any>
+    triggers: FieldTriggers<any>,
   ): void {
     assert(!this._didFinalizeFieldTriggers);
     this._fieldTriggersByClass.set(cls, triggers);
@@ -132,7 +132,7 @@ export class Vertex implements Comparable {
    */
   private static _finalizeFieldTriggersForClass(
     rawTriggers: Map<VertCls, FieldTriggers<Vertex>>,
-    src: VertCls
+    src: VertCls,
   ): FieldTriggers<any> {
     const classHierarchy = this._getVertexClasses(src);
     const result: MutableFieldTriggers<any> = {};
@@ -151,7 +151,7 @@ export class Vertex implements Comparable {
           result[fieldName] = triggerCompose(
             result[fieldName]!,
             func,
-            fieldName
+            fieldName,
           );
         } else {
           result[fieldName] = func;
@@ -171,7 +171,7 @@ export class Vertex implements Comparable {
     for (const cls of rawTriggers.keys()) {
       finalizedTriggers.set(
         cls,
-        this._finalizeFieldTriggersForClass(rawTriggers, cls)
+        this._finalizeFieldTriggersForClass(rawTriggers, cls),
       );
     }
 
@@ -185,13 +185,14 @@ export class Vertex implements Comparable {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ) {
     this._manager = mgr as VertexManager<typeof this>;
     this._compositeFieldsCache = new Map();
     this._cachedDepth = -1;
-    this._isLocal =
-      prevVertex !== undefined ? prevVertex._isLocal : config?.isLocal === true;
+    this._isLocal = prevVertex !== undefined
+      ? prevVertex._isLocal
+      : config?.isLocal === true;
     this.isDemoData = prevVertex !== undefined ? prevVertex.isDemoData : false;
   }
 
@@ -271,7 +272,7 @@ export class Vertex implements Comparable {
   parentDidMutate(
     local: boolean,
     oldValue: Vertex | undefined,
-    neighbor: Vertex
+    neighbor: Vertex,
   ): MutationPack {
     this._cachedDepth = -1;
     return ['depth', local, oldValue === undefined ? 0 : oldValue.depth + 1];
@@ -290,7 +291,7 @@ export class Vertex implements Comparable {
   }
 
   *getChildManagers<T extends Vertex>(
-    ns?: SchemeNamespace
+    ns?: SchemeNamespace,
   ): Generator<VertexManager<T>> {
     for (const [mgr] of this.inEdgesManagers('parent')) {
       if (ns === undefined || mgr.scheme.namespace === ns) {
@@ -326,7 +327,7 @@ export class Vertex implements Comparable {
   }
 
   *inEdges<T extends Vertex>(
-    fieldName?: string
+    fieldName?: string,
   ): Generator<[vertex: T, fieldName: string]> {
     for (const [mgr, f] of this.inEdgesManagers(fieldName)) {
       yield [mgr.getVertexProxy(), f];
@@ -334,7 +335,7 @@ export class Vertex implements Comparable {
   }
 
   *inEdgesManagers<T extends Vertex>(
-    fieldName?: string
+    fieldName?: string,
   ): Generator<[vertex: VertexManager<T>, fieldName: string]> {
     const graph = this.graph;
     for (const edge of graph.adjacencyList.inEdges(this.key, fieldName)) {
@@ -344,7 +345,7 @@ export class Vertex implements Comparable {
 
   *outEdges(
     fieldName?: string,
-    graphLayer?: string
+    graphLayer?: string,
   ): Generator<[vertex: Vertex, fieldName: string]> {
     const graph = this.graph;
     for (const edge of graph.adjacencyList.outEdges(this.key, fieldName)) {
@@ -374,13 +375,14 @@ export class Vertex implements Comparable {
     let remainingMutations = mutationPackClone(pack);
 
     while (!mutationPackIsEmpty(remainingMutations)) {
-      const [fieldName, local, oldValue] =
-        mutationPackGetFirst(remainingMutations)!;
+      const [fieldName, local, oldValue] = mutationPackGetFirst(
+        remainingMutations,
+      )!;
       const handlerName = getDidMutateMethodName(fieldName);
       if (typeof (this as any)[handlerName] === 'function') {
         result = mutationPackAppend(
           result,
-          (this as any)[handlerName](local, oldValue)
+          (this as any)[handlerName](local, oldValue),
         );
       }
       remainingMutations = mutationPackDeleteFirst(remainingMutations);
@@ -391,7 +393,7 @@ export class Vertex implements Comparable {
   private _runFieldTriggers(pack: MutationPack): void {
     Vertex._finalizeFieldTriggersIfNeeded();
     const triggers = Vertex._fieldTriggersByClass.get(
-      this.constructor as VertCls
+      this.constructor as VertCls,
     );
     if (triggers === undefined) {
       return;
@@ -491,7 +493,7 @@ export class Vertex implements Comparable {
   parentIsLocalChanged(
     local: boolean,
     oldValue: boolean,
-    parent: Vertex
+    parent: Vertex,
   ): MutationPack {
     if (!this._isLocal) {
       return ['isLocal', local, oldValue];
@@ -535,7 +537,7 @@ function getDidMutateMethodName(fieldName: string): string {
 
 export function keyDictToVertDict<K extends Vertex, V extends Vertex>(
   graph: GraphManager,
-  keyDict: ReadonlyDict<string, string>
+  keyDict: ReadonlyDict<string, string>,
 ): Dictionary<K, V> {
   const result = new Map<K, V>();
   for (const [k, v] of keyDict) {
@@ -545,7 +547,7 @@ export function keyDictToVertDict<K extends Vertex, V extends Vertex>(
 }
 
 export function vertDictToKeyDict(
-  vertDict: ReadonlyDict<Vertex, Vertex>
+  vertDict: ReadonlyDict<Vertex, Vertex>,
 ): Dictionary<string, string> {
   const result = new Map<string, string>();
   for (const [k, v] of vertDict) {
@@ -571,7 +573,7 @@ export function extractFieldRefs(
     | Set<Vertex>
     | RichText
     | CoreValue,
-  local: boolean
+  local: boolean,
 ): Set<string> {
   const result = new Set<string>();
   if (value === undefined) {

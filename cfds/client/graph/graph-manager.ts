@@ -82,6 +82,7 @@ interface RepositoryPlumbing {
   client?: RepoClient<MemRepoStorage>;
   backup?: IDBRepositoryBackup;
   loadingPromise?: Promise<void>;
+  loadedLocalContents?: boolean;
   loadingFinished?: true;
   syncFinished?: true;
   active: boolean;
@@ -204,6 +205,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   }
 
   loadRepository(id: string): Promise<void> {
+    id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
     if (plumbing.loadingPromise) {
       return plumbing.loadingPromise;
@@ -224,7 +226,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
           if (commits instanceof Array) {
             repo.allowMerge = false;
             try {
-              await repo.persistCommits(commits);
+              repo.persistVerifiedCommits(commits);
             } finally {
               repo.allowMerge = true;
             }
@@ -240,6 +242,9 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         }
         plumbing.active = true;
         plumbing.loadingFinished = true;
+        const numberOfCommits = repo.numberOfCommits();
+        plumbing.loadedLocalContents =
+          numberOfCommits > (id === 'sys/dir' ? 1 : 0);
         // plumbing.client?.startSyncing();
       },
     );
@@ -253,6 +258,10 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       await this.loadRepository(id);
       if (client && client.isOnline) {
         await client.sync();
+        // Load all keys from this repo
+        for (const key of plumbing.repo.keys()) {
+          this.getVertexManager(key).touch();
+        }
         plumbing.syncFinished = true;
         // client.startSyncing();
       }
@@ -265,9 +274,10 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
 
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
-    const repo = this.repository(repoId);
-    if (repo.numberOfCommits() <= 0) {
+    const plumbing = this.plumbingForRepository(repoId);
+    if (plumbing.loadedLocalContents !== true) {
       await this.syncRepository(repoId);
+      this.startSyncing(repoId);
     } else {
       this.startSyncing(repoId);
     }
@@ -296,7 +306,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         // if (c.session === this.trustPool.currentSession.id) {
         //   plumbing!.client?.touch();
         // }
-        if (!c.key) {
+        if (!c.key || !repo.commitIsLeaf(c) || !this.repositoryReady(id)) {
           return;
         }
         // The following line does two major things:
@@ -370,14 +380,8 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     }
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
-    if (
-      plumbing?.loadingFinished === true && plumbing.repo.numberOfCommits() > 0
-    ) {
-      return true;
-    }
-    return plumbing.repo.numberOfCommits() > 0
-      ? true
-      : plumbing?.syncFinished === true;
+    return plumbing?.loadedLocalContents === true ||
+      plumbing?.syncFinished === true;
   }
 
   /**

@@ -518,8 +518,9 @@ export class Note extends ContentVertex {
 
   get parentNote(): Note | undefined {
     const parentKey = this.record.get('parentNote');
-    return parentKey !== undefined
-      ? this.graph.getVertex<Note>(parentKey)
+    const graph = this.graph;
+    return parentKey !== undefined && graph.hasVertex(parentKey)
+      ? graph.getVertex<Note>(parentKey)
       : undefined;
   }
 

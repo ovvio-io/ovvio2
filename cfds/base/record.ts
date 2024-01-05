@@ -166,7 +166,7 @@ export class Record implements ReadonlyRecord, Encodable {
     return this._data.hasOwnProperty(key);
   }
 
-  set(key: string, value: any) {
+  set(key: string, value: any): void {
     assert(!this._locked);
     assert(
       this.scheme.hasField(key),
@@ -184,7 +184,7 @@ export class Record implements ReadonlyRecord, Encodable {
     this.normalize();
   }
 
-  setMultiple(data: { [K in string]: any }) {
+  setMultiple(data: { [K in string]: any }): void {
     assert(!this._locked);
     for (const [key, value] of Object.entries(data)) {
       this.set(key, value);
