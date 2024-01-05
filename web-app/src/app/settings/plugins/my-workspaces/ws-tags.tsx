@@ -11,5 +11,5 @@ export function WsTagsSettings() {
   // const styles = makeStyles();
 
   return 'In Progress';
-  //   return <TagsTable />;
+  // return <TagsTable />;
 }

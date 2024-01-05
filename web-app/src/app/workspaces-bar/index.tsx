@@ -350,7 +350,7 @@ const useStyles = makeStyles(
       padding: '16px',
     },
   }),
-  'workspaces-bar_881015',
+  'workspaces-bar_881015'
 );
 
 const useStrings = createUseStrings(localization);
@@ -408,10 +408,10 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
   const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
   const idx1 = kWorkspaceGIDOrder.indexOf(
-    typeof marker1 === 'string' ? marker1 : null,
+    typeof marker1 === 'string' ? marker1 : null
   );
   const idx2 = kWorkspaceGIDOrder.indexOf(
-    typeof marker2 === 'string' ? marker2 : null,
+    typeof marker2 === 'string' ? marker2 : null
   );
   return idx1 - idx2;
 }
@@ -495,25 +495,25 @@ export interface WorkspacesBarProps {
 function CheckIcon() {
   return (
     <svg
-      width='16'
-      height='16'
-      viewBox='0 0 16 16'
-      fill='none'
-      xmlns='http://www.w3.org/2000/svg'
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        opacity='0.6'
-        d='M6.82617 10.739L11 5'
-        stroke='white'
-        strokeWidth='2'
-        strokeLinecap='round'
+        opacity="0.6"
+        d="M6.82617 10.739L11 5"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
-        opacity='0.6'
-        d='M5 8.13037L6.82605 10.739'
-        stroke='white'
-        strokeWidth='2'
-        strokeLinecap='round'
+        opacity="0.6"
+        d="M5 8.13037L6.82605 10.739"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -522,32 +522,32 @@ function CheckIcon() {
 function CollapseIcon({ className }: { className?: string }) {
   return (
     <svg
-      width='24'
-      height='24'
-      viewBox='0 0 24 24'
-      fill='none'
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
       className={className}
-      xmlns='http://www.w3.org/2000/svg'
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <g clipPath='url(#clip0_591_1399)'>
+      <g clipPath="url(#clip0_591_1399)">
         <path
-          opacity='0.6'
-          d='M9 12L15 18'
-          stroke='#3184DD'
-          strokeWidth='2'
-          strokeLinecap='round'
+          opacity="0.6"
+          d="M9 12L15 18"
+          stroke="#3184DD"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
         <path
-          opacity='0.6'
-          d='M15 6L9 12'
-          stroke='#1960CF'
-          strokeWidth='2'
-          strokeLinecap='round'
+          opacity="0.6"
+          d="M15 6L9 12"
+          stroke="#1960CF"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </g>
       <defs>
-        <clipPath id='clip0_591_1399'>
-          <rect width='24' height='24' fill='white' />
+        <clipPath id="clip0_591_1399">
+          <rect width="24" height="24" fill="white" />
         </clipPath>
       </defs>
     </svg>
@@ -577,10 +577,10 @@ function WorkspaceToggleView({
   const view = usePartialGlobalView(
     'workspaceGrouping',
     'workspaceBarCollapsed',
-    'selectedWorkspaces',
+    'selectedWorkspaces'
   );
-  const selectedRatio = query.count &&
-    view.selectedWorkspaces.size / query.count;
+  const selectedRatio =
+    query.count && view.selectedWorkspaces.size / query.count;
 
   const moreButtonRef = useRef(null); //ADDED
 
@@ -597,10 +597,10 @@ function WorkspaceToggleView({
             )}
             popupClassName={cn(styles.workSpaceMenu)}
             anchor={moreButtonRef.current}
-            placement='auto-end'
-            direction='out'
-            position='right'
-            align='end'
+            placement="auto-end"
+            direction="out"
+            position="right"
+            align="end"
           >
             <div>
               <div
@@ -614,9 +614,8 @@ function WorkspaceToggleView({
                   style={{
                     padding: '0 4px',
                   }}
-                >
-                </div>
-                <IconGroup style={{ marginRight: '8px' }} color='blue' />
+                ></div>
+                <IconGroup style={{ marginRight: '8px' }} color="blue" />
                 <LabelSm className={styles.groupBy}>Group By:</LabelSm>
               </div>
             </div>
@@ -649,7 +648,7 @@ function WorkspaceToggleView({
                 view.workspaceGrouping = 'none';
               }}
               icon={(iconProps) => (
-                <IconUngroupWithColor color='blue' {...iconProps} />
+                <IconUngroupWithColor color="blue" {...iconProps} />
               )}
             >
               {'Ungroup'}
@@ -666,7 +665,7 @@ function WorkspaceToggleView({
             onClick={onSelectAll}
             className={cn(
               styles.toggleViewButton,
-              selectedRatio === 1 && styles.toggleViewButtonDisabled,
+              selectedRatio === 1 && styles.toggleViewButtonDisabled
             )}
           >
             Select All
@@ -675,7 +674,7 @@ function WorkspaceToggleView({
             onClick={onUnselectAll}
             className={cn(
               styles.toggleViewButton,
-              selectedRatio === 0 && styles.toggleViewButtonDisabled,
+              selectedRatio === 0 && styles.toggleViewButtonDisabled
             )}
           >
             Unselect All
@@ -724,7 +723,7 @@ function WorkspaceListItem({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
@@ -737,7 +736,8 @@ function WorkspaceListItem({
   }, [graph, repoId, isSelected]);
 
   const textRef = useRef<HTMLDivElement>(null);
-  const isOverflowing = textRef.current &&
+  const isOverflowing =
+    textRef.current &&
     textRef.current.offsetWidth < textRef.current.scrollWidth;
 
   // const renderButton = useCallback(() => <IconMore />, []);
@@ -747,7 +747,7 @@ function WorkspaceListItem({
         <IconMore />
       </div>
     ),
-    [],
+    []
   );
 
   const setWorkspaceState = useCallback(
@@ -767,7 +767,7 @@ function WorkspaceListItem({
       view.selectedWorkspaces,
       workspace,
       ofSettings,
-    ],
+    ]
   );
 
   const toggleSelected = useCallback(() => {
@@ -795,11 +795,11 @@ function WorkspaceListItem({
       className={cn(
         styles.listItem,
         !view.workspaceBarCollapsed && styles.listItemExpanded,
-        isSelected && styles.listItemSelected,
+        isSelected && styles.listItemSelected
       )}
       style={style}
     >
-      <Tooltip text={name} disabled={!isOverflowing} position='right'>
+      <Tooltip text={name} disabled={!isOverflowing} position="right">
         <div
           className={cn(styles.itemTab)}
           onClick={toggleSelected}
@@ -813,96 +813,99 @@ function WorkspaceListItem({
       </Tooltip>
       <div /*className={cn(layout.flexSpacer)}*/ />
       {!view.workspaceBarCollapsed &&
-        (!loaded
-          ? (
-            <div
-              className={cn(
-                isSelected ? styles.loadingIndicatorContainer : styles.hidden,
-              )}
-            >
-              <IndeterminateProgressIndicator
-                className={cn(styles.loadingIndicator)}
-              />
-            </div>
-          )
-          : (
-            <React.Fragment>
-              {groupId === 'myWorkspace' && (
-                <Button>
-                  <img
-                    key='MyWorkspacePersonalIcon'
-                    src='/icons/settings/Personal.svg'
-                  />
-                </Button>
-              )}
+        (!loaded ? (
+          <div
+            className={cn(
+              isSelected ? styles.loadingIndicatorContainer : styles.hidden
+            )}
+          >
+            <IndeterminateProgressIndicator
+              className={cn(styles.loadingIndicator)}
+            />
+          </div>
+        ) : (
+          <React.Fragment>
+            {groupId === 'myWorkspace' && (
+              <Button>
+                <img
+                  key="MyWorkspacePersonalIcon"
+                  src="/icons/settings/Personal.svg"
+                />
+              </Button>
+            )}
 
-              {groupId !== 'myWorkspace' && (
-                <Button
-                  className={cn(
-                    styles.pinButton,
-                    groupId === 'pinned' && styles.pinButtonPinned,
-                  )}
-                  onClick={() =>
-                    setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')}
-                >
-                  {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-                </Button>
-              )}
-              {groupId !== 'myWorkspace' && (
-                <Menu
-                  renderButton={renderButton}
-                  direction='out'
-                  position='right'
-                  align='start'
-                  // className={cn(styles.itemMenu)}
-                >
-                  {!isTemplate && (
-                    <MenuItem
-                      onClick={() =>
-                        setWorkspaceState(
-                          groupId === 'hidden' ? 'none' : 'hidden',
-                        )}
-                    >
-                      {groupId === 'hidden'
-                        ? <IconShow color={IconColor.Primary} />
-                        : <IconHide />}
-                      {groupId === 'hidden'
-                        ? strings.showWorkspace
-                        : strings.hideWorkspace}
-                    </MenuItem>
-                  )}
-                  {groupId !== 'hidden' && (
-                    <MenuItem
-                      onClick={() =>
-                        setWorkspaceState(
-                          groupId === 'templates' ? 'none' : 'template',
-                        )}
-                    >
-                      {groupId === 'templates'
-                        ? <IconTemplateUnset />
-                        : <IconTemplateSet />}
-
-                      {groupId === 'templates'
-                        ? strings.unsetTemplate
-                        : strings.setTemplate}
-                    </MenuItem>
-                  )}
-
-                  <MenuItem onClick={() => setIsSettingsOpen(true)}>
-                    <IconSettings />
-                    {strings.workspaceSettings}
+            {groupId !== 'myWorkspace' && (
+              <Button
+                className={cn(
+                  styles.pinButton,
+                  groupId === 'pinned' && styles.pinButtonPinned
+                )}
+                onClick={() =>
+                  setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+                }
+              >
+                {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+              </Button>
+            )}
+            {groupId !== 'myWorkspace' && (
+              <Menu
+                renderButton={renderButton}
+                direction="out"
+                position="right"
+                align="start"
+                // className={cn(styles.itemMenu)}
+              >
+                {!isTemplate && (
+                  <MenuItem
+                    onClick={() =>
+                      setWorkspaceState(
+                        groupId === 'hidden' ? 'none' : 'hidden'
+                      )
+                    }
+                  >
+                    {groupId === 'hidden' ? (
+                      <IconShow color={IconColor.Primary} />
+                    ) : (
+                      <IconHide />
+                    )}
+                    {groupId === 'hidden'
+                      ? strings.showWorkspace
+                      : strings.hideWorkspace}
                   </MenuItem>
-                </Menu>
-              )}
-            </React.Fragment>
-          ))}
-      {
-        /* <WorkspaceSettingsDialog
+                )}
+                {groupId !== 'hidden' && (
+                  <MenuItem
+                    onClick={() =>
+                      setWorkspaceState(
+                        groupId === 'templates' ? 'none' : 'template'
+                      )
+                    }
+                  >
+                    {groupId === 'templates' ? (
+                      <IconTemplateUnset />
+                    ) : (
+                      <IconTemplateSet />
+                    )}
+
+                    {groupId === 'templates'
+                      ? strings.unsetTemplate
+                      : strings.setTemplate}
+                  </MenuItem>
+                )}
+
+                <MenuItem onClick={() => setIsSettingsOpen(true)}>
+                  <IconSettings />
+                  {strings.workspaceSettings}
+                </MenuItem>
+              </Menu>
+            )}
+          </React.Fragment>
+        ))}
+      {/* <WorkspaceSettingsDialog
         workspaceManager={workspace}
         isOpen={isSettingsOpen}
         hide={() => setIsSettingsOpen(false)}
-      /> */
-      }
+      /> */}
     </div>
   );
 }
@@ -998,25 +1001,25 @@ function ExpanderIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      width='16'
-      height='16'
-      viewBox='0 0 16 16'
-      fill='none'
-      xmlns='http://www.w3.org/2000/svg'
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        opacity='0.8'
-        d='M10 8L6 4'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
+        opacity="0.8"
+        d="M10 8L6 4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
-        opacity='0.8'
-        d='M6 12L10 8'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
+        opacity="0.8"
+        d="M6 12L10 8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -1034,7 +1037,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   const view = usePartialGlobalView(
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'selectedWorkspaces',
+    'selectedWorkspaces'
   );
 
   const toggleExpanded = useCallback(
@@ -1047,7 +1050,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         expandedWorkspaceGroups.add(key);
       }
     },
-    [view],
+    [view]
   );
 
   const contents: JSX.Element[] = [];
@@ -1062,18 +1065,19 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         <div
           className={cn(styles.separator)}
           key={`wsBar/sep/${++separatorCount}`}
-        />,
+        />
       );
     }
     const rows = query.group(gid);
     const expanded = view.expandedWorkspaceGroups.has(
-      WorkspaceGIDToString(gid),
+      WorkspaceGIDToString(gid)
     );
     if (gid !== 'pinned' && gid !== null && gid !== 'myWorkspace') {
       const selectedCount = SetUtils.intersectionSize(
         view.selectedWorkspaces,
-        query.vertices(gid),
+        query.vertices(gid)
       );
+
       contents.push(
         <Button
           key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
@@ -1083,17 +1087,20 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         >
           <div className={cn(styles.expanderText)}>
             {typeof gid === 'string'
-              ? expanded ? strings[gid] : strings[`${gid}Short`]
+              ? expanded
+                ? strings[gid]
+                : strings[`${gid}Short`]
               : gid.getVertexProxy().name}
+
             {selectedCount > 0 ? ` [${selectedCount}]` : ''}
           </div>
           <ExpanderIcon
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconOpen,
+              expanded && styles.expanderIconOpen
             )}
           />
-        </Button>,
+        </Button>
       );
     }
     const personalWsKey = `${graph.rootKey}-ws`;
@@ -1104,13 +1111,13 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         }
         contents.push(
           <WorkspaceListItem
-            key={`wsbar/${
-              gid instanceof VertexManager ? gid.key : gid
-            }/${ws.key}`}
+            key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
+              ws.key
+            }`}
             workspace={ws}
             groupId={gid}
             ofSettings={ofSettings}
-          />,
+          />
         );
       }
     }
@@ -1130,7 +1137,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
 function shouldAutoSelectWorkspace(
   ws: Workspace,
   groups: Iterable<WorkspaceGID>,
-  expandedWorkspaceGroups: Set<string>,
+  expandedWorkspaceGroups: Set<string>
 ): boolean {
   if (ws.isTemplate) {
     return false;
@@ -1159,7 +1166,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
   const view = usePartialGlobalView('workspaceGrouping');
   const partialUser = usePartialRootUser(
     'hiddenWorkspaces',
-    'pinnedWorkspaces',
+    'pinnedWorkspaces'
   );
 
   const query = useQuery2(
@@ -1180,7 +1187,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
       view.workspaceGrouping,
       partialUser.hiddenWorkspaces,
       partialUser.pinnedWorkspaces,
-    ]),
+    ])
   );
 
   return (
@@ -1208,7 +1215,7 @@ function WorkspaceBarInternal({
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'noteType',
+    'noteType'
   );
 
   const selectAll = useCallback(() => {
@@ -1218,10 +1225,10 @@ function WorkspaceBarInternal({
           shouldAutoSelectWorkspace(
             ws,
             query.groupsForKey(ws.key),
-            view.expandedWorkspaceGroups,
+            view.expandedWorkspaceGroups
           ),
-        (mgr) => mgr.getVertexProxy(),
-      ),
+        (mgr) => mgr.getVertexProxy()
+      )
     );
     logger.log({
       severity: 'EVENT',
@@ -1303,54 +1310,50 @@ function WorkspaceBarInternal({
           className={cn(
             styles.root,
             view.workspaceBarCollapsed && styles.collapsed,
-            className,
+            className
           )}
         >
           <div className={cn(styles.header)}>
-            {ofSettings
-              ? (
-                <div className={cn(styles.collapsedSettings)}>
-                  <Button
-                    className={cn(styles.openBarButton)}
-                    onClick={() => {
-                      view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
-                    }}
-                  >
-                    <CollapseIcon
-                      className={view.workspaceBarCollapsed
-                        ? styles.rotated
-                        : undefined}
-                    />
-                  </Button>
-                </div>
-              )
-              : (
-                <div className={cn(styles.logoContainer)}>
-                  <LogoIcon className={cn(styles.logoIcon)} />
-                  {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
-                  {!view.workspaceBarCollapsed && (
-                    <LogoText className={cn(styles.logoText)} />
-                  )}
-                  {
-                    /* {!view.workspaceBarCollapsed && (
+            {ofSettings ? (
+              <div className={cn(styles.collapsedSettings)}>
+                <Button
+                  className={cn(styles.openBarButton)}
+                  onClick={() => {
+                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
+                  }}
+                >
+                  <CollapseIcon
+                    className={
+                      view.workspaceBarCollapsed ? styles.rotated : undefined
+                    }
+                  />
+                </Button>
+              </div>
+            ) : (
+              <div className={cn(styles.logoContainer)}>
+                <LogoIcon className={cn(styles.logoIcon)} />
+                {/* <img src="/Logo_precise_fold.png" alt="logo-small" /> */}
+                {!view.workspaceBarCollapsed && (
+                  <LogoText className={cn(styles.logoText)} />
+                )}
+                {/* {!view.workspaceBarCollapsed && (
               <img src="/Logo_precise_open.png" alt="logo-ful" />
-            )} */
-                  }
-                  <div className={cn(layout.flexSpacer)} />
-                  <Button
-                    className={cn(styles.openBarButton)}
-                    onClick={() => {
-                      view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
-                    }}
-                  >
-                    <CollapseIcon
-                      className={view.workspaceBarCollapsed
-                        ? styles.rotated
-                        : undefined}
-                    />
-                  </Button>
-                </div>
-              )}
+            )} */}
+                <div className={cn(layout.flexSpacer)} />
+                <Button
+                  className={cn(styles.openBarButton)}
+                  onClick={() => {
+                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
+                  }}
+                >
+                  <CollapseIcon
+                    className={
+                      view.workspaceBarCollapsed ? styles.rotated : undefined
+                    }
+                  />
+                </Button>
+              </div>
+            )}
             <WorkspaceToggleView
               // selectedRatio={
               //   query.count && view.selectedWorkspaces.size / query.count
@@ -1389,7 +1392,7 @@ function MobileBar({ ...rest }: WorkspacesBarProps) {
           <WorkspaceBarWrapper {...rest} />
         </React.Fragment>
       )}
-    </Layer>,
+    </Layer>
   );
 }
 
