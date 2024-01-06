@@ -1,22 +1,6 @@
 import { Vertex } from '../vertex.ts';
 
 export class UserSettings extends Vertex {
-  get passwordHash(): string | undefined {
-    return this.record.get<string>('passwordHash');
-  }
-
-  set passwordHash(p: string | undefined) {
-    if (p) {
-      this.record.set('passwordHash', p);
-    } else {
-      this.record.delete('passwordHash');
-    }
-  }
-
-  clearPasswordHash(): void {
-    this.record.delete('passwordHash');
-  }
-
   get lastLoggedIn(): Date | undefined {
     return this.record.get<Date>('lastLoggedIn');
   }
@@ -30,10 +14,12 @@ export class UserSettings extends Vertex {
   }
 
   get workspaceColors(): Map<string, number> {
-    const workspaceColors = this.record.get('workspaceColors') as Map<
-      string,
-      number
-    >;
+    const workspaceColors = this.record.get<
+      Map<
+        string,
+        number
+      >
+    >('workspaceColors');
     if (!workspaceColors) {
       return new Map<string, number>();
     }
@@ -43,7 +29,7 @@ export class UserSettings extends Vertex {
   }
 
   set workspaceColors(map: Map<string, number>) {
-    const copy = new Map(map.entries());
+    const copy = new Map(map);
     this.record.set('workspaceColors', copy);
   }
 

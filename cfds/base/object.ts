@@ -33,7 +33,7 @@ export function isValidData(scheme: Scheme, data: DataType) {
 
 export function validateFieldTypes(
   fieldsScheme: SchemeFields,
-  data: DataType
+  data: DataType,
 ): [boolean, string] {
   for (const [key, value] of Object.entries(data)) {
     const type = fieldsScheme[key];
@@ -60,9 +60,9 @@ export function serialize(
       encoder: Encoder,
       key: string,
       value: any,
-      options: SerializeValueTypeOptions
+      options: SerializeValueTypeOptions,
     ) => void;
-  } = {}
+  } = {},
 ) {
   if (!data) {
     return;
@@ -102,7 +102,7 @@ export function deserialize(
   options: ValueTypeOptions = {},
   overrides: {
     [key: string]: (value: DecodedValue, options: ValueTypeOptions) => any;
-  } = {}
+  } = {},
 ): DataType {
   const data: DataType = {};
 
@@ -145,7 +145,7 @@ export function equals(
   fields: SchemeFields,
   data1: DataType,
   data2: DataType,
-  options: ValueTypeOptions = {}
+  options: ValueTypeOptions = {},
 ) {
   if (!data1 && !data2) {
     return true;
@@ -169,7 +169,7 @@ export function equals(
 export function clone(
   fieldsScheme: SchemeFields,
   data: DataType,
-  onlyFields?: string[]
+  onlyFields?: string[],
 ): DataType {
   const result: DataType = {};
   for (const key of Object.keys(data)) {
@@ -198,13 +198,13 @@ export function diff(
   schemeFields: SchemeFields,
   data1: DataType,
   data2: DataType,
-  options: ValueTypeOptions = {}
+  options: ValueTypeOptions = {},
 ): DataChanges {
   const changes: DataChanges = {};
 
   const addChanges = (
     field: string,
-    fChanges: undefined | Change<EncodedChange> | Change<EncodedChange>[]
+    fChanges: undefined | Change<EncodedChange> | Change<EncodedChange>[],
   ) => {
     if (fChanges === undefined) return;
 
@@ -249,7 +249,7 @@ export function patch(
   fieldsScheme: SchemeFields,
   data: DataType,
   changes: DataChanges,
-  options: ValueTypeOptions = {}
+  options: ValueTypeOptions = {},
 ) {
   for (const [field, fChanges] of Object.entries(changes)) {
     const type = fieldsScheme[field];
@@ -269,7 +269,7 @@ export function patch(
 
 export function getRefs(
   schemeFields: SchemeFields,
-  data: DataType
+  data: DataType,
 ): Set<string> {
   const refs = new Set<string>();
   for (const [key, type] of Object.entries(schemeFields)) {
@@ -294,14 +294,18 @@ export function normalize(scheme: Scheme, data: DataType) {
 
     const typeOP = getTypeOperations(type as ValueType);
 
-    if (value === undefined || typeOP.isEmpty(value)) {
+    if (value !== undefined && typeOP.isEmpty(value)) {
+      value = undefined;
+    }
+
+    if (value === undefined) {
       if (scheme.hasInitForField(key)) {
         value = scheme.initValueForField(key, data);
         data[key] = value;
+      } else {
+        delete data[key];
       }
-    }
-
-    if (value !== undefined) {
+    } else {
       data[key] = typeOP.normalize(value);
     }
   }
@@ -341,7 +345,7 @@ export function diffKeys(
   schemeFields: SchemeFields,
   data1: DataType,
   data2: DataType,
-  options: ValueTypeOptions = {}
+  options: ValueTypeOptions = {},
 ) {
   const result = new Set<string>();
 
@@ -423,7 +427,7 @@ export function rewriteRefs(
   scheme: Scheme,
   data: DataType,
   keyMapping: Map<string, string>,
-  deleteRefs?: Set<string>
+  deleteRefs?: Set<string>,
 ): DataType {
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined || !scheme.hasField(key)) {
@@ -433,7 +437,7 @@ export function rewriteRefs(
     const newValue = getTypeOperations(type).rewriteRefs(
       keyMapping,
       data[key],
-      deleteRefs
+      deleteRefs,
     );
     if (newValue === undefined) {
       delete data[key];

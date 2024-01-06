@@ -276,7 +276,9 @@ function commitContentsClone(contents: CommitContents): CommitContents {
       edit: contents.edit.clone(),
     };
   }
+  const record = contents.record.clone();
+  record.normalize();
   return {
-    record: contents.record.clone(),
+    record,
   };
 }

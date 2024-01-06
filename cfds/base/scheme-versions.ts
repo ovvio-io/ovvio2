@@ -151,19 +151,15 @@ const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
   lastLoggedIn: TYPE_DATE,
   seenTutorials: {
     type: TYPE_STR_SET,
-    default: () => new Set<string>(),
   },
   workspaceColors: {
     type: TYPE_MAP,
-    default: () => new Map<string, number>(),
   },
   hiddenWorkspaces: {
     type: TYPE_STR_SET,
-    default: () => new Set<string>(),
   },
   pinnedWorkspaces: {
     type: TYPE_SET,
-    default: () => new Set<string>(),
   },
   onboardingStep: {
     type: TYPE_NUMBER,

@@ -126,6 +126,7 @@ export class Record implements ReadonlyRecord, Encodable {
    * backend's DB for ALL records and their versions (lifetime).
    */
   get checksum(): string {
+    this.normalize();
     if (this._checksum === undefined) {
       const csEncoder = new MD5Checksum();
       serialize(csEncoder, this._scheme.fields, this._data, checksumSerOptions);
@@ -207,7 +208,7 @@ export class Record implements ReadonlyRecord, Encodable {
     this._invalidateCaches();
   }
 
-  isEqual(other: Record, local: boolean = false): boolean {
+  isEqual(other: Record, local = false): boolean {
     if (this === other /*|| (!local && this.checksum === other.checksum)*/) {
       return true;
     }
