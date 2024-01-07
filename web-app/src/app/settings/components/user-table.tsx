@@ -10,6 +10,7 @@ import { UserMetadataKey } from '../../../../../cfds/client/graph/vertices/user.
 import Menu, { MenuItem } from '../../../../../styles/components/menu.tsx';
 import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
 type EditableColumnProps = {
   index: number;
@@ -258,6 +259,22 @@ const TableRow: React.FC<TableRowProps> = ({
     setIsEditing(true);
   };
 
+  const removeUserFromOrg = () => {
+    user && (user.isDeleted = 1);
+  };
+
+  const copyToClipboard = () => {
+    user &&
+      navigator.clipboard
+        .writeText(user.key)
+        .then(() => {
+          console.log('Text copied to clipboard');
+        })
+        .catch((err) => {
+          console.error('Failed to copy: ', err);
+        });
+  };
+
   if (editNow) {
     return (
       <div
@@ -305,11 +322,19 @@ const TableRow: React.FC<TableRowProps> = ({
               align="start"
               direction="out"
             >
-              <MenuItem onClick={() => {}}>
+              <MenuItem
+                onClick={() => {
+                  copyToClipboard();
+                }}
+              >
                 <IconDuplicate />
                 Copy User ID
               </MenuItem>
-              <MenuItem onClick={() => {}}>
+              <MenuItem
+                onClick={() => {
+                  removeUserFromOrg();
+                }}
+              >
                 <IconDelete />
                 Remove from Org.
               </MenuItem>

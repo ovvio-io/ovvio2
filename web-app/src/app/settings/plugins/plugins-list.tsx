@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import { SettingsTabId } from '../../../../../cfds/base/scheme-types.ts';
 import { tabsStyles } from '../components/tabs-style.tsx';
 import {
-  useGraphManager,
   usePartialRootUser,
   useRootUser,
 } from '../../../core/cfds/react/graph.tsx';
