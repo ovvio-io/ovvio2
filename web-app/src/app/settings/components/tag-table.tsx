@@ -1,5 +1,6 @@
 import React, {
   CSSProperties,
+  forwardRef,
   useCallback,
   useEffect,
   useRef,
@@ -21,11 +22,126 @@ import Menu, {
   MenuItem,
 } from '../../../../../styles/components/menu.tsx';
 import { IconOpen } from '../../../../../styles/components/new-icons/icon-open.tsx';
+import { RefObject } from 'https://esm.sh/v96/@types/react@18.2.15/index.js';
 
 const useStyles = makeStyles(() => ({
+  /* Container for the entire table. Positioned relative to its normal position and given a top margin. */
   tableContainer: {
     position: 'relative',
     top: '64px',
+    width: '100%', // Adjust as necessary for overall container width
+  },
+
+  /* Style for each row's layout including shadow, border, and background settings. */
+  rowLayout: {
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)', // Shadow for depth
+    borderRadius: '2px', // Rounded corners
+    borderColor: '#E0EEF4', // Border color
+    backgroundColor: '#FFF', // Background color
+    boxSizing: 'border-box', // Box sizing to include padding and borders in width/height
+    marginBottom: '1px', // Space between rows
+  },
+
+  /* Styling for each row. It uses flexbox for layout. */
+  row: {
+    display: 'flex',
+    flexWrap: 'wrap', // Allows items to wrap to the next line
+    padding: '0px 8px 0px 0px',
+    position: 'relative',
+    alignItems: 'center', // Centers items vertically
+    width: '670px', // Fixed width for consistency
+    ':hover': {
+      backgroundColor: '#FBF6EF', // Background color on hover
+      itemMenu: {
+        opacity: 1, // Show item menu on hover
+      },
+    },
+  },
+
+  /* Styling for the content inside each row. */
+  rowContent: {
+    display: 'flex',
+    position: 'relative',
+    justifyContent: 'flex-start', // Aligns items to the start
+    gap: '4px', // Space between elements
+    padding: '18px 26px 17px 16px', // Padding inside the row
+  },
+
+  /* Styling for the category column. */
+  CategoryColumnStyle: {
+    display: 'flex',
+    width: '160px', // Fixed width
+    flexDirection: 'column', // Items are laid out vertically
+    justifyContent: 'flex-start', // Aligns items to the start
+  },
+
+  categoryPill: {
+    padding: '2px 4px 2px 8px', // Padding within the tag
+    display: 'flex',
+    position: 'absolute',
+  },
+
+  categoryInputPill: {
+    color: '#000000',
+    fontSize: '14px',
+    lineHeight: '21px',
+    letterSpacing: '0.0.87px',
+    fontWeight: '600',
+    outline: 'none',
+    border: 'none',
+    backgroundColor: 'transparent',
+    padding: 0,
+    minWidth: '30px',
+  },
+  editPill: {
+    borderRadius: styleguide.gridbase * 2,
+    boxSizing: 'border-box',
+    borderStyle: 'solid',
+    borderColor: '#CCCCCC',
+  },
+
+  /* Styling for the tags column. */
+  TagsColumnStyle: {
+    display: 'flex',
+    maxWidth: '510px', // Maximum width to leave space for moreButtonColumn
+    alignItems: 'center', // Centers items vertically
+    flexFlow: 'row wrap', // Allows items to be in a row and wrap
+    gap: '4px', // Space between tags
+    marginRight: '96px', // Space from the More Button Column
+  },
+
+  /* Base style for each pill in the tag column. */
+  tagPillSize: {
+    borderRadius: styleguide.gridbase * 2, // Rounded corners
+    boxSizing: 'border-box',
+    backgroundColor: '#E5E5E5', // Background color
+    justifyContent: 'space-between', // Spaces items evenly
+    alignItems: 'center', // Centers items vertically
+  },
+
+  /* Additional styling for each tag pill. */
+  tagPill: {
+    color: 'var(--tag-color)', // Color of the text
+    marginRight: styleguide.gridbase, // Margin to the right
+    display: 'flex',
+    padding: '2px 4px 2px 8px', // Padding within the tag
+  },
+
+  moreButtonColumn: {
+    position: 'relative',
+    left: '12px',
+  },
+
+  //===========
+  input: {
+    fontSize: '10px',
+    lineHeight: '20px',
+    outline: 'none',
+    border: 'none',
+    padding: 0,
+    backgroundColor: 'transparent',
+    minWidth: '20px', // Set a reasonable minimum width
+    width: 'auto', // Allow width to adjust automatically
   },
   newCategory: {
     display: 'flex',
@@ -51,63 +167,7 @@ const useStyles = makeStyles(() => ({
     overflowY: 'scroll',
     overflowX: 'visible',
   },
-  rowLayout: {
-    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    borderRadius: '2px',
-    borderColor: '#E0EEF4',
-    backgroundColor: '#FFF',
-    boxSizing: 'border-box',
-    marginBottom: '1px',
-  },
-  row: {
-    display: 'flex',
-    position: 'relative',
-    alignItems: 'center',
-    maxWidth: '670px',
-    ':hover': {
-      backgroundColor: '#FBF6EF',
-      itemMenu: {
-        opacity: 1,
-      },
-    },
-  },
-  rowContent: {
-    display: 'flex',
-    position: 'relative',
-    justifyContent: 'center',
-    maxWidth: '510px',
-    gap: '4px',
-    padding: ' 18px 28px 17px 16px',
-  },
-  pillRoot: {
-    position: 'relative',
-  },
-  CategoryColumnStyle: {
-    display: 'flex',
-    width: '200px',
-    height: '20px',
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    color: theme.colors.text,
-    fontSize: '14px',
-    lineHeight: '21px',
-    letterSpacing: '0.0.87px',
-    fontWeight: '600',
-  },
-  TagsColumnStyle: {
-    display: 'flex',
-    height: '17px',
-    maxWidth: '510px',
-    alignItems: 'center',
-    alignContent: 'center',
-    flexFlow: 'column wrap',
-    justifyContent: 'center',
-    gap: '4px',
-  },
-  moreButtonColumn: {
-    position: 'relative',
-    // left: '220px',
-  },
+
   itemMenu: {
     opacity: 0,
     ...styleguide.transition.short,
@@ -121,171 +181,262 @@ const useStyles = makeStyles(() => ({
       backgroundColor: '#FBF6EF',
     },
   },
-  pillSize: {
-    height: styleguide.gridbase * 4,
-    padding: styleguide.gridbase,
-    borderRadius: styleguide.gridbase * 2,
-    minWidth: styleguide.gridbase * 6,
-    boxSizing: 'border-box',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    basedOn: [layout.row],
-  },
-  tagPill: {
-    color: 'var(--tag-color)',
-    backgroundColor: '#E5E5E5',
-    marginRight: styleguide.gridbase,
-    display: 'flex,',
-    padding: '2px 4px 2px 8px',
-  },
-  input: {
-    fontSize: '10px',
-    lineHeight: '20px',
-    outline: 'none',
-    border: 'none',
-    padding: 0,
-    backgroundColor: '#E5E5E5',
-  },
-  pillInput: {
-    position: 'absolute',
-    left: styleguide.gridbase,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    '::selection': {
-      backgroundColor: 'var(--tag-bg-color)',
-    },
-  },
+
   deleteIcon: {
     width: styleguide.gridbase * 2,
     height: styleguide.gridbase * 2,
     cursor: 'pointer',
   },
 }));
+
+function useOutsideClick<T extends HTMLElement>(
+  ref: RefObject<T>,
+  callback: () => void
+): void {
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        callback();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return (): void => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [ref, callback]);
+}
+
+//==============================================================================TagInput======================================
 interface TagInputProps {
   name: string;
   setName: React.Dispatch<React.SetStateAction<string>>;
   onBlur: () => void;
-  className?: string;
+  editMode: boolean;
 }
-const TagInput = React.forwardRef(function (
-  { name, setName, onBlur, className }: TagInputProps,
-  ref: any
-) {
-  const styles = useStyles();
-  const [value, setValue] = useState(name);
-  useEffect(() => {
-    setValue(name);
-  }, [name]);
-  const onChange = (e) => {
-    setValue(e.target.value);
-  };
-  const commit = () => {
-    setName(value);
-    onBlur();
-  };
-  const reset = () => {
-    setValue(name);
-    onBlur();
-  };
-  const blur = (e) => {
-    commit();
-  };
 
-  const onKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      e.preventDefault();
-      reset();
-    } else if (e.key === 'Enter') {
-      e.stopPropagation();
-      e.preventDefault();
+const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
+  ({ name, setName, onBlur, editMode }, ref) => {
+    const styles = useStyles();
+    const [value, setValue] = useState<string>(name);
+
+    useEffect(() => {
+      setValue(name);
+      if (ref && 'current' in ref && ref.current) {
+        ref.current.style.width = (name.length + 1) * 9 + 'px';
+      }
+    }, [name, ref]);
+
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(e.target.value);
+      if (ref && 'current' in ref && ref.current) {
+        ref.current.style.width = e.target.value.length * 6 + 'px';
+      }
+    };
+
+    const commit = () => {
+      setName(value);
+      onBlur();
+    };
+
+    const reset = () => {
+      setValue(name);
+      onBlur();
+    };
+
+    const blur = (e: React.FocusEvent<HTMLInputElement>) => {
       commit();
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault();
+        reset();
+      } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        e.preventDefault();
+        commit();
+      }
+    };
+
+    return (
+      <input
+        className={cn(styles.input)}
+        type="text"
+        ref={ref as React.RefObject<HTMLInputElement>} // Explicitly specify the ref type
+        value={value}
+        onChange={onChange}
+        onBlur={blur}
+        onKeyDown={onKeyDown}
+        readOnly={!editMode}
+      />
+    );
+  }
+);
+
+//==============================================================================TagInput======================================
+interface CategoryInputProps {
+  name: string;
+  setName: React.Dispatch<React.SetStateAction<string>>;
+  onBlur: () => void;
+  editMode: boolean;
+}
+
+const CategoryInput = React.forwardRef<HTMLInputElement, CategoryInputProps>(
+  ({ name, setName, onBlur, editMode }, ref) => {
+    const styles = useStyles();
+    const [value, setValue] = useState<string>(name);
+
+    useEffect(() => {
+      setValue(name);
+      if (ref && 'current' in ref && ref.current) {
+        ref.current.style.width = (name.length + 1) * 7 + 'px';
+      }
+    }, [name, ref]);
+
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(e.target.value);
+      if (ref && 'current' in ref && ref.current) {
+        ref.current.style.width = e.target.value.length * 6 + 'px';
+      }
+    };
+
+    const commit = () => {
+      setName(value);
+      onBlur();
+    };
+
+    const reset = () => {
+      setValue(name);
+      onBlur();
+    };
+
+    const blur = (e: React.FocusEvent<HTMLInputElement>) => {
+      commit();
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault();
+        reset();
+      } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        e.preventDefault();
+        commit();
+      }
+    };
+
+    return (
+      <input
+        className={cn(styles.categoryInputPill)}
+        type="text"
+        ref={ref as React.RefObject<HTMLInputElement>}
+        value={value}
+        onChange={onChange}
+        onBlur={blur}
+        onKeyDown={onKeyDown}
+        readOnly={!editMode}
+      />
+    );
+  }
+);
+
+//=========================================================================================CategoryPill===========================
+
+type CategoryPillProps = { category: string; editMode: boolean };
+
+const CategoryPill: React.FC<CategoryPillProps> = ({ category, editMode }) => {
+  const styles = useStyles();
+  const inputRef = useRef<any>();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const onClick = () => {
+    setIsEditing(true);
+    inputRef.current.focus();
+
+    if (inputRef.current.setSelectionRange) {
+      inputRef.current.setSelectionRange(0, category.length);
     }
+    window.requestAnimationFrame(() => {
+      inputRef.current.focus();
+    });
+  };
+  const onBlur = () => {
+    setIsEditing(false);
   };
 
   return (
-    <input
-      className={cn(styles.input, className)}
-      type="text"
-      ref={ref}
-      value={value}
-      onChange={onChange}
-      onBlur={blur}
-      onKeyDown={onKeyDown}
-    />
+    <div
+      className={cn(styles.categoryPill, editMode && styles.editPill)}
+      onClick={() => {
+        onClick;
+      }}
+    >
+      <CategoryInput
+        name={category}
+        setName={function (value: React.SetStateAction<string>): void {
+          throw new Error('Function not implemented.');
+        }}
+        ref={inputRef}
+        onBlur={onBlur}
+        editMode={editMode}
+      />
+    </div>
   );
-});
-class ExistTagPillInfo implements ITagPillInfo {
-  private _tag: Tag;
-  protected _eventLogger: EventLogger;
+};
 
-  constructor(tag: Tag, eventLogger: EventLogger) {
-    this._tag = tag;
-    this._eventLogger = eventLogger;
-  }
+//=========================================================================================TagPills===========================
 
-  get key() {
-    return this._tag.key;
-  }
+type TagPillsProps = { tag: string; editMode: boolean };
 
-  get name() {
-    return this._tag.name;
-  }
-
-  get isNew() {
-    return false;
-  }
-
-  onCommit(r: ChangeRecord) {
-    const changedName = r.get('name');
-
-    if (changedName) {
-      this._tag.name = changedName;
-
-      this._eventLogger.wsAction('TAG_UPDATED', this._tag.workspace, {
-        category: EventCategory.WS_SETTINGS,
-        tagId: this._tag.key,
-        parentTagId: this._tag.parentTag?.key,
-      });
-    }
-    if (r.get('isDeleted')) {
-      this._tag.isDeleted = 1;
-
-      this._eventLogger.wsAction('TAG_DELETED', this._tag.workspace, {
-        category: EventCategory.WS_SETTINGS,
-        tagId: this._tag.key,
-        parentTagId: this._tag.parentTag?.key,
-      });
-    }
-  }
-
-  onDelete() {}
-}
-type CategoryTitleProps = {};
-const CategoryTitle: React.FC<CategoryTitleProps> = ({}) => {};
-
-type TagPillsProps = {};
-const TagPills: React.FC<TagPillsProps> = ({}) => {
+const TagPills: React.FC<TagPillsProps> = ({ tag, editMode }) => {
   const styles = useStyles();
+  const inputRef = useRef<any>();
+  const [isEditing, setIsEditing] = useState(false);
 
+  const onClick = () => {
+    setIsEditing(true);
+    inputRef.current.focus();
+
+    if (inputRef.current.setSelectionRange) {
+      inputRef.current.setSelectionRange(0, tag.length);
+    }
+    window.requestAnimationFrame(() => {
+      inputRef.current.focus();
+    });
+  };
+  const onBlur = () => {
+    setIsEditing(false);
+  };
   return (
-    <div className={cn(styles.pillRoot)}>
-      <div className={cn(styles.pillSize, styles.tagPill)} onClick={() => {}}>
-        <TagInput
-          name={'TAG INPUT'}
-          setName={function (value: React.SetStateAction<string>): void {
-            throw new Error('Function not implemented.');
-          }}
-          onBlur={function (): void {
-            throw new Error('Function not implemented.');
-          }}
-        />
-
-        <span className={cn(styles.input)}>Tag</span>
-        <div className={cn(styles.deleteIcon)}>
+    <div
+      className={cn(
+        styles.tagPillSize,
+        styles.tagPill,
+        editMode && styles.editPill
+      )}
+      style={{ backgroundColor: editMode ? 'transparent' : '#E5E5E5' }}
+      onClick={() => {
+        onClick;
+      }}
+    >
+      <TagInput
+        name={tag}
+        setName={function (value: React.SetStateAction<string>): void {
+          throw new Error('Function not implemented.');
+        }}
+        ref={inputRef}
+        onBlur={onBlur}
+        editMode={editMode}
+      />
+      {editMode && (
+        <div className={cn(styles.deleteIcon)} onClick={() => {}}>
           <img key="DeleteTagSettings" src="/icons/settings/Close-big.svg" />
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -294,25 +445,47 @@ const onCreateTag = () => {
   const newTags = {};
 };
 
+//==================================================================================TableRowCategory==================================
 type TableRowCategoryProps = {
-  user?: User; // change later to category
+  category: string;
   addNewCategory: boolean;
   onRowSelect: (user: string) => void;
 };
 const TableRowCategory: React.FC<TableRowCategoryProps> = ({
-  user,
+  category,
   addNewCategory,
   onRowSelect,
 }) => {
   const styles = useStyles();
   const [isRowHovered, setIsRowHovered] = useState(false);
-
+  const tags: string[] = [
+    'high',
+    'low',
+    'medium',
+    '1st',
+    '2nd',
+    '3th',
+    '4th',
+    '5th',
+  ];
   const handleMouseEnter = () => {
     setIsRowHovered(true);
   };
   const handleMouseLeave = () => {
     setIsRowHovered(false);
   };
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+  };
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  const closeEditMode = (): void => {
+    setIsEditMode(false);
+  };
+
+  useOutsideClick(rowRef, closeEditMode);
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
@@ -339,46 +512,59 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 
   return (
     <div
+      ref={rowRef}
       className={cn(styles.row, styles.rowLayout)}
       onClick={() => {
-        user && onRowSelect(user.key);
+        category && onRowSelect(category);
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <div className={cn(styles.rowContent)}>
-        <div className={cn(styles.CategoryColumnStyle)}>category pill</div>
+        <div className={cn(styles.CategoryColumnStyle)}>
+          <CategoryPill category={category} editMode={isEditMode} />
+        </div>
         <div className={cn(styles.TagsColumnStyle)}>
-          <Button className={cn(styles.addButton)} onClick={onCreateTag}>
-            <img key="AddTagSettings" src="/icons/settings/Add.svg" />
-          </Button>
-          <TagPills />
+          {isEditMode && (
+            <Button className={cn(styles.addButton)} onClick={onCreateTag}>
+              <img key="AddTagSettings" src="/icons/settings/Add.svg" />
+            </Button>
+          )}
+          {tags.map((tag: string, index) => (
+            <TagPills key={tag + index} tag={tag} editMode={isEditMode} />
+          ))}
+        </div>
+        <div className={cn(styles.moreButtonColumn)}>
+          <Menu
+            renderButton={renderButton}
+            position="right"
+            align="center"
+            direction="out"
+          >
+            <MenuAction
+              IconComponent={IconOpen}
+              text="Edit"
+              onClick={toggleEditMode}
+            ></MenuAction>
+            <MenuAction IconComponent={IconOpen} text="Reorder"></MenuAction>{' '}
+            <MenuAction
+              IconComponent={(props: ImageIconProps) => (
+                <ImageIcon
+                  {...props}
+                  src="/icons/settings/Delete.svg"
+                  alt="Delete"
+                />
+              )}
+              text="Delete"
+            ></MenuAction>
+          </Menu>
         </div>
       </div>
-
-      <Menu
-        renderButton={renderButton}
-        position="right"
-        align="center"
-        direction="out"
-      >
-        <MenuAction IconComponent={IconOpen} text="Edit"></MenuAction>
-        <MenuAction IconComponent={IconOpen} text="Reorder"></MenuAction>{' '}
-        <MenuAction
-          IconComponent={(props: ImageIconProps) => (
-            <ImageIcon
-              {...props}
-              src="/icons/settings/Delete.svg"
-              alt="Delete"
-            />
-          )}
-          text="Delete"
-        ></MenuAction>
-      </Menu>
     </div>
   );
 };
 
+//=====================================================================================TagsTable===============================
 type TagsTableProps = {
   setStep?: (step: number) => void;
   onClose?: () => void;
@@ -396,6 +582,8 @@ export const TagsTable: React.FC<TagsTableProps> = ({ setStep, onClose }) => {
   };
 
   const onRowSelect = () => {};
+  const tempCategories: string[] = ['Effort', 'Priority', 'Phase', 'Mil'];
+
   return (
     <div className={cn(styles.tableContainer)}>
       <div
@@ -408,12 +596,16 @@ export const TagsTable: React.FC<TagsTableProps> = ({ setStep, onClose }) => {
         </div>
       </div>
       {newCategory && (
-        <TableRowCategory addNewCategory={true} onRowSelect={() => {}} />
-      )}
-      {users.map((user: User) => (
         <TableRowCategory
-          key={user.key}
-          user={user}
+          category={''}
+          addNewCategory={true}
+          onRowSelect={() => {}}
+        />
+      )}
+      {tempCategories.map((category: string, index) => (
+        <TableRowCategory
+          key={category + index}
+          category={category}
           onRowSelect={onRowSelect}
           addNewCategory={false}
         />

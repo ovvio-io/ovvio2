@@ -10,6 +10,6 @@ import { TagsTable } from '../../components/tag-table.tsx';
 export function WsTagsSettings() {
   // const styles = makeStyles();
 
-  return 'In Progress';
-  // return <TagsTable />;
+  // return 'In Progress';
+  return <TagsTable />;
 }
