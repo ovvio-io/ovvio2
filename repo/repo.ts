@@ -745,7 +745,7 @@ export class Repository<
       this._pendingMergePromises.set(key, result);
     } else {
       // Disallow concurrent commits for any given key
-      throw serviceUnavailable();
+      return Promise.resolve(undefined);
     }
     return result;
   }
@@ -891,22 +891,13 @@ export class Repository<
           mergeParents.add(l.id);
         }
       }
-      try {
-        const mergeCommit = await this.createMergeCommit(
-          commitsToMerge,
-          Array.from(mergeParents),
-          mergeLeaderSession,
-        );
-        if (mergeCommit) {
-          return mergeCommit;
-        }
-      } catch (err) {
-        if (
-          !(err instanceof ServerError) ||
-          err.code !== Code.ServiceUnavailable
-        ) {
-          throw err;
-        }
+      const mergeCommit = await this.createMergeCommit(
+        commitsToMerge,
+        Array.from(mergeParents),
+        mergeLeaderSession,
+      );
+      if (mergeCommit) {
+        return mergeCommit;
       }
     }
     // Since we're dealing with a partial graph, some of our leaves may not
