@@ -2,7 +2,6 @@
   "deno.enable": true,
   "deno.config": "./deno.json",
   "deno.unstable": true,
-  "cSpell.words": [
-    "ovvio"
-  ]
+  "cSpell.words": ["ovvio"],
+  "editor.formatOnSave": true
 }
