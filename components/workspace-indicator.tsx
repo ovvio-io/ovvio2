@@ -6,6 +6,7 @@ import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { useWorkspaceColor } from '../web-app/src/shared/workspace-icon/index.tsx';
+import { VertexId } from '../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles(() => ({
   workspaceIndicator: {
@@ -30,24 +31,50 @@ const useStyles = makeStyles(() => ({
     // font-weight: 400;
     lineHight: '14px' /* 140% */,
   },
+  colorIndicator: {
+    width: styleguide.gridbase * 2,
+    height: styleguide.gridbase * 2,
+    borderRadius: styleguide.gridbase * 2,
+  },
 }));
 
+export type WorkspaceIndicatorType = 'color' | 'full';
+
 export interface WorkspaceIndicatorProps {
-  workspace: VertexManager<Workspace> | Workspace;
+  workspace: VertexId<Workspace>;
+  type?: WorkspaceIndicatorType;
+  editable?: boolean;
+  className?: string;
 }
 
-export function WorkspaceIndicator({ workspace }: WorkspaceIndicatorProps) {
+export function WorkspaceIndicator({
+  workspace,
+  type,
+  editable,
+  className,
+}: WorkspaceIndicatorProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
   const color = useWorkspaceColor(workspace)?.background || 'transparent';
+  if (!type) {
+    type = 'full';
+  }
   return (
-    <div className={cn(styles.workspaceIndicator)}>
-      <div className={cn(styles.background)} style={{ backgroundColor: color }}>
-        <span className={cn(styles.text)}>{name}</span>
-      </div>
-      {
-        //<img src='/icons/editor/breadcrumbs/icon/arrow-small.svg' />
-      }
+    <div className={cn(styles.workspaceIndicator, className)}>
+      {type === 'full' ? (
+        <div
+          className={cn(styles.background)}
+          style={{ backgroundColor: color }}
+        >
+          <span className={cn(styles.text)}>{name}</span>
+        </div>
+      ) : (
+        <div
+          className={cn(styles.colorIndicator)}
+          style={{ backgroundColor: color }}
+        ></div>
+      )}
+      {editable && <img src="/icons/editor/breadcrumbs/icon/arrow-small.svg" />}
     </div>
   );
 }

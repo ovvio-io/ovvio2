@@ -209,7 +209,10 @@ export function useVertices<V extends Vertex>(
   return usePartialVertices(vertexManagers, [], opts) as V[];
 }
 
-export function usePartialVertices<V extends Vertex, K extends keyof V>(
+export function usePartialVertices<
+  V extends Vertex,
+  K extends keyof V = keyof V
+>(
   vertexManagers: readonly VertexId<V>[] | Set<VertexId<V>>,
   keys: K[],
   opts: OnChangeOpts = EMPTY_OPTS

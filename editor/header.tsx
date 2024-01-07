@@ -221,7 +221,7 @@ export function EditorHeader({ note, onFocusOnEditor }: EditorHeaderProps) {
     <div className={cn(styles.header)} key='EditorHeaderDiv'>
       <EditorBreadCrumbs note={note} />
       <div className={cn(styles.headerMainActions)} key='EditorHeaderActions'>
-        <PublishButton note={note} />
+        {/* <PublishButton note={note} /> */}
         <img
           key='ExitEditorAction'
           className={cn(styles.headerMainActionButton)}
