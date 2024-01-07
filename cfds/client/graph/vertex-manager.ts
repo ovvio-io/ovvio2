@@ -92,7 +92,8 @@ export type VertexManagerEvent =
 
 export class VertexManager<V extends Vertex = Vertex>
   extends Emitter<VertexManagerEvent>
-  implements Comparable<VertexManager>, Equatable<VertexManager> {
+  implements Comparable<VertexManager>, Equatable<VertexManager>
+{
   private readonly _graph: GraphManager;
   private readonly _key: string;
   private readonly _vertexConfig: VertexConfig;
@@ -165,9 +166,9 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const vert = this.getVertexProxy();
     let pack: MutationPack;
-    for (
-      const fieldName of prevRecord.diffKeys(newRecord, true)
-    ) {
+    for (const fieldName of prevRecord.isNull
+      ? newRecord.keys
+      : prevRecord.diffKeys(newRecord, true)) {
       pack = mutationPackAppend(pack, [
         fieldName,
         false,
@@ -607,10 +608,8 @@ export class VertexManager<V extends Vertex = Vertex>
           newRecValue &&
           vertex.record.scheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
         ) {
-          newRecValue = projectPointers(
-            oldRecValue,
-            newRecValue,
-            (ptr) => this.graph.ptrFilterFunc(ptr.key),
+          newRecValue = projectPointers(oldRecValue, newRecValue, (ptr) =>
+            this.graph.ptrFilterFunc(ptr.key),
           );
         }
         vertex.record.set(fieldName, newRecValue);
@@ -777,8 +776,9 @@ class SetProxy<T> implements Clonable, Equatable, RecordValueWrapper<Set<T>> {
     if (other instanceof Set) {
       return coreValueEquals(this._target, other);
     }
-    return other instanceof SetProxy &&
-      coreValueEquals(other._target, this._target);
+    return (
+      other instanceof SetProxy && coreValueEquals(other._target, this._target)
+    );
   }
 
   __wrappedValueForRecord() {
@@ -787,7 +787,8 @@ class SetProxy<T> implements Clonable, Equatable, RecordValueWrapper<Set<T>> {
 }
 
 class DictionaryProxy<K, V>
-  implements Clonable, Equatable, RecordValueWrapper<Dictionary<K, V>> {
+  implements Clonable, Equatable, RecordValueWrapper<Dictionary<K, V>>
+{
   readonly _target: Dictionary<K, V>;
   private readonly _didMutateCallback: DidMutateCallback<Dictionary<K, V>>;
 
@@ -863,8 +864,10 @@ class DictionaryProxy<K, V>
     if (other instanceof Map) {
       return coreValueEquals(this._target, other);
     }
-    return other instanceof DictionaryProxy &&
-      coreValueEquals(other._target, this._target);
+    return (
+      other instanceof DictionaryProxy &&
+      coreValueEquals(other._target, this._target)
+    );
   }
 
   __wrappedValueForRecord() {
