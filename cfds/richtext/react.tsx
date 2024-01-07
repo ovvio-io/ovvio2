@@ -28,6 +28,10 @@ import { VertexManager } from '../client/graph/vertex-manager.ts';
 import { Note } from '../client/graph/vertices/note.ts';
 import { useGraphManager } from '../../web-app/src/core/cfds/react/graph.tsx';
 import { uniqueId } from '../../base/common.ts';
+import { coreValueCompare } from '../../base/core-types/comparable.ts';
+import { AssigneeChip } from '../../components/assignee-chip.tsx';
+import Menu from '../../styles/components/menu.tsx';
+import { MemberPicker } from '../../components/member-picker.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -54,7 +58,7 @@ const useStyles = makeStyles(() => ({
     borderBottom: '1px solid',
     borderColor: theme.primary.p2,
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'stretch',
     transition:
       `background-color ${styleguide.transition.duration.short}ms ease-out`,
   },
@@ -62,6 +66,8 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     flexDirection: 'column',
     width: `calc(100% - 34px - ${styleguide.gridbase * 3}px)`,
+    paddingTop: styleguide.gridbase,
+    paddingBottom: styleguide.gridbase,
   },
   focusedTask: {
     backgroundColor: theme.primary.p1,
@@ -72,10 +78,28 @@ const useStyles = makeStyles(() => ({
       backgroundColor: theme.secondary.s1,
     },
   },
+  taskCheckboxContainer: {
+    display: 'flex',
+    alignItems: 'flex-start',
+  },
   taskCheckbox: {
     marginTop: styleguide.gridbase * 2,
     marginBottom: styleguide.gridbase * 2,
     marginInlineEnd: styleguide.gridbase * 2,
+  },
+  taskColumnsContainer: {
+    display: 'flex',
+    height: '100%',
+  },
+  taskActionsColumn: {
+    width: styleguide.gridbase * 51,
+    marginInlineStart: styleguide.gridbase * 2,
+  },
+  taskTextColumn: {
+    width: `calc(100% - ${styleguide.gridbase * 51}px)`,
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
   },
   taskText: {
     overflowWrap: 'break-word',
@@ -105,6 +129,10 @@ const useStyles = makeStyles(() => ({
     position: 'relative',
     // bottom: styleguide.gridbase / 2,
     transition: `opacity ${styleguide.transition.duration.short}ms ease-out`,
+  },
+  assigneeChip: {
+    position: 'relative',
+    top: 2,
   },
   p: {
     fontWeight: '400',
@@ -242,7 +270,14 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
     ref,
   ) {
     const styles = useStyles();
-    const partialTask = usePartialVertex(task, ['isChecked']);
+    const partialTask = usePartialVertex(task, [
+      'isChecked',
+      'assignees',
+      'workspace',
+    ]);
+    const partialWorkspace = usePartialVertex(partialTask.workspace.manager, [
+      'users',
+    ]);
     const onClick = useCallback(() => {
       const doc = docClone(ctx.doc);
       const refNode = findNode(
@@ -268,13 +303,47 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         data-ovv-key={id}
         onClick={onClick}
       >
-        <CheckBox
-          className={cn(styles.taskCheckbox)}
-          value={partialTask.isChecked}
-          onChange={(value) => partialTask.isChecked = value}
-        />
+        <div className={cn(styles.taskCheckboxContainer)}>
+          <CheckBox
+            className={cn(styles.taskCheckbox)}
+            value={partialTask.isChecked}
+            onChange={(value) => partialTask.isChecked = value}
+          />
+        </div>
         <div className={cn(styles.taskTextElement)}>
-          {children}
+          <div className={cn(styles.taskColumnsContainer)}>
+            <div className={cn(styles.taskTextColumn)}>
+              {children}
+            </div>
+            <div className={cn(styles.taskActionsColumn)}>
+              {Array.from(partialTask.assignees).sort(coreValueCompare).map(
+                (u) => (
+                  <Menu
+                    renderButton={() => (
+                      <AssigneeChip
+                        className={cn(styles.assigneeChip)}
+                        user={u.manager}
+                      />
+                    )}
+                    position='bottom'
+                    align='center'
+                    direction='out'
+                  >
+                    <MemberPicker
+                      users={Array.from(partialWorkspace.users).filter((
+                        wsUser,
+                      ) => !partialTask.assignees.has(wsUser))}
+                      onRowSelect={(updatedAssignee) => {
+                        const assignees = partialTask.assignees;
+                        assignees.delete(u);
+                        assignees.add(updatedAssignee);
+                      }}
+                    />
+                  </Menu>
+                ),
+              )}
+            </div>
+          </div>
           <div
             className={cn(styles.focusedTaskUnderline)}
             style={{ opacity: focused ? 1 : 0 }}

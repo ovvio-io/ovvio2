@@ -71,7 +71,6 @@ export function onKeyboardArrow(
   if (!coreValueEquals(selection.anchor, selection.focus)) {
     return;
   }
-  debugger;
   const predicate = arrow === 'ArrowUp' || arrow === 'ArrowDown'
     ? upDownPredicate
     : isTextNode;

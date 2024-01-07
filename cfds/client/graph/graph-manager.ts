@@ -99,7 +99,6 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   private readonly _processPendingMutationsTimer: MicroTaskTimer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
-  private readonly _baseServerUrl: string | undefined;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
   private readonly _syncScheduler: SyncScheduler | undefined;
   private _prevClientStatus: ClientStatus = 'offline';
@@ -122,7 +121,6 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
       coreValueHash,
       coreValueEquals,
     );
-    this._baseServerUrl = baseServerUrl;
     if (baseServerUrl) {
       this._syncScheduler = new SyncScheduler(
         `${baseServerUrl}/batch-sync`,
