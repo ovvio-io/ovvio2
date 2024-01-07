@@ -891,13 +891,22 @@ export class Repository<
           mergeParents.add(l.id);
         }
       }
-      const mergeCommit = await this.createMergeCommit(
-        commitsToMerge,
-        Array.from(mergeParents),
-        mergeLeaderSession,
-      );
-      if (mergeCommit) {
-        return mergeCommit;
+      try {
+        const mergeCommit = await this.createMergeCommit(
+          commitsToMerge,
+          Array.from(mergeParents),
+          mergeLeaderSession,
+        );
+        if (mergeCommit) {
+          return mergeCommit;
+        }
+      } catch (err) {
+        if (
+          !(err instanceof ServerError) ||
+          err.code !== Code.ServiceUnavailable
+        ) {
+          throw err;
+        }
       }
     }
     // Since we're dealing with a partial graph, some of our leaves may not
