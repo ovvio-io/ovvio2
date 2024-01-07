@@ -885,9 +885,15 @@ export class Repository<
     const mergeLeaderSession =
       mergeLeaderFromLeaves(leavesBySession) || session;
     if (this.allowMerge && mergeLeaderSession === session) {
+      const mergeParents = new Set<string>(commitsToMerge.map((c) => c.id));
+      for (const l of leaves) {
+        if (Date.now() - l.timestamp.getTime() > MERGE_GRACE_PERIOD_MS) {
+          mergeParents.add(l.id);
+        }
+      }
       const mergeCommit = await this.createMergeCommit(
         commitsToMerge,
-        leaves.map((c) => c.id),
+        Array.from(mergeParents),
         mergeLeaderSession,
       );
       if (mergeCommit) {
