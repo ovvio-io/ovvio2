@@ -35,7 +35,6 @@ import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
-import { delay } from '../base/time.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
@@ -252,20 +251,9 @@ export class Repository<
     session?: Session,
   ): Commit[] {
     const adjList = this._adjList;
-    const leavesBySession = new Map<string, Commit>();
+    const result: Commit[] = [];
     for (const c of this.commitsForKey(key, session)) {
       if (!adjList.hasInEdges(c.id)) {
-        const sessionId = c.session;
-        const prevLeaf = leavesBySession.get(sessionId);
-        if (!prevLeaf || prevLeaf.timestamp.getTime() < c.timestamp.getTime()) {
-          leavesBySession.set(sessionId, c);
-        }
-      }
-    }
-
-    const result: Commit[] = [];
-    for (const c of leavesBySession.values()) {
-      if (c) {
         result.push(c);
       }
     }
@@ -543,6 +531,20 @@ export class Repository<
     return result;
   }
 
+  findLatestNonCorruptedCommitForKey(
+    key: string | null,
+  ): Commit | undefined {
+    const commits = Array.from(this.commitsForKey(key)).sort(
+      compareCommitsDesc,
+    );
+    for (const c of commits) {
+      if (!this.commitIsCorrupted(c) && this.hasRecordForCommit(c)) {
+        return c;
+      }
+    }
+    return undefined;
+  }
+
   recordForCommit(c: Commit | string): CFDSRecord {
     let result = this._cachedRecordForCommit.get(
       typeof c === 'string' ? c : c.id,
@@ -581,10 +583,12 @@ export class Repository<
               c.id,
               false,
             );
-          } else {
-            // No good parents are available. This key is effectively null.
-            return CFDSRecord.nullRecord();
           }
+          const lastGoodCommit = this.findLatestNonCorruptedCommitForKey(c.key);
+          // No good parents are available. This key is effectively null.
+          return lastGoodCommit
+            ? this.recordForCommit(lastGoodCommit)
+            : CFDSRecord.nullRecord();
         }
         // assert(result.checksum === contents.edit.srcChecksum);
         // result.patch(contents.edit.changes);
@@ -599,24 +603,19 @@ export class Repository<
     key: string | null,
     head: Commit | undefined,
   ): Commit | undefined {
-    // Look for a commit with a full value, so we don't crash on a later read
-    while (head) {
-      if (
-        commitContentsIsRecord(head.contents) ||
-        this.hasCommit(head.contents.base)
-      ) {
-        break;
-      }
-      let found = false;
-      for (const p of head.parents) {
-        if (this.hasCommit(p)) {
-          head = this.getCommit(p);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        head = undefined;
+    if (!head) {
+      return undefined;
+    }
+    if (
+      commitContentsIsDelta(head.contents) &&
+      !this.hasCommit(head.contents.base)
+    ) {
+      const ancestors = this.findNonCorruptedParentsFromCommits(head.parents);
+      if (!ancestors || ancestors.length === 0) {
+        head = this.findLatestNonCorruptedCommitForKey(head.key);
+      } else {
+        ancestors.sort(compareCommitsDesc);
+        head = ancestors[0];
       }
     }
     if (head) {
