@@ -88,8 +88,10 @@ interface RepositoryPlumbing {
   active: boolean;
 }
 
-export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
-  implements VertexSource {
+export class GraphManager
+  extends Emitter<VertexSourceEvent | 'status-changed'>
+  implements VertexSource
+{
   readonly sharedQueriesManager: SharedQueriesManager;
   private readonly _trustPool: TrustPool;
   private readonly _adjList: AdjacencyList;
@@ -110,7 +112,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     this._vertManagers = new Map();
     this._pendingMutations = new Map();
     this._processPendingMutationsTimer = new MicroTaskTimer(() =>
-      this._processPendingMutations()
+      this._processPendingMutations(),
     );
     this._executedFieldTriggers = new Map();
     this._undoManager = new UndoManager(this);
@@ -202,7 +204,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     return offlineCount === this._repoById.size ? 'offline' : 'idle';
   }
 
-  loadRepository(id: string): Promise<void> {
+  async loadRepository(id: string): Promise<void> {
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
     if (plumbing.loadingPromise) {
@@ -213,6 +215,8 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
 
     if (typeof backup === 'undefined') {
       plumbing.loadingFinished = true;
+      await plumbing?.client?.sync();
+      plumbing.client?.startSyncing();
       return Promise.resolve();
     }
 
@@ -243,7 +247,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
         const numberOfCommits = repo.numberOfCommits();
         plumbing.loadedLocalContents =
           numberOfCommits > (id === 'sys/dir' ? 1 : 0);
-        // plumbing.client?.startSyncing();
+        plumbing.client?.startSyncing();
       },
     );
     return plumbing.loadingPromise;
@@ -273,6 +277,7 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
+    debugger;
     if (plumbing.loadedLocalContents !== true) {
       await this.syncRepository(repoId);
       this.startSyncing(repoId);
@@ -378,8 +383,9 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     }
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
-    return plumbing?.loadedLocalContents === true ||
-      plumbing?.syncFinished === true;
+    return (
+      plumbing?.loadedLocalContents === true || plumbing?.syncFinished === true
+    );
   }
 
   /**
@@ -552,21 +558,16 @@ export class GraphManager extends Emitter<VertexSourceEvent | 'status-changed'>
     let mgr = this._vertManagers.get(key);
 
     if (mgr === undefined) {
-      const scheme = ns !== undefined
-        ? SchemeManager.instance.getScheme(ns)
-        : undefined;
-      const record = scheme !== undefined
-        ? new Record({
-          scheme: scheme,
-          data: initialData!,
-        })
-        : undefined;
-      mgr = new VertexManager(
-        this,
-        key,
-        record,
-        local,
-      );
+      const scheme =
+        ns !== undefined ? SchemeManager.instance.getScheme(ns) : undefined;
+      const record =
+        scheme !== undefined
+          ? new Record({
+              scheme: scheme,
+              data: initialData!,
+            })
+          : undefined;
+      mgr = new VertexManager(this, key, record, local);
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
     } else if (mgr.scheme.isNull && initialData && ns) {

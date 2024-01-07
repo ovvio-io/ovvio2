@@ -62,7 +62,7 @@ export async function generateKeyPair(): Promise<CryptoKeyPair> {
 
 export async function generateSession(
   owner?: string,
-  ttlMs = 30 * kDayMs,
+  ttlMs = 30 * kDayMs
 ): Promise<OwnedSession> {
   const keyPair = await generateKeyPair();
   const expiration = deserializeDate(Date.now() + ttlMs);
@@ -122,7 +122,7 @@ interface DataToSignContainer extends JSONObject {
 export async function signData(
   session: OwnedSession,
   externalData?: JSONValue,
-  embeddedData?: ReadonlyJSONObject,
+  embeddedData?: ReadonlyJSONObject
 ): Promise<string> {
   const container: DataToSignContainer = {
     sessionId: session.id,
@@ -142,7 +142,7 @@ export async function signData(
       hash: { name: 'SHA-384' },
     },
     session.privateKey,
-    buffer,
+    buffer
   );
   const res: Signature<typeof embeddedData> = {
     sessionId: session.id,
@@ -156,7 +156,7 @@ export async function signData(
 }
 
 let gCachedDataVerifications: Map<string, boolean> = new Map();
-setInterval(() => gCachedDataVerifications = new Map(), 10 * kSecondMs);
+setInterval(() => (gCachedDataVerifications = new Map()), 10 * kSecondMs);
 
 /**
  * This is the lowest-level verification primitive. Given an expected signer,
@@ -172,15 +172,16 @@ setInterval(() => gCachedDataVerifications = new Map(), 10 * kSecondMs);
 export async function verifyData<T extends JSONValue>(
   expectedSigner: Session,
   signature: string | undefined | Signature<T>,
-  externalData?: JSONValue,
+  externalData?: JSONValue
 ): Promise<boolean> {
   if (!signature) {
+    debugger;
     return false;
   }
-  const sig = typeof signature === 'string'
-    ? decodeSignature(signature)
-    : signature;
+  const sig =
+    typeof signature === 'string' ? decodeSignature(signature) : signature;
   if (!sig || !sig.sessionId || sig.sessionId !== expectedSigner.id) {
+    debugger;
     return false;
   }
   // if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
@@ -188,6 +189,7 @@ export async function verifyData<T extends JSONValue>(
   // }
   // Reject everything signed after the expiration of the signer.
   if (sig.timestamp > expectedSigner.expiration.getTime()) {
+    debugger;
     return false;
   }
   const container: DataToSignContainer = {
@@ -213,9 +215,12 @@ export async function verifyData<T extends JSONValue>(
     },
     expectedSigner.publicKey,
     decodeBase32URL(sig.signature),
-    buffer,
+    buffer
   );
   gCachedDataVerifications.set(cacheKey, result);
+  if (!result) {
+    debugger;
+  }
   return result;
 }
 
@@ -223,7 +228,7 @@ export async function verifyData<T extends JSONValue>(
  * Encodes a given signature to a URL-safe string.
  */
 export function encodeSignature<T extends JSONValue | undefined>(
-  sig: Signature<T>,
+  sig: Signature<T>
 ): string {
   const obj: JSONObject = {
     i: sig.sessionId,
@@ -237,12 +242,12 @@ export function encodeSignature<T extends JSONValue | undefined>(
 }
 
 export function decodeSignature<T extends JSONValue | undefined = undefined>(
-  str: string,
+  str: string
 ): Signature<T>;
 export function decodeSignature(str: undefined): undefined;
 
 export function decodeSignature<T extends JSONValue | undefined = undefined>(
-  str: string | undefined,
+  str: string | undefined
 ): Signature<T> | undefined;
 
 /**
@@ -251,7 +256,7 @@ export function decodeSignature<T extends JSONValue | undefined = undefined>(
  * @returns A signature structure.
  */
 export function decodeSignature<T extends JSONValue | undefined = undefined>(
-  str: string | undefined,
+  str: string | undefined
 ): Signature<T> | undefined {
   if (!str) {
     return undefined;
@@ -270,13 +275,13 @@ export function decodeSignature<T extends JSONValue | undefined = undefined>(
 
 export async function signCommit(
   session: OwnedSession,
-  commit: Commit,
+  commit: Commit
 ): Promise<Commit> {
   const signature = await signData(
     session,
     JSONCyclicalEncoder.serialize<CommitSerializeOptions>(commit, {
       signed: false,
-    }),
+    })
   );
   return new Commit({
     id: commit.id,
@@ -294,14 +299,14 @@ export async function signCommit(
 
 export async function verifyCommit(
   expectedSigner: Session,
-  commit: Commit,
+  commit: Commit
 ): Promise<boolean> {
   return await verifyData(
     expectedSigner,
     commit.signature,
     JSONCyclicalEncoder.serialize<CommitSerializeOptions>(commit, {
       signed: false,
-    }),
+    })
   );
 }
 
@@ -311,17 +316,17 @@ export function signerIdFromCommit(commit: Commit): string | undefined {
 }
 
 export async function encodeSession(
-  session: OwnedSession,
+  session: OwnedSession
 ): Promise<EncodedOwnedSession>;
 
 export async function encodeSession(session: Session): Promise<EncodedSession>;
 
 export async function encodeSession(
-  session: Session | OwnedSession,
+  session: Session | OwnedSession
 ): Promise<EncodedSession | EncodedOwnedSession> {
   const publicKey = (await crypto.subtle.exportKey(
     'jwk',
-    session.publicKey,
+    session.publicKey
   )) as ReadonlyJSONObject;
 
   if (isOwnedSession(session)) {
@@ -330,7 +335,7 @@ export async function encodeSession(
       publicKey,
       privateKey: (await crypto.subtle.exportKey(
         'jwk',
-        session.privateKey,
+        session.privateKey
       )) as ReadonlyJSONObject,
       expiration: serializeDate(session.expiration),
     };
@@ -343,24 +348,24 @@ export async function encodeSession(
 }
 
 export async function decodeSession(
-  session: EncodedOwnedSession,
+  session: EncodedOwnedSession
 ): Promise<OwnedSession>;
 
 export async function decodeSession(session: EncodedSession): Promise<Session>;
 
 export async function decodeSession(
-  session: EncodedSession | EncodedOwnedSession,
+  session: EncodedSession | EncodedOwnedSession
 ): Promise<Session | OwnedSession>;
 
 export async function decodeSession(
-  session: EncodedSession | EncodedOwnedSession,
+  session: EncodedSession | EncodedOwnedSession
 ): Promise<Session | OwnedSession> {
   const publicKey = await crypto.subtle.importKey(
     'jwk',
     session.publicKey as JsonWebKey,
     SESSION_CRYPTO_KEY_GEN_PARAMS,
     true,
-    ['verify'],
+    ['verify']
   );
   if (session.privateKey) {
     const privateKey = await crypto.subtle.importKey(
@@ -368,7 +373,7 @@ export async function decodeSession(
       session.privateKey as JsonWebKey,
       SESSION_CRYPTO_KEY_GEN_PARAMS,
       true,
-      ['sign'],
+      ['sign']
     );
     return {
       ...session,
@@ -423,7 +428,7 @@ interface RequestSignatureMetadata extends ReadonlyJSONObject {
 const REQUEST_SIG_EXPIRATION_MS = 3 * kMinuteMs;
 
 export function generateRequestSignature(
-  session: OwnedSession,
+  session: OwnedSession
 ): Promise<string> {
   return signData(session, null, {
     id: uniqueId(),
@@ -439,7 +444,7 @@ setInterval(() => {
 
 export async function verifyRequestSignature(
   session: Session,
-  signature: string,
+  signature: string
 ): Promise<boolean> {
   const cacheId = `${session.id}+${signature}`;
   let result = requestSigCache.get(cacheId);
@@ -478,7 +483,7 @@ export class TrustPool {
     currentSession: OwnedSession,
     roots?: Session[],
     trustedSessions?: Session[],
-    changeCallback?: () => void,
+    changeCallback?: () => void
   ) {
     this._currentSession = currentSession;
     this.roots = roots || [];
@@ -606,10 +611,12 @@ export class TrustPool {
   async verify(commit: Commit): Promise<boolean> {
     const signerId = signerIdFromCommit(commit);
     if (!signerId) {
+      debugger;
       return false;
     }
     const session = this.getSession(signerId);
     if (!session) {
+      debugger;
       return false;
     }
     return await verifyCommit(session, commit);

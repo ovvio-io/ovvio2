@@ -27,6 +27,8 @@ function generateConfigSnippet(
     debug: true,
     version,
   };
+  delete config.clientData;
+  delete config.serverData;
   if (serverURL) {
     config.serverURL = serverURL;
   }

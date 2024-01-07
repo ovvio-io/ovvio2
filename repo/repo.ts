@@ -204,8 +204,8 @@ export class Repository<
 
   *commits(session?: Session): Generator<Commit> {
     const { authorizer } = this;
-    const checkAuth = session &&
-      session.id !== this.trustPool.currentSession.id && authorizer;
+    const checkAuth =
+      session && session.id !== this.trustPool.currentSession.id && authorizer;
     for (const id of this.storage.allCommitsIds()) {
       const commit = this.getCommit(id);
       if (!checkAuth || authorizer(this, this.getCommit(id), session, false)) {
@@ -246,10 +246,7 @@ export class Repository<
     return !this._adjList.hasInEdges(c);
   }
 
-  leavesForKey(
-    key: string | null,
-    session?: Session,
-  ): Commit[] {
+  leavesForKey(key: string | null, session?: Session): Commit[] {
     const adjList = this._adjList;
     const result: Commit[] = [];
     for (const c of this.commitsForKey(key, session)) {
@@ -267,10 +264,8 @@ export class Repository<
       session.id !== this.trustPool.currentSession.id &&
       authorizer
     ) {
-      return filterIterable(
-        this.storage.allKeys(),
-        (key) =>
-          authorizer(this, this.headForKey(key, session.id)!, session, false),
+      return filterIterable(this.storage.allKeys(), (key) =>
+        authorizer(this, this.headForKey(key, session.id)!, session, false),
       );
     }
     return this.storage.allKeys();
@@ -389,9 +384,9 @@ export class Repository<
       const bases = SetUtils.intersection(parents1, parents2);
       if (bases.size > 0) {
         return [
-          Array.from(bases).map((id) => this.getCommit(id)).sort(
-            compareCommitsDesc,
-          )[0],
+          Array.from(bases)
+            .map((id) => this.getCommit(id))
+            .sort(compareCommitsDesc)[0],
           reachedRoot,
         ];
       }
@@ -485,8 +480,9 @@ export class Repository<
     if (commitContentsIsRecord(c.contents)) {
       return true;
     }
-    return this.hasRecordForCommit(c.contents.base) &&
-      !this.commitIsCorrupted(c);
+    return (
+      this.hasRecordForCommit(c.contents.base) && !this.commitIsCorrupted(c)
+    );
   }
 
   commitIsCorrupted(c: Commit): boolean {
@@ -531,9 +527,7 @@ export class Repository<
     return result;
   }
 
-  findLatestNonCorruptedCommitForKey(
-    key: string | null,
-  ): Commit | undefined {
+  findLatestNonCorruptedCommitForKey(key: string | null): Commit | undefined {
     const commits = Array.from(this.commitsForKey(key)).sort(
       compareCommitsDesc,
     );
@@ -670,15 +664,14 @@ export class Repository<
       return undefined;
     }
     // Filter out any commits with equal records
-    const uniqueCommits = commitsWithUniqueRecords(leaves).sort(
-      coreValueCompare,
-    );
+    const uniqueCommits =
+      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it.
     if (uniqueCommits.length === 1) {
       return this.cacheHeadForKey(key, uniqueCommits[0]);
     }
-    const mergeLeaderSession = mergeLeaderFromLeaves(leaves) ||
-      this.trustPool.currentSession.id;
+    const mergeLeaderSession =
+      mergeLeaderFromLeaves(leaves) || this.trustPool.currentSession.id;
     if (merge && mergeLeaderSession === this.trustPool.currentSession.id) {
       this.mergeIfNeeded(key);
     }
@@ -711,11 +704,9 @@ export class Repository<
       }
     }
     // No match found. Find the newest commit we're able to read its record.
-    for (
-      const c of Array.from(this.commitsForKey(key)).sort(
-        compareCommitsDesc,
-      )
-    ) {
+    for (const c of Array.from(this.commitsForKey(key)).sort(
+      compareCommitsDesc,
+    )) {
       const head = this.cacheHeadForKey(key, c);
       if (head) {
         return head;
@@ -753,8 +744,8 @@ export class Repository<
       });
       this._pendingMergePromises.set(key, result);
     } else {
-      // Disallow concurrent merges for any given key
-      return Promise.resolve(undefined);
+      // Disallow concurrent commits for any given key
+      throw serviceUnavailable();
     }
     return result;
   }
@@ -782,13 +773,12 @@ export class Repository<
         foundRoot = true;
       } else if (commitsToMerge.length === 1) {
         // Special case: a single chain of commits.
-        scheme = this.recordForCommit(commitsToMerge[0]).scheme ||
-          Scheme.nullScheme();
+        scheme =
+          this.recordForCommit(commitsToMerge[0]).scheme || Scheme.nullScheme();
         foundRoot = false;
       } else {
-        [commitsToMerge, lca, scheme, foundRoot] = this.findMergeBase(
-          commitsToMerge,
-        );
+        [commitsToMerge, lca, scheme, foundRoot] =
+          this.findMergeBase(commitsToMerge);
       }
       if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
         throw serviceUnavailable();
@@ -855,18 +845,14 @@ export class Repository<
       this.persistVerifiedCommits([signedCommit]);
       return this.cacheHeadForKey(key, signedCommit);
     } catch (e) {
-      if (
-        !(e instanceof ServerError && e.code === Code.ServiceUnavailable)
-      ) {
+      if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
         debugger;
         throw e; // Unknown error. Rethrow.
       }
     }
   }
 
-  async mergeIfNeeded(
-    key: string | null,
-  ): Promise<Commit | undefined> {
+  async mergeIfNeeded(key: string | null): Promise<Commit | undefined> {
     const session = this.trustPool.currentSession.id;
     const cacheEntry = this._cachedHeadsByKey.get(key);
     if (
@@ -884,10 +870,10 @@ export class Repository<
       // No commit history found. Return the null record as a starting point
       return undefined;
     }
+    const leavesBySession = pickLatestCommitBySession(leaves);
     // Filter out any commits with equal records
-    const commitsToMerge = commitsWithUniqueRecords(leaves).sort(
-      coreValueCompare,
-    );
+    const commitsToMerge =
+      commitsWithUniqueRecords(leavesBySession).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it.
     if (commitsToMerge.length === 1) {
       return this.cacheHeadForKey(key, commitsToMerge[0]);
@@ -896,10 +882,9 @@ export class Repository<
     // concurrent editors choose a soft leader amongst all currently active
     // writers. Non-leaders will back off and not perform any merge commits,
     // instead waiting for the leader(s) to merge.
-    const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || session;
-    if (
-      this.allowMerge && mergeLeaderSession === session
-    ) {
+    const mergeLeaderSession =
+      mergeLeaderFromLeaves(leavesBySession) || session;
+    if (this.allowMerge && mergeLeaderSession === session) {
       const mergeCommit = await this.createMergeCommit(
         commitsToMerge,
         leaves.map((c) => c.id),
@@ -914,7 +899,7 @@ export class Repository<
     // If we somehow temporarily lost c2 and c4, we would consider both c3
     // and c1 as leaves. Therefore, we first sort all our leaves from
     // newest to oldest.
-    leaves.sort(compareCommitsDesc);
+    leavesBySession.sort(compareCommitsDesc);
     // Preserve local consistency for the caller and return whichever value
     // it wrote last.
     for (const c of leaves) {
@@ -936,11 +921,9 @@ export class Repository<
       }
     }
     // No match found. Find the newest commit we're able to read its record.
-    for (
-      const c of Array.from(this.commitsForKey(key)).sort(
-        compareCommitsDesc,
-      )
-    ) {
+    for (const c of Array.from(this.commitsForKey(key)).sort(
+      compareCommitsDesc,
+    )) {
       const head = this.cacheHeadForKey(key, c);
       if (head) {
         return head;
@@ -949,11 +932,7 @@ export class Repository<
     return undefined;
   }
 
-  valueForKey(
-    key: string | null,
-    session?: string,
-    merge = true,
-  ): CFDSRecord {
+  valueForKey(key: string | null, session?: string, merge = true): CFDSRecord {
     const head = this.headForKey(key, session, merge);
     return head ? this.recordForCommit(head) : CFDSRecord.nullRecord();
   }
@@ -1008,9 +987,14 @@ export class Repository<
 
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
     assert(commitContentsIsRecord(fullCommit.contents));
-    // Periodically create a full commit to prevent all parties from being stuck
-    // to a specific commit.
-    if (randomInt(0, 20) === 0) {
+    if (
+      // Periodically create a full commit to prevent all parties from being stuck
+      // to a specific commit.
+      randomInt(0, 20) === 0 ||
+      // Sessions are too important to apply delta compression to, since they
+      // bootstrap everything else.
+      fullCommit.scheme?.namespace === SchemeNamespace.SESSIONS
+    ) {
       return fullCommit;
     }
     const key = fullCommit.key;
@@ -1071,8 +1055,8 @@ export class Repository<
 
   async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
     const authorizer = this.authorizer;
-    commits = Array.from(commits).sort((c1, c2) =>
-      c1.timestamp.getTime() - c2.timestamp.getTime()
+    commits = Array.from(commits).sort(
+      (c1, c2) => c1.timestamp.getTime() - c2.timestamp.getTime(),
     );
     for (const c of commits) {
       if (await this.trustPool.verify(c)) {
@@ -1084,13 +1068,13 @@ export class Repository<
           if (authorizer(this, c, session, true)) {
             yield c;
           } else {
-            // debugger;
+            debugger;
           }
         } else {
           yield c;
         }
       } else {
-        // debugger;
+        debugger;
       }
     }
   }
@@ -1159,10 +1143,7 @@ export class Repository<
     try {
       if (this.namespaceForKey(commit.key) === SchemeNamespace.SESSIONS) {
         this._cachedHeadsByKey.delete(commit.key);
-        const headRecord = this.valueForKey(
-          commit.key,
-          undefined,
-        );
+        const headRecord = this.valueForKey(commit.key, undefined);
         if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
           sessionFromRecord(headRecord).then((session) => {
             this.trustPool.addSession(session, commit);
@@ -1388,4 +1369,15 @@ export class MemRepoStorage implements RepoStorage<MemRepoStorage> {
   }
 
   close(): void {}
+}
+
+function pickLatestCommitBySession(commits: Commit[]): Commit[] {
+  const commitBySession = new Map<string, Commit>();
+  for (const c of commits) {
+    const existing = commitBySession.get(c.session);
+    if (!existing || existing.timestamp.getTime() < c.timestamp.getTime()) {
+      commitBySession.set(c.session, c);
+    }
+  }
+  return Array.from(commitBySession.values());
 }
