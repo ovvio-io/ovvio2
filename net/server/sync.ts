@@ -165,7 +165,7 @@ export class SyncService extends BaseService<ServerServices> {
             this.services.trustPool.currentSession,
             this.services.organizationId,
           ),
-        ).startSyncing()
+        ).startSyncing(),
       );
       this._clientsForRepo.set(repoId, clients);
     }
@@ -178,8 +178,14 @@ export class SyncService extends BaseService<ServerServices> {
     backup: JSONLogRepoBackup,
   ): void {
     repo.allowMerge = false;
+    const allowedNamespaces = repo.allowedNamespaces;
     for (const c of backup.open()) {
-      repo.persistVerifiedCommits([c]);
+      if (
+        c.scheme?.namespace === undefined ||
+        allowedNamespaces.includes(c.scheme?.namespace)
+      ) {
+        repo.persistVerifiedCommits([c]);
+      }
     }
     repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
@@ -229,6 +235,15 @@ export class SyncService extends BaseService<ServerServices> {
 
   clientsForRepo(id: string): RepoClient<MemRepoStorage>[] {
     return this._clientsForRepo.get(id)!;
+  }
+
+  repoIdForKey(key: string | null): string | undefined {
+    for (const [repoId, repo] of this._repositories) {
+      if (repo.hasKey(key)) {
+        return repoId;
+      }
+    }
+    return undefined;
   }
 
   start(): void {
@@ -316,14 +331,22 @@ export class SyncEndpoint implements Endpoint {
       if (!kRepositoryTypes.includes(storage as RepositoryType)) {
         continue;
       }
-      promises.push((async () => {
-        const res = await this.doSync(services, storage, id, userSession, msg);
-        results.push({
-          storage,
-          id,
-          res,
-        });
-      })());
+      promises.push(
+        (async () => {
+          const res = await this.doSync(
+            services,
+            storage,
+            id,
+            userSession,
+            msg,
+          );
+          results.push({
+            storage,
+            id,
+            res,
+          });
+        })(),
+      );
     }
     await Promise.all(promises);
     return new Response(JSON.stringify(results));

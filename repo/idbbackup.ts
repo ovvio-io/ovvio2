@@ -50,7 +50,7 @@ export class IDBRepositoryBackup {
 
   constructor(
     readonly dbName: string,
-    readonly repo: Repository<MemRepoStorage>
+    readonly repo: Repository<MemRepoStorage>,
   ) {
     this._commitPersistedTs = new Map();
     this._backupTimer = new EaseInOutSineTimer(
@@ -77,7 +77,7 @@ export class IDBRepositoryBackup {
         }
       },
       true,
-      'IDB Background Save'
+      'IDB Background Save',
     ).schedule();
   }
 
@@ -104,7 +104,7 @@ export class IDBRepositoryBackup {
             try {
               if ((await store.getKey(c.id)) === undefined) {
                 await store.put(
-                  JSONCyclicalEncoder.serialize(c) as EncodedCommit
+                  JSONCyclicalEncoder.serialize(c) as EncodedCommit,
                 );
                 ++result;
               }
@@ -120,7 +120,7 @@ export class IDBRepositoryBackup {
               });
               throw e;
             }
-          })()
+          })(),
         );
       }
       for (const p of promises) {
@@ -135,15 +135,21 @@ export class IDBRepositoryBackup {
   loadCommits(): Promise<Commit[]> {
     return SerialScheduler.get('idb').run(async () => {
       try {
+        const startTime = performance.now();
         const db = await this.open();
         const txn = db.transaction('commits', 'readonly');
         const result = ((await txn.store.getAll()) || []).map(
           (json) =>
             new Commit({
               decoder: new JSONCyclicalDecoder(json),
-            })
+            }),
         );
         db.close();
+        console.log(
+          `Loading from IDB Backup took ${
+            performance.now() - startTime
+          }ms for ${this.dbName}`,
+        );
         return result || [];
       } catch (err: unknown) {
         console.log('IDB error: ' + err);

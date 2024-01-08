@@ -19,6 +19,8 @@ import { Scheme } from '../cfds/base/scheme.ts';
 import { VersionNumber } from '../base/version-number.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { Comparable, coreValueCompare } from '../base/core-types/index.ts';
+import { ReadonlyJSONObject } from '../base/interfaces.ts';
+import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -67,6 +69,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _mergeBase?: string;
   private _mergeLeader?: string;
   private _revert?: string;
+  private _cachedJSON?: ReadonlyJSONObject;
+  private _cachedChecksum?: string;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -130,10 +134,13 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   }
 
   get contentsChecksum(): string {
-    const contents = this.contents;
-    return commitContentsIsRecord(contents)
-      ? contents.record.checksum
-      : contents.edit.dstChecksum;
+    if (!this._cachedChecksum) {
+      const contents = this.contents;
+      this._cachedChecksum = commitContentsIsRecord(contents)
+        ? contents.record.checksum
+        : contents.edit.dstChecksum;
+    }
+    return this._cachedChecksum;
   }
 
   get buildVersion(): VersionNumber {
@@ -191,6 +198,13 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     }
   }
 
+  toJS(): ReadonlyJSONObject {
+    if (!this._cachedJSON) {
+      this._cachedJSON = JSONCyclicalEncoder.serialize(this);
+    }
+    return this._cachedJSON;
+  }
+
   deserialize(decoder: Decoder): void {
     this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
@@ -203,6 +217,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._mergeBase = decoder.get<string | undefined>('mb');
     this._mergeLeader = decoder.get<string | undefined>('ml');
     this._revert = decoder.get<string | undefined>('revert');
+    this._cachedJSON = undefined;
+    this._cachedChecksum = undefined;
   }
 
   isEqual(other: Commit): boolean {

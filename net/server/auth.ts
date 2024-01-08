@@ -53,7 +53,7 @@ export class AuthEndpoint implements Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     const path = getRequestPath<AuthEndpointPath>(req);
     if (!kAuthEndpointPaths.includes(path)) {
@@ -76,7 +76,7 @@ export class AuthEndpoint implements Endpoint {
   async processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     const path = getRequestPath<AuthEndpointPath>(req);
     const method = req.method as HTTPMethod;
@@ -101,7 +101,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async createNewSession(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     if (!services.sync.ready) {
       return Promise.resolve(new Response(null, { status: 503 }));
@@ -118,7 +118,7 @@ export class AuthEndpoint implements Endpoint {
         jwk,
         SESSION_CRYPTO_KEY_GEN_PARAMS,
         true,
-        ['verify']
+        ['verify'],
       );
     } catch (e: any) {
       return responseForError('InvalidPublicKey');
@@ -138,7 +138,7 @@ export class AuthEndpoint implements Endpoint {
       JSON.stringify({
         session: encodedSession,
         roots: fetchEncodedRootSessions(services.sync.getSysDir()),
-      })
+      }),
     );
     resp.headers.set('Content-Type', 'application/json');
     return resp;
@@ -146,7 +146,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async sendTemporaryLoginEmail(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     const smtp = services.email;
     const body = await req.json();
@@ -220,7 +220,7 @@ export class AuthEndpoint implements Endpoint {
 
   private async loginWithToken(
     services: ServerServices,
-    req: Request
+    req: Request,
   ): Promise<Response> {
     const encodedToken = new URL(req.url).searchParams.get('t');
     if (!encodedToken) {
@@ -229,7 +229,6 @@ export class AuthEndpoint implements Endpoint {
     try {
       const signature = decodeSignature<TemporaryLoginToken>(encodedToken);
       const signerId = signature.sessionId;
-      debugger;
       if (!signerId) {
         return responseForError('AccessDenied');
       }
@@ -272,7 +271,7 @@ export class AuthEndpoint implements Endpoint {
 
 export async function persistSession(
   services: ServerServices,
-  session: Session | OwnedSession
+  session: Session | OwnedSession,
 ): Promise<void> {
   const repo = services.sync.getRepository('sys', 'dir');
   const record = await sessionToRecord(session);
@@ -280,7 +279,7 @@ export async function persistSession(
 }
 
 export function fetchEncodedRootSessions(
-  sysDir: Repository<MemRepoStorage, SysDirIndexes>
+  sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): EncodedSession[] {
   const result: EncodedSession[] = [];
   const rootSessions = sysDir.indexes!.rootSessions;
@@ -296,7 +295,7 @@ export function fetchEncodedRootSessions(
 
 function fetchUserByEmail(
   services: ServerServices,
-  email: string
+  email: string,
 ): [key: string | undefined, record: Record | undefined] {
   email = normalizeEmail(email);
   const repo = services.sync.getSysDir();
@@ -318,14 +317,14 @@ function fetchUserByEmail(
 
 export function fetchSessionById(
   services: ServerServices,
-  sessionId: string
+  sessionId: string,
 ): Session | undefined {
   return services.trustPool.getSession(sessionId);
 }
 
 export function fetchUserById(
   services: ServerServices,
-  userId: string
+  userId: string,
 ): Record | undefined {
   const record = services.sync.getSysDir().valueForKey(userId);
   assert(record.isNull || record.scheme.namespace === SchemeNamespace.USERS);
@@ -347,7 +346,7 @@ export type Role = 'operator' | 'anonymous';
 export async function requireSignedUser(
   services: ServerServices,
   requestOrSignature: Request | string,
-  role?: Role
+  role?: Role,
 ): Promise<
   [userId: string | null, userRecord: Record | undefined, userSession: Session]
 > {
@@ -360,7 +359,7 @@ export async function requireSignedUser(
   }
   const signerSession = fetchSessionById(
     services,
-    sessionIdFromSignature(signature)
+    sessionIdFromSignature(signature),
   );
   if (signerSession === undefined) {
     throw accessDenied();

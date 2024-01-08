@@ -1075,12 +1075,14 @@ export class Repository<
             yield c;
           } else {
             debugger;
+            authorizer(this, c, session, true);
           }
         } else {
           yield c;
         }
       } else {
         debugger;
+        this.trustPool.verify(c);
       }
     }
   }
@@ -1089,7 +1091,13 @@ export class Repository<
     const batchSize = 50;
     const result: Commit[] = [];
     let batch: Commit[] = [];
-    commits = filterIterable(commits, (c) => !this._commitsCache.has(c.id));
+    commits = filterIterable(
+      commits,
+      (c) =>
+        (c.scheme?.namespace === undefined ||
+          this.allowedNamespaces.includes(c.scheme?.namespace)) &&
+        !this._commitsCache.has(c.id),
+    );
     for await (const verifiedCommit of this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
@@ -1146,22 +1154,22 @@ export class Repository<
   private _runUpdatesOnNewCommit(commit: Commit): void {
     this._commitsCache.set(commit.id, commit);
     // Auto add newly discovered sessions to our trust pool
-    try {
-      if (this.namespaceForKey(commit.key) === SchemeNamespace.SESSIONS) {
-        this._cachedHeadsByKey.delete(commit.key);
-        const headRecord = this.valueForKey(commit.key, undefined);
-        if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
-          sessionFromRecord(headRecord).then((session) => {
-            this.trustPool.addSession(session, commit);
-          });
-        }
-      }
-    } catch (e: unknown) {
-      // Rethrow any error not caused by a missing commit graph
-      if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
-        throw e;
+    // try {
+    if (this.namespaceForKey(commit.key) === SchemeNamespace.SESSIONS) {
+      this._cachedHeadsByKey.delete(commit.key);
+      const headRecord = this.valueForKey(commit.key, undefined);
+      if (headRecord.scheme.namespace === SchemeNamespace.SESSIONS) {
+        sessionFromRecord(headRecord).then((session) => {
+          this.trustPool.addSession(session, commit);
+        });
       }
     }
+    // } catch (e: unknown) {
+    //   // Rethrow any error not caused by a missing commit graph
+    //   if (!(e instanceof ServerError && e.code === Code.ServiceUnavailable)) {
+    //     throw e;
+    //   }
+    // }
     // Notify everyone else
     this.emit('NewCommit', commit);
   }

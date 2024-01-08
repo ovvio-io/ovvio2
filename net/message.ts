@@ -117,7 +117,8 @@ const COMMITS_CACHE = new Map<string, Commit>();
  * effectively providing a rolling time frame sync window.
  */
 export class SyncMessage<T extends SyncValueType>
-  implements Encodable, Decodable {
+  implements Encodable, Decodable
+{
   private _buildVersion!: VersionNumber;
   private _filter!: BloomFilter;
   private _size!: number;
@@ -181,9 +182,7 @@ export class SyncMessage<T extends SyncValueType>
       case SyncValueFlag.Commit:
         encoder.set(
           'c',
-          (this.values as Commit[]).map((c) =>
-            JSONCyclicalEncoder.serialize(c)
-          ),
+          (this.values as Commit[]).map((c) => c.toJS()),
         );
         break;
 

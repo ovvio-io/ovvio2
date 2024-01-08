@@ -72,10 +72,8 @@ function duplicateWorkspace(
   graph.markRepositoryReady(newRepoId);
   const dstRepo = graph.repository(newRepoId);
   // Copy notes and reset their assignees
-  for (
-    const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
-      []
-  ) {
+  for (const [oldKey, record] of recordByNamespace.get(SchemeNamespace.NOTES) ||
+    []) {
     record.delete('assignees');
     record.rewriteRefs(rewriteKeys);
     dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
@@ -153,10 +151,10 @@ export function WorkspaceForm({
       source,
       id: flowId,
     });
-    graph.sharedQueriesManager.workspaces.forEach(
-      (ws) => (ws.selected = ws.key === wsResult.key),
-    );
-    wsResult.getVertexProxy().selected = true;
+    // graph.sharedQueriesManager.workspaces.forEach(
+    //   (ws) => (ws.selected = ws.key === wsResult.key),
+    // );
+    // wsResult.getVertexProxy().selected = true;
     onWorkspaceCreated(wsResult);
   };
   return (
@@ -174,14 +172,14 @@ export function WorkspaceForm({
           <DuplicateWorkspaceView
             className={cn(styles.input)}
             allWorkspaces={workspacesQuery.results.filter((mgr) =>
-              graph.repositoryReady(Repository.id('data', mgr.key))
+              graph.repositoryReady(Repository.id('data', mgr.key)),
             )}
             setWorkspace={setDuplicateWs}
             workspace={duplicateWs}
           />
         )}
         <TextField
-          placeholder='Name your workspace'
+          placeholder="Name your workspace"
           value={name}
           onChange={(e: any) => setName(e.currentTarget.value)}
           className={cn(styles.input)}

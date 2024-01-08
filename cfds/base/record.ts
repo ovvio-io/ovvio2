@@ -217,6 +217,9 @@ export class Record implements ReadonlyRecord, Encodable {
     }
     this.normalize();
     other.normalize();
+    if (this._checksum && other._checksum && !local) {
+      return this._checksum === other._checksum;
+    }
     return dataEqual(this.scheme.getFields(), this._data, other._data, {
       local,
     });
@@ -347,7 +350,7 @@ export class Record implements ReadonlyRecord, Encodable {
 
   assertValidData() {
     const [valid, msg] = isValidData(this.scheme, this._data);
-    assert(<boolean> valid, <string> msg);
+    assert(<boolean>valid, <string>msg);
   }
 
   private _invalidateCaches() {

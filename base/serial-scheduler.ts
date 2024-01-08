@@ -79,7 +79,7 @@ export class MultiSerialScheduler {
 
   constructor(concurrency?: number) {
     if (!concurrency) {
-      concurrency = navigator.hardwareConcurrency;
+      concurrency = navigator.hardwareConcurrency * 2;
     }
     this._schedulers = [];
     for (let i = 0; i < concurrency; ++i) {

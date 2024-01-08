@@ -186,11 +186,11 @@ export abstract class BaseClient<
 
     let syncResp: SyncMessage<ValueType>;
     try {
-      syncResp = await this.scheduler.send(
+      syncResp = (await this.scheduler.send(
         this.storage,
         this.id,
         reqMsg,
-      ) as typeof reqMsg;
+      )) as typeof reqMsg;
     } catch (e) {
       log({
         severity: 'INFO',
@@ -266,7 +266,7 @@ export abstract class BaseClient<
     do {
       await this.sendSyncMessage();
       ++i;
-    } while (!this.closed && i <= cycleCount || this.needsReplication());
+    } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
   }
 
   needsReplication(): boolean {
@@ -292,6 +292,5 @@ export abstract class BaseClient<
     this._setIsOnline(false);
   }
 
-  protected afterMessageSent(msg: SyncMessage<ValueType>): void {
-  }
+  protected afterMessageSent(msg: SyncMessage<ValueType>): void {}
 }
