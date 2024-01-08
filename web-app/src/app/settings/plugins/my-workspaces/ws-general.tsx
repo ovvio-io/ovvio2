@@ -158,50 +158,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-export function WsGeneralSettings() {
-  const styles = tabsStyles();
-  const graph = useGraphManager();
-  const mgr = graph.getVertexManager<View>('ViewWsSettings');
-  const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
-  const ws = [...partialView.selectedWorkspaces][0];
-  const wsV = useVertex(ws);
-  const wsManager = ws.manager;
-  const onWorkspaceDeleted = () => {};
-
-  return (
-    <div>
-      <div
-        className={cn(styles.barRow)}
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexDirection: 'row',
-        }}
-      >
-        <div className={cn(styles.settingsFields)}>
-          <SettingsField
-            title="Workspace's Name"
-            toggle="editable"
-            value={wsV && wsV.name}
-            onChange={(newValue) => (wsV.name = newValue)}
-          />
-          <SettingsField
-            title="Description"
-            placeholder="Add a description of the project/client/etc."
-            toggle="editable"
-            value=""
-          />
-          <DeleteConfirmWsButton
-            wsMng={wsManager}
-            onDeleted={onWorkspaceDeleted}
-          />
-        </div>
-        <UsersList wsMng={wsManager} ws={ws} />
-      </div>
-    </div>
-  );
-}
-
 interface UserItemProps {
   user: User;
   ws: Workspace;
@@ -455,6 +411,50 @@ function UsersList({ wsMng, ws }: UsersListProps) {
             />
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function WsGeneralSettings() {
+  const styles = tabsStyles();
+  const graph = useGraphManager();
+  const mgr = graph.getVertexManager<View>('ViewWsSettings');
+  const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
+  const ws = [...partialView.selectedWorkspaces][0];
+  const wsV = useVertex(ws);
+  const wsManager = ws.manager;
+  const onWorkspaceDeleted = () => {};
+
+  return (
+    <div>
+      <div
+        className={cn(styles.barRow)}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexDirection: 'row',
+        }}
+      >
+        <div className={cn(styles.settingsFields)}>
+          <SettingsField
+            title="Workspace's Name"
+            toggle="editable"
+            value={wsV && wsV.name}
+            onChange={(newValue) => (wsV.name = newValue)}
+          />
+          <SettingsField
+            title="Description"
+            placeholder="Add a description of the project/client/etc."
+            toggle="editable"
+            value=""
+          />
+          <DeleteConfirmWsButton
+            wsMng={wsManager}
+            onDeleted={onWorkspaceDeleted}
+          />
+        </div>
+        <UsersList wsMng={wsManager} ws={ws} />
       </div>
     </div>
   );

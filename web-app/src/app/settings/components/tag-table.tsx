@@ -6,14 +6,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
-import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
-import { IconMore } from '../../../../../styles/components/new-icons/icon-more.tsx';
-import { SearchBar } from '../../../../../components/search-bar.tsx';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../core/cfds/react/vertex.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
@@ -23,6 +17,16 @@ import Menu, {
 } from '../../../../../styles/components/menu.tsx';
 import { IconOpen } from '../../../../../styles/components/new-icons/icon-open.tsx';
 import { RefObject } from 'https://esm.sh/v96/@types/react@18.2.15/index.js';
+import {
+  Tag,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import {
+  usePartialVertex,
+  useVertices,
+} from '../../../core/cfds/react/vertex.ts';
+import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles(() => ({
   /* Container for the entire table. Positioned relative to its normal position and given a top margin. */
@@ -215,24 +219,23 @@ interface TagInputProps {
   onBlur: () => void;
   editMode: boolean;
 }
-
 const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
   ({ name, setName, onBlur, editMode }, ref) => {
     const styles = useStyles();
     const [value, setValue] = useState<string>(name);
 
+    const [inputWidth, setInputWidth] = useState<string>(
+      (name.length + 1) * 5 + 'px'
+    );
+
     useEffect(() => {
       setValue(name);
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.style.width = (name.length + 1) * 9 + 'px';
-      }
-    }, [name, ref]);
+      setInputWidth((name.length + 1) * 5 + 'px');
+    }, [name]);
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.style.width = e.target.value.length * 6 + 'px';
-      }
+      setInputWidth(e.target.value.length * 2 + 'px');
     };
 
     const commit = () => {
@@ -265,12 +268,13 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
       <input
         className={cn(styles.input)}
         type="text"
-        ref={ref as React.RefObject<HTMLInputElement>} // Explicitly specify the ref type
+        ref={ref as React.RefObject<HTMLInputElement>}
         value={value}
         onChange={onChange}
         onBlur={blur}
         onKeyDown={onKeyDown}
         readOnly={!editMode}
+        style={{ width: inputWidth }}
       />
     );
   }
@@ -292,14 +296,14 @@ const CategoryInput = React.forwardRef<HTMLInputElement, CategoryInputProps>(
     useEffect(() => {
       setValue(name);
       if (ref && 'current' in ref && ref.current) {
-        ref.current.style.width = (name.length + 1) * 7 + 'px';
+        ref.current.style.width = (name.length + 2) * 10 + 'px';
       }
     }, [name, ref]);
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
       if (ref && 'current' in ref && ref.current) {
-        ref.current.style.width = e.target.value.length * 6 + 'px';
+        ref.current.style.width = (e.target.value.length + 1) * 7 + 'px';
       }
     };
 
@@ -346,35 +350,37 @@ const CategoryInput = React.forwardRef<HTMLInputElement, CategoryInputProps>(
 
 //=========================================================================================CategoryPill===========================
 
-type CategoryPillProps = { category: string; editMode: boolean };
+type CategoryPillProps = {
+  category: string;
+  editMode: boolean;
+  isNewCategory: boolean;
+};
 
-const CategoryPill: React.FC<CategoryPillProps> = ({ category, editMode }) => {
+const CategoryPill: React.FC<CategoryPillProps> = ({
+  category,
+  editMode,
+  isNewCategory,
+}) => {
   const styles = useStyles();
-  const inputRef = useRef<any>();
-  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const onClick = () => {
-    setIsEditing(true);
-    inputRef.current.focus();
-
-    if (inputRef.current.setSelectionRange) {
-      inputRef.current.setSelectionRange(0, category.length);
+  useEffect(() => {
+    if (isNewCategory || (editMode && inputRef.current)) {
+      inputRef.current?.focus();
     }
-    window.requestAnimationFrame(() => {
-      inputRef.current.focus();
-    });
-  };
-  const onBlur = () => {
-    setIsEditing(false);
-  };
+  }, [isNewCategory, editMode]);
+
+  const onBlur = () => {};
+  const categoryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isNewCategory && categoryInputRef.current) {
+      categoryInputRef.current.focus();
+    }
+  }, [isNewCategory]);
 
   return (
-    <div
-      className={cn(styles.categoryPill, editMode && styles.editPill)}
-      onClick={() => {
-        onClick;
-      }}
-    >
+    <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
       <CategoryInput
         name={category}
         setName={function (value: React.SetStateAction<string>): void {
@@ -382,7 +388,7 @@ const CategoryPill: React.FC<CategoryPillProps> = ({ category, editMode }) => {
         }}
         ref={inputRef}
         onBlur={onBlur}
-        editMode={editMode}
+        editMode={editMode || isNewCategory}
       />
     </div>
   );
@@ -390,75 +396,58 @@ const CategoryPill: React.FC<CategoryPillProps> = ({ category, editMode }) => {
 
 //=========================================================================================TagPills===========================
 
-type TagPillsProps = { tag: string; editMode: boolean };
-
-const TagPills: React.FC<TagPillsProps> = ({ tag, editMode }) => {
-  const styles = useStyles();
-  const inputRef = useRef<any>();
-  const [isEditing, setIsEditing] = useState(false);
-
-  const onClick = () => {
-    setIsEditing(true);
-    inputRef.current.focus();
-
-    if (inputRef.current.setSelectionRange) {
-      inputRef.current.setSelectionRange(0, tag.length);
-    }
-    window.requestAnimationFrame(() => {
-      inputRef.current.focus();
-    });
-  };
-  const onBlur = () => {
-    setIsEditing(false);
-  };
-  return (
-    <div
-      className={cn(
-        styles.tagPillSize,
-        styles.tagPill,
-        editMode && styles.editPill
-      )}
-      style={{ backgroundColor: editMode ? 'transparent' : '#E5E5E5' }}
-      onClick={() => {
-        onClick;
-      }}
-    >
-      <TagInput
-        name={tag}
-        setName={function (value: React.SetStateAction<string>): void {
-          throw new Error('Function not implemented.');
-        }}
-        ref={inputRef}
-        onBlur={onBlur}
-        editMode={editMode}
-      />
-      {editMode && (
-        <div className={cn(styles.deleteIcon)} onClick={() => {}}>
-          <img key="DeleteTagSettings" src="/icons/settings/Close-big.svg" />
-        </div>
-      )}
-    </div>
-  );
+type TagPillsProps = {
+  tag: string;
+  editMode: boolean;
+  deleteTag: () => void;
+  isNewCategory: boolean;
 };
 
-const onCreateTag = () => {
-  const newTags = {};
-};
+const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
+  ({ tag, editMode, deleteTag, isNewCategory }, ref) => {
+    const styles = useStyles();
+
+    const onBlur = () => {};
+
+    return (
+      <div
+        className={cn(
+          styles.tagPillSize,
+          styles.tagPill,
+          editMode && styles.editPill
+        )}
+        style={{ backgroundColor: editMode ? 'transparent' : '#E5E5E5' }}
+      >
+        <TagInput
+          name={tag}
+          setName={function (value: React.SetStateAction<string>): void {
+            throw new Error('Function not implemented.');
+          }}
+          ref={ref}
+          onBlur={onBlur}
+          editMode={editMode || isNewCategory}
+        />
+        {editMode && (
+          <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
+            <img key="DeleteTagSettings" src="/icons/settings/Close-big.svg" />
+          </div>
+        )}
+      </div>
+    );
+  }
+);
 
 //==================================================================================TableRowCategory==================================
 type TableRowCategoryProps = {
   category: string;
-  addNewCategory: boolean;
-  onRowSelect: (user: string) => void;
+  isNewCategory: boolean;
 };
 const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   category,
-  addNewCategory,
-  onRowSelect,
+  isNewCategory,
 }) => {
   const styles = useStyles();
-  const [isRowHovered, setIsRowHovered] = useState(false);
-  const tags: string[] = [
+  const examplesTags: string[] = [
     'high',
     'low',
     'medium',
@@ -468,18 +457,30 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
     '4th',
     '5th',
   ];
-  const handleMouseEnter = () => {
-    setIsRowHovered(true);
-  };
-  const handleMouseLeave = () => {
-    setIsRowHovered(false);
-  };
+  const rowRef = useRef<HTMLDivElement>(null);
+  const lastTagRef = useRef<HTMLInputElement>(null);
+
   const [isEditMode, setIsEditMode] = useState(false);
+  const [tags, setTags] = useState<string[]>(examplesTags);
+
+  const onCreateTag = () => {
+    setTags([...tags, '']);
+    setIsEditMode(true);
+  };
+
+  useEffect(() => {
+    if (lastTagRef.current) {
+      lastTagRef.current.focus();
+    }
+  }, [tags]);
+
+  const deleteTag = (tagToDelete: string) => {
+    setTags(tags?.filter((tag) => tag !== tagToDelete));
+  };
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
   };
-  const rowRef = useRef<HTMLDivElement>(null);
 
   const closeEditMode = (): void => {
     setIsEditMode(false);
@@ -511,28 +512,40 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   };
 
   return (
-    <div
-      ref={rowRef}
-      className={cn(styles.row, styles.rowLayout)}
-      onClick={() => {
-        category && onRowSelect(category);
-      }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div ref={rowRef} className={cn(styles.row, styles.rowLayout)}>
       <div className={cn(styles.rowContent)}>
         <div className={cn(styles.CategoryColumnStyle)}>
-          <CategoryPill category={category} editMode={isEditMode} />
+          {isNewCategory ? (
+            <CategoryPill
+              category={''}
+              editMode={isNewCategory}
+              isNewCategory={isNewCategory}
+            />
+          ) : (
+            <CategoryPill
+              category={category}
+              editMode={isEditMode}
+              isNewCategory={false}
+            />
+          )}
         </div>
         <div className={cn(styles.TagsColumnStyle)}>
-          {isEditMode && (
+          {(isEditMode || isNewCategory) && (
             <Button className={cn(styles.addButton)} onClick={onCreateTag}>
               <img key="AddTagSettings" src="/icons/settings/Add.svg" />
             </Button>
           )}
-          {tags.map((tag: string, index) => (
-            <TagPills key={tag + index} tag={tag} editMode={isEditMode} />
-          ))}
+          {!isNewCategory &&
+            tags?.map((tag: string, index) => (
+              <TagPills
+                key={`${tag}-${index}`}
+                tag={tag}
+                editMode={isEditMode}
+                deleteTag={() => deleteTag(tag)}
+                isNewCategory={false}
+                ref={index === tags.length - 1 ? lastTagRef : null}
+              />
+            ))}
         </div>
         <div className={cn(styles.moreButtonColumn)}>
           <Menu
@@ -546,7 +559,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
               text="Edit"
               onClick={toggleEditMode}
             ></MenuAction>
-            <MenuAction IconComponent={IconOpen} text="Reorder"></MenuAction>{' '}
+            <MenuAction IconComponent={IconOpen} text="Reorder"></MenuAction>
             <MenuAction
               IconComponent={(props: ImageIconProps) => (
                 <ImageIcon
@@ -565,27 +578,25 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 };
 
 //=====================================================================================TagsTable===============================
-type TagsTableProps = {
-  setStep?: (step: number) => void;
-  onClose?: () => void;
-};
+type TagsTableProps = { workspaceManager: VertexManager<Workspace> };
 
-export const TagsTable: React.FC<TagsTableProps> = ({ setStep, onClose }) => {
-  const usersQuery = useSharedQuery('users');
-  const users = useVertices(usersQuery.results) as User[];
-  const [newCategory, setNewCategory] = useState<boolean>();
-  const [categories, setCategories] = useState<boolean>();
-
+export const TagsTable: React.FC<TagsTableProps> = ({ workspaceManager }) => {
   const styles = useStyles();
+  const tagsQuery = useSharedQuery('tags');
+  const tags = useVertices(tagsQuery.results) as Tag[];
+  const [newCategory, setNewCategory] = useState<boolean>();
+  const [wsCategories, setWsCategories] = useState<Tag[]>(tags);
+
   const handleNewCategory = () => {
     setNewCategory(true);
   };
+  const initTempTags = () => {};
 
-  const onRowSelect = () => {};
-  const tempCategories: string[] = ['Effort', 'Priority', 'Phase', 'Mil'];
+  // const tempCategories: string[] = ['Effort', 'Priority', 'Phase', 'Mil'];
 
   return (
     <div className={cn(styles.tableContainer)}>
+      <Button onClick={initTempTags}>Init Temp Tags</Button>
       <div
         className={cn(styles.newCategory, styles.rowLayout)}
         onClick={handleNewCategory}
@@ -595,19 +606,12 @@ export const TagsTable: React.FC<TagsTableProps> = ({ setStep, onClose }) => {
           <div className={cn(styles.newCategoryText)}>New Category</div>
         </div>
       </div>
-      {newCategory && (
+      {newCategory && <TableRowCategory category={''} isNewCategory={true} />}
+      {wsCategories.map((category: Tag, index) => (
         <TableRowCategory
-          category={''}
-          addNewCategory={true}
-          onRowSelect={() => {}}
-        />
-      )}
-      {tempCategories.map((category: string, index) => (
-        <TableRowCategory
-          key={category + index}
-          category={category}
-          onRowSelect={onRowSelect}
-          addNewCategory={false}
+          key={`${category.name}-${index}`}
+          category={category.name}
+          isNewCategory={false}
         />
       ))}
     </div>
