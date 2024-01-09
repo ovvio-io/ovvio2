@@ -343,8 +343,13 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     };
     const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
+    if (note.scheme.isNull) {
+      return null;
+    }
+
     const hasOverride = view.notesExpandOverride.has(note.key);
-    const isExpanded = (view.notesExpandBase && !hasOverride) ||
+    const isExpanded =
+      (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
 
     return (
@@ -355,34 +360,31 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           onMouseOver={onMouseOver}
           onMouseLeave={onMouseLeave}
         >
-          {
-            /* <div className={cn(styles[GridColumns.DragAnchor])} {...attributes}>
+          {/* <div className={cn(styles[GridColumns.DragAnchor])} {...attributes}>
           ::
-        </div> */
-          }
-          {isChild
-            ? (
-              <React.Fragment>
-                <Cell className={cn(styles.childPadding)} />
-                <Cell className={cn(styles[GridColumns.Title])}>
-                  <table className={cn(gridStyles.table)}>
-                    <TypeCell note={note} />
-                    <TitleCell note={note} onClick={onClickImpl} />
-                  </table>
-                </Cell>
-              </React.Fragment>
-            )
-            : (
-              <React.Fragment>
-                <TypeCell note={note} />
-                <TitleCell note={note} onClick={onClickImpl} />
-              </React.Fragment>
-            )}
+        </div> */}
+          {isChild ? (
+            <React.Fragment>
+              <Cell className={cn(styles.childPadding)} />
+              <Cell className={cn(styles[GridColumns.Title])}>
+                <table className={cn(gridStyles.table)}>
+                  <TypeCell note={note} />
+                  <TitleCell note={note} onClick={onClickImpl} />
+                </table>
+              </Cell>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <TypeCell note={note} />
+              <TitleCell note={note} onClick={onClickImpl} />
+            </React.Fragment>
+          )}
           <ExpanderCell
             note={note}
             isExpanded={isExpanded}
             toggleExpanded={() =>
-              view.setNoteExpandOverride(note.key, !hasOverride)}
+              view.setNoteExpandOverride(note.key, !hasOverride)
+            }
           />
           <ContentIndicatorCell note={note} />
           <WorkspaceCell note={note} onWorkspaceMoved={onWorkspaceMoved} />
@@ -526,9 +528,9 @@ const AssigneesCell = ({
     'assignees',
     'workspace',
   ]);
-  const { assignees: wsAssignees } = usePartialVertex(
+  const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['assignees'],
+    ['users'],
   );
   const workspaces = useMemo(
     () => [workspace?.manager as VertexManager<Workspace>],
@@ -558,7 +560,7 @@ const AssigneesCell = ({
           users={userManagers}
           assignees={managers}
           className={cn(styles.assignee)}
-          size='small'
+          size="small"
           source={'list'}
         />
       ))}
@@ -637,7 +639,7 @@ const TagsCell = ({
       {managers.map((x) => (
         <TagView
           className={cn(styles.tag)}
-          showMenu='hover'
+          showMenu="hover"
           key={x.key}
           tag={x}
           onSelected={onTag}
@@ -667,11 +669,13 @@ const TypeCell = ({
 
   return (
     <Cell className={cn(styles.iconCell, styles[GridColumns.Type])}>
-      {isDraft
-        ? <IconNewTask />
-        : isActionable
-        ? <ItemCheckbox note={note} />
-        : <img src='/icons/list/note.svg' />}
+      {isDraft ? (
+        <IconNewTask />
+      ) : isActionable ? (
+        <ItemCheckbox note={note} />
+      ) : (
+        <img src="/icons/list/note.svg" />
+      )}
     </Cell>
   );
 };
@@ -747,15 +751,13 @@ function TitleCell({
   return (
     <Cell className={cn(styles.title)} onClick={isDraft ? undefined : onClick}>
       <div className={cn(styles.titleContainer)}>
-        {
-          /* <Slate editor={editor} {...handlers}>
+        {/* <Slate editor={editor} {...handlers}>
           <Editable
             className={cn(styles.titleEditor, !isDraft && styles.nowrap)}
             {...plugins}
             readOnly={!isDraft}
           />
-        </Slate> */
-        }
+        </Slate> */}
         <Text>{titlePlaintext}</Text>
       </div>
     </Cell>
@@ -837,9 +839,11 @@ const WorkspaceCell = ({
         isExpanded={false}
         setWorkspace={setWorkspace}
         validateMove={!isDraft}
-        ButtonComponent={isDraft
-          ? WorkspaceDraftIndicatorComponent
-          : WorkspaceIndicatorComponent}
+        ButtonComponent={
+          isDraft
+            ? WorkspaceDraftIndicatorComponent
+            : WorkspaceIndicatorComponent
+        }
       />
     </Cell>
   );
@@ -891,15 +895,13 @@ const PinCell = ({
     <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
       {!isChild && (
         <Button onClick={togglePin}>
-          {
-            /* {isPinned ? (
+          {/* {isPinned ? (
             <IconPinOn />
           ) : (
             <IconPinOff
               className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
             />
-          )} */
-          }
+          )} */}
           <IconPin on={isPinned} visible={isMouseOver} />
         </Button>
       )}
@@ -924,7 +926,7 @@ const MenuCell = ({
         styles[GridColumns.Menu],
       )}
     >
-      <CardMenuView visible={isMouseOver} cardManager={note} source='list' />
+      <CardMenuView visible={isMouseOver} cardManager={note} source="list" />
     </Cell>
   );
 };
