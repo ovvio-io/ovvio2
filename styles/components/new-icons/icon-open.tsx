@@ -36,7 +36,7 @@ export function IconOpen({
       viewBox="0 0 16 16"
       fill="none"
     >
-      <g clip-path="url(#clip0_2726_8814)">
+      <g clipPath="url(#clip0_2726_8814)">
         <path
           opacity="0.7"
           d="M12.8999 1.5V6.65"

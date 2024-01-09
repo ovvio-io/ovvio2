@@ -23,10 +23,19 @@ import {
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import {
   usePartialVertex,
+  usePartialVertices,
+  useVertex,
   useVertices,
 } from '../../../core/cfds/react/vertex.ts';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { QueryResults } from '../../../../../cfds/client/graph/query.ts';
+import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
+import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
+import { LogoText } from '../../../../../styles/components/logo.tsx';
+import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
+import IconEdit from '../../../../../styles/components/icons/IconEdit.tsx';
+import { IconCompose } from '../../../../../styles/components/new-icons/icon-compose.tsx';
 
 const useStyles = makeStyles(() => ({
   /* Container for the entire table. Positioned relative to its normal position and given a top margin. */
@@ -49,6 +58,7 @@ const useStyles = makeStyles(() => ({
   /* Styling for each row. It uses flexbox for layout. */
   row: {
     display: 'flex',
+    minHeight: '56px',
     flexWrap: 'wrap', // Allows items to wrap to the next line
     padding: '0px 8px 0px 0px',
     position: 'relative',
@@ -80,7 +90,6 @@ const useStyles = makeStyles(() => ({
   },
 
   categoryPill: {
-    padding: '2px 4px 2px 8px', // Padding within the tag
     display: 'flex',
     position: 'absolute',
   },
@@ -94,7 +103,7 @@ const useStyles = makeStyles(() => ({
     outline: 'none',
     border: 'none',
     backgroundColor: 'transparent',
-    padding: 0,
+    padding: '0px 8px 0px 8px',
     minWidth: '30px',
   },
   editPill: {
@@ -132,8 +141,8 @@ const useStyles = makeStyles(() => ({
   },
 
   moreButtonColumn: {
-    position: 'relative',
-    left: '12px',
+    position: 'absolute',
+    right: '8px',
   },
 
   //===========
@@ -142,7 +151,7 @@ const useStyles = makeStyles(() => ({
     lineHeight: '20px',
     outline: 'none',
     border: 'none',
-    padding: 0,
+    padding: '0px 8px 0px 8px',
     backgroundColor: 'transparent',
     minWidth: '20px', // Set a reasonable minimum width
     width: 'auto', // Allow width to adjust automatically
@@ -215,7 +224,7 @@ function useOutsideClick<T extends HTMLElement>(
 //==============================================================================TagInput======================================
 interface TagInputProps {
   name: string;
-  setName: React.Dispatch<React.SetStateAction<string>>;
+  setName: (name: string) => void;
   onBlur: () => void;
   editMode: boolean;
 }
@@ -283,7 +292,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
 //==============================================================================TagInput======================================
 interface CategoryInputProps {
   name: string;
-  setName: React.Dispatch<React.SetStateAction<string>>;
+  setName: (name: string) => void;
   onBlur: () => void;
   editMode: boolean;
 }
@@ -383,9 +392,7 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
       <CategoryInput
         name={category}
-        setName={function (value: React.SetStateAction<string>): void {
-          throw new Error('Function not implemented.');
-        }}
+        setName={() => {}}
         ref={inputRef}
         onBlur={onBlur}
         editMode={editMode || isNewCategory}
@@ -420,9 +427,7 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
       >
         <TagInput
           name={tag}
-          setName={function (value: React.SetStateAction<string>): void {
-            throw new Error('Function not implemented.');
-          }}
+          setName={() => {}}
           ref={ref}
           onBlur={onBlur}
           editMode={editMode || isNewCategory}
@@ -439,43 +444,64 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
 
 //==================================================================================TableRowCategory==================================
 type TableRowCategoryProps = {
-  category: string;
+  graphManager: GraphManager;
+  categoryVertex: VertexManager<Tag>;
   isNewCategory: boolean;
+  workspaceManagerKey: string;
+  setIsNewCategory: (b: boolean) => void;
 };
 const TableRowCategory: React.FC<TableRowCategoryProps> = ({
-  category,
+  graphManager,
+  categoryVertex,
   isNewCategory,
+  setIsNewCategory,
+  workspaceManagerKey,
 }) => {
+  const category = useVertex(categoryVertex) as Tag;
+  const { childTags } = usePartialVertex(category, ['childTags']);
   const styles = useStyles();
-  const examplesTags: string[] = [
-    'high',
-    'low',
-    'medium',
-    '1st',
-    '2nd',
-    '3th',
-    '4th',
-    '5th',
-  ];
   const rowRef = useRef<HTMLDivElement>(null);
   const lastTagRef = useRef<HTMLInputElement>(null);
-
   const [isEditMode, setIsEditMode] = useState(false);
-  const [tags, setTags] = useState<string[]>(examplesTags);
 
-  const onCreateTag = () => {
-    setTags([...tags, '']);
-    setIsEditMode(true);
+  const [newTagVertex, setNewTagVertex] = useState<VertexManager<Tag> | null>(
+    null
+  );
+
+  const handleOnCreateTag = async () => {
+    try {
+      const createdVertex = await graphManager.createVertex<Tag>(
+        SchemeNamespace.TAGS,
+        {
+          workspace: workspaceManagerKey,
+          name: '',
+          parentTag: category.key,
+        }
+      );
+      // Convert the Vertex to a VertexManager
+      const vertexManager = graphManager.getVertexManager(createdVertex);
+      setNewTagVertex(vertexManager);
+    } catch (error) {
+      console.error('Error creating new category vertex:', error);
+    }
+  };
+  const handleOnDeleteCategory = async () => {
+    try {
+      category.isDeleted = 1;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setIsEditMode(false);
+    }
   };
 
   useEffect(() => {
     if (lastTagRef.current) {
       lastTagRef.current.focus();
     }
-  }, [tags]);
+  }, [childTags]);
 
-  const deleteTag = (tagToDelete: string) => {
-    setTags(tags?.filter((tag) => tag !== tagToDelete));
+  const deleteTag = (tagToDelete: Tag) => {
+    tagToDelete.isDeleted = 1;
   };
 
   const toggleEditMode = () => {
@@ -484,6 +510,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 
   const closeEditMode = (): void => {
     setIsEditMode(false);
+    setIsNewCategory(false); // fix this. the ref is now on the new row.
   };
 
   useOutsideClick(rowRef, closeEditMode);
@@ -523,30 +550,35 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             />
           ) : (
             <CategoryPill
-              category={category}
+              category={category.name}
               editMode={isEditMode}
-              isNewCategory={false}
+              isNewCategory={isNewCategory}
             />
           )}
         </div>
         <div className={cn(styles.TagsColumnStyle)}>
           {(isEditMode || isNewCategory) && (
-            <Button className={cn(styles.addButton)} onClick={onCreateTag}>
+            <Button
+              className={cn(styles.addButton)}
+              onClick={handleOnCreateTag}
+            >
               <img key="AddTagSettings" src="/icons/settings/Add.svg" />
             </Button>
           )}
           {!isNewCategory &&
-            tags?.map((tag: string, index) => (
+            childTags.map((tag: Tag, index) => (
               <TagPills
                 key={`${tag}-${index}`}
-                tag={tag}
+                tag={tag.name}
                 editMode={isEditMode}
                 deleteTag={() => deleteTag(tag)}
                 isNewCategory={false}
-                ref={index === tags.length - 1 ? lastTagRef : null}
+                ref={index === childTags.length - 1 ? lastTagRef : null}
               />
             ))}
         </div>
+      </div>
+      {!isEditMode && !isNewCategory && (
         <div className={cn(styles.moreButtonColumn)}>
           <Menu
             renderButton={renderButton}
@@ -555,11 +587,26 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             direction="out"
           >
             <MenuAction
-              IconComponent={IconOpen}
+              IconComponent={(props: ImageIconProps) => (
+                <ImageIcon
+                  {...props}
+                  src="/icons/settings/Compose.svg"
+                  alt="Edit"
+                />
+              )}
               text="Edit"
               onClick={toggleEditMode}
             ></MenuAction>
-            <MenuAction IconComponent={IconOpen} text="Reorder"></MenuAction>
+            <MenuAction
+              IconComponent={(props: ImageIconProps) => (
+                <ImageIcon
+                  {...props}
+                  src="/icons/settings/Reorder.svg"
+                  alt="Reorder"
+                />
+              )}
+              text="Reorder"
+            ></MenuAction>
             <MenuAction
               IconComponent={(props: ImageIconProps) => (
                 <ImageIcon
@@ -568,35 +615,57 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
                   alt="Delete"
                 />
               )}
+              onClick={handleOnDeleteCategory}
               text="Delete"
             ></MenuAction>
           </Menu>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 //=====================================================================================TagsTable===============================
-type TagsTableProps = { workspaceManager: VertexManager<Workspace> };
+type TagsTableProps = {
+  workspaceManager: VertexManager<Workspace>;
+  graphManager: GraphManager;
+};
 
-export const TagsTable: React.FC<TagsTableProps> = ({ workspaceManager }) => {
+export const TagsTable: React.FC<TagsTableProps> = ({
+  workspaceManager,
+  graphManager,
+}) => {
   const styles = useStyles();
-  const tagsQuery = useSharedQuery('tags');
-  const tags = useVertices(tagsQuery.results) as Tag[];
   const [newCategory, setNewCategory] = useState<boolean>();
-  const [wsCategories, setWsCategories] = useState<Tag[]>(tags);
+  const categoriesQuery = useSharedQuery('parentTagsByWorkspace').group(
+    workspaceManager
+  );
 
-  const handleNewCategory = () => {
+  const [newCategoryVertex, setNewCategoryVertex] =
+    useState<VertexManager<Tag> | null>(null);
+
+  const handleNewCategory = async () => {
     setNewCategory(true);
+    try {
+      const createdVertex = await graphManager.createVertex<Tag>(
+        SchemeNamespace.TAGS,
+        {
+          workspace: workspaceManager.key,
+          name: '',
+          parentTag: '',
+        }
+      );
+      // Convert the Vertex to a VertexManager
+      const vertexManager = graphManager.getVertexManager<Tag>(createdVertex);
+      setNewCategoryVertex(vertexManager);
+    } catch (error) {
+      console.error('Error creating new category vertex:', error);
+      setNewCategory(false);
+    }
   };
-  const initTempTags = () => {};
-
-  // const tempCategories: string[] = ['Effort', 'Priority', 'Phase', 'Mil'];
 
   return (
     <div className={cn(styles.tableContainer)}>
-      <Button onClick={initTempTags}>Init Temp Tags</Button>
       <div
         className={cn(styles.newCategory, styles.rowLayout)}
         onClick={handleNewCategory}
@@ -606,12 +675,25 @@ export const TagsTable: React.FC<TagsTableProps> = ({ workspaceManager }) => {
           <div className={cn(styles.newCategoryText)}>New Category</div>
         </div>
       </div>
-      {newCategory && <TableRowCategory category={''} isNewCategory={true} />}
-      {wsCategories.map((category: Tag, index) => (
+
+      {newCategory && newCategoryVertex && (
         <TableRowCategory
-          key={`${category.name}-${index}`}
-          category={category.name}
+          key={`${newCategoryVertex}`}
+          categoryVertex={newCategoryVertex}
+          isNewCategory={true}
+          setIsNewCategory={setNewCategory}
+          graphManager={graphManager}
+          workspaceManagerKey={workspaceManager.key}
+        />
+      )}
+      {categoriesQuery.map((category, index) => (
+        <TableRowCategory
+          key={`${category.key}-${index}`}
+          categoryVertex={category}
           isNewCategory={false}
+          setIsNewCategory={setNewCategory}
+          graphManager={graphManager}
+          workspaceManagerKey={workspaceManager.key}
         />
       ))}
     </div>

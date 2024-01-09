@@ -22,11 +22,10 @@ export function WsTagsSettings() {
   const mgr = graph.getVertexManager<View>('ViewWsSettings');
   const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
   const ws = [...partialView.selectedWorkspaces][0];
-  const wsV = useVertex(ws);
   const wsManager = ws.manager;
 
   // const styles = makeStyles();
 
   // return 'In Progress';
-  return <TagsTable workspaceManager={wsManager} />;
+  return <TagsTable workspaceManager={wsManager} graphManager={graph} />;
 }
