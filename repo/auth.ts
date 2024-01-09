@@ -47,17 +47,14 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     // Operator Access
     const record = repo.valueForKey(commit.key);
     const userRecord = repo.valueForKey(userKey);
-    const email = userRecord.scheme.namespace === SchemeNamespace.USERS
-      ? userRecord.get<string>('email')
-      : undefined;
+    const email =
+      userRecord.scheme.namespace === SchemeNamespace.USERS
+        ? userRecord.get<string>('email')
+        : undefined;
     const operatorEmails = fetchOperatorEmails();
-    const isOperator = typeof email === 'string' &&
-      operatorEmails.includes(email);
+    const isOperator =
+      typeof email === 'string' && operatorEmails.includes(email);
 
-    // Operators are granted root-level access-everything under /sys/dir
-    if (isOperator) {
-      return true;
-    }
     // If a current record doesn't exist, and we got a delta commit or a null
     // commit, reject it as an invalid case.
     if (record.isNull && (!commit.scheme || commit.scheme?.isNull)) {
@@ -72,6 +69,10 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     switch (namespace) {
       // Read-write access to members only
       case SchemeNamespace.WORKSPACE: {
+        // Operators are allowed to access all workspaces
+        if (isOperator) {
+          return true;
+        }
         // Anyone is allowed to create new workspaces
         if (record.isNull) {
           return write === true;
@@ -84,6 +85,10 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
       case SchemeNamespace.USERS:
+        // Operators are allowed to access all users
+        if (isOperator) {
+          return true;
+        }
         if (record.isNull) {
           // Only root and operators are allowed to create users
           return false;
@@ -152,18 +157,21 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     // Personal workspace is accessible only to its owner. Not even operators
     // are allowed to touch it.
     if (workspaceKey.endsWith(PERSONAL_WS_KEY_SUFFIX)) {
-      return userKey ===
+      return (
+        userKey ===
         workspaceKey.substring(
           0,
           workspaceKey.length - PERSONAL_WS_KEY_SUFFIX.length,
-        );
+        )
+      );
     }
 
     // Operator Access
     const userRecord = sysDir.valueForKey(userKey);
-    const email = userRecord.scheme.namespace === SchemeNamespace.USERS
-      ? userRecord.get<string>('email')
-      : undefined;
+    const email =
+      userRecord.scheme.namespace === SchemeNamespace.USERS
+        ? userRecord.get<string>('email')
+        : undefined;
     const isOperator = email && fetchOperatorEmails().includes(email);
     if (isOperator) {
       return true;
@@ -171,9 +179,10 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
 
     // Full read-write for workspace members
     const workspaceRecord = sysDir.valueForKey(workspaceKey);
-    const users = workspaceRecord.scheme.namespace === SchemeNamespace.WORKSPACE
-      ? workspaceRecord.get<Set<string>>('users')
-      : undefined;
+    const users =
+      workspaceRecord.scheme.namespace === SchemeNamespace.WORKSPACE
+        ? workspaceRecord.get<Set<string>>('users')
+        : undefined;
     return users?.has(userKey) === true;
   };
 }
