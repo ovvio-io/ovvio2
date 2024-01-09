@@ -1059,32 +1059,40 @@ export class Repository<
     return this.keyExists(key);
   }
 
-  async *verifyCommits(commits: Iterable<Commit>): AsyncIterable<Commit> {
+  async verifyCommits(commits: Iterable<Commit>): Promise<Commit[]> {
     const authorizer = this.authorizer;
     commits = Array.from(commits).sort(
       (c1, c2) => c1.timestamp.getTime() - c2.timestamp.getTime(),
     );
+    const result: Commit[] = [];
+    const promises: Promise<void>[] = [];
     for (const c of commits) {
-      if (await this.trustPool.verify(c)) {
-        if (authorizer) {
-          const session = this.trustPool.getSession(c.session);
-          if (!session) {
-            continue;
-          }
-          if (authorizer(this, c, session, true)) {
-            yield c;
+      promises.push(
+        (async () => {
+          if (await this.trustPool.verify(c)) {
+            if (authorizer) {
+              const session = this.trustPool.getSession(c.session);
+              if (!session) {
+                return;
+              }
+              if (authorizer(this, c, session, true)) {
+                result.push(c);
+              } else {
+                debugger;
+                authorizer(this, c, session, true);
+              }
+            } else {
+              result.push(c);
+            }
           } else {
             debugger;
-            authorizer(this, c, session, true);
+            this.trustPool.verify(c);
           }
-        } else {
-          yield c;
-        }
-      } else {
-        debugger;
-        this.trustPool.verify(c);
-      }
+        })(),
+      );
     }
+    await Promise.allSettled(promises);
+    return result;
   }
 
   async persistCommits(commits: Iterable<Commit>): Promise<Commit[]> {
@@ -1098,7 +1106,7 @@ export class Repository<
           this.allowedNamespaces.includes(c.scheme?.namespace)) &&
         !this._commitsCache.has(c.id),
     );
-    for await (const verifiedCommit of this.verifyCommits(commits)) {
+    for (const verifiedCommit of await this.verifyCommits(commits)) {
       batch.push(verifiedCommit);
       if (batch.length >= batchSize) {
         ArrayUtils.append(result, this.persistVerifiedCommits(batch));
