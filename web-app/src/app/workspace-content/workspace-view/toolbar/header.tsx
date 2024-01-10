@@ -19,6 +19,7 @@ import { isWindowsOS } from '../../../../utils.ts';
 import { useLogger } from '../../../../core/cfds/react/logger.tsx';
 import { brandLightTheme as theme } from '../../../../../../styles/theme.tsx';
 import { Workspace } from '../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { IDBRepositoryBackup } from '../../../../../../repo/idbbackup.ts';
 
 const useStyles = makeStyles(() => ({
   headerRoot: {
@@ -134,25 +135,27 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
     <div>
       <input
         ref={inputRef}
-        key='wsFileInput'
+        key="wsFileInput"
         className={cn(styles.uploadWorkspaceInput)}
-        type='file'
-        accept='.json'
+        type="file"
+        accept=".json"
         onChange={onChange}
       />
       <Menu
         className={className}
         popupClassName={cn(styles.menu)}
         renderButton={() => <IconAvatar />}
-        position='bottom'
+        position="bottom"
       >
-        <MenuItem
-          onClick={() => inputRef.current?.click()}
-        >
+        <MenuItem onClick={() => inputRef.current?.click()}>
           Upload Workspace...
         </MenuItem>
         <MenuItem onClick={openSettings}>Settings</MenuItem>
-        {/* <MenuItem>Sign out of Ovvio</MenuItem> */}
+        {
+          <MenuItem onClick={() => IDBRepositoryBackup.logout()}>
+            Sign out of Ovvio
+          </MenuItem>
+        }
       </Menu>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   signData,
 } from '../auth/session.ts';
 import { JSONValue, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { IDBRepositoryBackup } from '../repo/idbbackup.ts';
 import { getOvvioConfig } from '../server/config.ts';
 
 export async function createNewSession(
@@ -85,9 +86,13 @@ export async function sendJSONToURL(
   if (orgId) {
     headers['x-org-id'] = orgId;
   }
-  return await fetch(url, {
+  const resp = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(json),
   });
+  if (resp.status === 403) {
+    await IDBRepositoryBackup.logout();
+  }
+  return resp;
 }

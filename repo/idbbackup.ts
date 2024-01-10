@@ -15,6 +15,7 @@ import { SerialScheduler } from '../base/serial-scheduler.ts';
 import { Repository, MemRepoStorage } from './repo.ts';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { kMinuteMs, kSecondMs } from '../base/date.ts';
+import { notReached } from '../base/error.ts';
 
 const K_DB_VERSION = 1;
 
@@ -45,8 +46,22 @@ interface RepoBackupSchema extends DBSchema {
 }
 
 export class IDBRepositoryBackup {
+  private static _didLogout = false;
   private readonly _commitPersistedTs: Map<string, number>;
   private readonly _backupTimer: EaseInOutSineTimer;
+
+  static async logout(): Promise<never> {
+    this._didLogout = true;
+    const databases = await indexedDB.databases();
+    for (const info of databases) {
+      if (!info.name) {
+        continue;
+      }
+      await indexedDB.deleteDatabase(info.name);
+    }
+    location.reload();
+    notReached();
+  }
 
   constructor(
     readonly dbName: string,
@@ -90,6 +105,9 @@ export class IDBRepositoryBackup {
   }
 
   persistCommits(commits: Iterable<Commit>): Promise<number> {
+    if (IDBRepositoryBackup._didLogout) {
+      return Promise.resolve(0);
+    }
     return SerialScheduler.get('idb').run(async () => {
       const db = await this.open();
       const txn = db.transaction('commits', 'readwrite', {
@@ -99,10 +117,16 @@ export class IDBRepositoryBackup {
       const promises: Promise<void>[] = [];
       let result = 0;
       for (const c of commits) {
+        if (IDBRepositoryBackup._didLogout) {
+          return result;
+        }
         promises.push(
           (async () => {
             try {
               if ((await store.getKey(c.id)) === undefined) {
+                if (IDBRepositoryBackup._didLogout) {
+                  return;
+                }
                 await store.put(
                   JSONCyclicalEncoder.serialize(c) as EncodedCommit,
                 );
