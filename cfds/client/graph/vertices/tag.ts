@@ -15,7 +15,7 @@ export class Tag extends ContentVertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined,
+    config: VertexConfig | undefined
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex && prevVertex instanceof Tag) {
@@ -36,9 +36,9 @@ export class Tag extends ContentVertex {
     //   );
     // }
     // return this._cachedChildTags.map(mgr => mgr.getVertexProxy());
-    return Array.from(this.inEdgesManagers<Tag>('parentTag')).map(([mgr]) =>
-      mgr.getVertexProxy()
-    );
+    return Array.from(this.inEdgesManagers<Tag>('parentTag'))
+      .map(([mgr]) => mgr.getVertexProxy())
+      .filter((tag) => tag.isDeleted !== 1);
   }
 
   private _invalidateChildTags(local: boolean): MutationPack {
@@ -50,7 +50,7 @@ export class Tag extends ContentVertex {
   childParentTagDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -58,7 +58,7 @@ export class Tag extends ContentVertex {
   childTagIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -134,11 +134,11 @@ export class Tag extends ContentVertex {
   childTagParentDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return mutationPackAppend(
       this._invalidateTagFamily(local),
-      this._invalidateChildTags(local),
+      this._invalidateChildTags(local)
     );
   }
 
@@ -146,7 +146,7 @@ export class Tag extends ContentVertex {
   childNameDidMutate(
     local: boolean,
     oldValue: string | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return this._invalidateTagFamily(local);
   }
@@ -155,18 +155,18 @@ export class Tag extends ContentVertex {
   childIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return mutationPackAppend(
       this._invalidateTagFamily(local),
-      this._invalidateChildTags(local),
+      this._invalidateChildTags(local)
     );
   }
 
   workspaceSelectedDidMutate(
     local: boolean,
     oldValue: boolean,
-    ws: Workspace,
+    ws: Workspace
   ): MutationPack {
     if (oldValue === true && this.selected) {
       //Workspace has been un-selected > Tag should be un-selected
@@ -186,13 +186,13 @@ const kFieldTriggersTag: FieldTriggers<Tag> = {
   parent: triggerParent(
     'childTagParentDidMutate',
     'Tag_parent',
-    SchemeNamespace.TAGS,
+    SchemeNamespace.TAGS
   ),
   name: triggerParent('childNameDidMutate', 'Tag_name', SchemeNamespace.TAGS),
   isDeleted: triggerParent(
     'childIsDeletedDidMutate',
     'Tag_isDeleted',
-    SchemeNamespace.TAGS,
+    SchemeNamespace.TAGS
   ),
 };
 

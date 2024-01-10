@@ -43,15 +43,22 @@ export type SharedQueryName =
 
 export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Vertex>
-  : N extends 'noNotes' ? Query<Vertex>
-  : N extends 'workspaces' ? Query<Vertex, Workspace>
-  : N extends 'tags' ? Query<Vertex, Tag, string>
-  : N extends 'childTags' ? Query<Tag, Tag, string>
-  : N extends 'parentTagsByName' ? Query<Tag, Tag, string>
-  : N extends 'childTagsByParentName' ? Query<Tag, Tag, string>
-  : N extends 'users' ? Query<Vertex, User>
+  : N extends 'noNotes'
+  ? Query<Vertex>
+  : N extends 'workspaces'
+  ? Query<Vertex, Workspace>
+  : N extends 'tags'
+  ? Query<Vertex, Tag, string>
+  : N extends 'childTags'
+  ? Query<Tag, Tag, string>
+  : N extends 'parentTagsByName'
+  ? Query<Tag, Tag, string>
+  : N extends 'childTagsByParentName'
+  ? Query<Tag, Tag, string>
+  : N extends 'users'
+  ? Query<Vertex, User>
   : N extends 'parentTagsByWorkspace'
-    ? Query<Tag, Tag, VertexManager<Workspace>>
+  ? Query<Tag, Tag, VertexManager<Workspace>>
   : Query;
 
 export type GlobalSharedQueriesManager = {
@@ -165,7 +172,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   getVertexQuery<
     IT extends Vertex = Vertex,
     OT extends IT = IT,
-    GT extends CoreValue = CoreValue,
+    GT extends CoreValue = CoreValue
   >(
     key: string,
     source: VertexSource,
@@ -174,7 +181,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       | SortDescriptor<OT>
       | QueryOptions<IT, OT, GT>
       | Omit<QueryOptions<IT, OT, GT>, 'source' | 'predicate'>,
-    name?: string,
+    name?: string
   ): Query<IT, OT> {
     let queries = this._vertexQueries.get(key);
     if (!queries) {
@@ -186,7 +193,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     }
     assert(
       typeof name !== 'undefined',
-      'Must provide a name for vertex function',
+      'Must provide a name for vertex function'
     );
     let result = queries.get(name);
     const opts: QueryOptions<IT, OT, GT> =

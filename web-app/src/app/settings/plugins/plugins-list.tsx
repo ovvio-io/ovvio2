@@ -50,21 +50,21 @@ export const tabPlugins: SettingsTabPlugin[] = [
     render: () => <DetailsTabContent />,
     category: 'workspaces-info',
   },
-  {
-    title: 'general-organization',
-    render: () => <GeneralOrgTabContent />,
-    category: 'organization-info',
-  },
+  // {
+  //   title: 'general-organization',
+  //   render: () => <GeneralOrgTabContent />,
+  //   category: 'organization-info',
+  // },
   {
     title: 'members',
     render: () => <MembersTabContent />,
     category: 'organization-info',
   },
-  {
-    title: 'billing',
-    render: () => <DetailsTabContent />,
-    category: 'organization-info',
-  },
+  // {
+  //   title: 'billing',
+  //   render: () => <DetailsTabContent />,
+  //   category: 'organization-info',
+  // },
 ];
 
 export function GeneralTabContent() {
