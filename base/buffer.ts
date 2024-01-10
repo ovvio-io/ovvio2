@@ -15,14 +15,14 @@ export function allocateBuffer(minBytes: number): Uint8Array {
       }
       if (buffer) {
         buffer.fill(0);
-        const res = buffer.slice(0, minBytes);
+        const res = buffer.subarray(0, minBytes);
         gLiveBuffersMap.set(res, buffer);
         return res;
       }
     }
   }
   const buffer = new Uint8Array(allocationSize);
-  const res = buffer.slice(0, minBytes);
+  const res = buffer.subarray(0, minBytes);
   gLiveBuffersMap.set(res, buffer);
   return res;
 }
