@@ -5,7 +5,7 @@ import { SortedQueue } from './collections/queue.ts';
 const MAX_TIMER_PROCESSING_MS = 30;
 
 const gScheduledTimers = new SortedQueue<BaseTimer>(
-  (t1: BaseTimer, t2: BaseTimer) => t1.compare(t2)
+  (t1: BaseTimer, t2: BaseTimer) => t1.compare(t2),
 );
 let gTimerTicker: number | undefined;
 let gTimerId = 0;
@@ -137,13 +137,13 @@ export class SimpleTimer extends BaseTimer {
   static once(
     delayMs: number,
     callback: TimerCallback,
-    name?: string
+    name?: string,
   ): SimpleTimer {
     return new SimpleTimer(
       delayMs,
       false,
       callback,
-      name
+      name,
     ).schedule() as SimpleTimer;
   }
 
@@ -151,7 +151,7 @@ export class SimpleTimer extends BaseTimer {
     intervalMs: number,
     repeat: boolean,
     callback: TimerCallback,
-    name?: string
+    name?: string,
   ) {
     super(callback, name);
     this._intervalMs = intervalMs;
@@ -190,10 +190,11 @@ export abstract class BaseDynamicTimer extends BaseTimer {
     durationMs: number,
     callback: TimerCallback,
     repeat = false,
-    name?: string
+    name?: string,
+    startAtMax?: boolean,
   ) {
     super(callback, name);
-    this._lastResetTime = performance.now();
+    this._lastResetTime = startAtMax === true ? 0 : performance.now();
     this._durationMs = durationMs;
     this._lastFireTime = 0;
     this._minFreqMs = minFreqMs;
@@ -365,7 +366,7 @@ export class NextEventLoopCycleTimer implements Timer {
       gScheduledNextEventLoopCycleTimers.push(this);
       if (gScheduledTimeoutHandler === undefined) {
         gScheduledTimeoutHandler = setTimeout(
-          processPendingNextEventLoopTimers
+          processPendingNextEventLoopTimers,
         );
       }
     }

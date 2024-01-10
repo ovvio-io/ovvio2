@@ -20,7 +20,12 @@ import { VersionNumber } from '../base/version-number.ts';
 import { getOvvioConfig } from '../server/config.ts';
 import { Comparable, coreValueCompare } from '../base/core-types/index.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
-import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
+import {
+  JSONCyclicalDecoder,
+  JSONCyclicalEncoder,
+} from '../base/core-types/encoding/json.ts';
+import { HashMap } from '../base/collections/hash-map.ts';
+import { coreValueHash } from '../base/core-types/encoding/hash.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -51,11 +56,15 @@ export interface CommitConfig {
   mergeBase?: string;
   mergeLeader?: string;
   revert?: string;
+  frozen?: true;
 }
 
 export interface CommitSerializeOptions {
   signed?: boolean;
 }
+
+const FROZEN_COMMITS = new Map<string, Commit>();
+const SERIALIZED_COMMITS = new Map<string, ReadonlyJSONObject>();
 
 export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _buildVersion!: VersionNumber;
@@ -71,6 +80,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _revert?: string;
   private _cachedJSON?: ReadonlyJSONObject;
   private _cachedChecksum?: string;
+  private _frozen: boolean = false;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -106,6 +116,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       this._mergeBase = config.mergeBase;
       this._mergeLeader = config.mergeLeader;
       this._revert = config.revert;
+      this._frozen = config.frozen === true;
     }
   }
 
@@ -169,6 +180,10 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._revert;
   }
 
+  get frozen(): boolean {
+    return this._frozen;
+  }
+
   serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
@@ -199,13 +214,29 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   }
 
   toJS(): ReadonlyJSONObject {
-    if (!this._cachedJSON) {
-      this._cachedJSON = JSONCyclicalEncoder.serialize(this);
+    const id = this.id;
+    let result = SERIALIZED_COMMITS.get(id);
+    if (!result) {
+      result = JSONCyclicalEncoder.serialize(this);
+      SERIALIZED_COMMITS.set(id, result);
     }
-    return this._cachedJSON;
+    return result;
+  }
+
+  static fromJS(obj: ReadonlyJSONObject): Commit {
+    const id = obj.id as string;
+    let result = FROZEN_COMMITS.get(id);
+    if (!result) {
+      const decoder = new JSONCyclicalDecoder(obj);
+      result = new Commit({ decoder });
+      result._frozen = true;
+      FROZEN_COMMITS.set(id, result);
+    }
+    return result;
   }
 
   deserialize(decoder: Decoder): void {
+    assert(!this.frozen);
     this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
     this._key = decoder.get<string | null>('k', null)!;

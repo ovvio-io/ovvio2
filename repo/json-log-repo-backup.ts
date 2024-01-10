@@ -11,8 +11,7 @@ export class JSONLogRepoBackup {
   private _log: JSONLogFile | undefined;
   private _ready = false;
 
-  constructor(readonly repoPath: string, readonly processId: number) {
-  }
+  constructor(readonly repoPath: string, readonly processId: number) {}
 
   get ready(): boolean {
     return this._ready;
@@ -65,12 +64,8 @@ function processIdToFileName(processId: number): string {
   return `${FILE_PREFIX}${processId}${FILE_SUFFIX}`;
 }
 
-function* loadCommitsFromJSONLog(
-  log: JSONLogFile,
-): Generator<Commit> {
+function* loadCommitsFromJSONLog(log: JSONLogFile): Generator<Commit> {
   for (const json of log.open()) {
-    yield new Commit({
-      decoder: new JSONCyclicalDecoder(json),
-    });
+    yield Commit.fromJS(json);
   }
 }

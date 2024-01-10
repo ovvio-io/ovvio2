@@ -315,7 +315,8 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.graph.builtinVertexKeys().includes(this.key)) {
       return;
     }
-    if (!this.graph.repositoryReady(this.repositoryId)) {
+    const repoId = this.repositoryId;
+    if (!repoId || !this.graph.repositoryReady(repoId)) {
       return;
     }
     const repo = this.repository;
@@ -332,6 +333,7 @@ export class VertexManager<V extends Vertex = Vertex>
           this.touch();
           this._hasLocalEdits = false;
           this.vertexDidMutate(['hasPendingChanges', true, true]);
+          this.graph.client(repoId)?.touch();
         }
         this._commitDelayTimer.unschedule();
       }

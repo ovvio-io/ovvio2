@@ -126,6 +126,7 @@ async function build(
     '-A',
     '--no-lock',
     '--no-check',
+    '--v8-flags=--predictable',
     `--output=${binaryOutputPath}`,
     '--include',
     path.join('.', 'server', 'sqlite3-worker.ts'),
@@ -170,8 +171,7 @@ async function main(): Promise<void> {
     .option('linux', {
       type: 'boolean',
       default: false,
-      description:
-        `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
+      description: `If supplied, will generate x64 linux build rather than ${Deno.build.os} build`,
     })
     .option('both', {
       type: 'boolean',

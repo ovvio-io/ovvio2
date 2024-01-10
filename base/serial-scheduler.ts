@@ -64,10 +64,10 @@ export class MultiSerialScheduler {
   private readonly _schedulers: SerialScheduler[];
   private _runCount = 0;
 
-  static get(name: string): MultiSerialScheduler {
+  static get(name: string, concurrency?: number): MultiSerialScheduler {
     let scheduler = this._namedSchedulers.get(name);
     if (!scheduler) {
-      scheduler = new this();
+      scheduler = new this(concurrency);
       this._namedSchedulers.set(name, scheduler);
     }
     return scheduler;

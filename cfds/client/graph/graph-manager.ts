@@ -45,7 +45,10 @@ import {
   kSyncConfigClient,
   SyncScheduler,
 } from '../../../net/sync-scheduler.ts';
-import { MultiSerialScheduler } from '../../../base/serial-scheduler.ts';
+import {
+  MultiSerialScheduler,
+  SerialScheduler,
+} from '../../../base/serial-scheduler.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -127,7 +130,7 @@ export class GraphManager
       this._syncScheduler = new SyncScheduler(
         `${baseServerUrl}/batch-sync`,
         kSyncConfigClient,
-        trustPool.currentSession,
+        trustPool,
       );
     }
 
@@ -212,11 +215,15 @@ export class GraphManager
     }
 
     const backup = plumbing.backup;
+    const client = plumbing?.client;
 
     if (typeof backup === 'undefined') {
       plumbing.loadingFinished = true;
-      await plumbing?.client?.sync();
-      plumbing.client?.startSyncing();
+      // if (client) {
+      // await client.sync();
+      // client.ready = true;
+      // client.startSyncing();
+      // }
       return Promise.resolve();
     }
 
@@ -245,16 +252,20 @@ export class GraphManager
         plumbing.active = true;
         plumbing.loadingFinished = true;
         const numberOfCommits = repo.numberOfCommits();
-        plumbing.loadedLocalContents =
-          numberOfCommits > (id === 'sys/dir' ? 1 : 0);
-        plumbing.client?.startSyncing();
+        if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
+          plumbing.loadedLocalContents = true;
+          if (client) {
+            client.ready = true;
+            client.startSyncing();
+          }
+        }
       },
     );
     return plumbing.loadingPromise;
   }
 
-  syncRepository(id: string): Promise<void> {
-    return MultiSerialScheduler.get('RepoSync').run(async () => {
+  async syncRepository(id: string): Promise<void> {
+    return SerialScheduler.get('RepoSync').run(async () => {
       const plumbing = this.plumbingForRepository(id);
       const client = plumbing.client;
       await this.loadRepository(id);
@@ -265,7 +276,8 @@ export class GraphManager
           this.getVertexManager(key).touch();
         }
         plumbing.syncFinished = true;
-        // client.startSyncing();
+        client.ready = true;
+        client.startSyncing();
       }
     });
   }
@@ -277,7 +289,6 @@ export class GraphManager
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
-    debugger;
     if (plumbing.loadedLocalContents !== true) {
       await this.syncRepository(repoId);
       this.startSyncing(repoId);
@@ -339,7 +350,9 @@ export class GraphManager
         // Any kind of activity needs to reset the sync timer. This causes
         // the initial sync to run at full speed, which is a desired side
         // effect.
-        plumbing?.client?.touch();
+        // if (plumbing?.syncFinished === true) {
+        //   plumbing?.client?.touch();
+        // }
       });
       this._repoById.set(id, plumbing);
 
@@ -375,6 +388,10 @@ export class GraphManager
   repository(id: string): Repository<MemRepoStorage> {
     this.loadRepository(id);
     return this.plumbingForRepository(id).repo;
+  }
+
+  client(repoId: string): RepoClient<MemRepoStorage> | undefined {
+    return this.plumbingForRepository(repoId).client;
   }
 
   repositoryReady(id: string | undefined): boolean {

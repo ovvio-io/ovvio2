@@ -61,8 +61,6 @@ export enum SyncValueFlag {
   Commit = 1,
 }
 
-const COMMITS_CACHE = new Map<string, Commit>();
-
 /**
  * The Ovvio sync protocol is stateless, peer-to-peer (fully symmetric),
  * lockless, and works on any collection of append-only unordered items.
@@ -209,16 +207,9 @@ export class SyncMessage<T extends SyncValueType>
     if (decoder.has('c')) {
       this._values = decoder
         .get<ReadonlyDecodedArray>('c', [])!
-        .map((obj: DecodedValue) => {
-          const id = (obj as ReadonlyJSONObject).id as string;
-          let result = COMMITS_CACHE.get(id);
-          if (!result) {
-            const decoder = new JSONCyclicalDecoder(obj as ReadonlyJSONObject);
-            result = new Commit({ decoder });
-            COMMITS_CACHE.set(id, result);
-          }
-          return result;
-        }) as T[];
+        .map((obj: DecodedValue) =>
+          Commit.fromJS(obj as ReadonlyJSONObject),
+        ) as T[];
     } else {
       this._values = decoder.get('v')! as T[];
     }

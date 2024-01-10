@@ -30,7 +30,7 @@ import {
   AdjacencyList,
   SimpleAdjacencyList,
 } from '../cfds/client/graph/adj-list.ts';
-import { RendezvoisHash } from '../base/rendezvous-hash.ts';
+import { RendezvousHash } from '../base/rendezvous-hash.ts';
 import { kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
@@ -539,7 +539,7 @@ export class Repository<
     return undefined;
   }
 
-  recordForCommit(c: Commit | string): CFDSRecord {
+  recordForCommit(c: Commit | string, readonly?: boolean): CFDSRecord {
     let result = this._cachedRecordForCommit.get(
       typeof c === 'string' ? c : c.id,
     );
@@ -590,7 +590,7 @@ export class Repository<
       }
       this._cachedRecordForCommit.set(c.id, result);
     }
-    return result.clone();
+    return readonly ? result : result.clone();
   }
 
   private cacheHeadForKey(
@@ -938,9 +938,20 @@ export class Repository<
     return undefined;
   }
 
-  valueForKey(key: string | null, session?: string, merge = true): CFDSRecord {
+  valueForKey(
+    key: string | null,
+    session?: string,
+    merge = true,
+    readonly?: boolean,
+  ): CFDSRecord {
     const head = this.headForKey(key, session, merge);
-    return head ? this.recordForCommit(head) : CFDSRecord.nullRecord();
+    return head
+      ? this.recordForCommit(head, readonly)
+      : CFDSRecord.nullRecord();
+  }
+
+  valueForKeyReadonlyUnsafe(key: string | null, session?: string): CFDSRecord {
+    return this.valueForKey(key, session, true, true);
   }
 
   /**
@@ -1065,33 +1076,38 @@ export class Repository<
       (c1, c2) => c1.timestamp.getTime() - c2.timestamp.getTime(),
     );
     const result: Commit[] = [];
-    const promises: Promise<void>[] = [];
-    for (const c of commits) {
-      promises.push(
-        (async () => {
-          if (await this.trustPool.verify(c)) {
-            if (authorizer) {
-              const session = this.trustPool.getSession(c.session);
-              if (!session) {
-                return;
-              }
-              if (authorizer(this, c, session, true)) {
-                result.push(c);
+    for (const batch of ArrayUtils.slices(
+      commits,
+      navigator.hardwareConcurrency,
+    )) {
+      const promises: Promise<void>[] = [];
+      for (const c of batch) {
+        promises.push(
+          (async () => {
+            if (await this.trustPool.verify(c)) {
+              if (authorizer) {
+                const session = this.trustPool.getSession(c.session);
+                if (!session) {
+                  return;
+                }
+                if (authorizer(this, c, session, true)) {
+                  result.push(c);
+                } else {
+                  debugger;
+                  // authorizer(this, c, session, true);
+                }
               } else {
-                debugger;
-                authorizer(this, c, session, true);
+                result.push(c);
               }
             } else {
-              result.push(c);
+              debugger;
+              // this.trustPool.verify(c);
             }
-          } else {
-            debugger;
-            this.trustPool.verify(c);
-          }
-        })(),
-      );
+          })(),
+        );
+      }
+      await Promise.allSettled(promises);
     }
-    await Promise.allSettled(promises);
     return result;
   }
 
@@ -1311,7 +1327,7 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 }
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
-  const hash = new RendezvoisHash();
+  const hash = new RendezvousHash();
   const now = Date.now();
   for (const c of leaves) {
     if (Math.abs(now - c.timestamp.getTime()) <= 5 * kSecondMs) {

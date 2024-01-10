@@ -1,6 +1,6 @@
 import { join as joinPath } from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
-import { mapIterable } from '../../base/common.ts';
+import { mapIterable, runGC } from '../../base/common.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
@@ -54,17 +54,19 @@ import {
   syncConfigGetCycles,
   SyncScheduler,
 } from '../sync-scheduler.ts';
+import { RendezvousHash } from '../../base/rendezvous-hash.ts';
+import { randomInt } from '../../base/math.ts';
 
 const gSyncSchedulers = new Map<string, SyncScheduler>();
 
 function syncSchedulerForURL(
   url: string,
-  session: OwnedSession,
+  trustPool: TrustPool,
   orgId: string,
 ): SyncScheduler {
   let res = gSyncSchedulers.get(url);
   if (!res) {
-    res = new SyncScheduler(url, kSyncConfigServer, session, orgId);
+    res = new SyncScheduler(url, kSyncConfigServer, trustPool, orgId);
     gSyncSchedulers.set(url, res);
   }
   return res;
@@ -87,12 +89,14 @@ export class SyncService extends BaseService<ServerServices> {
   readonly name = 'sync';
 
   private readonly _backupForRepo: Dictionary<string, JSONLogRepoBackup>;
+  private readonly _rendezvousHash: RendezvousHash<number>;
 
   constructor() {
     super();
     this._repositories = new Map();
     this._clientsForRepo = new Map();
     this._backupForRepo = new Map();
+    this._rendezvousHash = new RendezvousHash();
   }
 
   get ready(): boolean {
@@ -105,6 +109,9 @@ export class SyncService extends BaseService<ServerServices> {
     const trustPool = services.trustPool;
     await setupTrustPool(trustPool, sysDir);
     await persistSession(services, services.settings.session);
+    for (let i = 0; i < services.serverProcessCount; ++i) {
+      this._rendezvousHash.addPeer(i);
+    }
   }
 
   setupRepository(
@@ -147,28 +154,31 @@ export class SyncService extends BaseService<ServerServices> {
     this._repositories.set(repoId, repo);
     const backup = new JSONLogRepoBackup(
       joinPath(this.services.dir, type, id + '.repo'),
-      this.services.serverId,
+      this.services.serverProcessIndex,
     );
     this._backupForRepo.set(repoId, backup);
     this.loadRepoFromBackup(repoId, repo, backup);
-    const replicas = this.services.replicas;
-    if (replicas.length > 0) {
-      assert(!this._clientsForRepo.has(repoId)); // Sanity check
-      const clients = this.services.replicas.map((baseServerUrl) =>
+    assert(!this._clientsForRepo.has(repoId)); // Sanity check
+    const clients: RepoClient<MemRepoStorage>[] = [];
+    for (let i = 0; i < this.services.serverProcessCount; ++i) {
+      if (i === this.services.serverProcessIndex) {
+        continue;
+      }
+      clients.push(
         new RepoClient(
           repo!,
           type,
           id,
           kSyncConfigServer,
           syncSchedulerForURL(
-            `${baseServerUrl}/batchSync`,
-            this.services.trustPool.currentSession,
+            `http://localhost:${9000 + i}/batch-sync`,
+            this.services.trustPool,
             this.services.organizationId,
           ),
         ).startSyncing(),
       );
-      this._clientsForRepo.set(repoId, clients);
     }
+    this._clientsForRepo.set(repoId, clients);
     return repo;
   }
 
@@ -190,7 +200,13 @@ export class SyncService extends BaseService<ServerServices> {
     repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
       const clients = this._clientsForRepo.get(repoId);
-      backup.appendCommits([c]);
+      debugger;
+      if (
+        this._rendezvousHash.peerForKey(c.key) ===
+        this.services.serverProcessIndex
+      ) {
+        backup.appendCommits([c]);
+      }
       if (clients) {
         for (const c of clients) {
           c.touch();
@@ -324,32 +340,21 @@ export class SyncEndpoint implements Endpoint {
       sig,
       'anonymous',
     );
-    const promises: Promise<void>[] = [];
     const results: JSONArray = [];
     for (const r of encodedRequests) {
       const { storage, id, msg } = r;
       if (!kRepositoryTypes.includes(storage as RepositoryType)) {
         continue;
       }
-      promises.push(
-        (async () => {
-          const res = await this.doSync(
-            services,
-            storage,
-            id,
-            userSession,
-            msg,
-          );
-          results.push({
-            storage,
-            id,
-            res,
-          });
-        })(),
-      );
+      results.push({
+        storage,
+        id,
+        res: await this.doSync(services, storage, id, userSession, msg),
+      });
+      runGC();
     }
-    await Promise.all(promises);
-    return new Response(JSON.stringify(results));
+    const respJsonStr = JSON.stringify(results);
+    return new Response(respJsonStr);
   }
 
   async processSingleSyncRequest(
@@ -363,6 +368,7 @@ export class SyncEndpoint implements Endpoint {
     const resourceId = path[2];
     const cmd = path[3];
     const json = await req.json();
+    runGC();
     let resp: Response;
     switch (cmd) {
       case 'sync': {

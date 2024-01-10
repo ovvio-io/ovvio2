@@ -354,6 +354,7 @@ export async function requireSignedUser(
     typeof requestOrSignature === 'string'
       ? requestOrSignature
       : requestOrSignature.headers.get('x-ovvio-sig');
+
   if (!signature) {
     throw accessDenied();
   }
@@ -368,6 +369,9 @@ export async function requireSignedUser(
     throw accessDenied();
   }
   const userId = signerSession.owner;
+  if (userId === 'root') {
+    return ['root', undefined, signerSession];
+  }
   // Anonymous access
   if (userId === undefined) {
     if (role === 'anonymous') {

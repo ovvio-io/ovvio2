@@ -12,6 +12,7 @@ import {
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
+import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -41,7 +42,7 @@ export abstract class BaseClient<
   private _ready: boolean;
   private _scheduled: boolean;
   private _closed = false;
-  private _pendingSyncPromise: Promise<void> | undefined;
+  private _pendingSyncPromise: Promise<boolean> | undefined;
 
   constructor(
     readonly storage: RepositoryType,
@@ -55,6 +56,9 @@ export abstract class BaseClient<
       syncConfig.maxSyncFreqMs,
       syncConfig.maxSyncFreqMs,
       () => {
+        if (!this.ready) {
+          return;
+        }
         this.sendSyncMessage().catch((e) => {
           log({
             severity: 'INFO',
@@ -65,7 +69,8 @@ export abstract class BaseClient<
         });
       },
       true,
-      'Sync timer',
+      `Sync timer ${storage}/${id}`,
+      true,
     );
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(this.syncConfig) * 2,
@@ -117,7 +122,7 @@ export abstract class BaseClient<
     return this._ready && !this.closed;
   }
 
-  protected set ready(f: boolean) {
+  set ready(f: boolean) {
     if (f !== this._ready) {
       this._ready = f;
       if (this._scheduled) {
@@ -134,7 +139,9 @@ export abstract class BaseClient<
     return this._closed;
   }
 
-  protected abstract buildSyncMessage(): Promise<SyncMessage<ValueType>>;
+  protected abstract buildSyncMessage(
+    includeMissing: boolean,
+  ): Promise<SyncMessage<ValueType>>;
   protected abstract persistPeerValues(values: ValueType[]): Promise<number>;
   protected abstract getLocalSize(): number;
   abstract localIds(): Iterable<string>;
@@ -163,10 +170,10 @@ export abstract class BaseClient<
     return this;
   }
 
-  private sendSyncMessage(): Promise<void> {
+  private sendSyncMessage(priority?: boolean): Promise<boolean> {
     let result = this._pendingSyncPromise;
     if (!result) {
-      const promise = this._sendSyncMessageImpl().finally(() => {
+      const promise = this._sendSyncMessageImpl(priority).finally(() => {
         if (this._pendingSyncPromise === promise) {
           this._pendingSyncPromise = undefined;
         }
@@ -177,12 +184,12 @@ export abstract class BaseClient<
     return result;
   }
 
-  private async _sendSyncMessageImpl(): Promise<void> {
+  private async _sendSyncMessageImpl(priority?: boolean): Promise<boolean> {
     if (this.closed) {
-      return;
+      return false;
     }
     const startingStatus = this.status;
-    const reqMsg = await this.buildSyncMessage();
+    const reqMsg = await this.buildSyncMessage(priority !== true);
 
     let syncResp: SyncMessage<ValueType>;
     try {
@@ -190,6 +197,7 @@ export abstract class BaseClient<
         this.storage,
         this.id,
         reqMsg,
+        priority,
       )) as typeof reqMsg;
     } catch (e) {
       log({
@@ -200,7 +208,7 @@ export abstract class BaseClient<
         trace: e.stack,
       });
       this._setIsOnline(false);
-      return;
+      return false;
     }
 
     this._previousServerFilter = syncResp.filter;
@@ -237,16 +245,17 @@ export abstract class BaseClient<
       });
     }
     if (this.closed) {
-      return;
+      return false;
     }
 
-    if (persistedCount > 0 || this.needsReplication()) {
-      this.touch();
-    }
+    // if (persistedCount > 0 || this.needsReplication()) {
+    //   this.touch();
+    // }
     this._setIsOnline(true);
     if (this.status !== startingStatus) {
       this.emit(EVENT_STATUS_CHANGED);
     }
+    return persistedCount > 0;
   }
 
   /**
@@ -263,8 +272,15 @@ export abstract class BaseClient<
     // sure everything is sync'ed. Also need to make sure we don't have any
     // local commits that our peer doesn't have (local changes or peer recovery).
     let i = 0;
+    let emptyCount = 0;
     do {
-      await this.sendSyncMessage();
+      if ((await this.sendSyncMessage(true)) === false) {
+        if (++emptyCount === 2) {
+          break;
+        }
+      } else {
+        emptyCount = 0;
+      }
       ++i;
     } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
   }
@@ -280,8 +296,9 @@ export abstract class BaseClient<
   }
 
   touch(): void {
-    // this._timer.unschedule();
-    // this.sendSyncMessage();
+    if (!this._scheduled) {
+      return;
+    }
     this._timer.reset();
     this._timer.schedule();
   }

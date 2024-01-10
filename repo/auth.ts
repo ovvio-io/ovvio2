@@ -45,8 +45,8 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       return true;
     }
     // Operator Access
-    const record = repo.valueForKey(commit.key);
-    const userRecord = repo.valueForKey(userKey);
+    const record = repo.valueForKeyReadonlyUnsafe(commit.key);
+    const userRecord = repo.valueForKeyReadonlyUnsafe(userKey);
     const email =
       userRecord.scheme.namespace === SchemeNamespace.USERS
         ? userRecord.get<string>('email')
@@ -167,7 +167,7 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     }
 
     // Operator Access
-    const userRecord = sysDir.valueForKey(userKey);
+    const userRecord = sysDir.valueForKeyReadonlyUnsafe(userKey);
     const email =
       userRecord.scheme.namespace === SchemeNamespace.USERS
         ? userRecord.get<string>('email')
@@ -178,7 +178,7 @@ export function createWorkspaceAuthorizer<ST extends RepoStorage<ST>>(
     }
 
     // Full read-write for workspace members
-    const workspaceRecord = sysDir.valueForKey(workspaceKey);
+    const workspaceRecord = sysDir.valueForKeyReadonlyUnsafe(workspaceKey);
     const users =
       workspaceRecord.scheme.namespace === SchemeNamespace.WORKSPACE
         ? workspaceRecord.get<Set<string>>('users')

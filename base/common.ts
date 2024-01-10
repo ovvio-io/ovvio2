@@ -6,7 +6,7 @@ export function cartesianProduct<T>(...allEntries: T[][]): T[][] {
       results
         .map((result) => entries.map((entry) => result.concat([entry])))
         .reduce((subResults, result) => subResults.concat(result), []),
-    [[]]
+    [[]],
   );
 }
 
@@ -43,7 +43,7 @@ export function prettyJSON(o: ReadonlyJSONValue): string {
 }
 
 export function* keysOf<T extends Record<string, unknown>>(
-  obj: T
+  obj: T,
 ): Generator<string> {
   for (const k in obj) {
     // deno-lint-ignore no-prototype-builtins
@@ -71,7 +71,7 @@ export function newInstance<T = any>(instance: any, ...args: any[]): T {
 
 export function* mapIterable<IT, OT = IT>(
   input: Iterable<IT>,
-  mapper: (v: IT, idx: number) => OT
+  mapper: (v: IT, idx: number) => OT,
 ): Iterable<OT> {
   let i = 0;
   for (const v of input) {
@@ -82,11 +82,17 @@ export function* mapIterable<IT, OT = IT>(
 
 export function* filterIterable<IT>(
   input: Iterable<IT>,
-  filter: (v: IT) => boolean
+  filter: (v: IT) => boolean,
 ): Iterable<IT> {
   for (const v of input) {
     if (filter(v)) {
       yield v;
     }
+  }
+}
+
+export function runGC(): void {
+  if (typeof gc === 'function') {
+    gc();
   }
 }

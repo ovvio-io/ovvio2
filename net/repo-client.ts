@@ -20,7 +20,6 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   ) {
     super(storage, id, syncConfig, scheduler);
     this._repo = repo;
-    this.ready = true;
     this._submitCount = new Map();
   }
 
@@ -32,7 +31,9 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     return this._repo.numberOfCommits(this.repo.trustPool.currentSession);
   }
 
-  protected async buildSyncMessage(): Promise<SyncMessage<Commit>> {
+  protected async buildSyncMessage(
+    includeMissing: boolean,
+  ): Promise<SyncMessage<Commit>> {
     const repo = this.repo;
     const session = repo.trustPool.currentSession;
     return SyncMessage.build(
@@ -41,6 +42,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
       repo.numberOfCommits(session),
       this.previousServerSize,
       this.syncCycles,
+      includeMissing,
     );
   }
 
@@ -75,7 +77,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
   }
 
   protected async persistPeerValues(values: Commit[]): Promise<number> {
-    return (await this.repo.persistCommits(values)).length;
+    return (await this.repo.persistVerifiedCommits(values)).length;
   }
 
   async sync(): Promise<void> {

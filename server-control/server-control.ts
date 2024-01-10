@@ -94,6 +94,7 @@ function filenameFromURL(url: string, suffix?: string): string {
 async function _startChildServerProcess(
   settings: ServerControlSettings,
   idx: number,
+  count: number,
   replicas: string[],
 ): Promise<Deno.ChildProcess | undefined> {
   // We match the port to the index of the process
@@ -113,8 +114,9 @@ async function _startChildServerProcess(
     '3',
     path.join(settings.serverBinaryDir, binaryFileName),
     '--silent',
-    `--port=${port}`,
+    // `--port=${port}`,
     `--serverId=${idx}`,
+    `--pool=${idx}:${count}`,
     '-d',
     settings.dataDir,
   ];
@@ -190,22 +192,32 @@ async function startServerProcesses(
   const processCount = 1; // navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
-    for (let x = 0; x < processCount; ++x) {
-      if (x !== i) {
-        replicas.push(`http://localhost:${9000 + x}`);
-      }
-    }
+    // for (let x = 0; x < processCount; ++x) {
+    //   if (x !== i) {
+    //     replicas.push(`http://localhost:${9000 + x}`);
+    //   }
+    // }
     const terminationCallback = async (status: Deno.CommandStatus) => {
       if (status.code !== 0) {
         console.log('Restarting crashed server');
-        const child = await _startChildServerProcess(settings, i, replicas);
+        const child = await _startChildServerProcess(
+          settings,
+          i,
+          processCount,
+          replicas,
+        );
         serverProcesses[i] = child;
         if (child) {
           child.status.then(terminationCallback);
         }
       }
     };
-    const child = await _startChildServerProcess(settings, i, replicas);
+    const child = await _startChildServerProcess(
+      settings,
+      i,
+      processCount,
+      replicas,
+    );
     if (child) {
       child.status.then(terminationCallback);
     }

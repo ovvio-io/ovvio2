@@ -36,9 +36,10 @@ interface BaseServerContext {
   readonly dir: string;
   readonly replicas: string[];
   readonly port: number;
-  readonly serverId: number;
   readonly silent?: boolean;
   readonly sesRegion?: string;
+  readonly serverProcessIndex: number;
+  readonly serverProcessCount: number;
 }
 
 /**
@@ -46,6 +47,7 @@ interface BaseServerContext {
  */
 interface Arguments extends BaseServerContext {
   readonly b64replicas?: string;
+  readonly pool?: string;
 }
 
 // Stuff that's shared to all organizations served by this server
@@ -78,12 +80,12 @@ export interface Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean;
   processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response>;
 }
 
@@ -99,13 +101,13 @@ export interface Middleware {
   shouldProcess?: (
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ) => Promise<Response | undefined>;
   didProcess?: (
     services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
-    resp: Response
+    resp: Response,
   ) => Promise<Response>;
 }
 
@@ -169,13 +171,6 @@ export class Server {
           default: false,
           description: 'Disables metric logging to stdout',
         })
-        .option('serverId', {
-          alias: 'sid',
-          type: 'number',
-          default: 0,
-          description:
-            'The server id of this process when running multiple servers on a single machine',
-        })
         .option('dir', {
           alias: 'd',
           description:
@@ -185,22 +180,27 @@ export class Server {
           description:
             'An AWS region to use for sending emails with SES. Defaults to us-east-1.',
         })
+        .option('pool', {
+          description: 'Process pool configuration in the form of "idx:count".',
+        })
         .demandOption(
-          ['dir']
+          ['dir'],
           // 'Please provide a local directory for this server'
         )
         // .demandOption(['app'], 'Please provide')
         .parse();
     }
 
-    const serverId = args?.serverId || 0;
+    const [serverProcessIndex, serverProcessCount] = parsePoolConfig(
+      args?.pool,
+    );
     const dir = args!.dir;
     this._servicesByOrg = new Map();
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
     const logStreams: LogStream[] = [
       // new JSONLogStream(path.join(dir, `log-${serverId}.jsonl`)),
-      prometeusLogStream,
+      // prometeusLogStream,
     ];
     if (args?.silent !== true) {
       logStreams.splice(0, 0, new ConsoleLogStream());
@@ -211,9 +211,11 @@ export class Server {
     if (args?.b64replicas?.length || 0 > 0) {
       const decoder = new TextDecoder();
       replicas = JSON.parse(
-        decoder.decode(decodeBase64Url(args?.b64replicas!))
+        decoder.decode(decodeBase64Url(args?.b64replicas!)),
       );
     }
+    const port =
+      serverProcessCount > 1 ? 9000 + serverProcessIndex : args?.port || 8080;
     // const envReplicasStr = Deno.env.get(ENV_REPLICAS);
     // const envReplicas = envReplicasStr &&
     //   JSON.parse(decoder.decode(decodeBase64Url(envReplicasStr)));
@@ -224,8 +226,9 @@ export class Server {
       // sqliteLogStream,
       dir,
       replicas: replicas || args?.replicas || [],
-      port: args?.port || 8080,
-      serverId,
+      port,
+      serverProcessIndex,
+      serverProcessCount,
       email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
       silent: args?.silent === true,
@@ -263,7 +266,7 @@ export class Server {
     await this._baseContext.settings.start();
     (this._baseContext as any).trustPool = new TrustPool(
       this._baseContext.settings.session,
-      []
+      [],
     );
   }
 
@@ -279,7 +282,7 @@ export class Server {
         sync: new SyncService(),
         trustPool: new TrustPool(
           baseTrustPool.currentSession,
-          baseTrustPool.roots
+          baseTrustPool.roots,
         ),
       };
 
@@ -301,7 +304,7 @@ export class Server {
 
   async processRequest(
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     if (req.url === 'http://AWSALB/healthy') {
       return new Response(null, { status: 200 });
@@ -423,13 +426,13 @@ export class Server {
         },
         signal: this._abortController.signal,
       },
-      this.processRequest.bind(this)
+      this.processRequest.bind(this),
     );
     if (this._baseContext.silent === true) {
       console.log('STARTED');
     }
     sleep(kSecondMs).then(() =>
-      console.log(`Replicas = ${this._baseContext?.replicas}`)
+      console.log(`Replicas = ${this._baseContext?.replicas}`),
     );
     Deno.addSignalListener('SIGTERM', () => {
       Deno.exit(0);
@@ -504,4 +507,22 @@ function organizationIdFromURL(url: string | URL): string | undefined {
     return maybeId;
   }
   return undefined;
+}
+
+function parsePoolConfig(
+  config: string | undefined,
+): [idx: number, count: number] {
+  if (!config) {
+    return [0, 1];
+  }
+  const comps = config.split(':');
+  if (comps.length !== 2) {
+    return [0, 1];
+  }
+  const idx = parseInt(comps[0]);
+  const count = parseInt(comps[1]);
+  if (idx >= count || idx < 0 || count < 0) {
+    return [0, 1];
+  }
+  return [idx, count];
 }

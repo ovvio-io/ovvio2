@@ -1,4 +1,4 @@
-import { decodeBase64, encodeBase64 } from 'std/encoding/base64.ts';
+import { encodeBase64 } from 'std/encoding/base64.ts';
 import { assert } from './error.ts';
 import { MurmurHash3 } from './hash.ts';
 import { CoreValue, Encodable, Encoder } from './core-types/base.ts';
@@ -10,32 +10,8 @@ import {
   isDecoderConfig,
 } from './core-types/encoding/index.ts';
 import { ReadonlyJSONObject } from './interfaces.ts';
-
-const gBufferCache = new Map<number, Uint8Array[]>();
-
-function allocateBuffer(minBytes: number): Uint8Array {
-  for (const size of Array.from(gBufferCache.keys()).sort((x, y) => y - x)) {
-    if (size >= minBytes) {
-      const cachedBuffers = gBufferCache.get(size)!;
-      const buffer = cachedBuffers.pop() || new Uint8Array(minBytes);
-      if (cachedBuffers.length <= 0) {
-        gBufferCache.delete(size);
-      }
-      return buffer;
-    }
-  }
-  return new Uint8Array(minBytes);
-}
-
-function cacheBufferForReuse(buff: Uint8Array): void {
-  const size = buff.byteLength;
-  let arr = gBufferCache.get(size);
-  if (!arr) {
-    arr = [];
-    gBufferCache.set(size, arr);
-  }
-  arr.push(buff);
-}
+import { allocateBuffer, cacheBufferForReuse } from './buffer.ts';
+import { decodeBase64 } from './buffer.ts';
 
 /**
  * A buffer that provides access to single bits by index.
@@ -47,7 +23,7 @@ class BitField {
 
   constructor(size: number) {
     this._byteSize = Math.ceil(size / 8);
-    this._buffer = new Uint8Array(this._byteSize);
+    this._buffer = allocateBuffer(this._byteSize);
   }
 
   get buffer(): Uint8Array {

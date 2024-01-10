@@ -1,17 +1,21 @@
-import { OwnedSession } from '../auth/session.ts';
+import { TrustPool } from '../auth/session.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
 import { kSecondMs } from '../base/date.ts';
 import { assert } from '../base/error.ts';
+import { ReadonlyJSONArray, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { MovingAverage } from '../base/math.ts';
+import { SerialScheduler } from '../base/serial-scheduler.ts';
 import { retry } from '../base/time.ts';
 import { serviceUnavailable } from '../cfds/base/errors.ts';
 import { log } from '../logging/log.ts';
 import { RepositoryType } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { sendJSONToURL } from './rest-api.ts';
+
+const K_MAX_REQ_BATCH = 5;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -21,8 +25,8 @@ export interface SyncConfig {
 
 export const kSyncConfigClient: SyncConfig = {
   minSyncFreqMs: 300,
-  maxSyncFreqMs: 3000,
-  syncDurationMs: 600,
+  maxSyncFreqMs: 5000,
+  syncDurationMs: 1000,
 };
 
 // export const kSyncConfigServer: SyncConfig = {
@@ -57,18 +61,21 @@ interface PendingSyncRequest {
 export class SyncScheduler {
   private readonly _syncFreqAvg: MovingAverage;
   private _pendingRequests: PendingSyncRequest[];
+  private _pendingPriorityRequests: PendingSyncRequest[];
   private _intervalId: number;
+  private _fetchInProgress = false;
 
   constructor(
     readonly url: string,
     readonly syncConfig: SyncConfig,
-    readonly session: OwnedSession,
+    readonly trustPool: TrustPool,
     readonly orgId?: string,
   ) {
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(kSyncConfigClient) * 2,
     );
     this._pendingRequests = [];
+    this._pendingPriorityRequests = [];
     this._intervalId = setInterval(() => this.sendPendingRequests(), 200);
   }
 
@@ -87,6 +94,7 @@ export class SyncScheduler {
     storage: RepositoryType,
     id: string,
     msg: SyncMessage<SyncValueType>,
+    priority?: boolean,
   ): Promise<SyncMessage<SyncValueType>> {
     let resolve!: (resp: SyncMessage<SyncValueType>) => void;
     let reject!: (err: unknown) => void;
@@ -94,16 +102,38 @@ export class SyncScheduler {
       resolve = res;
       reject = rej;
     });
-    this._pendingRequests.push({ req: { storage, id, msg }, resolve, reject });
+    (priority === true
+      ? this._pendingPriorityRequests
+      : this._pendingRequests
+    ).push({ req: { storage, id, msg }, resolve, reject });
     return result;
   }
 
   private async sendPendingRequests(): Promise<void> {
-    const pendingRequests = this._pendingRequests;
-    if (pendingRequests.length <= 0) {
+    if (this._fetchInProgress) {
       return;
     }
-    this._pendingRequests = [];
+    if (
+      this._pendingPriorityRequests.length <= 0 &&
+      this._pendingRequests.length <= 0
+    ) {
+      return;
+    }
+    const pendingRequests: PendingSyncRequest[] = [];
+    for (
+      let i = 0;
+      i < K_MAX_REQ_BATCH && this._pendingPriorityRequests.length > 0;
+      ++i
+    ) {
+      pendingRequests.push(this._pendingPriorityRequests.shift()!);
+    }
+    for (
+      let i = 0;
+      i < K_MAX_REQ_BATCH && this._pendingRequests.length > 0;
+      ++i
+    ) {
+      pendingRequests.push(this._pendingRequests.shift()!);
+    }
     const reqArr = pendingRequests.map((p) => ({
       ...p.req,
       msg: JSONCyclicalEncoder.serialize(p.req.msg),
@@ -111,16 +141,19 @@ export class SyncScheduler {
 
     let respText: string | undefined;
     try {
+      this._fetchInProgress = true;
       const start = performance.now();
-      respText = await retry(async () => {
-        const resp = await sendJSONToURL(
+      // respText = await retry(async () => {
+      respText = await (
+        await sendJSONToURL(
           this.url,
-          this.session,
+          this.trustPool.currentSession,
           reqArr,
           this.orgId,
-        );
-        return await resp.text();
-      }, 3 * kSecondMs);
+        )
+      ).text();
+      // return await resp.text();
+      // }, 3 * kSecondMs);
 
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
@@ -139,6 +172,8 @@ export class SyncScheduler {
         trace: e.stack,
         url: this.url,
       });
+    } finally {
+      this._fetchInProgress = false;
     }
 
     if (!respText) {
@@ -146,13 +181,23 @@ export class SyncScheduler {
       return;
     }
     try {
-      const json = JSON.parse(respText);
+      const json = JSON.parse(respText) as ReadonlyJSONArray;
       assert(json instanceof Array && json.length === pendingRequests.length);
-      for (let i = 0; i < pendingRequests.length; ++i) {
-        const syncResp = new SyncMessage<SyncValueType>({
-          decoder: new JSONCyclicalDecoder(json[i].res),
-        });
-        pendingRequests[i].resolve(syncResp);
+      for (const req of pendingRequests) {
+        let found = false;
+        for (const resp of json as ReadonlyJSONObject[]) {
+          if (resp.storage === req.req.storage && resp.id === req.req.id) {
+            const syncResp = new SyncMessage<SyncValueType>({
+              decoder: new JSONCyclicalDecoder(resp.res as ReadonlyJSONObject),
+            });
+            req.resolve(syncResp);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          req.reject(serviceUnavailable());
+        }
       }
     } catch (e) {
       log({
