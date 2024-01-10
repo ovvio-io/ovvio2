@@ -127,8 +127,10 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
     if (!files || !files.length) {
       return;
     }
-    const json = JSON.parse(await files[0].text());
-    Workspace.createFromJSON(graph, json);
+    for (const f of files) {
+      const json = JSON.parse(await f.text());
+      Workspace.createFromJSON(graph, json);
+    }
   }, []);
 
   return (
@@ -140,6 +142,7 @@ export function ToolbarMenu({ className }: ToolbarMenuProps) {
         type="file"
         accept=".json"
         onChange={onChange}
+        multiple={true}
       />
       <Menu
         className={className}
