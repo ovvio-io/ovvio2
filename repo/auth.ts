@@ -32,9 +32,9 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       );
       userKey = commitSignerSession?.owner;
     }
-    // Anonymous session
+    // Anonymous users are allowed to only read their own session
     if (!userKey) {
-      return commit.key === session.id;
+      return !write && commit.key === session.id;
     }
     // Root access
     if (userKey === 'root') {
@@ -104,8 +104,7 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         // Readonly access for everyone else
         return write === false;
 
-      // Readonly access to everyone. Only root and operators are allowed to
-      // update sessions.
+      // Readonly access to everyone. Only root is allowed to update sessions.
       case SchemeNamespace.SESSIONS:
         return write === false;
 
