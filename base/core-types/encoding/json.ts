@@ -1,5 +1,6 @@
 import {
   JSONObject,
+  JSONValue,
   ReadonlyJSONObject,
   ReadonlyJSONValue,
 } from '../../interfaces.ts';
@@ -46,7 +47,7 @@ export class JSONEncoder extends JSONBaseEncoder<ReadonlyJSONValue> {
   protected setPrimitive(
     key: string,
     value: ReadonlyJSONValue,
-    _options?: unknown
+    _options?: unknown,
   ): void {
     this._encodedObj[key] = value;
   }
@@ -81,7 +82,7 @@ export class JSONCyclicalEncoder extends BaseCyclicalEncoder<
 
   convertRefsMap(
     map: Map<CoreValue, number>,
-    options?: CoreOptions
+    options?: CoreOptions,
   ): CoreValue {
     const refs = Array.from(map.entries())
       .sort((a, b) => a[1] - b[1])
@@ -191,8 +192,17 @@ export class JSONDecoder implements Decoder {
     [key: string]: DecodedValue;
   } {
     const obj: { [key: string]: DecodedValue } = {};
-    for (const [k, v] of Object.entries(jsonObj)) {
-      obj[k] = this.decodeValue(v as ReadonlyJSONValue);
+    for (let [k, v] of Object.entries(jsonObj)) {
+      if (
+        v instanceof Array ||
+        isEncodedSet(v) ||
+        isEncodedDate(v) ||
+        isEncodedEncodable(v) ||
+        getCoreType(v) === CoreType.Object
+      ) {
+        v = this.decodeValue(v as ReadonlyJSONValue) as JSONValue;
+      }
+      obj[k] = v;
     }
     return obj;
   }
