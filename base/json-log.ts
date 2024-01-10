@@ -65,11 +65,8 @@ export class JSONLogFile {
         this._didScan,
         'Attempting to append to log before initial scan completed',
       );
-      const encodedEntries = '\n' + entries.map((obj) => JSON.stringify(obj))
-        .join(
-          '\n',
-        ) +
-        '\n';
+      const encodedEntries =
+        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
       const encodedBuf = new TextEncoder().encode(encodedEntries);
       let bytesWritten = 0;
       await file.seek(0, Deno.SeekMode.End);
@@ -85,6 +82,7 @@ export class JSONLogFile {
     if (!file) {
       return;
     }
+    const start = performance.now();
     file.seekSync(0, Deno.SeekMode.Start);
     let fileOffset = 0;
     const readBuf = new Uint8Array(FILE_READ_BUF_SIZE_BYTES);
@@ -105,7 +103,8 @@ export class JSONLogFile {
       while (readBufStart < bytesRead) {
         readBufEnd = readBufStart;
         while (
-          readBufEnd < bytesRead && readBuf[readBufEnd] !== LINE_DELIMITER_BYTE
+          readBufEnd < bytesRead &&
+          readBuf[readBufEnd] !== LINE_DELIMITER_BYTE
         ) {
           ++readBufEnd;
         }
@@ -123,7 +122,8 @@ export class JSONLogFile {
         }
         readBufStart = readBufEnd + 1;
         if (
-          readBuf[readBufEnd] === LINE_DELIMITER_BYTE && objectBufOffset > 0
+          readBuf[readBufEnd] === LINE_DELIMITER_BYTE &&
+          objectBufOffset > 0
         ) {
           try {
             const text = textDecoder.decode(
@@ -173,7 +173,7 @@ function appendBytes(
 ): Uint8Array {
   if (dstOffset + srcLen > dst.byteLength) {
     const newDst = new Uint8Array(
-      Math.ceil((dstOffset + srcLen) * 2 / PAGE_SIZE) * PAGE_SIZE,
+      Math.ceil(((dstOffset + srcLen) * 2) / PAGE_SIZE) * PAGE_SIZE,
     );
     newDst.set(dst);
     dst = newDst;
