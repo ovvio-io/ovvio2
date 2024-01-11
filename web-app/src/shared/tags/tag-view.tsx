@@ -16,7 +16,10 @@ import {
   makeStyles,
 } from '../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
-import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  usePartialVertices,
+} from '../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
 
 const showAnim = keyframes({
@@ -137,7 +140,7 @@ export function TagPillView({
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
         menuOnHover && styles.onHover,
-        className
+        className,
       )}
       style={{
         ...style,
@@ -148,7 +151,7 @@ export function TagPillView({
       <div
         className={cn(
           styles.tagDelete,
-          !menuOnHover && !showMenu && styles.hide
+          !menuOnHover && !showMenu && styles.hide,
         )}
       >
         <IconDropDownArrow className="" />
@@ -183,8 +186,10 @@ export default function TagView({
 }: PillViewProps) {
   const styles = useStyles();
   const partialTag = usePartialVertex(tag, ['parentTag']);
-  const siblingsQuery = partialTag.parentTag?.childTagsQuery;
-  const siblings = siblingsQuery?.results || [];
+  const siblings = usePartialVertices<Tag>(
+    partialTag.parentTag?.childTags || [],
+    ['name'],
+  );
 
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
@@ -219,9 +224,7 @@ export default function TagView({
               // }}
             />
           </div>
-          <span className={cn(styles.tagDropDownName)}>
-            {t.getVertexProxy().name}
-          </span>
+          <span className={cn(styles.tagDropDownName)}>{t.name}</span>
         </DropDownItem>
       ))}
       <DropDownItem value={DELETE_TAG}>
