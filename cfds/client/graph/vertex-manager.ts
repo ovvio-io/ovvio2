@@ -104,6 +104,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private _localMutationsCount = 0;
   private _commitPromise: Promise<void> | undefined;
   private _hasLocalEdits = false;
+  private _reportedInitialFields = false;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -348,6 +349,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
   touch(): void {
     if (this.isLocal) {
+      this.reportInitialFields(true);
       return;
     }
     const repo = this.repository;
@@ -355,6 +357,7 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     this.record = repo.valueForKey(this.key);
+    this.reportInitialFields(true);
   }
 
   scheduleCommitIfNeeded(): void {
@@ -589,7 +592,15 @@ export class VertexManager<V extends Vertex = Vertex>
    * Never call this directly. Reserved for GraphManager.
    */
   reportInitialFields(local: boolean): void {
-    this.vertexDidMutate(this.getCurrentStateMutations(local));
+    if (!this._reportedInitialFields) {
+      this._reportedInitialFields = true;
+      this.vertexDidMutate(this.getCurrentStateMutations(local));
+      if (this.repositoryId === 'sys/dir') {
+        console.log(
+          `Reported initial fields for ${this.scheme.namespace}/${this.key}`,
+        );
+      }
+    }
   }
 
   updateBySnapshot(snapshot: VertexSnapshot) {
