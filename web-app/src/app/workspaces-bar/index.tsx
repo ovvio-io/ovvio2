@@ -350,7 +350,7 @@ const useStyles = makeStyles(
       padding: '16px',
     },
   }),
-  'workspaces-bar_881015'
+  'workspaces-bar_881015',
 );
 
 const useStrings = createUseStrings(localization);
@@ -408,10 +408,10 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
   const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
   const idx1 = kWorkspaceGIDOrder.indexOf(
-    typeof marker1 === 'string' ? marker1 : null
+    typeof marker1 === 'string' ? marker1 : null,
   );
   const idx2 = kWorkspaceGIDOrder.indexOf(
-    typeof marker2 === 'string' ? marker2 : null
+    typeof marker2 === 'string' ? marker2 : null,
   );
   return idx1 - idx2;
 }
@@ -577,7 +577,7 @@ function WorkspaceToggleView({
   const view = usePartialGlobalView(
     'workspaceGrouping',
     'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    'selectedWorkspaces',
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
@@ -615,7 +615,7 @@ function WorkspaceToggleView({
                     padding: '0 4px',
                   }}
                 ></div>
-                <IconGroup style={{ marginRight: '8px' }} color="blue" />
+                <IconGroup style={{ marginRight: '8px' }} />
                 <LabelSm className={styles.groupBy}>Group By:</LabelSm>
               </div>
             </div>
@@ -637,9 +637,7 @@ function WorkspaceToggleView({
               }}
             >
               {'Employee'}
-              {view.workspaceGrouping === 'Employee' && (
-                <IconCheck color={'blue'} />
-              )}
+              {view.workspaceGrouping === 'Employee' && <IconCheck />}
             </MenuItem>
             <div style={{ marginTop: '8px' }} />
 
@@ -652,9 +650,7 @@ function WorkspaceToggleView({
               )}
             >
               {'Ungroup'}
-              {view.workspaceGrouping === 'none' && (
-                <IconCheck color={'blue'} />
-              )}
+              {view.workspaceGrouping === 'none' && <IconCheck />}
             </MenuItem>
           </Menu>
         </div>
@@ -665,7 +661,7 @@ function WorkspaceToggleView({
             onClick={onSelectAll}
             className={cn(
               styles.toggleViewButton,
-              selectedRatio === 1 && styles.toggleViewButtonDisabled
+              selectedRatio === 1 && styles.toggleViewButtonDisabled,
             )}
           >
             Select All
@@ -674,7 +670,7 @@ function WorkspaceToggleView({
             onClick={onUnselectAll}
             className={cn(
               styles.toggleViewButton,
-              selectedRatio === 0 && styles.toggleViewButtonDisabled
+              selectedRatio === 0 && styles.toggleViewButtonDisabled,
             )}
           >
             Unselect All
@@ -723,7 +719,7 @@ function WorkspaceListItem({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
@@ -747,7 +743,7 @@ function WorkspaceListItem({
         <IconMore />
       </div>
     ),
-    []
+    [],
   );
 
   const setWorkspaceState = useCallback(
@@ -767,7 +763,7 @@ function WorkspaceListItem({
       view.selectedWorkspaces,
       workspace,
       ofSettings,
-    ]
+    ],
   );
 
   const toggleSelected = useCallback(() => {
@@ -795,7 +791,7 @@ function WorkspaceListItem({
       className={cn(
         styles.listItem,
         !view.workspaceBarCollapsed && styles.listItemExpanded,
-        isSelected && styles.listItemSelected
+        isSelected && styles.listItemSelected,
       )}
       style={style}
     >
@@ -816,7 +812,7 @@ function WorkspaceListItem({
         (!loaded ? (
           <div
             className={cn(
-              isSelected ? styles.loadingIndicatorContainer : styles.hidden
+              isSelected ? styles.loadingIndicatorContainer : styles.hidden,
             )}
           >
             <IndeterminateProgressIndicator
@@ -838,7 +834,7 @@ function WorkspaceListItem({
               <Button
                 className={cn(
                   styles.pinButton,
-                  groupId === 'pinned' && styles.pinButtonPinned
+                  groupId === 'pinned' && styles.pinButtonPinned,
                 )}
                 onClick={() =>
                   setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
@@ -859,7 +855,7 @@ function WorkspaceListItem({
                   <MenuItem
                     onClick={() =>
                       setWorkspaceState(
-                        groupId === 'hidden' ? 'none' : 'hidden'
+                        groupId === 'hidden' ? 'none' : 'hidden',
                       )
                     }
                   >
@@ -877,7 +873,7 @@ function WorkspaceListItem({
                   <MenuItem
                     onClick={() =>
                       setWorkspaceState(
-                        groupId === 'templates' ? 'none' : 'template'
+                        groupId === 'templates' ? 'none' : 'template',
                       )
                     }
                   >
@@ -1037,7 +1033,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   const view = usePartialGlobalView(
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'selectedWorkspaces'
+    'selectedWorkspaces',
   );
 
   const toggleExpanded = useCallback(
@@ -1050,7 +1046,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         expandedWorkspaceGroups.add(key);
       }
     },
-    [view]
+    [view],
   );
 
   const contents: JSX.Element[] = [];
@@ -1065,17 +1061,17 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         <div
           className={cn(styles.separator)}
           key={`wsBar/sep/${++separatorCount}`}
-        />
+        />,
       );
     }
     const rows = query.group(gid);
     const expanded = view.expandedWorkspaceGroups.has(
-      WorkspaceGIDToString(gid)
+      WorkspaceGIDToString(gid),
     );
     if (gid !== 'pinned' && gid !== null && gid !== 'myWorkspace') {
       const selectedCount = SetUtils.intersectionSize(
         view.selectedWorkspaces,
-        query.vertices(gid)
+        query.vertices(gid),
       );
 
       contents.push(
@@ -1097,10 +1093,10 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           <ExpanderIcon
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconOpen
+              expanded && styles.expanderIconOpen,
             )}
           />
-        </Button>
+        </Button>,
       );
     }
     const personalWsKey = `${graph.rootKey}-ws`;
@@ -1117,7 +1113,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             workspace={ws}
             groupId={gid}
             ofSettings={ofSettings}
-          />
+          />,
         );
       }
     }
@@ -1137,7 +1133,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
 function shouldAutoSelectWorkspace(
   ws: Workspace,
   groups: Iterable<WorkspaceGID>,
-  expandedWorkspaceGroups: Set<string>
+  expandedWorkspaceGroups: Set<string>,
 ): boolean {
   if (ws.isTemplate) {
     return false;
@@ -1166,7 +1162,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
   const view = usePartialGlobalView('workspaceGrouping');
   const partialUser = usePartialRootUser(
     'hiddenWorkspaces',
-    'pinnedWorkspaces'
+    'pinnedWorkspaces',
   );
 
   const query = useQuery2(
@@ -1187,7 +1183,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
       view.workspaceGrouping,
       partialUser.hiddenWorkspaces,
       partialUser.pinnedWorkspaces,
-    ])
+    ]),
   );
 
   return (
@@ -1215,7 +1211,7 @@ function WorkspaceBarInternal({
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'noteType'
+    'noteType',
   );
 
   const selectAll = useCallback(() => {
@@ -1225,10 +1221,10 @@ function WorkspaceBarInternal({
           shouldAutoSelectWorkspace(
             ws,
             query.groupsForKey(ws.key),
-            view.expandedWorkspaceGroups
+            view.expandedWorkspaceGroups,
           ),
-        (mgr) => mgr.getVertexProxy()
-      )
+        (mgr) => mgr.getVertexProxy(),
+      ),
     );
     logger.log({
       severity: 'EVENT',
@@ -1310,7 +1306,7 @@ function WorkspaceBarInternal({
           className={cn(
             styles.root,
             view.workspaceBarCollapsed && styles.collapsed,
-            className
+            className,
           )}
         >
           <div className={cn(styles.header)}>
@@ -1392,7 +1388,7 @@ function MobileBar({ ...rest }: WorkspacesBarProps) {
           <WorkspaceBarWrapper {...rest} />
         </React.Fragment>
       )}
-    </Layer>
+    </Layer>,
   );
 }
 
