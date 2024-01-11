@@ -595,11 +595,6 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!this._reportedInitialFields) {
       this._reportedInitialFields = true;
       this.vertexDidMutate(this.getCurrentStateMutations(local));
-      if (this.repositoryId === 'sys/dir') {
-        console.log(
-          `Reported initial fields for ${this.scheme.namespace}/${this.key}`,
-        );
-      }
     }
   }
 
