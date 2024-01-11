@@ -34,6 +34,7 @@ import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../../core/localization/index.tsx';
 import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -122,17 +123,18 @@ function AssigneeView({ user: userId }: { user: VertexId<User> }) {
   const styles = useStyles();
   const view = usePartialView('selectedAssignees');
   const toggleSelected = useCallback(() => {
-    const u = user as User;
+    const u = (user.manager as VertexManager<User>).getVertexProxy();
     if (view.selectedAssignees.has(u)) {
       view.selectedAssignees.delete(u);
     } else {
       view.selectedAssignees.add(u);
     }
   }, [view, user]);
+
   return (
     <div className={cn(styles.sectionOption)} onClick={toggleSelected}>
       <RadioCheckBox
-        checked={view.selectedAssignees.has(user as User)}
+        checked={view.selectedAssignees.has(user.manager.getVertexProxy())}
         onChecked={toggleSelected}
       />{' '}
       {user.name}
@@ -228,11 +230,12 @@ function useTagSectionState(
         ++selectedCount;
       }
     }
-    const state: FilterCheckboxState = selectedCount === values.length
-      ? 'on'
-      : selectedCount === 0
-      ? 'off'
-      : 'partial';
+    const state: FilterCheckboxState =
+      selectedCount === values.length
+        ? 'on'
+        : selectedCount === 0
+        ? 'off'
+        : 'partial';
     return [
       state,
       () => {
@@ -318,7 +321,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
         ? -1
         : b.key === rootUser.key
         ? 1
-        : b.name.localeCompare(a.name)
+        : b.name.localeCompare(a.name),
     );
     const hasMore = assignees.length > SECTION_SIZE;
     return [
@@ -405,9 +408,9 @@ function InternalFiltersView() {
     <div className={cn(styles.filtersView)}>
       <div className={cn(styles.section)}>
         <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {...assignees.map((assignee) => <AssigneeView
-          user={assignee.manager}
-        />)}
+        {...assignees.map((assignee) => (
+          <AssigneeView user={assignee.manager} />
+        ))}
         {hasMore && (
           <div
             onClick={() => setShowMore((x) => !x)}
@@ -418,7 +421,7 @@ function InternalFiltersView() {
         )}
       </div>
       {unifiedTags.map(([title, ...values]) =>
-        title === 'Status' ? null : <TagSection parentTagName={title} />
+        title === 'Status' ? null : <TagSection parentTagName={title} />,
       )}
     </div>
   );
