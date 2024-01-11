@@ -839,6 +839,7 @@ const WorkspaceCell = ({
         isExpanded={false}
         setWorkspace={setWorkspace}
         validateMove={!isDraft}
+        readOnly={true}
         ButtonComponent={
           isDraft
             ? WorkspaceDraftIndicatorComponent
