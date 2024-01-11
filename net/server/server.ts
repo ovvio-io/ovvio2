@@ -28,6 +28,7 @@ import { sleep } from '../../base/time.ts';
 import { kSecondMs } from '../../base/date.ts';
 import { JSONLogStream } from '../../logging/json-log-stream.ts';
 import { getOvvioConfig } from '../../server/config.ts';
+import { organizationIdFromURL } from '../rest-api.ts';
 
 export const ENV_REPLICAS = 'REPLICAS';
 
@@ -439,74 +440,6 @@ export class Server {
     });
     return result;
   }
-}
-
-const RESERVED_ORG_IDS = [
-  'me',
-  'team',
-  'us',
-  'user',
-  'profile',
-  'ovvio',
-  'debug',
-  'localhost',
-];
-
-function isValidOrgId(id: string): boolean {
-  const len = id.length;
-  if (len < 4 || len > 32) {
-    return false;
-  }
-  if (RESERVED_ORG_IDS.includes(id)) {
-    return false;
-  }
-  for (let i = 0; i < len; ++i) {
-    const code = id.charCodeAt(i);
-    // Hyphens are allowed
-    if (code === 45) {
-      continue;
-    }
-    // [0 -
-    if (code < 48) {
-      return false;
-    }
-    // 9], [A -
-    if (code > 57 && code < 65) {
-      return false;
-    }
-    // Z], [a -
-    if (code > 90 && code < 97) {
-      return false;
-    }
-    // z]
-    if (code > 122) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * WARNING: This seemingly trivial function deals with data that arrives from
- * anywhere in the internet. We must treat it as potentially hostile.
- */
-function organizationIdFromURL(url: string | URL): string | undefined {
-  if (typeof url === 'string') {
-    url = new URL(url);
-  }
-  const hostname = url.hostname.toLowerCase();
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'localhost';
-  }
-  const comps = url.hostname.split('.');
-  if (comps.length !== 3) {
-    return undefined;
-  }
-  const maybeId = comps[0];
-  if (isValidOrgId(maybeId)) {
-    return maybeId;
-  }
-  return undefined;
 }
 
 function parsePoolConfig(
