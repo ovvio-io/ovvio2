@@ -666,8 +666,8 @@ export class Repository<
     // Filter out any commits with equal records
     const uniqueCommits =
       commitsWithUniqueRecords(leaves).sort(coreValueCompare);
-    // If our leaves converged on a single value, we can simply return it.
     if (uniqueCommits.length === 1) {
+      // If our leaves converged on a single value, we can simply return it.
       return this.cacheHeadForKey(key, uniqueCommits[0]);
     }
     const mergeLeaderSession =
@@ -724,7 +724,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0) {
+    if (commitsToMerge.length <= 0 || !this.allowMerge) {
       return Promise.resolve(undefined);
     }
     const key = commitsToMerge[0].key;
@@ -757,7 +757,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0) {
+    if (commitsToMerge.length <= 0 || !this.allowMerge) {
       return undefined;
     }
     const key = commitsToMerge[0].key;
@@ -871,19 +871,32 @@ export class Repository<
       return undefined;
     }
     const leavesBySession = pickLatestCommitBySession(leaves);
-    // Filter out any commits with equal records
-    const commitsToMerge =
-      commitsWithUniqueRecords(leavesBySession).sort(coreValueCompare);
-    // If our leaves converged on a single value, we can simply return it.
-    if (commitsToMerge.length === 1) {
-      return this.cacheHeadForKey(key, commitsToMerge[0]);
-    }
     // In order to keep merges simple and reduce conflicts and races,
     // concurrent editors choose a soft leader amongst all currently active
     // writers. Non-leaders will back off and not perform any merge commits,
     // instead waiting for the leader(s) to merge.
     const mergeLeaderSession =
       mergeLeaderFromLeaves(leavesBySession) || session;
+    // Filter out any commits with equal records
+    const commitsToMerge =
+      commitsWithUniqueRecords(leavesBySession).sort(coreValueCompare);
+    // If our leaves converged on a single value, we can simply return it.
+    if (commitsToMerge.length === 1) {
+      // Is possible that a buggy session had created a broken branch. To
+      // recover, we force merge it the latest value
+      if (leaves.length > 1 && mergeLeaderSession === session) {
+        const mergeCommit = await this.createMergeCommit(
+          commitsToMerge,
+          leaves.map((c) => c.id),
+          mergeLeaderSession,
+        );
+        if (mergeCommit) {
+          return mergeCommit;
+        }
+      }
+      return this.cacheHeadForKey(key, commitsToMerge[0]);
+    }
+
     if (this.allowMerge && mergeLeaderSession === session) {
       const mergeParents = new Set<string>(commitsToMerge.map((c) => c.id));
       for (const l of leaves) {
@@ -1327,7 +1340,7 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 }
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
-  const hash = new RendezvousHash();
+  const hash = new RendezvousHash<string>();
   const now = Date.now();
   for (const c of leaves) {
     if (Math.abs(now - c.timestamp.getTime()) <= 5 * kSecondMs) {
