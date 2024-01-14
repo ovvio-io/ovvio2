@@ -692,7 +692,7 @@ function WorkspaceListItem({
     [color],
   );
   const repoId = Repository.id('data', workspace.key);
-  const [loaded, setLoaded] = useState(graph.repositoryIsActive(repoId));
+  const [loaded, setLoaded] = useState(graph.repositoryReady(repoId));
   const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
 
   useEffect(() => {
@@ -1141,49 +1141,6 @@ function WorkspaceBarInternal({
       removed: 'ALL',
     });
   }, [logger, view]);
-
-  // const pinWorkspace = (ws: VertexManager<Workspace>, pinned?: boolean) => {
-  //   const proxy = user.getVertexProxy();
-  //   const current = new Set(proxy.pinnedWorkspaces);
-  //   const hidden = new Set(proxy.hiddenWorkspaces);
-  //   pinned = typeof pinned === 'undefined' ? !current.has(ws.key) : pinned;
-  //   if (pinned) {
-  //     current.add(ws.key);
-  //     if (hidden.has(ws.key)) {
-  //       hidden.delete(ws.key);
-  //       proxy.hiddenWorkspaces = hidden;
-  //     }
-  //   } else if (current.has(ws.key)) {
-  //     current.delete(ws.key);
-  //   }
-  //   eventLogger.wsAction(pinned ? 'PIN_WORKSPACE' : 'UNPIN_WORKSPACE', ws, {});
-  //   proxy.pinnedWorkspaces = current;
-  // };
-
-  // const hideWorkspace = (ws: VertexManager<Workspace>, hidden?: boolean) => {
-  //   const proxy = user.getVertexProxy();
-  //   const current = new Set(proxy.hiddenWorkspaces);
-  //   const pinned = new Set(proxy.pinnedWorkspaces);
-  //   hidden = typeof hidden === 'undefined' ? !current.has(ws.key) : hidden;
-  //   if (hidden) {
-  //     current.add(ws.key);
-  //     if (pinned.has(ws.key)) {
-  //       pinned.delete(ws.key);
-  //       proxy.pinnedWorkspaces = pinned;
-  //     }
-  //   } else if (current.has(ws.key)) {
-  //     current.delete(ws.key);
-  //   }
-  //   eventLogger.wsAction(hidden ? 'HIDE_WORKSPACE' : 'SHOW_WORKSPACE', ws, {});
-  //   proxy.hiddenWorkspaces = current;
-  //   if (hidden && view.selectedWorkspaces.has(ws.getVertexProxy())) {
-  //     view.selectedWorkspaces.delete(ws.getVertexProxy());
-  //     setView({
-  //       ...view,
-  //       selectedWorkspaces: view.selectedWorkspaces,
-  //     });
-  //   }
-  // };
 
   return (
     <Layer priority={2}>
