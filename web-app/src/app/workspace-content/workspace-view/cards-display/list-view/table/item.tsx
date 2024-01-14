@@ -275,7 +275,7 @@ const useStyles = makeStyles(
       margin: styleguide.gridbase * 2,
     },
   }),
-  'item_1cda8c',
+  'item_1cda8c'
 );
 
 export { useStyles as useRowStyles };
@@ -329,7 +329,7 @@ export function Cell({
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
   function (
     { onWorkspaceMoved, note, isChild, onClick = () => {}, attributes },
-    ref,
+    ref
   ) {
     const styles = useStyles();
     const gridStyles = useGridStyles();
@@ -407,7 +407,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           ))}
       </React.Fragment>
     );
-  },
+  }
 );
 
 export function DraftItemRow({
@@ -463,7 +463,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        isChecked && styles.doneIndicatorActive,
+        isChecked && styles.doneIndicatorActive
       )}
     />
   );
@@ -490,7 +490,7 @@ const ExpanderCell = ({
         <IconArrowDown
           className={cn(
             styles.expanderIcon,
-            isExpanded && styles.expanderIconExpanded,
+            isExpanded && styles.expanderIconExpanded
           )}
         />
       )}
@@ -507,7 +507,7 @@ const ContentIndicatorCell = ({ note }: { note: VertexManager<Note> }) => {
       className={cn(
         styles.cell,
         styles.iconCell,
-        styles[GridColumns.ContentIndicator],
+        styles[GridColumns.ContentIndicator]
       )}
     >
       {!!bodyPreview.trim().length && <IconContent />}
@@ -530,24 +530,24 @@ const AssigneesCell = ({
   ]);
   const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['users'],
+    ['users']
   );
   const workspaces = useMemo(
     () => [workspace?.manager as VertexManager<Workspace>],
-    [workspace?.manager],
+    [workspace?.manager]
   );
 
   const userManagers = useMemo(
     () =>
       Array.from(wsAssignees || []).map(
-        (x) => x.manager as VertexManager<User>,
+        (x) => x.manager as VertexManager<User>
       ),
-    [wsAssignees],
+    [wsAssignees]
   );
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
-    [assignees],
+    [assignees]
   );
 
   return (
@@ -599,7 +599,7 @@ const TagsCell = ({
   for (const [p, c] of tags) {
     tagsMng.set(
       p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>,
+      c.manager as VertexManager<Tag>
     );
   }
   const onDelete = useCallback(
@@ -614,7 +614,7 @@ const TagsCell = ({
         removed: tag.key,
       });
     },
-    [note, logger],
+    [note, logger]
   );
   const onTag = useCallback(
     (tag: Tag) => {
@@ -632,7 +632,7 @@ const TagsCell = ({
         removed: prevTag?.key,
       });
     },
-    [note, logger],
+    [note, logger]
   );
   return (
     <Cell className={cn(styles[GridColumns.Tags])}>
@@ -695,7 +695,7 @@ const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: { className?: string },
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
     return (
@@ -705,18 +705,18 @@ const TitleNode = React.forwardRef(
         {...props}
       />
     );
-  },
+  }
 );
 const DraftTitleNode = React.forwardRef(
   (
     { className, ...props }: { className?: string },
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  },
+  }
 );
 
 function TitleCell({
@@ -784,7 +784,7 @@ function WorkspaceIndicatorComponent({
       '--ws-active': color.active,
       '--ws-inactive': color.inactive,
     }),
-    [color],
+    [color]
   );
 
   return (
@@ -864,7 +864,7 @@ const DateCell = ({ note }: { note: VertexManager<Note> }) => {
       <React.Fragment>
         <IconDueDate
           className={cn(styles.dueDateIcon)}
-          state={isLate ? DueDateState.OverDue : DueDateState.Default}
+          state={isLate ? DueDateState.Late : DueDateState.None}
         />
         <TextSm className={isLate ? styles.overdueDateText : undefined}>
           {formatTimeDiff(dueDate)}
@@ -924,7 +924,7 @@ const MenuCell = ({
       className={cn(
         styles.iconCell,
         styles.visibleOnHover,
-        styles[GridColumns.Menu],
+        styles[GridColumns.Menu]
       )}
     >
       <CardMenuView visible={isMouseOver} cardManager={note} source="list" />

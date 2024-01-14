@@ -198,7 +198,7 @@ export function DeleteCardAction({
         });
       }
     },
-    [setOpen, logger, card, source],
+    [setOpen, logger, card, source]
   );
 
   const onDeleteClick = useCallback(() => {
@@ -427,7 +427,7 @@ export function ToggleSubTasksAction({
       iconHeight="25"
       iconWidth="20"
       onClick={onClick}
-      text={partialNote.isChecked ? 'Uncheck All Tasks' : 'Check All Tasks'}
+      text={partialNote.isChecked ? ' Uncheck All Tasks' : '   Check All Tasks'}
     />
   );
 }
