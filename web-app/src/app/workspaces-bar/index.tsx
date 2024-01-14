@@ -1108,6 +1108,9 @@ function WorkspaceBarInternal({
         (mgr) => mgr.getVertexProxy(),
       ),
     );
+    view.selectedWorkspaces.add(
+      view.graph.getVertex<Workspace>(`${view.graph.rootKey}-ws`),
+    );
     logger.log({
       severity: 'EVENT',
       event: 'FilterChange',
