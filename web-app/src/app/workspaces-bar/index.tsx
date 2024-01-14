@@ -93,7 +93,7 @@ const useStyles = makeStyles(
       basedOn: [layout.column],
     },
     groupBy: {
-      color: theme.colors['monochrom-m-10'] || '#262626',
+      color: theme.mono.m10,
       fontFeatureSettings: "'clig' off, 'liga' off",
       padding: '8px 16px 8px 8px',
       backgroundColor: theme.secondary.s0,
@@ -408,10 +408,10 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
   const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
   const idx1 = kWorkspaceGIDOrder.indexOf(
-    typeof marker1 === 'string' ? marker1 : null,
+    typeof marker1 === 'string' && marker1.length > 0 ? marker1 : null,
   );
   const idx2 = kWorkspaceGIDOrder.indexOf(
-    typeof marker2 === 'string' ? marker2 : null,
+    typeof marker2 === 'string' && marker2.length > 0 ? marker2 : null,
   );
   return idx1 - idx2;
 }
@@ -441,15 +441,15 @@ const GROUP_BY: GroupByMapping = {
     if (sysGID) {
       return sysGID;
     }
-    const teams = new Set<WorkspaceGID>();
+    const allTeams = new Set<WorkspaceGID>();
     for (const u of ws.users) {
-      const team = u.metadata.get('team');
-      if (team) {
-        teams.add(team as WorkspaceGID);
-      }
+      const userTeams = (u.metadata.get('team') || '').split(
+        ',',
+      ) as WorkspaceGID[];
+      SetUtils.update(allTeams, userTeams);
     }
 
-    const res = Array.from(teams);
+    const res = Array.from(allTeams);
 
     if (res.length === 0) {
       res.push(null);
@@ -459,25 +459,6 @@ const GROUP_BY: GroupByMapping = {
   },
 };
 
-// Team: (ws: Workspace) => {
-//   const sysGID = systemGIDForWorkspace(ws);
-//   if (sysGID) {
-//     return sysGID;
-//   }
-//   const res: WorkspaceGID[] = [];
-//   // const role = ws.graph.getVertex<Role>('RoleTeamLeader');
-//   // const teamLeaders = role.assignees;
-//   const teamLeaders = new Set<User>();
-//   for (const u of ws.assignees) {
-//     if (teamLeaders.has(u) && !u.isRoot) {
-//       res.push(u.manager);
-//     }
-//   }
-//   if (res.length === 0) {
-//     res.push(null);
-//   }
-//   return res;
-// },
 function WorkspaceCheckbox({ toggled }: { toggled: boolean }) {
   const styles = useStyles();
   return (
@@ -554,11 +535,6 @@ function CollapseIcon({ className }: { className?: string }) {
   );
 }
 
-function IconUngroupWithColor(props) {
-  const { color, ...otherProps } = props;
-  return <IconUngroup color={color} {...otherProps} />;
-}
-
 interface WorkspaceToggleViewProps {
   onSelectAll: () => void;
   onUnselectAll: () => void;
@@ -596,8 +572,6 @@ function WorkspaceToggleView({
               </div>
             )}
             popupClassName={cn(styles.workSpaceMenu)}
-            anchor={moreButtonRef.current}
-            placement="auto-end"
             direction="out"
             position="right"
             align="end"
@@ -626,9 +600,7 @@ function WorkspaceToggleView({
               }}
             >
               {'Team'}
-              {view.workspaceGrouping === 'Team' && (
-                <IconCheck color={'blue'} />
-              )}
+              {view.workspaceGrouping === 'Team' && <IconCheck />}
             </MenuItem>
 
             <MenuItem
@@ -645,9 +617,7 @@ function WorkspaceToggleView({
               onClick={() => {
                 view.workspaceGrouping = 'none';
               }}
-              icon={(iconProps) => (
-                <IconUngroupWithColor color="blue" {...iconProps} />
-              )}
+              icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
             >
               {'Ungroup'}
               {view.workspaceGrouping === 'none' && <IconCheck />}
@@ -747,10 +717,9 @@ function WorkspaceListItem({
   );
 
   const setWorkspaceState = useCallback(
-    (state: 'myWorkspace' | 'template' | 'hidden' | 'pinned' | 'none') => {
+    (state: 'template' | 'hidden' | 'pinned' | 'none') => {
       const vert = workspace.getVertexProxy();
       vert.isTemplate = state === 'template';
-      // vert.isMyWorkspace = state === ''
       user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
       user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
       if (state === 'template' || state === 'hidden') {
@@ -905,93 +874,6 @@ function WorkspaceListItem({
     </div>
   );
 }
-
-//   return (
-//     <div
-//       className={cn(
-//         styles.listItem,
-//         !view.workspaceBarCollapsed && styles.listItemExpanded,
-//         isSelected && styles.listItemSelected
-//       )}
-//       style={style}
-//     >
-//       <Tooltip text={name} disabled={!isOverflowing} position="right">
-//         <div
-//           className={cn(styles.itemTab)}
-//           onClick={toggleSelected}
-//           // onContextMenu={toggleSelected}
-//         >
-//           <div ref={textRef} className={cn(styles.itemText)}>
-//             {name}
-//           </div>
-
-//           <WorkspaceCheckbox toggled={isSelected} />
-//         </div>
-//       </Tooltip>
-//       <div /*className={cn(layout.flexSpacer)}*/ />
-//       {!view.workspaceBarCollapsed && (
-//         <React.Fragment>
-//           <Button
-//             className={cn(
-//               styles.pinButton,
-//               groupId === "pinned" && styles.pinButtonPinned
-//             )}
-//             onClick={() =>
-//               setWorkspaceState(groupId === "pinned" ? "none" : "pinned")
-//             }
-//           >
-//             {groupId === "pinned" ? <IconPinOn /> : <IconPinOff />}
-//           </Button>
-//           <Menu
-//             renderButton={renderButton}
-//             direction="out"
-//             position="right"
-//             align="start"
-//             className={cn(styles.itemMenu)}
-//           >
-//             <MenuItem
-//               onClick={() => setIsSettingsOpen(true)}
-//               icon={IconSettings}
-//             >
-//               {strings.workspaceSettings}
-//             </MenuItem>
-//             {!isTemplate && (
-//               <MenuItem
-//                 onClick={() =>
-//                   setWorkspaceState(groupId === "hidden" ? "none" : "hidden")
-//                 }
-//                 icon={IconAdd}
-//               >
-//                 {groupId === "hidden"
-//                   ? strings.showWorkspace
-//                   : strings.hideWorkspace}
-//               </MenuItem>
-//             )}
-//             {groupId !== "hidden" && (
-//               <MenuItem
-//                 onClick={() =>
-//                   setWorkspaceState(
-//                     groupId === "templates" ? "none" : "template"
-//                   )
-//                 }
-//                 icon={IconAttachment}
-//               >
-//                 {groupId === "templates"
-//                   ? strings.unsetTemplate
-//                   : strings.setTemplate}
-//               </MenuItem>
-//             )}
-//           </Menu>
-//         </React.Fragment>
-//       )}
-//       {/* <WorkspaceSettingsDialog
-//         workspaceManager={workspace}
-//         isOpen={isSettingsOpen}
-//         hide={() => setIsSettingsOpen(false)}
-//       /> */}
-//     </div>
-//   );
-// }
 
 function ExpanderIcon({ className }: { className?: string }) {
   return (
