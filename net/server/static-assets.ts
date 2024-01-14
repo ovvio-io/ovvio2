@@ -71,10 +71,38 @@ export class StaticAssetsEndpoint implements Endpoint {
       return Promise.resolve(new Response(null, { status: 404 }));
     }
 
-    const epRelativePath = ep === EntryPointDefault
-      ? path
-      : path.substring(ep.length + 1);
-    const asset = staticEP[epRelativePath] || staticEP['/index.html'];
+    const epRelativePath =
+      ep === EntryPointDefault ? path : path.substring(ep.length + 1);
+
+    const orgPathPrefix = `/org/${services.organizationId}/`;
+    let asset =
+      staticEP[`${orgPathPrefix}${epRelativePath.substring(1)}`] ||
+      staticEP[epRelativePath];
+
+    if (asset && epRelativePath === '/app.js') {
+      const result: string[] = [];
+      for (const p of Object.keys(staticEP)) {
+        if (p.startsWith(orgPathPrefix)) {
+          result.push(p.substring(orgPathPrefix.length - 1));
+        }
+      }
+      result.sort();
+      const snippet = `window.OvvioAssetsList = ${JSON.stringify(result)};\n`;
+      return Promise.resolve(
+        new Response(snippet + new TextDecoder().decode(asset.data), {
+          headers: {
+            'content-type': 'application/json',
+          },
+        }),
+      );
+    }
+
+    // Default to index page
+    if (!asset) {
+      asset = staticEP['/index.html'];
+    }
+
+    // 404 if we don't have an index
     if (!asset) {
       return Promise.resolve(new Response(null, { status: 404 }));
     }
@@ -83,8 +111,9 @@ export class StaticAssetsEndpoint implements Endpoint {
       'content-type': asset.contentType,
     };
     if (asset.contentType.startsWith('image/')) {
-      headers['cache-control'] =
-        `Cache-Control: public, max-age=${STATIC_ASSETS_CACHE_DURATION_SEC}`;
+      headers[
+        'cache-control'
+      ] = `Cache-Control: public, max-age=${STATIC_ASSETS_CACHE_DURATION_SEC}`;
     }
     return Promise.resolve(
       new Response(asset.data, {
@@ -102,14 +131,12 @@ export async function compileAssetsDirectory(
     if (!(await exists(dir))) {
       continue;
     }
-    for await (
-      const { path } of walk(dir, {
-        includeDirs: false,
-        includeSymlinks: false,
-        followSymlinks: false,
-        exts: kValidFileExtensions,
-      })
-    ) {
+    for await (const { path } of walk(dir, {
+      includeDirs: false,
+      includeSymlinks: false,
+      followSymlinks: false,
+      exts: kValidFileExtensions,
+    })) {
       const ext = extname(path).substring(1) as keyof typeof ContentTypeMapping;
       const key = path.substring(dir.length).toLowerCase();
       result[key] = {
@@ -140,11 +167,9 @@ export function staticAssetsFromJS(assets: ReadonlyJSONObject): StaticAssets {
   const result: Record<string, StaticEntryPoint> = {};
   for (const [ep, encodedEp] of Object.entries(assets)) {
     const entry: StaticEntryPoint = {};
-    for (
-      const [path, asset] of Object.entries(
-        encodedEp as ReadonlyJSONObject,
-      )
-    ) {
+    for (const [path, asset] of Object.entries(
+      encodedEp as ReadonlyJSONObject,
+    )) {
       entry[path] = {
         data: decodeBase64((asset as ReadonlyJSONObject).data as string),
         contentType: (asset as ReadonlyJSONObject).contentType as ContentType,

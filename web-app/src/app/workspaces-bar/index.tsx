@@ -1078,6 +1078,21 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
   );
 }
 
+function findAssetPath(filter: (asset: string) => boolean): string | undefined {
+  const assetsList = (self as any).OvvioAssetsList as string[];
+  for (const p of assetsList) {
+    if (filter(p)) {
+      return p;
+    }
+  }
+  return undefined;
+}
+
+const LOGO_PATH =
+  findAssetPath((path) => path.startsWith('/logo.')) || '/logo.svg';
+const LOGO_EXTRA_PATH =
+  findAssetPath((path) => path.startsWith('/logo-extra.')) || '/logo-extra.svg';
+
 function WorkspaceBarInternal({
   className,
   query,
@@ -1172,9 +1187,21 @@ function WorkspaceBarInternal({
               </div>
             ) : (
               <div className={cn(styles.logoContainer)}>
-                <LogoIcon className={cn(styles.logoIcon)} />
+                {/* <LogoIcon className={cn(styles.logoIcon)} />
                 {view.workspaceBarCollapsed && (
                   <LogoText className={cn(styles.logoText)} />
+                )} */}
+                <img
+                  key="LOGO"
+                  className={cn(styles.logoIcon)}
+                  src={LOGO_PATH}
+                />
+                {!view.workspaceBarCollapsed && (
+                  <img
+                    key="LOGO-EXTRA"
+                    className={cn(styles.logoText)}
+                    src={LOGO_EXTRA_PATH}
+                  />
                 )}
                 {/* <img
                   className={cn(styles.logoIcon)}
