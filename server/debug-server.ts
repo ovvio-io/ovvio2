@@ -19,10 +19,13 @@ function incrementBuildNumber(version: VersionNumber): VersionNumber {
 
 function shouldRebuildAfterPathChange(p: string): boolean {
   const name = path.basename(p);
-  if (name.startsWith('.')) {
+  if (name.startsWith('.') || p.startsWith('.')) {
     return false;
   }
   if (p.startsWith('node_modules/')) {
+    return false;
+  }
+  if (p.includes('.git/')) {
     return false;
   }
   return true;
