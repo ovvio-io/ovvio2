@@ -14,65 +14,64 @@ import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
 import { useVertex } from '../../../core/cfds/react/vertex.ts';
+import { layout } from '../../../../../styles/layout.ts';
 
 const useStyles = makeStyles(() => ({
-  /* Container for the entire table. Positioned relative to its normal position and given a top margin. */
   tableContainer: {
     position: 'relative',
     top: '64px',
-    width: '100%', // Adjust as necessary for overall container width
+    width: '100%',
   },
 
-  /* Style for each row's layout including shadow, border, and background settings. */
   rowLayout: {
-    boxShadow: 'inset rgba(151, 132, 97, 0.25) 0px 2px 5px -2px', // Shadow for depth
-    backgroundColor: 'var(--Monochrom-M0, #FFF)', // Using variable for background color
+    boxShadow: 'inset rgba(151, 132, 97, 0.25) 0px 2px 5px -2px',
+    backgroundColor: 'var(--Monochrom-M0, #FFF)',
   },
 
-  /* Styling for each row. It uses flexbox for layout. */
   row: {
     display: 'flex',
     minHeight: '56px',
-    flexWrap: 'wrap', // Allows items to wrap to the next line
+    flexWrap: 'wrap',
     padding: '0px 8px 0px 0px',
     position: 'relative',
-    alignItems: 'center', // Centers items vertically
-    width: '670px', // Fixed width for consistency
+    alignItems: 'center',
+    width: '670px',
     borderBottom: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
     // borderTop: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
-
     ':hover': {
-      backgroundColor: '#FBF6EF', // Background color on hover
+      backgroundColor: '#FBF6EF',
       itemMenu: {
-        opacity: 1, // Show item menu on hover
+        opacity: 1,
       },
     },
   },
 
-  /* Styling for the content inside each row. */
   rowContent: {
-    display: 'flex',
+    basedOn: [layout.row],
     position: 'relative',
-    justifyContent: 'flex-start', // Aligns items to the start
-    gap: '4px', // Space between elements
-    padding: '18px 26px 17px 16px', // Padding inside the row
+    justifyContent: 'flex-start',
+    gap: '4px',
+    padding: '18px 26px 17px 16px',
   },
 
-  /* Styling for the category column. */
   CategoryColumnStyle: {
-    display: 'flex',
-    width: '160px', // Fixed width
-    minWidth: '160px',
-    flexDirection: 'column', // Items are laid out vertically
-    justifyContent: 'center',
+    width: '160px',
+    maxWidth: '160px',
   },
 
   categoryPill: {
-    display:
-      'inline-flex' /* Align items in a row and allow dynamic resizing */,
-    minWidth: '50px',
-    // maxWidth: '100%',
-    padding: '2px 4px 2px 8px', // Padding within the tag
+    padding: '2px 4px 2px 8px',
+    minWidth: '40px',
+    maxWidth: '160px',
+    width: '160px',
+  },
+
+  editPill: {
+    borderRadius: styleguide.gridbase * 2,
+    boxSizing: 'border-box',
+    borderStyle: 'solid',
+    borderColor: '#CCCCCC',
+    width: 'fit-content',
   },
 
   categoryInputPill: {
@@ -85,52 +84,34 @@ const useStyles = makeStyles(() => ({
     border: 'none',
     backgroundColor: 'transparent',
     padding: '0px 8px 0px 8px',
-    minWidth: '50px',
-    width: 'auto',
-  },
-  editPill: {
-    borderRadius: styleguide.gridbase * 2,
-    boxSizing: 'border-box',
-    borderStyle: 'solid',
-    borderColor: '#CCCCCC',
-    // position: 'absolute',
+    background: 'transparent',
+    display: 'flex',
   },
 
-  /* Styling for the tags column. */
   TagsColumnStyle: {
     display: 'flex',
-    maxWidth: '510px', // Maximum width to leave space for moreButtonColumn
-    alignItems: 'center', // Centers items vertically
-    flexFlow: 'row wrap', // Allows items to be in a row and wrap
-    gap: '4px', // Space between tags
-    marginRight: '96px', // Space from the More Button Column
+    width: '70%',
+    maxWidth: '510px',
+    alignItems: 'center',
+    flexFlow: 'row wrap',
+    gap: '4px',
+    marginRight: '96px',
   },
-
-  /* Base style for each pill in the tag column. */
   tagPillSize: {
-    borderRadius: styleguide.gridbase * 2, // Rounded corners
+    borderRadius: styleguide.gridbase * 2,
     boxSizing: 'border-box',
-    backgroundColor: '#E5E5E5', // Background color
-    justifyContent: 'space-between', // Spaces items evenly
-    alignItems: 'center', // Centers items vertically
+    backgroundColor: '#E5E5E5',
+    minWidth: '40px',
+    maxWidth: '260px',
   },
-
-  /* Additional styling for each tag pill. */
   tagPill: {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    color: 'var(--tag-color)', // Color of the text
-    marginRight: styleguide.gridbase, // Margin to the right
-    padding: '2px 4px 2px 8px', // Padding within the tag
+    color: 'var(--tag-color)',
+    marginRight: styleguide.gridbase,
+    padding: '2px 4px 2px 4px',
   },
-
-  moreButtonColumn: {
-    position: 'absolute',
-    right: '8px',
-  },
-
-  //===========
   tagInputPill: {
     fontSize: '10px',
     lineHeight: '14px',
@@ -138,9 +119,13 @@ const useStyles = makeStyles(() => ({
     border: 'none',
     padding: '0px 8px 0px 8px',
     backgroundColor: 'transparent',
-    minWidth: '20px', // Set a reasonable minimum width
-    width: 'auto', // Allow width to adjust automatically
+    minWidth: '20px',
     fontWeight: '400',
+    background: 'transparent',
+  },
+  moreButtonColumn: {
+    position: 'absolute',
+    right: '8px',
   },
   newCategory: {
     display: 'flex',
@@ -149,7 +134,7 @@ const useStyles = makeStyles(() => ({
     justifyContent: 'center',
     alignItems: 'center',
     cursor: 'pointer',
-    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)', // Shadow for depth
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
   },
   newCategoryText: {
     fontSize: '13px',
@@ -165,7 +150,7 @@ const useStyles = makeStyles(() => ({
     maxHeight: '700px',
     overflowY: 'scroll',
     overflowX: 'visible',
-    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)', // Shadow for depth
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
   },
 
   itemMenu: {
@@ -223,144 +208,6 @@ function useOutsideClick<T extends HTMLElement>(
   }, [ref, callback]);
 }
 
-//==============================================================================TagInput======================================
-interface TagInputProps {
-  tagName: string;
-  setTagName: (name: string) => void;
-  onBlur: () => void;
-  editMode: boolean;
-}
-const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
-  ({ tagName, setTagName, onBlur, editMode }, ref) => {
-    const styles = useStyles();
-    const [value, setValue] = useState<string>(tagName);
-
-    const [inputWidth, setInputWidth] = useState<string>(
-      (tagName.length + 1) * 5 + 'px'
-    );
-
-    useEffect(() => {
-      setValue(tagName);
-      setInputWidth((tagName.length + 1) * 5 + 'px');
-    }, [tagName]);
-
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.value);
-      setInputWidth((tagName.length + e.target.value.length) * 2 + 'px');
-    };
-
-    const commit = () => {
-      setTagName(value);
-      onBlur();
-    };
-
-    const reset = () => {
-      setValue(tagName);
-      onBlur();
-    };
-
-    const blur = (e: React.FocusEvent<HTMLInputElement>) => {
-      commit();
-    };
-
-    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        e.preventDefault();
-        reset();
-      } else if (e.key === 'Enter') {
-        e.stopPropagation();
-        e.preventDefault();
-        commit();
-      }
-    };
-
-    return (
-      <input
-        className={cn(styles.tagInputPill)}
-        type="text"
-        ref={ref as React.RefObject<HTMLInputElement>}
-        value={value}
-        onChange={onChange}
-        onBlur={blur}
-        onKeyDown={onKeyDown}
-        readOnly={!editMode}
-        placeholder="untitled"
-        style={{ width: inputWidth }}
-      />
-    );
-  }
-);
-
-//==============================================================================TagInput======================================
-interface CategoryInputProps {
-  categoryName: string;
-  setCategoryName: (name: string) => void;
-  onBlur: () => void;
-  editMode: boolean;
-}
-
-const CategoryInput = React.forwardRef<HTMLInputElement, CategoryInputProps>(
-  ({ categoryName, setCategoryName, onBlur, editMode }, ref) => {
-    const styles = useStyles();
-    const [value, setValue] = useState<string>(categoryName);
-
-    const [inputWidth, setInputWidth] = useState<string>(
-      (categoryName.length + 1) * 5 + 'px'
-    );
-    useEffect(() => {
-      setValue(categoryName);
-      setInputWidth((categoryName.length + 1) * 5 + 'px');
-    }, [categoryName]);
-
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.value);
-      setInputWidth((categoryName.length + e.target.value.length) * 2 + 'px');
-    };
-
-    const commit = () => {
-      setCategoryName(value);
-      onBlur();
-    };
-
-    const reset = () => {
-      setValue(categoryName);
-      onBlur();
-    };
-
-    const blur = (e: React.FocusEvent<HTMLInputElement>) => {
-      commit();
-    };
-
-    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        e.preventDefault();
-        reset();
-      } else if (e.key === 'Enter') {
-        e.stopPropagation();
-        e.preventDefault();
-        commit();
-      }
-    };
-
-    return (
-      <input
-        className={cn(styles.categoryInputPill)}
-        type="text"
-        ref={ref as React.RefObject<HTMLInputElement>}
-        value={value}
-        onChange={onChange}
-        onBlur={blur}
-        onKeyDown={onKeyDown}
-        readOnly={!editMode}
-        placeholder="untitled"
-        style={{ width: inputWidth }}
-      />
-    );
-  }
-);
-
 //=========================================================================================CategoryPill===========================
 
 type CategoryPillProps = {
@@ -377,9 +224,9 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
   inputRef,
 }) => {
   const styles = useStyles();
-  // const inputRef = useRef<HTMLInputElement>(null);
   const category = useVertex(categoryVertex) as Tag;
   const [categoryName, setCategoryName] = useState<string>(category.name);
+  const [inputWidth, setInputWidth] = useState(`${categoryName.length * 10}px`);
 
   useEffect(() => {
     category.name = categoryName;
@@ -391,24 +238,22 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     }
   }, [isNewCategory, editMode]);
 
-  const onBlur = () => {};
-
-  const categoryInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isNewCategory && categoryInputRef.current) {
-      categoryInputRef.current.focus();
-    }
-  }, [isNewCategory]);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCategoryName(e.target.value);
+    setInputWidth((categoryName.length + e.target.value.length) * 5 + 'px');
+  };
 
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
-      <CategoryInput
-        categoryName={categoryName}
-        setCategoryName={setCategoryName}
-        ref={inputRef}
-        onBlur={onBlur}
-        editMode={editMode || isNewCategory}
+      <input
+        className={cn(styles.categoryInputPill)}
+        type="text"
+        value={categoryName}
+        maxlength="14"
+        onChange={onChange}
+        readOnly={!editMode && !isNewCategory}
+        placeholder="untitled"
+        style={{ width: inputWidth }}
       />
     </div>
   );
@@ -430,11 +275,18 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
     const styles = useStyles();
     const [tagName, setTagName] = useState<string>(tag.name);
 
-    const onBlur = () => {};
-
     useEffect(() => {
       tag.name = tagName;
     }, [tagName]);
+
+    const [inputWidth, setInputWidth] = useState<string>(
+      (tagName.length + 1) * 5 + 'px'
+    );
+
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTagName(e.target.value);
+      setInputWidth((tagName.length + e.target.value.length - 1) * 3 + 'px');
+    };
 
     return (
       <div
@@ -455,12 +307,15 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
             />
           </div>
         )}
-        <TagInput
-          tagName={tagName}
-          setTagName={setTagName}
-          ref={ref}
-          onBlur={onBlur}
-          editMode={editMode || isNewCategory}
+        <input
+          className={cn(styles.tagInputPill)}
+          type="text"
+          ref={ref as React.RefObject<HTMLInputElement>}
+          value={tagName}
+          onChange={onChange}
+          onBlur={blur}
+          readOnly={!editMode}
+          style={{ width: inputWidth }}
         />
         {editMode && (
           <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
