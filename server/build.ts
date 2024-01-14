@@ -10,6 +10,7 @@ import { defaultAssetsBuild } from './generate-statc-assets.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { getRepositoryPath } from '../base/development.ts';
 import { tuple4ToString } from '../base/tuple.ts';
+import { generateBuildInfo } from './build-info.ts';
 
 interface Arguments {
   upload?: boolean;
@@ -200,6 +201,10 @@ async function main(): Promise<void> {
   if (!controlBuild) {
     await defaultAssetsBuild();
   }
+  await Deno.writeTextFile(
+    path.join(buildDirPath, 'build-info.json'),
+    JSON.stringify(generateBuildInfo()),
+  );
   let channel: BuildChannel | undefined;
   if (args?.beta === true) {
     channel = 'beta';

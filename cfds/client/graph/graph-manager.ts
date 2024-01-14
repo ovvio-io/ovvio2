@@ -251,14 +251,14 @@ export class GraphManager
         }
         plumbing.active = true;
         plumbing.loadingFinished = true;
-        const numberOfCommits = repo.numberOfCommits();
-        if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
-          plumbing.loadedLocalContents = true;
-          if (client) {
-            client.ready = true;
-            client.startSyncing();
-          }
-        }
+        // const numberOfCommits = repo.numberOfCommits();
+        // if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
+        //   plumbing.loadedLocalContents = true;
+        //   if (client) {
+        //     client.ready = true;
+        //     client.startSyncing();
+        //   }
+        // }
       },
     );
     return plumbing.loadingPromise;

@@ -23,7 +23,11 @@ import { IconViewNote } from '../../../../../styles/components/new-icons/icon-vi
 import { IconOpen } from '../../../../../styles/components/new-icons/icon-open.tsx';
 import { IconExportPdf } from '../../../../../styles/components/new-icons/icon-export-pdf.tsx';
 import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
-import { IconDueDate } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
+import {
+  DueDateState,
+  IconDueDate,
+  IconDueDateProps,
+} from '../../../../../styles/components/new-icons/icon-due-date.tsx';
 import { IconColor } from '../../../../../styles/components/new-icons/types.ts';
 import { IconLink } from '../../../../../styles/components/icons/index.ts';
 import { MenuAction } from '../../../../../styles/components/menu.tsx';
@@ -42,6 +46,11 @@ import {
 import { useLogger } from '../../../core/cfds/react/logger.tsx';
 import { UISource } from '../../../../../logging/client-events.ts';
 import { IconAddDueDate } from '../../../../../styles/components/new-icons/icon-add-due-date.tsx';
+import {
+  IconCheckAllProps,
+  IconCheckAll,
+  CheckAllState,
+} from '../../../../../styles/components/new-icons/icon-check-all.tsx';
 
 interface CardActionProps {
   cardManager: VertexManager<Note>;
@@ -74,7 +83,7 @@ export function EditCardAction({
       {...props}
       onClick={openItem}
       IconComponent={IconOpen}
-      text='Open'
+      text="Open"
     />
   );
 }
@@ -97,7 +106,7 @@ export function EditDueDateAction({
       {...props}
       onClick={onClick}
       IconComponent={IconAddDueDate}
-      text='Add Due Date'
+      text="Add Due Date"
     />
   );
 }
@@ -130,7 +139,7 @@ export function ViewInNoteAction({
       {...props}
       onClick={openNote}
       IconComponent={IconViewNote}
-      text='View In Note'
+      text="View In Note"
     />
   );
 }
@@ -224,7 +233,7 @@ export function DeleteCardAction({
         {...props}
         onClick={onOpen}
         IconComponent={IconDelete}
-        text='Delete'
+        text="Delete"
       />
       <Dialog
         open={open}
@@ -281,7 +290,7 @@ export function DuplicateCardAction({
       {...props}
       onClick={onDuplicate}
       IconComponent={IconDuplicate}
-      text='Duplicate'
+      text="Duplicate"
     />
   );
 }
@@ -358,3 +367,67 @@ export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
 //     />
 //   );
 // }
+
+export function ClearDueDateAction({
+  cardManager,
+  source,
+  ...props
+}: CardActionProps) {
+  const toastController = useToastController();
+
+  return (
+    <MenuAction
+      {...props}
+      IconComponent={(props: IconDueDateProps) =>
+        IconDueDate({ ...props, state: DueDateState.Clear })
+      }
+      // iconHeight="25"
+      // iconWidth="20"
+      onClick={() => {
+        delete cardManager.getVertexProxy().dueDate;
+        toastController.displayToast({
+          text: 'Due Date Cleared',
+          duration: 3000,
+        });
+      }}
+      text="Clear Due Date"
+    />
+  );
+}
+
+export function ToggleSubTasksAction({
+  cardManager,
+  source,
+  ...props
+}: CardActionProps) {
+  const partialNote = usePartialVertex(cardManager, [
+    'childCards',
+    'isChecked',
+  ]);
+
+  const onClick = useCallback(() => {
+    const checked = !partialNote.isChecked;
+    partialNote.isChecked = checked;
+    for (const child of partialNote.childCards) {
+      child.isChecked = checked;
+    }
+  }, [partialNote]);
+
+  return (
+    <MenuAction
+      {...props}
+      IconComponent={(props: IconCheckAllProps) =>
+        IconCheckAll({
+          ...props,
+          state: partialNote.isChecked
+            ? CheckAllState.Uncheck
+            : CheckAllState.Check,
+        })
+      }
+      iconHeight="25"
+      iconWidth="20"
+      onClick={onClick}
+      text={partialNote.isChecked ? 'Uncheck All Tasks' : 'Check All Tasks'}
+    />
+  );
+}

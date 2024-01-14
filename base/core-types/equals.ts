@@ -21,7 +21,7 @@ function coreIterableEquals(
   i1: Iterable<CoreValue>,
   i2: Iterable<CoreValue>,
   iterableFilter: IterableFilterFunc,
-  options?: EqualOptions
+  options?: EqualOptions,
 ) {
   const iter1 = i1[Symbol.iterator]();
   const iter2 = i2[Symbol.iterator]();
@@ -72,7 +72,7 @@ function coreIterableEquals(
 function setLongMatch(
   s1: Set<CoreValue>,
   s2: Set<CoreValue>,
-  options?: EqualOptions
+  options?: EqualOptions,
 ) {
   let matchCount = 0;
   const iterableFilter = options && options.iterableFilter;
@@ -103,7 +103,7 @@ export interface EqualOptions extends CoreOptions {}
 export function coreValueEquals(
   e1: CoreValue | object,
   e2: CoreValue | object,
-  options?: EqualOptions
+  options?: EqualOptions,
 ): boolean {
   if (e1 === e2) {
     return true;
@@ -113,7 +113,7 @@ export function coreValueEquals(
   const t2 = getCoreTypeOrUndef(e2 as CoreValue);
 
   if (t1 === undefined || t2 === undefined) {
-    return t1 === t2;
+    return e1 === e2;
   }
 
   if (t1 !== t2) {
@@ -217,7 +217,7 @@ export function coreValueEquals(
     case CoreType.Dictionary:
       return dictEquals(
         e1 as Dictionary<CoreKey, CoreValue>,
-        e2 as Dictionary<CoreKey, CoreValue>
+        e2 as Dictionary<CoreKey, CoreValue>,
       );
 
     case CoreType.Generator: {

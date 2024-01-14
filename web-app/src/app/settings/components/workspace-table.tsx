@@ -219,10 +219,11 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
     tableContent: {
       flex: 1,
     },
-    // scrollTable: {
-    //   overflowY: 'scroll',
-    //   overflowX: 'visible',
-    // },
+    scrollTable: {
+      maxHeight: '700px',
+      overflowY: 'scroll',
+      overflowX: 'visible',
+    },
   }));
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -231,7 +232,12 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
 
   useEffect(() => {
     if (workspaces) {
-      const filtered = suggestResults(searchTerm, workspaces, (t) => t.name);
+      const filtered = suggestResults(
+        searchTerm,
+        workspaces,
+        (t) => t.name,
+        Number.MAX_SAFE_INTEGER
+      );
       setFilteredWorkspaces(filtered);
     }
   }, [searchTerm, workspaces]);
@@ -250,21 +256,21 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
             isSearching={isSearching}
           />
         )}
-        <div className={styles.scrollTable}>
-          {filteredWorkspaces.map(
-            (ws: Workspace) =>
-              ws.key !== personalWsKey && (
-                <RowInTable
-                  key={ws.key + wsKey}
-                  ws={ws}
-                  onRowSelect={onRowSelect}
-                  isSelected={showSelection && selectedWorkspaces.includes(ws)}
-                  isEditable={isEditable && !selectedWorkspaces.includes(ws)}
-                />
-              )
-          )}
-        </div>
+        {/* <div className={styles.scrollTable}> */}
+        {filteredWorkspaces.map(
+          (ws: Workspace) =>
+            ws.key !== personalWsKey && (
+              <RowInTable
+                key={ws.key + wsKey}
+                ws={ws}
+                onRowSelect={onRowSelect}
+                isSelected={showSelection && selectedWorkspaces.includes(ws)}
+                isEditable={isEditable && !selectedWorkspaces.includes(ws)}
+              />
+            )
+        )}
       </div>
+      {/* </div> */}
     </div>
   );
 };

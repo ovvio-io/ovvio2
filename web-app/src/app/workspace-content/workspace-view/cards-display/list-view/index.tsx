@@ -82,7 +82,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
     },
-    [docRouter]
+    [docRouter],
   );
 
   useEffect(() => {
@@ -148,7 +148,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                 >
                   {(
                     draggableProps,
-                    ref: React.MutableRefObject<HTMLTableRowElement>
+                    ref: React.MutableRefObject<HTMLTableRowElement>,
                   ) => (
                     <ItemRow
                       index={index}
@@ -163,13 +163,13 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
               ))}
 
               <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
-              {view.noteType === NoteType.Task && (
+              {/* {view.noteType === NoteType.Task && (
                 <InlineTaskButton
                   key={`list/inline-task`}
                   draft={draft}
                   setDraft={setDraft}
                 />
-              )}
+              )} */}
               {unpinnedQuery?.results.slice(0, limit).map((c) => (
                 <ItemRow
                   note={c}

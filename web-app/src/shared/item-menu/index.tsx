@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from "react";
-import Menu from "../../../../styles/components/menu.tsx";
-import { IconOverflow } from "../../../../styles/components/icons/index.ts";
+import React, { useCallback, useEffect } from 'react';
+import Menu from '../../../../styles/components/menu.tsx';
+import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
   EditCardAction,
   // UploadAttachmentAction,
@@ -12,28 +12,29 @@ import {
   DuplicateCardAction,
   // CopyUrlAction,
   ConvertNoteAction,
-} from "./actions/index.tsx";
-import { Note } from "../../../../cfds/client/graph/vertices/note.ts";
-import { VertexManager } from "../../../../cfds/client/graph/vertex-manager.ts";
-import { OvvioEditor } from "../../core/slate/types.ts";
-import { UISource } from "../../../../logging/client-events.ts";
-import { useLogger } from "../../core/cfds/react/logger.tsx";
-import { usePartialVertex } from "../../core/cfds/react/vertex.ts";
-import { IconMore } from "../../../../styles/components/new-icons/icon-more.tsx";
-import { makeStyles } from "../../../../styles/css-objects/index.ts";
-import { styleguide } from "../../../../styles/styleguide.ts";
-import { notFound } from "../../../../cfds/base/errors.ts";
+  ToggleSubTasksAction,
+  ClearDueDateAction,
+} from './actions/index.tsx';
+import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { UISource } from '../../../../logging/client-events.ts';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
+import { makeStyles } from '../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../styles/styleguide.ts';
+import { notFound } from '../../../../cfds/base/errors.ts';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
     opacity: 0,
     ...styleguide.transition.short,
-    transitionProperty: "opacity",
+    transitionProperty: 'opacity',
     marginRight: styleguide.gridbase,
   },
   itemMenuOpen: {
     opacity: 1,
-    padding: "0px 6px 0px 0px",
+    padding: '0px 6px 0px 0px',
   },
 }));
 
@@ -44,9 +45,8 @@ export interface CardMenuViewProps {
   className?: any;
   source: UISource;
   editorRootKey?: string;
-  direction?: "in" | "out";
-  position?: "top" | "bottom" | "left" | "right";
-  editor?: OvvioEditor;
+  direction?: 'in' | 'out';
+  position?: 'top' | 'bottom' | 'left' | 'right';
   visible?: boolean;
 }
 
@@ -59,28 +59,29 @@ export default function CardMenuView({
   editorRootKey,
   direction,
   position,
-  editor,
   visible,
 }: CardMenuViewProps) {
   const logger = useLogger();
   const styles = useStyles();
+  const partialNote = usePartialVertex(cardManager, [
+    'dueDate',
+    'type',
+    'isChecked',
+    'childCards',
+    'parentNote',
+  ]);
 
-  const partialNote = usePartialVertex(cardManager, ["parentNote"]);
   if (!cardManager) {
     return null;
   }
 
   const renderButton = useCallback(
-    (
-      { isOpen } //TODO: fix this.
-    ) => (
-      <div
-        className={!isOpen && visible ? styles.itemMenu : styles.itemMenuOpen}
-      >
+    () => (
+      <div className={visible ? styles.itemMenu : styles.itemMenuOpen}>
         <IconMore />
       </div>
     ),
-    [styles]
+    [styles],
   );
 
   // useEffect(()=> {
@@ -94,13 +95,12 @@ export default function CardMenuView({
       align="start"
     >
       {allowsEdit && (
-        <EditCardAction
-          cardManager={cardManager}
-          source={source}
-          editor={editor}
-        />
+        <EditCardAction cardManager={cardManager} source={source} />
       )}
       <EditDueDateAction cardManager={cardManager} source={source} />
+      {partialNote.dueDate && (
+        <ClearDueDateAction cardManager={cardManager} source={source} />
+      )}
 
       {/* <UploadAttachmentAction cardManager={cardManager} source={source} /> */}
       {partialNote.parentNote && (
@@ -110,11 +110,13 @@ export default function CardMenuView({
         cardManager={cardManager}
         source={source}
         editorRootKey={editorRootKey}
-        editor={editor}
       />
       {/* <ExportMailAction cardManager={cardManager} source={source} />
       <ExportPdfAction cardManager={cardManager} source={source} /> */}
-      <ConvertNoteAction cardManager={cardManager} source={source} />
+      {/* <ConvertNoteAction cardManager={cardManager} source={source} /> */}
+      {partialNote.childCards.length > 0 && (
+        <ToggleSubTasksAction cardManager={cardManager} source={source} />
+      )}
       <DeleteCardAction
         cardManager={cardManager}
         source={source}
