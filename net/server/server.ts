@@ -28,6 +28,11 @@ import { sleep } from '../../base/time.ts';
 import { kSecondMs } from '../../base/date.ts';
 import { JSONLogStream } from '../../logging/json-log-stream.ts';
 import { getOvvioConfig } from '../../server/config.ts';
+import { organizationIdFromURL } from '../rest-api.ts';
+import { VCurrent } from '../../base/version-number.ts';
+import { tuple4ToString } from '../../base/tuple.ts';
+import { BuildInfo, generateBuildInfo } from '../../server/build-info.ts';
+import { prettyJSON } from '../../base/common.ts';
 
 export const ENV_REPLICAS = 'REPLICAS';
 
@@ -48,6 +53,7 @@ interface BaseServerContext {
 interface Arguments extends BaseServerContext {
   readonly b64replicas?: string;
   readonly pool?: string;
+  readonly version?: boolean;
 }
 
 // Stuff that's shared to all organizations served by this server
@@ -141,11 +147,16 @@ export class Server {
   private _abortController: AbortController | undefined;
   private _httpServer?: Deno.HttpServer;
 
-  constructor(args?: Arguments, staticAssets?: StaticAssets) {
+  constructor(
+    args?: Arguments,
+    staticAssets?: StaticAssets,
+    buildInfo?: BuildInfo,
+  ) {
     this._endpoints = [];
     this._middlewares = [];
     getOvvioConfig().serverData = this;
     if (args === undefined) {
+      debugger;
       args = yargs(Deno.args)
         .option('port', {
           alias: 'p',
@@ -183,6 +194,14 @@ export class Server {
         .option('pool', {
           description: 'Process pool configuration in the form of "idx:count".',
         })
+        // .option('version', {
+        //   description: 'Display version information about this build',
+        // })
+        .version(
+          `Ovvio Server Version ${tuple4ToString(
+            VCurrent,
+          )}\nBuild Info:\n${prettyJSON(buildInfo || generateBuildInfo())}`,
+        )
         .demandOption(
           ['dir'],
           // 'Please provide a local directory for this server'
@@ -439,74 +458,6 @@ export class Server {
     });
     return result;
   }
-}
-
-const RESERVED_ORG_IDS = [
-  'me',
-  'team',
-  'us',
-  'user',
-  'profile',
-  'ovvio',
-  'debug',
-  'localhost',
-];
-
-function isValidOrgId(id: string): boolean {
-  const len = id.length;
-  if (len < 4 || len > 32) {
-    return false;
-  }
-  if (RESERVED_ORG_IDS.includes(id)) {
-    return false;
-  }
-  for (let i = 0; i < len; ++i) {
-    const code = id.charCodeAt(i);
-    // Hyphens are allowed
-    if (code === 45) {
-      continue;
-    }
-    // [0 -
-    if (code < 48) {
-      return false;
-    }
-    // 9], [A -
-    if (code > 57 && code < 65) {
-      return false;
-    }
-    // Z], [a -
-    if (code > 90 && code < 97) {
-      return false;
-    }
-    // z]
-    if (code > 122) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * WARNING: This seemingly trivial function deals with data that arrives from
- * anywhere in the internet. We must treat it as potentially hostile.
- */
-function organizationIdFromURL(url: string | URL): string | undefined {
-  if (typeof url === 'string') {
-    url = new URL(url);
-  }
-  const hostname = url.hostname.toLowerCase();
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'localhost';
-  }
-  const comps = url.hostname.split('.');
-  if (comps.length !== 3) {
-    return undefined;
-  }
-  const maybeId = comps[0];
-  if (isValidOrgId(maybeId)) {
-    return maybeId;
-  }
-  return undefined;
 }
 
 function parsePoolConfig(

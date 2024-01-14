@@ -19,10 +19,13 @@ function incrementBuildNumber(version: VersionNumber): VersionNumber {
 
 function shouldRebuildAfterPathChange(p: string): boolean {
   const name = path.basename(p);
-  if (name.startsWith('.')) {
+  if (name.startsWith('.') || p.startsWith('.')) {
     return false;
   }
   if (p.startsWith('node_modules/')) {
+    return false;
+  }
+  if (p.includes('.git/')) {
     return false;
   }
   return true;
@@ -49,6 +52,7 @@ async function openBrowser(): Promise<void> {
 
 async function main(): Promise<void> {
   const args: Arguments = yargs(Deno.args)
+    .version(false)
     .option('org', {
       description:
         'The organization id to connect to. Connects to local server if not provided (default).',
@@ -71,9 +75,10 @@ async function main(): Promise<void> {
     console.log('Changes detected. Rebuilding static assets...');
     try {
       const config = getOvvioConfig();
-      const version = serverURL === undefined
-        ? incrementBuildNumber(config.version)
-        : config.version;
+      const version =
+        serverURL === undefined
+          ? incrementBuildNumber(config.version)
+          : config.version;
       (await server.servicesForOrganization('localhost')).staticAssets =
         await buildAssets(ctx, version, serverURL);
       config.version = version;

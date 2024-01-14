@@ -56,6 +56,11 @@ export function getBaseURL(): string {
   return serverURL || `${location.protocol}//${location.host}`;
 }
 
+export function getOrganizationId(): string {
+  const serverURL = getOvvioConfig().serverURL;
+  return organizationIdFromURL(serverURL || location.toString()) || 'localhost';
+}
+
 function urlForEndpoint(endpoint: string): string {
   if (endpoint[0] === '/') {
     endpoint = endpoint.substring(1);
@@ -95,4 +100,75 @@ export async function sendJSONToURL(
     await IDBRepositoryBackup.logout();
   }
   return resp;
+}
+
+/**
+ * WARNING: This function is used by the server to direct requests to the
+ * appropriate organization, and thus must be secure. This seemingly trivial
+ * function deals with data that arrives from anywhere in the internet. We must
+ * treat it as potentially hostile and not assume we're running in a safe
+ * browser environment.
+ */
+export function organizationIdFromURL(url: string | URL): string | undefined {
+  if (typeof url === 'string') {
+    url = new URL(url);
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'localhost';
+  }
+  const comps = url.hostname.split('.');
+  if (comps.length !== 3) {
+    return undefined;
+  }
+  const maybeId = comps[0];
+  if (isValidOrgId(maybeId)) {
+    return maybeId;
+  }
+  return undefined;
+}
+
+const RESERVED_ORG_IDS = [
+  'me',
+  'team',
+  'us',
+  'user',
+  'profile',
+  'ovvio',
+  'debug',
+  'localhost',
+];
+
+function isValidOrgId(id: string): boolean {
+  const len = id.length;
+  if (len < 4 || len > 32) {
+    return false;
+  }
+  if (RESERVED_ORG_IDS.includes(id)) {
+    return false;
+  }
+  for (let i = 0; i < len; ++i) {
+    const code = id.charCodeAt(i);
+    // Hyphens are allowed
+    if (code === 45) {
+      continue;
+    }
+    // [0 -
+    if (code < 48) {
+      return false;
+    }
+    // 9], [A -
+    if (code > 57 && code < 65) {
+      return false;
+    }
+    // Z], [a -
+    if (code > 90 && code < 97) {
+      return false;
+    }
+    // z]
+    if (code > 122) {
+      return false;
+    }
+  }
+  return true;
 }
