@@ -1127,7 +1127,9 @@ function WorkspaceBarInternal({
   }, [activeViewMgr, view.selectedWorkspaces]);
 
   const unselectAll = useCallback(() => {
-    view.clear();
+    // view.clear();
+    view.clearContentsDisplaySettings();
+    view.selectedWorkspaces.clear();
     logger.log({
       severity: 'EVENT',
       event: 'FilterChange',
