@@ -101,12 +101,15 @@ export function EditDueDateAction({
   const onClick = () => {
     dueDateEditor.edit(cardManager.getVertexProxy());
   };
+  const partialNote = usePartialVertex(cardManager, ['dueDate']);
+  const hasDueDate = partialNote.dueDate;
+
   return (
     <MenuAction
       {...props}
       onClick={onClick}
       IconComponent={IconAddDueDate}
-      text="Add Due Date"
+      text={hasDueDate != undefined ? 'Edit Due Date' : 'Add Due Date'}
     />
   );
 }
