@@ -1003,12 +1003,6 @@ export class Repository<
       parents: head?.id,
     });
     commit = this.deltaCompressIfNeeded(commit);
-    if (
-      commitContentsIsDelta(commit.contents) &&
-      commit.contents.edit.isEmpty
-    ) {
-      return false;
-    }
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
     this.persistVerifiedCommits([signedCommit]);
