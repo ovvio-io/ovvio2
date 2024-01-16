@@ -23,7 +23,7 @@ import { TrustPool } from '../../auth/session.ts';
 import { EmailService } from './email.ts';
 import { CORSEndpoint, CORSMiddleware } from './cors.ts';
 import { ServerError } from '../../cfds/base/errors.ts';
-import { LogsEndpoint } from './logs.ts';
+// import { LogsEndpoint } from './logs.ts';
 import { sleep } from '../../base/time.ts';
 import { kSecondMs } from '../../base/date.ts';
 import { JSONLogStream } from '../../logging/json-log-stream.ts';
@@ -269,7 +269,7 @@ export class Server {
     this.registerMiddleware(new CORSMiddleware());
     this.registerEndpoint(new CORSEndpoint());
     // Logs
-    this.registerEndpoint(new LogsEndpoint());
+    // this.registerEndpoint(new LogsEndpoint());
   }
 
   async setup(): Promise<void> {

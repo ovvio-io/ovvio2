@@ -10,7 +10,7 @@ import { defaultAssetsBuild } from './generate-statc-assets.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { getRepositoryPath } from '../base/development.ts';
 import { tuple4ToString } from '../base/tuple.ts';
-import { generateBuildInfo } from './build-info.ts';
+import { BuildChannel, generateBuildInfo } from './build-info.ts';
 
 interface Arguments {
   upload?: boolean;
@@ -22,7 +22,6 @@ interface Arguments {
 }
 
 export type BuildTarget = 'server' | 'control';
-export type BuildChannel = 'alpha' | 'beta';
 
 async function compressFile(srcPath: string, dstPath: string): Promise<void> {
   const src = await Deno.open(srcPath, { read: true, write: false });
@@ -85,7 +84,7 @@ export function outputFileName(
   channel?: BuildChannel,
 ): string {
   return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}${
-    channel ? '-' + channel : ''
+    channel && channel !== 'release' ? '-' + channel : ''
   }`;
 }
 
@@ -125,19 +124,25 @@ async function build(
   const compileArgs = [
     'compile',
     '-A',
-    '--no-lock',
+    '--lock-write',
     '--no-check',
     '--v8-flags=--predictable',
+    '--allow-read',
+    '--allow-env',
+    '--allow-run',
+    '--allow-sys',
+    '--allow-write',
+    '--allow-net',
     `--output=${binaryOutputPath}`,
-    '--include',
-    path.join('.', 'server', 'sqlite3-worker.ts'),
+    // '--include',
+    // path.join('.', 'server', 'sqlite3-worker.ts'),
   ];
   if (linux) {
     compileArgs.push('--target=x86_64-unknown-linux-gnu');
   }
   if (target === 'server') {
-    compileArgs.push('--unstable');
-    compileArgs.push('--allow-ffi');
+    // compileArgs.push('--unstable');
+    // compileArgs.push('--allow-ffi');
     compileArgs.push(path.join(repoPath, 'server', 'run-server.ts'));
   } else {
     compileArgs.push(
@@ -201,16 +206,17 @@ async function main(): Promise<void> {
   if (!controlBuild) {
     await defaultAssetsBuild();
   }
-  await Deno.writeTextFile(
-    path.join(buildDirPath, 'build-info.json'),
-    JSON.stringify(generateBuildInfo()),
-  );
-  let channel: BuildChannel | undefined;
+
+  let channel: BuildChannel = 'alpha';
   if (args?.beta === true) {
     channel = 'beta';
-  } else if (args?.release !== true) {
-    channel = 'alpha';
+  } else if (args?.release === true) {
+    channel = 'release';
   }
+  await Deno.writeTextFile(
+    path.join(buildDirPath, 'build-info.json'),
+    JSON.stringify(generateBuildInfo(channel)),
+  );
   if (args?.both === true) {
     await Promise.all([
       build(

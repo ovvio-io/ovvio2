@@ -4,25 +4,67 @@ We're using Deno as our server. Install it from here https://deno.com/manual/get
 
 ## Running the Server
 
-First, you'll need to set up a directory to which the server writes all of its
+First, run `npm-install`.
+
+Second, you'll need to set up a directory to which the server writes all of its
 data.
 
-Running the server will pull all dependencies, and compile the web-app.
+### Required Deno permissions:
 
-Debug run:
-`deno run --unstable -A --inspect-brk server/run-server.ts -d <path to data dir>`
+`--allow-read --allow-env --allow-run --allow-sys --allow-write --allow-net`
 
-NOTE: If you're having problems with deno.lock getting out of sync, add the
-`--lock-write` flag to deno run which will force update the lock file.
+### Debug Run:
 
-## Compiling for Production
+`deno run -A server/debug-server.ts -d <path to data dir>`
 
-When compiling for production, run the following command:
-`deno run -A server/build.ts`
+Useful Options (Google them):
 
-This will create a `build` directory inside, containing executables both for
-the local OS and for x64 linux for production. These executables are fully self
-contained, and have no external dependencies.
+- `--inspect-brk`
+- `--inspect`
+- `--lock-write`
+- `--no-lock`
+
+### Production-Like Run:
+
+`deno run --allow-read --allow-env --allow-run --allow-sys --allow-write --allow-net server/run-server -d <path to data dir>`
+
+Note: You'll need to run the build script for all the required assets to be
+generated in the `./build/` dir.
+
+## Production Build:
+
+A production build generates a standalone executable with all required
+dependencies bundled into it. The resulting binaries are placed in the `./build/`
+directory.
+
+`deno run -A server/build.ts` will generate a production like build for the
+current OS, assuming an alpha level release.
+
+Useful Flags (refer to the script's help page for additional info):
+
+- `--control`
+- `--linux`
+- `--upload`
+- `--beta`
+- `--release`
+
+## Server Control
+
+An additional control binary is deployed alongside the server binary. The
+control process does not respond to outside traffic directly, and can't be
+communicated with actively. Instead, the server control periodically polls
+publicly accessible configuration files stored on our S3 bucket - `arn:aws:s3:::ovvio2-release`.
+
+When the server control detects the machine's configuration does not match the
+desired configuration, it'll take the needed steps and reconfigure the machine.
+
+The control process itself is managed by `systemd`, and is initially
+bootstrapped using the launch script located at
+`server-control/launch-script.sh`.
+
+### Debugging Server Control
+
+`deno run -A server-control/server-control.ts`
 
 ## Starting Fresh
 
