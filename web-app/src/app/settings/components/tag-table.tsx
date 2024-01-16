@@ -64,13 +64,14 @@ const useStyles = makeStyles(() => ({
   categoryPill: {
     padding: '2px 4px 2px 8px',
     minWidth: '20px',
+    maxWidth: '160px',
     width: 'auto',
   },
 
   editPill: {
     borderRadius: styleguide.gridbase * 2,
     boxSizing: 'border-box',
-    borderStyle: 'solid',
+    border: '1px solid',
     borderColor: '#CCCCCC',
     width: 'fit-content',
   },
@@ -86,7 +87,9 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'transparent',
     padding: '0px 8px 0px 8px',
     background: 'transparent',
-    display: 'flex',
+    display: 'block',
+    maxWidth: '100%' /* Adjusted to be 100% of the parent's width */,
+    overflowWrap: ' break-word' /* Ensures text wraps */,
   },
 
   TagsColumnStyle: {
@@ -101,12 +104,13 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     flexFlow: 'row wrap',
     gap: '4px',
+    alignItem: 'center',
   },
   tagPillSize: {
     borderRadius: styleguide.gridbase * 2,
     boxSizing: 'border-box',
     backgroundColor: '#E5E5E5',
-    minWidth: '40px',
+    minWidth: '20px',
     maxWidth: '260px',
   },
   tagPill: {
@@ -114,19 +118,21 @@ const useStyles = makeStyles(() => ({
     flexWrap: 'wrap',
     alignItems: 'center',
     color: 'var(--tag-color)',
-    marginRight: styleguide.gridbase,
     padding: '2px 4px 2px 4px',
+    justifyContent: 'center',
+    width: 'auto',
   },
   tagInputPill: {
     fontSize: '10px',
     lineHeight: '14px',
     outline: 'none',
     border: 'none',
-    padding: '0px 8px 0px 8px',
+    padding: '0px 2px',
     backgroundColor: 'transparent',
-    minWidth: '20px',
     fontWeight: '400',
     background: 'transparent',
+    maxWidth: '100%',
+    overflowWrap: ' break-word',
   },
   moreButtonColumn: {
     position: 'absolute',
@@ -176,6 +182,12 @@ const useStyles = makeStyles(() => ({
     width: styleguide.gridbase * 2,
     height: styleguide.gridbase * 2,
     cursor: 'pointer',
+    display: 'contents',
+  },
+  highlightedTag: {
+    backgroundColor: 'red',
+    border: '2px solid',
+    transition: 'background-color 1s ease, border 1s ease',
   },
 }));
 
@@ -204,9 +216,7 @@ function useOutsideClick<T extends HTMLElement>(
         callback();
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-
     return (): void => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -219,14 +229,12 @@ type CategoryPillProps = {
   categoryVertex: VertexManager<Tag>;
   editMode: boolean;
   isNewCategory: boolean;
-  inputRef?: React.RefObject<HTMLInputElement>;
 };
 
 const CategoryPill: React.FC<CategoryPillProps> = ({
   categoryVertex,
   editMode,
   isNewCategory,
-  inputRef,
 }) => {
   const styles = useStyles();
   const category = useVertex(categoryVertex) as Tag;
@@ -236,28 +244,34 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     category.name = categoryName;
   }, [categoryName]);
 
-  useEffect(() => {
-    if (isNewCategory || (editMode && inputRef?.current)) {
-      inputRef?.current?.focus();
-    }
-  }, [isNewCategory, editMode]);
-
   const onInput = (e: React.FormEvent<HTMLDivElement>) => {
     setCategoryName(e.currentTarget.textContent || '');
   };
 
+  const inputId = `category-input-${String(uniqueId())}`;
+
+  useEffect(() => {
+    if (isNewCategory) {
+      const inputElement = document.getElementById(inputId);
+      if (inputElement) {
+        inputElement.focus();
+      }
+      //TODO: send also setNewCategory prop and then reset it to null here.
+    }
+  }, [isNewCategory, inputId]);
+
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
       <div
-        id={String(uniqueId())}
+        id={inputId}
         className={cn(styles.categoryInputPill)}
         onInput={onInput}
         placeholder="untitled"
-        maxLength="14"
         contentEditable={
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'
         }
         suppressContentEditableWarning={true}
+        dir="ltr"
       >
         {categoryName}
       </div>
@@ -274,96 +288,109 @@ type TagPillsProps = {
   onReorder: (tag: Tag, direction: string) => void;
   deleteTag: () => void;
   isNewCategory: boolean;
+  uniqueId: string | null;
+  onTypingStart: () => void;
+  isHighlighted: boolean;
+};
+const TagPills: React.FC<TagPillsProps> = ({
+  tag,
+  editMode,
+  reorderMode,
+  deleteTag,
+  isNewCategory,
+  onReorder,
+  uniqueId,
+  onTypingStart,
+  isHighlighted,
+}) => {
+  const styles = useStyles();
+
+  const [tagName, setTagName] = useState<string>(tag.name);
+
+  useEffect(() => {
+    tag.name = tagName;
+  }, [tagName]);
+
+  const [highlight, setHighlight] = useState(false);
+
+  useEffect(() => {
+    if (isHighlighted) {
+      setHighlight(true);
+      setTimeout(() => setHighlight(false), 1000); // Highlight for 1 second
+    }
+  }, [isHighlighted]);
+
+  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
+    setTagName(e.currentTarget.textContent || '');
+    onTypingStart(); // Call the callback when typing starts
+  };
+
+  return (
+    <div
+      className={cn(
+        styles.tagPillSize,
+        styles.tagPill,
+        (editMode || reorderMode) && styles.editPill,
+        highlight && styles.highlightedTag
+      )}
+      style={{
+        backgroundColor: editMode || reorderMode ? 'transparent' : '#E5E5E5',
+      }}
+    >
+      {reorderMode && (
+        <Button
+          className={cn(styles.deleteIcon)}
+          onClick={() => onReorder(tag, 'right')}
+        >
+          <img key="MoveLeftTagSettings" src="/icons/settings/Move-left.svg" />
+        </Button>
+      )}
+      <div
+        id={uniqueId || undefined}
+        // className={cn(styles.tagInputPill)}
+        className={cn(styles.tagInputPill)}
+        onInput={onInput}
+        placeholder="untitled"
+        readOnly={!editMode && !isNewCategory}
+        contentEditable={
+          !editMode && !isNewCategory ? 'false' : 'plaintext-only'
+        }
+        suppressContentEditableWarning={true}
+      >
+        {tagName}
+      </div>
+      {editMode && (
+        <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
+          <img key="DeleteTagSettings" src="/icons/settings/Close.svg" />
+        </div>
+      )}
+      {reorderMode && (
+        <Button
+          className={cn(styles.deleteIcon)}
+          onClick={() => onReorder(tag, 'left')}
+        >
+          <img
+            key="MoveRightTagSettings"
+            src="/icons/settings/Move-right.svg"
+          />
+        </Button>
+      )}
+    </div>
+  );
 };
 
-const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
-  (
-    { tag, editMode, reorderMode, deleteTag, isNewCategory, onReorder },
-    ref
-  ) => {
-    const styles = useStyles();
-
-    const [tagName, setTagName] = useState<string>(tag.name);
-
-    useEffect(() => {
-      tag.name = tagName;
-    }, [tagName]);
-
-    const onInput = (e: React.FormEvent<HTMLDivElement>) => {
-      setTagName(e.currentTarget.textContent || '');
-    };
-
-    return (
-      <div
-        className={cn(
-          styles.tagPillSize,
-          styles.tagPill,
-          (editMode || reorderMode) && styles.editPill
-        )}
-        style={{
-          backgroundColor: editMode || reorderMode ? 'transparent' : '#E5E5E5',
-        }}
-      >
-        {reorderMode && (
-          <Button
-            className={cn(styles.deleteIcon)}
-            onClick={() => onReorder(tag, 'right')}
-          >
-            <img
-              key="MoveLeftTagSettings"
-              src="/icons/settings/Move-left.svg"
-            />
-          </Button>
-        )}
-        <div
-          id={String(uniqueId())}
-          className={cn(styles.tagInputPill)}
-          onInput={onInput}
-          placeholder="untitled"
-          readOnly={!editMode && !isNewCategory}
-          contentEditable={
-            !editMode && !isNewCategory ? 'false' : 'plaintext-only'
-          }
-          suppressContentEditableWarning={true}
-          ref={ref as React.RefObject<HTMLInputElement>}
-        >
-          {tagName}
-        </div>
-        {editMode && (
-          <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
-            <img key="DeleteTagSettings" src="/icons/settings/Close-big.svg" />
-          </div>
-        )}
-        {reorderMode && (
-          <Button
-            className={cn(styles.deleteIcon)}
-            onClick={() => onReorder(tag, 'left')}
-          >
-            <img
-              key="MoveRightTagSettings"
-              src="/icons/settings/Move-right.svg"
-            />
-          </Button>
-        )}
-      </div>
-    );
-  }
-);
-
-//==================================================================================TableRowCategory==================================
+//==================================================================================TableRowCategory=========================================================================
 type TableRowCategoryProps = {
   graphManager: GraphManager;
   categoryVertex: VertexManager<Tag>;
   workspaceManagerKey: string;
   isNew: boolean;
-  newCategoryRef: React.RefObject<HTMLInputElement>;
 };
 const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   graphManager,
   categoryVertex,
   workspaceManagerKey,
   isNew,
-  newCategoryRef,
 }) => {
   const category = useVertex(categoryVertex) as Tag;
   // const { childTags } = usePartialVertex(category, ['childTags']);
@@ -374,6 +401,9 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   const [isNewCategory, setIsNewCategory] = useState(isNew);
   const [isEditMode, setIsEditMode] = useState(isNewCategory);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [newTagId, setNewTagId] = useState<string | null>(null);
+  const [canCreateNewTag, setCanCreateNewTag] = useState(true);
+  const [highlightTag, setHighlightTag] = useState(false);
 
   const handleReorderTag = (tag: Tag, direction: string) => {
     if (!childTags || !tag) return;
@@ -401,38 +431,53 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
     VertexManager<Tag> | undefined
   >(undefined);
 
+  const handleTypingStart = () => {
+    setCanCreateNewTag(true);
+  };
+
   const handleOnCreateTag = () => {
+    if (!canCreateNewTag) {
+      setHighlightTag(true);
+      setTimeout(() => setHighlightTag(false), 1000);
+      return;
+    }
     const createdVertex = graphManager.createVertex<Tag>(SchemeNamespace.TAGS, {
       workspace: workspaceManagerKey,
       parentTag: category.key,
     });
+    const uniqueIdForNewTag = `tag-${String(uniqueId())}`;
+    setNewTagId(uniqueIdForNewTag);
     setNewTagVertex(createdVertex.manager);
+    setCanCreateNewTag(false);
   };
 
-  if (newTagVertex?.getVertexProxy().isDeleted) {
-    setNewTagVertex(undefined);
-  }
+  useEffect(() => {
+    if (newTagId) {
+      const newTagElement = document.getElementById(newTagId);
+      if (newTagElement) {
+        newTagElement.focus();
+      }
+      setNewTagId(null);
+    }
+  }, [newTagId]);
+
   const handleOnDeleteCategory = () => {
     category.isDeleted = 1;
   };
 
   useEffect(() => {
     childTags.sort((a, b) => coreValueCompare(a.sortStamp, b.sortStamp));
-
     if (lastTagRef.current) {
       lastTagRef.current.focus();
     }
   }, [childTags]);
 
-  // const deleteTag = (tagToDelete: Tag) => {
-  //   tagToDelete.isDeleted = 1;
-  // };
   const deleteTag = (tagKey: string) => {
     const tagToDelete = childTags.find((tag) => tag.key === tagKey);
     if (tagToDelete) {
       tagToDelete.isDeleted = 1;
     }
-  }; //TODO: need to be fixed (removes the right tag but shows like always the last one is removed)
+  };
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -470,7 +515,6 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             isNewCategory={isNew}
             categoryVertex={categoryVertex}
             editMode={isEditMode}
-            inputRef={isNew ? newCategoryRef : undefined}
           />
         </div>
         <div className={cn(styles.TagsColumnStyle)}>
@@ -488,13 +532,14 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
               <TagPills
                 key={tag.key}
                 tag={tag}
+                uniqueId={tag.key === newTagVertex?.key ? newTagId : null} //for focus.
                 editMode={isEditMode}
                 reorderMode={isReorderMode}
-                // deleteTag={() => deleteTag(tag)}
                 deleteTag={() => deleteTag(tag.key)}
                 isNewCategory={false}
-                ref={index === childTags.length - 1 ? lastTagRef : null}
                 onReorder={handleReorderTag}
+                onTypingStart={handleTypingStart}
+                isHighlighted={highlightTag && index === 0}
               />
             ))}
           </div>
@@ -548,7 +593,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   );
 };
 
-//=====================================================================================TagsTable===============================
+//=====================================================================================TagsTable======================================================================================
 type TagsTableProps = {
   workspaceManager: VertexManager<Workspace>;
   graphManager: GraphManager;
@@ -566,8 +611,6 @@ export const TagsTable: React.FC<TagsTableProps> = ({
     VertexManager<Tag> | undefined
   >(undefined);
 
-  const newCategoryRef = useRef<HTMLInputElement>(null);
-
   const handleNewCategory = () => {
     const createdVertex = graphManager.createVertex<Tag>(SchemeNamespace.TAGS, {
       workspace: workspaceManager.key,
@@ -582,7 +625,7 @@ export const TagsTable: React.FC<TagsTableProps> = ({
 
   return (
     <div className={cn(styles.tableContainer)}>
-      <div
+      <Button
         className={cn(styles.newCategory, styles.rowLayout)}
         onClick={handleNewCategory}
       >
@@ -590,13 +633,12 @@ export const TagsTable: React.FC<TagsTableProps> = ({
           <img key="AddTagSettings" src="/icons/settings/Add.svg" />
           <div className={cn(styles.newCategoryText)}>New Category</div>
         </div>
-      </div>
+      </Button>
       <div className={cn(styles.scrollTable)}>
         {categoriesQuery.map((category, index) => (
           <TableRowCategory
             key={`${category.key}-${index}`}
             categoryVertex={category}
-            newCategoryRef={newCategoryRef}
             isNew={newCategoryVertex === category}
             graphManager={graphManager}
             workspaceManagerKey={workspaceManager.key}
