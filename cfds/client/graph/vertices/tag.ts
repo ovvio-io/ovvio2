@@ -7,6 +7,7 @@ import { Record } from '../../../base/record.ts';
 import { triggerParent } from '../propagation-triggers.ts';
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Query } from '../query.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 
 export class Tag extends ContentVertex {
   private _cachedTagFamily: Tag[] | undefined;
@@ -28,17 +29,24 @@ export class Tag extends ContentVertex {
     return this.parentTag || super.parent;
   }
 
+  // get childTags(): Tag[] {
+  //   // if (!this._cachedChildTags) {
+  //   //   this._cachedChildTags = Query.blocking(
+  //   //     this.graph.sharedQueriesManager.tagsQuery,
+  //   //     tag => tag.parentTag === this
+  //   //   );
+  //   // }
+  //   // return this._cachedChildTags.map(mgr => mgr.getVertexProxy());
+  //   return Array.from(this.inEdgesManagers<Tag>('parentTag'))
+  //     .map(([mgr]) => mgr.getVertexProxy())
+  //     .filter((tag) => tag.isDeleted !== 1);
+  // }
+
   get childTags(): Tag[] {
-    // if (!this._cachedChildTags) {
-    //   this._cachedChildTags = Query.blocking(
-    //     this.graph.sharedQueriesManager.tagsQuery,
-    //     tag => tag.parentTag === this
-    //   );
-    // }
-    // return this._cachedChildTags.map(mgr => mgr.getVertexProxy());
     return Array.from(this.inEdgesManagers<Tag>('parentTag'))
       .map(([mgr]) => mgr.getVertexProxy())
-      .filter((tag) => tag.isDeleted !== 1);
+      .filter((tag) => tag.isDeleted !== 1)
+      .sort(coreValueCompare);
   }
 
   private _invalidateChildTags(local: boolean): MutationPack {
@@ -142,6 +150,17 @@ export class Tag extends ContentVertex {
     );
   }
 
+  childSortStampDidMutate(
+    local: boolean,
+    oldValue: Tag | undefined,
+    child: Tag
+  ): MutationPack {
+    return mutationPackAppend(
+      this._invalidateTagFamily(local),
+      this._invalidateChildTags(local)
+    );
+  }
+
   // Invalidate our tagFamily when a sub tag changes its name
   childNameDidMutate(
     local: boolean,
@@ -192,6 +211,11 @@ const kFieldTriggersTag: FieldTriggers<Tag> = {
   isDeleted: triggerParent(
     'childIsDeletedDidMutate',
     'Tag_isDeleted',
+    SchemeNamespace.TAGS
+  ),
+  sortStamp: triggerParent(
+    'childSortStampDidMutate',
+    'Tag_sortStamp',
     SchemeNamespace.TAGS
   ),
 };

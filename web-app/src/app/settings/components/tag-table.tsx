@@ -14,7 +14,9 @@ import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
 import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
 import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
 import { useVertex } from '../../../core/cfds/react/vertex.ts';
-import { layout } from '../../../../../styles/layout.ts';
+import { uniqueId } from '../../../../../base/common.ts';
+import { between, present } from '../../../../../cfds/base/orderstamp.ts';
+import { past } from '../../../../../cfds/base/orderstamp.ts';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -35,7 +37,6 @@ const useStyles = makeStyles(() => ({
     padding: '0px 8px 0px 0px',
     position: 'relative',
     alignItems: 'center',
-    width: '670px',
     borderBottom: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
     // borderTop: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
     ':hover': {
@@ -47,9 +48,10 @@ const useStyles = makeStyles(() => ({
   },
 
   rowContent: {
-    basedOn: [layout.row],
     position: 'relative',
     justifyContent: 'flex-start',
+    display: 'flex',
+    flexDirection: 'row',
     gap: '4px',
     padding: '18px 26px 17px 16px',
   },
@@ -61,9 +63,8 @@ const useStyles = makeStyles(() => ({
 
   categoryPill: {
     padding: '2px 4px 2px 8px',
-    minWidth: '40px',
-    maxWidth: '160px',
-    width: '160px',
+    minWidth: '20px',
+    width: 'auto',
   },
 
   editPill: {
@@ -90,12 +91,16 @@ const useStyles = makeStyles(() => ({
 
   TagsColumnStyle: {
     display: 'flex',
-    width: '70%',
+    width: '510px',
     maxWidth: '510px',
     alignItems: 'center',
     flexFlow: 'row wrap',
     gap: '4px',
-    marginRight: '96px',
+  },
+  flexColumnTags: {
+    display: 'flex',
+    flexFlow: 'row wrap',
+    gap: '4px',
   },
   tagPillSize: {
     borderRadius: styleguide.gridbase * 2,
@@ -226,7 +231,6 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
   const styles = useStyles();
   const category = useVertex(categoryVertex) as Tag;
   const [categoryName, setCategoryName] = useState<string>(category.name);
-  const [inputWidth, setInputWidth] = useState(`${categoryName.length * 10}px`);
 
   useEffect(() => {
     category.name = categoryName;
@@ -239,22 +243,24 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
   }, [isNewCategory, editMode]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCategoryName(e.target.value);
-    setInputWidth((categoryName.length + e.target.value.length) * 5 + 'px');
+    setCategoryName(e.currentTarget.textContent);
   };
 
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
-      <input
+      <div
+        id={String(uniqueId())}
         className={cn(styles.categoryInputPill)}
-        type="text"
-        value={categoryName}
-        maxlength="14"
         onChange={onChange}
-        readOnly={!editMode && !isNewCategory}
         placeholder="untitled"
-        style={{ width: inputWidth }}
-      />
+        maxLength="14"
+        contentEditable={
+          !editMode && !isNewCategory ? 'false' : 'plaintext-only'
+        }
+        suppressContentEditableWarning={true}
+      >
+        {categoryName}
+      </div>
     </div>
   );
 };
@@ -265,27 +271,28 @@ type TagPillsProps = {
   tag: Tag;
   editMode: boolean;
   reorderMode: boolean;
-
+  onReorder: (tag: Tag, direction: string) => void;
   deleteTag: () => void;
   isNewCategory: boolean;
 };
 
 const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
-  ({ tag, editMode, reorderMode, deleteTag, isNewCategory }, ref) => {
+  (
+    { tag, editMode, reorderMode, deleteTag, isNewCategory, onReorder },
+    ref
+  ) => {
     const styles = useStyles();
+
     const [tagName, setTagName] = useState<string>(tag.name);
 
     useEffect(() => {
       tag.name = tagName;
     }, [tagName]);
 
-    const [inputWidth, setInputWidth] = useState<string>(
-      (tagName.length + 1) * 5 + 'px'
-    );
-
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setTagName(e.target.value);
-      setInputWidth((tagName.length + e.target.value.length - 1) * 3 + 'px');
+    const onChange = (e: React.ChangeEvent<HTMLDivElement>) => {
+      setTagName(
+        (e.nativeEvent.currentTarget as HTMLDivElement).textContent || ''
+      );
     };
 
     return (
@@ -300,35 +307,45 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
         }}
       >
         {reorderMode && (
-          <div className={cn(styles.deleteIcon)} onClick={() => {}}>
+          <Button
+            className={cn(styles.deleteIcon)}
+            onClick={() => onReorder(tag, 'right')}
+          >
             <img
               key="MoveLeftTagSettings"
               src="/icons/settings/Move-left.svg"
             />
-          </div>
+          </Button>
         )}
-        <input
+        <div
+          id={String(uniqueId())}
           className={cn(styles.tagInputPill)}
-          type="text"
-          ref={ref as React.RefObject<HTMLInputElement>}
-          value={tagName}
           onChange={onChange}
-          onBlur={blur}
-          readOnly={!editMode}
-          style={{ width: inputWidth }}
-        />
+          placeholder="untitled"
+          readOnly={!editMode && !isNewCategory}
+          contentEditable={
+            !editMode && !isNewCategory ? 'false' : 'plaintext-only'
+          }
+          suppressContentEditableWarning={true}
+          ref={ref as React.RefObject<HTMLInputElement>}
+        >
+          {tagName}
+        </div>
         {editMode && (
           <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
             <img key="DeleteTagSettings" src="/icons/settings/Close-big.svg" />
           </div>
         )}
         {reorderMode && (
-          <div className={cn(styles.deleteIcon)} onClick={() => {}}>
+          <Button
+            className={cn(styles.deleteIcon)}
+            onClick={() => onReorder(tag, 'left')}
+          >
             <img
               key="MoveRightTagSettings"
               src="/icons/settings/Move-right.svg"
             />
-          </div>
+          </Button>
         )}
       </div>
     );
@@ -360,6 +377,28 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   const [isEditMode, setIsEditMode] = useState(isNewCategory);
   const [isReorderMode, setIsReorderMode] = useState(false);
 
+  const handleReorderTag = (tag: Tag, direction: string) => {
+    if (!childTags || !tag) return;
+    const tagIndex = childTags.indexOf(tag);
+
+    if (tagIndex === -1) return;
+    if (direction === 'left' && tagIndex > 0) {
+      // Moving left - need to place between the previous and the one before it
+      const prevTagSortStamp = childTags[tagIndex - 1].sortStamp;
+      const prevPrevTagSortStamp =
+        tagIndex > 1 ? childTags[tagIndex - 2].sortStamp : past();
+      tag.sortStamp = between(prevPrevTagSortStamp, prevTagSortStamp);
+    } else if (direction === 'right' && tagIndex < childTags.length - 1) {
+      // Moving right - need to place between the next and the one after it
+      const nextTagSortStamp = childTags[tagIndex + 1].sortStamp;
+      const nextNextTagSortStamp =
+        tagIndex < childTags.length - 2
+          ? childTags[tagIndex + 2].sortStamp
+          : present();
+      tag.sortStamp = between(nextTagSortStamp, nextNextTagSortStamp);
+    }
+  };
+
   const [newTagVertex, setNewTagVertex] = useState<
     VertexManager<Tag> | undefined
   >(undefined);
@@ -380,6 +419,8 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   };
 
   useEffect(() => {
+    childTags.sort((a, b) => coreValueCompare(a.sortStamp, b.sortStamp));
+
     if (lastTagRef.current) {
       lastTagRef.current.focus();
     }
@@ -431,30 +472,34 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             isNewCategory={isNew}
             categoryVertex={categoryVertex}
             editMode={isEditMode}
-            inputRef={isNew ? newCategoryRef : undefined} // Pass the ref to CategoryPill
+            inputRef={isNew ? newCategoryRef : undefined}
           />
         </div>
         <div className={cn(styles.TagsColumnStyle)}>
-          {isEditMode && (
-            <Button
-              className={cn(styles.addButton)}
-              onClick={handleOnCreateTag}
-            >
-              <img key="AddTagSettings" src="/icons/settings/Add.svg" />
-            </Button>
-          )}
-          {childTags.map((tag: Tag, index) => (
-            <TagPills
-              key={`${tag}-${index}`}
-              tag={tag}
-              editMode={isEditMode}
-              reorderMode={isReorderMode}
-              // deleteTag={() => deleteTag(tag)}
-              deleteTag={() => deleteTag(tag.key)} // Pass tag key here
-              isNewCategory={false}
-              ref={index === childTags.length - 1 ? lastTagRef : null}
-            />
-          ))}
+          <div className={cn(styles.flexColumnTags)}>
+            {isEditMode && (
+              <Button
+                className={cn(styles.addButton)}
+                onClick={handleOnCreateTag}
+              >
+                <img key="AddTagSettings" src="/icons/settings/Add.svg" />
+              </Button>
+            )}
+
+            {childTags.map((tag: Tag, index) => (
+              <TagPills
+                key={tag.key}
+                tag={tag}
+                editMode={isEditMode}
+                reorderMode={isReorderMode}
+                // deleteTag={() => deleteTag(tag)}
+                deleteTag={() => deleteTag(tag.key)}
+                isNewCategory={false}
+                ref={index === childTags.length - 1 ? lastTagRef : null}
+                onReorder={handleReorderTag}
+              />
+            ))}
+          </div>
         </div>
       </div>
       {!isEditMode && !isNewCategory && (
@@ -525,15 +570,6 @@ export const TagsTable: React.FC<TagsTableProps> = ({
 
   const newCategoryRef = useRef<HTMLInputElement>(null);
 
-  categoriesQuery.sort((a, b) => {
-    if (a.key === newCategoryVertex?.key) {
-      return -1;
-    } else if (b.key == newCategoryVertex?.key) {
-      return 1;
-    }
-    return coreValueCompare(a, b);
-  });
-
   const handleNewCategory = () => {
     const createdVertex = graphManager.createVertex<Tag>(SchemeNamespace.TAGS, {
       workspace: workspaceManager.key,
@@ -562,7 +598,7 @@ export const TagsTable: React.FC<TagsTableProps> = ({
           <TableRowCategory
             key={`${category.key}-${index}`}
             categoryVertex={category}
-            newCategoryRef={newCategoryRef} // Pass the ref down
+            newCategoryRef={newCategoryRef}
             isNew={newCategoryVertex === category}
             graphManager={graphManager}
             workspaceManagerKey={workspaceManager.key}
