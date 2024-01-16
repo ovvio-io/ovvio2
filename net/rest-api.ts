@@ -141,7 +141,7 @@ const RESERVED_ORG_IDS = [
 
 function isValidOrgId(id: string): boolean {
   const len = id.length;
-  if (len < 4 || len > 32) {
+  if (len < 3 || len > 32) {
     return false;
   }
   if (RESERVED_ORG_IDS.includes(id)) {

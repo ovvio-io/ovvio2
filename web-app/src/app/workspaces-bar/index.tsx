@@ -41,6 +41,7 @@ import {
   useGraphManager,
   usePartialGlobalView,
   usePartialRootUser,
+  usePartialUserSettings,
   useRootUser,
 } from '../../core/cfds/react/graph.tsx';
 import { useQuery2 } from '../../core/cfds/react/query.ts';
@@ -679,7 +680,7 @@ function WorkspaceListItem({
     'selectedWorkspaces',
   ]);
 
-  const user = usePartialVertex(useRootUser(), [
+  const partialUserSettings = usePartialUserSettings([
     'hiddenWorkspaces',
     'pinnedWorkspaces',
   ]);
@@ -721,19 +722,17 @@ function WorkspaceListItem({
     (state: 'template' | 'hidden' | 'pinned' | 'none') => {
       const vert = workspace.getVertexProxy();
       vert.isTemplate = state === 'template';
-      user.hiddenWorkspaces[state === 'hidden' ? 'add' : 'delete'](vert.key);
-      user.pinnedWorkspaces[state === 'pinned' ? 'add' : 'delete'](vert.key);
+      partialUserSettings.hiddenWorkspaces[
+        state === 'hidden' ? 'add' : 'delete'
+      ](vert.key);
+      partialUserSettings.pinnedWorkspaces[
+        state === 'pinned' ? 'add' : 'delete'
+      ](vert.key);
       if (state === 'template' || state === 'hidden') {
         view.selectedWorkspaces.delete(vert);
       }
     },
-    [
-      user.hiddenWorkspaces,
-      user.pinnedWorkspaces,
-      view.selectedWorkspaces,
-      workspace,
-      ofSettings,
-    ],
+    [partialUserSettings, workspace, ofSettings],
   );
 
   const toggleSelected = useCallback(() => {
@@ -1043,10 +1042,10 @@ function shouldAutoSelectWorkspace(
 function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
   const graph = useGraphManager();
   const view = usePartialGlobalView('workspaceGrouping');
-  const partialUser = usePartialRootUser(
+  const partialUserSettings = usePartialUserSettings([
     'hiddenWorkspaces',
     'pinnedWorkspaces',
-  );
+  ]);
 
   const query = useQuery2(
     useMemo(() => {
@@ -1061,12 +1060,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
         contentSensitive: true,
         contentFields: ['isTemplate'],
       } as QueryOptions<Workspace, Workspace, GroupId<WorkspaceGID>>;
-    }, [
-      graph,
-      view.workspaceGrouping,
-      partialUser.hiddenWorkspaces,
-      partialUser.pinnedWorkspaces,
-    ]),
+    }, [graph, view, partialUserSettings]),
   );
 
   return (
