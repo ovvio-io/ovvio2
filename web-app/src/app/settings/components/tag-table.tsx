@@ -242,8 +242,8 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     }
   }, [isNewCategory, editMode]);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCategoryName(e.currentTarget.textContent);
+  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
+    setCategoryName(e.currentTarget.textContent || '');
   };
 
   return (
@@ -251,7 +251,7 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
       <div
         id={String(uniqueId())}
         className={cn(styles.categoryInputPill)}
-        onChange={onChange}
+        onInput={onInput}
         placeholder="untitled"
         maxLength="14"
         contentEditable={
@@ -289,10 +289,8 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
       tag.name = tagName;
     }, [tagName]);
 
-    const onChange = (e: React.ChangeEvent<HTMLDivElement>) => {
-      setTagName(
-        (e.nativeEvent.currentTarget as HTMLDivElement).textContent || ''
-      );
+    const onInput = (e: React.FormEvent<HTMLDivElement>) => {
+      setTagName(e.currentTarget.textContent || '');
     };
 
     return (
@@ -320,7 +318,7 @@ const TagPills = React.forwardRef<HTMLInputElement, TagPillsProps>(
         <div
           id={String(uniqueId())}
           className={cn(styles.tagInputPill)}
-          onChange={onChange}
+          onInput={onInput}
           placeholder="untitled"
           readOnly={!editMode && !isNewCategory}
           contentEditable={
