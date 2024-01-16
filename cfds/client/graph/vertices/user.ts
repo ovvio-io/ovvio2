@@ -111,4 +111,9 @@ export class User extends BaseVertex {
   set metadata(d: Dictionary<UserMetadataKey, string>) {
     this.record.set('metadata', d);
   }
+
+  getRoles(): string[] {
+    const roles = (this.metadata.get('companyRoles') || '').split(',');
+    return roles.filter((v) => v.length > 0);
+  }
 }

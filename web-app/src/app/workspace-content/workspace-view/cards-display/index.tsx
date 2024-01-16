@@ -18,6 +18,7 @@ import {
 } from './display-bar/index.tsx';
 import { ListView } from './list-view/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
+import { Dashboard } from '../dashboard/dashboard.tsx';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -86,12 +87,13 @@ export function CardsDisplay() {
   const view = usePartialView('viewType', 'selectedTabId');
 
   let content = null;
-  if (view.viewType === 'list') {
+  if (view.selectedTabId === 'overview') {
+    content = <Dashboard />;
+  } else if (view.viewType === 'list') {
     content = <ListView key={'list'} className={cn(styles.contentView)} />;
   } else if (view.viewType === 'board') {
     content = <BoardView className={cn(styles.contentView)} />;
   }
-
   return (
     <div className={cn(styles.displayRoot)}>
       <div className={cn(styles.displayMain)}>

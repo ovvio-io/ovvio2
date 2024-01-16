@@ -48,9 +48,7 @@ import { ComposeButton } from './compose-button.tsx';
 import { GroupByDropDown } from './group-by-drop-down.tsx';
 import { ViewToggle } from './view-toggle.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import localization from '../cards-display.strings.json' assert {
-  type: 'json',
-};
+import localization from '../cards-display.strings.json' assert { type: 'json' };
 import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
 import {
   DueDateState,
@@ -258,11 +256,11 @@ function DateFilterDropdown() {
 
   const text = view.dateFilter
     ? `${
-      view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
-    } ${
-      (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
-      strings[view.dateFilter]
-    }`
+        view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
+      } ${
+        (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
+        strings[view.dateFilter]
+      }`
     : view.selectedTabId === 'overview'
     ? strings.noTimeFrame
     : strings.noDateFilter;
@@ -326,9 +324,8 @@ function ShowPinnedButton() {
   const styles = useStyles();
 
   const togglePinned = useCallback(() => {
-    view.showPinned = view.showPinned === 'pinned'
-      ? 'pinned-unpinned'
-      : 'pinned';
+    view.showPinned =
+      view.showPinned === 'pinned' ? 'pinned-unpinned' : 'pinned';
   }, [view, view.showPinned]);
 
   return (
@@ -428,7 +425,7 @@ function FilterButton() {
       onClick={filterButtonClicked}
       className={cn(styles.filterButton, view.showFilters && styles.hasFilters)}
     >
-      <img src='/icons/filter-small.svg' />
+      <img src="/icons/filter-small.svg" />
       <Text className={cn(styles.dropDownButtonText)}>{strings.filter}</Text>
     </Button>
   );
@@ -457,7 +454,7 @@ function TabView() {
     [view],
   );
   const tabs: React.ReactElement[] = [];
-  for (const tabId of ['tasks', 'notes'] as TabId[]) {
+  for (const tabId of ['tasks', 'notes', 'overview'] as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
   return (
