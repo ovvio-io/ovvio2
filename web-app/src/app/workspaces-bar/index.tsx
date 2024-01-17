@@ -407,8 +407,16 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   if (gid1 instanceof VertexManager && gid2 instanceof VertexManager) {
     return coreValueCompare(gid1, gid2);
   }
-  const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
-  const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
+  const marker1 =
+    gid1 instanceof VertexManager ||
+    (typeof gid1 === 'string' && gid1.length > 0)
+      ? 'groups'
+      : gid1;
+  const marker2 =
+    gid2 instanceof VertexManager ||
+    (typeof gid2 === 'string' && gid2.length > 0)
+      ? 'groups'
+      : gid2;
   const idx1 = kWorkspaceGIDOrder.indexOf(
     typeof marker1 === 'string' && marker1.length > 0 ? marker1 : null,
   );
@@ -427,7 +435,6 @@ const GROUP_BY: GroupByMapping = {
     }
     const res: WorkspaceGID[] = [];
     for (const u of ws.users) {
-      console.log('GroupByMapping', u);
       if (!u.isRoot) {
         res.push(u.manager);
       }
@@ -443,21 +450,19 @@ const GROUP_BY: GroupByMapping = {
     if (sysGID) {
       return sysGID;
     }
-    const allTeams = new Set<WorkspaceGID>();
+    const allTeams = new Set<string | null>();
     for (const u of ws.users) {
-      const userTeams = (u.metadata.get('team') || '').split(
-        ',',
-      ) as WorkspaceGID[];
+      const userTeams = (u.metadata.get('team') || '').split(',');
       SetUtils.update(allTeams, userTeams);
     }
 
-    const res = Array.from(allTeams);
+    const res = Array.from(allTeams).filter((t) => t!.length > 0);
 
     if (res.length === 0) {
       res.push(null);
     }
-
-    return res;
+    console.log(`Teams for ${ws.key} = ${res}`);
+    return res as WorkspaceGID[];
   },
 };
 
@@ -916,6 +921,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
     'selectedWorkspaces',
+    'workspaceGrouping',
   );
 
   const toggleExpanded = useCallback(
@@ -956,6 +962,18 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         query.vertices(gid),
       );
 
+      let groupTitle: string = '';
+      if (view.workspaceGrouping === 'Team') {
+        groupTitle = gid as string;
+      } else {
+        groupTitle =
+          typeof gid === 'string'
+            ? expanded
+              ? strings[gid]
+              : strings[`${gid}Short`]
+            : gid.getVertexProxy().name;
+      }
+
       contents.push(
         <Button
           key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
@@ -964,12 +982,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           onClick={() => toggleExpanded(gid)}
         >
           <div className={cn(styles.expanderText)}>
-            {typeof gid === 'string'
-              ? expanded
-                ? strings[gid]
-                : strings[`${gid}Short`]
-              : gid.getVertexProxy().name}
-
+            {groupTitle}
             {selectedCount > 0 ? ` [${selectedCount}]` : ''}
           </div>
           <ExpanderIcon
