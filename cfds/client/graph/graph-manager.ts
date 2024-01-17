@@ -317,10 +317,11 @@ export class GraphManager
           return;
         }
         plumbing!.backup?.persistCommits([c]);
-        // if (c.session === this.trustPool.currentSession.id) {
-        //   plumbing!.client?.touch();
-        // }
-        if (!c.key || !repo.commitIsLeaf(c) || !this.repositoryReady(id)) {
+        const repoReady = this.repositoryReady(id);
+        if (repoReady) {
+          plumbing!.client?.touch();
+        }
+        if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
           return;
         }
         // The following line does two major things:
@@ -335,7 +336,10 @@ export class GraphManager
           repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
         ) {
           const mgr = this.getVertexManager(c.key);
-          if (c.session !== this.trustPool.currentSession.id) {
+          if (
+            c.session !== this.trustPool.currentSession.id ||
+            c.parents.length > 1
+          ) {
             if (plumbing.syncFinished && mgr.hasPendingChanges) {
               mgr.commit();
             } else {
