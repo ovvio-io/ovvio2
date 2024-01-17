@@ -37,8 +37,7 @@ const useStyles = makeStyles(() => ({
     padding: '0px 8px 0px 0px',
     position: 'relative',
     alignItems: 'center',
-    borderBottom: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
-    // borderTop: '1px solid var(--Primary-P2, #E0EEF4)', // New border top style
+    borderBottom: '1px solid var(--Primary-P2, #E0EEF4)',
     ':hover': {
       backgroundColor: '#FBF6EF',
       itemMenu: {
@@ -62,7 +61,7 @@ const useStyles = makeStyles(() => ({
   },
 
   categoryPill: {
-    padding: '2px 4px 2px 8px',
+    padding: '0px 4px 2px 8px',
     minWidth: '20px',
     maxWidth: '160px',
     width: 'auto',
@@ -88,8 +87,8 @@ const useStyles = makeStyles(() => ({
     padding: '0px 8px 0px 8px',
     background: 'transparent',
     display: 'block',
-    maxWidth: '100%' /* Adjusted to be 100% of the parent's width */,
-    overflowWrap: ' break-word' /* Ensures text wraps */,
+    maxWidth: '100%',
+    overflowWrap: ' break-word',
   },
 
   TagsColumnStyle: {
@@ -118,7 +117,7 @@ const useStyles = makeStyles(() => ({
     flexWrap: 'wrap',
     alignItems: 'center',
     color: 'var(--tag-color)',
-    padding: '2px 4px 2px 4px',
+    padding: '0px 4px 2px 4px',
     justifyContent: 'center',
     width: 'auto',
   },
@@ -133,6 +132,13 @@ const useStyles = makeStyles(() => ({
     background: 'transparent',
     maxWidth: '100%',
     overflowWrap: ' break-word',
+    minWidth: '20px',
+    display: 'flex',
+    justifyContent: 'center',
+    // '&[contentEditable="true"]:empty:not(:focus)::before': {
+    //   content: 'attr(data-text)',
+    //   color: '#aaa',
+    // },
   },
   moreButtonColumn: {
     position: 'absolute',
@@ -169,14 +175,6 @@ const useStyles = makeStyles(() => ({
     ...styleguide.transition.short,
     transitionProperty: 'opacity',
   },
-  itemMenuOpen: {
-    opacity: 1,
-  },
-  hoverableRow: {
-    ':hover': {
-      backgroundColor: '#FBF6EF',
-    },
-  },
 
   deleteIcon: {
     width: styleguide.gridbase * 2,
@@ -185,9 +183,8 @@ const useStyles = makeStyles(() => ({
     display: 'contents',
   },
   highlightedTag: {
-    backgroundColor: 'red',
-    border: '2px solid',
-    transition: 'background-color 1s ease, border 1s ease',
+    border: '3px solid red',
+    transition: ' border 2s linear',
   },
 }));
 
@@ -220,7 +217,7 @@ function useOutsideClick<T extends HTMLElement>(
     return (): void => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [ref, callback]);
+  }, [callback]);
 }
 
 //=========================================================================================CategoryPill===========================
@@ -256,9 +253,8 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
       if (inputElement) {
         inputElement.focus();
       }
-      //TODO: send also setNewCategory prop and then reset it to null here.
     }
-  }, [isNewCategory, inputId]);
+  }, [isNewCategory]);
 
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
@@ -271,7 +267,6 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'
         }
         suppressContentEditableWarning={true}
-        dir="ltr"
       >
         {categoryName}
       </div>
@@ -316,13 +311,13 @@ const TagPills: React.FC<TagPillsProps> = ({
   useEffect(() => {
     if (isHighlighted) {
       setHighlight(true);
-      setTimeout(() => setHighlight(false), 1000); // Highlight for 1 second
+      setTimeout(() => setHighlight(false), 1000);
     }
   }, [isHighlighted]);
 
   const onInput = (e: React.FormEvent<HTMLDivElement>) => {
     setTagName(e.currentTarget.textContent || '');
-    onTypingStart(); // Call the callback when typing starts
+    onTypingStart();
   };
 
   return (
@@ -347,11 +342,10 @@ const TagPills: React.FC<TagPillsProps> = ({
       )}
       <div
         id={uniqueId || undefined}
-        // className={cn(styles.tagInputPill)}
         className={cn(styles.tagInputPill)}
         onInput={onInput}
-        placeholder="untitled"
         readOnly={!editMode && !isNewCategory}
+        data-text="Untitled"
         contentEditable={
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'
         }
@@ -495,12 +489,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
-      <div
-        className={cn(
-          styles.moreButtonColumn,
-          isOpen ? styles.itemMenuOpen : styles.itemMenu
-        )}
-      >
+      <div className={cn(styles.moreButtonColumn, styles.itemMenu)}>
         <img key="MoreButtonTagSettings" src="/icons/settings/More.svg" />
       </div>
     ),
