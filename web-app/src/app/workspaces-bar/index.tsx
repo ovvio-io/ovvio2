@@ -68,6 +68,7 @@ import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { getOrganizationId } from '../../../../net/rest-api.ts';
+import { assert } from '../../../../base/error.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -407,22 +408,20 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   if (gid1 instanceof VertexManager && gid2 instanceof VertexManager) {
     return coreValueCompare(gid1, gid2);
   }
-  const marker1 =
-    gid1 instanceof VertexManager ||
-    (typeof gid1 === 'string' && gid1.length > 0)
-      ? 'groups'
-      : gid1;
-  const marker2 =
-    gid2 instanceof VertexManager ||
-    (typeof gid2 === 'string' && gid2.length > 0)
-      ? 'groups'
-      : gid2;
-  const idx1 = kWorkspaceGIDOrder.indexOf(
+  const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
+  const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
+  let idx1 = kWorkspaceGIDOrder.indexOf(
     typeof marker1 === 'string' && marker1.length > 0 ? marker1 : null,
   );
-  const idx2 = kWorkspaceGIDOrder.indexOf(
+  if (idx1 < 0) {
+    idx1 = kWorkspaceGIDOrder.indexOf('groups');
+  }
+  let idx2 = kWorkspaceGIDOrder.indexOf(
     typeof marker2 === 'string' && marker2.length > 0 ? marker2 : null,
   );
+  if (idx2 < 0) {
+    idx2 = kWorkspaceGIDOrder.indexOf('groups');
+  }
   return idx1 - idx2;
 }
 
@@ -962,9 +961,11 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         query.vertices(gid),
       );
 
-      let groupTitle: string = '';
+      let groupTitle = '';
       if (view.workspaceGrouping === 'Team') {
-        groupTitle = gid as string;
+        if (typeof gid === 'string') {
+          groupTitle = gid as string;
+        }
       } else {
         groupTitle =
           typeof gid === 'string'
