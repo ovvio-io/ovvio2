@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3';
-import { EaseInOutSineTimer } from '../base/timer.ts';
+import { EaseInExpoTimer, EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { log } from '../logging/log.ts';
@@ -51,7 +51,7 @@ export abstract class BaseClient<
     readonly scheduler: SyncScheduler,
   ) {
     super();
-    this._timer = new EaseInOutSineTimer(
+    this._timer = new EaseInExpoTimer(
       syncConfig.minSyncFreqMs,
       syncConfig.maxSyncFreqMs,
       syncConfig.maxSyncFreqMs,

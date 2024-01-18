@@ -65,7 +65,7 @@ export async function retry<T>(
   func: () => T | Promise<T>,
   timeoutMs: number,
   maxDelayMs = 20,
-  timingFunc: (factor: number) => number = easeInQuad
+  timingFunc: (factor: number) => number = easeInQuad,
 ): Promise<T> {
   const startTime = Date.now();
   let factor = 0;
@@ -115,6 +115,10 @@ export function easeInOutSine(factor: number): number {
 
 export function easeInOutQuint(x: number): number {
   return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
+}
+
+export function easeInExpo(x: number): number {
+  return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
 }
 
 export function secondsToMS(sec: number) {

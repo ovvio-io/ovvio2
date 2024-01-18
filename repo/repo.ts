@@ -37,7 +37,7 @@ import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
-const MERGE_GRACE_PERIOD_MS = 5 * kSecondMs;
+const MERGE_GRACE_PERIOD_MS = 10 * kSecondMs;
 
 type RepositoryEvent = 'NewCommit';
 
@@ -760,6 +760,7 @@ export class Repository<
     if (commitsToMerge.length <= 0 || !this.allowMerge) {
       return undefined;
     }
+    if ((parents?.length || 0) > 2) debugger;
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
     try {
@@ -1177,12 +1178,16 @@ export class Repository<
       this._cachedHeadsByKey.delete(c.key);
     }
     for (const c of leaves) {
-      this._runUpdatesOnNewCommit(c);
+      this._runUpdatesOnNewLeafCommit(c);
+    }
+    for (const c of result) {
+      // Notify everyone else
+      this.emit('NewCommit', c);
     }
     return result;
   }
 
-  private _runUpdatesOnNewCommit(commit: Commit): void {
+  private _runUpdatesOnNewLeafCommit(commit: Commit): void {
     this._commitsCache.set(commit.id, commit);
     // Auto add newly discovered sessions to our trust pool
     // try {
@@ -1201,8 +1206,6 @@ export class Repository<
     //     throw e;
     //   }
     // }
-    // Notify everyone else
-    this.emit('NewCommit', commit);
   }
 
   private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {

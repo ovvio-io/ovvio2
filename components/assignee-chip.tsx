@@ -24,5 +24,14 @@ export interface AssigneeChipProps {
 export function AssigneeChip({ user, className }: AssigneeChipProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(user, ['name']);
-  return <div className={cn(styles.Container, className)}>{name}</div>;
+  const nameComps = name.split(/\s+/);
+  let initials = '';
+  if (nameComps.length > 1) {
+    for (const c of nameComps) {
+      initials += c[0];
+    }
+  } else {
+    initials = nameComps[0].substring(0, 2);
+  }
+  return <div className={cn(styles.Container, className)}>{initials}</div>;
 }
