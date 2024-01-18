@@ -59,8 +59,7 @@ const useStyles = makeStyles(() => ({
     borderColor: theme.primary.p2,
     display: 'flex',
     alignItems: 'stretch',
-    transition:
-      `background-color ${styleguide.transition.duration.short}ms ease-out`,
+    transition: `background-color ${styleguide.transition.duration.short}ms ease-out`,
   },
   taskTextElement: {
     display: 'flex',
@@ -95,6 +94,10 @@ const useStyles = makeStyles(() => ({
     width: styleguide.gridbase * 51,
     marginInlineStart: styleguide.gridbase * 2,
   },
+  taskAssigneesColumn: {
+    display: 'flex',
+    gap: styleguide.gridbase / 2,
+  },
   taskTextColumn: {
     width: `calc(100% - ${styleguide.gridbase * 51}px)`,
     height: '100%',
@@ -104,8 +107,7 @@ const useStyles = makeStyles(() => ({
   taskText: {
     overflowWrap: 'break-word',
     color: theme.mono.m10,
-    transition:
-      `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
+    transition: `text-decoration-color ${styleguide.transition.duration.short}ms ease-in`,
     textDecorationColor: 'transparent',
     // position: 'relative',
     // top: '-3px',
@@ -265,8 +267,16 @@ type TaskElementProps = React.PropsWithChildren<{
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    { children, className, dir, id, task, ctx, focused, onChange }:
-      TaskElementProps,
+    {
+      children,
+      className,
+      dir,
+      id,
+      task,
+      ctx,
+      focused,
+      onChange,
+    }: TaskElementProps,
     ref,
   ) {
     const styles = useStyles();
@@ -307,48 +317,47 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
           <CheckBox
             className={cn(styles.taskCheckbox)}
             value={partialTask.isChecked}
-            onChange={(value) => partialTask.isChecked = value}
+            onChange={(value) => (partialTask.isChecked = value)}
           />
         </div>
         <div className={cn(styles.taskTextElement)}>
           <div className={cn(styles.taskColumnsContainer)}>
-            <div className={cn(styles.taskTextColumn)}>
-              {children}
-            </div>
+            <div className={cn(styles.taskTextColumn)}>{children}</div>
             <div className={cn(styles.taskActionsColumn)}>
-              {Array.from(partialTask.assignees).sort(coreValueCompare).map(
-                (u) => (
-                  <Menu
-                    renderButton={() => (
-                      <AssigneeChip
-                        className={cn(styles.assigneeChip)}
-                        user={u.manager}
+              <div className={cn(styles.taskAssigneesColumn)}>
+                {Array.from(partialTask.assignees)
+                  .sort(coreValueCompare)
+                  .map((u) => (
+                    <Menu
+                      renderButton={() => (
+                        <AssigneeChip
+                          className={cn(styles.assigneeChip)}
+                          user={u.manager}
+                        />
+                      )}
+                      position="bottom"
+                      align="center"
+                      direction="out"
+                    >
+                      <MemberPicker
+                        users={Array.from(partialWorkspace.users).filter(
+                          (wsUser) => !partialTask.assignees.has(wsUser),
+                        )}
+                        onRowSelect={(updatedAssignee) => {
+                          const assignees = partialTask.assignees;
+                          assignees.delete(u);
+                          assignees.add(updatedAssignee);
+                        }}
                       />
-                    )}
-                    position='bottom'
-                    align='center'
-                    direction='out'
-                  >
-                    <MemberPicker
-                      users={Array.from(partialWorkspace.users).filter((
-                        wsUser,
-                      ) => !partialTask.assignees.has(wsUser))}
-                      onRowSelect={(updatedAssignee) => {
-                        const assignees = partialTask.assignees;
-                        assignees.delete(u);
-                        assignees.add(updatedAssignee);
-                      }}
-                    />
-                  </Menu>
-                ),
-              )}
+                    </Menu>
+                  ))}
+              </div>
             </div>
           </div>
           <div
             className={cn(styles.focusedTaskUnderline)}
             style={{ opacity: focused ? 1 : 0 }}
-          >
-          </div>
+          ></div>
         </div>
       </div>
     );
@@ -435,10 +444,16 @@ type ParagraphElementNode = React.PropsWithChildren<{
   onChange: (doc: Document) => void;
 }>;
 
-function ParagraphElementNode(
-  { id, htmlId, dir, onNewTask, showNewTaskHint, ctx, onChange, children }:
-    ParagraphElementNode,
-) {
+function ParagraphElementNode({
+  id,
+  htmlId,
+  dir,
+  onNewTask,
+  showNewTaskHint,
+  ctx,
+  onChange,
+  children,
+}: ParagraphElementNode) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
   const onClick = useCallback(() => {
@@ -473,7 +488,7 @@ function ParagraphElementNode(
             right: dir === 'rtl' ? `${styleguide.gridbase * 6}px` : '0px',
           }}
         >
-          <img src='/icons/design-system/checkbox/selected.svg' />
+          <img src="/icons/design-system/checkbox/selected.svg" />
         </div>
       )}
       {children}
@@ -498,7 +513,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
 
   if (isTextNode(node)) {
     const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
-    const focused = selection &&
+    const focused =
+      selection &&
       (selection.anchor?.node === node || selection.focus?.node === node);
     return <EditorSpan node={node} ctx={ctx} focused={focused} />;
   }
@@ -518,7 +534,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     });
   }
 
-  const focusNode = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId] &&
+  const focusNode =
+    ctx.doc.ranges &&
+    ctx.doc.ranges[ctx.selectionId] &&
     ctx.doc.ranges[ctx.selectionId].focus.node;
   const focusPath = focusNode && pathToNode(ctx.doc.root, focusNode);
   const elementInFocusPath = focusPath?.includes(node) === true;
