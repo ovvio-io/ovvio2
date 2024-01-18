@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
@@ -84,10 +90,12 @@ const useStyles = makeStyles(() => ({
     outline: 'none',
     border: 'none',
     backgroundColor: 'transparent',
-    padding: '0px 8px 0px 8px',
+    padding: '0px 8px 0px 3px',
     background: 'transparent',
     display: 'block',
     maxWidth: '100%',
+    minWidth: '100px',
+
     overflowWrap: ' break-word',
   },
 
@@ -117,7 +125,7 @@ const useStyles = makeStyles(() => ({
     flexWrap: 'wrap',
     alignItems: 'center',
     color: 'var(--tag-color)',
-    padding: '0px 4px 2px 4px',
+    padding: '2px 4px 2px 4px',
     justifyContent: 'center',
     width: 'auto',
   },
@@ -135,10 +143,6 @@ const useStyles = makeStyles(() => ({
     minWidth: '20px',
     display: 'flex',
     justifyContent: 'center',
-    // '&[contentEditable="true"]:empty:not(:focus)::before': {
-    //   content: 'attr(data-text)',
-    //   color: '#aaa',
-    // },
   },
   moreButtonColumn: {
     position: 'absolute',
@@ -241,10 +245,6 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     category.name = categoryName;
   }, [categoryName]);
 
-  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
-    setCategoryName(e.currentTarget.textContent || '');
-  };
-
   const inputId = `category-input-${String(uniqueId())}`;
 
   useEffect(() => {
@@ -256,20 +256,43 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
     }
   }, [isNewCategory]);
 
+  const contentEditableRef = useRef<HTMLInputElement>(null);
+
+  const handleOnInput = () => {
+    if (contentEditableRef.current) {
+      const content = contentEditableRef.current.textContent;
+      content && setCategoryName(content);
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (contentEditableRef.current) {
+      contentEditableRef.current.textContent = category.name;
+    }
+  }, [category]);
+
+  const handleOnBlur = () => {
+    if (
+      contentEditableRef.current &&
+      contentEditableRef.current['textContent'] === ''
+    ) {
+      setCategoryName('Untitled');
+    }
+  };
+
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
       <div
         id={inputId}
         className={cn(styles.categoryInputPill)}
-        onInput={onInput}
-        placeholder="untitled"
+        onInput={handleOnInput}
+        onBlur={handleOnBlur}
         contentEditable={
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'
         }
         suppressContentEditableWarning={true}
-      >
-        {categoryName}
-      </div>
+        ref={contentEditableRef}
+      />
     </div>
   );
 };
@@ -315,21 +338,46 @@ const TagPills: React.FC<TagPillsProps> = ({
     }
   }, [isHighlighted]);
 
-  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
-    setTagName(e.currentTarget.textContent || '');
-    onTypingStart();
+  const contentEditableRef = useRef<HTMLInputElement>(null);
+
+  const handleOnInput = () => {
+    if (contentEditableRef.current) {
+      onTypingStart();
+      const content = contentEditableRef.current.textContent;
+      content && setTagName(content);
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (contentEditableRef.current) {
+      contentEditableRef.current.textContent = tag.name;
+    }
+  }, [tag]);
+
+  const handleOnBlur = () => {
+    //TODO: check why this doesn't work here but on Category does work.
+    if (
+      contentEditableRef.current &&
+      contentEditableRef.current['textContent'] === ''
+    ) {
+      setTagName('Untitled');
+    }
   };
 
   return (
     <div
-      className={cn(
-        styles.tagPillSize,
-        styles.tagPill,
-        (editMode || reorderMode) && styles.editPill,
-        highlight && styles.highlightedTag
-      )}
+      className={
+        tag &&
+        cn(
+          styles.tagPillSize,
+          styles.tagPill,
+          (editMode || reorderMode) && styles.editPill,
+          highlight && styles.highlightedTag
+        )
+      }
       style={{
-        backgroundColor: editMode || reorderMode ? 'transparent' : '#E5E5E5',
+        backgroundColor:
+          tag && (editMode || reorderMode) ? 'transparent' : '#E5E5E5',
       }}
     >
       {reorderMode && (
@@ -340,19 +388,20 @@ const TagPills: React.FC<TagPillsProps> = ({
           <img key="MoveLeftTagSettings" src="/icons/settings/Move-left.svg" />
         </Button>
       )}
+
       <div
-        id={uniqueId || undefined}
+        id={uniqueId || tag.key}
         className={cn(styles.tagInputPill)}
-        onInput={onInput}
         readOnly={!editMode && !isNewCategory}
-        data-text="Untitled"
+        onInput={handleOnInput}
+        onBlur={handleOnBlur}
         contentEditable={
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'
         }
         suppressContentEditableWarning={true}
-      >
-        {tagName}
-      </div>
+        ref={contentEditableRef}
+      />
+
       {editMode && (
         <div className={cn(styles.deleteIcon)} onClick={deleteTag}>
           <img key="DeleteTagSettings" src="/icons/settings/Close.svg" />
@@ -521,7 +570,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
               <TagPills
                 key={tag.key}
                 tag={tag}
-                uniqueId={tag.key === newTagVertex?.key ? newTagId : null} //for focus.
+                uniqueId={tag.key === newTagVertex?.key ? newTagId : null}
                 editMode={isEditMode}
                 reorderMode={isReorderMode}
                 deleteTag={() => deleteTag(tag.key)}
