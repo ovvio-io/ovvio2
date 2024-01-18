@@ -29,9 +29,9 @@ const useStyles = makeStyles(
       padding: styleguide.gridbase * 2,
       alignItems: 'center',
       marginBottom: styleguide.gridbase,
-      // ':last-child': {
-      //   marginBottom: 0,
-      // },
+      ':last-child': {
+        marginBottom: 0,
+      },
       ':hover': {
         backgroundColor: theme.colors.secondaryButtonActive,
         color: theme.colors.text,
@@ -69,7 +69,7 @@ const useStyles = makeStyles(
       basedOn: [useTypographyStyles.button, layout.column, layout.centerCenter],
     },
   }),
-  'actions_2eb8a6'
+  'actions_2eb8a6',
 );
 
 const useStrings = createUseStrings(localization);
