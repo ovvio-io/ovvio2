@@ -20,8 +20,6 @@ export const Step1: React.FC<Step1Props> = ({
   selectedUsers,
   setSelectedUsers,
 }) => {
-  const usersQuery = useSharedQuery('users');
-  const users = useVertices(usersQuery.results) as User[];
   const handleChooseWsClick = () => {
     setStep(2);
   };
@@ -82,12 +80,11 @@ export const Step1: React.FC<Step1Props> = ({
         <Bold>Org. Members</Bold>
       </div>
       <UserTable
-        users={users}
+        // users={users}
         onRowSelect={handleRowSelect}
         showSelection={true}
         selectedUsers={selectedUsers}
         showSearch={true}
-        isEditable={true}
         editMode={false}
       />
     </div>

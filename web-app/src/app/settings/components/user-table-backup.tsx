@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
@@ -11,17 +11,12 @@ import Menu, { MenuItem } from '../../../../../styles/components/menu.tsx';
 import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../core/cfds/react/vertex.ts';
-import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
-import { normalizeEmail } from '../../../../../base/string.ts';
 
 type EditableColumnProps = {
   index: number;
   placeholder: string;
   setCurrState: (s: string) => void;
-  value?: string | undefined;
+  value: string | undefined;
 };
 const EditableColumn: React.FC<EditableColumnProps> = ({
   index,
@@ -54,13 +49,11 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   }));
   const styles = useStyles();
   const inputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (index === 1 && inputRef.current) {
       inputRef.current.focus();
     }
   }, []);
-
   const inputValue = value !== undefined ? value : '';
 
   return (
@@ -80,12 +73,17 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
 };
 // ============================================================================================================
 type TableRowProps = {
-  user: User;
-  newUser?: boolean;
+  user?: User;
   isSelected: boolean;
+  addNewMember: boolean;
   onRowSelect: (user: string) => void;
+  setName?: (s: string) => void;
+  setEmail?: (s: string) => void;
+  name?: string | null;
+  email?: string | null;
+  metadata?: { [key: string]: string };
+  setMetadata?: (metadata: { [key: string]: string }) => void;
   editMode: boolean;
-  addMemberMode: boolean;
   onSaveEdit?: (
     userKey: string,
     name: string,
@@ -95,11 +93,16 @@ type TableRowProps = {
 };
 const TableRow: React.FC<TableRowProps> = ({
   user,
-  newUser,
   isSelected,
+  addNewMember,
   onRowSelect,
+  setName,
+  setEmail,
+  name,
+  email,
+  metadata,
+  setMetadata,
   editMode,
-  addMemberMode,
   onSaveEdit,
 }) => {
   const useStyles = makeStyles(() => ({
@@ -182,39 +185,12 @@ const TableRow: React.FC<TableRowProps> = ({
 
   const styles = useStyles();
   const [isRowHovered, setIsRowHovered] = useState(false);
-  const [localName, setLocalName] = useState(user.name);
-  const [localEmail, setLocalEmail] = useState(user.email);
-  const [localMetadata, setLocalMetadata] = useState(
-    convertDictionaryToObject(user.metadata)
-  );
+  const [localName, setLocalName] = useState(name);
+  const [localEmail, setLocalEmail] = useState(email);
+  const [localMetadata, setLocalMetadata] = useState(metadata);
   const [editNow, setEditNow] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
-
-  const saveAndExitEditing = () => {
-    if (editNow && onSaveEdit) {
-      setEditNow(false);
-      onSaveEdit(user.key, localName, localEmail, localMetadata);
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      debugger;
-      if (
-        editNow &&
-        rowRef.current &&
-        !rowRef.current.contains(event.target as Node)
-      ) {
-        saveAndExitEditing();
-      }
-    };
-    if (editNow) {
-      document.addEventListener('click', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [editNow, rowRef, saveAndExitEditing]);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleMouseEnter = () => {
     setIsRowHovered(true);
@@ -229,17 +205,67 @@ const TableRow: React.FC<TableRowProps> = ({
         ...localMetadata,
         [key]: value,
       });
+    } else {
+      {
+        setMetadata &&
+          setMetadata({
+            ...metadata,
+            [key]: value,
+          });
+      }
     }
   };
 
-  const handleRowSelect = (event: React.MouseEvent, user: string) => {
-    event.stopPropagation();
+  const handleRowSelect = (user: string) => {
+    console.log('row selected for user-', user, 'and editMode is-', editMode);
     if (editMode) {
-      // event.preventDefault();
+      // debugger;
       setEditNow(true);
     } else if (user) {
+      console.log('row selected for user-', user, 'and editMode is-', editMode);
+
       onRowSelect(user);
     }
+  };
+
+  const saveAndExitEditing = () => {
+    if (
+      editNow &&
+      onSaveEdit &&
+      user &&
+      localName &&
+      localEmail &&
+      localMetadata !== undefined
+    ) {
+      onSaveEdit(user.key, localName, localEmail, localMetadata);
+      setEditNow(false);
+      setIsEditing(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        editNow &&
+        rowRef.current &&
+        !rowRef.current.contains(event.target as Node)
+      ) {
+        saveAndExitEditing();
+      }
+    };
+    if (editNow) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isEditing, editNow, rowRef, saveAndExitEditing]);
+
+  const enableEditing = (event: React.MouseEvent) => {
+    // console.log('Editing NOW');
+    event.stopPropagation();
+    event.preventDefault();
+    setIsEditing(true);
   };
 
   const removeUserFromOrg = () => {
@@ -257,152 +283,204 @@ const TableRow: React.FC<TableRowProps> = ({
           console.error('Failed to copy: ', err);
         });
   };
-  return (
-    <div ref={rowRef} className={cn(styles.rowContainer)}>
-      {!addMemberMode && !editMode && isRowHovered && (
-        <div className={cn(styles.rowLeft, styles.rowLeftHover)}>
-          <img
-            key="HoveredRowSettings"
-            src="/icons/settings/hover-select.svg"
-          />
-        </div>
-      )}
-      {isSelected && (
-        <div className={cn(styles.rowLeft)}>
-          <img
-            key="SelectedRowSettings"
-            src="/icons/settings/hover-select2.svg"
-          />
-        </div>
-      )}
-      {!editNow && !newUser ? (
-        <div
-          className={cn(
-            isSelected && styles.selectedRow,
-            styles.rowRight,
-            styles.hoverableRow
-          )}
-          onClick={(event) => {
-            user && handleRowSelect(event, user.key);
-          }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
-          <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
-          <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('team')}
-          </div>
-          <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('companyRoles')}
-          </div>
-          <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('comments')}
-          </div>
-          <Menu
-            renderButton={() => <IconMore />}
-            position="right"
-            align="start"
-            direction="out"
-          >
-            <MenuItem
-              onClick={() => {
-                copyToClipboard();
-              }}
-            >
-              <IconDuplicate />
-              Copy User ID
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                removeUserFromOrg();
-              }}
-            >
-              <IconDelete />
-              Remove from Org.
-            </MenuItem>
-          </Menu>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            styles.selectedRow,
-            styles.rowRight,
-            styles.hoverableRow
-          )}
-        >
-          <EditableColumn
-            index={1}
-            placeholder={'Full name'}
-            setCurrState={setLocalName}
-            value={localName || ''}
-          />
-          <EditableColumn
-            index={2}
-            placeholder={'Email'}
-            setCurrState={setLocalEmail}
-            value={localEmail || ''}
-          />
-          <EditableColumn
-            index={4}
-            placeholder="Team"
-            value={localMetadata && localMetadata.team}
-            setCurrState={(value) => handleMetadataChange('team', value)}
-          />
-          <EditableColumn
-            index={3}
-            placeholder="Roles"
-            value={localMetadata && localMetadata.companyRoles}
-            setCurrState={(value) =>
-              handleMetadataChange('companyRoles', value)
-            }
-          />
-          <Menu
-            renderButton={() => <IconMore />}
-            position="right"
-            align="start"
-            direction="out"
-          >
-            <MenuItem
-              onClick={() => {
-                copyToClipboard();
-              }}
-            >
-              <IconDuplicate />
-              Copy User ID
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                removeUserFromOrg();
-              }}
-            >
-              <IconDelete />
-              Remove from Org.
-            </MenuItem>
-          </Menu>
-        </div>
-      )}
-    </div>
-  );
-};
 
+  if (editNow) {
+    return (
+      <div
+        ref={rowRef}
+        className={cn(styles.rowContainer)}
+        onClick={enableEditing}
+      >
+        {setLocalEmail && setLocalName && (
+          <div
+            className={cn(
+              styles.selectedRow,
+              styles.rowRight,
+              styles.hoverableRow
+            )}
+          >
+            <EditableColumn
+              index={1}
+              placeholder={'Full name'}
+              setCurrState={setLocalName}
+              value={localName || ''}
+            />
+            <EditableColumn
+              index={2}
+              placeholder={'Email'}
+              setCurrState={setLocalEmail}
+              value={localEmail || ''}
+            />
+            <EditableColumn
+              index={4}
+              placeholder="Team"
+              value={localMetadata && localMetadata.team}
+              setCurrState={(value) => handleMetadataChange('team', value)}
+            />
+            <EditableColumn
+              index={3}
+              placeholder="Roles"
+              value={localMetadata && localMetadata.companyRoles}
+              setCurrState={(value) =>
+                handleMetadataChange('companyRoles', value)
+              }
+            />
+            <Menu
+              renderButton={() => <IconMore />}
+              position="right"
+              align="start"
+              direction="out"
+            >
+              <MenuItem
+                onClick={() => {
+                  copyToClipboard();
+                }}
+              >
+                <IconDuplicate />
+                Copy User ID
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  removeUserFromOrg();
+                }}
+              >
+                <IconDelete />
+                Remove from Org.
+              </MenuItem>
+            </Menu>
+            <IconMore />
+          </div>
+        )}
+      </div>
+    );
+  } else {
+    console.log('ELSE for', user?.name);
+    return (
+      <div
+        className={cn(styles.rowContainer)}
+        onClick={() => {
+          user && handleRowSelect(user.key);
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {isRowHovered && (
+          <div className={cn(styles.rowLeft, styles.rowLeftHover)}>
+            <img
+              key="HoveredRowSettings"
+              src="/icons/settings/hover-select.svg"
+            />
+          </div>
+        )}
+        {isSelected && (
+          <div className={cn(styles.rowLeft)}>
+            <img
+              key="SelectedRowSettings"
+              src="/icons/settings/hover-select2.svg"
+            />
+          </div>
+        )}
+        {!addNewMember && user && (
+          <div
+            id={`setting/org/<${user.key}>`}
+            className={cn(
+              styles.rowRight,
+              styles.hoverableRow,
+              isSelected && styles.selectedRow
+            )}
+          >
+            <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
+            <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
+            <div className={cn(styles.otherColumnStyle)}>
+              {user.metadata.get('team')}
+            </div>
+            <div className={cn(styles.otherColumnStyle)}>
+              {user.metadata.get('companyRoles')}
+            </div>
+            <div className={cn(styles.otherColumnStyle)}>
+              {' '}
+              {user.metadata.get('comments')}
+            </div>
+          </div>
+        )}
+        {addNewMember && setName && setEmail && (
+          <div
+            id={`setting/org/<undefined>`}
+            className={cn(
+              styles.selectedRow,
+              styles.rowRight,
+              styles.hoverableRow
+            )}
+          >
+            <EditableColumn
+              index={1}
+              placeholder={'Full name'}
+              setCurrState={setName}
+              value={name || ''}
+            />
+            <EditableColumn
+              index={2}
+              placeholder={'Email'}
+              setCurrState={setEmail}
+              value={email || ''}
+            />
+            <EditableColumn
+              index={4}
+              placeholder="Team"
+              value={metadata && metadata.team}
+              setCurrState={(value) => handleMetadataChange('team', value)}
+            />
+            <EditableColumn
+              index={3}
+              placeholder="Roles"
+              value={metadata && metadata.companyRoles}
+              setCurrState={(value) =>
+                handleMetadataChange('companyRoles', value)
+              }
+            />
+            <IconMore />
+          </div>
+        )}
+      </div>
+    );
+  }
+};
 //============================================+++++++=====================================================
 type UserTableProps = {
+  users: User[];
   showSelection: boolean;
   onRowSelect: (user: string) => void;
   selectedUsers: Set<string>;
   showSearch: boolean;
   editMode: boolean;
-  addMemberMode: boolean;
+  setName?: (s: string) => void;
+  setEmail?: (s: string) => void;
+  setMetadata?: (metadata: { [key: string]: string }) => void;
+  name?: string | null;
+  email?: string | null;
+  metadata?: { [key: string]: string };
+  onSaveEdit?: (
+    userKey: string,
+    name: string,
+    email: string,
+    metadata: { [key: string]: string }
+  ) => void;
 };
 
 const UserTable: React.FC<UserTableProps> = ({
+  users,
   showSelection,
   selectedUsers,
   onRowSelect,
   showSearch,
   editMode,
-  addMemberMode,
+  setName,
+  setEmail,
+  setMetadata,
+  name,
+  email,
+  metadata,
+  onSaveEdit,
 }) => {
   const useStyles2 = makeStyles(() => ({
     tableContainer: {
@@ -462,10 +540,8 @@ const UserTable: React.FC<UserTableProps> = ({
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [newUser, setNewUser] = useState<User | undefined>();
-  const graphManager = useGraphManager();
-  const usersQuery = useSharedQuery('users');
-  const users = useVertices(usersQuery.results) as User[];
+  const [newUser, setNewUser] = useState<boolean>();
+  const [isSearching, setIsSearching] = useState(showSearch ? true : false);
 
   useEffect(() => {
     if (users) {
@@ -477,44 +553,10 @@ const UserTable: React.FC<UserTableProps> = ({
       );
       setFilteredUsers(filtered);
     }
-  }, [searchTerm, usersQuery]); // ask ofri why put users instead of userQuery will lead to max memory usage;
+  }, [searchTerm, users]);
 
-  const handleNewMember = useCallback(() => {
-    const createdVertex = graphManager.createVertex<User>(
-      SchemeNamespace.USERS,
-      {}
-    );
-    setNewUser(createdVertex.manager.getVertexProxy()); //check if getVertexProxy is correct.
-  }, [graphManager]);
-
-  const handleSaveUserEdit = (
-    userKey: string,
-    name: string,
-    email: string,
-    metadata: { [key: string]: string }
-  ) => {
-    if (!email || !name) {
-      console.log('Name and Email are mandatory fields');
-      return;
-    }
-    if (name.trim() === '' || email.trim() === '') {
-      console.log('Name and Email are mandatory fields');
-      return;
-    }
-    const userVertex = graphManager.getVertex<User>(userKey);
-    if (!userVertex) {
-      console.log('User not found');
-      return;
-    }
-    userVertex.name = name;
-    userVertex.email = normalizeEmail(email);
-    const metadataMap = new Map<UserMetadataKey, string>();
-    Object.entries(metadata).forEach(([key, value]) => {
-      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
-        metadataMap.set(key as UserMetadataKey, value);
-      }
-    });
-    userVertex.metadata = metadataMap;
+  const handleNewMember = () => {
+    setNewUser(true);
   };
 
   return (
@@ -525,10 +567,10 @@ const UserTable: React.FC<UserTableProps> = ({
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            isSearching={showSearch}
+            isSearching={isSearching}
           />
         )}
-        {addMemberMode && (
+        {editMode && (
           <div
             className={cn(styles.rowRight, styles.hoverableRow)}
             onClick={handleNewMember}
@@ -539,21 +581,41 @@ const UserTable: React.FC<UserTableProps> = ({
             </div>
           </div>
         )}
-
+        {newUser && (
+          <TableRow
+            isSelected={false}
+            addNewMember={true}
+            onRowSelect={() => {}}
+            setName={setName}
+            setEmail={setEmail}
+            name={name}
+            email={email}
+            metadata={metadata}
+            setMetadata={setMetadata}
+            onSaveEdit={onSaveEdit}
+            editMode={false}
+          />
+        )}
+        {/* <div className={styles.scrollTable}> */}
         {filteredUsers.map((user: User) => (
           <TableRow
             key={user.key}
             user={user}
-            newUser={newUser === user}
             onRowSelect={() => onRowSelect(user.key)}
             isSelected={showSelection && selectedUsers.has(user.key)}
+            addNewMember={false}
             editMode={editMode}
-            addMemberMode={addMemberMode}
-            onSaveEdit={handleSaveUserEdit}
+            onSaveEdit={onSaveEdit}
+            setName={setName}
+            setEmail={setEmail}
+            name={user.name}
+            email={user.email}
+            metadata={convertDictionaryToObject(user.metadata)}
           />
         ))}
       </div>
     </div>
+    // </div>
   );
 };
 export default UserTable;

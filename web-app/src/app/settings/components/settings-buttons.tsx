@@ -225,21 +225,18 @@ export function AssignWsButton({
   );
 }
 
-interface EditSaveButtonProps {
-  onSaveEditClick?: () => void;
+interface SaveAddButtonProps {
+  onSaveAddClick?: () => void;
   disable: boolean;
 }
 
-export function EditSaveButton({
-  onSaveEditClick,
-  disable,
-}: EditSaveButtonProps) {
+export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
   const styles = useStyles();
   const isDisabled = disable;
 
   return (
     <Button
-      onClick={isDisabled ? undefined : onSaveEditClick}
+      onClick={isDisabled ? undefined : onSaveAddClick}
       className={cn(
         styles.compose,
         isDisabled ? styles.disabled : styles.available
@@ -250,7 +247,7 @@ export function EditSaveButton({
         src="/icons/settings/Check.svg"
         onClick={() => {}}
       />
-      <span className={cn(styles.text)}>{'Save changes'}</span>
+      <span className={cn(styles.text)}>{'Done'}</span>
     </Button>
   );
 }
@@ -268,7 +265,20 @@ export function EditButton({ onEditClick }: EditButtonProps) {
     </Button>
   );
 }
+interface AddMemberButtonProps {
+  onAddClick?: () => void;
+}
 
+export function AddMemberButton({ onAddClick }: AddMemberButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onAddClick} className={cn(styles.compose, styles.blue)}>
+      <img key="AddMemberSettings" src="/icons/settings/InviteWhite.svg" />
+      <span className={cn(styles.textWhite)}>{'Add members'}</span>
+    </Button>
+  );
+}
 type UserPillProps = {
   user: string;
   selectedUsers: Set<string>;
