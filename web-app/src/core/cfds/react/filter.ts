@@ -93,7 +93,23 @@ function rootNoteForNote(n: Note): Note | undefined {
 
 function groupByRootTitle(note: Note): string | undefined {
   const root = rootNoteForNote(note);
-  return root ? root.plaintextTitle : undefined;
+  return root ? root.titlePlaintext : undefined;
+}
+
+function groupByTeam(note: Note): (string | null)[] | undefined {
+  const result: (string | null)[] = [];
+  for (const u of note.assignees) {
+    for (const t of u.teams) {
+      if (!result.includes(t)) {
+        result.push(t);
+      }
+    }
+  }
+  result.sort();
+  if (!result.length) {
+    result.push(null);
+  }
+  return result;
 }
 
 export const GROUP_BY: Record<
@@ -112,6 +128,7 @@ export const GROUP_BY: Record<
   dueDate: groupByDueDate,
   note: groupByRootTitle,
   tag: undefined,
+  team: groupByTeam,
 };
 
 const GROUP_COMPARATOR: Record<
@@ -125,6 +142,7 @@ const GROUP_COMPARATOR: Record<
     kDueDateColumns.indexOf(g2 as DueDateColumn),
   note: undefined,
   tag: undefined,
+  team: undefined,
 };
 
 const gGroupByTagFunctions: {
@@ -132,7 +150,7 @@ const gGroupByTagFunctions: {
 } = {};
 
 function groupByForTag(
-  parentName: string
+  parentName: string,
 ): GroupByFunction<Note, string | null> {
   let result = gGroupByTagFunctions[parentName];
   if (!result) {
@@ -188,7 +206,7 @@ export function createUnionWorkspacesSource(
   graph: GraphManager,
   selectedWorkspaces: VertexId<Workspace>[],
   sortBy: SortBy,
-  name: string
+  name: string,
 ): UnionQuery<Vertex, Note, string> {
   return new UnionQuery(
     selectedWorkspaces.sort(coreValueCompare).map((id) => {
@@ -197,17 +215,17 @@ export function createUnionWorkspacesSource(
         groupId: VertexIdGetKey(id),
       };
     }),
-    'NotesUnion/' + name
+    'NotesUnion/' + name,
   );
 }
 
 export type FilteredNotes<GT extends CoreValue = CoreValue> = readonly [
   pinned: QueryOptions<Note, Note, GT>,
-  unpinned: QueryOptions<Note, Note, GT> | undefined
+  unpinned: QueryOptions<Note, Note, GT> | undefined,
 ];
 
 export function useFilteredNotes<GT extends CoreValue>(
-  name: string
+  name: string,
 ): FilteredNotes<GT> {
   const graph = useGraphManager();
   const view = usePartialView(
@@ -221,7 +239,7 @@ export function useFilteredNotes<GT extends CoreValue>(
     'selectedAssignees',
     'selectedTagIds',
     'viewType',
-    'dateFilter'
+    'dateFilter',
   );
   const unpinnedSource = useMemo(
     () =>
@@ -229,9 +247,9 @@ export function useFilteredNotes<GT extends CoreValue>(
         graph,
         Array.from(view.selectedWorkspaces),
         view.sortBy,
-        name
+        name,
       ),
-    [graph, view.selectedWorkspaces, view.sortBy, name]
+    [graph, view.selectedWorkspaces, view.sortBy, name],
   );
   // const unpinnedSource = useSharedQuery('notDeleted');
   const result: FilteredNotes<GT> = useMemo(() => {
@@ -279,7 +297,7 @@ function buildQueryOptions<GT extends CoreValue>(
   >,
   src: VertexSource,
   pinned: boolean | undefined,
-  name: string
+  name: string,
 ): QueryOptions<Note, Note, GT> {
   const groupBy =
     view.groupBy === 'tag'
@@ -337,7 +355,7 @@ function buildQueryOptions<GT extends CoreValue>(
 
 function noteMatchesTags(
   note: Note,
-  selectedTags: Map<string, string[]>
+  selectedTags: Map<string, string[]>,
 ): boolean {
   const noteTags = note.tags;
   for (const [parentName, childNames] of selectedTags) {
