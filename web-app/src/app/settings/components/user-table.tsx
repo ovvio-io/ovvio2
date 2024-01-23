@@ -15,6 +15,7 @@ import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../core/cfds/react/vertex.ts';
 import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
 import { normalizeEmail } from '../../../../../base/string.ts';
+import { styleguide } from '../../../../../styles/styleguide.ts';
 
 type EditableColumnProps = {
   index: number;
@@ -126,6 +127,9 @@ const TableRow: React.FC<TableRowProps> = ({
     hoverableRow: {
       ':hover': {
         backgroundColor: '#FBF6EF',
+        itemMenu: {
+          opacity: 1,
+        },
       },
     },
     rowLeft: {
@@ -179,6 +183,14 @@ const TableRow: React.FC<TableRowProps> = ({
       height: '1px',
       background: theme.primary.p8,
       margin: '5px 0px 0px 0px',
+    },
+    itemMenu: {
+      opacity: 0,
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity',
+    },
+    itemMenuOpen: {
+      opacity: 1,
     },
   }));
 
@@ -272,6 +284,14 @@ const TableRow: React.FC<TableRowProps> = ({
     }
   };
 
+  const renderButton = useCallback(
+    ({ isOpen }: { isOpen: boolean }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
+      </div>
+    ),
+    []
+  );
   const handleMouseEnter = () => {
     if (!isSelected) setIsRowHovered(true);
   };
@@ -345,7 +365,7 @@ const TableRow: React.FC<TableRowProps> = ({
             {user.metadata.get('comments')}
           </div>
           <Menu
-            renderButton={() => <IconMore />}
+            renderButton={renderButton}
             position="right"
             align="start"
             direction="out"
@@ -407,7 +427,7 @@ const TableRow: React.FC<TableRowProps> = ({
             isValid={true}
           />
           <Menu
-            renderButton={() => <IconMore />}
+            renderButton={renderButton}
             position="right"
             align="start"
             direction="out"
