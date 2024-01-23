@@ -31,6 +31,7 @@ const useStyles = makeStyles(() => ({
     fontWeight: '400',
   },
   hoverableRow: {
+    cursor: 'pointer',
     ':hover': {
       backgroundColor: '#FBF6EF',
     },
@@ -75,13 +76,13 @@ const useStyles = makeStyles(() => ({
 type MemberPickerProps = {
   users: User[];
   onRowSelect: (user: User) => void;
-  isSearching?: boolean;
-  setIsSearching?: (b: boolean) => void;
+  showSearch?: boolean;
 };
 
 export const MemberPicker: React.FC<MemberPickerProps> = ({
   users,
   onRowSelect,
+  showSearch,
 }) => {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -96,7 +97,7 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER
+        Number.MAX_SAFE_INTEGER,
       );
       setFilteredUsers(filtered);
     }
@@ -153,20 +154,22 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
   return (
     isVisible && (
       <div className={cn(styles.tableContainer)}>
-        <div className={cn(styles.searchRowStyle)}>
-          <div className={cn(styles.iconContainer)}>
-            <IconSearch />
+        {showSearch !== false && (
+          <div className={cn(styles.searchRowStyle)}>
+            <div className={cn(styles.iconContainer)}>
+              <IconSearch />
+            </div>
+            <TextField
+              ref={inputRef}
+              type="text"
+              placeholder={'Type name:'}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onKeyDown={onKeyDown}
+              className={styles.InputTextStyle}
+            />
           </div>
-          <TextField
-            ref={inputRef}
-            type="text"
-            placeholder={'Type name:'}
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onKeyDown={onKeyDown}
-            className={styles.InputTextStyle}
-          />
-        </div>
+        )}
         <Scroller>
           {(inputRef) => (
             <div className={cn(styles.tableContent)} ref={inputRef}>

@@ -32,6 +32,7 @@ import { coreValueCompare } from '../../base/core-types/comparable.ts';
 import { AssigneeChip } from '../../components/assignee-chip.tsx';
 import Menu from '../../styles/components/menu.tsx';
 import { MemberPicker } from '../../components/member-picker.tsx';
+import { TagChip } from '../../components/tag-chip.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -93,8 +94,14 @@ const useStyles = makeStyles(() => ({
   taskActionsColumn: {
     width: styleguide.gridbase * 51,
     marginInlineStart: styleguide.gridbase * 2,
+    display: 'flex',
+    gap: styleguide.gridbase * 3,
   },
   taskAssigneesColumn: {
+    display: 'flex',
+    gap: styleguide.gridbase / 2,
+  },
+  taskTagsColumn: {
     display: 'flex',
     gap: styleguide.gridbase / 2,
   },
@@ -284,6 +291,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
       'isChecked',
       'assignees',
       'workspace',
+      'tags',
     ]);
     const partialWorkspace = usePartialVertex(partialTask.workspace.manager, [
       'users',
@@ -348,7 +356,37 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                           assignees.delete(u);
                           assignees.add(updatedAssignee);
                         }}
+                        showSearch={false}
                       />
+                    </Menu>
+                  ))}
+              </div>
+              <div className={cn(styles.taskTagsColumn)}>
+                {Array.from(partialTask.tags.values())
+                  .sort(coreValueCompare)
+                  .map((tag) => (
+                    <Menu
+                      renderButton={() => (
+                        <TagChip
+                          className={cn(styles.assigneeChip)}
+                          tag={tag.manager}
+                        />
+                      )}
+                      position="bottom"
+                      align="center"
+                      direction="out"
+                    >
+                      {/* <MemberPicker
+                        users={Array.from(partialWorkspace.users).filter(
+                          (wsUser) => !partialTask.assignees.has(wsUser),
+                        )}
+                        onRowSelect={(updatedAssignee) => {
+                          const assignees = partialTask.assignees;
+                          assignees.delete(u);
+                          assignees.add(updatedAssignee);
+                        }}
+                      /> */}
+                      <div></div>
                     </Menu>
                   ))}
               </div>
