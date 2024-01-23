@@ -366,6 +366,9 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
     const result: UnifiedTagDisplay[] = [];
     const selectedWorkspaces = view.selectedWorkspaces;
     for (const name of parentTagsByName.groups()) {
+      if (!name) {
+        continue;
+      }
       const values = new Set<string>();
       for (const parent of parentTagsByName.group(name)) {
         const t = parent.getVertexProxy();

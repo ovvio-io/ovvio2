@@ -73,7 +73,7 @@ export function AssigneesBoardView({
         });
       }
     },
-    [toast, strings]
+    [toast, strings],
   );
 
   const onDrop = (
@@ -81,7 +81,7 @@ export function AssigneesBoardView({
     items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
-    dragPosition: DragPosition
+    dragPosition: DragPosition,
   ) => {
     const card = item.getVertexProxy();
     if (user === 'unassigned') {
@@ -94,14 +94,14 @@ export function AssigneesBoardView({
 
   const allowsDrop = (
     user: VertexManager<User> | 'unassigned',
-    card: VertexManager<Note>
+    card: VertexManager<Note>,
   ) => {
     if (user === 'unassigned') {
       return true;
     }
     const proxy = card.getVertexProxy();
     return (
-      proxy.workspace.assignees.has(user.getVertexProxy()) || {
+      proxy.workspace.users.has(user.getVertexProxy()) || {
         isAllowed: false,
         context: {
           user,

@@ -25,6 +25,7 @@ import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
+import { TaskCheckbox } from '../../../../../../../components/task.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -44,7 +45,7 @@ function getStrikethroughSVG(fill: string) {
       TITLE_LINE_HEIGHT / 2
     }' stroke='${fill}'/>
   </svg>
-  `.replace(/\n/g, '')
+  `.replace(/\n/g, ''),
   );
 }
 
@@ -123,7 +124,7 @@ const useStyles = makeStyles((theme) => ({
     transform: 'scale(0)',
     transformOrigin: 'left center',
     backgroundImage: `url("data:image/svg+xml;utf8,${getStrikethroughSVG(
-      theme.background.text
+      theme.background.text,
     )}")`,
   },
   strikethroughDone: {
@@ -158,6 +159,10 @@ const useStyles = makeStyles((theme) => ({
   child: {
     margin: [styleguide.gridbase * 2, 0],
   },
+  taskCheckbox: {
+    marginTop: 2,
+    marginRight: styleguide.gridbase,
+  },
 }));
 
 interface TitleElementProps {
@@ -167,13 +172,13 @@ interface TitleElementProps {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: TitleElementProps,
-    ref: React.ForwardedRef<HTMLSpanElement>
+    ref: React.ForwardedRef<HTMLSpanElement>,
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  }
+  },
 );
 
 function Title({
@@ -306,7 +311,7 @@ export interface CardItemProps {
 
 export const CardItem = React.forwardRef(function CardItemView(
   { card, className, showChildCards, size, ...rest }: CardItemProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -368,13 +373,14 @@ export const CardItem = React.forwardRef(function CardItemView(
           source={source}
         />
         <div className={cn(styles.titleRow)}>
-          <StatusCheckbox source={source} card={card} />
+          {/* <StatusCheckbox source={source} card={card} /> */}
+          <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
           <div className={cn(styles.titleTextContainer)}>
             <Title source={source} card={card} />
             <div
               className={cn(
                 styles.strikethrough,
-                isDone && styles.strikethroughDone
+                isDone && styles.strikethroughDone,
               )}
             />
           </div>
@@ -394,7 +400,7 @@ export const CardItem = React.forwardRef(function CardItemView(
           <IconExpander
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconExpanded
+              expanded && styles.expanderIconExpanded,
             )}
           />
         </div>

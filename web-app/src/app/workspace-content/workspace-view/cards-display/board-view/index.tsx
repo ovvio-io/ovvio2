@@ -13,7 +13,7 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
 import { AssigneesBoardView } from './assignees-board-view.tsx';
 import { DueDateBoardView } from './dates-board-view.tsx';
-import { NoteBoardView } from './note-board-view.tsx';
+import { TitleBoardView } from './title-board-view.tsx';
 import { TagBoardView } from './tag-board-view.tsx';
 import { WorkspaceBoardView } from './workspace-board-view.tsx';
 
@@ -44,8 +44,8 @@ export function BoardView({ className }: { className?: string }) {
     content = <TagBoardView filteredNotes={filteredNotes} />;
   } else if (groupBy === 'dueDate') {
     content = <DueDateBoardView filteredNotes={filteredNotes} />;
-  } else if (groupBy === 'note') {
-    content = <NoteBoardView filteredNotes={filteredNotes} />;
+  } else if (groupBy === 'note' || groupBy === 'team') {
+    content = <TitleBoardView filteredNotes={filteredNotes} />;
   } else {
     content = <AssigneesBoardView filteredNotes={filteredNotes} />;
   }

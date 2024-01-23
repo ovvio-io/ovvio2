@@ -18,7 +18,10 @@ import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/wo
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
 import IconDelete from '../../../../../../../../styles/components/icons/IconDelete.tsx';
 import IconNote from '../../../../../../../../styles/components/icons/IconNote.tsx';
-import { CheckBox } from '../../../../../../../../components/task.tsx';
+import {
+  CheckBox,
+  TaskCheckbox,
+} from '../../../../../../../../components/task.tsx';
 import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
 import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
 import {
@@ -672,7 +675,7 @@ const TypeCell = ({
       {isDraft ? (
         <IconNewTask />
       ) : isActionable ? (
-        <ItemCheckbox note={note} />
+        <TaskCheckbox task={note} />
       ) : (
         <img src="/icons/list/note.svg" />
       )}
@@ -680,17 +683,17 @@ const TypeCell = ({
   );
 };
 
-const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
-  const partialNote = usePartialVertex(note, ['isChecked']);
-  return (
-    <CheckBox
-      className={cn(styles.checkbox)}
-      value={partialNote.isChecked}
-      onChange={() => (partialNote.isChecked = !partialNote.isChecked)}
-    />
-  );
-};
+// export const ItemCheckbox = ({ note }: { note: VertexManager<Note> }) => {
+//   const styles = useStyles();
+//   const partialNote = usePartialVertex(note, ['isChecked']);
+//   return (
+//     <CheckBox
+//       className={cn(styles.checkbox)}
+//       value={partialNote.isChecked}
+//       onChange={() => (partialNote.isChecked = !partialNote.isChecked)}
+//     />
+//   );
+// };
 
 const TitleNode = React.forwardRef(
   (

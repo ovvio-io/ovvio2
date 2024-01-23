@@ -21,7 +21,7 @@ import localization from './board.strings.json' assert { type: 'json' };
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
 
-export function NoteBoardView({
+export function TitleBoardView({
   filteredNotes,
 }: {
   filteredNotes: FilteredNotes<string>;
@@ -49,7 +49,7 @@ export function NoteBoardView({
     items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
-    dragPosition: DragPosition
+    dragPosition: DragPosition,
   ) => {
     // eventLogger.cardAction('DRAG_DONE', item, {
     //   source: DragSource.WorkspaceBoard,
@@ -81,7 +81,7 @@ export function NoteBoardView({
                 notesQuery.group(title),
                 item,
                 relativeTo,
-                dragPosition
+                dragPosition,
               )
             }
           >

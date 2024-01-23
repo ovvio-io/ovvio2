@@ -12,7 +12,6 @@ import {
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
-import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -287,8 +286,11 @@ export abstract class BaseClient<
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
+    if (!serverFilter) {
+      return false;
+    }
     for (const id of this.localIds()) {
-      if (!serverFilter || !serverFilter.has(id)) {
+      if (!serverFilter.has(id)) {
         return true;
       }
     }
