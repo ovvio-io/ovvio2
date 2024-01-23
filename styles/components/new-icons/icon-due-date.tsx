@@ -1,5 +1,5 @@
 import React from 'react';
-// import { brandLightTheme as theme } from '../../theme';
+import { brandLightTheme as theme } from '../../theme.tsx';
 import { IconProps, IconSize } from './types.ts';
 
 export enum DueDateState {
@@ -8,18 +8,23 @@ export enum DueDateState {
   Clear = 'clear',
 }
 
-// const COLOR_MAP = {
-//   [DueDateState.None]: {
-//     var1: theme.mono.m5,
-//     var2: theme.mono.m6,
-//     var3: theme.mono.m4,
-//   },
-//   [DueDateState.Late]: {
-//     var1: theme.supporting.O3,
-//     var2: theme.supporting.O4,
-//     var3: theme.supporting.O2,
-//   },
-// };
+const COLOR_MAP = {
+  [DueDateState.None]: {
+    var1: theme.mono.m5,
+    var2: theme.mono.m6,
+    var3: theme.mono.m4,
+  },
+  [DueDateState.Late]: {
+    var1: theme.supporting.O3,
+    var2: theme.supporting.O4,
+    var3: theme.supporting.O2,
+  },
+  [DueDateState.Clear]: {
+    var1: theme.primary.p10,
+    var2: theme.primary.p9,
+    var3: theme.primary.p8,
+  },
+};
 
 export interface IconDueDateProps extends IconProps {
   state?: DueDateState;
@@ -30,71 +35,65 @@ export function IconDueDate({
   className,
   state = DueDateState.None,
 }: IconDueDateProps) {
-  // const colors = COLOR_MAP[state];
+  const colors = COLOR_MAP[state];
 
   switch (state) {
     case DueDateState.Clear:
       return (
         <svg
-          className={className}
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          style={{ paddingRight: '8px' }}
+          width="15"
+          height="15"
+          viewBox="0 0 15 15"
+          fill="none"
         >
           <path
             opacity="0.6"
             d="M14 14H1"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2H1"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M1 2L1 14"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2L14 14"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M10 1L10 3"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M5 1L5 3"
-            stroke="#262626"
+            stroke="#1960CF"
             stroke-width="2"
             stroke-linecap="round"
           />
           <path
             opacity="0.6"
             d="M14 6H1"
-            stroke="#8C8C8C"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
-          <path
-            d="M14 2L1.00005 13.8764"
-            stroke="#3F3F3F"
+            stroke="#5793E0"
             stroke-width="2"
             stroke-linecap="round"
           />

@@ -48,9 +48,7 @@ import { ComposeButton } from './compose-button.tsx';
 import { GroupByDropDown } from './group-by-drop-down.tsx';
 import { ViewToggle } from './view-toggle.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import localization from '../cards-display.strings.json' assert {
-  type: 'json',
-};
+import localization from '../cards-display.strings.json' assert { type: 'json' };
 import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
 import {
   DueDateState,
@@ -166,7 +164,7 @@ function SortByDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onChange = useCallback(
@@ -179,7 +177,7 @@ function SortByDropDown() {
       });
       view.sortBy = val;
     },
-    [view, logger],
+    [view, logger]
   );
 
   return (
@@ -214,7 +212,7 @@ function ShowCheckedDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onOpen = () => {
@@ -231,7 +229,7 @@ function ShowCheckedDropDown() {
       // });
       view.showChecked = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -258,11 +256,11 @@ function DateFilterDropdown() {
 
   const text = view.dateFilter
     ? `${
-      view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
-    } ${
-      (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
-      strings[view.dateFilter]
-    }`
+        view.selectedTabId === 'overview' ? strings.timeFrame : strings.dueBy
+      } ${
+        (view.selectedTabId === 'overview' ? '' : strings.thisPrefix + ' ') +
+        strings[view.dateFilter]
+      }`
     : view.selectedTabId === 'overview'
     ? strings.noTimeFrame
     : strings.noDateFilter;
@@ -270,13 +268,13 @@ function DateFilterDropdown() {
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconDueDate state={DueDateState.Default} />
+        <IconDueDate state={DueDateState.None} />
 
         <Text className={cn(styles.dropDownButtonText)}>{text}</Text>
         <IconDropDownArrow />
       </div>
     ),
-    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text],
+    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text]
   );
 
   const onOpen = () => {
@@ -293,7 +291,7 @@ function DateFilterDropdown() {
       // });
       view.dateFilter = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -326,9 +324,8 @@ function ShowPinnedButton() {
   const styles = useStyles();
 
   const togglePinned = useCallback(() => {
-    view.showPinned = view.showPinned === 'pinned'
-      ? 'pinned-unpinned'
-      : 'pinned';
+    view.showPinned =
+      view.showPinned === 'pinned' ? 'pinned-unpinned' : 'pinned';
   }, [view, view.showPinned]);
 
   return (
@@ -428,7 +425,7 @@ function FilterButton() {
       onClick={filterButtonClicked}
       className={cn(styles.filterButton, view.showFilters && styles.hasFilters)}
     >
-      <img src='/icons/filter-small.svg' />
+      <img src="/icons/filter-small.svg" />
       <Text className={cn(styles.dropDownButtonText)}>{strings.filter}</Text>
     </Button>
   );
@@ -454,7 +451,7 @@ function TabView() {
       }
       view.closeFiltersDrawer();
     },
-    [view],
+    [view]
   );
   const tabs: React.ReactElement[] = [];
   for (const tabId of ['tasks', 'notes'] as TabId[]) {

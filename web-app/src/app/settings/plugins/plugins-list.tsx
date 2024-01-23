@@ -45,11 +45,11 @@ export const tabPlugins: SettingsTabPlugin[] = [
     render: () => <WsTagsSettings />,
     category: 'workspaces-info',
   },
-  {
-    title: 'roles-details',
-    render: () => <DetailsTabContent />,
-    category: 'workspaces-info',
-  },
+  // {
+  //   title: 'roles-details',
+  //   render: () => <DetailsTabContent />,
+  //   category: 'workspaces-info',
+  // },
   // {
   //   title: 'general-organization',
   //   render: () => <GeneralOrgTabContent />,
