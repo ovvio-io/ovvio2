@@ -10,7 +10,6 @@ import { UserMetadataKey } from '../../../../../cfds/client/graph/vertices/user.
 import Menu, { MenuItem } from '../../../../../styles/components/menu.tsx';
 import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { useVertices } from '../../../core/cfds/react/vertex.ts';
@@ -22,12 +21,14 @@ type EditableColumnProps = {
   placeholder: string;
   setCurrState: (s: string) => void;
   value?: string | undefined;
+  isValid: boolean;
 };
 const EditableColumn: React.FC<EditableColumnProps> = ({
   index,
   placeholder,
   setCurrState,
   value,
+  isValid,
 }) => {
   const size = index === 1 ? '200px' : index === 2 ? '160px' : '176px';
   const useStyles = makeStyles(() => ({
@@ -51,22 +52,29 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
       background: theme.primary.p8,
       margin: '5px 0px 0px 0px',
     },
+    invalidInput: {
+      border: '1px solid red',
+    },
   }));
   const styles = useStyles();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (index === 1 && inputRef.current) {
-      inputRef.current.focus();
+    if (inputRef.current) {
+      if (!isValid) {
+        inputRef.current.focus();
+      } else if (index === 1) {
+        inputRef.current.focus();
+      }
     }
-  }, []);
+  }, [isValid]);
 
   const inputValue = value !== undefined ? value : '';
 
   return (
     <div>
       <input
-        className={cn(styles.columnStyle)}
+        className={cn(styles.columnStyle, !isValid ? styles.invalidInput : '')}
         placeholder={placeholder}
         value={inputValue}
         ref={inputRef}
@@ -86,12 +94,7 @@ type TableRowProps = {
   onRowSelect: (user: string) => void;
   editMode: boolean;
   addMemberMode: boolean;
-  onSaveEdit?: (
-    userKey: string,
-    name: string,
-    email: string,
-    metadata: { [key: string]: string }
-  ) => void;
+  isEditValid?: boolean;
 };
 const TableRow: React.FC<TableRowProps> = ({
   user,
@@ -100,7 +103,6 @@ const TableRow: React.FC<TableRowProps> = ({
   onRowSelect,
   editMode,
   addMemberMode,
-  onSaveEdit,
 }) => {
   const useStyles = makeStyles(() => ({
     rowContainer: {
@@ -181,65 +183,107 @@ const TableRow: React.FC<TableRowProps> = ({
   }));
 
   const styles = useStyles();
-  const [isRowHovered, setIsRowHovered] = useState(false);
+  const graphManager = useGraphManager();
   const [localName, setLocalName] = useState(user.name);
   const [localEmail, setLocalEmail] = useState(user.email);
   const [localMetadata, setLocalMetadata] = useState(
     convertDictionaryToObject(user.metadata)
   );
+  const [isRowHovered, setIsRowHovered] = useState(false);
   const [editNow, setEditNow] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
+  const [isNameValid, setIsNameValid] = useState(true);
+  const [isEmailValid, setIsEmailValid] = useState(true);
+
+  const onSaveEdit = (
+    userKey: string,
+    name: string,
+    email: string,
+    metadata: { [key: string]: string }
+  ) => {
+    let isValid = true;
+    if (!name || name.trim() === '') {
+      console.log('Name is mandatory');
+      setIsNameValid(false);
+      isValid = false;
+    } else {
+      setIsNameValid(true);
+    }
+
+    if (!email || email.trim() === '' || !normalizeEmail(email)) {
+      console.log('Email is invalid or empty');
+      setIsEmailValid(false);
+      isValid = false;
+    } else {
+      setIsEmailValid(true);
+    }
+
+    const userVertex = graphManager.getVertex<User>(userKey);
+    if (!userVertex) {
+      console.log('User not found');
+      return false;
+    }
+    userVertex.name = name;
+    userVertex.email = normalizeEmail(email);
+    const metadataMap = new Map<UserMetadataKey, string>();
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
+        metadataMap.set(key as UserMetadataKey, value);
+      }
+    });
+    userVertex.metadata = metadataMap;
+
+    return isValid;
+  };
 
   const saveAndExitEditing = () => {
-    if (editNow && onSaveEdit) {
-      setEditNow(false);
-      onSaveEdit(user.key, localName, localEmail, localMetadata);
+    if ((editNow && onSaveEdit) || newUser) {
+      if (onSaveEdit(user.key, localName, localEmail, localMetadata)) {
+        setEditNow(false);
+      }
     }
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      debugger;
       if (
-        editNow &&
+        (editNow || newUser) &&
         rowRef.current &&
         !rowRef.current.contains(event.target as Node)
       ) {
         saveAndExitEditing();
       }
     };
-    if (editNow) {
-      document.addEventListener('click', handleClickOutside);
+    if (editNow || newUser) {
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
     }
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [editNow, rowRef, saveAndExitEditing]);
+  }, [editNow, newUser, rowRef, saveAndExitEditing]);
+
+  const handleRowSelect = (user: string) => {
+    if (editMode && isEmailValid && isNameValid) {
+      setEditNow(true);
+    } else if (user) {
+      onRowSelect(user);
+    }
+  };
 
   const handleMouseEnter = () => {
-    setIsRowHovered(true);
+    if (!isSelected) setIsRowHovered(true);
   };
   const handleMouseLeave = () => {
     setIsRowHovered(false);
   };
 
   const handleMetadataChange = (key: UserMetadataKey, value: string) => {
-    if (editNow) {
-      setLocalMetadata({
-        ...localMetadata,
-        [key]: value,
-      });
-    }
-  };
-
-  const handleRowSelect = (event: React.MouseEvent, user: string) => {
-    event.stopPropagation();
-    if (editMode) {
-      // event.preventDefault();
-      setEditNow(true);
-    } else if (user) {
-      onRowSelect(user);
-    }
+    setLocalMetadata({
+      ...localMetadata,
+      [key]: value,
+    });
   };
 
   const removeUserFromOrg = () => {
@@ -257,6 +301,7 @@ const TableRow: React.FC<TableRowProps> = ({
           console.error('Failed to copy: ', err);
         });
   };
+
   return (
     <div ref={rowRef} className={cn(styles.rowContainer)}>
       {!addMemberMode && !editMode && isRowHovered && (
@@ -280,10 +325,10 @@ const TableRow: React.FC<TableRowProps> = ({
           className={cn(
             isSelected && styles.selectedRow,
             styles.rowRight,
-            styles.hoverableRow
+            !isSelected && !newUser && !editNow && styles.hoverableRow
           )}
-          onClick={(event) => {
-            user && handleRowSelect(event, user.key);
+          onClick={() => {
+            user && handleRowSelect(user.key);
           }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -333,21 +378,24 @@ const TableRow: React.FC<TableRowProps> = ({
         >
           <EditableColumn
             index={1}
-            placeholder={'Full name'}
+            placeholder={'Full name *'}
             setCurrState={setLocalName}
             value={localName || ''}
+            isValid={isNameValid}
           />
           <EditableColumn
             index={2}
-            placeholder={'Email'}
+            placeholder={'Email *'}
             setCurrState={setLocalEmail}
             value={localEmail || ''}
+            isValid={isEmailValid}
           />
           <EditableColumn
             index={4}
             placeholder="Team"
             value={localMetadata && localMetadata.team}
             setCurrState={(value) => handleMetadataChange('team', value)}
+            isValid={true}
           />
           <EditableColumn
             index={3}
@@ -356,6 +404,7 @@ const TableRow: React.FC<TableRowProps> = ({
             setCurrState={(value) =>
               handleMetadataChange('companyRoles', value)
             }
+            isValid={true}
           />
           <Menu
             renderButton={() => <IconMore />}
@@ -487,36 +536,6 @@ const UserTable: React.FC<UserTableProps> = ({
     setNewUser(createdVertex.manager.getVertexProxy()); //check if getVertexProxy is correct.
   }, [graphManager]);
 
-  const handleSaveUserEdit = (
-    userKey: string,
-    name: string,
-    email: string,
-    metadata: { [key: string]: string }
-  ) => {
-    if (!email || !name) {
-      console.log('Name and Email are mandatory fields');
-      return;
-    }
-    if (name.trim() === '' || email.trim() === '') {
-      console.log('Name and Email are mandatory fields');
-      return;
-    }
-    const userVertex = graphManager.getVertex<User>(userKey);
-    if (!userVertex) {
-      console.log('User not found');
-      return;
-    }
-    userVertex.name = name;
-    userVertex.email = normalizeEmail(email);
-    const metadataMap = new Map<UserMetadataKey, string>();
-    Object.entries(metadata).forEach(([key, value]) => {
-      if (key === 'companyRoles' || key === 'comments' || key === 'team') {
-        metadataMap.set(key as UserMetadataKey, value);
-      }
-    });
-    userVertex.metadata = metadataMap;
-  };
-
   return (
     <div className={cn(styles.tableContainer)}>
       <div className={cn(styles.tableContent)}>
@@ -539,7 +558,6 @@ const UserTable: React.FC<UserTableProps> = ({
             </div>
           </div>
         )}
-
         {filteredUsers.map((user: User) => (
           <TableRow
             key={user.key}
@@ -549,7 +567,6 @@ const UserTable: React.FC<UserTableProps> = ({
             isSelected={showSelection && selectedUsers.has(user.key)}
             editMode={editMode}
             addMemberMode={addMemberMode}
-            onSaveEdit={handleSaveUserEdit}
           />
         ))}
       </div>

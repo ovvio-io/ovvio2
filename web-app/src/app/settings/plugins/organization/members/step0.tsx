@@ -1,12 +1,8 @@
 import React, { CSSProperties } from 'react';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
 import {
   AddMemberButton,
   AssignButton,
-  EditButton,
 } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
 
@@ -15,9 +11,6 @@ type Step0Props = {
 };
 
 export const Step0: React.FC<Step0Props> = ({ setStep }) => {
-  const usersQuery = useSharedQuery('users');
-  const users = useVertices(usersQuery.results) as User[];
-
   const step0ContainerStyle: CSSProperties = {
     display: 'flex',
     gap: '16px',
@@ -54,6 +47,7 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
         selectedUsers={new Set<string>()}
         showSearch={true}
         editMode={true}
+        addMemberMode={false}
       />
     </div>
   );

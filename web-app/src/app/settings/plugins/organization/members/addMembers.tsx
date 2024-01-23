@@ -1,24 +1,13 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import {
-  User,
-  UserMetadataKey,
-} from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
   Bold,
   H4,
 } from '../../../../../../../styles/components/typography.tsx';
-import {
-  EditSaveButton,
-  SaveAddButton,
-} from '../../../components/settings-buttons.tsx';
+import { SaveAddButton } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { SchemeNamespace } from '../../../../../../../cfds/base/scheme-types.ts';
 import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
-import { normalizeEmail } from '../../../../../../../base/string.ts';
 
 type AddMembersProps = {
   setStep: (step: number) => void;
@@ -65,13 +54,7 @@ export const AddMembers: React.FC<AddMembersProps> = ({ setStep, onClose }) => {
     maxWidth: '802px',
   };
 
-  const graph = useGraphManager();
   const [scrollToUser, setScrollToUser] = useState<string | null>(null);
-  const [metadata, setMetadata] = useState({
-    team: '',
-    companyRoles: '',
-    comments: '',
-  });
 
   useEffect(() => {
     let timeoutId: number | undefined = setTimeout(() => {
@@ -93,43 +76,6 @@ export const AddMembers: React.FC<AddMembersProps> = ({ setStep, onClose }) => {
     };
   }, [scrollToUser, setScrollToUser]);
 
-  const handleSetMetadata = (newMetadata: { [key: string]: string }) => {
-    setMetadata((prevMetadata) => ({
-      ...prevMetadata,
-      ...newMetadata,
-    }));
-  };
-
-  // const onSave = useCallback(() => {
-  //   if (name !== null && email !== null) {
-  //     if (name.trim() === '' || email.trim() === '') {
-  //       console.log('Input is invalid');
-  //     } else {
-  //       const metadataMap = new Map(Object.entries(metadata));
-
-  //       const newUser = {
-  //         name: name,
-  //         email: normalizeEmail(email),
-  //         metadata: metadataMap,
-  //       };
-  //       const newVert = graph.createVertex(SchemeNamespace.USERS, newUser);
-
-  //       setScrollToUser(newVert.key);
-  //     }
-  //   } else {
-  //     console.log('Name or email is null');
-  //   }
-  // }, [graph, name, email, metadata, setScrollToUser]);
-
-  const handleSaveEditClick = (
-    userKey: string,
-    name: string,
-    email: string,
-    metadata: { [key: string]: string }
-  ) => {
-    setStep(0);
-  };
-
   return (
     <div>
       <div style={RectangleEdit}>
@@ -144,10 +90,7 @@ export const AddMembers: React.FC<AddMembersProps> = ({ setStep, onClose }) => {
           <H4>Add members to Organization</H4>
         </div>
         <div style={RightRectangleEdit}>
-          <SaveAddButton
-            onSaveAddClick={() => handleSaveEditClick}
-            disable={false}
-          />
+          <SaveAddButton onSaveAddClick={onClose} disable={false} />
         </div>
       </div>
       <div style={HeaderContainerStyle}>

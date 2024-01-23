@@ -80,12 +80,12 @@ export const Step1: React.FC<Step1Props> = ({
         <Bold>Org. Members</Bold>
       </div>
       <UserTable
-        // users={users}
         onRowSelect={handleRowSelect}
         showSelection={true}
         selectedUsers={selectedUsers}
         showSearch={true}
         editMode={false}
+        addMemberMode={false}
       />
     </div>
   );

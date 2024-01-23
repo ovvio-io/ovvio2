@@ -242,11 +242,7 @@ export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
         isDisabled ? styles.disabled : styles.available
       )}
     >
-      <img
-        key="CheckEditSettings"
-        src="/icons/settings/Check.svg"
-        onClick={() => {}}
-      />
+      <img key="CheckEditSettings" src="/icons/settings/Check.svg" />
       <span className={cn(styles.text)}>{'Done'}</span>
     </Button>
   );
