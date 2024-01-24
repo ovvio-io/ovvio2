@@ -332,36 +332,38 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
           <div className={cn(styles.taskColumnsContainer)}>
             <div className={cn(styles.taskTextColumn)}>{children}</div>
             <div className={cn(styles.taskActionsColumn)}>
-              <div className={cn(styles.taskAssigneesColumn)}>
-                {Array.from(partialTask.assignees)
-                  .sort(coreValueCompare)
-                  .map((u) => (
-                    <Menu
-                      renderButton={() => (
-                        <AssigneeChip
-                          className={cn(styles.assigneeChip)}
-                          user={u.manager}
-                        />
-                      )}
-                      position="bottom"
-                      align="center"
-                      direction="out"
-                    >
-                      <MemberPicker
-                        users={Array.from(partialWorkspace.users).filter(
-                          (wsUser) => !partialTask.assignees.has(wsUser),
+              {partialTask.assignees.size > 0 && (
+                <div className={cn(styles.taskAssigneesColumn)}>
+                  {Array.from(partialTask.assignees)
+                    .sort(coreValueCompare)
+                    .map((u) => (
+                      <Menu
+                        renderButton={() => (
+                          <AssigneeChip
+                            className={cn(styles.assigneeChip)}
+                            user={u.manager}
+                          />
                         )}
-                        onRowSelect={(updatedAssignee) => {
-                          const assignees = partialTask.assignees;
-                          assignees.delete(u);
-                          assignees.add(updatedAssignee);
-                        }}
-                        showSearch={false}
-                        onRemove={() => partialTask.assignees.delete(u)}
-                      />
-                    </Menu>
-                  ))}
-              </div>
+                        position="bottom"
+                        align="center"
+                        direction="out"
+                      >
+                        <MemberPicker
+                          users={Array.from(partialWorkspace.users).filter(
+                            (wsUser) => !partialTask.assignees.has(wsUser),
+                          )}
+                          onRowSelect={(updatedAssignee) => {
+                            const assignees = partialTask.assignees;
+                            assignees.delete(u);
+                            assignees.add(updatedAssignee);
+                          }}
+                          showSearch={false}
+                          onRemove={() => partialTask.assignees.delete(u)}
+                        />
+                      </Menu>
+                    ))}
+                </div>
+              )}
               <div className={cn(styles.taskTagsColumn)}>
                 {Array.from(partialTask.tags.values())
                   .sort(coreValueCompare)
