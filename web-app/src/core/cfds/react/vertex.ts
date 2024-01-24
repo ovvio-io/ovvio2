@@ -236,10 +236,10 @@ export function usePartialVertices<
     }
     return () => unSubs.forEach((fn) => fn());
   }, [vertexManagers, opts, keysStr]);
-  const result = [];
-  for (const id of vertexManagers) {
-    result.push(graph.getVertex(id));
-  }
+  const result = useMemo(
+    () => Array.from(vertexManagers).map((mgr) => graph.getVertex(mgr)),
+    [vertexManagers]
+  );
   return result;
 }
 

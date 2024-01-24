@@ -230,17 +230,24 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
   const [filteredWorkspaces, setFilteredWorkspaces] = useState<Workspace[]>([]);
   const [isSearching, setIsSearching] = useState(showSearch ? true : false);
 
-  useEffect(() => {
-    if (workspaces) {
-      const filtered = suggestResults(
-        searchTerm,
-        workspaces,
-        (t) => t.name,
-        Number.MAX_SAFE_INTEGER
-      );
-      setFilteredWorkspaces(filtered);
-    }
-  }, [searchTerm, workspaces]);
+  // useEffect(() => {
+  //   if (workspaces) {
+  //     const filtered = suggestResults(
+  //       searchTerm,
+  //       workspaces,
+  //       (t) => t.name,
+  //       Number.MAX_SAFE_INTEGER
+  //     );
+  //     setFilteredWorkspaces(filtered);
+  //   }
+  // }, [searchTerm, workspaces]);
+
+  const filtered = suggestResults(
+    searchTerm,
+    workspaces,
+    (t) => t.name,
+    Number.MAX_SAFE_INTEGER
+  );
 
   const wsKey = 'SettingWs_';
   const graph = useGraphManager();
@@ -257,7 +264,7 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
           />
         )}
         {/* <div className={styles.scrollTable}> */}
-        {filteredWorkspaces.map(
+        {filtered.map(
           (ws: Workspace) =>
             ws.key !== personalWsKey && (
               <RowInTable

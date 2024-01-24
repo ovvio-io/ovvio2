@@ -364,6 +364,24 @@ const TagPills: React.FC<TagPillsProps> = ({
     }
   };
 
+  const reset = () => {
+    handleOnBlur();
+  };
+  const commit = () => {
+    handleOnBlur();
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      e.preventDefault();
+      reset();
+    } else if (e.key === 'Enter') {
+      e.stopPropagation();
+      e.preventDefault();
+      commit();
+    }
+  };
   return (
     <div
       className={
@@ -394,6 +412,7 @@ const TagPills: React.FC<TagPillsProps> = ({
         className={cn(styles.tagInputPill)}
         readOnly={!editMode && !isNewCategory}
         onInput={handleOnInput}
+        onKeyDown={onKeyDown}
         onBlur={handleOnBlur}
         contentEditable={
           !editMode && !isNewCategory ? 'false' : 'plaintext-only'

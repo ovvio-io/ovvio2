@@ -3,7 +3,6 @@ import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
-import { IconMore } from '../../../../../styles/components/new-icons/icon-more.tsx';
 import { SearchBar } from '../../../../../components/search-bar.tsx';
 import { convertDictionaryToObject } from '../../../../../base/collections/dict.ts';
 import { UserMetadataKey } from '../../../../../cfds/client/graph/vertices/user.ts';
@@ -16,6 +15,7 @@ import { useVertices } from '../../../core/cfds/react/vertex.ts';
 import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
 import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
 type EditableColumnProps = {
   index: number;
@@ -530,30 +530,24 @@ const UserTable: React.FC<UserTableProps> = ({
 
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [newUser, setNewUser] = useState<User | undefined>();
+  const [newUser, setNewUser] = useState<VertexManager>();
   const graphManager = useGraphManager();
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
 
-  useEffect(() => {
-    if (users) {
-      const filtered = suggestResults(
-        searchTerm,
-        users,
-        (t) => t.name,
-        Number.MAX_SAFE_INTEGER
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [searchTerm, usersQuery]); // ask ofri why put users instead of userQuery will lead to max memory usage;
+  const filtered = suggestResults(
+    searchTerm,
+    users,
+    (t) => t.name,
+    Number.MAX_SAFE_INTEGER
+  );
 
   const handleNewMember = useCallback(() => {
     const createdVertex = graphManager.createVertex<User>(
       SchemeNamespace.USERS,
       {}
     );
-    setNewUser(createdVertex.manager.getVertexProxy()); //check if getVertexProxy is correct.
+    setNewUser(createdVertex.manager);
   }, [graphManager]);
 
   return (
@@ -578,11 +572,11 @@ const UserTable: React.FC<UserTableProps> = ({
             </div>
           </div>
         )}
-        {filteredUsers.map((user: User) => (
+        {filtered.map((user: User) => (
           <TableRow
             key={user.key}
             user={user}
-            newUser={newUser === user}
+            newUser={newUser === user.manager}
             onRowSelect={() => onRowSelect(user.key)}
             isSelected={showSelection && selectedUsers.has(user.key)}
             editMode={editMode}
