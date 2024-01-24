@@ -7,14 +7,12 @@ import { SaveAddButton } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { useGraphManager } from '../../../../../core/cfds/react/graph.tsx';
 
 type AddMembersProps = {
-  setStep: (step: number) => void;
   onClose: () => void;
 };
 
-export const AddMembers: React.FC<AddMembersProps> = ({ setStep, onClose }) => {
+export const AddMembers: React.FC<AddMembersProps> = ({ onClose }) => {
   const RectangleEdit: CSSProperties = {
     top: '0px',
     right: '0px',

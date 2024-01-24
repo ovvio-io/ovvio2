@@ -23,9 +23,7 @@ export default function MembersTabContent() {
         <Wizard onClose={handleCloseWizard} currentStepIndex={step} />
       )}
       {step === 0 && <Step0 setStep={setStep} />}
-      {step === 5 && (
-        <AddMembers setStep={setStep} onClose={handleCloseWizard} />
-      )}
+      {step === 5 && <AddMembers onClose={handleCloseWizard} />}
       {step === 1 && (
         <Step1
           setStep={setStep}
