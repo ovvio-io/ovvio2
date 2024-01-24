@@ -357,6 +357,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                           assignees.add(updatedAssignee);
                         }}
                         showSearch={false}
+                        onRemove={() => partialTask.assignees.delete(u)}
                       />
                     </Menu>
                   ))}
