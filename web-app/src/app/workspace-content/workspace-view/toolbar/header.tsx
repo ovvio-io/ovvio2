@@ -241,7 +241,6 @@ export const IconAvatar: React.FC = () => {
     </div>
   );
 };
-//segev ot haim
 
 function getInitials(name: string, email: string): string {
   if (!name && email) {
@@ -251,7 +250,7 @@ function getInitials(name: string, email: string): string {
   const names = name.split(' ');
   let initials = names
     .slice(0, 3)
-    .map((n) => n[0].toUpperCase())
+    .map((n) => n && n[0].toUpperCase())
     .join('');
 
   return initials;

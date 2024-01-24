@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: 'white',
     boxSizing: 'border-box',
     height: styleguide.gridbase * 4,
-    minWidth: styleguide.gridbase * 12,
+    minWidth: styleguide.gridbase * 15,
     maxWidth: styleguide.gridbase * 27,
     padding: '8px 16px 8px 8px',
     color: theme.background.text,
@@ -152,7 +152,17 @@ export function SecondaryMenuItem({
       <div className={cn(className, styles.item)}>
         <Text>{text}</Text>
         <div className={cn(layout.flexSpacer)} />
-        <IconExpander className={cn(styles.secondaryIcon)} />
+        <img
+          key="iconExpender"
+          src="/icons/list/icon-expender.svg"
+          style={{
+            transform: 'rotate(0deg)',
+            position: 'relative',
+            left: '8px',
+          }}
+          className={cn(styles.secondaryIcon)}
+        />
+        {/* <IconExpander className={cn(styles.secondaryIcon)} /> */}
       </div>
     );
   }, [text, className, styles]);
@@ -163,6 +173,7 @@ export function SecondaryMenuItem({
       position="right"
       direction="out"
       align="start"
+      withoutArrow={true}
     >
       {children}
     </Menu>
@@ -307,6 +318,7 @@ interface MenuProps {
   style?: {};
   isItemHovered?: boolean;
   openImmediately?: boolean;
+  withoutArrow?: boolean;
 }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
@@ -328,6 +340,7 @@ export default function Menu({
   style = {},
   isItemHovered,
   openImmediately,
+  withoutArrow,
 }: MenuProps) {
   const styles = useStyles();
   const [open, setOpen] = useState(openImmediately ? true : false);
@@ -394,12 +407,14 @@ export default function Menu({
             </React.Fragment>
           ))}
         </div>
-        <Arrow
-          containerPosition={`${position!}ArrowContainer`}
-          position={position!}
-          shadowPosition={`${position!}Shadow`}
-          oneCellMenu={oneCellMenu}
-        />
+        {!withoutArrow && (
+          <Arrow
+            containerPosition={`${position!}ArrowContainer`}
+            position={position!}
+            shadowPosition={`${position!}Shadow`}
+            oneCellMenu={oneCellMenu}
+          />
+        )}
       </div>
     </Popper>
   );

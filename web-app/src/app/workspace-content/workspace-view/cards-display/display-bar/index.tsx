@@ -189,7 +189,7 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
-          {view.sortBy === x && <IconCheck color={'blue'} />}
+          {view.sortBy === x && <IconCheck />}
         </DropDownItem>
       ))}
     </DropDown>

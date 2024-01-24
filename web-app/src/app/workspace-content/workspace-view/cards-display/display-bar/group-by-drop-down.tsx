@@ -19,6 +19,8 @@ import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
+import { IconCheck } from '../../../../../../../styles/components/new-icons/icon-check.tsx';
+import { Tag } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 
 const useStyles = makeStyles((theme) => ({
   dropDownButtonText: {
@@ -41,7 +43,7 @@ export function GroupByDropDown() {
     'groupBy',
     'pivot',
     'selectedWorkspaces',
-    'noteType',
+    'noteType'
   );
   const parentTagsByName = useSharedQuery('parentTagsByName');
   const parentNames = parentTagsByName.groups().filter((gid) => {
@@ -54,7 +56,7 @@ export function GroupByDropDown() {
   });
 
   const setGroup = (
-    group: 'assignee' | 'workspace' | 'dueDate' | 'note' | 'team',
+    group: 'assignee' | 'workspace' | 'dueDate' | 'note' | 'team'
   ) => {
     logger.log({
       severity: 'EVENT',
@@ -98,7 +100,7 @@ export function GroupByDropDown() {
       view.groupBy = 'tag';
       view.pivot = tagName;
     },
-    [logger, view],
+    [logger, view]
   );
 
   const parentNoteGrouping =
@@ -110,18 +112,29 @@ export function GroupByDropDown() {
     <Menu renderButton={renderButton} align="start" position="bottom">
       <MenuItem onClick={() => setGroup('workspace')}>
         {strings.workspace}
+        {view.groupBy === 'workspace' && <IconCheck />}
       </MenuItem>
       <MenuItem onClick={() => setGroup('assignee')}>
         {strings.assignee}
+        {view.groupBy === 'assignee' && <IconCheck />}
       </MenuItem>
-      <MenuItem onClick={() => setGroup('dueDate')}>{strings.dueDate}</MenuItem>
-      <MenuItem onClick={() => setGroup('team')}>{strings.team}</MenuItem>
+      <MenuItem onClick={() => setGroup('dueDate')}>
+        {strings.dueDate}
+        {view.groupBy === 'dueDate' && <IconCheck />}
+      </MenuItem>
+      <MenuItem onClick={() => setGroup('team')}>
+        {strings.team}
+        {view.groupBy === 'team' && <IconCheck />}
+      </MenuItem>
       {parentNoteGrouping}
       <SecondaryMenuItem text={strings.groupByTag}>
         {parentNames.map((name) =>
           name === 'Status' ? null : (
-            <MenuItem onClick={() => setTag(name!)}>{name}</MenuItem>
-          ),
+            <MenuItem onClick={() => setTag(name!)}>
+              {name}
+              {view.pivot === name && <IconCheck />}
+            </MenuItem>
+          )
         )}
       </SecondaryMenuItem>
     </Menu>
