@@ -379,16 +379,6 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                       align="center"
                       direction="out"
                     >
-                      {/* <MemberPicker
-                        users={Array.from(partialWorkspace.users).filter(
-                          (wsUser) => !partialTask.assignees.has(wsUser),
-                        )}
-                        onRowSelect={(updatedAssignee) => {
-                          const assignees = partialTask.assignees;
-                          assignees.delete(u);
-                          assignees.add(updatedAssignee);
-                        }}
-                      /> */}
                       <div></div>
                     </Menu>
                   ))}

@@ -8,6 +8,7 @@ import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { TextField } from '../styles/components/inputs/index.ts';
 import { useMenuContext } from '../styles/components/menu.tsx';
+import Input from './input.tsx';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -162,7 +163,7 @@ export function MemberPicker({
           <div className={cn(styles.iconContainer)}>
             <IconSearch />
           </div>
-          <TextField
+          <Input
             ref={inputRef}
             type="text"
             placeholder={'Type name:'}
