@@ -174,7 +174,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    []
+    [],
   );
   useEffect(() => {
     let timeoutId: number;
@@ -270,7 +270,7 @@ export default function AddSelectionButton<T>({
   const styles = useStyles();
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
-  const [isSearching, setIsSearching] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(true);
 
   const onRowSelect = (user: User) => {
     ws.users.add(user);
@@ -279,28 +279,23 @@ export default function AddSelectionButton<T>({
   const usersSet = new Set(users);
 
   const newUsersSet = new Set(
-    [...usersSet].filter((user) => !existUsers.has(user))
+    [...usersSet].filter((user) => !existUsers.has(user)),
   );
   const newUsersArray = Array.from(newUsersSet);
 
   return (
-    <Menu
-      renderButton={() => (
-        <AddUserButton onAddClick={() => setIsSearching(true)} />
-      )}
-      position="right"
-      align="start"
-      direction="out"
-      className={className}
-      popupClassName={cn(styles.popup)}
-    >
-      <MemberPicker
-        users={newUsersArray}
-        onRowSelect={onRowSelect}
-        setIsSearching={setIsSearching}
-        isSearching={isSearching}
-      />
-    </Menu>
+    menuOpen && (
+      <Menu
+        renderButton={() => <AddUserButton />}
+        position="right"
+        align="start"
+        direction="out"
+        className={className}
+        popupClassName={cn(styles.popup)}
+      >
+        <MemberPicker users={newUsersArray} onRowSelect={onRowSelect} />
+      </Menu>
+    )
   );
 }
 
@@ -354,7 +349,7 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
       }
       setInputName('');
     },
-    [inputName, displayName, setInputName, setIsDeleting, wsMng]
+    [inputName, displayName, setInputName, setIsDeleting, wsMng],
   );
 
   return (

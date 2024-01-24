@@ -210,8 +210,8 @@ function setBrowserSelectionToDocument(
     const range = document.createRange();
     let offsetShift = 0;
     let desiredStartOffset = cfdsRange.anchor.offset;
-    const origAnchorNode: HTMLElement | null | undefined = document
-      .getElementById(domIdFromNodeKey(ctx, cfdsRange.anchor.node));
+    const origAnchorNode: HTMLElement | null | undefined =
+      document.getElementById(domIdFromNodeKey(ctx, cfdsRange.anchor.node));
     if (!origAnchorNode) {
       return;
     }
@@ -228,9 +228,8 @@ function setBrowserSelectionToDocument(
       }
       anchorNode = newAnchor as HTMLElement;
     }
-    const realAnchorNode = anchorNode.childNodes.length > 0
-      ? anchorNode.childNodes[0]
-      : anchorNode;
+    const realAnchorNode =
+      anchorNode.childNodes.length > 0 ? anchorNode.childNodes[0] : anchorNode;
     if (cfdsRange.dir === PointerDirection.Backward) {
       range.setEnd(realAnchorNode, desiredStartOffset);
       offsetShift = range.endOffset - desiredStartOffset;
@@ -249,9 +248,8 @@ function setBrowserSelectionToDocument(
       focusNode = focusNode.parentNode as unknown as ChildNode;
     }
     if (focusNode) {
-      const realFocusNode = focusNode.childNodes.length > 0
-        ? focusNode.childNodes[0]
-        : focusNode;
+      const realFocusNode =
+        focusNode.childNodes.length > 0 ? focusNode.childNodes[0] : focusNode;
       if (cfdsRange.dir === PointerDirection.Backward) {
         const offset = state.ranges![selectionId].focus.offset + offsetShift;
         if (focusNode instanceof Text && offset === focusNode.data.length) {
@@ -280,13 +278,17 @@ function setBrowserSelectionToDocument(
     ) {
       selection.removeAllRanges();
       selection.addRange(range);
-      (
-        selection.focusNode?.parentElement as Element | undefined
-      )?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'nearest',
-      });
+      const focusNode = selection.focusNode;
+      if (focusNode && editorDivNode) {
+        let scrollTarget = focusNode;
+        while (scrollTarget.parentElement !== editorDivNode) {
+          scrollTarget = scrollTarget.parentElement!;
+        }
+        editorDivNode.scroll({
+          top: (scrollTarget as HTMLElement).offsetTop,
+          behavior: 'smooth',
+        });
+      }
     }
   }
 }
@@ -339,10 +341,11 @@ export const RichTextEditor = forwardRef<
     [editorDivRef.current],
   );
 
-  useLayoutEffect(
+  useLayoutEffect(updateSelectionToCurrentState, [
+    partialNote,
+    selectionId,
     updateSelectionToCurrentState,
-    [partialNote, selectionId, updateSelectionToCurrentState],
-  );
+  ]);
 
   const onSelectionChanged = useCallback(
     (event: Event) => {
@@ -484,10 +487,7 @@ export const RichTextEditor = forwardRef<
           note.getVertexProxy().body = doc;
         }
       }
-      if (
-        event.key === 'z' &&
-        (event.ctrlKey || event.metaKey)
-      ) {
+      if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
         event.stopPropagation();
         event.preventDefault();
         if (event.shiftKey) {
@@ -497,8 +497,10 @@ export const RichTextEditor = forwardRef<
         }
       }
       if (
-        event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
-        event.key === 'ArrowLeft' || event.key === 'ArrowRight'
+        event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowRight'
       ) {
         const doc = onKeyboardArrow(
           state,
@@ -575,7 +577,10 @@ export const RichTextEditor = forwardRef<
       onPaste={onPaste}
       // onBlur={onBlur}
     >
-      <RichTextRenderer ctx={ctx} onChange={(doc) => partialNote.body = doc} />
+      <RichTextRenderer
+        ctx={ctx}
+        onChange={(doc) => (partialNote.body = doc)}
+      />
     </div>
   );
 });
@@ -632,13 +637,13 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, [editorRef.current?.contenteditable]);
 
   return (
-    <div className={cn(styles.mainContainer)} key='EditorContainer'>
+    <div className={cn(styles.mainContainer)} key="EditorContainer">
       <EditorHeader
-        key='EditorHeader'
+        key="EditorHeader"
         note={note}
         onFocusOnEditor={onFocusOnEditor}
       />
-      <RichTextEditor key='EditorBody' ref={editorRef} note={note} />
+      <RichTextEditor key="EditorBody" ref={editorRef} note={note} />
     </div>
   );
 }

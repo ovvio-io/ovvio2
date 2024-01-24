@@ -134,6 +134,10 @@ const MenuContext = React.createContext({
   hasParent: false,
 });
 
+export function useMenuContext() {
+  return useContext(MenuContext);
+}
+
 type DivProps = React.ComponentPropsWithoutRef<'div'>;
 
 export type SecondaryMenuItemProps = React.PropsWithChildren<{
@@ -205,7 +209,7 @@ export const MenuItem = React.forwardRef<
     icon: IconItem = null,
     ...props
   },
-  ref
+  ref,
 ) {
   const styles = useStyles();
   const ctx = useContext(MenuContext);
@@ -249,7 +253,7 @@ export const MenuAction = React.forwardRef<
   MenuActionProps & DivProps & MenuItemProps
 >(function MenuAction(
   { IconComponent, text, iconWidth, iconHeight, ...props },
-  ref
+  ref,
 ) {
   const styles = useStyles();
   return (
@@ -285,7 +289,7 @@ export const Backdrop = React.forwardRef<
           className={cn(
             className,
             styles.backdrop,
-            visible && styles.backdropVisible
+            visible && styles.backdropVisible,
           )}
           style={{ zIndex, marginBottom: '8px' }}
           {...rest}
@@ -294,7 +298,7 @@ export const Backdrop = React.forwardRef<
         </div>
       )}
     </Layer>,
-    document.getElementById('root')!
+    document.getElementById('root')!,
   );
 });
 
@@ -347,7 +351,7 @@ export default function Menu({
   const anchor = useRef(null);
   const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
-  const menuCtx = useContext(MenuContext);
+  const menuCtx = useMenuContext();
 
   const close = useCallback(
     (e?: MouseEvent) => {
@@ -358,7 +362,7 @@ export default function Menu({
       }
       menuCtx.close();
     },
-    [menuCtx]
+    [menuCtx],
   );
 
   const newContext = useMemo(
@@ -368,7 +372,7 @@ export default function Menu({
       },
       hasParent: true,
     }),
-    [close]
+    [close],
   );
 
   const openMenu = (e: React.MouseEvent) => {
