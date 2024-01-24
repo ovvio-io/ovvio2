@@ -98,7 +98,7 @@ export function MemberPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuCtx = useMenuContext();
-  useFocusOnMount(inputRef); //CHECK
+  useFocusOnMount(inputRef);
 
   useEffect(() => {
     if (users) {
@@ -106,7 +106,7 @@ export function MemberPicker({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER,
+        Number.MAX_SAFE_INTEGER
       );
       setFilteredUsers(filtered);
     }
