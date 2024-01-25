@@ -509,7 +509,7 @@ function ParagraphElementNode({
         showNewTaskHint && styles.paragraphElementContainer,
       )}
     >
-      {showNewTaskHint && (
+      {/* {showNewTaskHint && (
         <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
@@ -521,7 +521,7 @@ function ParagraphElementNode({
         >
           <img src="/icons/design-system/checkbox/selected.svg" />
         </div>
-      )}
+      )} */}
       {children}
     </div>
   );
