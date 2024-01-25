@@ -24,6 +24,12 @@ const useStyles = makeStyles(() => ({
   noteTypeToggleSmall: {
     width: styleguide.gridbase * 60,
   },
+  emptyStateContainer: {
+    overflow: 'hidden',
+  },
+  emptyStateBackgroundColor: {
+    background: 'none',
+  },
 }));
 
 export class PluginManager {
@@ -148,8 +154,8 @@ function TabView({ category }: any) {
         {tabElements}
       </TabsHeader>
       {category === 'workspaces-info' && view.selectedWorkspaces.size < 1 ? (
-        <div>
-          <EmptyState />
+        <div className={styles.emptyStateContainer}>
+          <EmptyState className={styles.emptyStateBackgroundColor} />
         </div>
       ) : (
         renderSelectedTabContent()

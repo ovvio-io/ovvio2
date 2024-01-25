@@ -116,7 +116,7 @@ export const Step2: React.FC<Step2Props> = ({
             />
           ))}
         </div>
-        <Bold>My Workspaces</Bold>
+        <Bold>Workspace Settings</Bold>
         <div style={WorkspaceIndicatorContainer}>
           {[...selectedWorkspaces].map((ws: Workspace) => (
             <WorkspaceIndicator key={ws.key} workspace={ws} />
