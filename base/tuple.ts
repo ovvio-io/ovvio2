@@ -11,7 +11,7 @@ export function tuple4Get(tuple: Tuple4, pos: Tuple4Position): number {
 export function tuple4Set(
   tuple: Tuple4,
   pos: Tuple4Position,
-  value: number
+  value: number,
 ): Tuple4 {
   const mask = ~(255 << (pos * 8));
   value &= 255;
@@ -37,8 +37,8 @@ export function tuple4Break(tuple: Tuple4): Tuple4Values {
 }
 
 export function tuple4ToString(tuple: Tuple4): string {
-  return `${tuple4Get(tuple, 0)}.${tuple4Get(tuple, 1)}.${tuple4Get(
-    tuple,
-    2
-  )}.${tuple4Get(tuple, 3)}`;
+  const lastValue = tuple4Get(tuple, 3);
+  return `${tuple4Get(tuple, 0)}.${tuple4Get(tuple, 1)}.${tuple4Get(tuple, 2)}${
+    lastValue ? `-${lastValue}` : ''
+  }`;
 }

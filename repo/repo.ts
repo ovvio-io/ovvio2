@@ -760,7 +760,6 @@ export class Repository<
     if (commitsToMerge.length <= 0 || !this.allowMerge) {
       return undefined;
     }
-    if ((parents?.length || 0) > 2) debugger;
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
     try {
@@ -880,7 +879,7 @@ export class Repository<
       mergeLeaderFromLeaves(leavesBySession) || session;
     // Filter out any commits with equal records
     const commitsToMerge =
-      commitsWithUniqueRecords(leavesBySession).sort(coreValueCompare);
+      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
     // If our leaves converged on a single value, we can simply return it.
     if (commitsToMerge.length === 1) {
       // Is possible that a buggy session had created a broken branch. To

@@ -31,11 +31,10 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   value,
   isValid,
 }) => {
-  const size = index === 1 ? '200px' : index === 2 ? '160px' : '176px';
   const useStyles = makeStyles(() => ({
     columnStyle: {
       display: 'flex',
-      width: size,
+      width: index === 1 ? '153px' : '138px',
       height: '20px',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -43,12 +42,13 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
       outline: 'none',
       background: 'none',
       color: theme.colors.text,
-      fontSize: 13,
+      fontSize: index === 1 ? 13 : 10,
       lineHeight: '18px',
       letterSpacing: 0.06,
+      fontFamily: 'Poppins',
     },
     editLine: {
-      width: size,
+      width: index === 1 ? '151px' : '135px',
       height: '1px',
       background: theme.primary.p8,
       margin: '5px 0px 0px 0px',
@@ -321,7 +321,6 @@ const TableRow: React.FC<TableRowProps> = ({
           console.error('Failed to copy: ', err);
         });
   };
-
   return (
     <div ref={rowRef} className={cn(styles.rowContainer)}>
       {!addMemberMode && !editMode && isRowHovered && (
@@ -426,6 +425,10 @@ const TableRow: React.FC<TableRowProps> = ({
             }
             isValid={true}
           />
+          <div className={cn(styles.otherColumnStyle)}>
+            {user.metadata.get('comments')}
+            {/* later might be changed for EditableColumn for comments */}
+          </div>
           <Menu
             renderButton={renderButton}
             position="right"
@@ -535,9 +538,10 @@ const UserTable: React.FC<UserTableProps> = ({
   const usersQuery = useSharedQuery('users');
   const users = useVertices(usersQuery.results) as User[];
 
+  const usersWithNewFirst = users;
   const filtered = suggestResults(
     searchTerm,
-    users,
+    usersWithNewFirst,
     (t) => t.name,
     Number.MAX_SAFE_INTEGER
   );
@@ -548,6 +552,12 @@ const UserTable: React.FC<UserTableProps> = ({
       {}
     );
     setNewUser(createdVertex.manager);
+
+    if (
+      !usersWithNewFirst.some((user) => user.manager === createdVertex.manager)
+    ) {
+      usersWithNewFirst.unshift(createdVertex);
+    }
   }, [graphManager]);
 
   return (
