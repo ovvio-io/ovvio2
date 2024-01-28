@@ -11,6 +11,8 @@ import {
   PointerDirection,
   TextNode,
   TreeNode,
+  Pointer,
+  comparePointers,
 } from './tree.ts';
 import { isRefNode, MarkupElement, MarkupNode, RefNode } from './model.ts';
 import { cn, makeStyles } from '../../styles/css-objects/index.ts';
@@ -33,6 +35,8 @@ import { AssigneeChip } from '../../components/assignee-chip.tsx';
 import Menu from '../../styles/components/menu.tsx';
 import { MemberPicker } from '../../components/member-picker.tsx';
 import { TagChip } from '../../components/tag-chip.tsx';
+import { splitTextNodeOnPointers, stripDuplicatePointers } from './flat-rep.ts';
+import { docToRT } from './doc-state.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -188,7 +192,7 @@ const useStyles = makeStyles(() => ({
     width: styleguide.gridbase * 3,
     height: styleguide.gridbase * 3,
     display: 'flex',
-    alignItmes: 'center',
+    alignItems: 'center',
     alignContent: 'center',
   },
   paragraphElement: {
@@ -212,12 +216,18 @@ const useStyles = makeStyles(() => ({
     marginTop: 0,
     marginBottom: styleguide.gridbase * 2,
   },
+  cursor: {
+    backgroundColor: 'blue',
+    width: 1,
+    height: styleguide.gridbase * 2,
+  },
 }));
 
 export interface RenderContext {
   doc: Document;
   selectionId: string;
   editorId: string;
+  sortedPointers?: Pointer[];
   baseDirection?: WritingDirection;
   onNewTask?: () => void;
 }
@@ -453,16 +463,26 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
       focused && styles.focusedTaskText,
     ]);
   }
-  return (
-    <span
-      className={cn(...classNames)}
-      key={ctx.doc.nodeKeys.keyFor(node).id}
-      id={htmlId}
-      data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
-    >
-      {node.text}
-    </span>
-  );
+
+  const children = [];
+  for (const txtOrPtr of splitTextNodeOnPointers(
+    node,
+    true,
+    ctx.sortedPointers,
+  )) {
+    if (isTextNode(txtOrPtr)) {
+      const id = `ctx.doc.nodeKeys.keyFor(node).id:${children.length}`;
+      children.push(
+        <span className={cn(...classNames)} key={id} id={id} data-ovv-key={id}>
+          {txtOrPtr.text}
+        </span>,
+      );
+    } else {
+      children.push(<span className={cn(styles.cursor)}></span>);
+    }
+  }
+
+  return children;
 }
 
 type ParagraphElementNode = React.PropsWithChildren<{
@@ -762,6 +782,14 @@ export interface RichTextRendererProps {
 }
 
 export function RichTextRenderer({ ctx, onChange }: RichTextRendererProps) {
+  const rt = docToRT(ctx.doc);
+  const pointers = rt.pointers;
+  ctx.sortedPointers =
+    pointers !== undefined
+      ? Array.from<Pointer>(stripDuplicatePointers(pointers)).sort(
+          comparePointers,
+        )
+      : undefined;
   return ctx.doc.root.children.map((node) => {
     return (
       <EditorNode
