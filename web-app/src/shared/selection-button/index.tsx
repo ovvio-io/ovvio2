@@ -78,7 +78,7 @@ export function SelectionPopup<T>({
       )
       .filter((x) => !filter || x.dist > filter.length * 0.1 || x.isFixed)
       .sort((a, b) => b.dist - a.dist);
-
+  // debugger;
   const onSelectedImpl = (item: SelectionPopupItemInternal<T>) => {
     const { value } = item;
 

@@ -1,45 +1,46 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { makeStyles, cn } from "../../../../styles/css-objects/index.ts";
-import { styleguide, layout } from "../../../../styles/index.ts";
-import Avatar from "../avatar/index.tsx";
-import { useTheme } from "../../../../styles/theme.tsx";
-import { MentionItem } from "./mention.tsx";
-import { assignNote } from "../utils/assignees.ts";
+import React, { useCallback, useMemo, useState } from 'react';
+import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
+import { styleguide, layout } from '../../../../styles/index.ts';
+import Avatar from '../avatar/index.tsx';
+import { useTheme } from '../../../../styles/theme.tsx';
+import { MentionItem } from './mention.tsx';
+import { assignNote } from '../utils/assignees.ts';
 import {
   Note,
   User,
   Workspace,
-} from "../../../../cfds/client/graph/vertices/index.ts";
-import SelectionButton, { SORT_VALUES } from "../selection-button/index.tsx";
-import { usePartialVertex } from "../../core/cfds/react/vertex.ts";
-import { VertexManager } from "../../../../cfds/client/graph/vertex-manager.ts";
-import { IconPlus } from "../../../../styles/components/new-icons/icon-plus.tsx";
-import { brandLightTheme as theme } from "../../../../styles/theme.tsx";
-import { UISource } from "../../../../logging/client-events.ts";
-import { useLogger } from "../../core/cfds/react/logger.tsx";
-import { IconClose } from "../../../../styles/components/new-icons/icon-close.tsx";
+} from '../../../../cfds/client/graph/vertices/index.ts';
+import SelectionButton, { SORT_VALUES } from '../selection-button/index.tsx';
+import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
+import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
+import { IconPlus } from '../../../../styles/components/new-icons/icon-plus.tsx';
+import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
+import { UISource } from '../../../../logging/client-events.ts';
+import { useLogger } from '../../core/cfds/react/logger.tsx';
+import { IconClose } from '../../../../styles/components/new-icons/icon-close.tsx';
+import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 
 const useStyles = makeStyles(() => ({
   list: {
     basedOn: [layout.row],
     height: styleguide.gridbase * 3,
-    alignItems: "center",
+    alignItems: 'center',
   },
   standard: {
-    flexDirection: "row-reverse",
+    flexDirection: 'row-reverse',
     assignee: {
       marginLeft: styleguide.gridbase * 0.5,
     },
   },
   reverse: {
-    flexDirection: "row",
+    flexDirection: 'row',
     assignee: {
       marginRight: styleguide.gridbase * 0.5,
     },
   },
   selectionButton: {
     ...styleguide.transition.short,
-    transitionProperty: "transform",
+    transitionProperty: 'transform',
   },
   assignee: {},
   regular: {
@@ -59,7 +60,7 @@ const useStyles = makeStyles(() => ({
   addButton: {
     backgroundColor: theme.mono.m2,
     flexShrink: 0,
-    borderRadius: "50%",
+    borderRadius: '50%',
     border: ``,
   },
   popup: {
@@ -69,22 +70,22 @@ const useStyles = makeStyles(() => ({
   },
   popupContent: {
     backgroundColor: theme.colors.background,
-    width: "100%",
-    boxSizing: "border-box",
+    width: '100%',
+    boxSizing: 'border-box',
     basedOn: [layout.column],
   },
   input: {
-    border: "none",
-    width: "100%",
-    borderBottom: "1px solid rgba(156, 178, 205, 0.6)",
+    border: 'none',
+    width: '100%',
+    borderBottom: '1px solid rgba(156, 178, 205, 0.6)',
     borderRadius: 0,
   },
   userName: {
     flexGrow: 1,
-    whiteSpace: "nowrap",
+    whiteSpace: 'nowrap',
     marginLeft: styleguide.gridbase,
     color: theme.colors.text,
-    fontSize: "13px",
+    fontSize: '13px',
   },
   inviteIcon: {
     marginRight: styleguide.gridbase * 2,
@@ -98,9 +99,9 @@ const useStyles = makeStyles(() => ({
 }));
 
 function AddAssigneeIcon({
-  className = "",
-  fill = "#D7E3F1",
-  stroke = "#C5D4E6",
+  className = '',
+  fill = '#D7E3F1',
+  stroke = '#C5D4E6',
 }) {
   const styles = useStyles();
   const theme = useTheme();
@@ -146,7 +147,7 @@ function AddAssigneeIcon({
   );
 }
 
-const REMOVE_ASSIGNEE = "REMOVE_ASSIGNEE";
+const REMOVE_ASSIGNEE = 'REMOVE_ASSIGNEE';
 type ACTION_ITEM = typeof REMOVE_ASSIGNEE;
 
 const RenderedItem = ({
@@ -159,7 +160,7 @@ const RenderedItem = ({
   if (item === REMOVE_ASSIGNEE) {
     return (
       <MentionItem {...props} key={REMOVE_ASSIGNEE}>
-        <IconClose />
+        <IconClose color={IconColor.Primary} />
         <span className={cn(styles.userName)}>Remove Assignee</span>
       </MentionItem>
     );
@@ -167,7 +168,7 @@ const RenderedItem = ({
 
   return (
     <MentionItem {...props} key={item.key}>
-      <Avatar user={item} size="big" />
+      {/* <Avatar user={item} size="big" /> */}
       <UserSpan userManager={item} />
     </MentionItem>
   );
@@ -184,14 +185,14 @@ const renderItem = ({
 
 function UserSpan({ userManager }: { userManager: VertexManager<User> }) {
   const styles = useStyles();
-  const user = usePartialVertex(userManager, ["name"]);
+  const user = usePartialVertex(userManager, ['name']);
   return <span className={cn(styles.userName)}>{user.name}</span>;
 }
 
 export type RenderAssignee = (props: {
   isOpen: boolean;
   user: VertexManager<User>;
-  size: "big" | "small";
+  size: 'big' | 'small';
 }) => JSX.Element;
 
 interface AssigneeProps {
@@ -202,7 +203,7 @@ interface AssigneeProps {
   className?: string;
   source: UISource;
   renderSelected?: RenderAssignee;
-  size?: "big" | "small";
+  size?: 'big' | 'small';
   style?: {};
 }
 
@@ -212,7 +213,7 @@ function DefaultAvatar({
 }: {
   isOpen: boolean;
   user: VertexManager<User>;
-  size: "big" | "small";
+  size: 'big' | 'small';
 }) {
   const styles = useStyles();
   return <Avatar user={user} size={size} className={cn(styles.assignee)} />;
@@ -229,7 +230,7 @@ export function Assignee({
   assignees,
   className,
   renderSelected = DEFAULT_RENDER,
-  size = "big",
+  size = 'big',
   style = {},
 }: AssigneeProps) {
   const styles = useStyles();
@@ -251,7 +252,7 @@ export function Assignee({
       .concat([
         {
           value: REMOVE_ASSIGNEE,
-          sortValue: SORT_VALUES.TOP,
+          sortValue: SORT_VALUES.BOTTOM,
         },
       ]);
   }, [users, assignees, user]);
@@ -263,12 +264,12 @@ export function Assignee({
     if (value === REMOVE_ASSIGNEE) {
       card.assignees.delete(current);
       logger.log({
-        severity: "INFO",
-        event: "MetadataChanged",
+        severity: 'INFO',
+        event: 'MetadataChanged',
         uiSource: source,
         user: current.key,
         vertex: card.key,
-        metadataType: "assignee",
+        metadataType: 'assignee',
       });
       return;
     }
@@ -353,7 +354,7 @@ interface AssigneesProps {
   cardManager: VertexManager<Note>;
   className?: string;
   assignClassName?: string;
-  cardType: "small" | "regular";
+  cardType: 'small' | 'regular';
   reverse?: boolean;
   source: UISource;
   renderAssignee?: RenderAssignee;
@@ -362,7 +363,7 @@ interface AssigneesProps {
 
 function calcStyle(isExpanded: boolean, reverse: boolean, index: number) {
   return isExpanded
-    ? { transform: "translateX(0)" }
+    ? { transform: 'translateX(0)' }
     : {
         transform: `translateX(${
           styleguide.gridbase * 1.25 * index * (reverse ? -1 : 1)
@@ -384,7 +385,7 @@ export default function AssigneesView({
   const logger = useLogger();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
-  const partialCard = usePartialVertex(cardManager, ["workspace", "assignees"]);
+  const partialCard = usePartialVertex(cardManager, ['workspace', 'assignees']);
 
   const workspaceManager = partialCard.workspace
     .manager as VertexManager<Workspace>;
@@ -413,7 +414,7 @@ export default function AssigneesView({
     }
   };
   // const size = cardType === 'regular' ? 'big' : 'small';
-  const size = "small";
+  const size = 'small';
   const assignStyle = calcStyle(isExpanded, reverse, assignees.length);
   return (
     <div
