@@ -9,4 +9,4 @@ export const V3_0_1: VersionNumber = tuple4Make([3, 0, 1, 0]);
 // 1/2/2024
 export const V3_0_2: VersionNumber = tuple4Make([3, 0, 2, 0]);
 
-export const VCurrent = V3_0_1;
+export const VCurrent = V3_0_2;
