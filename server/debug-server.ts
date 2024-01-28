@@ -14,7 +14,7 @@ interface Arguments {
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {
-  return tuple4Set(version, 0, tuple4Get(version, 0) + 1);
+  return tuple4Set(version, 3, tuple4Get(version, 3) + 1);
 }
 
 function shouldRebuildAfterPathChange(p: string): boolean {
