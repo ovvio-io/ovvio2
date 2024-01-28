@@ -336,16 +336,16 @@ export class GraphManager
           repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
         ) {
           const mgr = this.getVertexManager(c.key);
-          if (
-            c.session !== this.trustPool.currentSession.id ||
-            c.parents.length > 1
-          ) {
-            if (plumbing.syncFinished && mgr.hasPendingChanges) {
-              mgr.commit();
-            } else {
-              mgr.touch();
-            }
+          // if (
+          //   c.session !== this.trustPool.currentSession.id ||
+          //   c.parents.length > 1
+          // ) {
+          if (plumbing.syncFinished && mgr.hasPendingChanges) {
+            mgr.commit();
+          } else {
+            mgr.touch();
           }
+          // }
           // else {
           //   mgr.touch();
           // }
