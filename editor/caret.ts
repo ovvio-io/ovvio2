@@ -53,8 +53,11 @@ function findNear<T extends MarkupNode>(
 }
 
 function upDownPredicate(node: TreeNode): boolean {
-  return isElementNode(node) && node.children.length > 0 &&
-    !isElementNode(node.children[0]);
+  return (
+    isElementNode(node) &&
+    node.children.length > 0 &&
+    !isElementNode(node.children[0])
+  );
 }
 
 export function onKeyboardArrow(
@@ -71,9 +74,8 @@ export function onKeyboardArrow(
   if (!coreValueEquals(selection.anchor, selection.focus)) {
     return;
   }
-  const predicate = arrow === 'ArrowUp' || arrow === 'ArrowDown'
-    ? upDownPredicate
-    : isTextNode;
+  const predicate =
+    arrow === 'ArrowUp' || arrow === 'ArrowDown' ? upDownPredicate : isTextNode;
   const focus = selection.focus.node;
   if (writingDirectionAtNode(doc, focus, baseDirection) === 'rtl') {
     if (arrow === 'ArrowLeft') {
@@ -83,10 +85,14 @@ export function onKeyboardArrow(
     }
   }
   if (arrow === 'ArrowRight' && selection.focus.offset < focus.text.length) {
-    return undefined;
+    ++selection.focus.offset;
+    ++selection.anchor.offset;
+    return doc;
   }
   if (arrow === 'ArrowLeft' && selection.focus.offset > 0) {
-    return undefined;
+    --selection.focus.offset;
+    --selection.anchor.offset;
+    return doc;
   }
   const target = findNear<MarkupElement>(
     doc,

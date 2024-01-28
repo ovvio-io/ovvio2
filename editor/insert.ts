@@ -29,7 +29,7 @@ import { uniqueId } from '../base/common.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { deleteCurrentSelection } from './delete.ts';
-import { expirationForSelection } from './editor.tsx';
+import { expirationForSelection } from './utils.ts';
 
 export function handleNewline(
   document: Document,
@@ -91,14 +91,15 @@ export function handleNewline(
     }
   }
 
-  const taskNode = prevElement &&
+  const taskNode =
+    prevElement &&
     pathToNode(document.root, prevElement)?.find(
       (node) => node.tagName === 'ref',
     );
 
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
-  const isEmptyElement = isAtEndOfElement &&
-    isDepthMarker(mergeCtx.at(end! - 1));
+  const isEmptyElement =
+    isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -117,8 +118,8 @@ export function handleNewline(
     return docFromRT(finalRt);
   }
   let didSetSelection = false;
-  const prevElementIsSticky = prevElement &&
-    STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
+  const prevElementIsSticky =
+    prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
   const focusPath = pathToNode(document.root, selection.focus.node);
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
@@ -151,12 +152,12 @@ export function handleNewline(
       },
       kElementSpacer,
       ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
-        prevElement
+      prevElement
         ? prevElement
         : {
-          children: [],
-          tagName: 'p',
-        },
+            children: [],
+            tagName: 'p',
+          },
       {
         depthMarker: startDepth + 1,
       },
@@ -223,6 +224,7 @@ export function handleInsertTextInputEvent(
   if (insertData === '\n') {
     return handleNewline(document, selectionId);
   }
+  debugger;
   let result = coreValueClone(document);
   let selection = result.ranges && result.ranges[selectionId];
   if (!selection) {
@@ -253,9 +255,10 @@ export function handleInsertTextInputEvent(
   } else {
     const textNode = selection.focus.node;
     const text = textNode.text;
-    textNode.text = text.substring(0, selection.focus.offset) +
+    textNode.text =
+      text.substring(0, selection.focus.offset + 1) +
       insertData +
-      text.substring(selection.focus.offset);
+      text.substring(selection.focus.offset + 1);
     if (
       selection.anchor.node !== selection.focus.node ||
       selection.anchor.offset !== selection.focus.offset
