@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import * as ArrayUtils from '../../base/array.ts';
 import { docClone, Document } from './doc-state.ts';
 import {
@@ -15,7 +15,7 @@ import {
   comparePointers,
 } from './tree.ts';
 import { isRefNode, MarkupElement, MarkupNode, RefNode } from './model.ts';
-import { cn, makeStyles } from '../../styles/css-objects/index.ts';
+import { cn, makeStyles, keyframes } from '../../styles/css-objects/index.ts';
 import {
   resolveWritingDirection,
   WritingDirection,
@@ -35,8 +35,13 @@ import { AssigneeChip } from '../../components/assignee-chip.tsx';
 import Menu from '../../styles/components/menu.tsx';
 import { MemberPicker } from '../../components/member-picker.tsx';
 import { TagChip } from '../../components/tag-chip.tsx';
-import { splitTextNodeOnPointers, stripDuplicatePointers } from './flat-rep.ts';
+import {
+  PointerValue,
+  splitTextNodeOnPointers,
+  stripDuplicatePointers,
+} from './flat-rep.ts';
 import { docToRT } from './doc-state.ts';
+import { SimpleTimer } from '../../base/timer.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -217,9 +222,14 @@ const useStyles = makeStyles(() => ({
     marginBottom: styleguide.gridbase * 2,
   },
   cursor: {
-    backgroundColor: 'blue',
-    width: 1,
-    height: styleguide.gridbase * 2,
+    backgroundColor: theme.mono.m4,
+    width: 2,
+    height: styleguide.gridbase * 2.5,
+    position: 'relative',
+    borderRadius: 1,
+    boxSizing: 'border-box',
+    border: `1px solid ${theme.mono.m4}`,
+    zIndex: 100,
   },
 }));
 
@@ -263,15 +273,6 @@ function focusOnLastTextNode(
   }
 }
 
-// interface TaskElementButtonsProps {
-//   task: VertexManager<Note>;
-// }
-//
-// function TaskElementButtons({ task }: TaskElementButtonsProps) {
-//   const styles = useStyles();
-//   return <div></div>;
-// }
-
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
   task: VertexManager<Note>;
@@ -284,16 +285,7 @@ type TaskElementProps = React.PropsWithChildren<{
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    {
-      children,
-      className,
-      dir,
-      id,
-      task,
-      ctx,
-      focused,
-      onChange,
-    }: TaskElementProps,
+    { children, className, dir, id, task, ctx, focused, onChange },
     ref,
   ) {
     const styles = useStyles();
@@ -409,9 +401,10 @@ interface EditorSpanProps {
   node: TextNode;
   ctx: RenderContext;
   focused?: boolean;
+  dir: WritingDirection;
 }
 
-function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
+function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
   const styles = useStyles();
   const htmlId = domIdFromNodeKey(ctx, node);
   const path = pathToNode<MarkupElement>(ctx.doc.root, node)!;
@@ -422,6 +415,27 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   const classNames: (string | undefined | boolean | null)[] = [
     node.text.length === 0 && styles.emptySpan,
   ];
+  const emittedCaretIds: string[] = [];
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      for (const id of emittedCaretIds) {
+        const element = document.getElementById(id);
+        if (element) {
+          const opacity = element.style?.opacity;
+          element.style.opacity = opacity === '0' ? '1' : '0';
+        }
+      }
+    }, 500);
+    return () => {
+      clearInterval(intervalId);
+      for (const id of emittedCaretIds) {
+        const element = document.getElementById(id);
+        if (element) {
+          element.style.opacity = '1';
+        }
+      }
+    };
+  }, [emittedCaretIds]);
   switch (path[path.length - 1]!.tagName) {
     case 'h1':
       classNames.push(styles.h1);
@@ -465,20 +479,49 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   }
 
   const children = [];
+  let prevPtr: PointerValue | undefined;
+  let xOffset = 0;
   for (const txtOrPtr of splitTextNodeOnPointers(
     node,
     true,
     ctx.sortedPointers,
   )) {
+    const style: React.CSSProperties = {
+      position: 'relative',
+    };
     if (isTextNode(txtOrPtr)) {
-      const id = `ctx.doc.nodeKeys.keyFor(node).id:${children.length}`;
+      const id = `${ctx.doc.nodeKeys.keyFor(node).id}:${children.length}`;
+      style[dir === 'rtl' ? 'right' : 'left'] = `-${xOffset}px`;
       children.push(
-        <span className={cn(...classNames)} key={id} id={id} data-ovv-key={id}>
+        <span
+          className={cn(...classNames)}
+          key={id}
+          id={id}
+          data-ovv-key={id}
+          style={style}
+        >
           {txtOrPtr.text}
         </span>,
       );
     } else {
-      children.push(<span className={cn(styles.cursor)}></span>);
+      if (prevPtr?.key === txtOrPtr.key || txtOrPtr.key !== ctx.selectionId) {
+        prevPtr = undefined;
+        continue;
+      }
+      style[dir === 'rtl' ? 'right' : 'left'] = `-1px`;
+      style.opacity = 1;
+      const id = `${ctx.doc.nodeKeys.keyFor(node).id}:ptr:${txtOrPtr.key}`;
+      children.push(
+        <span
+          className={cn(styles.cursor) + ' OvvioCaret'}
+          style={style}
+          key={id}
+          id={id}
+        ></span>,
+      );
+      xOffset += 2;
+      prevPtr = txtOrPtr;
+      emittedCaretIds.push(id);
     }
   }
 
@@ -561,17 +604,20 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
+  const dir =
+    writingDirectionAtNode(ctx.doc, node, ctx.baseDirection) ||
+    ctx.baseDirection ||
+    'auto';
 
   if (isTextNode(node)) {
     const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
     const focused =
       selection &&
       (selection.anchor?.node === node || selection.focus?.node === node);
-    return <EditorSpan node={node} ctx={ctx} focused={focused} />;
+    return <EditorSpan node={node} ctx={ctx} focused={focused} dir={dir} />;
   }
 
   let children: JSX.Element[] | undefined;
-  let dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
   if (isElementNode(node)) {
     children = node.children.map((n) => {
       return (
@@ -593,10 +639,6 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const elementInFocusPath = focusPath?.includes(node) === true;
   const indexInRoot = ctx.doc.root.children.indexOf(node);
   const isChildOfRoot = indexInRoot >= 0;
-
-  if (!dir) {
-    dir = ctx.baseDirection || 'auto';
-  }
 
   switch (node.tagName) {
     case 'h1':
