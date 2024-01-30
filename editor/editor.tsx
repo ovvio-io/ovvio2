@@ -365,18 +365,23 @@ export const RichTextEditor = forwardRef<
           const node = body.nodeKeys.nodeFromKey(nodeKey);
           if (isTextNode(node)) {
             const text = node.text;
-            const boundingRect = e.target.getBoundingClientRect();
+            let contentWidth = 0;
+            for (const node of e.target.parentElement!.childNodes) {
+              contentWidth += (node as HTMLSpanElement).getBoundingClientRect()
+                .width;
+            }
+            const elementBoundingRect =
+              e.target.parentElement!.getBoundingClientRect();
             const offset = Math.max(
               0,
               Math.min(
                 text.length,
-                Math.round(
-                  (text.length * (e.clientX - CONTENTEDITABLE_PADDING)) /
-                    boundingRect.width,
+                Math.ceil(
+                  (text.length * (e.clientX - elementBoundingRect.x)) /
+                    contentWidth,
                 ),
               ),
             );
-            console.log(`text= "${text}" offset = ${offset}`);
             if (!body.ranges) {
               body.ranges = {};
             }

@@ -33,7 +33,6 @@ function findNear<T extends MarkupNode>(
     }
     target = path[path.length - 1];
   }
-  debugger;
   for (const [node] of dfs(rt.root)) {
     if (node === target) {
       if (direction === 'before') {
