@@ -245,11 +245,14 @@ export function* flattenTextNode(
  * @param node The node to split to atoms.
  * @param local Whether to include local pointers or not.
  * @param sortedPointers All pointers available in the rich text.
+ * @param direction Whether to emit the pointers before their respective node
+ *                  or after (default).
  */
 export function* splitTextNodeOnPointers(
   node: TextNode,
   local: boolean,
   sortedPointers?: Pointer[],
+  direction: 'before' | 'after' = 'after',
 ): Generator<TextNode | PointerValue> {
   if (!sortedPointers || !sortedPointers.length) {
     yield Object.freeze(coreValueClone(node));
@@ -266,6 +269,7 @@ export function* splitTextNodeOnPointers(
   let start = 0;
   for (const ptr of sortedPtrsForNode) {
     const offset = ptr.offset;
+    let emittedPtr = false;
     if (offset >= start) {
       // The reconstruction logic assumes pointer values appear after single
       // character text nodes. Thus, we can keep everything before the pointer's
@@ -276,6 +280,10 @@ export function* splitTextNodeOnPointers(
           text: nodeText.substring(start, offset),
         });
       }
+      if (direction === 'before') {
+        yield ptr as PointerValue;
+        emittedPtr = true;
+      }
       // The actual single character target of our pointer
       yield getFrozenTextNode(
         node,
@@ -285,8 +293,10 @@ export function* splitTextNodeOnPointers(
       // offset
       start = ptr.offset + 1;
     }
-    // The actual pointer can be returned
-    yield ptr as PointerValue;
+    if (!emittedPtr || direction !== 'before') {
+      // The actual pointer can be returned
+      yield ptr as PointerValue;
+    }
   }
   // Handle any remaining text after the last pointer
   if (start < node.text.length) {

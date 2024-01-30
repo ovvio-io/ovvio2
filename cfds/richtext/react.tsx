@@ -491,6 +491,7 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
     node,
     true,
     ctx.sortedPointers,
+    'before',
   )) {
     const style: React.CSSProperties = {
       position: 'relative',
