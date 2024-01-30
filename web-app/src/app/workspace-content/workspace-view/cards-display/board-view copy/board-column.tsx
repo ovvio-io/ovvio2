@@ -14,7 +14,6 @@ import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 import { DroppableProps } from '../../../../../shared/dragndrop/droppable.tsx';
 import { Droppable } from '../../../../../shared/dragndrop/index.ts';
-import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -26,14 +25,11 @@ const useStyles = makeStyles((theme) => ({
     flexBasis: '33%',
     boxSizing: 'border-box',
     marginRight: styleguide.gridbase,
-    // backgroundColor: theme.background[400],
-    backgroundColor: lightColorWheel.secondary.s1,
-    borderRadius: 2,
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    borderColor: lightColorWheel.secondary.s2,
+    backgroundColor: theme.background[400],
+    borderRadius: 4,
   },
   columnHeader: {
+    paddingBottom: styleguide.gridbase,
     alignItems: 'center',
     basedOn: [layout.row],
   },
@@ -59,19 +55,11 @@ const useStyles = makeStyles((theme) => ({
   titleText: {},
   columnContent: {
     boxSizing: 'border-box',
-    // padding: styleguide.gridbase,
+    padding: styleguide.gridbase,
     width: '100%',
   },
   item: {
-    // marginBottom: styleguide.gridbase * 2,
-  },
-  newTaskText: {
-    color: '#3184DD',
-    fontSize: '10px',
-    fontWeight: '400',
-    lineHeight: '14px',
-    letterSpacing: '-0.1px',
-    gap: '4px',
+    marginBottom: styleguide.gridbase * 2,
   },
 }));
 
@@ -125,14 +113,11 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
           <div className={cn(styles.columnHeader)}>
             <H4 className={cn(styles.titleText)}>{title}</H4>
             <div className={cn(layout.flexSpacer)} />
-            <Button onClick={onCreateCard}>
-              <div className={cn(styles.newTaskText)}>New Task</div>
-              <img
-                key="IconNewTaskBoard"
-                src="/icons/board/New-Task-plus.svg"
-              />
-              {/* <IconCreateNew /> */}
-            </Button>
+            {onCreateCard && (
+              <Button onClick={onCreateCard}>
+                <IconCreateNew />
+              </Button>
+            )}
           </div>
           <div
             className={cn(styles.stickyNotifier)}

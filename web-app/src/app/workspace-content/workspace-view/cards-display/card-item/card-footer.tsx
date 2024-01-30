@@ -1,38 +1,41 @@
-import React, { MouseEvent, useCallback } from "react";
-import { formatTimeDiff } from "../../../../../../../base/date.ts";
-import { VertexManager } from "../../../../../../../cfds/client/graph/vertex-manager.ts";
-import { Note } from "../../../../../../../cfds/client/graph/vertices/note.ts";
-import { usePartialVertex } from "../../../../../core/cfds/react/vertex.ts";
+import React, { MouseEvent, useCallback } from 'react';
+import { formatTimeDiff } from '../../../../../../../base/date.ts';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import {
   createUseStrings,
   format,
-} from "../../../../../core/localization/index.tsx";
-import { useDueDate } from "../../../../../shared/components/due-date-editor/index.tsx";
-import { layout, styleguide } from "../../../../../../../styles/index.ts";
-import { Button } from "../../../../../../../styles/components/buttons.tsx";
+} from '../../../../../core/localization/index.tsx';
+import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';
+import { layout, styleguide } from '../../../../../../../styles/index.ts';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import {
   IconAttachment,
   IconDueDate,
-} from "../../../../../../../styles/components/icons/index.ts";
-import { IconContent } from "../../../../../../../styles/components/new-icons/icon-content.tsx";
-import Menu from "../../../../../../../styles/components/menu.tsx";
-import { Text } from "../../../../../../../styles/components/texts.tsx";
+} from '../../../../../../../styles/components/icons/index.ts';
+import { IconContent } from '../../../../../../../styles/components/new-icons/icon-content.tsx';
+import Menu from '../../../../../../../styles/components/menu.tsx';
+import { Text } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
   cn,
-} from "../../../../../../../styles/css-objects/index.ts";
-import { useTheme } from "../../../../../../../styles/theme.tsx";
-import { CardSize } from "./index.tsx";
+} from '../../../../../../../styles/css-objects/index.ts';
+import { useTheme } from '../../../../../../../styles/theme.tsx';
+import { CardSize } from './index.tsx';
 // import localization from './card.strings.json' assert { type: 'json' };
-import { UISource } from "../../../../../../../logging/client-events.ts";
-import { useLogger } from "../../../../../core/cfds/react/logger.tsx";
-import { DueDateState } from "../../../../../../../styles/components/new-icons/icon-due-date.tsx";
+import { UISource } from '../../../../../../../logging/client-events.ts';
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { DueDateState } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
+import CardMenuView from '../../../../../shared/item-menu/index.tsx';
+import { CardTags } from './card-tag-view.tsx';
 
 export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
 const useStyles = makeStyles((theme) => ({
   footer: {
-    alignItems: "center",
+    alignItems: 'center',
     minHeight: styleguide.gridbase,
     color: theme.background.textSecondary,
     basedOn: [layout.row],
@@ -42,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
     height: FOOTER_HEIGHT,
   },
   attachments: {
-    alignItems: "center",
+    alignItems: 'center',
     basedOn: [layout.row],
   },
   attachment: {
@@ -50,6 +53,17 @@ const useStyles = makeStyles((theme) => ({
   },
   margin: {
     marginRight: styleguide.gridbase,
+  },
+  menu: {
+    opacity: 0,
+    transition: `${styleguide.transition.duration.short}ms linear opacity`,
+  },
+  menuVisible: {
+    opacity: 1,
+  },
+  tagsContainer: {
+    display: 'flex',
+    padding: '0.5px 6px 1.5px 6px',
   },
 }));
 
@@ -106,7 +120,7 @@ export interface CardFooterProps {
 
 function DueDateIndicator({ card, source }: CardFooterProps) {
   const styles = useStyles();
-  const { dueDate } = usePartialVertex(card, ["dueDate"]);
+  const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
   const logger = useLogger();
   const theme = useTheme();
@@ -116,10 +130,10 @@ function DueDateIndicator({ card, source }: CardFooterProps) {
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
     logger.log({
-      severity: "INFO",
-      event: "Start",
-      flow: "edit",
-      type: "due",
+      severity: 'INFO',
+      event: 'Start',
+      flow: 'edit',
+      type: 'due',
       vertex: card.key,
       source,
     });
@@ -127,20 +141,18 @@ function DueDateIndicator({ card, source }: CardFooterProps) {
   };
 
   const isOverdue = dueDate < new Date();
-  const color = isOverdue ? "#C25A3E" : "#3f3f3f"; //TODO: need to use "theme"
+  const color = isOverdue ? '#C25A3E' : '#3f3f3f'; //TODO: need to use "theme"
 
   return (
     <Button className={cn(styles.footerItem)} onClick={onClick}>
-      <IconDueDate
-        state={isOverdue ? DueDateState.OverDue : DueDateState.Default}
-      />
+      <IconDueDate state={isOverdue ? DueDateState.Late : DueDateState.None} />
       <Text style={{ color }}>{formatTimeDiff(dueDate)}</Text>
     </Button>
   );
 }
 
 function ContentIndicator({ card }: { card: VertexManager<Note> }) {
-  const { bodyPreview } = usePartialVertex(card, ["bodyPreview"]);
+  const { bodyPreview } = usePartialVertex(card, ['bodyPreview']);
   const styles = useStyles();
   if (!bodyPreview.trim()) {
     return null;
@@ -160,11 +172,21 @@ export function CardFooter({
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
-  const { dueDate } = usePartialVertex(card, ["dueDate"]);
+  const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
     <div className={cn(styles.footer, className)}>
-      {size === CardSize.Small && <ContentIndicator card={card} />}
+      <AssigneesView
+        cardManager={card}
+        cardType="small"
+        source={source}
+        isExpanded={true}
+      />
       <div className={cn(layout.flexSpacer)} />
+      {/* {size === CardSize.Small && ( */}
+      <div className={cn(styles.tagsContainer)}>
+        <CardTags size={size} card={card} isExpanded={true} source={source} />
+        {/* )} */}
+      </div>
       {dueDate && <DueDateIndicator card={card} source={source} />}
     </div>
   );

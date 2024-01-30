@@ -18,7 +18,10 @@ import {
   makeStyles,
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
+import {
+  brandLightTheme,
+  useTheme,
+} from '../../../../../../../styles/theme.tsx';
 import { CardFooter } from './card-footer.tsx';
 import { CardTags } from './card-tag-view.tsx';
 import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
@@ -26,6 +29,9 @@ import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
 import { TaskCheckbox } from '../../../../../../../components/task.tsx';
+import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
+import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -45,7 +51,7 @@ function getStrikethroughSVG(fill: string) {
       TITLE_LINE_HEIGHT / 2
     }' stroke='${fill}'/>
   </svg>
-  `.replace(/\n/g, ''),
+  `.replace(/\n/g, '')
   );
 }
 
@@ -73,8 +79,9 @@ const useStyles = makeStyles((theme) => ({
     cursor: 'pointer',
     padding: styleguide.gridbase,
     boxSizing: 'border-box',
-    boxShadow: theme.shadows.z2,
-    borderRadius: 6,
+    // boxShadow: theme.shadows.z2,
+    boxShadow: brandLightTheme.shadows.z2,
+    // borderRadius: 6,
     basedOn: [layout.column],
   },
   [CardSize.Regular]: {
@@ -107,7 +114,7 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row],
   },
   titleTextContainer: {
-    // padding: [0, styleguide.gridbase * 0],
+    padding: [0, styleguide.gridbase * 0],
     position: 'relative',
   },
   strikethrough: {
@@ -124,15 +131,15 @@ const useStyles = makeStyles((theme) => ({
     transform: 'scale(0)',
     transformOrigin: 'left center',
     backgroundImage: `url("data:image/svg+xml;utf8,${getStrikethroughSVG(
-      theme.background.text,
+      theme.background.text
     )}")`,
   },
   strikethroughDone: {
     transform: 'scale(1)',
   },
   checkboxPlaceholder: {
-    width: styleguide.gridbase * 3,
-    height: styleguide.gridbase * 3,
+    // width: styleguide.gridbase * 3,
+    // height: styleguide.gridbase * 3,
   },
   status: {
     marginRight: styleguide.gridbase,
@@ -163,6 +170,17 @@ const useStyles = makeStyles((theme) => ({
     marginTop: 2,
     marginRight: styleguide.gridbase,
   },
+  taskCheckBoxContainer: {
+    display: 'flex',
+  },
+
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  cardMiddle: {
+    padding: [styleguide.gridbase, 0, 0, 0],
+  },
 }));
 
 interface TitleElementProps {
@@ -172,13 +190,13 @@ interface TitleElementProps {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: TitleElementProps,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  },
+  }
 );
 
 function Title({
@@ -213,24 +231,19 @@ export function CardHeader({
   size,
 }: CardHeaderPartProps) {
   const styles = useStyles();
+  const { workspace } = usePartialVertex(card, ['workspace']);
+
   return (
-    <div className={className}>
-      <div className={cn(styles.header)}>
-        <CardWorkspaceIndicator
+    <div className={styles.cardMiddle}>
+      {/* <div className={cn(styles.header)}> */}
+      {/* <CardWorkspaceIndicator
           card={card}
           source={source}
           isExpanded={isExpanded}
-        />
-        {size === CardSize.Regular && (
-          <CardTags
-            size={size}
-            card={card}
-            isExpanded={isExpanded}
-            source={source}
-          />
-        )}
-        <div className={cn(layout.flexSpacer)} />
-        <AssigneesView
+        /> */}
+      <WorkspaceIndicator workspace={workspace} />
+      <div className={cn(layout.flexSpacer)} />
+      {/* <AssigneesView
           cardManager={card}
           cardType="small"
           source={source}
@@ -243,17 +256,17 @@ export function CardHeader({
             source={source}
             className={cn(styles.menu, isExpanded && styles.menuVisible)}
           />
-        )}
-      </div>
-      {size === CardSize.Small && (
-        <CardTags
-          size={size}
-          card={card}
-          isExpanded={isExpanded}
-          source={source}
-        />
-      )}
+        )} */}
     </div>
+    // {/* {size === CardSize.Small && (
+    //   <CardTags
+    //     size={size}
+    //     card={card}
+    //     isExpanded={isExpanded}
+    //     source={source}
+    //   />
+    // )} */}
+    // </div>
   );
 }
 
@@ -311,7 +324,7 @@ export interface CardItemProps {
 
 export const CardItem = React.forwardRef(function CardItemView(
   { card, className, showChildCards, size, ...rest }: CardItemProps,
-  ref: React.ForwardedRef<HTMLDivElement>,
+  ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -366,30 +379,30 @@ export const CardItem = React.forwardRef(function CardItemView(
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
+        {/* <div className={cn(styles.titleRow)}> */}
+        <div className={cn(styles.headerContainer)}>
+          <div className={cn(styles.taskCheckBoxContainer)}>
+            {/* <StatusCheckbox source={source} card={card} /> */}
+            <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
+            <div className={cn(styles.titleTextContainer)}>
+              <Title source={source} card={card} />
+              <div
+                className={cn(
+                  styles.strikethrough,
+                  isDone && styles.strikethroughDone
+                )}
+              />
+            </div>
+          </div>
+          <IconPin on={true} />
+        </div>
         <CardHeader
           size={size}
           card={card}
           isExpanded={isInHover}
           source={source}
         />
-        <div className={cn(styles.titleRow)}>
-          {/* <StatusCheckbox source={source} card={card} /> */}
-          <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
-          <div className={cn(styles.titleTextContainer)}>
-            <Title source={source} card={card} />
-            <div
-              className={cn(
-                styles.strikethrough,
-                isDone && styles.strikethroughDone,
-              )}
-            />
-          </div>
-        </div>
-        {/* {size === CardSize.Regular ? (
-          <BodyPreview card={card} className={cn(styles.preview)} />
-        ) : ( */}
         <div className={cn(styles.preview)} />
-        {/* )} */}
         <CardFooter size={size} card={card} source={source} />
       </div>
       {showChildCards && !!childCards.length && (
@@ -400,7 +413,7 @@ export const CardItem = React.forwardRef(function CardItemView(
           <IconExpander
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconExpanded,
+              expanded && styles.expanderIconExpanded
             )}
           />
         </div>

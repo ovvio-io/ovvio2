@@ -225,7 +225,7 @@ export interface RenderContext {
 function focusOnLastTextNode(
   element: ElementNode,
   doc: Document,
-  selectionId: string,
+  selectionId: string
 ): void {
   const textNode = findLastTextNode(element);
   if (textNode) {
@@ -284,7 +284,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
       focused,
       onChange,
     }: TaskElementProps,
-    ref,
+    ref
   ) {
     const styles = useStyles();
     const partialTask = usePartialVertex(task, [
@@ -300,7 +300,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
       const doc = docClone(ctx.doc);
       const refNode = findNode(
         doc.root,
-        (n) => isRefNode(n) && n.ref === task.key,
+        (n) => isRefNode(n) && n.ref === task.key
       );
       if (refNode) {
         focusOnLastTextNode(refNode[0] as ElementNode, doc, ctx.selectionId);
@@ -312,7 +312,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         className={cn(
           styles.taskElement,
           className,
-          focused ? styles.focusedTask : styles.unfocusedTask,
+          focused ? styles.focusedTask : styles.unfocusedTask
         )}
         ref={ref}
         dir={dir}
@@ -350,7 +350,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                       >
                         <MemberPicker
                           users={Array.from(partialWorkspace.users).filter(
-                            (wsUser) => !partialTask.assignees.has(wsUser),
+                            (wsUser) => !partialTask.assignees.has(wsUser)
                           )}
                           onRowSelect={(updatedAssignee) => {
                             const assignees = partialTask.assignees;
@@ -392,7 +392,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 interface EditorSpanProps {
@@ -506,7 +506,7 @@ function ParagraphElementNode({
       onClick={onClick}
       className={cn(
         styles.paragraphElement,
-        showNewTaskHint && styles.paragraphElementContainer,
+        showNewTaskHint && styles.paragraphElementContainer
       )}
     >
       {/* {showNewTaskHint && (
@@ -721,7 +721,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           ctx={ctx}
           className={cn(
             isLastTask && styles.lastTaskElement,
-            isFirstTask && styles.firstTaskElement,
+            isFirstTask && styles.firstTaskElement
           )}
         >
           {children}
@@ -739,7 +739,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           onNewTask={() => {
             const newDoc = docClone(ctx.doc);
             const newNode = newDoc.nodeKeys.nodeFromKey(
-              ctx.doc.nodeKeys.keyFor(node).id,
+              ctx.doc.nodeKeys.keyFor(node).id
             )! as MarkupElement;
             (newNode as CoreObject).tagName = 'ref';
             (newNode as CoreObject).ref = uniqueId();

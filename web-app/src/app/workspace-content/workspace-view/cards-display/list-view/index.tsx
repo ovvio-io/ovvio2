@@ -38,7 +38,7 @@ import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 const useStyles = makeStyles((theme) => ({
   item: {
     position: 'relative',
-    marginBottom: styleguide.gridbase * 2,
+    marginBottom: '1px',
   },
   listRoot: {
     height: '100%',
@@ -82,7 +82,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
     },
-    [docRouter],
+    [docRouter]
   );
 
   useEffect(() => {
@@ -148,7 +148,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                 >
                   {(
                     draggableProps,
-                    ref: React.MutableRefObject<HTMLTableRowElement>,
+                    ref: React.MutableRefObject<HTMLTableRowElement>
                   ) => (
                     <ItemRow
                       index={index}
