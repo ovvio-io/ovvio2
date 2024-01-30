@@ -4,6 +4,8 @@ import {
   writingDirectionAtNode,
 } from '../cfds/richtext/doc-state.ts';
 import {
+  dfs,
+  ElementNode,
   isElementNode,
   isTextNode,
   pathToNode,
@@ -22,6 +24,8 @@ function findNear<T extends MarkupNode>(
   predicate: (node: TreeNode) => boolean,
   direction: 'before' | 'after',
 ): T | undefined {
+  let lastMatch: T | undefined;
+  let foundTarget = false;
   if (!isElementNode(target)) {
     const path = pathToNode(rt.root, target);
     if (!path) {
@@ -29,24 +33,21 @@ function findNear<T extends MarkupNode>(
     }
     target = path[path.length - 1];
   }
-  const atoms = Array.from(flattenRichText(rt, true, false));
-  const idx = atoms.indexOf(target);
-  if (idx < 0) {
-    return undefined;
-  }
-  if (direction === 'before') {
-    for (let j = idx - 1; j > 0; --j) {
-      const node = atoms[j];
-      if (predicate(node)) {
-        return node as T;
+  debugger;
+  for (const [node] of dfs(rt.root)) {
+    if (node === target) {
+      if (direction === 'before') {
+        return lastMatch;
       }
+      foundTarget = true;
+      continue;
     }
-  } else {
-    for (let j = idx + 1; j < atoms.length; ++j) {
-      const node = atoms[j];
-      if (predicate(node)) {
-        return node as T;
-      }
+    if (direction === 'before' && predicate(node)) {
+      lastMatch = node as T;
+      continue;
+    }
+    if (foundTarget && direction === 'after' && predicate(node)) {
+      return node as T;
     }
   }
   return undefined;
