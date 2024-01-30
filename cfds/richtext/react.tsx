@@ -224,12 +224,18 @@ const useStyles = makeStyles(() => ({
   cursor: {
     backgroundColor: theme.mono.m4,
     width: 2,
-    height: styleguide.gridbase * 2.5,
+    height: styleguide.gridbase * 2,
     position: 'relative',
     borderRadius: 1,
+    top: 1,
     boxSizing: 'border-box',
     border: `1px solid ${theme.mono.m4}`,
     zIndex: 100,
+  },
+  editorSpan: {
+    '::selection': {
+      background: 'transparent',
+    },
   },
 }));
 
@@ -494,10 +500,10 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
       style[dir === 'rtl' ? 'right' : 'left'] = `-${xOffset}px`;
       children.push(
         <span
-          className={cn(...classNames)}
+          className={cn(...classNames, styles.editorSpan)}
           key={id}
           id={id}
-          data-ovv-key={id}
+          data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
           style={style}
         >
           {txtOrPtr.text}
@@ -513,10 +519,11 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
       const id = `${ctx.doc.nodeKeys.keyFor(node).id}:ptr:${txtOrPtr.key}`;
       children.push(
         <span
-          className={cn(styles.cursor) + ' OvvioCaret'}
+          className={cn(styles.cursor, styles.editorSpan) + ' OvvioCaret'}
           style={style}
           key={id}
           id={id}
+          data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
         ></span>,
       );
       xOffset += 2;

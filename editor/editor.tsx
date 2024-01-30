@@ -50,6 +50,8 @@ import { useUndoContext } from './undo.ts';
 import { onKeyboardArrow } from './caret.ts';
 import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
 
+const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
+
 const useStyles = makeStyles(() => ({
   mainContainer: {
     height: '100%',
@@ -94,13 +96,16 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     height: `calc(100% - ${HEADER_HEIGHT}px)`,
     whiteSpace: 'pre-wrap',
-    padding: styleguide.gridbase * 11,
+    padding: CONTENTEDITABLE_PADDING,
     outline: 'none',
     cursor: 'text',
     boxSizing: 'border-box',
     overflowY: 'scroll',
     scrollBehavior: 'instant',
     caretColor: 'transparent',
+    '::selection': {
+      background: 'transparent',
+    },
   },
 }));
 
@@ -324,13 +329,13 @@ export const RichTextEditor = forwardRef<
   //     document.removeEventListener('selectionchange', onSelectionChanged);
   // }, [onSelectionChanged]);
 
-  // const onBlur = useCallback(() => {
-  //   const body = docClone(partialNote.body);
-  //   if (body.ranges) {
-  //     delete body.ranges[selectionId];
-  //     partialNote.body = body;
-  //   }
-  // }, [partialNote, selectionId]);
+  const onBlur = useCallback(() => {
+    const body = docClone(partialNote.body);
+    if (body.ranges) {
+      delete body.ranges[selectionId];
+      partialNote.body = body;
+    }
+  }, [partialNote, selectionId]);
 
   return (
     <div
@@ -347,10 +352,50 @@ export const RichTextEditor = forwardRef<
         e.preventDefault();
         e.stopPropagation();
       }}
-      onMouseDown={(e) => {
-        debugger;
+      onMouseUp={(e) => {
+        // debugger;
+        const proxy = note.getVertexProxy();
+        const body = docClone(proxy.body);
+        if (e.target instanceof HTMLSpanElement) {
+          const nodeKey = e.target.dataset.ovvNodeKey;
+          if (!nodeKey) {
+            return;
+          }
+          const node = body.nodeKeys.nodeFromKey(nodeKey);
+          if (isTextNode(node)) {
+            const text = node.text;
+            const boundingRect = e.target.getBoundingClientRect();
+            const offset = Math.max(
+              0,
+              Math.min(
+                text.length,
+                Math.round(
+                  (text.length * (e.clientX - CONTENTEDITABLE_PADDING)) /
+                    boundingRect.width,
+                ),
+              ),
+            );
+            console.log(`text= "${text}" offset = ${offset}`);
+            if (!body.ranges) {
+              body.ranges = {};
+            }
+            body.ranges[selectionId] = {
+              anchor: {
+                node,
+                offset,
+              },
+              focus: {
+                node,
+                offset,
+              },
+              dir: PointerDirection.None,
+              expiration: expirationForSelection(),
+            };
+            proxy.body = body;
+          }
+        }
       }}
-      // onBlur={onBlur}
+      onBlur={onBlur}
     >
       <RichTextRenderer
         ctx={ctx}
