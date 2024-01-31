@@ -49,8 +49,9 @@ import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
 import { onKeyboardArrow } from './caret.ts';
 import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
+import { onMouseUp } from './mouse.ts';
 
-const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
+export const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -353,54 +354,7 @@ export const RichTextEditor = forwardRef<
         e.preventDefault();
         e.stopPropagation();
       }}
-      onMouseUp={(e) => {
-        // debugger;
-        const proxy = note.getVertexProxy();
-        const body = docClone(proxy.body);
-        if (e.target instanceof HTMLSpanElement) {
-          const nodeKey = e.target.dataset.ovvNodeKey;
-          if (!nodeKey) {
-            return;
-          }
-          const node = body.nodeKeys.nodeFromKey(nodeKey);
-          if (isTextNode(node)) {
-            const text = node.text;
-            let contentWidth = 0;
-            for (const node of e.target.parentElement!.childNodes) {
-              contentWidth += (node as HTMLSpanElement).getBoundingClientRect()
-                .width;
-            }
-            const elementBoundingRect =
-              e.target.parentElement!.getBoundingClientRect();
-            const offset = Math.max(
-              0,
-              Math.min(
-                text.length,
-                Math.ceil(
-                  (text.length * (e.clientX - elementBoundingRect.x)) /
-                    contentWidth,
-                ),
-              ),
-            );
-            if (!body.ranges) {
-              body.ranges = {};
-            }
-            body.ranges[selectionId] = {
-              anchor: {
-                node,
-                offset,
-              },
-              focus: {
-                node,
-                offset,
-              },
-              dir: PointerDirection.None,
-              expiration: expirationForSelection(),
-            };
-            proxy.body = body;
-          }
-        }
-      }}
+      onMouseUp={(e) => onMouseUp(e, note, selectionId)}
       onBlur={onBlur}
     >
       <RichTextRenderer

@@ -248,37 +248,6 @@ export interface RenderContext {
   onNewTask?: () => void;
 }
 
-function focusOnLastTextNode(
-  element: ElementNode,
-  doc: Document,
-  selectionId: string,
-): void {
-  const textNode = findLastTextNode(element);
-  if (textNode) {
-    if (!doc.ranges) {
-      doc.ranges = {};
-    }
-    const curSelection = doc.ranges[selectionId];
-    if (
-      !curSelection ||
-      (curSelection.anchor.node !== textNode &&
-        curSelection.focus.node !== textNode)
-    ) {
-      doc.ranges[selectionId] = {
-        anchor: {
-          node: textNode,
-          offset: textNode.text.length,
-        },
-        focus: {
-          node: textNode,
-          offset: textNode.text.length,
-        },
-        dir: PointerDirection.None,
-      };
-    }
-  }
-}
-
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
   task: VertexManager<Note>;
@@ -304,17 +273,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
     const partialWorkspace = usePartialVertex(partialTask.workspace.manager, [
       'users',
     ]);
-    const onClick = useCallback(() => {
-      const doc = docClone(ctx.doc);
-      const refNode = findNode(
-        doc.root,
-        (n) => isRefNode(n) && n.ref === task.key,
-      );
-      if (refNode) {
-        focusOnLastTextNode(refNode[0] as ElementNode, doc, ctx.selectionId);
-        onChange(doc);
-      }
-    }, [ctx, task]);
+
     return (
       <div
         className={cn(
@@ -327,7 +286,6 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         key={id}
         id={id}
         data-ovv-key={id}
-        onClick={onClick}
       >
         <div className={cn(styles.taskCheckboxContainer)}>
           <CheckBox
@@ -558,14 +516,7 @@ function ParagraphElementNode({
 }: ParagraphElementNode) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
-  const onClick = useCallback(() => {
-    const doc = docClone(ctx.doc);
-    const node = doc.nodeKeys.nodeFromKey(id);
-    if (isElementNode(node)) {
-      focusOnLastTextNode(node, doc, ctx.selectionId);
-      onChange(doc);
-    }
-  }, [ctx, onChange]);
+
   return (
     <div
       key={id}
@@ -574,7 +525,6 @@ function ParagraphElementNode({
       dir={dir}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onClick={onClick}
       className={cn(
         styles.paragraphElement,
         showNewTaskHint && styles.paragraphElementContainer,
