@@ -38,7 +38,8 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     minHeight: styleguide.gridbase,
     color: theme.background.textSecondary,
-    basedOn: [layout.row],
+    display: 'flex',
+    flexDirection: 'row',
   },
   footerItem: {
     marginTop: styleguide.gridbase * 0.5,
@@ -63,6 +64,8 @@ const useStyles = makeStyles((theme) => ({
   },
   tagsContainer: {
     display: 'flex',
+    maxWidth: '20px',
+
     padding: '0.5px 6px 1.5px 6px',
   },
 }));
@@ -74,6 +77,7 @@ export interface CardFooterProps {
   source: UISource;
   size?: CardSize;
   className?: string;
+  isExpanded?: boolean;
 }
 
 // function Attachments({ card, source }: CardFooterProps) {
@@ -142,11 +146,12 @@ function DueDateIndicator({ card, source }: CardFooterProps) {
 
   const isOverdue = dueDate < new Date();
   const color = isOverdue ? '#C25A3E' : '#3f3f3f'; //TODO: need to use "theme"
+  const fontSize = '10px';
 
   return (
     <Button className={cn(styles.footerItem)} onClick={onClick}>
       <IconDueDate state={isOverdue ? DueDateState.Late : DueDateState.None} />
-      <Text style={{ color }}>{formatTimeDiff(dueDate)}</Text>
+      <Text style={{ color, fontSize }}>{formatTimeDiff(dueDate)}</Text>
     </Button>
   );
 }
@@ -168,6 +173,7 @@ function ContentIndicator({ card }: { card: VertexManager<Note> }) {
 export function CardFooter({
   card,
   source,
+  isExpanded,
   className,
   size = CardSize.Regular,
 }: CardFooterProps) {
@@ -175,18 +181,23 @@ export function CardFooter({
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
     <div className={cn(styles.footer, className)}>
-      <AssigneesView
-        cardManager={card}
-        cardType="small"
-        source={source}
-        isExpanded={true}
-      />
-      <div className={cn(layout.flexSpacer)} />
-      {/* {size === CardSize.Small && ( */}
-      <div className={cn(styles.tagsContainer)}>
-        <CardTags size={size} card={card} isExpanded={true} source={source} />
-        {/* )} */}
+      <div>
+        <AssigneesView
+          cardManager={card}
+          cardType="small"
+          source={source}
+          isExpanded={true}
+        />
+        <div className={cn(styles.tagsContainer)}>
+          <CardTags
+            size={size}
+            card={card}
+            isExpanded={isExpanded}
+            source={source}
+          />
+        </div>
       </div>
+      <div className={cn(layout.flexSpacer)} />
       {dueDate && <DueDateIndicator card={card} source={source} />}
     </div>
   );

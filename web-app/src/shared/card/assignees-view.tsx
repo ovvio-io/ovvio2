@@ -342,10 +342,10 @@ export function AssignButton({
       getItems={getItems}
       renderItem={renderItem}
       onSelected={onSelected}
-      className={cn(styles.selectionButton, styles.addButton, className)}
+      className={cn(styles.selectionButton, className)}
       style={style}
     >
-      {() => <IconPlus />}
+      {() => <img key="IconAddAssignee" src="/icons/board/Assignee.svg" />}
     </SelectionButton>
   );
 }
@@ -446,11 +446,7 @@ export default function AssigneesView({
         cardManager={cardManager}
         users={users}
         assignees={assignees}
-        className={cn(
-          styles.addButton,
-          !isExpanded && styles.hide,
-          assignClassName
-        )}
+        className={cn(styles.z, !isExpanded && styles.hide, assignClassName)}
         style={assignStyle}
       />
     </div>

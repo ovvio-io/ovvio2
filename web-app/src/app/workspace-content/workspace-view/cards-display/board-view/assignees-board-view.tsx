@@ -37,9 +37,11 @@ const PAGE_SIZE = 10;
 export function AssigneesBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes<VertexManager<User>>;
+  filteredNotes: FilteredNotes;
 }) {
-  const notesQuery = useQuery2(filteredNotes[0]);
+  const notesQuery = useQuery2(filteredNotes[0]); // ------------ ASK OFRI
+  // const notesQuery2 = useQuery2(filteredNotes[1]); // ------------ ASK OFRI
+
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
@@ -73,7 +75,7 @@ export function AssigneesBoardView({
         });
       }
     },
-    [toast, strings],
+    [toast, strings]
   );
 
   const onDrop = (
@@ -81,7 +83,7 @@ export function AssigneesBoardView({
     items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
-    dragPosition: DragPosition,
+    dragPosition: DragPosition
   ) => {
     const card = item.getVertexProxy();
     if (user === 'unassigned') {
@@ -94,7 +96,7 @@ export function AssigneesBoardView({
 
   const allowsDrop = (
     user: VertexManager<User> | 'unassigned',
-    card: VertexManager<Note>,
+    card: VertexManager<Note>
   ) => {
     if (user === 'unassigned') {
       return true;

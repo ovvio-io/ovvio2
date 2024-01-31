@@ -32,7 +32,9 @@ const useStyles = makeStyles((theme) => ({
   tagsView: {
     // height: styleguide.gridbase * 3,
     alignItems: 'center',
-    basedOn: [layout.row],
+    // basedOn: [layout.row],
+    display: 'flex',
+    flexDirection: 'row',
   },
   tagsWrap: {
     flexWrap: 'wrap',

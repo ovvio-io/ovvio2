@@ -75,9 +75,8 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
   const docRouter = useDocumentRouter();
   const view = usePartialView('noteType');
 
-  const pinnedQuery = useQuery2(filteredNotes[0]);
+  const pinnedQuery = useQuery2(filteredNotes[0]); // ------------ ASK OFRI
   const unpinnedQuery = useQuery2(filteredNotes[1]);
-
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
@@ -136,7 +135,6 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                   <LabelSm>{headerText}</LabelSm>
                 </Row>
               )}
-
               {/* <Droppable items={cards.pinned} onDrop={onDrop}>
                     {({ attributes }) => (
                       <div {...attributes} style={{ display: 'contents' }}> */}
@@ -161,7 +159,6 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                   )}
                 </Draggable>
               ))}
-
               <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
               {/* {view.noteType === NoteType.Task && (
                 <InlineTaskButton

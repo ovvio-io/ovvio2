@@ -25,13 +25,14 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 0,
     flexBasis: '33%',
     boxSizing: 'border-box',
-    marginRight: styleguide.gridbase,
+    marginRight: styleguide.gridbase * 2,
     // backgroundColor: theme.background[400],
     backgroundColor: lightColorWheel.secondary.s1,
-    borderRadius: 2,
+    borderRadius: '4px',
     borderStyle: 'solid',
     borderWidth: '1px',
     borderColor: lightColorWheel.secondary.s2,
+    padding: [0, 0, styleguide.gridbase, 0],
   },
   columnHeader: {
     alignItems: 'center',
@@ -166,6 +167,11 @@ export function BoardColumn({
 }: React.PropsWithChildren<
   Omit<DroppableProps<VertexManager<Note>>, 'children'> & BoardColumnProps
 >) {
+  // const filteredNotes = useFilteredNotes('listView');
+
+  // const pinnedQuery = useQuery2(filteredNotes[0]);
+  // const unpinnedQuery = useQuery2(filteredNotes[1]);
+
   return (
     <Droppable {...props}>
       {(droppableProps) => (

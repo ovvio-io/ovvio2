@@ -12,8 +12,8 @@ import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { IconExpander } from '../../../../../../../styles/components/icons/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-// import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
-import { Text } from '../../../../../../../styles/components/typography.tsx';
+import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
+// import { Text } from '../../../../../../../styles/components/typography.tsx';
 import {
   makeStyles,
   cn,
@@ -82,7 +82,9 @@ const useStyles = makeStyles((theme) => ({
     // boxShadow: theme.shadows.z2,
     boxShadow: brandLightTheme.shadows.z2,
     // borderRadius: 6,
-    basedOn: [layout.column],
+    // basedOn: [layout.column],
+    display: 'flex',
+    flexDirection: 'column',
   },
   [CardSize.Regular]: {
     preview: {
@@ -117,29 +119,8 @@ const useStyles = makeStyles((theme) => ({
     padding: [0, styleguide.gridbase * 0],
     position: 'relative',
   },
-  strikethrough: {
-    width: '100%',
-    position: 'absolute',
-    left: '0',
-    top: '0',
-    height: '100%',
-    // height: 1,
-    // top: '50%',
-    // backgroundColor: theme.background.text,
-    ...styleguide.transition.short,
-    transitionProperty: 'transform',
-    transform: 'scale(0)',
-    transformOrigin: 'left center',
-    backgroundImage: `url("data:image/svg+xml;utf8,${getStrikethroughSVG(
-      theme.background.text
-    )}")`,
-  },
   strikethroughDone: {
-    transform: 'scale(1)',
-  },
-  checkboxPlaceholder: {
-    // width: styleguide.gridbase * 3,
-    // height: styleguide.gridbase * 3,
+    textDecoration: 'line-through' /* This creates the strikethrough effect */,
   },
   status: {
     marginRight: styleguide.gridbase,
@@ -148,8 +129,11 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.column, layout.centerCenter],
   },
   titleText: {
-    fontSize: 16,
+    fontSize: 13,
+    fontWeight: '400',
     lineHeight: `${TITLE_LINE_HEIGHT}px`,
+    display: 'inline' /* Make sure it doesn't take up the full width */,
+    ...styleguide.transition.short,
   },
   preview: {
     marginTop: styleguide.gridbase * 1.25,
@@ -172,14 +156,28 @@ const useStyles = makeStyles((theme) => ({
   },
   taskCheckBoxContainer: {
     display: 'flex',
+    alignItems: 'flex-start',
   },
-
   headerContainer: {
     display: 'flex',
     justifyContent: 'space-between',
   },
   cardMiddle: {
     padding: [styleguide.gridbase, 0, 0, 0],
+    display: 'flex',
+    alignItems: 'center',
+  },
+  breadCrumbsTitle: {
+    fontSize: '10px',
+    color: '#262626',
+    position: 'relative',
+    top: '1px',
+  },
+  breadCrumbsSlash: {
+    position: 'relative',
+    top: '2px',
+    marginRight: styleguide.gridbase / 2,
+    marginLeft: styleguide.gridbase / 2,
   },
 }));
 
@@ -202,22 +200,45 @@ const TitleNode = React.forwardRef(
 function Title({
   card,
   source,
+  isDone,
 }: {
   card: VertexManager<Note>;
   source: UISource;
+  isDone: boolean;
 }) {
   const styles = useStyles();
   const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
 
   return (
     <div>
-      <Text className={cn(styles.titleText)}>{titlePlaintext}</Text>
+      {titlePlaintext.split(' ').map((word, index) => (
+        <Text
+          className={cn(
+            styles.titleText,
+            styles.strikethrough,
+            isDone && styles.strikethroughDone
+          )}
+        >
+          {word}{' '}
+        </Text>
+      ))}
     </div>
   );
 }
 
+// function Title({ source, card, isDone }) {
+//   const styles = useStyles();
+//   const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
+//   const words = titlePlaintext.split(' ').map((word, index) => (
+//     <span key={index} style={isDone ? { textDecoration: 'line-through' } : {}}>
+//       {word}{' '}
+//     </span>
+//   ));
+
+//   return <div className={styles.titleTextContainer}>{words}</div>;
+// }
 export interface CardHeaderPartProps extends CardItemProps {
-  isExpanded: boolean;
+  isExpanded?: boolean;
   source: UISource;
   hideMenu?: boolean;
 }
@@ -231,7 +252,9 @@ export function CardHeader({
   size,
 }: CardHeaderPartProps) {
   const styles = useStyles();
-  const { workspace } = usePartialVertex(card, ['workspace']);
+  const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
+  // const { workspace } = usePartialVertex(card, ['workspace']);
+  const isTask = pCard.type === NoteType.Task;
 
   return (
     <div className={styles.cardMiddle}>
@@ -241,7 +264,15 @@ export function CardHeader({
           source={source}
           isExpanded={isExpanded}
         /> */}
-      <WorkspaceIndicator workspace={workspace} />
+      <WorkspaceIndicator workspace={pCard.workspace.manager} />
+      {isTask && (
+        <>
+          <span className={cn(styles.breadCrumbsSlash)}>/</span>
+          <Text className={cn(styles.breadCrumbsTitle)}>
+            {pCard.titlePlaintext}
+          </Text>
+        </>
+      )}
       <div className={cn(layout.flexSpacer)} />
       {/* <AssigneesView
           cardManager={card}
@@ -334,6 +365,7 @@ export const CardItem = React.forwardRef(function CardItemView(
     'tags',
     'type',
     'isChecked',
+    'titlePlaintext',
   ]);
   const { childCards } = pCard;
   const [expanded, setExpanded] = useState(false);
@@ -379,19 +411,23 @@ export const CardItem = React.forwardRef(function CardItemView(
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
-        {/* <div className={cn(styles.titleRow)}> */}
         <div className={cn(styles.headerContainer)}>
+          {/* <PinCell isChild={isChild} note={note} onMouseEnter={onMouseEnter} /> */}
+
           <div className={cn(styles.taskCheckBoxContainer)}>
-            {/* <StatusCheckbox source={source} card={card} /> */}
             <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
             <div className={cn(styles.titleTextContainer)}>
-              <Title source={source} card={card} />
-              <div
-                className={cn(
-                  styles.strikethrough,
-                  isDone && styles.strikethroughDone
-                )}
-              />
+              {pCard.titlePlaintext.split(' ').map((word, index) => (
+                <Text
+                  key={index}
+                  className={cn(
+                    styles.titleText,
+                    isDone && styles.strikethroughDone
+                  )}
+                >
+                  {word}{' '}
+                </Text>
+              ))}
             </div>
           </div>
           <IconPin on={true} />
@@ -403,7 +439,12 @@ export const CardItem = React.forwardRef(function CardItemView(
           source={source}
         />
         <div className={cn(styles.preview)} />
-        <CardFooter size={size} card={card} source={source} />
+        <CardFooter
+          isExpanded={isInHover}
+          size={size}
+          card={card}
+          source={source}
+        />
       </div>
       {showChildCards && !!childCards.length && (
         <div
@@ -458,3 +499,38 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
   // }, [index, isVisible]);
   return <CardItem size={size} card={card} className={cn(styles.child)} />;
 }
+
+const PinCell = ({
+  note,
+  onMouseEnter,
+  isChild,
+}: {
+  note: VertexManager<Note>;
+  onMouseEnter: boolean;
+  isChild?: boolean;
+}) => {
+  const styles = useStyles();
+  const { isPinned } = usePartialVertex(note, ['isPinned']);
+
+  const togglePin = () => {
+    const proxy = note.getVertexProxy();
+    proxy.isPinned = !proxy.isPinned;
+  };
+
+  return (
+    <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
+      {!isChild && (
+        <Button onClick={togglePin}>
+          {/* {isPinned ? (
+            <IconPinOn />
+          ) : (
+            <IconPinOff
+              className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
+            />
+          )} */}
+          <IconPin on={isPinned} visible={onMouseEnter} />
+        </Button>
+      )}
+    </Cell>
+  );
+};

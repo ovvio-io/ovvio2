@@ -83,7 +83,7 @@ const useStrings = createUseStrings(localization);
 
 export function CardsDisplay() {
   const styles = useStyles();
-  const view = usePartialView('viewType', 'selectedTabId');
+  const view = usePartialView('viewType');
 
   let content = null;
   if (view.viewType === 'list') {
