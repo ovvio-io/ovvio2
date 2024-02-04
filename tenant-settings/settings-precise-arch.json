@@ -1,8 +1,3 @@
 {
-  "operatorEmails": [
-    "nadav@ovvio.io",
-    "yarden@ovvio.io",
-    "ofri@ovvio.io",
-    "carmels@precise.co.il"
-  ]
+  "operatorEmails": ["nadav@ovvio.io", "yarden@ovvio.io", "ofri@ovvio.io"]
 }
