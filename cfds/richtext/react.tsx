@@ -442,56 +442,17 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
     ]);
   }
 
-  const children = [];
-  let prevPtr: PointerValue | undefined;
-  let xOffset = 0;
-  for (const txtOrPtr of splitTextNodeOnPointers(
-    node,
-    true,
-    ctx.sortedPointers,
-    'before',
-  )) {
-    const style: React.CSSProperties = {
-      position: 'relative',
-    };
-    if (isTextNode(txtOrPtr)) {
-      const id = `${ctx.doc.nodeKeys.keyFor(node).id}:${children.length}`;
-      style[dir === 'rtl' ? 'right' : 'left'] = `-${xOffset}px`;
-      children.push(
-        <span
-          className={cn(...classNames, styles.editorSpan)}
-          key={id}
-          id={id}
-          data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
-          style={style}
-        >
-          {txtOrPtr.text}
-        </span>,
-      );
-    } else {
-      if (prevPtr?.key === txtOrPtr.key || txtOrPtr.key !== ctx.selectionId) {
-        prevPtr = undefined;
-        continue;
-      }
-      style[dir === 'rtl' ? 'right' : 'left'] = `-1px`;
-      style.opacity = 1;
-      const id = `${ctx.doc.nodeKeys.keyFor(node).id}:ptr:${txtOrPtr.key}`;
-      children.push(
-        <span
-          className={cn(styles.cursor, styles.editorSpan) + ' OvvioCaret'}
-          style={style}
-          key={id}
-          id={id}
-          data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
-        ></span>,
-      );
-      xOffset += 2;
-      prevPtr = txtOrPtr;
-      emittedCaretIds.push(id);
-    }
-  }
-
-  return children;
+  const id = ctx.doc.nodeKeys.keyFor(node).id;
+  return (
+    <span
+      className={cn(...classNames, styles.editorSpan)}
+      key={id}
+      id={id}
+      data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
+    >
+      {node.text}
+    </span>
+  );
 }
 
 type ParagraphElementNode = React.PropsWithChildren<{
