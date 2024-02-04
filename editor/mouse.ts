@@ -14,6 +14,7 @@ import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { CONTENTEDITABLE_PADDING } from './editor.tsx';
 import { findFirstTextNode } from '../cfds/richtext/tree.ts';
 import { findLastTextNode } from '../cfds/richtext/tree.ts';
+import { breakText } from './text.ts';
 
 function onMouseUpInSpan(
   target: HTMLSpanElement,
@@ -26,14 +27,20 @@ function onMouseUpInSpan(
     return undefined;
   }
   const node = body.nodeKeys.nodeFromKey(nodeKey);
-  debugger;
   if (isTextNode(node)) {
     const text = node.text;
+    const breaks = breakText(
+      text,
+      getComputedStyle(target),
+      target.getBoundingClientRect().width,
+    );
+    debugger;
     let contentWidth = 0;
     for (const node of target.parentElement!.childNodes) {
       contentWidth += (node as HTMLSpanElement).getBoundingClientRect().width;
     }
     const elementBoundingRect = target.parentElement!.getBoundingClientRect();
+    debugger;
     const offset = Math.max(
       0,
       Math.min(
@@ -94,6 +101,7 @@ function onMouseUpOutsideSpan(
       continue;
     }
     if (clientY >= r.y && clientY <= r.bottom) {
+      debugger;
       let start =
         e.clientX < contentEditableBounds.x + contentEditableBounds.width / 2;
       if (writingDirectionAtNode(body, rtNode as MarkupElement) === 'rtl') {

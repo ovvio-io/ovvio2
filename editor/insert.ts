@@ -205,73 +205,85 @@ export function handleNewline(
   return docFromRT(finalRt);
 }
 
+const NEWLINE_REGEX = /[\n\r]+/g;
+
 export function handleInsertTextInputEvent(
   document: Document,
   event: InputEvent | KeyboardEvent | ClipboardEvent,
   selectionId: string,
 ): Document {
-  let insertData = '';
+  let rawInsertData = '';
   if (event instanceof ClipboardEvent) {
-    insertData = event.clipboardData?.getData('text/plain') || '';
+    rawInsertData = event.clipboardData?.getData('text/plain') || '';
   } else if (event instanceof KeyboardEvent) {
-    insertData = event.key;
+    rawInsertData = event.key;
   } else {
-    insertData = event.data || '';
+    rawInsertData = event.data || '';
   }
-  if (!insertData.length) {
+  if (!rawInsertData.length) {
     return document;
   }
-  if (insertData === '\n') {
+  if (rawInsertData === '\n') {
     return handleNewline(document, selectionId);
   }
+  const paragraphs = rawInsertData.split(NEWLINE_REGEX);
+  let result: Document = document;
   debugger;
-  let result = coreValueClone(document);
-  let selection = result.ranges && result.ranges[selectionId];
-  if (!selection) {
-    const lastNode = findEndOfDocument(result);
-    let textNode: TextNode;
-    if (isElementNode(lastNode)) {
-      textNode = { text: '' };
-      lastNode.children.push(textNode);
+  for (let i = 0; i < paragraphs.length; ++i) {
+    if (i > 0) {
+      result = handleNewline(result, selectionId);
+    }
+    const insertData = paragraphs[i];
+    result = coreValueClone(result);
+    let selection = result.ranges && result.ranges[selectionId];
+    if (!selection) {
+      const lastNode = findEndOfDocument(result);
+      let textNode: TextNode;
+      if (isElementNode(lastNode)) {
+        textNode = { text: '' };
+        lastNode.children.push(textNode);
+      } else {
+        textNode = lastNode;
+      }
+      textNode.text += insertData;
+      if (!result.ranges) {
+        result.ranges = {};
+      }
+      result.ranges[selectionId] = {
+        anchor: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        focus: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        dir: PointerDirection.None,
+        expiration: expirationForSelection(),
+      };
     } else {
-      textNode = lastNode;
+      const textNode = selection.focus.node;
+      const text = textNode.text;
+      textNode.text =
+        text.substring(0, selection.focus.offset + 1) +
+        insertData +
+        text.substring(selection.focus.offset + 1);
+      if (
+        selection.anchor.node !== selection.focus.node ||
+        selection.anchor.offset !== selection.focus.offset
+      ) {
+        result = deleteCurrentSelection(result, selectionId);
+        selection = (result.ranges && result.ranges[selectionId])!;
+      }
+      selection.anchor.offset += insertData.length;
+      selection.focus.offset += insertData.length;
     }
-    textNode.text += insertData;
-    if (!result.ranges) {
-      result.ranges = {};
-    }
-    result.ranges[selectionId] = {
-      anchor: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      focus: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      dir: PointerDirection.None,
-      expiration: expirationForSelection(),
-    };
-  } else {
-    const textNode = selection.focus.node;
-    const text = textNode.text;
-    textNode.text =
-      text.substring(0, selection.focus.offset + 1) +
-      insertData +
-      text.substring(selection.focus.offset + 1);
-    if (
-      selection.anchor.node !== selection.focus.node ||
-      selection.anchor.offset !== selection.focus.offset
-    ) {
-      result = deleteCurrentSelection(result, selectionId);
-      selection = (result.ranges && result.ranges[selectionId])!;
-    }
-    selection.anchor.offset += insertData.length;
-    selection.focus.offset += insertData.length;
+    // Run any shortcuts
+    result = docFromRT(
+      reconstructRichText(
+        applyShortcuts(flattenRichText(docToRT(result), true)),
+      ),
+    );
   }
-  // Run any shortcuts
-  result = docFromRT(
-    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true))),
-  );
   return result;
 }
