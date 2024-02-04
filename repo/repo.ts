@@ -31,13 +31,13 @@ import {
   SimpleAdjacencyList,
 } from '../cfds/client/graph/adj-list.ts';
 import { RendezvousHash } from '../base/rendezvous-hash.ts';
-import { kSecondMs } from '../base/date.ts';
+import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
-const MERGE_GRACE_PERIOD_MS = 10 * kSecondMs;
+const MERGE_GRACE_PERIOD_MS = 5 * kMinuteMs;
 
 type RepositoryEvent = 'NewCommit';
 
