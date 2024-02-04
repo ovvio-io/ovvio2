@@ -14,7 +14,6 @@ import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { CONTENTEDITABLE_PADDING } from './editor.tsx';
 import { findFirstTextNode } from '../cfds/richtext/tree.ts';
 import { findLastTextNode } from '../cfds/richtext/tree.ts';
-import { breakText } from './text.ts';
 
 function onMouseUpInSpan(
   target: HTMLSpanElement,
@@ -29,12 +28,6 @@ function onMouseUpInSpan(
   const node = body.nodeKeys.nodeFromKey(nodeKey);
   if (isTextNode(node)) {
     const text = node.text;
-    const breaks = breakText(
-      text,
-      getComputedStyle(target),
-      target.getBoundingClientRect().width,
-    );
-    debugger;
     let contentWidth = 0;
     for (const node of target.parentElement!.childNodes) {
       contentWidth += (node as HTMLSpanElement).getBoundingClientRect().width;

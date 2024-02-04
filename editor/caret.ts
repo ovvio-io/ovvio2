@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import {
   docClone,
   Document,
@@ -15,8 +16,8 @@ import {
 } from '../cfds/richtext/tree.ts';
 import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
-import { flattenRichText } from '../cfds/richtext/flat-rep.ts';
 import { WritingDirection } from '../base/string.ts';
+import { RenderContext } from '../cfds/richtext/react.tsx';
 
 function findNear<T extends MarkupNode>(
   rt: RichText,
@@ -133,5 +134,46 @@ export function onKeyboardArrow(
       selection.focus.offset = len;
     }
     return doc;
+  }
+}
+
+export function CaretRenderer(
+  contentEditable: HTMLDivElement,
+  ctx: RenderContext,
+) {
+  // const emittedCaretIds: string[] = [];
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     for (const id of emittedCaretIds) {
+  //       const element = document.getElementById(id);
+  //       if (element) {
+  //         const opacity = element.style?.opacity;
+  //         element.style.opacity = opacity === '0' ? '1' : '0';
+  //       }
+  //     }
+  //   }, 500);
+  //   return () => {
+  //     clearInterval(intervalId);
+  //     for (const id of emittedCaretIds) {
+  //       const element = document.getElementById(id);
+  //       if (element) {
+  //         element.style.opacity = '1';
+  //       }
+  //     }
+  //   };
+  // }, [emittedCaretIds]);
+
+  if (!ctx.doc.ranges) {
+    return;
+  }
+
+  const selectionId = ctx.selectionId;
+  const selection = ctx.doc.ranges[selectionId];
+  if (!selection) {
+    return;
+  }
+
+  if (selection.anchor.node !== selection.focus.node) {
+    return; // TODO: Range selection
   }
 }

@@ -379,27 +379,7 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
   const classNames: (string | undefined | boolean | null)[] = [
     node.text.length === 0 && styles.emptySpan,
   ];
-  const emittedCaretIds: string[] = [];
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      for (const id of emittedCaretIds) {
-        const element = document.getElementById(id);
-        if (element) {
-          const opacity = element.style?.opacity;
-          element.style.opacity = opacity === '0' ? '1' : '0';
-        }
-      }
-    }, 500);
-    return () => {
-      clearInterval(intervalId);
-      for (const id of emittedCaretIds) {
-        const element = document.getElementById(id);
-        if (element) {
-          element.style.opacity = '1';
-        }
-      }
-    };
-  }, [emittedCaretIds]);
+
   switch (path[path.length - 1]!.tagName) {
     case 'h1':
       classNames.push(styles.h1);
@@ -442,12 +422,11 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
     ]);
   }
 
-  const id = ctx.doc.nodeKeys.keyFor(node).id;
   return (
     <span
       className={cn(...classNames, styles.editorSpan)}
-      key={id}
-      id={id}
+      key={htmlId}
+      id={htmlId}
       data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
     >
       {node.text}

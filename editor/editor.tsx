@@ -325,12 +325,6 @@ export const RichTextEditor = forwardRef<
     return () => clearTimeout(timeoutId);
   }, [editorDivRef.current]);
 
-  // useEffect(() => {
-  //   document.addEventListener('selectionchange', onSelectionChanged);
-  //   return () =>
-  //     document.removeEventListener('selectionchange', onSelectionChanged);
-  // }, [onSelectionChanged]);
-
   const onBlur = useCallback(() => {
     const body = docClone(partialNote.body);
     if (body.ranges) {

@@ -1,6 +1,100 @@
-import { searchAll } from '../base/string.ts';
+import {
+  WritingDirection,
+  resolveWritingDirection,
+  searchAll,
+} from '../base/string.ts';
+import { Rect2D } from '../base/math.ts';
+import { assert } from '../base/error.ts';
 
-const OFFSCREEN_CANVAS = new OffscreenCanvas(1000, 1000);
+const OFFSCREEN_CANVAS = new OffscreenCanvas(100, 100);
+
+export class MeasuredText {
+  readonly characterWidths: readonly number[];
+  readonly wordEdges: readonly number[];
+  readonly lines: readonly (readonly [string, Rect2D])[];
+  readonly characterRects: Rect2D[];
+  readonly characterMetrics: TextMetrics[];
+
+  constructor(
+    readonly text: string,
+    readonly style: CSSStyleDeclaration,
+    readonly width: number,
+    readonly dir: WritingDirection = 'auto',
+  ) {
+    const wordEdges = searchAll(text, /\b/gm);
+    this.wordEdges = wordEdges;
+    const [charWidths, charMetrics] = measureCharacters(text, style);
+    this.characterWidths = charWidths;
+    this.characterMetrics = charMetrics;
+    const lines: [string, Rect2D][] = [];
+    const charRects: Rect2D[] = [];
+    if (dir === 'auto') {
+      dir = resolveWritingDirection(text);
+    }
+    const lineHeight = CSSNumericValue.parse(style.lineHeight).to('px').value;
+    let lineWidth = 0;
+    let prevLineBreak = 0;
+    let y = 0;
+    for (let i = 0; i < text.length; ++i) {
+      const w = charWidths[i];
+      if (lineWidth + w >= width) {
+        const prevWordBoundary = findValueBefore(i, wordEdges);
+        const line = text.substring(prevLineBreak, prevWordBoundary);
+        let actualWidth = 0;
+        for (let j = prevLineBreak; j < prevWordBoundary; ++j) {
+          const w2 = charWidths[j];
+          charRects.push({
+            x: actualWidth,
+            y,
+            width: w2,
+            height: lineHeight, // TODO: Actual letter height
+          });
+          actualWidth += w2;
+        }
+        prevLineBreak = prevWordBoundary;
+        lineWidth = 0;
+        lines.push([
+          line,
+          {
+            x: dir === 'rtl' ? width - actualWidth : 0,
+            y,
+            width: actualWidth,
+            height: lineHeight,
+          },
+        ]);
+        y += lineHeight;
+      } else {
+        lineWidth += w;
+      }
+    }
+    if (prevLineBreak < text.length) {
+      const line = text.substring(prevLineBreak, text.length);
+      let actualWidth = 0;
+      for (let j = prevLineBreak; j < text.length; ++j) {
+        const w2 = charWidths[j];
+        charRects.push({
+          x: actualWidth,
+          y,
+          width: w2,
+          height: lineHeight, // TODO: Actual letter height
+        });
+        actualWidth += w2;
+      }
+      lines.push([
+        line,
+        {
+          x: dir === 'rtl' ? width - lineWidth : 0,
+          y,
+          width: lineWidth,
+          height: lineHeight,
+        },
+      ]);
+    }
+    assert(charRects.length === text.length);
+    this.lines = lines;
+    this.characterRects = charRects;
+  }
+}
 
 /**
  * Given text and CSS style, this function measures the width of each character
@@ -11,12 +105,12 @@ const OFFSCREEN_CANVAS = new OffscreenCanvas(1000, 1000);
  *
  * @returns An array of character widths.
  */
-export function measureCharacterWidths(
+export function measureCharacters(
   text: string,
   style: CSSStyleDeclaration,
-): number[] {
+): [number[], TextMetrics[]] {
   if (!text.length) {
-    return [];
+    return [[], []];
   }
   const ctx = OFFSCREEN_CANVAS.getContext('2d')!;
   ctx.save();
@@ -24,16 +118,18 @@ export function measureCharacterWidths(
   ctx.fontKerning = style.fontKerning as CanvasFontKerning;
   // ctx.fontStretch = style.fontStretch;
   // ctx.fontVariantCaps = style.fontVariantCaps;
-  const result: number[] = [];
+  const widths: number[] = [];
+  const metrics: TextMetrics[] = [];
   let prevWidth = 0;
   for (let i = 0; i < text.length; ++i) {
-    const metrics = ctx.measureText(text.substring(0, i + 1));
-    const width = metrics.width;
-    result.push(width - prevWidth);
+    const m = ctx.measureText(text.substring(0, i + 1));
+    const width = m.width;
+    widths.push(width - prevWidth);
+    metrics.push(m);
     prevWidth = width;
   }
   ctx.restore();
-  return result;
+  return [widths, metrics];
 }
 
 function findValueBefore(desired: number, values: number[]): number {
@@ -43,48 +139,4 @@ function findValueBefore(desired: number, values: number[]): number {
     }
   }
   return values[values.length - 1];
-}
-
-/**
- * Given text, style and width, this function breaks the text into multiple
- * lines that fit in the desired width. It takes word boundaries into account
- * and should have the same ICU level as the browser.
- *
- * @param text The text to break.
- * @param style The CSS style to apply while measuring the text.
- * @param width The desired width to fit the text in.
- *
- * @returns An array of text lines and their matching widths.
- */
-export function breakText(
-  text: string,
-  style: CSSStyleDeclaration,
-  width: number,
-): [string, number][] {
-  const wordBreaks = searchAll(text, /\b/gm);
-  const charWidths = measureCharacterWidths(text, style);
-  const result: [string, number][] = [];
-  let lineWidth = 0;
-  let prevLineBreak = 0;
-  for (let i = 0; i < text.length; ++i) {
-    const w = charWidths[i];
-    if (lineWidth + w >= width) {
-      const prevWordBoundary = findValueBefore(i, wordBreaks);
-      const line = text.substring(prevLineBreak, prevWordBoundary);
-      let actualWidth = 0;
-      for (let j = prevLineBreak; j < prevWordBoundary; ++j) {
-        actualWidth += charWidths[j];
-      }
-      prevLineBreak = prevWordBoundary;
-      lineWidth = 0;
-      result.push([line, actualWidth]);
-    } else {
-      lineWidth += w;
-    }
-  }
-  if (prevLineBreak < text.length) {
-    const line = text.substring(prevLineBreak, text.length);
-    result.push([line, lineWidth]);
-  }
-  return result;
 }
