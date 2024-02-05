@@ -21,6 +21,7 @@ import { RenderContext, domIdFromNodeKey } from '../cfds/richtext/react.tsx';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { assert } from '../base/error.ts';
+import { MeasuredText } from './text.ts';
 
 function findNear<T extends MarkupNode>(
   rt: RichText,
@@ -170,7 +171,27 @@ function renderCaret(ctx: RenderContext) {
   }
 
   caretDiv.hidden = false;
-  // const measuredText = measure
+  const text = selection.anchor.node.text;
+  const measuredText = new MeasuredText(
+    text,
+    getComputedStyle(span),
+    span.clientWidth,
+  );
+  const idx = selection.anchor.offset;
+  const spanBounds = span.getBoundingClientRect();
+  if (idx === 0) {
+    caretDiv.style.left = `${spanBounds.x}px`;
+    caretDiv.style.top = `${spanBounds.y}px`;
+  } else {
+    const bounds = measuredText.characterRects[Math.min(idx, text.length - 1)];
+    debugger;
+    if (idx === text.length) {
+      caretDiv.style.left = `${spanBounds.x + bounds.x + bounds.width}px`;
+    } else {
+      caretDiv.style.left = `${spanBounds.x + bounds.x}px`;
+    }
+    caretDiv.style.top = `${spanBounds.y + bounds.y}px`;
+  }
 }
 
 function domIdForCaret(ctx: RenderContext) {
