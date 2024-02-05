@@ -76,8 +76,12 @@ export function KanbanView({ className }: { className?: string }) {
 
   const groups = useMemo(() => {
     const s = new Set<CoreValue>();
-    SetUtils.update(s, pinnedQuery.groups());
-    SetUtils.update(s, unpinnedQuery.groups());
+    if (pinnedQuery) {
+      SetUtils.update(s, pinnedQuery.groups());
+    }
+    if (unpinnedQuery) {
+      SetUtils.update(s, unpinnedQuery.groups());
+    }
     return Array.from(s).sort(coreValueCompare);
   }, [pinnedQuery, unpinnedQuery]);
 
@@ -99,7 +103,6 @@ export function KanbanView({ className }: { className?: string }) {
       maxColSize = Math.max(maxColSize, unpinnedQuery.countForGroup(gid));
     }
   }
-
   let showWorkspaceOnCard: boolean = true;
   if (groupBy === 'workspace') {
     showWorkspaceOnCard = false;
