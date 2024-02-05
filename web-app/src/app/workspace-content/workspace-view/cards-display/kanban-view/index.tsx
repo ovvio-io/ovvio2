@@ -103,11 +103,11 @@ export function KanbanView({ className }: { className?: string }) {
       maxColSize = Math.max(maxColSize, unpinnedQuery.countForGroup(gid));
     }
   }
+
   let showWorkspaceOnCard: boolean = true;
   if (groupBy === 'workspace') {
     showWorkspaceOnCard = false;
   }
-
   return (
     <Scroller>
       {(ref) => (

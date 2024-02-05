@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -35,27 +35,18 @@ import { WorkspaceIndicator } from '../../../../../../../components/workspace-in
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { CardFooter } from '../card-item/card-footer.tsx';
 import { PinCell } from '../list-view/table/item.tsx';
+import { CollapseExpandeToggle } from '../display-bar/index.tsx';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
+import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import Card from '../../../../../../../styles/components/card.tsx';
+import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
 export enum CardSize {
   Regular = 'regular',
   Small = 'small',
-}
-
-function getStrikethroughSVG(fill: string) {
-  return encodeURIComponent(
-    `
-  <svg xmlns='http://www.w3.org/2000/svg' 
-    width='${TITLE_LINE_HEIGHT}' 
-    height='${TITLE_LINE_HEIGHT}'
-    viewBox='0 0 ${TITLE_LINE_HEIGHT} ${TITLE_LINE_HEIGHT}'>
-    <line x1='0' y1='${TITLE_LINE_HEIGHT / 2}' x2='${TITLE_LINE_HEIGHT}' y2='${
-      TITLE_LINE_HEIGHT / 2
-    }' stroke='${fill}'/>
-  </svg>
-  `.replace(/\n/g, '')
-  );
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -66,7 +57,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'absolute',
     cursor: 'pointer',
     top: styleguide.gridbase * 8,
-    right: -styleguide.gridbase * 2,
+    right: -styleguide.gridbase,
     transform: `translateX(calc(-100% - ${styleguide.gridbase * 0.5}px))`,
   },
   expanderIcon: {
@@ -78,7 +69,7 @@ const useStyles = makeStyles((theme) => ({
     transform: 'rotate(180deg)',
   },
   card: {
-    backgroundColor: theme.background[0],
+    backgroundColor: '#FFF',
     cursor: 'pointer',
     padding: styleguide.gridbase,
     boxSizing: 'border-box',
@@ -220,11 +211,7 @@ function Title({
     <div>
       {titlePlaintext.split(' ').map((word, index) => (
         <Text
-          className={cn(
-            styles.titleText,
-            styles.strikethrough,
-            isDone && styles.strikethroughDone
-          )}
+          className={cn(styles.titleText, isDone && styles.strikethroughDone)}
         >
           {word}{' '}
         </Text>
@@ -359,6 +346,32 @@ export function StatusCheckbox({
     </div>
   );
 }
+const CollapseExpanderToggle = ({
+  card,
+  isExpanded,
+  toggleExpanded,
+}: {
+  card: VertexManager<Note>;
+  isExpanded: boolean;
+  toggleExpanded: () => void;
+}) => {
+  return (
+    <Button>
+      <IconCollapseExpand on={isExpanded} />
+    </Button>
+  );
+};
+const calculateIsExpanded = (
+  card: VertexManager<Note>,
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
+) => {
+  const hasOverride = view.notesExpandOverride.has(card.key);
+
+  return (
+    (view.notesExpandBase && !hasOverride) ||
+    (!view.notesExpandBase && hasOverride)
+  );
+};
 
 export interface KanbanCardProps {
   card: VertexManager<Note>;
@@ -370,14 +383,7 @@ export interface KanbanCardProps {
 }
 
 export const KanbanCard = React.forwardRef(function CardItemView(
-  {
-    card,
-    className,
-    showChildCards = true,
-    size,
-    showWorkspaceOnCard,
-    ...rest
-  }: KanbanCardProps,
+  { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
@@ -390,8 +396,19 @@ export const KanbanCard = React.forwardRef(function CardItemView(
     'isChecked',
     'titlePlaintext',
   ]);
+
   const { childCards } = pCard;
-  const [expanded, setExpanded] = useState(false);
+  const view = usePartialView('notesExpandOverride', 'notesExpandBase');
+
+  const [expanded, setExpanded] = useState(() =>
+    calculateIsExpanded(card, view)
+  );
+
+  useEffect(() => {
+    // Update expanded state when card or view changes
+    setExpanded(calculateIsExpanded(card, view));
+  }, [card, view]);
+
   const style = useAnimateHeight(childListRef, expanded);
   const [isInHover, setIsInHover] = useState(false);
   const isTask = pCard.type === NoteType.Task;
@@ -399,10 +416,36 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const logger = useLogger();
   const [isMouseOver, setIsMouseOver] = useState(false);
 
+  // const onClickImpl: MouseEventHandler = (e) => {   //Might use later.
+  //   e.stopPropagation();
+  //   onClick(note);
+  // };
+  // const [expanded, setExpanded] = useState(false);
+
+  // useEffect(() => {
+  //   const hasOverride = view.notesExpandOverride.has(card.key);
+  //   const isExpanded =
+  //     (view.notesExpandBase && !hasOverride) ||
+  //     (!view.notesExpandBase && hasOverride);
+  //   // Set the `expanded` state based on the calculated `isExpanded`
+  //   setExpanded(isExpanded);
+  // }, [card, view]);
+
+  // const hasOverride = view.notesExpandOverride.has(card.key);
+  // const isExpanded =
+  //   (view.notesExpandBase && !hasOverride) ||
+  //   (!view.notesExpandBase && hasOverride);
+
   const onMouseOver = useCallback(() => setIsMouseOver(true), []);
   const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
+  const hasOverride = view.notesExpandOverride.has(card.key);
 
   const source: UISource = 'board';
+
+  const handleExpandCard = () => {
+    view.setNoteExpandOverride(card.key, !hasOverride);
+    setExpanded((x) => !x);
+  };
 
   const onClick = useCallback(() => {
     documentRouter.goTo(card);
@@ -468,38 +511,34 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           source={source}
         />
       </div>
-      {showChildCards && !!childCards.length && (
-        <div
-          className={cn(styles.expander)}
-          onClick={() => setExpanded((x) => !x)}
-        >
-          <IconExpander
-            className={cn(
-              styles.expanderIcon,
-              expanded && styles.expanderIconExpanded
-            )}
-            isMouseOver={isMouseOver}
+      {!!childCards.length && (
+        <div className={cn(styles.expander)} onClick={() => handleExpandCard()}>
+          <CollapseExpanderToggle
+            card={card}
+            isExpanded={expanded}
+            toggleExpanded={() =>
+              view.setNoteExpandOverride(card.key, !hasOverride)
+            }
           />
         </div>
       )}
-      {showChildCards && (
-        <div
-          className={cn(styles.childList, !expanded && styles.hide)}
-          ref={childListRef}
-          style={style}
-        >
-          {expanded &&
-            childCards.map((child, index) => (
-              <ChildCard
-                size={size}
-                key={child.key}
-                card={child.manager as VertexManager<Note>}
-                index={index}
-                isVisible={expanded}
-              />
-            ))}
-        </div>
-      )}
+
+      <div
+        className={cn(styles.childList, !expanded && styles.hide)}
+        ref={childListRef}
+        style={style}
+      >
+        {expanded &&
+          childCards.map((child, index) => (
+            <ChildCard
+              size={size}
+              key={child.key}
+              card={child.manager as VertexManager<Note>}
+              index={index}
+              isVisible={expanded}
+            />
+          ))}
+      </div>
     </div>
   );
 });

@@ -90,11 +90,7 @@ export interface KanbanColumnProps {
   onCreateCard?: () => void;
 }
 
-function ColumnTitle({
-  header,
-  isColumnHovered,
-  onCreateCard,
-}: KanbanColumnProps) {
+function ColumnTitle({ header, onCreateCard }: KanbanColumnProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
@@ -129,6 +125,7 @@ function ColumnTitle({
       observer.disconnect();
     };
   }, [sentinel, scrollParent]);
+
   return (
     <Layer>
       {(style) => (
@@ -139,7 +136,7 @@ function ColumnTitle({
           <div className={cn(styles.columnHeader)}>
             <H4 className={cn(styles.titleText)}>{header}</H4>
             <div className={cn(layout.flexSpacer)} />
-            <Button onClick={onCreateCard}>
+            {/* <Button onClick={onCreateCard}>
               {isColumnHovered && (
                 <div className={cn(styles.newTaskText)}>New Task</div>
               )}
@@ -147,7 +144,7 @@ function ColumnTitle({
                 key="IconNewTaskBoard"
                 src="/icons/board/New-Task-plus.svg"
               />
-            </Button>
+            </Button> */}
           </div>
           <div
             className={cn(styles.stickyNotifier)}

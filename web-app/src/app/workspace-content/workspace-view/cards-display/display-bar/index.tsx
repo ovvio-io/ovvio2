@@ -339,7 +339,7 @@ function ShowPinnedButton() {
   );
 }
 
-function CollapseExpandeToggle() {
+export function CollapseExpandeToggle() {
   const view = usePartialView('notesExpandBase');
   const styles = useStyles();
 
