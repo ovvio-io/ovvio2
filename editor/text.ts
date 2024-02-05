@@ -38,7 +38,7 @@ export class MeasuredText {
     for (let i = 0; i < text.length; ++i) {
       const w = charWidths[i];
       if (lineWidth + w >= width) {
-        const prevWordBoundary = findValueBefore(i, wordEdges);
+        const prevWordBoundary = findValueBefore(i, wordEdges) || i + 1;
         const line = text.substring(prevLineBreak, prevWordBoundary);
         let actualWidth = 0;
         for (let j = prevLineBreak; j < prevWordBoundary; ++j) {

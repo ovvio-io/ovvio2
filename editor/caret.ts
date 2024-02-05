@@ -184,11 +184,10 @@ function renderCaret(ctx: RenderContext) {
     caretDiv.style.top = `${spanBounds.y}px`;
   } else {
     const bounds = measuredText.characterRects[Math.min(idx, text.length - 1)];
-    debugger;
     if (idx === text.length) {
-      caretDiv.style.left = `${spanBounds.x + bounds.x + bounds.width}px`;
+      caretDiv.style.left = `${spanBounds.x + bounds.x + bounds.width - 1}px`;
     } else {
-      caretDiv.style.left = `${spanBounds.x + bounds.x}px`;
+      caretDiv.style.left = `${spanBounds.x + bounds.x - 1}px`;
     }
     caretDiv.style.top = `${spanBounds.y + bounds.y}px`;
   }
@@ -243,5 +242,5 @@ export function useCaret(ctx: RenderContext) {
         element.style.opacity = '1';
       }
     };
-  }, [ctx.editorId]);
+  });
 }
