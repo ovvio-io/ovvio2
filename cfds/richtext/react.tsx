@@ -35,13 +35,8 @@ import { AssigneeChip } from '../../components/assignee-chip.tsx';
 import Menu from '../../styles/components/menu.tsx';
 import { MemberPicker } from '../../components/member-picker.tsx';
 import { TagChip } from '../../components/tag-chip.tsx';
-import {
-  PointerValue,
-  splitTextNodeOnPointers,
-  stripDuplicatePointers,
-} from './flat-rep.ts';
+import { stripDuplicatePointers } from './flat-rep.ts';
 import { docToRT } from './doc-state.ts';
-import { SimpleTimer } from '../../base/timer.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {

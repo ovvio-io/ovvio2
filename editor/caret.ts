@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import {
   docClone,
   Document,
@@ -17,7 +17,10 @@ import {
 import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { WritingDirection } from '../base/string.ts';
-import { RenderContext } from '../cfds/richtext/react.tsx';
+import { RenderContext, domIdFromNodeKey } from '../cfds/richtext/react.tsx';
+import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../styles/styleguide.ts';
+import { assert } from '../base/error.ts';
 
 function findNear<T extends MarkupNode>(
   rt: RichText,
@@ -137,43 +140,87 @@ export function onKeyboardArrow(
   }
 }
 
-export function CaretRenderer(
-  contentEditable: HTMLDivElement,
-  ctx: RenderContext,
-) {
-  // const emittedCaretIds: string[] = [];
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     for (const id of emittedCaretIds) {
-  //       const element = document.getElementById(id);
-  //       if (element) {
-  //         const opacity = element.style?.opacity;
-  //         element.style.opacity = opacity === '0' ? '1' : '0';
-  //       }
-  //     }
-  //   }, 500);
-  //   return () => {
-  //     clearInterval(intervalId);
-  //     for (const id of emittedCaretIds) {
-  //       const element = document.getElementById(id);
-  //       if (element) {
-  //         element.style.opacity = '1';
-  //       }
-  //     }
-  //   };
-  // }, [emittedCaretIds]);
-
+function renderCaret(ctx: RenderContext) {
+  const caretDiv = getCaretDiv(ctx);
+  if (!caretDiv) {
+    return;
+  }
   if (!ctx.doc.ranges) {
+    caretDiv.hidden = true;
     return;
   }
 
   const selectionId = ctx.selectionId;
   const selection = ctx.doc.ranges[selectionId];
   if (!selection) {
+    caretDiv.hidden = true;
     return;
   }
 
   if (selection.anchor.node !== selection.focus.node) {
+    caretDiv.hidden = true;
     return; // TODO: Range selection
   }
+
+  const spanId = domIdFromNodeKey(ctx, selection.anchor.node);
+  const span = document.getElementById(spanId);
+  if (!span) {
+    caretDiv.hidden = true;
+    return;
+  }
+
+  caretDiv.hidden = false;
+  // const measuredText = measure
+}
+
+function domIdForCaret(ctx: RenderContext) {
+  return `${ctx.editorId}:caret`;
+}
+
+function getCaretDiv(ctx: RenderContext): HTMLDivElement | undefined {
+  const editor = document.getElementById(ctx.editorId);
+  if (editor === null) {
+    return undefined;
+  }
+  const caretId = domIdForCaret(ctx);
+  let div = document.getElementById(caretId);
+  if (!div) {
+    div = document.createElement('div');
+    div.id = caretId;
+    div.style.position = 'absolute';
+    div.style.backgroundColor = theme.mono.m4;
+    div.style.width = '2px';
+    div.style.height = `${styleguide.gridbase * 2}px`;
+    div.style.borderRadius = '1px';
+    div.style.boxSizing = 'border-box';
+    div.style.border = `1px solid ${theme.mono.m4}`;
+    div.style.zIndex = '1';
+    editor.appendChild(div);
+  }
+  return div as HTMLDivElement;
+}
+
+export function useCaret(ctx: RenderContext) {
+  renderCaret(ctx);
+  useLayoutEffect(() => {
+    renderCaret(ctx);
+  });
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const domId = `${ctx.editorId}:caret`;
+      const div = document.getElementById(domId);
+      if (div) {
+        const opacity = div.style?.opacity;
+        div.style.opacity = opacity === '0' ? '1' : '0';
+      }
+    }, 550);
+    return () => {
+      clearInterval(intervalId);
+      const domId = `${ctx.editorId}:caret`;
+      const element = document.getElementById(domId);
+      if (element) {
+        element.style.opacity = '1';
+      }
+    };
+  }, [ctx.editorId]);
 }

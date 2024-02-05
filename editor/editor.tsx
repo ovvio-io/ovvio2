@@ -50,6 +50,7 @@ import { useUndoContext } from './undo.ts';
 import { onKeyboardArrow } from './caret.ts';
 import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
 import { onMouseUp } from './mouse.ts';
+import { useCaret } from './caret.ts';
 
 export const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
 
@@ -333,6 +334,7 @@ export const RichTextEditor = forwardRef<
     }
   }, [partialNote, selectionId]);
 
+  useCaret(ctx);
   return (
     <div
       id={editorId}
