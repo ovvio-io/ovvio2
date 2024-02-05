@@ -145,14 +145,14 @@ export function WorkspaceForm({
       copyFrom: duplicateWs,
     });
     // Hack for sandbox - mass workspace creation
-    // if (getOrganizationId() === 'sandbox') {
-    //   for (let i = 1; i <= 100; ++i) {
-    //     const copyName = `${name} (${i})`;
-    //     createNewWorkspace(copyName, graph, {
-    //       copyFrom: duplicateWs,
-    //     });
-    //   }
-    // }
+    if (getOrganizationId() === 'sandbox') {
+      for (let i = 1; i <= 100; ++i) {
+        const copyName = `${name} (${i})`;
+        createNewWorkspace(copyName, graph, {
+          copyFrom: duplicateWs,
+        });
+      }
+    }
     logger.log({
       severity: 'EVENT',
       event: 'End',
