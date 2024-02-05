@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   docClone,
   Document,
@@ -257,4 +257,13 @@ export function useCaret(ctx: RenderContext) {
       }
     };
   });
+
+  const contentEditable = document.getElementById(ctx.editorId);
+  const resizeObserver = useMemo(() => {
+    if (contentEditable) {
+      const observer = new ResizeObserver(() => renderCaret(ctx));
+      observer.observe(contentEditable);
+      return observer;
+    }
+  }, [contentEditable]);
 }
