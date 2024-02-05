@@ -14,12 +14,14 @@ import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { CONTENTEDITABLE_PADDING } from './editor.tsx';
 import { findFirstTextNode } from '../cfds/richtext/tree.ts';
 import { findLastTextNode } from '../cfds/richtext/tree.ts';
+import { MeasuredText } from './text.ts';
 
 function onMouseUpInSpan(
   target: HTMLSpanElement,
   body: Document,
   selectionId: string,
   mouseX: number,
+  mouseY: number,
 ): Document | undefined {
   const nodeKey = target.dataset.ovvNodeKey;
   if (!nodeKey) {
@@ -28,21 +30,41 @@ function onMouseUpInSpan(
   const node = body.nodeKeys.nodeFromKey(nodeKey);
   if (isTextNode(node)) {
     const text = node.text;
-    let contentWidth = 0;
-    for (const node of target.parentElement!.childNodes) {
-      contentWidth += (node as HTMLSpanElement).getBoundingClientRect().width;
-    }
-    const elementBoundingRect = target.parentElement!.getBoundingClientRect();
-    debugger;
-    const offset = Math.max(
-      0,
-      Math.min(
-        text.length,
-        Math.ceil(
-          (text.length * (mouseX - elementBoundingRect.x)) / contentWidth,
-        ),
-      ),
+    const targetBounds = target.getBoundingClientRect();
+    const targetStyle = getComputedStyle(target);
+    const measuredText = new MeasuredText(
+      text,
+      targetStyle,
+      targetBounds.width,
     );
+    const lineCount = measuredText.lines.length;
+    const lineIdx = Math.floor(
+      (lineCount * (mouseY - targetBounds.y)) / targetBounds.height,
+    );
+    let offset = 0;
+    for (let idx = 0; idx < lineIdx; ++idx) {
+      offset += measuredText.lines[idx][0].length;
+    }
+    const rtl = targetStyle.direction === 'rtl';
+    const line = measuredText.lines[lineIdx];
+    const lineText = line[0];
+    let x = 0;
+    let found = false;
+    for (let i = 0; i < lineText.length; ++i) {
+      const charW = measuredText.characterWidths[offset + i];
+      if (
+        x + charW >
+        (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
+      ) {
+        offset += i;
+        found = true;
+        break;
+      }
+      x += charW;
+    }
+    if (!found) {
+      offset += lineText.length;
+    }
     if (!body.ranges) {
       body.ranges = {};
     }
@@ -135,7 +157,13 @@ export function onMouseUp(
   const proxy = note.getVertexProxy();
   const body = docClone(proxy.body);
   if (e.target instanceof HTMLSpanElement) {
-    const updatedBody = onMouseUpInSpan(e.target, body, selectionId, e.clientX);
+    const updatedBody = onMouseUpInSpan(
+      e.target,
+      body,
+      selectionId,
+      e.clientX,
+      e.clientY,
+    );
     if (updatedBody) {
       note.getVertexProxy().body = updatedBody;
     }

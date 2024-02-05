@@ -172,22 +172,36 @@ function renderCaret(ctx: RenderContext) {
 
   caretDiv.hidden = false;
   const text = selection.anchor.node.text;
-  const measuredText = new MeasuredText(
-    text,
-    getComputedStyle(span),
-    span.clientWidth,
-  );
+  const spanStyle = getComputedStyle(span);
+  const measuredText = new MeasuredText(text, spanStyle, span.clientWidth);
   const idx = selection.anchor.offset;
   const spanBounds = span.getBoundingClientRect();
+  const rtl = spanStyle.direction === 'rtl';
   if (idx === 0) {
-    caretDiv.style.left = `${spanBounds.x}px`;
+    if (rtl) {
+      caretDiv.style.left = `${spanBounds.right}px`;
+    } else {
+      caretDiv.style.left = `${spanBounds.left}px`;
+    }
     caretDiv.style.top = `${spanBounds.y}px`;
   } else {
     const bounds = measuredText.characterRects[Math.min(idx, text.length - 1)];
-    if (idx === text.length) {
-      caretDiv.style.left = `${spanBounds.x + bounds.x + bounds.width - 1}px`;
+    if (rtl) {
+      if (idx === text.length) {
+        caretDiv.style.left = `${
+          spanBounds.right - bounds.x - bounds.width - 1
+        }px`;
+      } else {
+        caretDiv.style.left = `${
+          spanBounds.right - bounds.width - bounds.x - 1
+        }px`;
+      }
     } else {
-      caretDiv.style.left = `${spanBounds.x + bounds.x - 1}px`;
+      if (idx === text.length) {
+        caretDiv.style.left = `${spanBounds.x + bounds.x + bounds.width - 1}px`;
+      } else {
+        caretDiv.style.left = `${spanBounds.x + bounds.x - 1}px`;
+      }
     }
     caretDiv.style.top = `${spanBounds.y + bounds.y}px`;
   }

@@ -21,7 +21,7 @@ export class MeasuredText {
     readonly width: number,
     readonly dir: WritingDirection = 'auto',
   ) {
-    const wordEdges = searchAll(text, /\b/gm);
+    const wordEdges = searchAll(text, /(?:^|\s)/gmu);
     this.wordEdges = wordEdges;
     const [charWidths, charMetrics] = measureCharacters(text, style);
     this.characterWidths = charWidths;
@@ -38,7 +38,7 @@ export class MeasuredText {
     for (let i = 0; i < text.length; ++i) {
       const w = charWidths[i];
       if (lineWidth + w >= width) {
-        const prevWordBoundary = findValueBefore(i, wordEdges) || i + 1;
+        const prevWordBoundary = findValueBefore(i, wordEdges) || i;
         const line = text.substring(prevLineBreak, prevWordBoundary);
         let actualWidth = 0;
         for (let j = prevLineBreak; j < prevWordBoundary; ++j) {
@@ -96,6 +96,9 @@ export class MeasuredText {
   }
 }
 
+const HEBREW_REGEX =
+  /[\u0590-\u05FF|\u200C-\u2010|\u20AA|\u25CC|\uFB1D-\uFB4F]/gm;
+
 /**
  * Given text and CSS style, this function measures the width of each character
  * when rendered sequentially using the provided style.
@@ -124,7 +127,11 @@ export function measureCharacters(
   for (let i = 0; i < text.length; ++i) {
     const m = ctx.measureText(text.substring(0, i + 1));
     const width = m.width;
-    widths.push(width - prevWidth);
+    let charWidth = width - prevWidth;
+    if (text[i].match(HEBREW_REGEX)) {
+      charWidth = Math.floor(1.1 * charWidth);
+    }
+    widths.push(charWidth);
     metrics.push(m);
     prevWidth = width;
   }
