@@ -271,15 +271,8 @@ export abstract class BaseClient<
     // sure everything is sync'ed. Also need to make sure we don't have any
     // local commits that our peer doesn't have (local changes or peer recovery).
     let i = 0;
-    let emptyCount = 0;
     do {
-      if ((await this.sendSyncMessage(true)) === false) {
-        if (++emptyCount === 2) {
-          break;
-        }
-      } else {
-        emptyCount = 0;
-      }
+      await this.sendSyncMessage(true);
       ++i;
     } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
   }
