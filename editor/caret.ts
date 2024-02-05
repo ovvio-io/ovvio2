@@ -266,4 +266,14 @@ export function useCaret(ctx: RenderContext) {
       return observer;
     }
   }, [contentEditable]);
+
+  useEffect(() => {
+    if (contentEditable) {
+      const listener = () => renderCaret(ctx);
+      contentEditable.addEventListener('scroll', listener);
+      return () => {
+        contentEditable.removeEventListener('scroll', listener);
+      };
+    }
+  }, [contentEditable]);
 }
