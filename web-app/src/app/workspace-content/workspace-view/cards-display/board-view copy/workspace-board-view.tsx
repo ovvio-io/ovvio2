@@ -1,41 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { coreValueCompare } from '../../../../../../../base/core-types/index.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import {
-  FilteredNotes,
-  DueDateColumn,
-} from '../../../../../core/cfds/react/filter.ts';
+import { FilteredNotes } from '../../../../../core/cfds/react/filter.ts';
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
+import { usePartialVertices } from '../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
+import { DragAndDropContext } from '../../../../../shared/dragndrop/context.tsx';
 import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
-import {
-  DragSource,
-  DragAndDropContext,
-} from '../../../../../shared/dragndrop/index.ts';
+import { DragSource } from '../../../../../shared/dragndrop/index.ts';
 import {
   InfiniteVerticalScroll,
   InfiniteHorizontalScroll,
 } from '../list-view/infinite-scroll.tsx';
 import { BoardCard } from './board-card.tsx';
 import { BoardColumn } from './board-column.tsx';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
-import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
 
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
 
-export function DueDateBoardView({
+export function WorkspaceBoardView({
   filteredNotes,
 }: {
-  filteredNotes: FilteredNotes<DueDateColumn>;
+  filteredNotes: FilteredNotes<VertexManager<Workspace>>;
 }) {
-  const toast = useToastController();
-  const logger = useLogger();
-  const strings = useStrings();
+  const view = usePartialView('selectedWorkspaces');
+  const selectedWorkspaces = usePartialVertices(view.selectedWorkspaces, [
+    'name',
+  ]);
   const notesQuery = useQuery2(filteredNotes[0]);
+  const toast = useToastController();
+  const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
 
@@ -45,21 +44,15 @@ export function DueDateBoardView({
   }, [notesQuery, yLimit, xLimit]);
 
   const onDragCancelled = useCallback(() => {
-    logger.log({
-      severity: 'INFO',
-      event: 'Cancel',
-      flow: 'dnd',
-      source: 'board',
-      groupBy: 'dueDate',
-    });
     toast.displayToast({
       duration: 5000,
       text: strings.dragNotSupported,
     });
-  }, [toast, logger, strings]);
+  }, [toast, strings]);
 
   const onDrop = (
-    column: DueDateColumn,
+    workspace: VertexManager<Workspace>,
+    items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
     dragPosition: DragPosition
@@ -76,27 +69,31 @@ export function DueDateBoardView({
     maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
   }
 
-  const forToday = notesQuery.group('Today');
-  debugger;
+  // console.log('Max col size = ' + maxColSize);
 
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {/* <div>{forToday}</div> */}
-      {notesQuery
-        .groups()
+      {Array.from(selectedWorkspaces)
+        .sort(coreValueCompare)
         .slice(0, xLimit)
-        .map((columnName) => (
+        .map((column) => (
           <BoardColumn
-            title={strings[columnName!]}
-            key={columnName}
-            items={notesQuery.group(columnName)}
+            title={column.name}
+            key={column.key}
+            items={notesQuery.group(column.manager as VertexManager<Workspace>)}
             allowsDrop={() => false}
             onDrop={(item, relativeTo, dragPosition) =>
-              onDrop(columnName!, item, relativeTo, dragPosition)
+              onDrop(
+                column.manager as VertexManager<Workspace>,
+                notesQuery.group(column.manager as VertexManager<Workspace>),
+                item,
+                relativeTo,
+                dragPosition
+              )
             }
           >
             {notesQuery
-              .group(columnName)
+              .group(column.manager as VertexManager<Workspace>)
               .slice(0, yLimit)
               .map((card, index) => (
                 <BoardCard card={card} index={index} key={card.key} />

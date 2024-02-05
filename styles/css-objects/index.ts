@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useEnsureAttached, __CssRegistry } from './context.tsx';
-import { cssTheme, Theme } from '../theme.tsx';
+import { cssTheme, NewTheme, Theme } from '../theme.tsx';
 import { isServerSide, useIsomorphicLayoutEffect } from '../utils/ssr.ts';
 
 function genId(): string {
@@ -177,7 +177,7 @@ type CssObject<T> = { [K in keyof T]: CssDefinitions<T[K]> } & {
 };
 
 type CssObjectCreator<T> = (
-  theme: Theme,
+  theme: Theme | NewTheme, // amit changed
   resolveClass?: (className: string) => string
 ) => T;
 

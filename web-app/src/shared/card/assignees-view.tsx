@@ -342,10 +342,10 @@ export function AssignButton({
       getItems={getItems}
       renderItem={renderItem}
       onSelected={onSelected}
-      className={cn(styles.selectionButton, styles.addButton, className)}
+      className={cn(styles.selectionButton, className)}
       style={style}
     >
-      {() => <IconPlus />}
+      {() => <img key="IconAddAssignee" src="/icons/board/Assignee.svg" />}
     </SelectionButton>
   );
 }
@@ -415,7 +415,7 @@ export default function AssigneesView({
   };
   // const size = cardType === 'regular' ? 'big' : 'small';
   const size = 'small';
-  const assignStyle = calcStyle(isExpanded, reverse, assignees.length);
+  // const assignStyle = calcStyle(isExpanded, reverse, assignees.length);
   return (
     <div
       className={cn(
@@ -425,8 +425,16 @@ export default function AssigneesView({
         reverse ? styles.reverse : styles.standard
       )}
     >
+      {' '}
+      <AssignButton
+        source={source}
+        cardManager={cardManager}
+        users={users}
+        assignees={assignees}
+        className={cn(!isExpanded && styles.hide, assignClassName)}
+        style={{ padding: '4px' }}
+      />
       {...assignees.map((user, index) => {
-        const style = calcStyle(isExpanded, reverse, index);
         return (
           <Assignee
             source={source}
@@ -436,23 +444,10 @@ export default function AssigneesView({
             assignees={assignees}
             user={user}
             size={size}
-            style={style}
             renderSelected={renderAssignee}
           />
         );
       })}
-      <AssignButton
-        source={source}
-        cardManager={cardManager}
-        users={users}
-        assignees={assignees}
-        className={cn(
-          styles.addButton,
-          !isExpanded && styles.hide,
-          assignClassName
-        )}
-        style={assignStyle}
-      />
     </div>
   );
 }

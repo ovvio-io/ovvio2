@@ -76,12 +76,8 @@ export function DueDateBoardView({
     maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
   }
 
-  const forToday = notesQuery.group('Today');
-  debugger;
-
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
-      {/* <div>{forToday}</div> */}
       {notesQuery
         .groups()
         .slice(0, xLimit)

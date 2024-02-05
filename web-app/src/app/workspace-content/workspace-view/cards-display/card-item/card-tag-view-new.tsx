@@ -37,15 +37,10 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
   },
   tagsWrap: {
-    flexWrap: 'wrap',
-    alignItems: 'flex-start',
-    marginBottom: styleguide.gridbase,
-    tag: {
-      marginBottom: styleguide.gridbase,
-    },
+    display: 'flex',
   },
   tag: {
-    marginRight: styleguide.gridbase * 0.5,
+    // marginRight: styleguide.gridbase * 0.5,
   },
   hide: {
     opacity: 0,
@@ -58,7 +53,7 @@ const useStyles = makeStyles((theme) => ({
 interface TagPillProps {
   tag: VertexManager<Tag>;
   setTag: (tag: VertexManager<Tag>) => void;
-  isExpanded: boolean;
+  isExpanded?: boolean;
   onDelete: () => void;
   ofBoard?: boolean;
 }
@@ -68,20 +63,15 @@ function TagPill({ tag, setTag, onDelete, isExpanded, ofBoard }: TagPillProps) {
   const { name } = usePartialVertex(tag, ['name']);
   const renderSelected = useCallback(
     () => (
-      <Pill
-        className={cn(styles.tag)}
-        extended={isExpanded}
-        pillStyle={isExpanded ? PillStyle.Border : PillStyle.None}
-      >
-        <PillContent>
-          {ofBoard && !ofBoard ? (
-            <Text>#{name}</Text>
-          ) : (
-            <div className={styles.tagText}>#{name}</div>
-          )}
-        </PillContent>
+      <Pill className={cn(styles.tag)} extended={isExpanded}>
         <PillAction>
-          <IconDropDownArrow />
+          <PillContent>
+            {ofBoard && !ofBoard ? (
+              <Text>#{name}</Text>
+            ) : (
+              <div className={styles.tagText}>#{name}</div>
+            )}
+          </PillContent>
         </PillAction>
       </Pill>
     ),
@@ -99,12 +89,7 @@ function TagPill({ tag, setTag, onDelete, isExpanded, ofBoard }: TagPillProps) {
   );
 }
 
-export function CardTags({
-  card,
-  size,
-  isExpanded,
-  source,
-}: CardHeaderPartProps) {
+export function CardTagsNew({ card, size, isExpanded }: CardHeaderPartProps) {
   const { tags, workspace } = usePartialVertex(card, ['tags', 'workspace']);
   const styles = useStyles();
   const logger = useLogger();
@@ -115,17 +100,6 @@ export function CardTags({
       (!tag.parentTag || !tag.parentTag.isDeleted)
   );
 
-  // const tagManagers = useMemo(
-  //   () =>
-  //     new Map(
-  //       Array.from(tags.entries()).map(([parent, child]) => [
-  //         parent.manager as VertexManager<Tag>,
-  //         child.manager as VertexManager<Tag>,
-  //       ])
-  //     ),
-  //   [tags]
-  // );
-
   const onDelete = useCallback(
     (tagManager: VertexManager<Tag>) => {
       const tag = tagManager.getVertexProxy();
@@ -134,15 +108,6 @@ export function CardTags({
       const tagToDelete = tag.parentTag || tag;
       newTags.delete(tagToDelete);
       proxy.tags = newTags;
-
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'tag',
-        removed: tag.key,
-        vertex: card.key,
-        source,
-      });
     },
     [card, logger]
   );
@@ -158,16 +123,6 @@ export function CardTags({
       const currentTag = newTags.get(tagKey);
       newTags.set(tagKey, tag);
       proxy.tags = newTags;
-
-      logger.log({
-        severity: 'INFO',
-        event: 'MetadataChanged',
-        type: 'tag',
-        vertex: card.key,
-        removed: currentTag?.key,
-        added: tag.key,
-        source,
-      });
     },
     [card, logger]
   );
@@ -185,7 +140,7 @@ export function CardTags({
           tag={tag.manager as VertexManager<Tag>}
           onDelete={() => onDelete(tag.manager as VertexManager<Tag>)}
           setTag={onTag}
-          isExpanded={isExpanded}
+          isExpanded={true}
           ofBoard={true}
         />
       ))}

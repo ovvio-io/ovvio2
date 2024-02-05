@@ -49,7 +49,7 @@ export function TitleBoardView({
     items: VertexManager<Note>[],
     item: VertexManager<Note>,
     relativeTo: VertexManager<Note>,
-    dragPosition: DragPosition,
+    dragPosition: DragPosition
   ) => {
     // eventLogger.cardAction('DRAG_DONE', item, {
     //   source: DragSource.WorkspaceBoard,
@@ -62,7 +62,6 @@ export function TitleBoardView({
   for (const gid of notesQuery.groups()) {
     maxColSize = Math.max(maxColSize, notesQuery.countForGroup(gid));
   }
-
   return (
     <DragAndDropContext onDragCancelled={onDragCancelled}>
       {notesQuery
@@ -81,7 +80,7 @@ export function TitleBoardView({
                 notesQuery.group(title),
                 item,
                 relativeTo,
-                dragPosition,
+                dragPosition
               )
             }
           >
@@ -110,3 +109,9 @@ export function TitleBoardView({
     </DragAndDropContext>
   );
 }
+
+//the solution that i think will work, but i dont know how to implement is:
+//check inside the KanbanColumn what groupBy is it and then deal with it accordingly.
+
+//most important is to understand how the Query works and that is the type- CoreValue
+// maybe doing something like this - card={pinnedQuery.group(group)[0]}

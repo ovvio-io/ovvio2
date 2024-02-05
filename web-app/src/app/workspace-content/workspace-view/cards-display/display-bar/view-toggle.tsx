@@ -76,7 +76,8 @@ export function ViewToggle({ className }: ViewToggleProps) {
         source: 'toolbar:viewType',
       });
       view.viewType = type;
-      view.showPinned = view.viewType === 'board' ? 'all' : 'pinned-unpinned';
+      // view.showPinned = view.viewType === 'board' ? 'all' : 'pinned-unpinned';
+      view.showPinned = 'pinned-unpinned';
     },
     [logger, view]
   );

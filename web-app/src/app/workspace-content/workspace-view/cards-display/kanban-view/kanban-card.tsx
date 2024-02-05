@@ -4,7 +4,10 @@ import {
   Note,
   NoteType,
 } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  useVertex,
+} from '../../../../../core/cfds/react/vertex.ts';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
 import CardMenuView from '../../../../../shared/item-menu/index.tsx';
@@ -22,9 +25,7 @@ import {
   brandLightTheme,
   useTheme,
 } from '../../../../../../../styles/theme.tsx';
-import { CardFooter } from './card-footer.tsx';
-import { CardTags } from './card-tag-view.tsx';
-import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
+
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
@@ -32,6 +33,8 @@ import { TaskCheckbox } from '../../../../../../../components/task.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { CardFooter } from '../card-item/card-footer.tsx';
+import { PinCell } from '../list-view/table/item.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -62,8 +65,8 @@ const useStyles = makeStyles((theme) => ({
   expander: {
     position: 'absolute',
     cursor: 'pointer',
-    top: styleguide.gridbase,
-    left: 0,
+    top: styleguide.gridbase * 8,
+    right: -styleguide.gridbase * 2,
     transform: `translateX(calc(-100% - ${styleguide.gridbase * 0.5}px))`,
   },
   expanderIcon: {
@@ -79,10 +82,8 @@ const useStyles = makeStyles((theme) => ({
     cursor: 'pointer',
     padding: styleguide.gridbase,
     boxSizing: 'border-box',
-    // boxShadow: theme.shadows.z2,
-    boxShadow: brandLightTheme.shadows.z2,
-    // borderRadius: 6,
-    // basedOn: [layout.column],
+    margin: '1px',
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
     display: 'flex',
     flexDirection: 'column',
   },
@@ -114,6 +115,7 @@ const useStyles = makeStyles((theme) => ({
   titleRow: {
     alignItems: 'flex-start',
     basedOn: [layout.row],
+    '::before': {},
   },
   titleTextContainer: {
     padding: [0, styleguide.gridbase * 0],
@@ -179,6 +181,11 @@ const useStyles = makeStyles((theme) => ({
     marginRight: styleguide.gridbase / 2,
     marginLeft: styleguide.gridbase / 2,
   },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#FBF6EF',
+    },
+  },
 }));
 
 interface TitleElementProps {
@@ -237,9 +244,10 @@ function Title({
 
 //   return <div className={styles.titleTextContainer}>{words}</div>;
 // }
-export interface CardHeaderPartProps extends CardItemProps {
+
+export interface CardHeaderPartProps extends KanbanCardProps {
   isExpanded?: boolean;
-  source?: UISource;
+  source: UISource;
   hideMenu?: boolean;
 }
 
@@ -250,10 +258,11 @@ export function CardHeader({
   source,
   hideMenu,
   size,
+  showWorkspaceOnCard,
 }: CardHeaderPartProps) {
   const styles = useStyles();
   const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
-  // const { workspace } = usePartialVertex(card, ['workspace']);
+  const note = useVertex(card);
   const isTask = pCard.type === NoteType.Task;
 
   return (
@@ -264,13 +273,19 @@ export function CardHeader({
           source={source}
           isExpanded={isExpanded}
         /> */}
-      <WorkspaceIndicator workspace={pCard.workspace.manager} />
+      {showWorkspaceOnCard && (
+        <WorkspaceIndicator workspace={pCard.workspace.manager} />
+      )}
       {isTask && (
         <>
-          <span className={cn(styles.breadCrumbsSlash)}>/</span>
-          <Text className={cn(styles.breadCrumbsTitle)}>
-            {pCard.titlePlaintext}
-          </Text>
+          {note.parentNote && (
+            <>
+              <span className={cn(styles.breadCrumbsSlash)}>/</span>
+              <Text className={cn(styles.breadCrumbsTitle)}>
+                {note.parentNote.titlePlaintext}
+              </Text>
+            </>
+          )}
         </>
       )}
       <div className={cn(layout.flexSpacer)} />
@@ -345,16 +360,24 @@ export function StatusCheckbox({
   );
 }
 
-export interface CardItemProps {
+export interface KanbanCardProps {
   card: VertexManager<Note>;
   size: CardSize;
   showChildCards?: boolean;
   className?: string;
+  showWorkspaceOnCard?: boolean;
   style?: {};
 }
 
-export const CardItem = React.forwardRef(function CardItemView(
-  { card, className, showChildCards, size, ...rest }: CardItemProps,
+export const KanbanCard = React.forwardRef(function CardItemView(
+  {
+    card,
+    className,
+    showChildCards = true,
+    size,
+    showWorkspaceOnCard,
+    ...rest
+  }: KanbanCardProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
@@ -374,16 +397,12 @@ export const CardItem = React.forwardRef(function CardItemView(
   const isTask = pCard.type === NoteType.Task;
   const isDone = pCard.isChecked;
   const logger = useLogger();
+  const [isMouseOver, setIsMouseOver] = useState(false);
 
-  const onMouseEnter = useCallback(() => {
-    setIsInHover(true);
-  }, []);
+  const onMouseOver = useCallback(() => setIsMouseOver(true), []);
+  const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
 
-  const onMouseLeave = useCallback(() => {
-    setIsInHover(false);
-  }, []);
-
-  const source: UISource = 'list';
+  const source: UISource = 'board';
 
   const onClick = useCallback(() => {
     documentRouter.goTo(card);
@@ -402,18 +421,20 @@ export const CardItem = React.forwardRef(function CardItemView(
       className={cn(styles.cardContainer, className)}
       ref={ref}
       // style={style}
-
       {...rest}
     >
       <div
-        className={cn(styles.card, isTask && styles.taskCard, styles[size])}
-        onMouseEnter={onMouseEnter}
+        className={cn(
+          styles.card,
+          isTask && styles.taskCard,
+          styles[size],
+          styles.hoverableRow
+        )}
+        onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
         <div className={cn(styles.headerContainer)}>
-          {/* <PinCell isChild={isChild} note={note} onMouseEnter={onMouseEnter} /> */}
-
           <div className={cn(styles.taskCheckBoxContainer)}>
             <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
             <div className={cn(styles.titleTextContainer)}>
@@ -430,17 +451,18 @@ export const CardItem = React.forwardRef(function CardItemView(
               ))}
             </div>
           </div>
-          <IconPin on={true} />
+          <PinCell isChild={false} note={card} isMouseOver={isMouseOver} />
         </div>
         <CardHeader
           size={size}
           card={card}
-          isExpanded={isInHover}
+          isExpanded={isMouseOver}
           source={source}
+          showWorkspaceOnCard={showWorkspaceOnCard}
         />
         <div className={cn(styles.preview)} />
         <CardFooter
-          isExpanded={isInHover}
+          isExpanded={isMouseOver}
           size={size}
           card={card}
           source={source}
@@ -456,6 +478,7 @@ export const CardItem = React.forwardRef(function CardItemView(
               styles.expanderIcon,
               expanded && styles.expanderIconExpanded
             )}
+            isMouseOver={isMouseOver}
           />
         </div>
       )}
@@ -497,40 +520,5 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
   //       : `translateY(${-(index + 1) * (16 + 64)}px)`,
   //   };
   // }, [index, isVisible]);
-  return <CardItem size={size} card={card} className={cn(styles.child)} />;
+  return <KanbanCard size={size} card={card} className={cn(styles.child)} />;
 }
-
-const PinCell = ({
-  note,
-  onMouseEnter,
-  isChild,
-}: {
-  note: VertexManager<Note>;
-  onMouseEnter: boolean;
-  isChild?: boolean;
-}) => {
-  const styles = useStyles();
-  const { isPinned } = usePartialVertex(note, ['isPinned']);
-
-  const togglePin = () => {
-    const proxy = note.getVertexProxy();
-    proxy.isPinned = !proxy.isPinned;
-  };
-
-  return (
-    <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
-      {!isChild && (
-        <Button onClick={togglePin}>
-          {/* {isPinned ? (
-            <IconPinOn />
-          ) : (
-            <IconPinOff
-              className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
-            />
-          )} */}
-          <IconPin on={isPinned} visible={onMouseEnter} />
-        </Button>
-      )}
-    </Cell>
-  );
-};
