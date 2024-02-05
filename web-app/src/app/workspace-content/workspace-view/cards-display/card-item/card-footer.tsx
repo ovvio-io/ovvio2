@@ -30,20 +30,23 @@ import { DueDateState } from '../../../../../../../styles/components/new-icons/i
 import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 import { CardTags } from './card-tag-view.tsx';
+import { CardTagsNew } from './card-tag-view-new.tsx';
 
 export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
 const useStyles = makeStyles((theme) => ({
   footer: {
-    alignItems: 'center',
+    // alignItems: 'center',
     minHeight: styleguide.gridbase,
     color: theme.background.textSecondary,
     display: 'flex',
     flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   footerItem: {
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
+    gap: styleguide.gridbase * 0.5,
   },
   attachments: {
     alignItems: 'center',
@@ -65,8 +68,7 @@ const useStyles = makeStyles((theme) => ({
   tagsContainer: {
     display: 'flex',
     maxWidth: '20px',
-
-    padding: '0.5px 6px 1.5px 6px',
+    // padding: '0.5px 6px 1.5px 6px',
   },
 }));
 
@@ -186,15 +188,10 @@ export function CardFooter({
           cardManager={card}
           cardType="small"
           source={source}
-          isExpanded={true}
+          isExpanded={isExpanded}
         />
         <div className={cn(styles.tagsContainer)}>
-          <CardTags
-            size={size}
-            card={card}
-            isExpanded={isExpanded}
-            source={source}
-          />
+          <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
         </div>
       </div>
       <div className={cn(layout.flexSpacer)} />

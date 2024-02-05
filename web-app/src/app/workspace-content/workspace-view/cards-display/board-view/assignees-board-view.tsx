@@ -39,8 +39,7 @@ export function AssigneesBoardView({
 }: {
   filteredNotes: FilteredNotes;
 }) {
-  const notesQuery = useQuery2(filteredNotes[0]); // ------------ ASK OFRI
-  // const notesQuery2 = useQuery2(filteredNotes[1]); // ------------ ASK OFRI
+  const notesQuery = useQuery2(filteredNotes[0]);
 
   const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);

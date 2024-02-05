@@ -75,7 +75,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
   const docRouter = useDocumentRouter();
   const view = usePartialView('noteType');
 
-  const pinnedQuery = useQuery2(filteredNotes[0]); // ------------ ASK OFRI
+  const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
