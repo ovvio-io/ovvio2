@@ -265,9 +265,9 @@ export function handleInsertTextInputEvent(
       const textNode = selection.focus.node;
       const text = textNode.text;
       textNode.text =
-        text.substring(0, selection.focus.offset + 1) +
+        text.substring(0, selection.focus.offset) +
         insertData +
-        text.substring(selection.focus.offset + 1);
+        text.substring(selection.focus.offset);
       if (
         selection.anchor.node !== selection.focus.node ||
         selection.anchor.offset !== selection.focus.offset
