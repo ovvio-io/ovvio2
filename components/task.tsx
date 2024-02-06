@@ -30,7 +30,7 @@ export function CheckBox({ value, onChange, className }: CheckBoxProps) {
       event.preventDefault();
       event.stopPropagation();
     },
-    [onChange, value],
+    [onChange, value]
   );
 
   return (

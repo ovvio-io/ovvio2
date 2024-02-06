@@ -1,20 +1,14 @@
 import React, { useCallback, useMemo } from 'react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Tag,
-  Workspace,
-} from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { Tag } from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import {
   Pill,
-  PillStyle,
   PillContent,
   PillAction,
 } from '../../../../../shared/pill/index.tsx';
 import TagButton from '../../../../../shared/tags/tag-button.tsx';
 import TagView from '../../../../../shared/tags/tag-view.tsx';
-import { styleguide, layout } from '../../../../../../../styles/index.ts';
-import { IconDropDownArrow } from '../../../../../../../styles/components/icons/index.ts';
 import { Text } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
@@ -23,24 +17,14 @@ import {
 import { CardHeaderPartProps, CardSize } from './index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
-import {
-  brandLightTheme,
-  lightColorWheel,
-} from '../../../../../../../styles/theme.tsx';
+import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
 
 const useStyles = makeStyles((theme) => ({
   tagsView: {
-    // height: styleguide.gridbase * 3,
     alignItems: 'center',
-    // basedOn: [layout.row],
     display: 'flex',
+    flexWrap: 'wrap',
     flexDirection: 'row',
-  },
-  tagsWrap: {
-    display: 'flex',
-  },
-  tag: {
-    // marginRight: styleguide.gridbase * 0.5,
   },
   hide: {
     opacity: 0,
@@ -63,7 +47,7 @@ function TagPill({ tag, setTag, onDelete, isExpanded, ofBoard }: TagPillProps) {
   const { name } = usePartialVertex(tag, ['name']);
   const renderSelected = useCallback(
     () => (
-      <Pill className={cn(styles.tag)} extended={isExpanded}>
+      <Pill extended={isExpanded}>
         <PillAction>
           <PillContent>
             {ofBoard && !ofBoard ? (
@@ -128,12 +112,7 @@ export function CardTagsNew({ card, size, isExpanded }: CardHeaderPartProps) {
   );
 
   return (
-    <div
-      className={cn(
-        styles.tagsView,
-        size === CardSize.Small && styles.tagsWrap
-      )}
-    >
+    <div className={cn(styles.tagsView, size === CardSize.Small)}>
       {cardTags.sort(coreValueCompare).map((tag) => (
         <TagPill
           key={tag.key}

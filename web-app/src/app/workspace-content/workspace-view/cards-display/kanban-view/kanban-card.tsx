@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -10,36 +16,24 @@ import {
 } from '../../../../../core/cfds/react/vertex.ts';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
-import CardMenuView from '../../../../../shared/item-menu/index.tsx';
-import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { IconExpander } from '../../../../../../../styles/components/icons/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
 import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
-// import { Text } from '../../../../../../../styles/components/typography.tsx';
 import {
   makeStyles,
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
-import {
-  brandLightTheme,
-  useTheme,
-} from '../../../../../../../styles/theme.tsx';
-
+import { useTheme } from '../../../../../../../styles/theme.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
 import { TaskCheckbox } from '../../../../../../../components/task.tsx';
-import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { CardFooter } from '../card-item/card-footer.tsx';
+import { CardFooter, DueDateIndicator } from '../card-item/card-footer.tsx';
 import { PinCell } from '../list-view/table/item.tsx';
-import { CollapseExpandeToggle } from '../display-bar/index.tsx';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import Card from '../../../../../../../styles/components/card.tsx';
 import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
@@ -53,21 +47,7 @@ const useStyles = makeStyles((theme) => ({
   cardContainer: {
     position: 'relative',
   },
-  expander: {
-    position: 'absolute',
-    cursor: 'pointer',
-    top: styleguide.gridbase * 8,
-    right: -styleguide.gridbase,
-    transform: `translateX(calc(-100% - ${styleguide.gridbase * 0.5}px))`,
-  },
-  expanderIcon: {
-    ...styleguide.transition.short,
-    transitionProperty: 'transform',
-    transform: 'rotate(0)',
-  },
-  expanderIconExpanded: {
-    transform: 'rotate(180deg)',
-  },
+
   card: {
     backgroundColor: '#FFF',
     cursor: 'pointer',
@@ -86,7 +66,7 @@ const useStyles = makeStyles((theme) => ({
   [CardSize.Small]: {},
   taskCard: {
     preview: {
-      // marginLeft: styleguide.gridbase * 4.5,
+      marginLeft: styleguide.gridbase * 4.5,
     },
   },
   header: {
@@ -113,7 +93,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
   },
   strikethroughDone: {
-    textDecoration: 'line-through' /* This creates the strikethrough effect */,
+    textDecoration: 'line-through',
   },
   status: {
     marginRight: styleguide.gridbase,
@@ -125,17 +105,19 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 13,
     fontWeight: '400',
     lineHeight: `${TITLE_LINE_HEIGHT}px`,
-    display: 'inline' /* Make sure it doesn't take up the full width */,
+    display: 'inline',
     ...styleguide.transition.short,
   },
   preview: {
     marginTop: styleguide.gridbase * 1.25,
     marginLeft: styleguide.gridbase * 4,
+    display: 'flex',
   },
   childList: {
     paddingLeft: styleguide.gridbase * 4,
     ...styleguide.transition.short,
     transitionProperty: 'height',
+    paddingBottom: '4px',
   },
   hide: {
     overflow: 'hidden',
@@ -176,6 +158,16 @@ const useStyles = makeStyles((theme) => ({
     ':hover': {
       backgroundColor: '#FBF6EF',
     },
+  },
+  footerAndExpand: {
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  expanderAndDate: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexDirection: 'Column',
+    alignItems: 'flex-end',
   },
 }));
 
@@ -220,33 +212,13 @@ function Title({
   );
 }
 
-// function Title({ source, card, isDone }) {
-//   const styles = useStyles();
-//   const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
-//   const words = titlePlaintext.split(' ').map((word, index) => (
-//     <span key={index} style={isDone ? { textDecoration: 'line-through' } : {}}>
-//       {word}{' '}
-//     </span>
-//   ));
-
-//   return <div className={styles.titleTextContainer}>{words}</div>;
-// }
-
 export interface CardHeaderPartProps extends KanbanCardProps {
   isExpanded?: boolean;
   source: UISource;
   hideMenu?: boolean;
 }
 
-export function CardHeader({
-  card,
-  className,
-  isExpanded,
-  source,
-  hideMenu,
-  size,
-  showWorkspaceOnCard,
-}: CardHeaderPartProps) {
+export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
   const styles = useStyles();
   const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
   const note = useVertex(card);
@@ -254,12 +226,6 @@ export function CardHeader({
 
   return (
     <div className={styles.cardMiddle}>
-      {/* <div className={cn(styles.header)}> */}
-      {/* <CardWorkspaceIndicator
-          card={card}
-          source={source}
-          isExpanded={isExpanded}
-        /> */}
       {showWorkspaceOnCard && (
         <WorkspaceIndicator workspace={pCard.workspace.manager} />
       )}
@@ -276,30 +242,7 @@ export function CardHeader({
         </>
       )}
       <div className={cn(layout.flexSpacer)} />
-      {/* <AssigneesView
-          cardManager={card}
-          cardType="small"
-          source={source}
-          isExpanded={isExpanded}
-        />
-        {!hideMenu && (
-          <CardMenuView
-            cardManager={card}
-            allowsEdit={true}
-            source={source}
-            className={cn(styles.menu, isExpanded && styles.menuVisible)}
-          />
-        )} */}
     </div>
-    // {/* {size === CardSize.Small && (
-    //   <CardTags
-    //     size={size}
-    //     card={card}
-    //     isExpanded={isExpanded}
-    //     source={source}
-    //   />
-    // )} */}
-    // </div>
   );
 }
 
@@ -349,11 +292,9 @@ export function StatusCheckbox({
 const CollapseExpanderToggle = ({
   card,
   isExpanded,
-  toggleExpanded,
 }: {
   card: VertexManager<Note>;
   isExpanded: boolean;
-  toggleExpanded: () => void;
 }) => {
   return (
     <Button>
@@ -379,7 +320,6 @@ export interface KanbanCardProps {
   showChildCards?: boolean;
   className?: string;
   showWorkspaceOnCard?: boolean;
-  style?: {};
 }
 
 export const KanbanCard = React.forwardRef(function CardItemView(
@@ -405,44 +345,24 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   );
 
   useEffect(() => {
-    // Update expanded state when card or view changes
     setExpanded(calculateIsExpanded(card, view));
   }, [card, view]);
 
   const style = useAnimateHeight(childListRef, expanded);
-  const [isInHover, setIsInHover] = useState(false);
   const isTask = pCard.type === NoteType.Task;
   const isDone = pCard.isChecked;
   const logger = useLogger();
   const [isMouseOver, setIsMouseOver] = useState(false);
 
-  // const onClickImpl: MouseEventHandler = (e) => {   //Might use later.
-  //   e.stopPropagation();
-  //   onClick(note);
-  // };
-  // const [expanded, setExpanded] = useState(false);
-
-  // useEffect(() => {
-  //   const hasOverride = view.notesExpandOverride.has(card.key);
-  //   const isExpanded =
-  //     (view.notesExpandBase && !hasOverride) ||
-  //     (!view.notesExpandBase && hasOverride);
-  //   // Set the `expanded` state based on the calculated `isExpanded`
-  //   setExpanded(isExpanded);
-  // }, [card, view]);
-
-  // const hasOverride = view.notesExpandOverride.has(card.key);
-  // const isExpanded =
-  //   (view.notesExpandBase && !hasOverride) ||
-  //   (!view.notesExpandBase && hasOverride);
-
   const onMouseOver = useCallback(() => setIsMouseOver(true), []);
   const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
   const hasOverride = view.notesExpandOverride.has(card.key);
+  const { dueDate } = usePartialVertex(card, ['dueDate']);
 
   const source: UISource = 'board';
 
-  const handleExpandCard = () => {
+  const handleExpandCard: MouseEventHandler = (e) => {
+    e.stopPropagation();
     view.setNoteExpandOverride(card.key, !hasOverride);
     setExpanded((x) => !x);
   };
@@ -460,12 +380,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   }, [card, documentRouter, logger, source]);
 
   return (
-    <div
-      className={cn(styles.cardContainer, className)}
-      ref={ref}
-      // style={style}
-      {...rest}
-    >
+    <div className={cn(styles.cardContainer, className)} ref={ref} {...rest}>
       <div
         className={cn(
           styles.card,
@@ -479,14 +394,22 @@ export const KanbanCard = React.forwardRef(function CardItemView(
       >
         <div className={cn(styles.headerContainer)}>
           <div className={cn(styles.taskCheckBoxContainer)}>
-            <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
+            {isTask ? (
+              <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
+            ) : (
+              <img
+                key="NoteIconBoard"
+                src="/icons/board/Note.svg"
+                className={cn(styles.taskCheckbox)}
+              />
+            )}
             <div className={cn(styles.titleTextContainer)}>
               {pCard.titlePlaintext.split(' ').map((word, index) => (
                 <Text
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone
+                    isDone && isTask && styles.strikethroughDone
                   )}
                 >
                   {word}{' '}
@@ -504,25 +427,23 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           showWorkspaceOnCard={showWorkspaceOnCard}
         />
         <div className={cn(styles.preview)} />
-        <CardFooter
-          isExpanded={isMouseOver}
-          size={size}
-          card={card}
-          source={source}
-        />
-      </div>
-      {!!childCards.length && (
-        <div className={cn(styles.expander)} onClick={() => handleExpandCard()}>
-          <CollapseExpanderToggle
+        <div className={cn(styles.footerAndExpand)}>
+          <CardFooter
+            isExpanded={isMouseOver}
+            size={size}
             card={card}
-            isExpanded={expanded}
-            toggleExpanded={() =>
-              view.setNoteExpandOverride(card.key, !hasOverride)
-            }
+            source={source}
           />
+          <div className={cn(styles.expanderAndDate)}>
+            {!!childCards.length && (
+              <div onClick={(e) => handleExpandCard(e)}>
+                <CollapseExpanderToggle card={card} isExpanded={expanded} />
+              </div>
+            )}
+            {dueDate && <DueDateIndicator card={card} source={source} />}
+          </div>
         </div>
-      )}
-
+      </div>
       <div
         className={cn(styles.childList, !expanded && styles.hide)}
         ref={childListRef}
@@ -552,12 +473,6 @@ interface ChildCardProps {
 
 function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
   const styles = useStyles();
-  // const style = useMemo(() => {
-  //   return {
-  //     transform: isVisible
-  //       ? 'translateY(0)'
-  //       : `translateY(${-(index + 1) * (16 + 64)}px)`,
-  //   };
-  // }, [index, isVisible]);
+
   return <KanbanCard size={size} card={card} className={cn(styles.child)} />;
 }
