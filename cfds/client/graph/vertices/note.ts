@@ -480,6 +480,7 @@ export class Note extends ContentVertex {
   titleRTDidMutate(local: boolean, oldValue: RichText): MutationPack {
     this._cachedTitle = undefined;
     const prevPlaintextTitle = this._cachedPlaintextTitle;
+    this._cachedPlaintextTitle = undefined;
     this._cachedTitleRT = undefined;
     return [
       ['title', local, docFromRT(oldValue)],
