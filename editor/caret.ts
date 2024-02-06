@@ -173,9 +173,9 @@ function renderCaret(ctx: RenderContext) {
   caretDiv.hidden = false;
   const text = selection.anchor.node.text;
   const spanStyle = getComputedStyle(span);
-  const measuredText = new MeasuredText(text, spanStyle, span.clientWidth);
-  const idx = selection.anchor.offset;
   const spanBounds = span.getBoundingClientRect();
+  const measuredText = new MeasuredText(text, spanStyle, spanBounds.width);
+  const idx = selection.anchor.offset;
   const rtl = spanStyle.direction === 'rtl';
   if (idx === 0) {
     if (rtl) {
@@ -192,9 +192,7 @@ function renderCaret(ctx: RenderContext) {
           spanBounds.right - bounds.x - bounds.width - 1
         }px`;
       } else {
-        caretDiv.style.left = `${
-          spanBounds.right - bounds.width - bounds.x - 1
-        }px`;
+        caretDiv.style.left = `${spanBounds.right - bounds.x - 1}px`;
       }
     } else {
       if (idx === text.length) {

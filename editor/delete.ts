@@ -99,12 +99,12 @@ export function deleteCurrentSelection(
         }
       }
     } else {
-      mergeCtx.delete(start);
+      mergeCtx.delete(start - 1);
     }
   } else {
     mergeCtx.deleteRange(start!, end!);
   }
-  mergeCtx.insert(start!, [
+  mergeCtx.insert(start! + 1, [
     {
       key: selectionId,
       type: 'anchor',
