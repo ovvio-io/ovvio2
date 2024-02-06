@@ -36,9 +36,7 @@ export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
 const useStyles = makeStyles((theme) => ({
   footer: {
-    // alignItems: 'center',
     minHeight: styleguide.gridbase,
-    color: theme.background.textSecondary,
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -47,6 +45,11 @@ const useStyles = makeStyles((theme) => ({
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
     gap: styleguide.gridbase * 0.5,
+  },
+  tagsAndAssignees: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   attachments: {
     alignItems: 'center',
@@ -67,8 +70,8 @@ const useStyles = makeStyles((theme) => ({
   },
   tagsContainer: {
     display: 'flex',
-    maxWidth: '20px',
-    // padding: '0.5px 6px 1.5px 6px',
+    maxWidth: '220px',
+    flexDirection: 'row',
   },
 }));
 
@@ -124,7 +127,7 @@ export interface CardFooterProps {
 //   );
 // }
 
-function DueDateIndicator({ card, source }: CardFooterProps) {
+export function DueDateIndicator({ card, source }: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
@@ -180,10 +183,10 @@ export function CardFooter({
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
-  const { dueDate } = usePartialVertex(card, ['dueDate']);
+  // const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
     <div className={cn(styles.footer, className)}>
-      <div>
+      <div className={cn(styles.tagsAndAssignees)}>
         <AssigneesView
           cardManager={card}
           cardType="small"
@@ -194,8 +197,8 @@ export function CardFooter({
           <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
         </div>
       </div>
-      <div className={cn(layout.flexSpacer)} />
-      {dueDate && <DueDateIndicator card={card} source={source} />}
+      {/* <div className={cn(layout.flexSpacer)} /> */}
+      {/* {dueDate && <DueDateIndicator card={card} source={source} />} */}
     </div>
   );
 }

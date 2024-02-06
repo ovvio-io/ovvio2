@@ -109,9 +109,3 @@ export function TitleBoardView({
     </DragAndDropContext>
   );
 }
-
-//the solution that i think will work, but i dont know how to implement is:
-//check inside the KanbanColumn what groupBy is it and then deal with it accordingly.
-
-//most important is to understand how the Query works and that is the type- CoreValue
-// maybe doing something like this - card={pinnedQuery.group(group)[0]}

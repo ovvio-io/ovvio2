@@ -33,6 +33,11 @@ import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
+import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
+import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
+import { CheckIcon } from '../../../../workspaces-bar/index.tsx';
+import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
@@ -43,9 +48,80 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-start',
     basedOn: [layout.row], // TODO: change to display flex
   },
+  listItem: {
+    height: styleguide.gridbase * 4,
+    flexShrink: 0,
+    basedOn: [layout.row],
+  },
+  listItemSelected: {
+    itemTab: {
+      backgroundColor: 'var(--ws-background)',
+    },
+  },
+  itemTab: {
+    cursor: 'pointer',
+    userSelect: 'none',
+    height: '100%',
+    width: '100%',
+    minWidth: styleguide.gridbase * 18.5,
+    borderBottomRightRadius: styleguide.gridbase * 2,
+    borderTopRightRadius: styleguide.gridbase * 2,
+    maxWidth: styleguide.gridbase * 20.5,
+    paddingLeft: styleguide.gridbase,
+    paddingRight: styleguide.gridbase * 0.5,
+    boxSizing: 'border-box',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    basedOn: [layout.row],
+  },
+  itemText: {
+    overflowX: 'hidden',
+    flexGrow: 1,
+    flexShrink: 1,
+    textOverflow: 'ellipsis',
+    fontSize: '13px',
+    fontWeight: '400',
+  },
+  itemToggle: {
+    marginLeft: styleguide.gridbase * 0.5,
+    height: styleguide.gridbase * 2,
+    width: styleguide.gridbase * 2,
+    borderRadius: styleguide.gridbase,
+    flexShrink: 0,
+    background: 'var(--ws-inactive)',
+    basedOn: [layout.column, layout.centerCenter],
+  },
 }));
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
+export interface WorkspaceIndicatorCardProps {
+  workspace: VertexId<Workspace>;
+}
+function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
+  const styles = useStyles();
+  const { name } = usePartialVertex(workspace, ['name']);
+  const color = useWorkspaceColor(workspace);
+  const style = useMemo<any>(
+    () => ({
+      '--ws-background': color.background,
+      '--ws-inactive': color.inactive,
+      '--ws-active': color.active,
+    }),
+    [color]
+  );
+  return (
+    <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
+      <Tooltip text={name} disabled={true} position="right">
+        <div className={cn(styles.itemTab)}>
+          <div className={cn(styles.itemText)}>{name}</div>
+          <div className={cn(styles.itemToggle)}>
+            <CheckIcon />
+          </div>
+        </div>
+      </Tooltip>
+    </div>
+  );
+}
 
 function headerForGroupId(gid: CoreValue): React.ReactNode {
   let header = null;
@@ -55,7 +131,7 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
   if (gid instanceof VertexManager) {
     const vert = gid.getVertexProxy();
     if (vert instanceof Workspace) {
-      header = <WorkspaceIndicator workspace={vert} />;
+      header = <WorkspaceIndicatorCard workspace={vert} />;
     }
     if (vert instanceof User) {
       header = <div>{vert.name}</div>;
@@ -103,11 +179,11 @@ export function KanbanView({ className }: { className?: string }) {
       maxColSize = Math.max(maxColSize, unpinnedQuery.countForGroup(gid));
     }
   }
+
   let showWorkspaceOnCard: boolean = true;
   if (groupBy === 'workspace') {
     showWorkspaceOnCard = false;
   }
-
   return (
     <Scroller>
       {(ref) => (
