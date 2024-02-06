@@ -15,6 +15,8 @@ import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 import { DroppableProps } from '../../../../../shared/dragndrop/droppable.tsx';
 import { Droppable } from '../../../../../shared/dragndrop/index.ts';
 import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -74,14 +76,25 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: '-0.1px',
     gap: '4px',
   },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#F5ECDC',
+    },
+  },
 }));
 
-export interface BoardColumnProps {
-  title: string;
+export interface KanbanColumnProps {
+  groupBy: string;
+  header: React.ReactNode;
+  isColumnHovered?: boolean;
   onCreateCard?: () => void;
 }
 
-function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
+function ColumnTitle({
+  header,
+  isColumnHovered,
+  onCreateCard,
+}: KanbanColumnProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
@@ -124,15 +137,16 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
           style={style}
         >
           <div className={cn(styles.columnHeader)}>
-            <H4 className={cn(styles.titleText)}>{title}</H4>
+            <H4 className={cn(styles.titleText)}>{header}</H4>
             <div className={cn(layout.flexSpacer)} />
             <Button onClick={onCreateCard}>
-              <div className={cn(styles.newTaskText)}>New Task</div>
+              {isColumnHovered && (
+                <div className={cn(styles.newTaskText)}>New Task</div>
+              )}
               <img
                 key="IconNewTaskBoard"
                 src="/icons/board/New-Task-plus.svg"
               />
-              {/* <IconCreateNew /> */}
             </Button>
           </div>
           <div
@@ -145,40 +159,33 @@ function ColumnTitle({ title, onCreateCard }: BoardColumnProps) {
   );
 }
 
-function Column({
+export function KanbanColumn({
+  groupBy,
   children,
-  title,
-  onCreateCard,
-  ...rest
-}: React.PropsWithChildren<BoardColumnProps>) {
+  header,
+  ...props
+}: React.PropsWithChildren<KanbanColumnProps>) {
   const styles = useStyles();
+  const [isColumnHovered, setIsColumnHovered] = useState(false);
+  const handleMouseEnter = () => {
+    setIsColumnHovered(true);
+  };
+  const handleMouseLeave = () => {
+    setIsColumnHovered(false);
+  };
   return (
-    <div className={cn(styles.column)} {...rest}>
-      <ColumnTitle title={title} onCreateCard={onCreateCard} />
+    <div
+      className={cn(styles.column, styles.hoverableRow)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <ColumnTitle
+        header={header}
+        groupBy={groupBy}
+        isColumnHovered={isColumnHovered}
+        onCreateCard={() => {}}
+      />
       <div className={cn(styles.columnContent)}>{children}</div>
     </div>
-  );
-}
-
-export function BoardColumn({
-  title,
-  children,
-  ...props
-}: React.PropsWithChildren<
-  Omit<DroppableProps<VertexManager<Note>>, 'children'> & BoardColumnProps
->) {
-  // const filteredNotes = useFilteredNotes('listView');
-
-  // const pinnedQuery = useQuery2(filteredNotes[0]);
-  // const unpinnedQuery = useQuery2(filteredNotes[1]);
-
-  return (
-    <Droppable {...props}>
-      {(droppableProps) => (
-        <Column {...droppableProps.attributes} title={title}>
-          {children}
-        </Column>
-      )}
-    </Droppable>
   );
 }

@@ -878,7 +878,7 @@ const DateCell = ({ note }: { note: VertexManager<Note> }) => {
   return <Cell className={cn(styles[GridColumns.DueDate])}>{content}</Cell>;
 };
 
-const PinCell = ({
+export const PinCell = ({
   note,
   isMouseOver,
   isChild,
@@ -890,7 +890,10 @@ const PinCell = ({
   const styles = useStyles();
   const { isPinned } = usePartialVertex(note, ['isPinned']);
 
-  const togglePin = () => {
+  const togglePin = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
     const proxy = note.getVertexProxy();
     proxy.isPinned = !proxy.isPinned;
   };
@@ -898,14 +901,7 @@ const PinCell = ({
   return (
     <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
       {!isChild && (
-        <Button onClick={togglePin}>
-          {/* {isPinned ? (
-            <IconPinOn />
-          ) : (
-            <IconPinOff
-              className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
-            />
-          )} */}
+        <Button onClick={(event) => togglePin(event)}>
           <IconPin on={isPinned} visible={isMouseOver} />
         </Button>
       )}

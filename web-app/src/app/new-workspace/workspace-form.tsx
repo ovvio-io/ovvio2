@@ -23,6 +23,7 @@ import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { uniqueId } from '../../../../base/common.ts';
 import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
 import { Repository } from '../../../../repo/repo.ts';
+import { getOrganizationId } from '../../../../net/rest-api.ts';
 
 const useStyles = makeStyles((theme) => ({
   input: {
@@ -143,6 +144,15 @@ export function WorkspaceForm({
     const wsResult = createNewWorkspace(name, graph, {
       copyFrom: duplicateWs,
     });
+    // Hack for sandbox - mass workspace creation
+    if (getOrganizationId() === 'sandbox') {
+      for (let i = 1; i <= 100; ++i) {
+        const copyName = `${name} (${i})`;
+        createNewWorkspace(copyName, graph, {
+          copyFrom: duplicateWs,
+        });
+      }
+    }
     logger.log({
       severity: 'EVENT',
       event: 'End',

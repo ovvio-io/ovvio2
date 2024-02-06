@@ -156,7 +156,6 @@ export class Server {
     this._middlewares = [];
     getOvvioConfig().serverData = this;
     if (args === undefined) {
-      debugger;
       args = yargs(Deno.args)
         .option('port', {
           alias: 'p',

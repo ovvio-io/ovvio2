@@ -12,9 +12,7 @@ import { CardSize } from '../card-item/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   item: {
-    // marginBottom: styleguide.gridbase * 2,
-    marginBottom: '1px',
-    padding: [0, '1px'],
+    marginBottom: styleguide.gridbase * 2,
   },
 }));
 

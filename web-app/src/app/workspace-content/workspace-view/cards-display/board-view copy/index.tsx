@@ -35,7 +35,7 @@ export interface BoardViewInternalProps {
 export function BoardView({ className }: { className?: string }) {
   const styles = useStyles();
   const view = usePartialView('groupBy');
-  const filteredNotes = useFilteredNotes('BoardView'); // ask ofri
+  const filteredNotes = useFilteredNotes('BoardView');
   let content: React.ReactNode = null;
   const groupBy = view.groupBy;
   if (groupBy === 'workspace') {

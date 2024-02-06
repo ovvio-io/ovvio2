@@ -38,7 +38,7 @@ import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 const useStyles = makeStyles((theme) => ({
   item: {
     position: 'relative',
-    marginBottom: styleguide.gridbase * 2,
+    marginBottom: '1px',
   },
   listRoot: {
     height: '100%',
@@ -77,12 +77,11 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
 
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
-
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
     },
-    [docRouter],
+    [docRouter]
   );
 
   useEffect(() => {
@@ -136,7 +135,6 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                   <LabelSm>{headerText}</LabelSm>
                 </Row>
               )}
-
               {/* <Droppable items={cards.pinned} onDrop={onDrop}>
                     {({ attributes }) => (
                       <div {...attributes} style={{ display: 'contents' }}> */}
@@ -148,7 +146,7 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                 >
                   {(
                     draggableProps,
-                    ref: React.MutableRefObject<HTMLTableRowElement>,
+                    ref: React.MutableRefObject<HTMLTableRowElement>
                   ) => (
                     <ItemRow
                       index={index}
@@ -161,7 +159,6 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
                   )}
                 </Draggable>
               ))}
-
               <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
               {/* {view.noteType === NoteType.Task && (
                 <InlineTaskButton

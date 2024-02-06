@@ -34,11 +34,11 @@ export enum PillStyle {
 const useStyles = makeStyles((theme) => ({
   pill: {
     direction: 'ltr',
-    height: styleguide.gridbase * 3,
-    minWidth: styleguide.gridbase * 6,
-    padding: [0, styleguide.gridbase],
+    // height: styleguide.gridbase * 3,
+    // minWidth: styleguide.gridbase * 6,
+    // padding: [0, styleguide.gridbase],
     flexShrink: 0,
-    fontSize: 12,
+    fontSize: 10,
     borderRadius: styleguide.gridbase * 2.5,
     ...styleguide.transition.short,
     transitionProperty: 'all',
@@ -49,6 +49,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     userSelect: 'none',
   },
+
   [PillStyle.Full]: {
     backgroundColor: 'var(--pill-color)',
     color: theme.background.text,
@@ -72,7 +73,7 @@ const useStyles = makeStyles((theme) => ({
   },
   pillAction: {
     position: 'relative',
-    top: 1,
+    // top: 1,
     animation: `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
     cursor: 'pointer',
     display: 'none',

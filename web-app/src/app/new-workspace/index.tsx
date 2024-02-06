@@ -66,26 +66,18 @@ export const CreateWorkspaceView = ({
       view.selectedWorkspaces.add(view.graph.getVertex<Workspace>(result));
       navigate('/');
     },
-    [view, navigate]
+    [view, navigate],
   );
-
-  const closeView = useCallback(() => {
-    navigate('/login');
-  }, [navigate]);
 
   return (
     <div className={cn(styles.root)}>
       <Toolbar />
       <div className={cn(styles.content)}>
         <div className={cn(styles.card)}>
-          {/* {ws ? (
-            <InviteForm showOnboard={true} close={closeView} source={source} />
-          ) : ( */}
           <WorkspaceForm
             source={source}
             onWorkspaceCreated={onWorkspaceCreated || onCreated}
           />
-          {/* )} */}
         </div>
       </div>
     </div>
