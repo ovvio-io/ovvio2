@@ -283,7 +283,6 @@ export const RichTextEditor = forwardRef<
           event.key,
           ctx.baseDirection || 'auto',
         );
-        debugger;
         if (doc) {
           event.stopPropagation();
           event.preventDefault();

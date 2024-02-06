@@ -65,13 +65,6 @@ export function deleteCurrentSelection(
   }
   if (start === end) {
     start = start!;
-    debugger;
-    if (
-      selection.anchor.offset === selection.anchor.node.text.length &&
-      selection.anchor.offset > 0
-    ) {
-      --start;
-    }
     const prevAtom = mergeCtx.at(start);
     if (isDepthMarker(prevAtom)) {
       mergeCtx.deleteRange(start - 3, start);
