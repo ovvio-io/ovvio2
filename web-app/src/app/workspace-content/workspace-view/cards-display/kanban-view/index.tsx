@@ -163,7 +163,7 @@ export function KanbanView({ className }: { className?: string }) {
             limit={xLimit}
             setLimit={setXLimit}
             pageSize={PAGE_SIZE}
-            recordsLength={unpinnedQuery.groupCount}
+            recordsLength={unpinnedQuery?.groupCount || 0}
             isVisible={false}
           />
         </div>
