@@ -235,10 +235,8 @@ export class Note extends ContentVertex {
   set body(rt: UnkeyedDocument) {
     // Take a snapshot of the out refs before changing the value
     const oldRefs = this.getBodyRefs();
-    rt = projectRanges(
-      this.body,
-      rt,
-      (ptr) => this.graph.ptrFilterFunc(ptr.key),
+    rt = projectRanges(this.body, rt, (ptr) =>
+      this.graph.ptrFilterFunc(ptr.key),
     );
     this._cachedBody = undefined;
     const graph = this.graph;
@@ -482,6 +480,7 @@ export class Note extends ContentVertex {
   titleRTDidMutate(local: boolean, oldValue: RichText): MutationPack {
     this._cachedTitle = undefined;
     const prevPlaintextTitle = this._cachedPlaintextTitle;
+    this._cachedPlaintextTitle = undefined;
     this._cachedTitleRT = undefined;
     return [
       ['title', local, docFromRT(oldValue)],
@@ -611,9 +610,8 @@ export class Note extends ContentVertex {
 
   get tags(): Dictionary<Tag, Tag> {
     const map: Dictionary | undefined = this.record.get('tags');
-    const result: Dictionary<Tag, Tag> = map === undefined
-      ? new Map()
-      : keyDictToVertDict(this.graph, map);
+    const result: Dictionary<Tag, Tag> =
+      map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
     for (const [parent, child] of this.dynamicTags) {
       if (!result.has(parent)) {
         result.set(parent, child);
