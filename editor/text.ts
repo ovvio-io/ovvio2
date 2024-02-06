@@ -157,7 +157,7 @@ export function measureCharacters(
   }
   const ctx = OFFSCREEN_CANVAS.getContext('2d')!;
   ctx.save();
-  ctx.font = style.font;
+  ctx.font = `${style.fontWeight} ${style.font}`;
   ctx.fontKerning = style.fontKerning as CanvasFontKerning;
   // ctx.fontStretch = style.fontStretch;
   // ctx.fontVariantCaps = style.fontVariantCaps;
