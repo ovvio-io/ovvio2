@@ -1,4 +1,8 @@
 import {
+  getEmbeddingLevels,
+  getReorderedString,
+} from '../external/bidi-js/index.js';
+import {
   WritingDirection,
   resolveWritingDirection,
   searchAll,
@@ -8,12 +12,25 @@ import { assert } from '../base/error.ts';
 
 const OFFSCREEN_CANVAS = new OffscreenCanvas(100, 100);
 
+interface BidiParagraph {
+  start: number;
+  end: number;
+  level: number;
+}
+
+interface GetEmbeddingLevelsResult {
+  paragraphs: BidiParagraph[];
+  levels: Uint8Array;
+}
+
 export class MeasuredText {
   readonly characterWidths: readonly number[];
   readonly wordEdges: readonly number[];
   readonly lines: readonly (readonly [string, Rect2D])[];
   readonly characterRects: Rect2D[];
   readonly characterMetrics: TextMetrics[];
+  readonly bidiReversedText: string;
+  readonly bidiEmbeddingLevels: GetEmbeddingLevelsResult;
 
   constructor(
     readonly text: string,
@@ -21,6 +38,15 @@ export class MeasuredText {
     readonly width: number,
     readonly dir: WritingDirection = 'auto',
   ) {
+    const bidiEmbeddingLevels = getEmbeddingLevels(text, 'auto');
+    this.bidiEmbeddingLevels = bidiEmbeddingLevels;
+    const bidiReversedText = getReorderedString(
+      text,
+      bidiEmbeddingLevels,
+      0,
+      text.length,
+    );
+    this.bidiReversedText = bidiReversedText;
     const wordEdges = searchAll(text, /(?:^|\s)/gmu);
     this.wordEdges = wordEdges;
     const [charWidths, charMetrics] = measureCharacters(text, style);
@@ -29,7 +55,7 @@ export class MeasuredText {
     const lines: [string, Rect2D][] = [];
     const charRects: Rect2D[] = [];
     if (dir === 'auto') {
-      dir = resolveWritingDirection(text);
+      dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
     }
     const lineHeight = CSSNumericValue.parse(style.lineHeight).to('px').value;
     let lineWidth = 0;
@@ -94,6 +120,13 @@ export class MeasuredText {
     this.lines = lines;
     this.characterRects = charRects;
   }
+}
+
+function getBaseDirectionFromBidiLevels(levels: Uint8Array): WritingDirection {
+  if (!levels.length) {
+    return 'auto';
+  }
+  return (levels[0] || 0) % 2 === 1 ? 'rtl' : 'ltr';
 }
 
 const HEBREW_REGEX =
