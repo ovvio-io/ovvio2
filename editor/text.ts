@@ -127,10 +127,10 @@ export function measureCharacters(
   for (let i = 0; i < text.length; ++i) {
     const m = ctx.measureText(text.substring(0, i + 1));
     const width = m.width;
-    let charWidth = width - prevWidth;
-    if (text[i].match(HEBREW_REGEX)) {
-      charWidth = Math.floor(1.1 * charWidth);
-    }
+    const charWidth = width - prevWidth;
+    // if (text[i].match(HEBREW_REGEX)) {
+    //   charWidth = Math.floor(1.1 * charWidth);
+    // }
     widths.push(charWidth);
     metrics.push(m);
     prevWidth = width;
