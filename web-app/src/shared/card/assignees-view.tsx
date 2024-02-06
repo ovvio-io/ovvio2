@@ -231,7 +231,7 @@ export function Assignee({
   className,
   renderSelected = DEFAULT_RENDER,
   size = 'big',
-  style = {},
+  style = { paddingRight: '1px' },
 }: AssigneeProps) {
   const styles = useStyles();
   const logger = useLogger();
@@ -432,7 +432,7 @@ export default function AssigneesView({
         users={users}
         assignees={assignees}
         className={cn(!isExpanded && styles.hide, assignClassName)}
-        style={{ padding: '4px' }}
+        // style={{ padding: '4px' }}
       />
       {...assignees.map((user, index) => {
         return (

@@ -6,29 +6,20 @@ import {
 } from '../../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import {
-  DueDateColumn,
-  FilteredNotes,
-  useFilteredNotes,
-} from '../../../../../core/cfds/react/filter.ts';
+import { useFilteredNotes } from '../../../../../core/cfds/react/filter.ts';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
+
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import localization from './board.strings.json' assert { type: 'json' };
 import { KanbanColumn } from './kanban-column.tsx';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { DragPosition } from '../../../../../shared/dragndrop/droppable.tsx';
 import { CardSize, KanbanCard } from './kanban-card.tsx';
-import { Row } from '../list-view/table/item.tsx';
 import {
   InfiniteHorizontalScroll,
   InfiniteVerticalScroll,
 } from '../list-view/infinite-scroll.tsx';
-import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
 import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
@@ -46,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
     paddingBottom: styleguide.gridbase * 2,
     boxSizing: 'border-box',
     alignItems: 'flex-start',
-    basedOn: [layout.row], // TODO: change to display flex
+    basedOn: [layout.row],
   },
   listItem: {
     height: styleguide.gridbase * 4,
@@ -125,16 +116,25 @@ function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
 
 function headerForGroupId(gid: CoreValue): React.ReactNode {
   let header = null;
-  if (typeof gid === 'string') {
-    header = <div> {gid}</div>;
-  }
-  if (gid instanceof VertexManager) {
-    const vert = gid.getVertexProxy();
-    if (vert instanceof Workspace) {
-      header = <WorkspaceIndicatorCard workspace={vert} />;
+  const strings = useStrings();
+  if (gid == null) {
+    header = strings.unassigned;
+  } else {
+    if (typeof gid === 'string') {
+      if (strings[gid]) {
+        header = <div> {strings[gid]}</div>;
+      } else {
+        header = <div> {gid}</div>;
+      }
     }
-    if (vert instanceof User) {
-      header = <div>{vert.name}</div>;
+    if (gid instanceof VertexManager) {
+      const vert = gid.getVertexProxy();
+      if (vert instanceof Workspace) {
+        header = <WorkspaceIndicatorCard workspace={vert} />;
+      }
+      if (vert instanceof User) {
+        header = <div>{vert.name}</div>;
+      }
     }
   }
   return header;
@@ -143,9 +143,7 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
 export function KanbanView({ className }: { className?: string }) {
   const styles = useStyles();
   const view = usePartialView('groupBy');
-
   const groupBy = view.groupBy;
-
   const filteredNotes = useFilteredNotes('BoardView');
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
@@ -161,7 +159,6 @@ export function KanbanView({ className }: { className?: string }) {
     return Array.from(s).sort(coreValueCompare);
   }, [pinnedQuery, unpinnedQuery]);
 
-  const strings = useStrings();
   const [yLimit, setYLimit] = useState(PAGE_SIZE);
   const [xLimit, setXLimit] = useState(PAGE_SIZE);
 
@@ -184,6 +181,7 @@ export function KanbanView({ className }: { className?: string }) {
   if (groupBy === 'workspace') {
     showWorkspaceOnCard = false;
   }
+
   return (
     <Scroller>
       {(ref) => (
@@ -200,18 +198,19 @@ export function KanbanView({ className }: { className?: string }) {
               }
               groupBy={groupBy}
             >
-              {pinnedQuery
-                .group(group)
-                .slice(0, yLimit)
-                .map((noteMgr) => (
-                  <KanbanCard
-                    card={noteMgr}
-                    size={CardSize.Small}
-                    key={noteMgr.key}
-                    showWorkspaceOnCard={showWorkspaceOnCard}
-                  />
-                ))}
-              {pinnedQuery.group(group).length > 0 && (
+              {pinnedQuery &&
+                pinnedQuery
+                  .group(group)
+                  .slice(0, yLimit)
+                  .map((noteMgr) => (
+                    <KanbanCard
+                      card={noteMgr}
+                      size={CardSize.Small}
+                      key={noteMgr.key}
+                      showWorkspaceOnCard={showWorkspaceOnCard}
+                    />
+                  ))}
+              {pinnedQuery && pinnedQuery.group(group).length > 0 && (
                 <div style={{ height: '16px' }}></div>
               )}
 

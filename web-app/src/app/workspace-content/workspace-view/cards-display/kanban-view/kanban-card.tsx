@@ -104,7 +104,6 @@ const useStyles = makeStyles((theme) => ({
   titleText: {
     fontSize: 13,
     fontWeight: '400',
-    lineHeight: `${TITLE_LINE_HEIGHT}px`,
     display: 'inline',
     ...styleguide.transition.short,
   },
@@ -171,47 +170,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface TitleElementProps {
-  className?: string;
-}
-
-const TitleNode = React.forwardRef(
-  (
-    { className, ...props }: TitleElementProps,
-    ref: React.ForwardedRef<HTMLSpanElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
-    );
-  }
-);
-
-function Title({
-  card,
-  source,
-  isDone,
-}: {
-  card: VertexManager<Note>;
-  source: UISource;
-  isDone: boolean;
-}) {
-  const styles = useStyles();
-  const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
-
-  return (
-    <div>
-      {titlePlaintext.split(' ').map((word, index) => (
-        <Text
-          className={cn(styles.titleText, isDone && styles.strikethroughDone)}
-        >
-          {word}{' '}
-        </Text>
-      ))}
-    </div>
-  );
-}
-
 export interface CardHeaderPartProps extends KanbanCardProps {
   isExpanded?: boolean;
   source: UISource;
@@ -263,7 +221,7 @@ export function StatusCheckbox({
     'isChecked',
   ]);
   if (pCard.type !== NoteType.Task || !pCard.isChecked) {
-    return <div className={cn(styles.checkboxPlaceholder, styles.status)} />;
+    return <div className={cn(styles.status)} />;
   }
 
   const onChange = useCallback(() => {
@@ -289,19 +247,14 @@ export function StatusCheckbox({
     </div>
   );
 }
-const CollapseExpanderToggle = ({
-  card,
-  isExpanded,
-}: {
-  card: VertexManager<Note>;
-  isExpanded: boolean;
-}) => {
+const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
   return (
     <Button>
       <IconCollapseExpand on={isExpanded} />
     </Button>
   );
 };
+
 const calculateIsExpanded = (
   card: VertexManager<Note>,
   view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
@@ -353,7 +306,6 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const isDone = pCard.isChecked;
   const logger = useLogger();
   const [isMouseOver, setIsMouseOver] = useState(false);
-
   const onMouseOver = useCallback(() => setIsMouseOver(true), []);
   const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
   const hasOverride = view.notesExpandOverride.has(card.key);
@@ -437,9 +389,10 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           <div className={cn(styles.expanderAndDate)}>
             {!!childCards.length && (
               <div onClick={(e) => handleExpandCard(e)}>
-                <CollapseExpanderToggle card={card} isExpanded={expanded} />
+                <CollapseExpanderToggle isExpanded={expanded} />
               </div>
             )}
+            {childCards.length == 0 && <div></div>}
             {dueDate && <DueDateIndicator card={card} source={source} />}
           </div>
         </div>
