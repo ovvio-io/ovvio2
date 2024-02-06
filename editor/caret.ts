@@ -23,6 +23,8 @@ import { styleguide } from '../styles/styleguide.ts';
 import { assert } from '../base/error.ts';
 import { MeasuredText } from './text.ts';
 
+export type CaretStyle = 'p' | 'h1' | 'h2';
+
 function findNear<T extends MarkupNode>(
   rt: RichText,
   target: TreeNode,
@@ -142,19 +144,35 @@ export function onKeyboardArrow(
 }
 
 function renderCaret(ctx: RenderContext) {
-  const caretDiv = getCaretDiv(ctx);
-  if (!caretDiv) {
-    return;
-  }
   if (!ctx.doc.ranges) {
-    caretDiv.hidden = true;
+    const caret = getCaretDiv(ctx, 'p');
+    if (caret) {
+      caret.hidden = true;
+    }
     return;
   }
 
   const selectionId = ctx.selectionId;
   const selection = ctx.doc.ranges[selectionId];
   if (!selection) {
-    caretDiv.hidden = true;
+    const caret = getCaretDiv(ctx, 'p');
+    if (caret) {
+      caret.hidden = true;
+    }
+    return;
+  }
+
+  const text = selection.anchor.node.text;
+  const path = pathToNode(ctx.doc.root, selection.anchor.node);
+  let style: CaretStyle = 'p';
+  if (path![0].tagName === 'h1') {
+    style = 'h1';
+  } else if (path![0].tagName === 'h2') {
+    style = 'h2';
+  }
+
+  const caretDiv = getCaretDiv(ctx, style);
+  if (!caretDiv) {
     return;
   }
 
@@ -171,7 +189,6 @@ function renderCaret(ctx: RenderContext) {
   }
 
   caretDiv.hidden = false;
-  const text = selection.anchor.node.text;
   const spanStyle = getComputedStyle(span);
   const spanBounds = span.getBoundingClientRect();
   const rtl = spanStyle.direction === 'rtl';
@@ -214,7 +231,10 @@ function domIdForCaret(ctx: RenderContext) {
   return `${ctx.editorId}:caret`;
 }
 
-function getCaretDiv(ctx: RenderContext): HTMLDivElement | undefined {
+function getCaretDiv(
+  ctx: RenderContext,
+  style: CaretStyle,
+): HTMLDivElement | undefined {
   const editor = document.getElementById(ctx.editorId);
   if (editor === null) {
     return undefined;
@@ -227,13 +247,27 @@ function getCaretDiv(ctx: RenderContext): HTMLDivElement | undefined {
     div.style.position = 'absolute';
     div.style.backgroundColor = theme.mono.m4;
     div.style.width = '2px';
-    div.style.height = `${styleguide.gridbase * 2}px`;
     div.style.borderRadius = '1px';
     div.style.boxSizing = 'border-box';
     div.style.border = `1px solid ${theme.mono.m4}`;
     div.style.zIndex = '1';
     editor.appendChild(div);
   }
+  let h: number;
+  switch (style) {
+    case 'h1':
+      h = 24;
+      break;
+
+    case 'h2':
+      h = 22;
+      break;
+
+    default:
+      h = styleguide.gridbase * 2;
+      break;
+  }
+  div.style.height = `${h}px`;
   return div as HTMLDivElement;
 }
 
