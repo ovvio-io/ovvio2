@@ -39,33 +39,37 @@ export class MeasuredText {
     readonly dir: WritingDirection = 'auto',
   ) {
     const bidiEmbeddingLevels = getEmbeddingLevels(text, 'auto');
+    if (dir === 'auto') {
+      dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
+    }
     this.bidiEmbeddingLevels = bidiEmbeddingLevels;
-    const bidiReversedText = getReorderedString(
-      text,
-      bidiEmbeddingLevels,
-      0,
-      text.length,
-    );
+    const bidiReversedText =
+      dir === 'rtl'
+        ? text
+        : getReorderedString(text, bidiEmbeddingLevels, 0, text.length);
     this.bidiReversedText = bidiReversedText;
-    const wordEdges = searchAll(text, /(?:^|\s)/gmu);
+    const wordEdges = searchAll(bidiReversedText, /(?:^|\s)/gmu);
     this.wordEdges = wordEdges;
-    const [charWidths, charMetrics] = measureCharacters(text, style);
+    const [charWidths, charMetrics] = measureCharacters(
+      bidiReversedText,
+      style,
+    );
     this.characterWidths = charWidths;
     this.characterMetrics = charMetrics;
     const lines: [string, Rect2D][] = [];
     const charRects: Rect2D[] = [];
-    if (dir === 'auto') {
-      dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
-    }
     const lineHeight = CSSNumericValue.parse(style.lineHeight).to('px').value;
     let lineWidth = 0;
     let prevLineBreak = 0;
     let y = 0;
-    for (let i = 0; i < text.length; ++i) {
+    for (let i = 0; i < bidiReversedText.length; ++i) {
       const w = charWidths[i];
       if (lineWidth + w >= width) {
         const prevWordBoundary = findValueBefore(i, wordEdges) || i;
-        const line = text.substring(prevLineBreak, prevWordBoundary);
+        const line = bidiReversedText.substring(
+          prevLineBreak,
+          prevWordBoundary,
+        );
         let actualWidth = 0;
         for (let j = prevLineBreak; j < prevWordBoundary; ++j) {
           const w2 = charWidths[j];
@@ -93,10 +97,13 @@ export class MeasuredText {
         lineWidth += w;
       }
     }
-    if (prevLineBreak < text.length) {
-      const line = text.substring(prevLineBreak, text.length);
+    if (prevLineBreak < bidiReversedText.length) {
+      const line = bidiReversedText.substring(
+        prevLineBreak,
+        bidiReversedText.length,
+      );
       let actualWidth = 0;
-      for (let j = prevLineBreak; j < text.length; ++j) {
+      for (let j = prevLineBreak; j < bidiReversedText.length; ++j) {
         const w2 = charWidths[j];
         charRects.push({
           x: actualWidth,

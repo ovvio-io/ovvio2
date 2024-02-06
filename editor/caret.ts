@@ -31,7 +31,6 @@ function findNear<T extends MarkupNode>(
 ): T | undefined {
   let lastMatch: T | undefined;
   let foundTarget = false;
-  debugger;
   if (direction === 'before' && !isElementNode(target)) {
     const path = pathToNode(rt.root, target);
     if (!path) {
@@ -176,7 +175,12 @@ function renderCaret(ctx: RenderContext) {
   const spanStyle = getComputedStyle(span);
   const spanBounds = span.getBoundingClientRect();
   const rtl = spanStyle.direction === 'rtl';
-  const measuredText = new MeasuredText(text, spanStyle, spanBounds.width);
+  const measuredText = new MeasuredText(
+    text,
+    spanStyle,
+    spanBounds.width,
+    rtl ? 'rtl' : 'ltr',
+  );
   const idx = selection.anchor.offset;
   if (idx === 0) {
     if (rtl) {
