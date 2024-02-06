@@ -149,13 +149,31 @@ export function DueDateIndicator({ card, source }: CardFooterProps) {
     dueDateEditor!.edit(card.getVertexProxy());
   };
 
-  const isOverdue = dueDate < new Date();
-  const color = isOverdue ? '#C25A3E' : '#3f3f3f'; //TODO: need to use "theme"
+  // const isOverdue = dueDate < new Date();
+  // const today = dueDate === new Date();
+  const today = new Date();
+
+  const isDueDateToday =
+    dueDate.getDate() === today.getDate() &&
+    dueDate.getMonth() === today.getMonth() &&
+    dueDate.getFullYear() === today.getFullYear();
+
+  const isOverdue = dueDate < today && !isDueDateToday;
+
+  const color = isOverdue ? '#C25A3E' : isDueDateToday ? '#F9B55A' : '#3f3f3f';
   const fontSize = '10px';
 
   return (
     <Button className={cn(styles.footerItem)} onClick={onClick}>
-      <IconDueDate state={isOverdue ? DueDateState.Late : DueDateState.None} />
+      <IconDueDate
+        state={
+          isOverdue
+            ? DueDateState.Late
+            : isDueDateToday
+            ? DueDateState.Today
+            : DueDateState.None
+        }
+      />
       <Text style={{ color, fontSize }}>{formatTimeDiff(dueDate)}</Text>
     </Button>
   );
