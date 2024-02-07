@@ -289,7 +289,7 @@ export class GraphManager
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
-    if (plumbing.loadedLocalContents !== true) {
+    if (!plumbing.syncFinished) {
       await this.syncRepository(repoId);
       this.startSyncing(repoId);
     } else {
@@ -404,9 +404,7 @@ export class GraphManager
     }
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
-    return (
-      plumbing?.loadedLocalContents === true || plumbing?.syncFinished === true
-    );
+    return plumbing?.syncFinished === true;
   }
 
   /**
