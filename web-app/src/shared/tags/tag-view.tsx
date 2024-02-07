@@ -2,10 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
-import {
-  IconClose,
-  IconDropDownArrow,
-} from '../../../../styles/components/icons/index.ts';
+import { IconDropDownArrow } from '../../../../styles/components/icons/index.ts';
 import DropDown, {
   DropDownItem,
 } from '../../../../styles/components/inputs/drop-down.tsx';
@@ -21,6 +18,7 @@ import {
   usePartialVertices,
 } from '../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
+import { IconClose } from '../../../../styles/components/new-icons/icon-close.tsx';
 
 const showAnim = keyframes({
   '0%': {
@@ -140,7 +138,7 @@ export function TagPillView({
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
         menuOnHover && styles.onHover,
-        className,
+        className
       )}
       style={{
         ...style,
@@ -151,7 +149,7 @@ export function TagPillView({
       <div
         className={cn(
           styles.tagDelete,
-          !menuOnHover && !showMenu && styles.hide,
+          !menuOnHover && !showMenu && styles.hide
         )}
       >
         <IconDropDownArrow className="" />
@@ -188,7 +186,7 @@ export default function TagView({
   const partialTag = usePartialVertex(tag, ['parentTag']);
   const siblings = usePartialVertices<Tag>(
     partialTag.parentTag?.childTags || [],
-    ['name'],
+    ['name']
   );
 
   const onChange = (t: Tag | typeof DELETE_TAG) => {
@@ -217,19 +215,14 @@ export default function TagView({
       {siblings.map((t) => (
         <DropDownItem value={t} key={t.key}>
           <div className={cn(styles.circleContainer)}>
-            <div
-              className={cn(styles.circle)}
-              // style={{
-              //   backgroundColor: t.color,
-              // }}
-            />
+            <div className={cn(styles.circle)} />#
           </div>
           <span className={cn(styles.tagDropDownName)}>{t.name}</span>
         </DropDownItem>
       ))}
       <DropDownItem value={DELETE_TAG}>
         <div className={cn(styles.circleContainer)}>
-          <IconClose className="" />
+          <img src="/icons/design-system/Close.svg" />
         </div>
         <span className={cn(styles.tagDropDownName)}>Remove Tag</span>
       </DropDownItem>
