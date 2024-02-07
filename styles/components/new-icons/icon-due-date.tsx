@@ -6,6 +6,7 @@ export enum DueDateState {
   None = 'none',
   Late = 'late',
   Clear = 'clear',
+  Today = 'today',
 }
 
 const COLOR_MAP = {
@@ -20,9 +21,14 @@ const COLOR_MAP = {
     var3: theme.supporting.O2,
   },
   [DueDateState.Clear]: {
-    var1: theme.primary.p10,
-    var2: theme.primary.p9,
-    var3: theme.primary.p8,
+    var1: theme.secondary.s7,
+    var2: theme.secondary.s5,
+    var3: theme.secondary.s7,
+  },
+  [DueDateState.Today]: {
+    var1: theme.secondary.s7,
+    var2: theme.secondary.s5,
+    var3: theme.secondary.s7,
   },
 };
 
@@ -38,6 +44,67 @@ export function IconDueDate({
   const colors = COLOR_MAP[state];
 
   switch (state) {
+    case DueDateState.Today:
+      return (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            opacity="0.6"
+            d="M14 14H1"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M14 2H1"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M1 2L1 14"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M14 2L14 14"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M10 1L10 3"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M5 1L5 3"
+            stroke="#F9B55A"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            opacity="0.6"
+            d="M14 6H1"
+            stroke="#EFD2AB"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      );
+
     case DueDateState.Clear:
       return (
         <svg

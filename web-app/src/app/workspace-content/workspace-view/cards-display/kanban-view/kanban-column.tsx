@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import IconCreateNew from '../../../../../../../styles/components/icons/IconCreateNew.tsx';
 import Layer from '../../../../../../../styles/components/layer.tsx';
 import { H4 } from '../../../../../../../styles/components/texts.tsx';
 import {
@@ -12,23 +8,18 @@ import {
 import { layout } from '../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
-import { DroppableProps } from '../../../../../shared/dragndrop/droppable.tsx';
-import { Droppable } from '../../../../../shared/dragndrop/index.ts';
 import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 
 const useStyles = makeStyles((theme) => ({
   column: {
     marginTop: styleguide.gridbase,
     position: 'relative',
-    maxWidth: styleguide.gridbase * 40,
+    maxWidth: styleguide.gridbase * 34,
     minWidth: styleguide.gridbase * 30,
     flexShrink: 0,
     flexBasis: '33%',
     boxSizing: 'border-box',
     marginRight: styleguide.gridbase * 2,
-    // backgroundColor: theme.background[400],
     backgroundColor: lightColorWheel.secondary.s1,
     borderRadius: '4px',
     borderStyle: 'solid',
@@ -90,11 +81,7 @@ export interface KanbanColumnProps {
   onCreateCard?: () => void;
 }
 
-function ColumnTitle({
-  header,
-  isColumnHovered,
-  onCreateCard,
-}: KanbanColumnProps) {
+function ColumnTitle({ header, onCreateCard }: KanbanColumnProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
@@ -129,6 +116,7 @@ function ColumnTitle({
       observer.disconnect();
     };
   }, [sentinel, scrollParent]);
+
   return (
     <Layer>
       {(style) => (
@@ -139,7 +127,7 @@ function ColumnTitle({
           <div className={cn(styles.columnHeader)}>
             <H4 className={cn(styles.titleText)}>{header}</H4>
             <div className={cn(layout.flexSpacer)} />
-            <Button onClick={onCreateCard}>
+            {/* <Button onClick={onCreateCard}>
               {isColumnHovered && (
                 <div className={cn(styles.newTaskText)}>New Task</div>
               )}
@@ -147,7 +135,7 @@ function ColumnTitle({
                 key="IconNewTaskBoard"
                 src="/icons/board/New-Task-plus.svg"
               />
-            </Button>
+            </Button> */}
           </div>
           <div
             className={cn(styles.stickyNotifier)}
@@ -163,7 +151,6 @@ export function KanbanColumn({
   groupBy,
   children,
   header,
-  ...props
 }: React.PropsWithChildren<KanbanColumnProps>) {
   const styles = useStyles();
   const [isColumnHovered, setIsColumnHovered] = useState(false);

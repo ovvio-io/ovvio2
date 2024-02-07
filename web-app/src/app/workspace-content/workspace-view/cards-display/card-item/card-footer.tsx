@@ -36,9 +36,7 @@ export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
 const useStyles = makeStyles((theme) => ({
   footer: {
-    // alignItems: 'center',
     minHeight: styleguide.gridbase,
-    color: theme.background.textSecondary,
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -47,6 +45,11 @@ const useStyles = makeStyles((theme) => ({
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
     gap: styleguide.gridbase * 0.5,
+  },
+  tagsAndAssignees: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   attachments: {
     alignItems: 'center',
@@ -67,8 +70,8 @@ const useStyles = makeStyles((theme) => ({
   },
   tagsContainer: {
     display: 'flex',
-    maxWidth: '20px',
-    // padding: '0.5px 6px 1.5px 6px',
+    maxWidth: '220px',
+    flexDirection: 'row',
   },
 }));
 
@@ -124,7 +127,7 @@ export interface CardFooterProps {
 //   );
 // }
 
-function DueDateIndicator({ card, source }: CardFooterProps) {
+export function DueDateIndicator({ card, source }: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
@@ -146,13 +149,31 @@ function DueDateIndicator({ card, source }: CardFooterProps) {
     dueDateEditor!.edit(card.getVertexProxy());
   };
 
-  const isOverdue = dueDate < new Date();
-  const color = isOverdue ? '#C25A3E' : '#3f3f3f'; //TODO: need to use "theme"
+  // const isOverdue = dueDate < new Date();
+  // const today = dueDate === new Date();
+  const today = new Date();
+
+  const isDueDateToday =
+    dueDate.getDate() === today.getDate() &&
+    dueDate.getMonth() === today.getMonth() &&
+    dueDate.getFullYear() === today.getFullYear();
+
+  const isOverdue = dueDate < today && !isDueDateToday;
+
+  const color = isOverdue ? '#C25A3E' : isDueDateToday ? '#F9B55A' : '#3f3f3f';
   const fontSize = '10px';
 
   return (
     <Button className={cn(styles.footerItem)} onClick={onClick}>
-      <IconDueDate state={isOverdue ? DueDateState.Late : DueDateState.None} />
+      <IconDueDate
+        state={
+          isOverdue
+            ? DueDateState.Late
+            : isDueDateToday
+            ? DueDateState.Today
+            : DueDateState.None
+        }
+      />
       <Text style={{ color, fontSize }}>{formatTimeDiff(dueDate)}</Text>
     </Button>
   );
@@ -180,10 +201,10 @@ export function CardFooter({
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
-  const { dueDate } = usePartialVertex(card, ['dueDate']);
+  // const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
     <div className={cn(styles.footer, className)}>
-      <div>
+      <div className={cn(styles.tagsAndAssignees)}>
         <AssigneesView
           cardManager={card}
           cardType="small"
@@ -194,8 +215,8 @@ export function CardFooter({
           <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
         </div>
       </div>
-      <div className={cn(layout.flexSpacer)} />
-      {dueDate && <DueDateIndicator card={card} source={source} />}
+      {/* <div className={cn(layout.flexSpacer)} /> */}
+      {/* {dueDate && <DueDateIndicator card={card} source={source} />} */}
     </div>
   );
 }
