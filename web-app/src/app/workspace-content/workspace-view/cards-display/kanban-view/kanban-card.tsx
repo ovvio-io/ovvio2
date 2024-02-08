@@ -20,7 +20,7 @@ import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
+import { Text } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
   cn,
@@ -184,23 +184,22 @@ const useStyles = makeStyles((theme) => ({
     right: '-15px',
   },
 
-  listItem: {
+  cardTab: {
     height: styleguide.gridbase * 3,
     width: styleguide.gridbase * 2,
     flexShrink: 0,
     basedOn: [layout.row],
   },
-  listItemSelected: {
-    itemTab: {
+  cardMoreTabSelected: {
+    cardMoreTab: {
       backgroundColor: 'var(--ws-background)',
     },
   },
-  itemTab: {
+  cardMoreTab: {
     cursor: 'pointer',
     userSelect: 'none',
     height: '100%',
     width: '100%',
-    // minWidth: styleguide.gridbase * 18.5,
     borderBottomRightRadius: styleguide.gridbase * 2,
     borderTopRightRadius: styleguide.gridbase * 2,
     maxWidth: styleguide.gridbase * 20.5,
@@ -209,16 +208,6 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'border-box',
     alignItems: 'center',
     whiteSpace: 'nowrap',
-    // basedOn: [layout.row],
-  },
-  itemToggle: {
-    marginLeft: styleguide.gridbase * 0.5,
-    height: styleguide.gridbase * 2,
-    width: styleguide.gridbase * 2,
-    borderRadius: styleguide.gridbase,
-    flexShrink: 0,
-    background: 'var(--ws-inactive)',
-    basedOn: [layout.column, layout.centerCenter],
   },
 }));
 
@@ -513,12 +502,12 @@ export function MoreButtonCard({
   );
   return (
     <div
-      className={cn(styles.listItem, styles.listItemSelected)}
+      className={cn(styles.cardTab, styles.cardMoreTabSelected)}
       style={style}
       onClick={onClick}
     >
       <Tooltip text={'name'} disabled={true} position="right">
-        <div className={cn(styles.itemTab)}>{children}</div>
+        <div className={cn(styles.cardMoreTab)}>{children}</div>
       </Tooltip>
     </div>
   );
@@ -548,7 +537,7 @@ const CardMenu = ({
         visible={isMouseOver}
         cardManager={card}
         source="board"
-        colorWs={colorWs.inactive}
+        colorWs={colorWs.active}
         isOpen={menuOpen}
         toggleMenu={toggleMenu}
       />

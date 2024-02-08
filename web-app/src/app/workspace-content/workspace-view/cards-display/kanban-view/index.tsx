@@ -79,7 +79,7 @@ const useStyles = makeStyles((theme) => ({
     width: styleguide.gridbase * 2,
     borderRadius: styleguide.gridbase,
     flexShrink: 0,
-    background: 'var(--ws-inactive)',
+    background: 'var(--ws-active)',
     basedOn: [layout.column, layout.centerCenter],
   },
 }));
