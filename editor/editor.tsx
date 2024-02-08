@@ -21,7 +21,7 @@ import {
   domIdFromNodeKey,
   RenderContext,
   RichTextRenderer,
-} from '../cfds/richtext/react.tsx';
+} from './renderer.tsx';
 import {
   docClone,
   docFromRT,

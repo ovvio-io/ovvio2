@@ -17,7 +17,7 @@ import {
 import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { WritingDirection } from '../base/string.ts';
-import { RenderContext, domIdFromNodeKey } from '../cfds/richtext/react.tsx';
+import { RenderContext, domIdFromNodeKey } from './renderer.tsx';
 import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { assert } from '../base/error.ts';

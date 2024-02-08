@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import * as ArrayUtils from '../../base/array.ts';
-import { docClone, Document } from './doc-state.ts';
+import * as ArrayUtils from '../base/array.ts';
+import { docClone, Document } from '../cfds/richtext/doc-state.ts';
 import {
   ElementNode,
   findLastTextNode,
@@ -13,30 +13,32 @@ import {
   TreeNode,
   Pointer,
   comparePointers,
-} from './tree.ts';
-import { isRefNode, MarkupElement, MarkupNode, RefNode } from './model.ts';
-import { cn, makeStyles, keyframes } from '../../styles/css-objects/index.ts';
+} from '../cfds/richtext/tree.ts';
 import {
-  resolveWritingDirection,
-  WritingDirection,
-} from '../../base/string.ts';
-import { brandLightTheme as theme } from '../../styles/theme.tsx';
-import { styleguide } from '../../styles/styleguide.ts';
-import { CoreObject, CoreValue } from '../../base/core-types/base.ts';
-import { writingDirectionAtNode } from './doc-state.ts';
-import { CheckBox } from '../../components/task.tsx';
-import { usePartialVertex } from '../../web-app/src/core/cfds/react/vertex.ts';
-import { VertexManager } from '../client/graph/vertex-manager.ts';
-import { Note } from '../client/graph/vertices/note.ts';
-import { useGraphManager } from '../../web-app/src/core/cfds/react/graph.tsx';
-import { uniqueId } from '../../base/common.ts';
-import { coreValueCompare } from '../../base/core-types/comparable.ts';
-import { AssigneeChip } from '../../components/assignee-chip.tsx';
-import Menu from '../../styles/components/menu.tsx';
-import { MemberPicker } from '../../components/member-picker.tsx';
-import { TagChip } from '../../components/tag-chip.tsx';
-import { stripDuplicatePointers } from './flat-rep.ts';
-import { docToRT } from './doc-state.ts';
+  isRefNode,
+  MarkupElement,
+  MarkupNode,
+  RefNode,
+} from '../cfds/richtext/model.ts';
+import { cn, makeStyles, keyframes } from '../styles/css-objects/index.ts';
+import { resolveWritingDirection, WritingDirection } from '../base/string.ts';
+import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../styles/styleguide.ts';
+import { CoreObject, CoreValue } from '../base/core-types/base.ts';
+import { writingDirectionAtNode } from '../cfds/richtext/doc-state.ts';
+import { CheckBox } from '../components/task.tsx';
+import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
+import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../cfds/client/graph/vertices/note.ts';
+import { useGraphManager } from '../web-app/src/core/cfds/react/graph.tsx';
+import { uniqueId } from '../base/common.ts';
+import { coreValueCompare } from '../base/core-types/comparable.ts';
+import { AssigneeChip } from '../components/assignee-chip.tsx';
+import Menu from '../styles/components/menu.tsx';
+import { MemberPicker } from '../components/member-picker.tsx';
+import { TagChip } from '../components/tag-chip.tsx';
+import { stripDuplicatePointers } from '../cfds/richtext/flat-rep.ts';
+import { docToRT } from '../cfds/richtext/doc-state.ts';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
