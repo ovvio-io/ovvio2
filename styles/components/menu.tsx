@@ -368,7 +368,6 @@ export default function Menu({
     (e?: MouseEvent) => {
       if (toggleMenu) {
         toggleMenu();
-        setInternalOpen(false);
       } else {
         setInternalOpen(false);
       }
