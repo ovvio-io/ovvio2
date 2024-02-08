@@ -111,7 +111,7 @@ const useStyles = makeStyles(
     },
     cell: {},
     cellInner: {
-      height: '100%',
+      // height: '100%',
       alignItems: 'center',
       basedOn: [layout.row],
     },
