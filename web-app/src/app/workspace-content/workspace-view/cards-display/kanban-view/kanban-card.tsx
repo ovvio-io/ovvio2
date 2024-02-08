@@ -168,6 +168,9 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'Column',
     alignItems: 'flex-end',
   },
+  workspaceIndicator: {
+    width: styleguide.gridbase * 15,
+  },
 }));
 
 export interface CardHeaderPartProps extends KanbanCardProps {
@@ -185,7 +188,10 @@ export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
   return (
     <div className={styles.cardMiddle}>
       {showWorkspaceOnCard && (
-        <WorkspaceIndicator workspace={pCard.workspace.manager} />
+        <WorkspaceIndicator
+          className={cn(styles.workspaceIndicator)}
+          workspace={pCard.workspace.manager}
+        />
       )}
       {isTask && (
         <>
@@ -257,7 +263,7 @@ const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -277,7 +283,7 @@ export interface KanbanCardProps {
 
 export const KanbanCard = React.forwardRef(function CardItemView(
   { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -294,7 +300,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view)
+    calculateIsExpanded(card, view),
   );
 
   useEffect(() => {
@@ -338,7 +344,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           styles.card,
           isTask && styles.taskCard,
           styles[size],
-          styles.hoverableRow
+          styles.hoverableRow,
         )}
         onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
@@ -361,7 +367,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && isTask && styles.strikethroughDone
+                    isDone && isTask && styles.strikethroughDone,
                   )}
                 >
                   {word}{' '}

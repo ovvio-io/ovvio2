@@ -30,6 +30,11 @@ const useStyles = makeStyles(() => ({
     // font-style: normal;
     // font-weight: 400;
     lineHight: '14px' /* 140% */,
+    textOverflow: 'ellipsis',
+    height: '100%',
+    whiteSpace: 'nowrap',
+    display: 'inline-block',
+    overflow: 'hidden',
   },
   colorIndicator: {
     width: styleguide.gridbase * 2,
