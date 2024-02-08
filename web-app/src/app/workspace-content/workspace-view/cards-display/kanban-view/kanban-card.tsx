@@ -489,8 +489,13 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
 export interface MoreButtonCardProps {
   workspace: VertexId<Workspace>;
   children: ReactNode;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
-export function MoreButtonCard({ workspace, children }: MoreButtonCardProps) {
+export function MoreButtonCard({
+  workspace,
+  children,
+  onClick,
+}: MoreButtonCardProps) {
   const styles = useStyles();
   const color = useWorkspaceColor(workspace);
   const style = useMemo<any>(
@@ -502,7 +507,11 @@ export function MoreButtonCard({ workspace, children }: MoreButtonCardProps) {
     [color]
   );
   return (
-    <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
+    <div
+      className={cn(styles.listItem, styles.listItemSelected)}
+      style={style}
+      onClick={onClick}
+    >
       <Tooltip text={'name'} disabled={true} position="right">
         <div className={cn(styles.itemTab)}>{children}</div>
       </Tooltip>
@@ -517,18 +526,26 @@ const CardMenu = ({
   card: VertexManager<Note>;
   isMouseOver?: boolean;
 }) => {
-  const styles = useStyles();
   const pCard = usePartialVertex(card, ['workspace']);
   const cardWs = pCard.workspace.manager;
   const colorWs = useWorkspaceColor(cardWs);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    setMenuOpen(!menuOpen);
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   return (
-    <MoreButtonCard workspace={cardWs}>
+    <MoreButtonCard workspace={cardWs} onClick={toggleMenu}>
       <CardMenuView
         visible={isMouseOver}
         cardManager={card}
         source="board"
         colorWs={colorWs.inactive}
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
       />
     </MoreButtonCard>
   );

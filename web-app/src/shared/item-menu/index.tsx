@@ -53,6 +53,8 @@ export interface CardMenuViewProps {
   position?: 'top' | 'bottom' | 'left' | 'right';
   visible?: boolean;
   colorWs?: string;
+  isOpen?: boolean;
+  toggleMenu?;
 }
 
 export default function CardMenuView({
@@ -66,6 +68,8 @@ export default function CardMenuView({
   position,
   visible,
   colorWs,
+  isOpen,
+  toggleMenu,
 }: CardMenuViewProps) {
   const logger = useLogger();
   const styles = useStyles();
@@ -97,6 +101,8 @@ export default function CardMenuView({
 
   return (
     <Menu
+      isOpen={isOpen}
+      toggleMenu={toggleMenu}
       renderButton={renderButton}
       direction="out"
       position={source === 'list' ? 'left' : 'right'}
