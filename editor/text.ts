@@ -38,6 +38,7 @@ export class MeasuredText {
     readonly width: number,
     readonly dir: WritingDirection = 'auto',
   ) {
+    width = Math.ceil(width);
     const bidiEmbeddingLevels = getEmbeddingLevels(text, 'auto');
     if (dir === 'auto') {
       dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
