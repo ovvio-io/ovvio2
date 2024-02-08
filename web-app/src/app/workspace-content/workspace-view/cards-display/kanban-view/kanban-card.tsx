@@ -169,7 +169,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   workspaceIndicator: {
-    width: styleguide.gridbase * 15,
+    maxWidth: styleguide.gridbase * 15,
   },
 }));
 
