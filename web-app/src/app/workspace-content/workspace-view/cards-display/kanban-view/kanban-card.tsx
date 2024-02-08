@@ -1,7 +1,9 @@
 import React, {
   MouseEventHandler,
+  ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -35,6 +37,12 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts';
+import CardMenuView from '../../../../../shared/item-menu/index.tsx';
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
+import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
+import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -167,6 +175,49 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
     flexDirection: 'Column',
     alignItems: 'flex-end',
+  },
+
+  RightHoverMoreButton: {
+    position: 'absolute',
+    top: '8px',
+    right: '-15px',
+  },
+
+  listItem: {
+    height: styleguide.gridbase * 3,
+    width: styleguide.gridbase * 2,
+    flexShrink: 0,
+    basedOn: [layout.row],
+  },
+  listItemSelected: {
+    itemTab: {
+      backgroundColor: 'var(--ws-background)',
+    },
+  },
+  itemTab: {
+    cursor: 'pointer',
+    userSelect: 'none',
+    height: '100%',
+    width: '100%',
+    // minWidth: styleguide.gridbase * 18.5,
+    borderBottomRightRadius: styleguide.gridbase * 2,
+    borderTopRightRadius: styleguide.gridbase * 2,
+    maxWidth: styleguide.gridbase * 20.5,
+    paddingLeft: styleguide.gridbase * 0.5,
+    paddingRight: styleguide.gridbase * 0.5,
+    boxSizing: 'border-box',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    // basedOn: [layout.row],
+  },
+  itemToggle: {
+    marginLeft: styleguide.gridbase * 0.5,
+    height: styleguide.gridbase * 2,
+    width: styleguide.gridbase * 2,
+    borderRadius: styleguide.gridbase,
+    flexShrink: 0,
+    background: 'var(--ws-inactive)',
+    basedOn: [layout.column, layout.centerCenter],
   },
 }));
 
@@ -344,6 +395,11 @@ export const KanbanCard = React.forwardRef(function CardItemView(
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
+        {isMouseOver && (
+          <div className={cn(styles.RightHoverMoreButton)}>
+            <CardMenu card={card} isMouseOver={isMouseOver} />
+          </div>
+        )}
         <div className={cn(styles.headerContainer)}>
           <div className={cn(styles.taskCheckBoxContainer)}>
             {isTask ? (
@@ -429,3 +485,51 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
 
   return <KanbanCard size={size} card={card} className={cn(styles.child)} />;
 }
+
+export interface MoreButtonCardProps {
+  workspace: VertexId<Workspace>;
+  children: ReactNode;
+}
+export function MoreButtonCard({ workspace, children }: MoreButtonCardProps) {
+  const styles = useStyles();
+  const color = useWorkspaceColor(workspace);
+  const style = useMemo<any>(
+    () => ({
+      '--ws-background': color.background,
+      '--ws-inactive': color.inactive,
+      '--ws-active': color.active,
+    }),
+    [color]
+  );
+  return (
+    <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
+      <Tooltip text={'name'} disabled={true} position="right">
+        <div className={cn(styles.itemTab)}>{children}</div>
+      </Tooltip>
+    </div>
+  );
+}
+
+const CardMenu = ({
+  card,
+  isMouseOver,
+}: {
+  card: VertexManager<Note>;
+  isMouseOver?: boolean;
+}) => {
+  const styles = useStyles();
+  const pCard = usePartialVertex(card, ['workspace']);
+  const cardWs = pCard.workspace.manager;
+  const colorWs = useWorkspaceColor(cardWs);
+
+  return (
+    <MoreButtonCard workspace={cardWs}>
+      <CardMenuView
+        visible={isMouseOver}
+        cardManager={card}
+        source="board"
+        colorWs={colorWs.inactive}
+      />
+    </MoreButtonCard>
+  );
+};
