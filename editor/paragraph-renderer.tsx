@@ -58,6 +58,13 @@ export class ParagraphRenderer {
     return this._canvas;
   }
 
+  render(): void {
+    const ctx = this.canvas.getContext('2d')!;
+    for (const [lineText, bounds] of this._lines!) {
+      ctx.fillText(lineText, bounds.x, bounds.y, bounds.width);
+    }
+  }
+
   /**
    * Given text and CSS style, this function measures the width of each character
    * when rendered sequentially using the provided style.
