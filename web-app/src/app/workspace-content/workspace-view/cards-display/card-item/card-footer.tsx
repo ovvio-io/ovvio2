@@ -3,10 +3,6 @@ import { formatTimeDiff } from '../../../../../../../base/date.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
-import {
-  createUseStrings,
-  format,
-} from '../../../../../core/localization/index.tsx';
 import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
@@ -55,9 +51,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     basedOn: [layout.row],
   },
-  attachment: {
-    color: theme.background.textSecondary,
-  },
+
   margin: {
     marginRight: styleguide.gridbase,
   },
@@ -70,7 +64,7 @@ const useStyles = makeStyles((theme) => ({
   },
   tagsContainer: {
     display: 'flex',
-    maxWidth: '220px',
+    maxWidth: '168px',
     flexDirection: 'row',
   },
 }));
@@ -132,27 +126,15 @@ export function DueDateIndicator({ card, source }: CardFooterProps) {
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
   const logger = useLogger();
-  const theme = useTheme();
   if (!dueDate) {
     return null;
   }
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
-    logger.log({
-      severity: 'INFO',
-      event: 'Start',
-      flow: 'edit',
-      type: 'due',
-      vertex: card.key,
-      source,
-    });
     dueDateEditor!.edit(card.getVertexProxy());
   };
 
-  // const isOverdue = dueDate < new Date();
-  // const today = dueDate === new Date();
   const today = new Date();
-
   const isDueDateToday =
     dueDate.getDate() === today.getDate() &&
     dueDate.getMonth() === today.getMonth() &&
