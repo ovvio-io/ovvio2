@@ -403,13 +403,13 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           </div>
         </div>
       </div>
-      <div
-        className={cn(styles.childList, !expanded && styles.hide)}
-        ref={childListRef}
-        style={style}
-      >
-        {expanded &&
-          childCards.map((child, index) => (
+      {expanded && (
+        <div
+          className={cn(styles.childList, !expanded && styles.hide)}
+          ref={childListRef}
+          style={style}
+        >
+          {childCards.map((child, index) => (
             <ChildCard
               size={size}
               key={child.key}
@@ -418,7 +418,8 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               isVisible={expanded}
             />
           ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 });
