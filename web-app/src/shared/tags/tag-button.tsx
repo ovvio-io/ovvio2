@@ -19,10 +19,11 @@ import { VertexId } from '../../../../cfds/client/graph/vertex.ts';
 import { useGraphManager } from '../../core/cfds/react/graph.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { mapIterable, unionIter } from '../../../../base/common.ts';
+import SelectionButton from '../selection-button/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   list: {
-    basedOn: [layout.row],
+    // basedOn: [layout.row],
     height: styleguide.gridbase * 3,
     alignItems: 'center',
   },
@@ -59,13 +60,13 @@ const useStyles = makeStyles((theme) => ({
     border: ``,
   },
   popup: {
-    backgroundColor: theme.background[0],
+    backgroundColor: '#FFFFFF',
     // width: styleguide.gridbase * 32,
     width: '100%',
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
-    backgroundColor: theme.background[0],
+    backgroundColor: '#FFFFFF',
     width: '100%',
     boxSizing: 'border-box',
     basedOn: [layout.column],
@@ -80,6 +81,7 @@ const useStyles = makeStyles((theme) => ({
     height: styleguide.gridbase * 4,
     width: styleguide.gridbase * 4,
     basedOn: [layout.column, layout.centerCenter],
+    fontSize: '13px',
   },
   circle: {
     height: styleguide.gridbase,
@@ -89,8 +91,8 @@ const useStyles = makeStyles((theme) => ({
   tagName: {
     flexGrow: 1,
     whiteSpace: 'nowrap',
-    marginLeft: styleguide.gridbase,
-    color: theme.background.text,
+    color: '##262626',
+    fontSize: '13px',
   },
   tagColor: {
     height: styleguide.gridbase * 3,
@@ -123,8 +125,8 @@ function AddTagActionPopup({
   const existingTags = new Set(
     unionIter(
       mapIterable(partialNote.tags.keys(), (t) => t.key),
-      mapIterable(partialNote.tags.values(), (t) => t.key),
-    ),
+      mapIterable(partialNote.tags.values(), (t) => t.key)
+    )
   );
   const childTagsQuery = useSharedQuery('childTags');
 
@@ -134,7 +136,7 @@ function AddTagActionPopup({
       .filter(
         (mgr) =>
           !existingTags.has(mgr.key) &&
-          !existingTags.has(mgr.getVertexProxy().parentTagKey!),
+          !existingTags.has(mgr.getVertexProxy().parentTagKey!)
       );
     if (!childTagManagers.length) {
       return [];
@@ -143,7 +145,7 @@ function AddTagActionPopup({
     const filteredRes: (VertexManager<Tag> | string)[] = suggestResults(
       filter,
       childTagManagers,
-      (tag) => tag.getVertexProxy().name,
+      (tag) => tag.getVertexProxy().name
     );
 
     if (filteredRes.length === 0) {
@@ -165,7 +167,7 @@ function AddTagActionPopup({
   };
   const renderItem: MentionPopupRenderItem<VertexManager<Tag> | string> = (
     item,
-    props,
+    props
   ) => {
     if (item === TAG_NOT_FOUND) {
       return (
@@ -180,14 +182,7 @@ function AddTagActionPopup({
 
     return (
       <MentionItem {...props} key={(item as VertexManager).key}>
-        <div className={cn(styles.circleContainer)}>
-          <div
-            className={cn(styles.circle)}
-            // style={{
-            //   backgroundColor: item.color,
-            // }}
-          />
-        </div>
+        <div className={cn(styles.circleContainer)}># </div>
         <span className={cn(styles.tagName)}>
           {(item as VertexManager<Tag>).getVertexProxy().name}
         </span>

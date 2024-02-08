@@ -36,6 +36,10 @@ const useStyles = makeStyles(() => ({
     opacity: 1,
     padding: '0px 6px 0px 0px',
   },
+  ofCard: {
+    position: 'relative',
+    top: '3px',
+  },
 }));
 
 export interface CardMenuViewProps {
@@ -48,6 +52,7 @@ export interface CardMenuViewProps {
   direction?: 'in' | 'out';
   position?: 'top' | 'bottom' | 'left' | 'right';
   visible?: boolean;
+  colorWs?: string;
 }
 
 export default function CardMenuView({
@@ -60,6 +65,7 @@ export default function CardMenuView({
   direction,
   position,
   visible,
+  colorWs,
 }: CardMenuViewProps) {
   const logger = useLogger();
   const styles = useStyles();
@@ -77,21 +83,23 @@ export default function CardMenuView({
 
   const renderButton = useCallback(
     () => (
-      <div className={visible ? styles.itemMenu : styles.itemMenuOpen}>
-        <IconMore />
+      <div
+        className={
+          (visible ? styles.itemMenu : styles.itemMenuOpen,
+          source === 'board' ? styles.ofCard : '')
+        }
+      >
+        <IconMore color={colorWs} />
       </div>
     ),
-    [styles],
+    [styles]
   );
 
-  // useEffect(()=> {
-  //   if()
-  // })
   return (
     <Menu
       renderButton={renderButton}
       direction="out"
-      position="left"
+      position={source === 'list' ? 'left' : 'right'}
       align="start"
     >
       {allowsEdit && (
