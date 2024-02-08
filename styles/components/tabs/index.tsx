@@ -225,7 +225,7 @@ const useStyles = makeStyles(
       transitionTimingFunction: 'linear',
       basedOn: [layout.row, layout.centerCenter, useTypographyStyles.h5],
       ':hover': {
-        fontWeight: 'bold',
+        fontFamily: 'PoppinsBold, HeeboBold',
       },
     },
     selected: {
@@ -254,7 +254,7 @@ const useStyles = makeStyles(
       basedOn: [layout.row],
     },
   }),
-  'tabs_3a7361'
+  'tabs_3a7361',
 );
 
 export type TabButtonProps = React.PropsWithChildren<{

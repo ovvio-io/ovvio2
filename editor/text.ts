@@ -64,7 +64,7 @@ export class MeasuredText {
     let y = 0;
     for (let i = 0; i < bidiReversedText.length; ++i) {
       const w = charWidths[i];
-      if (lineWidth + w >= width) {
+      if (lineWidth + w > width) {
         const prevWordBoundary = findValueBefore(i, wordEdges) || i;
         const line = bidiReversedText.substring(
           prevLineBreak,
@@ -157,7 +157,7 @@ export function measureCharacters(
   }
   const ctx = OFFSCREEN_CANVAS.getContext('2d')!;
   ctx.save();
-  ctx.font = `${style.fontWeight} ${style.font}`;
+  ctx.font = `${style.font}`;
   ctx.fontKerning = style.fontKerning as CanvasFontKerning;
   // ctx.fontStretch = style.fontStretch;
   // ctx.fontVariantCaps = style.fontVariantCaps;

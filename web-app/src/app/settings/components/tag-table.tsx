@@ -86,7 +86,7 @@ const useStyles = makeStyles(() => ({
     fontSize: '14px',
     lineHeight: '21px',
     letterSpacing: '0.0.87px',
-    fontWeight: '600',
+    fontFamily: 'PoppinsBold, HeeboBold',
     outline: 'none',
     border: 'none',
     backgroundColor: 'transparent',
@@ -136,7 +136,6 @@ const useStyles = makeStyles(() => ({
     border: 'none',
     padding: '0px 2px',
     backgroundColor: 'transparent',
-    fontWeight: '400',
     background: 'transparent',
     maxWidth: '100%',
     overflowWrap: ' break-word',
@@ -161,7 +160,6 @@ const useStyles = makeStyles(() => ({
     fontSize: '13px',
     lineHeight: 'normal',
     letterSpacing: '0.0.75px',
-    fontWeight: '400',
   },
   addButton: {
     display: 'flex',
@@ -209,7 +207,7 @@ export const ImageIcon: React.FC<ImageIconProps> = ({
 
 function useOutsideClick<T extends HTMLElement>(
   ref: RefObject<T>,
-  callback: () => void
+  callback: () => void,
 ): void {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -390,7 +388,7 @@ const TagPills: React.FC<TagPillsProps> = ({
           styles.tagPillSize,
           styles.tagPill,
           (editMode || reorderMode) && styles.editPill,
-          highlight && styles.highlightedTag
+          highlight && styles.highlightedTag,
         )
       }
       style={{
@@ -561,7 +559,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
         <img key="MoreButtonTagSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    []
+    [],
   );
 
   return (
@@ -662,7 +660,7 @@ export const TagsTable: React.FC<TagsTableProps> = ({
 }) => {
   const styles = useStyles();
   const categoriesQuery = useSharedQuery('parentTagsByWorkspace').group(
-    workspaceManager
+    workspaceManager,
   );
   const [newCategoryVertex, setNewCategoryVertex] = useState<
     VertexManager<Tag> | undefined

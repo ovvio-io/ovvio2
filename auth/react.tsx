@@ -24,7 +24,8 @@ const useStyles = makeStyles((theme) => ({
     height: kRootBannerHeight,
     backgroundColor: 'red',
     color: 'white',
-    fontWeight: 700,
+    // fontWeight: 700,
+    fontFamily: 'PoppinsBold, HeeboBold',
     textAlign: 'center',
     fontSize: 24,
     margin: 'auto',
@@ -182,9 +183,8 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
   if (!trustPool.currentSession.owner) {
     return <LoginView session={trustPool.currentSession} />;
   }
-  const banner = trustPool.currentSession.owner !== 'root'
-    ? null
-    : (
+  const banner =
+    trustPool.currentSession.owner !== 'root' ? null : (
       <div className={cn(styles.rootUserBanner)}>
         WARNING: Running as root user
       </div>

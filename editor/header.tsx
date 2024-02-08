@@ -44,9 +44,8 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 3,
     width: `calc(100% - ${styleguide.gridbase * 32}px)`,
     outline: 'none',
-    fontFamily: "'Poppins', 'Heebo', sans-serif",
+    fontFamily: 'HeeboBold, PoppinsBold',
     fontSize: '30px',
-    fontWeight: '600',
     lineHeight: styleguide.gridbase * 3,
     textAlign: 'center',
     border: 'none',
@@ -99,10 +98,10 @@ export const HeaderTitle = forwardRef<HTMLInputElement, HeaderTitleProps>(
     const baseDirection = resolveWritingDirection(partialVertex.titlePlaintext);
     return (
       <input
-        key='EditorTitle'
+        key="EditorTitle"
         ref={ref}
         className={cn(styles.titleInput)}
-        type='text'
+        type="text"
         dir={baseDirection === 'rtl' ? 'rtl' : undefined}
         value={partialVertex.titlePlaintext}
         placeholder={'Name your note'}
@@ -137,9 +136,7 @@ function EditorBreadCrumbs({ note }: EditorBreadCrumbsProps) {
     <div className={cn(styles.breadCrumbsContainer)}>
       <TextSm>{formatTimeDiff(partialNote.creationDate)}</TextSm>
       <span className={cn(styles.breadCrumbsSeparator)}></span>
-      <WorkspaceIndicator
-        workspace={partialNote.workspace.manager}
-      />
+      <WorkspaceIndicator workspace={partialNote.workspace.manager} />
       <span className={cn(styles.breadCrumbsSlash)}>/</span>
       <Text className={cn(styles.breadCrumbsTitle)}>
         {partialNote.titlePlaintext}
@@ -157,34 +154,30 @@ function PublishButton({ note }: PublishButtonProps) {
   const partialNote = usePartialVertex(note, ['workspace']);
   const navigate = useNavigate();
 
-  return partialNote.workspace.key.endsWith('-ws')
-    ? (
-      <Menu
-        renderButton={() => (
-          <ActionButton
-            className={cn(styles.shareButton)}
-            icon='/icons/editor/share.svg'
-          >
-            Publish
-          </ActionButton>
-        )}
-        position='bottom'
-        align='center'
-        direction='out'
-        // popupClassName={cn(styles.workspacesList)}
-      >
-        <SelectWorkspaceMenu
-          onChange={(ws) => {
-            note.getVertexProxy().workspace = ws.getVertexProxy();
-            navigate(
-              `/${note.getVertexProxy().workspace.key}/notes/${note.key}`,
-            );
-          }}
-          value={undefined}
-        />
-      </Menu>
-    )
-    : null;
+  return partialNote.workspace.key.endsWith('-ws') ? (
+    <Menu
+      renderButton={() => (
+        <ActionButton
+          className={cn(styles.shareButton)}
+          icon="/icons/editor/share.svg"
+        >
+          Publish
+        </ActionButton>
+      )}
+      position="bottom"
+      align="center"
+      direction="out"
+      // popupClassName={cn(styles.workspacesList)}
+    >
+      <SelectWorkspaceMenu
+        onChange={(ws) => {
+          note.getVertexProxy().workspace = ws.getVertexProxy();
+          navigate(`/${note.getVertexProxy().workspace.key}/notes/${note.key}`);
+        }}
+        value={undefined}
+      />
+    </Menu>
+  ) : null;
 }
 
 export interface EditorHeaderProps {
@@ -218,21 +211,21 @@ export function EditorHeader({ note, onFocusOnEditor }: EditorHeaderProps) {
   }, [didFocus, setDidFocus, titleInputRef]);
 
   return (
-    <div className={cn(styles.header)} key='EditorHeaderDiv'>
+    <div className={cn(styles.header)} key="EditorHeaderDiv">
       <EditorBreadCrumbs note={note} />
-      <div className={cn(styles.headerMainActions)} key='EditorHeaderActions'>
+      <div className={cn(styles.headerMainActions)} key="EditorHeaderActions">
         {/* <PublishButton note={note} /> */}
         <img
-          key='ExitEditorAction'
+          key="ExitEditorAction"
           className={cn(styles.headerMainActionButton)}
-          src='/icons/editor/close-circle.svg'
+          src="/icons/editor/close-circle.svg"
           onClick={() => {
             navigate('/');
           }}
         />
       </div>
       <HeaderTitle
-        key='EditorHeader'
+        key="EditorHeader"
         ref={titleInputRef}
         note={note}
         onEnter={onFocusOnEditor}

@@ -13,19 +13,19 @@ const useStyles = makeStyles(() => ({
   },
   title: {
     fontSize: '13px',
-    fontWeight: '600',
+    fontFamily: 'PoppinsBold, HeeboBold',
     letterSpacing: ' 0.075px',
   },
   info: {
     fontSize: '13px',
     fontStyle: 'normal',
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     lineHeight: 'normal',
   },
   infoLight: {
     color: 'var(--monochrom-m-3, #B3B3B3)',
     fontSize: '13px',
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
   },
   field: {
     lineHeight: 'normal',

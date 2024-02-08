@@ -137,13 +137,7 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: '62px',
   },
   addParenButtonText: {
-    fontFamily: 'Roboto',
     fontSize: '14px',
-    fontWeight: 'normal',
-    fontStretch: 'normal',
-    fontStyle: 'normal',
-    lineHeight: 'normal',
-    letterSpacing: 'normal',
     color: '#9cb2cd',
   },
   addSubTagOval: { width: '32px', height: '32px', border: 'solid 2px #da9f43' },
@@ -189,7 +183,7 @@ interface TagInputProps {
 }
 const TagInput = React.forwardRef(function (
   { name, setName, onBlur, className }: TagInputProps,
-  ref: any
+  ref: any,
 ) {
   const styles = useStyles();
   const [value, setValue] = useState(name);
@@ -323,7 +317,7 @@ function TagPill({
           styles.pillSize,
           styles.tagPill,
           isChild && styles.tagChildPill,
-          isEditing && styles.invisible
+          isEditing && styles.invisible,
         )}
         onClick={onClick}
       >
@@ -490,7 +484,7 @@ export default function TagsSettings({
     {
       workspaceKey: workspaceManager.key,
     },
-    TagTree.empty()
+    TagTree.empty(),
   ).result;
 
   const eventLogger = useEventLogger();
@@ -502,8 +496,8 @@ export default function TagsSettings({
   useEffect(() => {
     setTags(
       tagTree.parents.map(
-        (x) => new ExistParentTagPillInfo(graphMng, x, eventLogger)
-      )
+        (x) => new ExistParentTagPillInfo(graphMng, x, eventLogger),
+      ),
     );
   }, [graphMng, tagTree, eventLogger]);
 
@@ -519,7 +513,7 @@ export default function TagsSettings({
         graphMng,
         workspaceManager,
         currentUser.id,
-        eventLogger
+        eventLogger,
       ),
       ...tags,
     ];
@@ -539,7 +533,7 @@ export default function TagsSettings({
               .map((tag) =>
                 tag.name === 'Status' ? null : (
                   <ParentTagRow key={tag.key} tag={tag} logAction={logAction} />
-                )
+                ),
               )}
             <Button
               className={cn(styles.addParentButton)}
@@ -612,13 +606,13 @@ class ExistParentTagPillInfo
   constructor(
     graphMng: GraphManager,
     tagGroup: TagGroup,
-    eventLogger: EventLogger
+    eventLogger: EventLogger,
   ) {
     super(tagGroup.parentTag, eventLogger);
     this._graphMng = graphMng;
     this._group = tagGroup;
     this._children = tagGroup.children.map(
-      (x) => new ExistTagPillInfo(x, eventLogger)
+      (x) => new ExistTagPillInfo(x, eventLogger),
     );
   }
 
@@ -669,7 +663,7 @@ class ExistParentTagPillInfo
         {
           category: EventCategory.WS_SETTINGS,
           tagId: this._group.parentTag.key,
-        }
+        },
       );
     }
     if (cRec.get('isDeleted')) {
@@ -702,7 +696,7 @@ class NewParentTagPillInfo implements IParentTagPillInfo {
     graphMng: GraphManager,
     workspaceManager: VertexManager<Workspace>,
     createdBy: string,
-    eventLogger: EventLogger
+    eventLogger: EventLogger,
   ) {
     this._key = 'parent-key' + Utils.uniqueId();
     this._graphMng = graphMng;
@@ -783,7 +777,7 @@ class NewSubTagPillInfo implements ITagPillInfo {
   constructor(
     parent: IParentTagPillInfo,
     createdBy: string,
-    eventLogger: EventLogger
+    eventLogger: EventLogger,
   ) {
     this._key = 'new-' + Utils.uniqueId();
     this._parent = parent;

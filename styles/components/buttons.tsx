@@ -27,7 +27,7 @@ export const useButtonStyles = makeStyles(
       basedOn: [layout.row, layout.centerCenter],
     },
   }),
-  'buttons_b9ffab'
+  'buttons_b9ffab',
 );
 
 export const useFabStyles = makeStyles(
@@ -52,7 +52,7 @@ export const useFabStyles = makeStyles(
       boxShadow: theme.shadows.z2,
     },
   }),
-  'buttons_f97674'
+  'buttons_f97674',
 );
 
 const useIconButtonStyles = makeStyles(
@@ -76,7 +76,7 @@ const useIconButtonStyles = makeStyles(
       basedOn: [useButtonStyles.button],
     },
   }),
-  'buttons_555432'
+  'buttons_555432',
 );
 
 const useSecondaryButtonStyles = makeStyles(
@@ -90,7 +90,7 @@ const useSecondaryButtonStyles = makeStyles(
       border: `1px solid ${theme.colors.background}`,
       backgroundColor: theme.colors.background[0],
       fontSize: 14,
-      fontWeight: 500,
+      // fontWeight: 500,
       fontStyle: 'normal',
       fontStretch: 'normal',
       lineHeight: 1.14,
@@ -109,7 +109,7 @@ const useSecondaryButtonStyles = makeStyles(
       basedOn: [useButtonStyles.button],
     },
   }),
-  'buttons_793301'
+  'buttons_793301',
 );
 
 export const useRaisedButtonStyles = makeStyles(
@@ -150,7 +150,7 @@ export const useRaisedButtonStyles = makeStyles(
       },
     },
   }),
-  'buttons_05a5fe'
+  'buttons_05a5fe',
 );
 
 const useLinkButtonStyles = makeStyles(
@@ -163,14 +163,14 @@ const useLinkButtonStyles = makeStyles(
       basedOn: [useButtonStyles.button],
     },
   }),
-  'buttons_8deff1'
+  'buttons_8deff1',
 );
 type ButtonProps = React.ComponentProps<'button'>;
 
 function makeButton<TProps>(useStyles: () => any, className: string) {
   return React.forwardRef(function (
     props: ButtonProps,
-    ref: React.Ref<HTMLButtonElement>
+    ref: React.Ref<HTMLButtonElement>,
   ) {
     const styles = useStyles();
     return (
@@ -189,12 +189,12 @@ export const FabButton = makeButton<ButtonProps>(useFabStyles, 'fab');
 
 export const IconButton = makeButton<ButtonProps>(
   useIconButtonStyles,
-  'iconButton'
+  'iconButton',
 );
 
 export const LinkButton = makeButton<ButtonProps>(
   useLinkButtonStyles,
-  'linkButton'
+  'linkButton',
 );
 
 interface RaisedButtonProps extends ButtonProps {
@@ -214,7 +214,7 @@ export const RaisedButton = React.forwardRef<
     processing,
     ...rest
   },
-  ref
+  ref,
 ) {
   const styles = useRaisedButtonStyles();
   const disAttr = { disabled: disabled || processing };

@@ -30,7 +30,6 @@ const useStyles = makeStyles(() => ({
     fontSize: 13,
     lineHeight: '18px',
     letterSpacing: '0.0.75px',
-    fontWeight: '400',
   },
   hoverableRow: {
     cursor: 'pointer',
@@ -106,7 +105,7 @@ export function MemberPicker({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER
+        Number.MAX_SAFE_INTEGER,
       );
       setFilteredUsers(filtered);
     }

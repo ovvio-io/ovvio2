@@ -38,7 +38,7 @@ const useStyles = makeStyles(() => ({
   },
   title: {
     fontSize: '13px',
-    fontWeight: '600',
+    fontFamily: 'PoppinsBold, HeeboBold',
     letterSpacing: ' 0.075px',
   },
   header: {
@@ -147,7 +147,7 @@ const useStyles = makeStyles(() => ({
     padding: '8px 10px 10px ',
     flexDirection: 'column',
     alignItems: 'center',
-    fontWeight: '600',
+    fontFamily: 'PoppinsBold, HeeboBold',
     fontSize: '14px',
   },
   confirmationButtons: {
