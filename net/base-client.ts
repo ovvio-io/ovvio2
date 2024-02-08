@@ -254,7 +254,7 @@ export abstract class BaseClient<
     if (this.status !== startingStatus) {
       this.emit(EVENT_STATUS_CHANGED);
     }
-    return persistedCount > 0;
+    return true;
   }
 
   /**
@@ -272,8 +272,9 @@ export abstract class BaseClient<
     // local commits that our peer doesn't have (local changes or peer recovery).
     let i = 0;
     do {
-      await this.sendSyncMessage(true);
-      ++i;
+      if (await this.sendSyncMessage(true)) {
+        ++i;
+      }
     } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
   }
 
