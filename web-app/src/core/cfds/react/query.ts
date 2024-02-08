@@ -90,7 +90,7 @@ function defaultMap(x: any) {
 
 export function useExistingQuery<
   IT extends Vertex = Vertex,
-  OT extends IT = IT
+  OT extends IT = IT,
 >(query: Query<IT, OT>): UseQueryResult<OT> {
   const [result, setResult] = useState<UseQueryResult<OT>>({
     loading: query.isLoading,
@@ -128,34 +128,34 @@ type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  GT extends CoreValue = CoreValue
+  GT extends CoreValue = CoreValue,
 >(queryOrName: QueryOptions<IT, OT, GT>): Query<IT, OT, GT>;
 
 export function useQuery2<T extends SharedQueryName | undefined = undefined>(
-  queryOrName: T
+  queryOrName: T,
 ): SharedQueryResultType<T>;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  GT extends CoreValue = CoreValue
+  GT extends CoreValue = CoreValue,
 >(
-  queryOrName: QueryOptions<IT, OT, GT> | undefined
+  queryOrName: QueryOptions<IT, OT, GT> | undefined,
 ): Query<IT, OT, GT> | undefined;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
-  GT extends CoreValue = CoreValue
+  GT extends CoreValue = CoreValue,
 >(queryOrName: undefined): undefined;
 
 export function useQuery2<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
   GT extends CoreValue = CoreValue,
-  T extends SharedQueryName | undefined = undefined
+  T extends SharedQueryName | undefined = undefined,
 >(
-  queryOrName: QueryOptions<IT, OT, GT> | T | undefined
+  queryOrName: QueryOptions<IT, OT, GT> | T | undefined,
 ): Query<IT, OT, GT> | SharedQueryResultType<T> | undefined {
   const graph = useGraphManager();
   if (typeof queryOrName === 'string') {
@@ -171,7 +171,7 @@ export function useQuery2<
     return graph.query(queryOrName as QueryOptions<IT, OT, GT>);
   }, [queryOrName]);
   const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(
-    query ? new Proxy(query, {}) : query
+    query ? new Proxy(query, {}) : query,
   );
   useEffect(() => {
     if (!query) {
@@ -187,11 +187,11 @@ export function useQuery2<
       query.detach('results-changed', callback);
     };
   }, [query]);
-  return proxy || query;
+  return query ? proxy || query : undefined;
 }
 
 export function useSharedQuery<T extends SharedQueryName>(
-  name: T
+  name: T,
 ): SharedQueryType<T> {
   const graph = useGraphManager();
   const q = graph.sharedQueriesManager[name] as Query;
