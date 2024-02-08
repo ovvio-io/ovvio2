@@ -41,7 +41,6 @@ import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
-import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
 import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
@@ -417,7 +416,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && isTask && styles.strikethroughDone
+                    isDone && styles.strikethroughDone
                   )}
                 >
                   {word}{' '}
