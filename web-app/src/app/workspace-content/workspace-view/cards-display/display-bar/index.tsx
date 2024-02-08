@@ -164,7 +164,7 @@ function SortByDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles]
+    [strings, view, styles],
   );
 
   const onChange = useCallback(
@@ -177,7 +177,7 @@ function SortByDropDown() {
       });
       view.sortBy = val;
     },
-    [view, logger]
+    [view, logger],
   );
 
   return (
@@ -212,7 +212,7 @@ function ShowCheckedDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles]
+    [strings, view, styles],
   );
 
   const onOpen = () => {
@@ -229,7 +229,7 @@ function ShowCheckedDropDown() {
       // });
       view.showChecked = val;
     },
-    [view]
+    [view],
   );
 
   return (
@@ -274,7 +274,7 @@ function DateFilterDropdown() {
         <IconDropDownArrow />
       </div>
     ),
-    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text]
+    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text],
   );
 
   const onOpen = () => {
@@ -291,7 +291,7 @@ function DateFilterDropdown() {
       // });
       view.dateFilter = val;
     },
-    [view]
+    [view],
   );
 
   return (
@@ -393,7 +393,7 @@ function ExtraFilters() {
     }
     items.push(<GroupByDropDown />);
   }
-  if (view.selectedTabId !== 'overview' && view.viewType === 'list') {
+  if (view.selectedTabId !== 'overview') {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
@@ -451,7 +451,7 @@ function TabView() {
       }
       view.closeFiltersDrawer();
     },
-    [view]
+    [view],
   );
   const tabs: React.ReactElement[] = [];
   for (const tabId of ['tasks', 'notes'] as TabId[]) {
