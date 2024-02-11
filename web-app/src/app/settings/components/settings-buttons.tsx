@@ -224,6 +224,27 @@ export function AssignWsButton({
     </Button>
   );
 }
+export function AssignWsBlueButton({
+  AssignWsClick,
+  disable,
+}: AssignWsButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
+
+  return (
+    <Button
+      onClick={isDisabled ? undefined : AssignWsClick}
+      className={cn(styles.compose, isDisabled ? styles.disabled : styles.blue)}
+    >
+      <img
+        key="InviteUserSettings"
+        src="/icons/settings/InviteWhite.svg"
+        onClick={() => {}}
+      />
+      <span className={cn(styles.textWhite)}>{'Assign'}</span>
+    </Button>
+  );
+}
 
 interface SaveAddButtonProps {
   onSaveAddClick?: () => void;

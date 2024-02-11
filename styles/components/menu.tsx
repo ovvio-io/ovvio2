@@ -344,7 +344,7 @@ export default function Menu({
   direction,
   onClick = () => {},
   sizeByButton = false,
-  style = {},
+  style,
   isItemHovered,
   openImmediately,
   withoutArrow,

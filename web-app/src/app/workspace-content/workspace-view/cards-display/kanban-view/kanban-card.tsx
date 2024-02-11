@@ -537,7 +537,7 @@ const CardMenu = ({
         visible={isMouseOver}
         cardManager={card}
         source="board"
-        colorWs={colorWs.active}
+        colorWs={colorWs.inactive}
         isOpen={menuOpen}
         toggleMenu={toggleMenu}
       />

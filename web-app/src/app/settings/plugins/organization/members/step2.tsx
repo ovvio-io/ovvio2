@@ -1,18 +1,30 @@
-import React, { CSSProperties, useEffect, useMemo, useState } from 'react';
+import React, {
+  CSSProperties,
+  ReactElement,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
   useVertexByKey,
   useVertices,
 } from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
-import { Bold } from '../../../../../../../styles/components/typography.tsx';
 import {
+  Bold,
+  TextSm,
+} from '../../../../../../../styles/components/typography.tsx';
+import {
+  AssignWsBlueButton,
   AssignWsButton,
+  CancelButton,
   UserPill,
 } from '../../../components/settings-buttons.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import WorkspaceTable from '../../../components/workspace-table.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
+import Menu from '../../../../../../../styles/components/menu.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
@@ -29,27 +41,9 @@ export const Step2: React.FC<Step2Props> = ({
   selectedWorkspaces,
   setSelectedWorkspaces,
 }) => {
-  // const [selectedWorkspaces, setSelectedWorkspaces] = useState<Workspace[]>([]);
   const workspacesQuery = useSharedQuery('workspaces');
   const workspaces = useVertices(workspacesQuery.results) as Workspace[];
-
   const usersData = new Map<string, User>();
-
-  //TODO: fix remove userPill bug.
-  selectedUsers.forEach((user) => {
-    const userData: User = useVertexByKey(user);
-    usersData.set(user, userData);
-  });
-
-  const handleAssignWsClick = () => {
-    selectedWorkspaces.forEach((ws) => {
-      selectedUsers.forEach((user) => {
-        const u = usersData.get(user);
-        if (u) ws.users.add(u);
-      });
-    });
-    setStep(3);
-  };
 
   const HeaderContainerStyle: CSSProperties = {
     padding: '50px 0px 8px',
@@ -77,6 +71,66 @@ export const Step2: React.FC<Step2Props> = ({
     gap: '4px',
     marginBottom: '8px',
   };
+  const toggleViewButton: CSSProperties = {
+    position: 'absolute',
+    bottom: '-124px',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    fontSize: 10,
+    fontFamily: 'Poppins',
+    lineHeight: '14px',
+    letterSpacing: '-0.1px',
+  };
+  const AssignsContainer: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+  };
+  const confirmation: CSSProperties = {
+    display: 'flex',
+    padding: '8px 10px 10px ',
+    flexDirection: 'column',
+    alignItems: 'center',
+    fontWeight: '600',
+    fontSize: '14px',
+    maxWidth: '200px',
+  };
+  const confirmationButtons: CSSProperties = {
+    display: 'flex',
+    padding: '16px 0px 16px 0px',
+    flexDirection: 'column',
+    width: '180px',
+    gap: '8px',
+  };
+
+  //TODO: fix remove userPill bug.
+  selectedUsers.forEach((user) => {
+    const userData: User = useVertexByKey(user);
+    usersData.set(user, userData);
+  });
+
+  const handleAssignWsClick = () => {
+    selectedWorkspaces.forEach((ws) => {
+      selectedUsers.forEach((user) => {
+        const u = usersData.get(user);
+        if (u) ws.users.add(u);
+      });
+    });
+    setStep(3);
+  };
+
+  const handleAssignAllWsClick = () => {
+    workspaces.forEach((ws) => {
+      selectedUsers.forEach((user) => {
+        const u = usersData.get(user);
+        if (u) ws.users.add(u);
+      });
+    });
+    setSelectedWorkspaces(workspaces);
+    setStep(3);
+  };
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleRowSelect = (ws: Workspace) => {
     if (selectedWorkspaces.includes(ws)) {
@@ -99,11 +153,42 @@ export const Step2: React.FC<Step2Props> = ({
       <div style={HeaderContainerStyle}>
         <div style={FunctionsHeader}>
           <div>Choose workspaces to assign</div>
-          {selectedWorkspaces && (
-            <AssignWsButton
-              AssignWsClick={handleAssignWsClick}
-              disable={selectedWorkspaces.length === 0}
-            />
+          <div style={AssignsContainer}>
+            {selectedWorkspaces && (
+              <AssignWsButton
+                AssignWsClick={handleAssignWsClick}
+                disable={selectedWorkspaces.length === 0}
+              />
+            )}
+            {selectedWorkspaces.length > 0 && (
+              <TextSm onClick={toggleMenu} style={toggleViewButton}>
+                Assign to all
+              </TextSm>
+            )}
+          </div>
+          {isMenuOpen && (
+            <Menu
+              isOpen={isMenuOpen}
+              toggleMenu={toggleMenu}
+              renderButton={() => <div style={{ display: 'none' }}></div>}
+              position="right"
+              align="start"
+              direction="out"
+              style={{ position: 'absolute', right: '635px', top: '142px' }}
+            >
+              <div style={confirmation}>
+                <div style={{ textAlign: 'center' }}>
+                  Assign selected members to all workspaces?
+                </div>{' '}
+                <div style={confirmationButtons}>
+                  <AssignWsBlueButton
+                    AssignWsClick={handleAssignAllWsClick}
+                    disable={false}
+                  />
+                  <CancelButton onCancel={toggleMenu} />{' '}
+                </div>
+              </div>
+            </Menu>
           )}
         </div>
         <div style={ChosenMembersContainer}>
