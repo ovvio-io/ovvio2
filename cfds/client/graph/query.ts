@@ -17,7 +17,6 @@ import { SimpleTimer, Timer } from '../../../base/timer.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { unionIter } from '../../../base/common.ts';
-import { Encodable } from '../../../base/core-types/index.ts';
 import { Emitter } from '../../../base/emitter.ts';
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
@@ -43,11 +42,11 @@ export interface QueryOptions<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
   GT extends CoreValue = CoreValue,
-> // SRC extends VertexSource<VertexSourceEvent, GT> = VertexSource<
-//   VertexSourceEvent,
-//   GT
-// >
-{
+> {
+  // SRC extends VertexSource<VertexSourceEvent, GT> = VertexSource<
+  //   VertexSourceEvent,
+  //   GT
+  // >
   source: VertexSource;
   predicate: Predicate<IT, OT>;
   name?: string;
@@ -76,10 +75,13 @@ const kQueryQueue = new CoroutineQueue(CoroutineScheduler.sharedScheduler());
 let gQueryId = 0;
 
 export class Query<
-  IT extends Vertex = Vertex,
-  OT extends IT = IT,
-  GT extends CoreValue = CoreValue,
-> extends Emitter<VertexSourceEvent> implements VertexSource {
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue,
+  >
+  extends Emitter<VertexSourceEvent>
+  implements VertexSource
+{
   readonly startTime: number;
   readonly source: VertexSource;
   readonly predicate: Predicate<IT, OT>;
@@ -159,8 +161,9 @@ export class Query<
     sortDescriptor?: SortDescriptor<OT>,
   ): QueryResults<OT> {
     const result: VertexManager<OT>[] = [];
-    const graph =
-      (source instanceof GraphManager ? source : source.graph) as GraphManager;
+    const graph = (
+      source instanceof GraphManager ? source : source.graph
+    ) as GraphManager;
     for (const key of source.keys()) {
       const vert = graph.getVertex<IT>(key);
       if (predicate(vert)) {
@@ -169,7 +172,7 @@ export class Query<
     }
     if (sortDescriptor !== undefined) {
       result.sort((mgr1, mgr2) =>
-        sortDescriptor(mgr1.getVertexProxy(), mgr2.getVertexProxy())
+        sortDescriptor(mgr1.getVertexProxy(), mgr2.getVertexProxy()),
       );
     }
     return result;
@@ -213,10 +216,8 @@ export class Query<
     this._vertexDeletedListener = (key) => this.vertexDeleted(key);
     // this._resultKeys = new Set();
     this._results = new Map();
-    this._clientsNotifyTimer = new SimpleTimer(
-      300,
-      false,
-      () => this._notifyQueryChanged(),
+    this._clientsNotifyTimer = new SimpleTimer(300, false, () =>
+      this._notifyQueryChanged(),
     );
     this._isLoading = true;
     this.source = opts.source;
@@ -285,8 +286,12 @@ export class Query<
         (this._sortDescriptor || coreValueCompare)(
           mgr1.getVertexProxy(),
           mgr2.getVertexProxy(),
-        )
+        ),
       );
+  }
+
+  get groupComparator(): GroupIdComparator<GT> {
+    return this._groupComparator || coreValueCompare;
   }
 
   get isLocked(): boolean {
@@ -423,7 +428,7 @@ export class Query<
   forEach(f: (vert: OT, idx: number, groupId: GroupId<GT>) => void): void {
     for (const [groupId, storage] of this._results.entries()) {
       storage.results.forEach((mgr, idx) =>
-        f(mgr.getVertexProxy(), idx, groupId)
+        f(mgr.getVertexProxy(), idx, groupId),
       );
     }
   }
@@ -484,7 +489,9 @@ export class Query<
     const existingGroups = new Set<GroupId<GT>>(this.groupsForKey(key));
     const match = this.predicate(mgr.getVertexProxy());
     const newGroupIds = match
-      ? this._groupByFunc ? this._groupByFunc(mgr.getVertexProxy()) : undefined
+      ? this._groupByFunc
+        ? this._groupByFunc(mgr.getVertexProxy())
+        : undefined
       : [];
     const newIdsSet = new Set<GroupId<GT>>();
 
@@ -520,12 +527,13 @@ export class Query<
       if (!storage) {
         continue;
       }
-      const groupInLimit = this._groupsLimit <= 0 ||
+      const groupInLimit =
+        this._groupsLimit <= 0 ||
         sortedGroupIds.indexOf(groupId) < this._groupsLimit;
       if (storage.size === 1) {
         assert(storage.has(key)); // Sanity check
-        shouldNotify = (results.delete(groupId) && groupInLimit) ||
-          shouldNotify;
+        shouldNotify =
+          (results.delete(groupId) && groupInLimit) || shouldNotify;
       } else {
         shouldNotify = (storage.delete(key) && groupInLimit) || shouldNotify;
       }
@@ -540,7 +548,8 @@ export class Query<
           results.set(gid, storage);
           sortedGroupIds = this.groups();
         }
-        const groupInLimit = this._groupsLimit <= 0 ||
+        const groupInLimit =
+          this._groupsLimit <= 0 ||
           sortedGroupIds.indexOf(gid) < this._groupsLimit;
         shouldNotify = (storage.add(key) && groupInLimit) || shouldNotify;
       }
@@ -604,7 +613,9 @@ export class Query<
   protected *loadKeysFromSource(): Generator<void> {
     const startTime = performance.now();
     console.log(
-      `${performance.now()} Query ${this.debugName} starting source scan. Pending queries: ${kQueryQueue.size}`,
+      `${performance.now()} Query ${
+        this.debugName
+      } starting source scan. Pending queries: ${kQueryQueue.size}`,
     );
     if (!this.isActive) {
       console.log(
@@ -628,7 +639,11 @@ export class Query<
     }
     const runningTime = performance.now() - startTime;
     console.log(
-      `${performance.now()} Query ${this.debugName} completed, took ${runningTime}ms and found ${this.count} results. Pending queries: ${kQueryQueue.size}`,
+      `${performance.now()} Query ${
+        this.debugName
+      } completed, took ${runningTime}ms and found ${
+        this.count
+      } results. Pending queries: ${kQueryQueue.size}`,
     );
     this._isLoading = false;
     this.emit('loading-finished');
@@ -693,10 +708,13 @@ export interface QueryInputDefinition<
 }
 
 export class UnionQuery<
-  IT extends Vertex = Vertex,
-  OT extends IT = IT,
-  GT extends CoreValue = CoreValue,
-> extends Emitter<VertexSourceEvent> implements VertexSource {
+    IT extends Vertex = Vertex,
+    OT extends IT = IT,
+    GT extends CoreValue = CoreValue,
+  >
+  extends Emitter<VertexSourceEvent>
+  implements VertexSource
+{
   readonly sources: QueryInputDefinition<IT, OT, GT>[];
   private readonly _changeListeners: Map<
     Query<IT, OT, GT>,
@@ -714,7 +732,7 @@ export class UnionQuery<
     this._changeListeners = new Map();
     let loadingCount = 0;
     this.sources = Array.from(sources).map((src) =>
-      src instanceof Query ? { query: src } : src
+      src instanceof Query ? { query: src } : src,
     );
     for (let src of this.sources) {
       const query = src.query;
@@ -767,11 +785,9 @@ export class UnionQuery<
 
   *keys(): Generator<string> {
     const processedKeys = new Set<string>();
-    for (
-      const key of unionIter(
-        ...this.sources.map((src) => src.query.keys(src.groupId)),
-      )
-    ) {
+    for (const key of unionIter(
+      ...this.sources.map((src) => src.query.keys(src.groupId)),
+    )) {
       if (!processedKeys.has(key)) {
         processedKeys.add(key);
         yield key;
