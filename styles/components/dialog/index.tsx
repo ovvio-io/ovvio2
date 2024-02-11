@@ -67,7 +67,8 @@ const backdropHide = keyframes(
 const useStyles = makeStyles(
   (theme) => ({
     backdrop: {
-      backgroundColor: '#FFFBF5',
+      // backgroundColor: '#FFFBF5',
+      backgroundColor: 'rgba(255, 251, 245, 0.9)', // Adjust the RGB values as needed
       position: 'absolute',
       top: 0,
       left: 0,
@@ -76,7 +77,7 @@ const useStyles = makeStyles(
       basedOn: [layout.column, layout.centerCenter],
       animation: `${backdropShow} 0.15s linear backwards`,
       fill: '#FFFBF5',
-      opacity: 0.9,
+      // opacity: 0.9,
     },
     backdropHide: {
       animation: `${backdropHide} 0.15s linear both`,
@@ -91,6 +92,7 @@ const useStyles = makeStyles(
       padding: styleguide.gridbase * 4,
       animation: `${show} 0.15s ${styleguide.transition.timing.standard}`,
       boxShadow: theme.shadows.z2,
+      opacity: 1,
     },
     closeBtn: {
       position: 'absolute',
