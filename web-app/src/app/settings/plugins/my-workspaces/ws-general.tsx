@@ -56,6 +56,7 @@ const useStyles = makeStyles(() => ({
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
     display: 'flex',
     flexDirection: 'column',
+    overflowY: 'scroll',
   },
   row: {
     height: '44px',
