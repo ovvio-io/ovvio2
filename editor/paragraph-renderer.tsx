@@ -13,11 +13,11 @@ import { getReorderedString } from '../external/bidi-js/index.js';
 import { measureCharacters } from './text.ts';
 
 export class ParagraphRenderer {
-  private _canvas: HTMLCanvasElement | undefined;
   private _width = 0;
   private _nodes: SpanNode[] = [];
   private _font = '13px Poppins, Heebo';
   private _lineHeight = 13;
+  private _dirty = false;
 
   private _characterWidths: readonly number[] | undefined;
   private _wordEdges: readonly number[] | undefined;
@@ -27,6 +27,8 @@ export class ParagraphRenderer {
   private _bidiReversedText: string | undefined;
   private _bidiEmbeddingLevels: GetEmbeddingLevelsResult | undefined;
 
+  constructor(readonly canvas: HTMLCanvasElement) {}
+
   get width(): number {
     return this._width;
   }
@@ -35,7 +37,7 @@ export class ParagraphRenderer {
     w = Math.round(w);
     if (!numbersEqual(this._width, w)) {
       this._width = w;
-      this._canvas = undefined;
+      this._dirty = true;
     }
   }
 
@@ -46,24 +48,30 @@ export class ParagraphRenderer {
   set nodes(n: SpanNode[]) {
     if (!coreValueEquals(n, this._nodes)) {
       this._nodes = n;
-      this._canvas = undefined;
+      this._dirty = true;
     }
   }
 
-  get canvas(): HTMLCanvasElement {
-    if (!this._canvas) {
-      const canvas = document.createElement('canvas');
-      const scaleFactor = self.devicePixelRatio || 1;
-      canvas.width = this.width * scaleFactor;
-      canvas.height = 10;
-      this.measureText();
-      const h = (this._lines?.length || 0) * this.lineHeight;
-      canvas.height = h * scaleFactor;
-      canvas.style.width = `${this.width}px`;
-      canvas.style.height = `${h}px`;
-      this._canvas = canvas;
+  get font(): string {
+    return this._font;
+  }
+
+  set font(s: string) {
+    if (this._font !== s) {
+      this._font = s;
+      this._dirty = true;
     }
-    return this._canvas;
+  }
+
+  get lineHeight(): number {
+    return this._lineHeight;
+  }
+
+  set lineHeight(h: number) {
+    if (h !== this._lineHeight) {
+      this._lineHeight = h;
+      this._dirty = true;
+    }
   }
 
   render(): void {
@@ -86,7 +94,7 @@ export class ParagraphRenderer {
     if (!text.length) {
       return [[], []];
     }
-    const ctx = this._canvas!.getContext('2d')!;
+    const ctx = this.canvas.getContext('2d')!;
     const widths: number[] = [];
     const metrics: TextMetrics[] = [];
     let prevWidth = 0;
