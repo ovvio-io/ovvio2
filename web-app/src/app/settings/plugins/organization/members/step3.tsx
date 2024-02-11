@@ -7,11 +7,18 @@ import {
 import { styleguide } from '../../../../../../../styles/index.ts';
 import Dialog from '../../../../../../../styles/components/dialog/index.tsx';
 import { DialogContent } from '../../../../../../../styles/components/dialog/index.tsx';
-import { H2 } from '../../../../../../../styles/components/typography.tsx';
+import {
+  H2,
+  useTypographyStyles,
+} from '../../../../../../../styles/components/typography.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import { useVertexByKey } from '../../../../../core/cfds/react/vertex.ts';
+import {
+  useVertexByKey,
+  useVertices,
+} from '../../../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 
 const showAnim = keyframes({
   '0%': {
@@ -102,6 +109,11 @@ export const Step3: React.FC<Step3Props> = ({
   setSelectedWorkspaces,
 }) => {
   const styles = useStyles();
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
+
+  const isSelectAll =
+    workspaces.length === selectedWorkspaces.length ? true : false;
 
   const onClose = () => {
     setStep(0);
@@ -127,12 +139,16 @@ export const Step3: React.FC<Step3Props> = ({
             </span>
           ))}{' '}
           added to: <br />
-          {selectedWorkspaces.map((ws, index) => (
-            <span key={ws.key}>
-              {index > 0 ? ' ; ' : ''}
-              {ws.name}
-            </span>
-          ))}
+          {isSelectAll ? (
+            <span> All Workspaces</span>
+          ) : (
+            selectedWorkspaces.map((ws, index) => (
+              <span key={ws.key}>
+                {index > 0 ? ' ; ' : ''}
+                {ws.name}
+              </span>
+            ))
+          )}
         </div>
         <div className={cn(styles.imgContainer)}>
           <img

@@ -1,7 +1,9 @@
 import React, {
   MouseEventHandler,
+  ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -18,7 +20,7 @@ import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx'; //TODO: check
+import { Text } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
   cn,
@@ -35,6 +37,11 @@ import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts';
+import CardMenuView from '../../../../../shared/item-menu/index.tsx';
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
+import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -169,7 +176,38 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   workspaceIndicator: {
-    width: styleguide.gridbase * 15,
+    maxWidth: styleguide.gridbase * 15,
+  },
+  RightHoverMoreButton: {
+    position: 'absolute',
+    top: '8px',
+    right: '-15px',
+  },
+
+  cardTab: {
+    height: styleguide.gridbase * 3,
+    width: styleguide.gridbase * 2,
+    flexShrink: 0,
+    basedOn: [layout.row],
+  },
+  cardMoreTabSelected: {
+    cardMoreTab: {
+      backgroundColor: 'var(--ws-background)',
+    },
+  },
+  cardMoreTab: {
+    cursor: 'pointer',
+    userSelect: 'none',
+    height: '100%',
+    width: '100%',
+    borderBottomRightRadius: styleguide.gridbase * 2,
+    borderTopRightRadius: styleguide.gridbase * 2,
+    maxWidth: styleguide.gridbase * 20.5,
+    paddingLeft: styleguide.gridbase * 0.5,
+    paddingRight: styleguide.gridbase * 0.5,
+    boxSizing: 'border-box',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
   },
 }));
 
@@ -263,7 +301,7 @@ const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -283,7 +321,7 @@ export interface KanbanCardProps {
 
 export const KanbanCard = React.forwardRef(function CardItemView(
   { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>,
+  ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -300,7 +338,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view),
+    calculateIsExpanded(card, view)
   );
 
   useEffect(() => {
@@ -344,12 +382,17 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           styles.card,
           isTask && styles.taskCard,
           styles[size],
-          styles.hoverableRow,
+          styles.hoverableRow
         )}
         onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
+        {isMouseOver && (
+          <div className={cn(styles.RightHoverMoreButton)}>
+            <CardMenu card={card} isMouseOver={isMouseOver} />
+          </div>
+        )}
         <div className={cn(styles.headerContainer)}>
           <div className={cn(styles.taskCheckBoxContainer)}>
             {isTask ? (
@@ -367,7 +410,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && isTask && styles.strikethroughDone,
+                    isDone && styles.strikethroughDone
                   )}
                 >
                   {word}{' '}
@@ -436,3 +479,68 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
 
   return <KanbanCard size={size} card={card} className={cn(styles.child)} />;
 }
+
+export interface MoreButtonCardProps {
+  workspace: VertexId<Workspace>;
+  children: ReactNode;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+}
+export function MoreButtonCard({
+  workspace,
+  children,
+  onClick,
+}: MoreButtonCardProps) {
+  const styles = useStyles();
+  const color = useWorkspaceColor(workspace);
+  const style = useMemo<any>(
+    () => ({
+      '--ws-background': color.background,
+      '--ws-inactive': color.inactive,
+      '--ws-active': color.active,
+    }),
+    [color]
+  );
+  return (
+    <div
+      className={cn(styles.cardTab, styles.cardMoreTabSelected)}
+      style={style}
+      onClick={onClick}
+    >
+      <Tooltip text={'name'} disabled={true} position="right">
+        <div className={cn(styles.cardMoreTab)}>{children}</div>
+      </Tooltip>
+    </div>
+  );
+}
+
+const CardMenu = ({
+  card,
+  isMouseOver,
+}: {
+  card: VertexManager<Note>;
+  isMouseOver?: boolean;
+}) => {
+  const pCard = usePartialVertex(card, ['workspace']);
+  const cardWs = pCard.workspace.manager;
+  const colorWs = useWorkspaceColor(cardWs);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    setMenuOpen(!menuOpen);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  return (
+    <MoreButtonCard workspace={cardWs} onClick={toggleMenu}>
+      <CardMenuView
+        visible={isMouseOver}
+        cardManager={card}
+        source="board"
+        colorWs={colorWs.inactive}
+        isOpen={menuOpen}
+        toggleMenu={toggleMenu}
+      />
+    </MoreButtonCard>
+  );
+};

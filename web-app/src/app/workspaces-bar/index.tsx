@@ -1056,7 +1056,7 @@ function shouldAutoSelectWorkspace(
   for (const gid of groups) {
     if (
       gid === null ||
-      (gid instanceof VertexManager && expandedWorkspaceGroups.has(gid.key))
+      expandedWorkspaceGroups.has(gid instanceof VertexManager ? gid.key : gid)
     ) {
       return true;
     }

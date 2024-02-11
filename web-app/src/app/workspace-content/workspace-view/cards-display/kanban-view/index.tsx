@@ -79,7 +79,7 @@ const useStyles = makeStyles((theme) => ({
     width: styleguide.gridbase * 2,
     borderRadius: styleguide.gridbase,
     flexShrink: 0,
-    background: 'var(--ws-inactive)',
+    background: 'var(--ws-active)',
     basedOn: [layout.column, layout.centerCenter],
   },
 }));
@@ -98,7 +98,7 @@ function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   return (
     <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
@@ -121,8 +121,9 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
     header = strings.unassigned;
   } else {
     if (typeof gid === 'string') {
-      if (strings[gid]) {
-        header = <div> {strings[gid]}</div>;
+      // deno-lint-ignore no-prototype-builtins
+      if (strings.hasOwnProperty(gid)) {
+        header = <div> {strings[gid as keyof typeof strings]}</div>;
       } else {
         header = <div> {gid}</div>;
       }
@@ -156,7 +157,9 @@ export function KanbanView({ className }: { className?: string }) {
     if (unpinnedQuery) {
       SetUtils.update(s, unpinnedQuery.groups());
     }
-    return Array.from(s).sort(coreValueCompare);
+    return Array.from(s).sort(
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
+    );
   }, [pinnedQuery, unpinnedQuery]);
 
   const [yLimit, setYLimit] = useState(PAGE_SIZE);

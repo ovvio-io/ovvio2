@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     padding: '6px 8px 6px 10px',
     alignItems: 'center',
-    gap: '8px',
+    // gap: '8px',
     flexShrink: 0,
     background: 'var(--secondary-secondary-s-0, #FFFBF5)',
   },
@@ -221,7 +221,7 @@ export function MentionPopup<T>({
         <TextField
           className={cn(styles.input)}
           type="text"
-          value={filter}
+          // value={filter} //puts "#" in the tags dropdown menu
           onChange={onChange}
           onKeyDown={onKeyDown}
           ref={ref}
