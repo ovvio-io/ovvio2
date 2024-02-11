@@ -1,4 +1,6 @@
 import { numbersEqual } from '../base/comparisons.ts';
+import { coreValueCompare } from '../base/core-types/compare.ts';
+import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
 import { Rect2D } from '../base/math.ts';
 import { WritingDirection, searchAll } from '../base/string.ts';
@@ -12,7 +14,10 @@ import { measureCharacters } from './text.ts';
 
 export class ParagraphRenderer {
   private _canvas: HTMLCanvasElement | undefined;
-  private _width: number;
+  private _width = 0;
+  private _nodes: SpanNode[] = [];
+  private _font = '13px Poppins, Heebo';
+  private _lineHeight = 13;
 
   private _characterWidths: readonly number[] | undefined;
   private _wordEdges: readonly number[] | undefined;
@@ -22,14 +27,6 @@ export class ParagraphRenderer {
   private _bidiReversedText: string | undefined;
   private _bidiEmbeddingLevels: GetEmbeddingLevelsResult | undefined;
 
-  constructor(
-    readonly nodes: SpanNode[],
-    readonly lineHeight: number,
-    width: number,
-  ) {
-    this._width = Math.round(width);
-  }
-
   get width(): number {
     return this._width;
   }
@@ -38,6 +35,17 @@ export class ParagraphRenderer {
     w = Math.round(w);
     if (!numbersEqual(this._width, w)) {
       this._width = w;
+      this._canvas = undefined;
+    }
+  }
+
+  get nodes(): SpanNode[] {
+    return this._nodes;
+  }
+
+  set nodes(n: SpanNode[]) {
+    if (!coreValueEquals(n, this._nodes)) {
+      this._nodes = n;
       this._canvas = undefined;
     }
   }
