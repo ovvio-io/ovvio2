@@ -507,16 +507,10 @@ export async function setupTrustPool(
   trustPool: TrustPool,
   sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): Promise<void> {
-  fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
-    const session = await decodeSession(encodedSesion);
-    await trustPool.addSession(session, sysDir.headForKey(session.id)!);
-  });
-  // Second, load all sessions (signed by root)
-  for (const key of sysDir.keys()) {
-    const record = sysDir.valueForKey(key);
-    if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-      const session = await sessionFromRecord(record);
-      await trustPool.addSession(session, sysDir.headForKey(key)!);
-    }
-  }
+  await Promise.allSettled(
+    fetchEncodedRootSessions(sysDir).map(async (encodedSession) => {
+      const session = await decodeSession(encodedSession);
+      trustPool.addSessionUnsafe(session);
+    }),
+  );
 }

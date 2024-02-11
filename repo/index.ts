@@ -14,6 +14,7 @@ export type SortDescriptor = (
 
 export class RepositoryIndex<T extends RepoStorage<T>> {
   private readonly _headIdForKey: Map<string | null, string>; // Key -> Commit ID
+  private readonly _tempRecordForKey: Map<string | null, Record>;
   private readonly _includedKeys: Set<string | null>; // Keys
   private _cachedValues: undefined | Row[];
 
@@ -24,6 +25,7 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
       coreValueCompare(k1, k2),
   ) {
     this._headIdForKey = new Map();
+    this._tempRecordForKey = new Map();
     this._includedKeys = new Set();
     repo.attach('NewCommit', (c: Commit) => this.onNewCommit(c));
   }
@@ -43,6 +45,7 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
       if (!prevRecord.isEqual(currentRecord)) {
         this._cachedValues = undefined;
         this._headIdForKey.set(key, currentHead!.id);
+        this._tempRecordForKey.delete(key);
         if (this.predicate(key, currentRecord)) {
           this._includedKeys.add(key);
         } else if (this._includedKeys.has(key)) {
@@ -52,12 +55,37 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
     }
   }
 
+  private onTemporaryRecord(key: string | null, record: Record): void {
+    const prevHeadId = this._headIdForKey.get(key);
+    let prevRecord: Record | undefined;
+    if (prevHeadId) {
+      prevRecord = this.repo.recordForCommit(prevHeadId);
+    }
+    if (!prevRecord || prevRecord.isNull) {
+      prevRecord = this._tempRecordForKey.get(key);
+    }
+    if (!prevRecord || !prevRecord.isEqual(record)) {
+      this._cachedValues = undefined;
+      this._tempRecordForKey.set(key, record);
+      this._headIdForKey.delete(key);
+      if (this.predicate(key, record)) {
+        this._includedKeys.add(key);
+      } else if (this._includedKeys.has(key)) {
+        this._includedKeys.delete(key);
+      }
+    }
+  }
+
   recordForKey(key: string | null | undefined): Record {
     if (key === undefined) {
       return Record.nullRecord();
     }
     const head = this._headIdForKey.get(key);
-    return head ? this.repo.recordForCommit(head) : Record.nullRecord();
+    return (
+      (head && this.repo.recordForCommit(head)) ||
+      this._tempRecordForKey.get(key) ||
+      Record.nullRecord()
+    );
   }
 
   values(): Row[] {
@@ -112,6 +140,11 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
       const head = repo.headForKey(key)!;
       if (head) {
         this.onNewCommit(head);
+      } else {
+        const record = repo.valueForKey(key);
+        if (!record.isNull) {
+          this.onTemporaryRecord(key, record);
+        }
       }
     }
   }

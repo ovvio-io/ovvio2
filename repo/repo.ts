@@ -670,50 +670,6 @@ export class Repository<
       // If our leaves converged on a single value, we can simply return it.
       return this.cacheHeadForKey(key, uniqueCommits[0]);
     }
-    const mergeLeaderSession =
-      mergeLeaderFromLeaves(leaves) || this.trustPool.currentSession.id;
-    if (merge && mergeLeaderSession === this.trustPool.currentSession.id) {
-      this.mergeIfNeeded(key);
-    }
-    // Since we're dealing with a partial graph, some of our leaves may not
-    // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
-    // If we somehow temporarily lost c2 and c4, we would consider both c3
-    // and c1 as leaves. Therefore, we first sort all our leaves from
-    // newest to oldest.
-    leaves.sort(compareCommitsDesc);
-    // Preserve local consistency for the caller and return whichever value
-    // it wrote last.
-    for (const c of leaves) {
-      if (c.session === session) {
-        const head = this.cacheHeadForKey(key, c);
-        if (head) {
-          return head;
-        }
-      }
-    }
-    // We're not part of the writers, and not the merge leader. Follow the
-    // leader so our view remains relatively stable.
-    if (mergeLeaderSession !== session) {
-      for (const c of leaves) {
-        if (c.session === mergeLeaderSession) {
-          const head = this.cacheHeadForKey(key, c);
-          if (head) {
-            return head;
-          }
-        }
-      }
-    }
-    // No match found. Find the newest commit we're able to read its record.
-    for (const c of Array.from(this.commitsForKey(key)).sort(
-      compareCommitsDesc,
-    )) {
-      const head = this.cacheHeadForKey(key, c);
-      if (head) {
-        return head;
-      }
-    }
-    // This shouldn't happen during normal operation, only while bootstrapping
-    // a repo
     return undefined;
   }
 
@@ -750,6 +706,76 @@ export class Repository<
     return result;
   }
 
+  private createMergeRecord(
+    commitsToMerge: Commit[],
+  ): [CFDSRecord, Commit | undefined] {
+    const session = this.trustPool.currentSession.id;
+    const roots = commitsToMerge.filter((c) => c.parents.length === 0);
+    commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
+    // Find the base for our N-way merge
+    let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
+    // When merging roots, we use the null record as the merge base
+    if (roots.length > 0) {
+      scheme = roots[0].scheme!;
+      foundRoot = true;
+    } else if (commitsToMerge.length === 1) {
+      // Special case: a single chain of commits.
+      scheme =
+        this.recordForCommit(commitsToMerge[0]).scheme || Scheme.nullScheme();
+      foundRoot = false;
+    } else {
+      [commitsToMerge, lca, scheme, foundRoot] =
+        this.findMergeBase(commitsToMerge);
+    }
+    if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
+      throw serviceUnavailable();
+    }
+    // If no LCA is found then we're dealing with concurrent writers who all
+    // created of the same key unaware of each other.
+    // Use the null record as a base in this case.
+    const base = lca
+      ? this.recordForCommit(lca).clone()
+      : CFDSRecord.nullRecord();
+    // Upgrade base to merge scheme
+    if (!scheme.isNull) {
+      base.upgradeScheme(scheme);
+    }
+    // Compute all changes to be applied in this merge
+    let changes: DataChanges = {};
+    // First, handle any new roots that may have appeared as leaves.
+    // We transform them to diff format by computing a diff from null.
+    // Note that we start with these changes in order to let later changes
+    // override them as concurrent root creation is likely a temporary
+    // error.
+    const nullRecord = CFDSRecord.nullRecord();
+    for (const c of roots) {
+      const record = this.recordForCommit(c);
+      if (record.isNull) {
+        continue;
+      }
+      changes = concatChanges(
+        changes,
+        nullRecord.diff(record, c.session === session),
+      );
+    }
+    // Second, compute a compound diff from our base to all unique records
+    for (const c of commitsToMerge) {
+      const record = this.recordForCommit(c);
+      // Before computing the diff, upgrade the record to the scheme decided
+      // for this merge.
+      if (!scheme.isNull) {
+        record.upgradeScheme(scheme);
+      }
+      changes = concatChanges(
+        changes,
+        base.diff(record, c.session === session),
+      );
+    }
+    // Patch, and we're done.
+    base.patch(changes);
+    return [base, lca];
+  }
+
   private async _createMergeCommitImpl(
     commitsToMerge: Commit[],
     parents?: string[],
@@ -763,75 +789,13 @@ export class Repository<
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
     try {
-      const roots = commitsToMerge.filter((c) => c.parents.length === 0);
-      commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
-      // Find the base for our N-way merge
-      let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
-      // When merging roots, we use the null record as the merge base
-      if (roots.length > 0) {
-        scheme = roots[0].scheme!;
-        foundRoot = true;
-      } else if (commitsToMerge.length === 1) {
-        // Special case: a single chain of commits.
-        scheme =
-          this.recordForCommit(commitsToMerge[0]).scheme || Scheme.nullScheme();
-        foundRoot = false;
-      } else {
-        [commitsToMerge, lca, scheme, foundRoot] =
-          this.findMergeBase(commitsToMerge);
-      }
-      if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
-        throw serviceUnavailable();
-      }
-      // If no LCA is found then we're dealing with concurrent writers who all
-      // created of the same key unaware of each other.
-      // Use the null record as a base in this case.
-      const base = lca
-        ? this.recordForCommit(lca).clone()
-        : CFDSRecord.nullRecord();
-      // Upgrade base to merge scheme
-      if (!scheme.isNull) {
-        base.upgradeScheme(scheme);
-      }
-      // Compute all changes to be applied in this merge
-      let changes: DataChanges = {};
-      // First, handle any new roots that may have appeared as leaves.
-      // We transform them to diff format by computing a diff from null.
-      // Note that we start with these changes in order to let later changes
-      // override them as concurrent root creation is likely a temporary
-      // error.
-      const nullRecord = CFDSRecord.nullRecord();
-      for (const c of roots) {
-        const record = this.recordForCommit(c);
-        if (record.isNull) {
-          continue;
-        }
-        changes = concatChanges(
-          changes,
-          nullRecord.diff(record, c.session === session),
-        );
-      }
-      // Second, compute a compound diff from our base to all unique records
-      for (const c of commitsToMerge) {
-        const record = this.recordForCommit(c);
-        // Before computing the diff, upgrade the record to the scheme decided
-        // for this merge.
-        if (!scheme.isNull) {
-          record.upgradeScheme(scheme);
-        }
-        changes = concatChanges(
-          changes,
-          base.diff(record, c.session === session),
-        );
-      }
-      // Patch, and we're done.
-      base.patch(changes);
+      const [merge, base] = this.createMergeRecord(commitsToMerge);
       let mergeCommit = new Commit({
         session,
         key,
-        contents: base,
+        contents: merge,
         parents: parents || commitsToMerge.map((c) => c.id),
-        mergeBase: lca?.id,
+        mergeBase: base?.id,
         mergeLeader,
         revert,
       });
@@ -891,7 +855,7 @@ export class Repository<
           mergeLeaderSession,
         );
         if (mergeCommit) {
-          return mergeCommit;
+          return this.cacheHeadForKey(key, mergeCommit);
         }
       }
       return this.cacheHeadForKey(key, commitsToMerge[0]);
@@ -958,9 +922,13 @@ export class Repository<
     readonly?: boolean,
   ): CFDSRecord {
     const head = this.headForKey(key, session, merge);
-    return head
-      ? this.recordForCommit(head, readonly)
-      : CFDSRecord.nullRecord();
+    if (!head) {
+      const leaves = this.leavesForKey(key);
+      return leaves.length > 0
+        ? this.createMergeRecord(leaves)[0]
+        : CFDSRecord.nullRecord();
+    }
+    return this.recordForCommit(head, readonly);
   }
 
   valueForKeyReadonlyUnsafe(key: string | null, session?: string): CFDSRecord {
