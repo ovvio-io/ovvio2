@@ -174,7 +174,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
   useEffect(() => {
     let timeoutId: number;
@@ -279,7 +279,7 @@ export default function AddSelectionButton<T>({
   const usersSet = new Set(users);
 
   const newUsersSet = new Set(
-    [...usersSet].filter((user) => !existUsers.has(user)),
+    [...usersSet].filter((user) => !existUsers.has(user))
   );
   const newUsersArray = Array.from(newUsersSet);
 
@@ -349,7 +349,7 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
       }
       setInputName('');
     },
-    [inputName, displayName, setInputName, setIsDeleting, wsMng],
+    [inputName, displayName, setInputName, setIsDeleting, wsMng]
   );
 
   return (
