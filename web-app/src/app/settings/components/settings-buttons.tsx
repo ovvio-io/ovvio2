@@ -366,8 +366,9 @@ export function CancelButton({ onCancel }: CancelButtonProps) {
 
 interface DeleteWsButtonProps {
   wsMng: VertexManager<Workspace>;
-  onDeleteClick: (ws: VertexManager<Workspace>) => void;
+  onDeleteClick: () => void;
   disabled: boolean;
+  isConfirmed: boolean;
   className: any;
 }
 
@@ -375,6 +376,7 @@ export function DeleteWsButton({
   wsMng,
   onDeleteClick,
   disabled,
+  isConfirmed,
   className,
 }: DeleteWsButtonProps) {
   const isDisabled = disabled;
@@ -382,16 +384,19 @@ export function DeleteWsButton({
 
   return (
     <Button
-      onClick={!isDisabled ? () => onDeleteClick(wsMng) : undefined}
+      onClick={isConfirmed ? onDeleteClick : onDeleteClick}
       className={cn(
         styles.compose,
         className,
-
-        isDisabled ? styles.disabled : styles.available
+        isDisabled && !isConfirmed ? styles.disabled : styles.available
       )}
     >
       <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
-      <span className={cn(styles.text)}>{'Delete Workspace'}</span>
+      <span className={cn(styles.text)}>
+        {isConfirmed === true ? 'true' : 'false'}
+
+        {/* {'Delete Workspace' + isConfirmed === true ? 'true' : 'false'} */}
+      </span>
     </Button>
   );
 }

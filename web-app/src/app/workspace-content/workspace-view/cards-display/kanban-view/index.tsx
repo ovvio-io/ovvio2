@@ -59,7 +59,7 @@ const useStyles = makeStyles((theme) => ({
     borderTopRightRadius: styleguide.gridbase * 2,
     maxWidth: styleguide.gridbase * 20.5,
     paddingLeft: styleguide.gridbase,
-    paddingRight: styleguide.gridbase * 0.5,
+    paddingRight: styleguide.gridbase,
     boxSizing: 'border-box',
     alignItems: 'center',
     whiteSpace: 'nowrap',
@@ -98,7 +98,7 @@ function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   return (
     <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
@@ -158,7 +158,7 @@ export function KanbanView({ className }: { className?: string }) {
       SetUtils.update(s, unpinnedQuery.groups());
     }
     return Array.from(s).sort(
-      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
     );
   }, [pinnedQuery, unpinnedQuery]);
 
