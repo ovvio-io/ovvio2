@@ -386,12 +386,13 @@ export class Repository<
     while (true) {
       const bases = SetUtils.intersection(parents1, parents2);
       if (bases.size > 0) {
-        return [
-          Array.from(bases)
-            .map((id) => this.getCommit(id))
-            .sort(compareCommitsDesc)[0],
-          reachedRoot,
-        ];
+        const prioritizedBases = Array.from(bases)
+          .filter((id) => this.hasCommit(id))
+          .map((id) => this.getCommit(id))
+          .sort(compareCommitsDesc);
+        if (prioritizedBases.length > 0) {
+          return [prioritizedBases[0], reachedRoot];
+        }
       }
       let updated = false;
       for (const parentId of Array.from(parents1)) {
