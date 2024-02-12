@@ -309,6 +309,9 @@ export class Repository<
         }
         continue;
       }
+      if (!this.hasRecordForCommit(c)) {
+        continue;
+      }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
       reachedRoot = reachedRoot || foundRoot;
       if (!newBase) {

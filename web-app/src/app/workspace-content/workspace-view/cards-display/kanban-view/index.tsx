@@ -29,6 +29,7 @@ import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { CheckIcon } from '../../../../workspaces-bar/index.tsx';
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
+import { resolveWritingDirection } from '../../../../../../../base/string.ts';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
@@ -82,6 +83,9 @@ const useStyles = makeStyles((theme) => ({
     background: 'var(--ws-active)',
     basedOn: [layout.column, layout.centerCenter],
   },
+  rtl: {
+    direction: 'rtl',
+  },
 }));
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
@@ -92,7 +96,7 @@ function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
   const color = useWorkspaceColor(workspace);
-  const style = useMemo<any>(
+  const internalStyle = useMemo<any>(
     () => ({
       '--ws-background': color.background,
       '--ws-inactive': color.inactive,
@@ -100,11 +104,17 @@ function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
     }),
     [color],
   );
+  const dir = resolveWritingDirection(name);
   return (
-    <div className={cn(styles.listItem, styles.listItemSelected)} style={style}>
+    <div
+      className={cn(styles.listItem, styles.listItemSelected)}
+      style={internalStyle}
+    >
       <Tooltip text={name} disabled={true} position="right">
         <div className={cn(styles.itemTab)}>
-          <div className={cn(styles.itemText)}>{name}</div>
+          <div className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}>
+            {name}
+          </div>
           <div className={cn(styles.itemToggle)}>
             <CheckIcon />
           </div>
