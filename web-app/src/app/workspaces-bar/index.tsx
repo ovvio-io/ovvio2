@@ -1156,17 +1156,17 @@ function WorkspaceBarInternal({
   }, [view, logger, query]);
 
   // Clear view settings when no workspace is selected
-  useEffect(() => {
-    if (view.selectedWorkspaces.size === 0) {
-      const activeView = activeViewMgr.getVertexProxy();
-      activeView.clearFilters();
-      activeView.clearContentsDisplaySettings();
-    }
-  }, [activeViewMgr, view.selectedWorkspaces]);
+  // useEffect(() => {
+  //   if (view.selectedWorkspaces.size === 0) {
+  //     const activeView = activeViewMgr.getVertexProxy();
+  //     activeView.clearFilters();
+  //     activeView.clearContentsDisplaySettings();
+  //   }
+  // }, [activeViewMgr, view.selectedWorkspaces]);
 
   const unselectAll = useCallback(() => {
     // view.clear();
-    view.clearContentsDisplaySettings();
+    // view.clearContentsDisplaySettings();
     view.selectedWorkspaces.clear();
     logger.log({
       severity: 'EVENT',
