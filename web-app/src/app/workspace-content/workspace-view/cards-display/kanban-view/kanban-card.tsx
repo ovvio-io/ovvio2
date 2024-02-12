@@ -525,7 +525,7 @@ const CardMenu = ({
   const colorWs = useWorkspaceColor(cardWs);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const toggleMenu: React.MouseEventHandler<HTMLDivElement> = () => {
+  const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
