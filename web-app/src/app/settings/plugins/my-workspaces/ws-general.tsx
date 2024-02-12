@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { tabsStyles } from '../../components/tabs-style.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
 import SettingsField from '../../components/settings-field.tsx';
-import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialView,
+} from '../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
   useVertex,
@@ -308,12 +311,14 @@ interface DeleteConfirmWsButtonProps {
 export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
   const styles = useStyles();
   const inputRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLInputElement>(null);
   const [inputName, setInputName] = useState('');
   const [startConfirmation, setStartConfirmation] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const partialWS = usePartialVertex(wsMng, ['name']);
   const displayName = partialWS.name;
+  const view = usePartialView('selectedWorkspaces');
 
   useEffect(() => {
     if (startConfirmation && inputRef.current) {
@@ -325,7 +330,9 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        buttonRef.current &&
+        !inputRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setStartConfirmation(false);
       }
@@ -340,23 +347,11 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
     setIsConfirmed(inputName === displayName);
   }, [inputName, displayName]);
 
-  // const handleDeleteWs = useCallback(() => {
-  //   debugger;
-  //   if (isConfirmed && wsMng) {
-  //     wsMng.getVertexProxy().isDeleted = 1;
-  //     setInputName('');
-  //     setStartConfirmation(false);
-  //     setIsConfirmed(false);
-  //   } else {
-  //     console.log("Name doesn't match, cannot delete.");
-  //   }
-  // }, [inputName, displayName, isConfirmed, wsMng, startConfirmation]);
-
   const handleDeleteWs = () => {
-    debugger;
     if (!startConfirmation) {
       setStartConfirmation(true);
     } else if (isConfirmed && wsMng) {
+      view.selectedWorkspaces.clear();
       wsMng.getVertexProxy().isDeleted = 1;
       setInputName('');
       setStartConfirmation(false);
@@ -383,81 +378,11 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
         isConfirmed={isConfirmed}
         onDeleteClick={handleDeleteWs}
         className={cn(styles.deleteWsButton)}
-        wsMng={wsMng}
+        ref={buttonRef}
       />
     </div>
   );
 }
-
-// export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
-//   const styles = useStyles();
-//   const inputRef = useRef<HTMLInputElement>(null);
-//   const [inputName, setInputName] = useState('');
-//   const [startConfirmation, setStartConfirmation] = useState(false);
-//   const partialWS = usePartialVertex(wsMng, ['name', 'isDeleted']);
-//   const displayName = partialWS.name;
-
-//   useEffect(() => {
-//     if (startConfirmation && inputRef.current) {
-//       (inputRef.current as any).focus();
-//     }
-//   }, [startConfirmation, wsMng]);
-
-//   useEffect(() => {
-//     const handleClickOutside = (event: MouseEvent) => {
-//       if (
-//         inputRef.current &&
-//         !inputRef.current.contains(event.target as Node)
-//       ) {
-//         setStartConfirmation(false);
-//       }
-//     };
-//     document.addEventListener('mousedown', handleClickOutside);
-//     return () => {
-//       document.removeEventListener('mousedown', handleClickOutside);
-//     };
-//   }, [inputRef]);
-
-//   const deleteWs = useCallback(
-//     (wsMng: VertexManager<Workspace>) => {
-//       setStartConfirmation(true);
-//       if (inputName === displayName) {
-//         const ws = wsMng.getVertexProxy();
-//         ws.isDeleted = 1;
-//       } else {
-//         console.log("Name doesn't match");
-//       }
-//       if (inputName !== '') {
-//         setStartConfirmation(false);
-//       }
-//       setInputName('');
-//     },
-//     [inputName, displayName, setInputName, setStartConfirmation, wsMng]
-//   );
-
-//   return (
-//     <div className={cn(styles.deleteContainer)}>
-//       {startConfirmation && (
-//         <TextField
-//           value={inputName}
-//           onChange={(e) => setInputName(e.currentTarget.value)}
-//           className={cn(styles.deleteConfirmation)}
-//           placeholder="Type workspace name to confirm"
-//           ref={inputRef}
-//         />
-//       )}
-//       <DeleteWsButton
-//         key="DeleteWsButton"
-//         disabled={startConfirmation && inputName !== displayName}
-//         isConfirmed={inputName === displayName}
-//         openConfirmationClick={() => setStartConfirmation(true)}
-//         onDeleteClick={deleteWs}
-//         className={cn(styles.deleteWsButton)}
-//         wsMng={wsMng}
-//       />
-//     </div>
-//   );
-// }
 
 interface UsersListProps {
   wsMng: VertexManager<Workspace>;
@@ -503,8 +428,7 @@ export function WsGeneralSettings() {
   const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
   const ws = [...partialView.selectedWorkspaces][0];
   const wsV = useVertex(ws);
-  const wsManager = ws.manager;
-  const onWorkspaceDeleted = () => {};
+  const wsManager = ws?.manager;
 
   return (
     <div>

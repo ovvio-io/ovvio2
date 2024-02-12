@@ -1,4 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router';
+
 import {
   encodeTagId,
   NS_USERS,
@@ -237,11 +239,17 @@ export function usePartialView<K extends ViewProp>(
 export function useActiveViewManager(): VertexManager<View> {
   const graph = useGraphManager();
   const { selectedTabId } = usePartialGlobalView('selectedTabId');
-  return graph.getVertexManager<View>(
-    selectedTabId === 'notes'
-      ? 'ViewNotes'
-      : selectedTabId === 'overview'
-      ? 'ViewOverview'
-      : 'ViewTasks'
-  );
+  const loc = useLocation();
+  const pathParts = loc.pathname.split('/');
+  if (pathParts[1] === 'settings') {
+    return graph.getVertexManager<View>('ViewWsSettings');
+  } else {
+    return graph.getVertexManager<View>(
+      selectedTabId === 'notes'
+        ? 'ViewNotes'
+        : selectedTabId === 'overview'
+        ? 'ViewOverview'
+        : 'ViewTasks'
+    );
+  }
 }
