@@ -65,21 +65,19 @@ export function ViewToggle({ className }: ViewToggleProps) {
   const styles = useStyles();
   const logger = useLogger();
   const strings = useStrings();
-  const view = usePartialView('viewType', 'showPinned');
+  const view = usePartialView('viewType');
 
   const setView = useCallback(
     (type: ViewType) => {
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'ViewChange',
         type: type,
         source: 'toolbar:viewType',
       });
       view.viewType = type;
-      // view.showPinned = view.viewType === 'board' ? 'all' : 'pinned-unpinned';
-      view.showPinned = 'pinned-unpinned';
     },
-    [logger, view]
+    [logger, view],
   );
 
   return (
@@ -89,7 +87,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
           className={cn(
             styles.toggleButton,
             view.viewType !== 'list' && styles.toggleButtonHover,
-            view.viewType === 'list' && styles.selected
+            view.viewType === 'list' && styles.selected,
           )}
           onClick={() => setView('list')}
         >
@@ -101,7 +99,7 @@ export function ViewToggle({ className }: ViewToggleProps) {
           className={cn(
             styles.toggleButton,
             view.viewType !== 'board' && styles.toggleButtonHover,
-            view.viewType === 'board' && styles.selected
+            view.viewType === 'board' && styles.selected,
           )}
           onClick={() => setView('board')}
         >
