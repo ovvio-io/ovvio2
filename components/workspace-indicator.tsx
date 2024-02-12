@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import { Workspace } from '../cfds/client/graph/vertices/workspace.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
@@ -20,6 +20,7 @@ const useStyles = makeStyles(() => ({
     color: theme.mono.m6,
     padding: styleguide.gridbase / 2,
     paddingRight: styleguide.gridbase * 1.5,
+    paddingLeft: styleguide.gridbase * 1,
     boxSizing: 'border-box',
     display: 'flex',
     alignItems: 'center',
@@ -50,6 +51,8 @@ export interface WorkspaceIndicatorProps {
   type?: WorkspaceIndicatorType;
   editable?: boolean;
   className?: string;
+  style?: CSSProperties;
+  ofSettings: boolean;
 }
 
 export function WorkspaceIndicator({
@@ -57,6 +60,8 @@ export function WorkspaceIndicator({
   type,
   editable,
   className,
+  style,
+  ofSettings,
 }: WorkspaceIndicatorProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
@@ -65,13 +70,28 @@ export function WorkspaceIndicator({
     type = 'full';
   }
   return (
-    <div className={cn(styles.workspaceIndicator, className)}>
+    <div
+      className={cn(styles.workspaceIndicator, className)}
+      style={{
+        ...(ofSettings ? { paddingTop: '8px' } : {}),
+      }}
+    >
       {type === 'full' ? (
         <div
-          className={cn(styles.background)}
-          style={{ backgroundColor: color }}
+          className={cn(styles.background, className)}
+          style={{
+            backgroundColor: color,
+            ...(ofSettings ? { height: '32px' } : {}),
+          }}
         >
-          <span className={cn(styles.text)}>{name}</span>
+          <span
+            className={cn(styles.text)}
+            style={{
+              ...(ofSettings ? { fontSize: '13px' } : {}),
+            }}
+          >
+            {name}
+          </span>
         </div>
       ) : (
         <div

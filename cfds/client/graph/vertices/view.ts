@@ -201,7 +201,6 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: Set<Workspace> | undefined
   ): MutationPack {
-    debugger;
     return ['selectedWorkspaces', origin, oldValue];
   }
 
