@@ -44,6 +44,7 @@ const useStyles = makeStyles(() => ({
   },
   rtl: {
     direction: 'rtl',
+    textAlign: 'left',
   },
 }));
 

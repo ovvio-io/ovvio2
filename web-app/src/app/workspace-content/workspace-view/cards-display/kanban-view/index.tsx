@@ -85,6 +85,7 @@ const useStyles = makeStyles((theme) => ({
   },
   rtl: {
     direction: 'rtl',
+    textAlign: 'left',
   },
 }));
 const useStrings = createUseStrings(localization);

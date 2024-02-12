@@ -358,6 +358,7 @@ const useStyles = makeStyles(
     },
     rtl: {
       direction: 'rtl',
+      textAlign: 'left',
     },
   }),
   'workspaces-bar_881015',
