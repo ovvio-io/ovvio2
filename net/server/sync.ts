@@ -200,7 +200,6 @@ export class SyncService extends BaseService<ServerServices> {
     repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
       const clients = this._clientsForRepo.get(repoId);
-      debugger;
       if (
         this._rendezvousHash.peerForKey(c.key) ===
         this.services.serverProcessIndex
