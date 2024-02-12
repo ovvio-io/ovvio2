@@ -1,21 +1,21 @@
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { numbersEqual } from '../base/comparisons.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
 import { Rect2D } from '../base/math.ts';
 import { WritingDirection, searchAll } from '../base/string.ts';
-import { SpanNode } from '../cfds/richtext/model.ts';
+import { MarkupElement, SpanNode } from '../cfds/richtext/model.ts';
 import {
   GetEmbeddingLevelsResult,
   getEmbeddingLevels,
 } from '../external/bidi-js/embeddingLevels.js';
 import { getReorderedString } from '../external/bidi-js/index.js';
 
-export class ParagraphRenderer {
-  private _width = 0;
+export class ParagraphRendererContext {
   private _nodes: SpanNode[] = [];
   private _font = '13px Poppins, Heebo';
   private _lineHeight = 13;
-  private _dirty = false;
+  private _dirty = true;
 
   private _characterWidths: readonly number[] | undefined;
   private _wordEdges: readonly number[] | undefined;
@@ -28,15 +28,8 @@ export class ParagraphRenderer {
   constructor(readonly canvas: HTMLCanvasElement) {}
 
   get width(): number {
-    return this._width;
-  }
-
-  set width(w: number) {
-    w = Math.round(w);
-    if (!numbersEqual(this._width, w)) {
-      this._width = w;
-      this._dirty = true;
-    }
+    debugger;
+    return this.canvas.width;
   }
 
   get nodes(): SpanNode[] {
@@ -74,8 +67,18 @@ export class ParagraphRenderer {
 
   render(): void {
     const ctx = this.canvas.getContext('2d')!;
+    this.applyStylesToCanvas();
     for (const [lineText, bounds] of this._lines!) {
       ctx.fillText(lineText, bounds.x, bounds.y, bounds.width);
+    }
+    this._dirty = false;
+  }
+
+  renderIfNeeded(): void {
+    debugger;
+    if (this._dirty) {
+      this.measureText();
+      this.render();
     }
   }
 
@@ -143,6 +146,7 @@ export class ParagraphRenderer {
     for (let i = 0; i < bidiReversedText.length; ++i) {
       const w = charWidths[i];
       if (lineWidth + w > width) {
+        debugger;
         const prevWordBoundary = findValueBefore(i, wordEdges) || i;
         const line = bidiReversedText.substring(
           prevLineBreak,
@@ -221,4 +225,38 @@ function findValueBefore(desired: number, values: number[]): number {
     }
   }
   return values[values.length - 1];
+}
+
+export type ParagraphRendererParams = {
+  element: MarkupElement;
+} & React.CanvasHTMLAttributes<HTMLCanvasElement>;
+
+export function ParagraphRenderer({
+  element,
+  ...rest
+}: ParagraphRendererParams) {
+  const ref = useRef(null);
+  const [renderCount, setRenderCount] = useState(0);
+  const ctx = useMemo(() => {
+    debugger;
+    if (!ref.current) {
+      return;
+    }
+    return new ParagraphRendererContext(ref.current);
+  }, [renderCount]);
+
+  useLayoutEffect(() => {
+    if (!ref.current || !ctx || ctx.canvas !== ref.current) {
+      setRenderCount(renderCount + 1);
+    }
+  });
+
+  useLayoutEffect(() => {
+    debugger;
+    if (ctx) {
+      ctx.nodes = element.children as SpanNode[];
+      ctx.renderIfNeeded();
+    }
+  }, [element.children, ctx]);
+  return <canvas ref={ref} {...rest} />;
 }

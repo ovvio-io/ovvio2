@@ -39,6 +39,7 @@ import { MemberPicker } from '../components/member-picker.tsx';
 import { TagChip } from '../components/tag-chip.tsx';
 import { stripDuplicatePointers } from '../cfds/richtext/flat-rep.ts';
 import { docToRT } from '../cfds/richtext/doc-state.ts';
+import { ParagraphRenderer } from './paragraph-renderer.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -431,7 +432,8 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
   );
 }
 
-type ParagraphElementNode = React.PropsWithChildren<{
+type ParagraphElementNode = {
+  element: MarkupElement;
   id: string;
   htmlId: string;
   dir?: WritingDirection;
@@ -439,9 +441,10 @@ type ParagraphElementNode = React.PropsWithChildren<{
   showNewTaskHint?: boolean;
   ctx: RenderContext;
   onChange: (doc: Document) => void;
-}>;
+};
 
 function ParagraphElementNode({
+  element,
   id,
   htmlId,
   dir,
@@ -449,13 +452,14 @@ function ParagraphElementNode({
   showNewTaskHint,
   ctx,
   onChange,
-  children,
-}: ParagraphElementNode) {
+}: // children,
+ParagraphElementNode) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
 
   return (
-    <div
+    <ParagraphRenderer
+      element={element}
       key={id}
       id={htmlId}
       data-ovv-key={id}
@@ -480,8 +484,8 @@ function ParagraphElementNode({
           <img src="/icons/design-system/checkbox/selected.svg" />
         </div>
       )} */}
-      {children}
-    </div>
+      {/* {children} */}
+    </ParagraphRenderer>
   );
 }
 
@@ -690,6 +694,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     default:
       return (
         <ParagraphElementNode
+          element={node}
           id={ctx.doc.nodeKeys.keyFor(node).id}
           htmlId={htmlId}
           dir={dir}
@@ -707,7 +712,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           onChange={onChange}
           ctx={ctx}
         >
-          {children}
+          {/* {children} */}
         </ParagraphElementNode>
       );
   }
