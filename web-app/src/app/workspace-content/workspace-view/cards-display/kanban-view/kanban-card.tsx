@@ -211,13 +211,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export interface CardHeaderPartProps extends KanbanCardProps {
+interface CardHeaderPartProps extends KanbanCardProps {
   isExpanded?: boolean;
   source: UISource;
   hideMenu?: boolean;
 }
 
-export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
+function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
   const styles = useStyles();
   const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
   const note = useVertex(card);
@@ -229,6 +229,7 @@ export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
         <WorkspaceIndicator
           className={cn(styles.workspaceIndicator)}
           workspace={pCard.workspace.manager}
+          ofSettings={false}
         />
       )}
       {isTask && (

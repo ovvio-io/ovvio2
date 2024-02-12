@@ -88,7 +88,9 @@ const PAGE_SIZE = 10;
 export interface WorkspaceIndicatorCardProps {
   workspace: VertexId<Workspace>;
 }
-function WorkspaceIndicatorCard({ workspace }: WorkspaceIndicatorCardProps) {
+export function WorkspaceIndicatorCard({
+  workspace,
+}: WorkspaceIndicatorCardProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
   const color = useWorkspaceColor(workspace);
@@ -201,18 +203,17 @@ export function KanbanView({ className }: { className?: string }) {
               }
               groupBy={groupBy}
             >
-              {pinnedQuery &&
-                pinnedQuery
-                  .group(group)
-                  .slice(0, yLimit)
-                  .map((noteMgr) => (
-                    <KanbanCard
-                      card={noteMgr}
-                      size={CardSize.Small}
-                      key={noteMgr.key}
-                      showWorkspaceOnCard={showWorkspaceOnCard}
-                    />
-                  ))}
+              {pinnedQuery
+                ?.group(group)
+                .slice(0, yLimit)
+                .map((noteMgr) => (
+                  <KanbanCard
+                    card={noteMgr}
+                    size={CardSize.Small}
+                    key={noteMgr.key}
+                    showWorkspaceOnCard={showWorkspaceOnCard}
+                  />
+                ))}
               {pinnedQuery && pinnedQuery.group(group).length > 0 && (
                 <div style={{ height: '16px' }}></div>
               )}
