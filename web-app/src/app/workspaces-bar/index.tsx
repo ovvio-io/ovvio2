@@ -72,6 +72,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { getOrganizationId } from '../../../../net/rest-api.ts';
 import { assert } from '../../../../base/error.ts';
 import { verifyRequestSignature } from '../../../../auth/session.ts';
+import { resolveWritingDirection } from '../../../../base/string.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -354,6 +355,9 @@ const useStyles = makeStyles(
       display: 'flex',
       justifyContent: 'flex-end',
       padding: '16px',
+    },
+    rtl: {
+      direction: 'rtl',
     },
   }),
   'workspaces-bar_881015',
@@ -672,6 +676,7 @@ function WorkspaceListItem({
     'name',
     'isTemplate',
   ]);
+  const dir = resolveWritingDirection(name);
   const styles = useStyles();
   const strings = useStrings();
   const graph = useGraphManager();
@@ -785,7 +790,10 @@ function WorkspaceListItem({
           onClick={toggleSelected}
           // onContextMenu={toggleSelected}
         >
-          <div ref={textRef} className={cn(styles.itemText)}>
+          <div
+            ref={textRef}
+            className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
+          >
             {name}
           </div>
           <WorkspaceCheckbox toggled={isSelected} />

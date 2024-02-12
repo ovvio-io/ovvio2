@@ -54,7 +54,7 @@ export interface CardMenuViewProps {
   visible?: boolean;
   colorWs?: string;
   isOpen?: boolean;
-  toggleMenu?;
+  toggleMenu?: () => void;
 }
 
 export default function CardMenuView({
@@ -96,7 +96,7 @@ export default function CardMenuView({
         <IconMore color={colorWs} />
       </div>
     ),
-    [styles]
+    [styles],
   );
 
   return (
