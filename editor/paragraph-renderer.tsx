@@ -1,5 +1,4 @@
 import { numbersEqual } from '../base/comparisons.ts';
-import { coreValueCompare } from '../base/core-types/compare.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
 import { Rect2D } from '../base/math.ts';
@@ -10,7 +9,6 @@ import {
   getEmbeddingLevels,
 } from '../external/bidi-js/embeddingLevels.js';
 import { getReorderedString } from '../external/bidi-js/index.js';
-import { measureCharacters } from './text.ts';
 
 export class ParagraphRenderer {
   private _width = 0;
@@ -81,6 +79,11 @@ export class ParagraphRenderer {
     }
   }
 
+  private applyStylesToCanvas(): void {
+    const ctx = this.canvas.getContext('2d')!;
+    ctx.font = this.font;
+  }
+
   /**
    * Given text and CSS style, this function measures the width of each character
    * when rendered sequentially using the provided style.
@@ -95,6 +98,8 @@ export class ParagraphRenderer {
       return [[], []];
     }
     const ctx = this.canvas.getContext('2d')!;
+    ctx.save();
+    this.applyStylesToCanvas();
     const widths: number[] = [];
     const metrics: TextMetrics[] = [];
     let prevWidth = 0;
@@ -109,6 +114,7 @@ export class ParagraphRenderer {
       metrics.push(m);
       prevWidth = width;
     }
+    ctx.restore();
     return [widths, metrics];
   }
 
