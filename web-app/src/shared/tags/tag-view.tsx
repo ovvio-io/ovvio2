@@ -145,15 +145,6 @@ export function TagPillView({
       }}
     >
       <div className={cn(styles.tagName)}>{tagName}</div>
-      <div className={cn(layout.flexSpacer)} />
-      <div
-        className={cn(
-          styles.tagDelete,
-          !menuOnHover && !showMenu && styles.hide
-        )}
-      >
-        <IconDropDownArrow className="" />
-      </div>
     </div>
   );
 }

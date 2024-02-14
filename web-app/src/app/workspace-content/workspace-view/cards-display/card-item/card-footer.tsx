@@ -121,7 +121,7 @@ export interface CardFooterProps {
 //   );
 // }
 
-export function DueDateIndicator({ card, source }: CardFooterProps) {
+export function DueDateIndicator({ card, source, className }: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
@@ -146,7 +146,7 @@ export function DueDateIndicator({ card, source }: CardFooterProps) {
   const fontSize = '10px';
 
   return (
-    <Button className={cn(styles.footerItem)} onClick={onClick}>
+    <Button className={cn(styles.footerItem, className)} onClick={onClick}>
       <IconDueDate
         state={
           isOverdue

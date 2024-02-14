@@ -43,8 +43,6 @@ import { Workspace } from '../../../../../../../cfds/client/graph/vertices/works
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
 import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 
-const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
-
 export enum CardSize {
   Regular = 'regular',
   Small = 'small',
@@ -176,7 +174,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   workspaceIndicator: {
-    maxWidth: styleguide.gridbase * 15,
+    maxWidth: styleguide.gridbase * 12,
   },
   RightHoverMoreButton: {
     position: 'absolute',
@@ -443,7 +441,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               </div>
             )}
             {childCards.length == 0 && <div></div>}
-            {dueDate && <DueDateIndicator card={card} source={source} />}
+            <DueDateIndicator card={card} source={source} />
           </div>
         </div>
       </div>

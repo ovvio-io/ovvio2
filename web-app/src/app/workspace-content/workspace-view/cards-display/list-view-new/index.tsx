@@ -7,8 +7,6 @@ import {
   Note,
   NoteType,
 } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
 import {
   makeStyles,
   cn,
@@ -23,18 +21,10 @@ import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import CANCELLATION_REASONS from '../../../../../shared/dragndrop/cancellation-reasons.tsx';
-import { Draggable } from '../../../../../shared/dragndrop/draggable.tsx';
-import {
-  DragSource,
-  DragAndDropContext,
-} from '../../../../../shared/dragndrop/index.ts';
 import { InfiniteVerticalScroll } from './infinite-scroll.tsx';
-import { InlineTaskButton } from './inline-task-button.tsx';
 import { ItemsTable, SectionTable } from './table/grid.tsx';
 import { Row, ItemRow } from './table/item.tsx';
 import localization from './list.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
@@ -87,10 +77,8 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
   return header;
 }
 export function ListViewNew({ className }: ListViewNewProps) {
-  const strings = useStrings();
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const toastController = useToastController();
   const filteredNotes = useFilteredNotes('listView');
   const docRouter = useDocumentRouter();
   const view = usePartialView('noteType');
@@ -156,7 +144,9 @@ export function ListViewNew({ className }: ListViewNewProps) {
                     groupBy={groupBy}
                   />
                 ))}
-              <div style={{ height: '8px' }}></div>
+              {unpinnedQuery && pinnedQuery && (
+                <div style={{ height: '8px' }}></div>
+              )}
               {unpinnedQuery
                 ?.group(group)
                 .slice(0, yLimit)

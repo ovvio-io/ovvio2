@@ -32,6 +32,8 @@ import { TaskCheckbox } from '../../../../../../../components/task.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import { Cell } from '../list-view-new/table/item.tsx';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -264,7 +266,10 @@ export function CardHeader({
           source={source}
           isExpanded={isExpanded}
         /> */}
-      <WorkspaceIndicator workspace={pCard.workspace.manager} />
+      <WorkspaceIndicator
+        workspace={pCard.workspace.manager}
+        ofSettings={false}
+      />
       {isTask && (
         <>
           <span className={cn(styles.breadCrumbsSlash)}>/</span>
@@ -347,7 +352,7 @@ export function StatusCheckbox({
 
 export interface CardItemProps {
   card: VertexManager<Note>;
-  size: CardSize;
+  size?: CardSize;
   showChildCards?: boolean;
   className?: string;
   style?: {};
@@ -484,7 +489,7 @@ export const CardItem = React.forwardRef(function CardItemView(
 interface ChildCardProps {
   card: VertexManager<Note>;
   index: number;
-  size: CardSize;
+  size?: CardSize;
   isVisible: boolean;
 }
 
@@ -499,38 +504,3 @@ function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
   // }, [index, isVisible]);
   return <CardItem size={size} card={card} className={cn(styles.child)} />;
 }
-
-const PinCell = ({
-  note,
-  onMouseEnter,
-  isChild,
-}: {
-  note: VertexManager<Note>;
-  onMouseEnter: boolean;
-  isChild?: boolean;
-}) => {
-  const styles = useStyles();
-  const { isPinned } = usePartialVertex(note, ['isPinned']);
-
-  const togglePin = () => {
-    const proxy = note.getVertexProxy();
-    proxy.isPinned = !proxy.isPinned;
-  };
-
-  return (
-    <Cell className={cn(styles.iconCell, styles[GridColumns.Pin])}>
-      {!isChild && (
-        <Button onClick={togglePin}>
-          {/* {isPinned ? (
-            <IconPinOn />
-          ) : (
-            <IconPinOff
-              className={cn(styles.pinOff, isMouseOver && styles.pinOffOver)}
-            />
-          )} */}
-          <IconPin on={isPinned} visible={onMouseEnter} />
-        </Button>
-      )}
-    </Cell>
-  );
-};

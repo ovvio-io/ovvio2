@@ -15,7 +15,7 @@ const useStyles = makeStyles(() => ({
   },
   background: {
     height: styleguide.gridbase * 3,
-    minWidth: styleguide.gridbase * 9,
+    minWidth: styleguide.gridbase * 12,
     borderRadius: '2px 60px 60px 2px',
     color: theme.mono.m6,
     padding: styleguide.gridbase / 2,
