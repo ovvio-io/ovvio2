@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { tabsStyles } from '../../components/tabs-style.tsx';
 import { cn, makeStyles } from '../../../../../../styles/css-objects/index.ts';
 import SettingsField from '../../components/settings-field.tsx';
-import { useGraphManager } from '../../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialView,
+} from '../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
   useVertex,
@@ -304,58 +307,63 @@ export default function AddSelectionButton<T>({
 
 interface DeleteConfirmWsButtonProps {
   wsMng: VertexManager<Workspace>;
-  onDeleted: () => void;
 }
-
 export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
   const styles = useStyles();
   const inputRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLInputElement>(null);
   const [inputName, setInputName] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const partialWS = usePartialVertex(wsMng, ['name', 'isDeleted']);
+  const [startConfirmation, setStartConfirmation] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+
+  const partialWS = usePartialVertex(wsMng, ['name']);
   const displayName = partialWS.name;
+  const view = usePartialView('selectedWorkspaces');
 
   useEffect(() => {
-    if (isDeleting && inputRef.current) {
-      (inputRef.current as any).focus();
+    if (startConfirmation && inputRef.current) {
+      inputRef.current.focus();
     }
-  }, [isDeleting, wsMng]);
+  }, [startConfirmation]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        buttonRef.current &&
+        !inputRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
-        setIsDeleting(false);
+        setStartConfirmation(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [inputRef]);
+  }, []);
 
-  const deleteWs = useCallback(
-    (wsMng: VertexManager<Workspace>) => {
-      setIsDeleting(true);
-      if (inputName === displayName) {
-        const ws = wsMng.getVertexProxy();
-        ws.isDeleted = 1;
-      } else {
-        console.log("Name doesn't match");
-      }
-      if (inputName !== '') {
-        setIsDeleting(false);
-      }
+  useEffect(() => {
+    setIsConfirmed(inputName === displayName);
+  }, [inputName, displayName]);
+
+  const handleDeleteWs = () => {
+    if (!startConfirmation) {
+      setStartConfirmation(true);
+    } else if (isConfirmed && wsMng) {
+      view.selectedWorkspaces.clear();
+      wsMng.getVertexProxy().isDeleted = 1;
       setInputName('');
-    },
-    [inputName, displayName, setInputName, setIsDeleting, wsMng]
-  );
+      setStartConfirmation(false);
+      setIsConfirmed(false);
+    } else {
+      console.log("Name doesn't match, cannot delete.");
+    }
+  };
 
   return (
     <div className={cn(styles.deleteContainer)}>
-      {isDeleting && (
+      {startConfirmation && (
         <TextField
           value={inputName}
           onChange={(e) => setInputName(e.currentTarget.value)}
@@ -366,10 +374,11 @@ export function DeleteConfirmWsButton({ wsMng }: DeleteConfirmWsButtonProps) {
       )}
       <DeleteWsButton
         key="DeleteWsButton"
-        disabled={isDeleting && inputName !== displayName}
-        onDeleteClick={deleteWs}
+        disabled={startConfirmation}
+        isConfirmed={isConfirmed}
+        onDeleteClick={handleDeleteWs}
         className={cn(styles.deleteWsButton)}
-        wsMng={wsMng}
+        ref={buttonRef}
       />
     </div>
   );
@@ -419,8 +428,7 @@ export function WsGeneralSettings() {
   const partialView = usePartialVertex(mgr, ['selectedWorkspaces']);
   const ws = [...partialView.selectedWorkspaces][0];
   const wsV = useVertex(ws);
-  const wsManager = ws.manager;
-  const onWorkspaceDeleted = () => {};
+  const wsManager = ws?.manager;
 
   return (
     <div>
@@ -445,10 +453,7 @@ export function WsGeneralSettings() {
             toggle="editable"
             value=""
           />
-          <DeleteConfirmWsButton
-            wsMng={wsManager}
-            onDeleted={onWorkspaceDeleted}
-          />
+          <DeleteConfirmWsButton wsMng={wsManager} />
         </div>
         <UsersList wsMng={wsManager} ws={ws} />
       </div>
