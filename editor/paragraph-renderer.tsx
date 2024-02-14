@@ -1,4 +1,11 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { numbersEqual } from '../base/comparisons.ts';
 import { coreValueEquals } from '../base/core-types/equals.ts';
 import { assert } from '../base/error.ts';
@@ -28,8 +35,25 @@ export class ParagraphRendererContext {
   constructor(readonly canvas: HTMLCanvasElement) {}
 
   get width(): number {
-    debugger;
     return this.canvas.width;
+  }
+
+  get height(): number {
+    return this.canvas.height;
+  }
+
+  get lineCount(): number {
+    if (!this._lines) {
+      this.measureText();
+    }
+    return this._lines?.length || 0;
+  }
+
+  get characterRects(): Rect2D[] {
+    if (!this._characterRects) {
+      this.measureText();
+    }
+    return this._characterRects || [];
   }
 
   get nodes(): SpanNode[] {
@@ -66,18 +90,26 @@ export class ParagraphRendererContext {
   }
 
   render(): void {
+    this.measure();
     const ctx = this.canvas.getContext('2d')!;
+    ctx.save();
     this.applyStylesToCanvas();
+    // ctx.scale(1, -1);
+    // ctx.translate(0, -this.height);
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    // ctx.strokeRect(0, 0, this.width, this.height);
+    // ctx.fillRect(0, 0, 5, 5);
+    const lineHeight = this.lineHeight;
     for (const [lineText, bounds] of this._lines!) {
-      ctx.fillText(lineText, bounds.x, bounds.y, bounds.width);
+      ctx.fillText(lineText, bounds.x, bounds.y + bounds.height, bounds.width);
     }
     this._dirty = false;
+    ctx.restore();
   }
 
   renderIfNeeded(): void {
-    debugger;
     if (this._dirty) {
-      this.measureText();
+      // this.measureText();
       this.render();
     }
   }
@@ -85,6 +117,19 @@ export class ParagraphRendererContext {
   private applyStylesToCanvas(): void {
     const ctx = this.canvas.getContext('2d')!;
     ctx.font = this.font;
+    ctx.textBaseline = 'bottom';
+  }
+
+  measure(): void {
+    const canvas = this.canvas;
+    const parent = canvas.parentElement;
+    const w = parent?.clientWidth || 0;
+    const h = this.lineCount * (this.lineHeight + 2);
+    canvas.width = w * devicePixelRatio;
+    canvas.height = h * devicePixelRatio;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    this.measureText();
   }
 
   /**
@@ -96,7 +141,7 @@ export class ParagraphRendererContext {
    *
    * @returns An array of character widths.
    */
-  measureCharacters(text: string): [number[], TextMetrics[]] {
+  private measureCharacters(text: string): [number[], TextMetrics[]] {
     if (!text.length) {
       return [[], []];
     }
@@ -122,8 +167,11 @@ export class ParagraphRendererContext {
   }
 
   private measureText(): void {
-    const width = this.width;
+    if (!this.nodes?.length) {
+      return;
+    }
     const text = this.nodes[0].text;
+    const width = this.width / devicePixelRatio;
     const bidiEmbeddingLevels = getEmbeddingLevels(text, 'auto');
     const dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
     this._bidiEmbeddingLevels = bidiEmbeddingLevels;
@@ -146,7 +194,6 @@ export class ParagraphRendererContext {
     for (let i = 0; i < bidiReversedText.length; ++i) {
       const w = charWidths[i];
       if (lineWidth + w > width) {
-        debugger;
         const prevWordBoundary = findValueBefore(i, wordEdges) || i;
         const line = bidiReversedText.substring(
           prevLineBreak,
@@ -198,9 +245,9 @@ export class ParagraphRendererContext {
       lines.push([
         line,
         {
-          x: dir === 'rtl' ? width - lineWidth : 0,
+          x: dir === 'rtl' ? width - actualWidth : 0,
           y,
-          width: lineWidth,
+          width: actualWidth,
           height: lineHeight,
         },
       ]);
@@ -227,6 +274,17 @@ function findValueBefore(desired: number, values: number[]): number {
   return values[values.length - 1];
 }
 
+const gCanvasToRendererMap = new WeakMap<
+  HTMLCanvasElement,
+  ParagraphRendererContext
+>();
+
+export function getParagraphRenderer(
+  canvas: HTMLCanvasElement,
+): ParagraphRendererContext | undefined {
+  return gCanvasToRendererMap.get(canvas);
+}
+
 export type ParagraphRendererParams = {
   element: MarkupElement;
 } & React.CanvasHTMLAttributes<HTMLCanvasElement>;
@@ -236,27 +294,45 @@ export function ParagraphRenderer({
   ...rest
 }: ParagraphRendererParams) {
   const ref = useRef(null);
-  const [renderCount, setRenderCount] = useState(0);
-  const ctx = useMemo(() => {
-    debugger;
-    if (!ref.current) {
-      return;
+  const [ctx, setCtx] = useState<ParagraphRendererContext | undefined>();
+  const render = useCallback(() => {
+    if (ctx) {
+      ctx.render();
     }
-    return new ParagraphRendererContext(ref.current);
-  }, [renderCount]);
-
+  }, [ctx]);
   useLayoutEffect(() => {
-    if (!ref.current || !ctx || ctx.canvas !== ref.current) {
-      setRenderCount(renderCount + 1);
+    if (ctx?.canvas !== ref.current && ref.current) {
+      const ctx = new ParagraphRendererContext(ref.current);
+      gCanvasToRendererMap.set(ref.current, ctx);
+      setCtx(ctx);
     }
-  });
-
-  useLayoutEffect(() => {
-    debugger;
     if (ctx) {
       ctx.nodes = element.children as SpanNode[];
-      ctx.renderIfNeeded();
+      render();
     }
-  }, [element.children, ctx]);
+  });
+  // Force initial measurement and rendering
+  useEffect(() => {
+    let t: number | undefined = setTimeout(() => {
+      render();
+      t = undefined;
+    }, 16);
+    return () => {
+      if (t) {
+        clearTimeout(t);
+        t = undefined;
+      }
+    };
+  });
+  useEffect(() => {
+    addEventListener('resize', render);
+    return () => {
+      removeEventListener('resize', render);
+    };
+  }, [render]);
+  if (ctx) {
+    ctx.nodes = element.children as SpanNode[];
+    ctx.measure();
+  }
   return <canvas ref={ref} {...rest} />;
 }

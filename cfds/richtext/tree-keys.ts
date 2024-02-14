@@ -8,6 +8,7 @@ import {
 } from '../../base/core-types/index.ts';
 import { encodableValueHash } from '../../base/core-types/encoding/index.ts';
 import { dfs, ElementNode, kCoreValueTreeNodeOpts } from './tree.ts';
+import { isElementNode } from './tree.ts';
 
 export type NodeKey = { id: string };
 
@@ -25,7 +26,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
     this._keys = new Map();
     this._counts = new HashMap<CoreValue, number>(
       (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
-      (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts)
+      (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts),
     );
     this._nodeByKey = new Map();
     for (const [node] of dfs(root)) {
@@ -41,7 +42,8 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
       const counts = this._counts;
       const idx: number = counts.get(node) || 0;
       const hash = encodableValueHash(node, kCoreValueTreeNodeOpts);
-      const id = hash + '/' + idx;
+      const tagName = (isElementNode(node) && node.tagName) || undefined;
+      const id = `${tagName || ''}/${hash}/${idx}`;
       nodeKey = gAllocatedKeys.get(id);
       if (nodeKey === undefined) {
         nodeKey = { id };

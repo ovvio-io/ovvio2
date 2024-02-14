@@ -22,6 +22,7 @@ import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { assert } from '../base/error.ts';
 import { MeasuredText } from './text.ts';
+import { getParagraphRenderer } from './paragraph-renderer.tsx';
 
 export type CaretStyle = 'p' | 'h1' | 'h2';
 
@@ -163,9 +164,9 @@ function renderCaret(ctx: RenderContext) {
   }
 
   const text = selection.anchor.node.text;
-  const path = pathToNode(ctx.doc.root, selection.anchor.node);
+  const path = pathToNode(ctx.doc.root, selection.anchor.node)!;
   let style: CaretStyle = 'p';
-  if (path![0].tagName === 'h1') {
+  if (path[0].tagName === 'h1') {
     style = 'h1';
   } else if (path![0].tagName === 'h2') {
     style = 'h2';
@@ -181,23 +182,33 @@ function renderCaret(ctx: RenderContext) {
     return; // TODO: Range selection
   }
 
-  const spanId = domIdFromNodeKey(ctx, selection.anchor.node);
-  const span = document.getElementById(spanId);
-  if (!span) {
+  const spanId = domIdFromNodeKey(ctx, path[path.length - 1]);
+  const canvas = document.getElementById(spanId) as
+    | HTMLCanvasElement
+    | undefined;
+
+  if (!canvas) {
+    caretDiv.hidden = true;
+    return;
+  }
+  const paragraphCtx = getParagraphRenderer(canvas);
+  debugger;
+  if (!paragraphCtx) {
     caretDiv.hidden = true;
     return;
   }
 
   caretDiv.hidden = false;
-  const spanStyle = getComputedStyle(span);
-  const spanBounds = span.getBoundingClientRect();
+  const spanStyle = getComputedStyle(canvas);
+  const spanBounds = canvas.getBoundingClientRect();
   const rtl = spanStyle.direction === 'rtl';
-  const measuredText = new MeasuredText(
-    text,
-    spanStyle,
-    spanBounds.width,
-    rtl ? 'rtl' : 'ltr',
-  );
+  // const measuredText = new MeasuredText(
+  //   text,
+  //   spanStyle,
+  //   spanBounds.width,
+  //   rtl ? 'rtl' : 'ltr',
+  // );
+
   const idx = selection.anchor.offset;
   if (idx === 0) {
     if (rtl) {
@@ -207,7 +218,10 @@ function renderCaret(ctx: RenderContext) {
     }
     caretDiv.style.top = `${spanBounds.y}px`;
   } else {
-    const bounds = measuredText.characterRects[Math.min(idx, text.length - 1)];
+    const bounds = paragraphCtx.characterRects[Math.min(idx, text.length - 1)];
+    if (!bounds) {
+      return;
+    }
     if (rtl) {
       if (idx === text.length) {
         caretDiv.style.left = `${
@@ -251,6 +265,7 @@ function getCaretDiv(
     div.style.boxSizing = 'border-box';
     div.style.border = `1px solid ${theme.mono.m4}`;
     div.style.zIndex = '1';
+    div.style.translate = '0px -3px';
     editor.appendChild(div);
   }
   let h: number;
@@ -272,7 +287,7 @@ function getCaretDiv(
 }
 
 export function useCaret(ctx: RenderContext) {
-  renderCaret(ctx);
+  // renderCaret(ctx);
   useLayoutEffect(() => {
     renderCaret(ctx);
   });

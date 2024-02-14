@@ -202,6 +202,11 @@ const useStyles = makeStyles(() => ({
     overflow: 'visible',
     display: 'flex',
     alignItems: 'flex-start',
+    width: '100%',
+  },
+  paragraphRenderer: {
+    position: 'relative',
+    top: 2,
   },
   h1Element: {
     marginTop: 0,
@@ -458,20 +463,25 @@ ParagraphElementNode) {
   const [hover, setHover] = useState(false);
 
   return (
-    <ParagraphRenderer
-      element={element}
-      key={id}
-      id={htmlId}
-      data-ovv-key={id}
-      dir={dir}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+    <div
       className={cn(
         styles.paragraphElement,
         showNewTaskHint && styles.paragraphElementContainer,
       )}
     >
-      {/* {showNewTaskHint && (
+      <ParagraphRenderer
+        element={element}
+        className={cn(styles.paragraphRenderer)}
+        key={id}
+        id={htmlId}
+        data-ovv-key={id}
+        dir={dir}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        // width="100%"
+        // height="100%"
+      >
+        {/* {showNewTaskHint && (
         <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
@@ -484,8 +494,9 @@ ParagraphElementNode) {
           <img src="/icons/design-system/checkbox/selected.svg" />
         </div>
       )} */}
-      {/* {children} */}
-    </ParagraphRenderer>
+        {/* {children} */}
+      </ParagraphRenderer>
+    </div>
   );
 }
 
