@@ -44,7 +44,7 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 3,
     width: `calc(100% - ${styleguide.gridbase * 32}px)`,
     outline: 'none',
-    fontFamily: 'HeeboBold, PoppinsBold',
+    fontFamily: 'PoppinsBold, HeeboBold',
     fontSize: '30px',
     lineHeight: styleguide.gridbase * 3,
     textAlign: 'center',
