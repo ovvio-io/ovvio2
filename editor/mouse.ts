@@ -51,7 +51,7 @@ function onMouseUpInText(
   for (let i = 0; i < lineText.length; ++i) {
     const charW = ctx.characterWidths[offset + i];
     if (
-      x + charW >
+      x + charW / 2 >
       (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
     ) {
       offset += i;
