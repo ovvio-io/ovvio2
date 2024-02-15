@@ -272,7 +272,7 @@ export abstract class BaseClient<
     // local commits that our peer doesn't have (local changes or peer recovery).
     let i = 0;
     do {
-      if (await this.sendSyncMessage(true)) {
+      if (await this.sendSyncMessage()) {
         ++i;
       }
     } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
