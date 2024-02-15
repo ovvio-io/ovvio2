@@ -678,7 +678,7 @@ export class Repository<
 
   private createMergeCommit(
     commitsToMerge: Commit[],
-    parents?: string[],
+    // parents?: string[],
     mergeLeader?: string,
     revert?: string,
     deltaCompress = true,
@@ -691,7 +691,7 @@ export class Repository<
     if (!result) {
       result = this._createMergeCommitImpl(
         commitsToMerge,
-        parents,
+        // parents,
         mergeLeader,
         revert,
         deltaCompress,
@@ -785,7 +785,7 @@ export class Repository<
 
   private async _createMergeCommitImpl(
     commitsToMerge: Commit[],
-    parents?: string[],
+    // parents?: string[],
     mergeLeader?: string,
     revert?: string,
     deltaCompress = true,
@@ -801,7 +801,7 @@ export class Repository<
         session,
         key,
         contents: merge,
-        parents: parents || commitsToMerge.map((c) => c.id),
+        parents: commitsToMerge.map((c) => c.id),
         mergeBase: base?.id,
         mergeLeader,
         revert,
@@ -858,7 +858,7 @@ export class Repository<
       if (leaves.length > 1 && mergeLeaderSession === session) {
         const mergeCommit = await this.createMergeCommit(
           commitsToMerge,
-          leaves.map((c) => c.id),
+          // leaves.map((c) => c.id),
           mergeLeaderSession,
         );
         if (mergeCommit) {
@@ -877,7 +877,7 @@ export class Repository<
       }
       const mergeCommit = await this.createMergeCommit(
         commitsToMerge,
-        Array.from(mergeParents),
+        // Array.from(mergeParents),
         mergeLeaderSession,
       );
       if (mergeCommit) {
