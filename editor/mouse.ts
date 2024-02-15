@@ -6,7 +6,7 @@ import {
   Document,
   writingDirectionAtNode,
 } from '../cfds/richtext/doc-state.ts';
-import { PointerDirection } from '../cfds/richtext/tree.ts';
+import { PointerDirection, TextNode } from '../cfds/richtext/tree.ts';
 import { expirationForSelection } from './utils.ts';
 import { MarkupElement } from '../cfds/richtext/model.ts';
 import { findFirstTextNode } from '../cfds/richtext/tree.ts';
@@ -22,9 +22,16 @@ function onMouseUpInText(
   mouseY: number,
 ): Document | undefined {
   const ctx = getParagraphRenderer(target);
-  debugger;
   if (!ctx) {
     return undefined;
+  }
+  const ovvKey = (ctx.canvas as HTMLElement).dataset.ovvKey;
+  if (!ovvKey) {
+    return;
+  }
+  const rtNode = body.nodeKeys.nodeFromKey(ovvKey) as MarkupElement | undefined;
+  if (!rtNode) {
+    return;
   }
   const targetBounds = target.getBoundingClientRect();
   const targetStyle = getComputedStyle(target);
@@ -61,11 +68,11 @@ function onMouseUpInText(
   }
   body.ranges[selectionId] = {
     anchor: {
-      node: ctx.nodes[0],
+      node: rtNode.children[0] as TextNode,
       offset,
     },
     focus: {
-      node: ctx.nodes[0],
+      node: rtNode.children[0] as TextNode,
       offset,
     },
     dir: PointerDirection.None,
@@ -105,7 +112,6 @@ function onMouseUpOutsideSpan(
       continue;
     }
     if (clientY >= r.y && clientY <= r.bottom) {
-      debugger;
       let start =
         e.clientX < contentEditableBounds.x + contentEditableBounds.width / 2;
       if (writingDirectionAtNode(body, rtNode as MarkupElement) === 'rtl') {
@@ -153,6 +159,7 @@ export function onMouseUp(
       e.clientX,
       e.clientY,
     );
+    debugger;
     if (updatedBody) {
       note.getVertexProxy().body = updatedBody;
     }

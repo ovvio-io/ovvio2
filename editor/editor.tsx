@@ -212,7 +212,7 @@ export const RichTextEditor = forwardRef<
       editorId,
       baseDirection,
     };
-  }, [partialNote, partialNote.body, selectionId, editorId, baseDirection]);
+  }, [partialNote, selectionId, editorId, baseDirection]);
   const undoContext = useUndoContext(note, 'body', true);
 
   useImperativeHandle(
@@ -332,7 +332,7 @@ export const RichTextEditor = forwardRef<
       partialNote.body = body;
     }
   }, [partialNote, selectionId]);
-
+  debugger;
   useCaret(ctx);
   return (
     <div

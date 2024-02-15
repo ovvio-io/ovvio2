@@ -64,6 +64,10 @@ export class ParagraphRendererContext {
     return this._characterWidths || [];
   }
 
+  get bidiReversedText(): string | undefined {
+    return this._bidiReversedText;
+  }
+
   get nodes(): SpanNode[] {
     return this._nodes;
   }
@@ -73,6 +77,11 @@ export class ParagraphRendererContext {
       this._nodes = n;
       this._dirty = true;
     }
+  }
+
+  get writingDirection(): WritingDirection {
+    const levels = this._bidiEmbeddingLevels;
+    return levels ? getBaseDirectionFromBidiLevels(levels.levels) : 'auto';
   }
 
   get font(): string {
@@ -108,8 +117,15 @@ export class ParagraphRendererContext {
     // ctx.strokeRect(0, 0, this.width, this.height);
     // ctx.fillRect(0, 0, 5, 5);
     const lineHeight = this.lineHeight;
+    const rtl = this.writingDirection === 'rtl';
     for (const [lineText, bounds] of this._lines!) {
-      ctx.fillText(lineText, bounds.x, bounds.y + bounds.height, bounds.width);
+      ctx.fillText(
+        lineText,
+        bounds.x + (rtl ? bounds.width : 0),
+        bounds.y + bounds.height,
+        bounds.width,
+      );
+      // ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
     }
     this._dirty = false;
     ctx.restore();
@@ -332,12 +348,24 @@ export function ParagraphRenderer({
       }
     };
   });
+  // useEffect(() => {
+  //   addEventListener('resize', render);
+  //   return () => {
+  //     removeEventListener('resize', render);
+  //   };
+  // }, [render]);
+
   useEffect(() => {
-    addEventListener('resize', render);
+    if (!ctx) {
+      return;
+    }
+    const observer = new ResizeObserver(render);
+    observer.observe(ctx.canvas);
     return () => {
-      removeEventListener('resize', render);
+      observer.disconnect();
     };
-  }, [render]);
+  }, [ctx, render]);
+
   if (ctx) {
     ctx.nodes = element.children as SpanNode[];
     ctx.measure();

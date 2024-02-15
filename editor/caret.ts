@@ -145,6 +145,7 @@ export function onKeyboardArrow(
 }
 
 function renderCaret(ctx: RenderContext) {
+  debugger;
   if (!ctx.doc.ranges) {
     const caret = getCaretDiv(ctx, 'p');
     if (caret) {
@@ -289,7 +290,7 @@ export function useCaret(ctx: RenderContext) {
   // renderCaret(ctx);
   useLayoutEffect(() => {
     renderCaret(ctx);
-  });
+  }, [ctx]);
   useEffect(() => {
     const intervalId = setInterval(() => {
       const domId = `${ctx.editorId}:caret`;
@@ -307,16 +308,18 @@ export function useCaret(ctx: RenderContext) {
         element.style.opacity = '1';
       }
     };
-  });
+  }, [ctx]);
 
   const contentEditable = document.getElementById(ctx.editorId);
-  const resizeObserver = useMemo(() => {
+  useEffect(() => {
     if (contentEditable) {
       const observer = new ResizeObserver(() => renderCaret(ctx));
       observer.observe(contentEditable);
-      return observer;
+      return () => {
+        observer.disconnect();
+      };
     }
-  }, [contentEditable]);
+  }, [contentEditable, ctx]);
 
   useEffect(() => {
     if (contentEditable) {
@@ -326,5 +329,5 @@ export function useCaret(ctx: RenderContext) {
         contentEditable.removeEventListener('scroll', listener);
       };
     }
-  }, [contentEditable]);
+  }, [contentEditable, ctx]);
 }
