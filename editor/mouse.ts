@@ -6,83 +6,72 @@ import {
   Document,
   writingDirectionAtNode,
 } from '../cfds/richtext/doc-state.ts';
-import { isTextNode, PointerDirection } from '../cfds/richtext/tree.ts';
+import { PointerDirection } from '../cfds/richtext/tree.ts';
 import { expirationForSelection } from './utils.ts';
-import { TreeNode } from '../cfds/richtext/tree.ts';
-import { ElementNode } from '../cfds/richtext/tree.ts';
-import { MarkupElement, MarkupNode } from '../cfds/richtext/model.ts';
-import { CONTENTEDITABLE_PADDING } from './editor.tsx';
+import { MarkupElement } from '../cfds/richtext/model.ts';
 import { findFirstTextNode } from '../cfds/richtext/tree.ts';
 import { findLastTextNode } from '../cfds/richtext/tree.ts';
-import { MeasuredText } from './text.ts';
+import { isElementNode } from '../cfds/richtext/tree.ts';
+import { getParagraphRenderer } from './paragraph-renderer.tsx';
 
-function onMouseUpInSpan(
-  target: HTMLSpanElement,
+function onMouseUpInText(
+  target: HTMLCanvasElement,
   body: Document,
   selectionId: string,
   mouseX: number,
   mouseY: number,
 ): Document | undefined {
-  const nodeKey = target.dataset.ovvNodeKey;
-  if (!nodeKey) {
+  const ctx = getParagraphRenderer(target);
+  debugger;
+  if (!ctx) {
     return undefined;
   }
-  const node = body.nodeKeys.nodeFromKey(nodeKey);
-  if (isTextNode(node)) {
-    const text = node.text;
-    const targetBounds = target.getBoundingClientRect();
-    const targetStyle = getComputedStyle(target);
-    const measuredText = new MeasuredText(
-      text,
-      targetStyle,
-      targetBounds.width,
-    );
-    const lineCount = measuredText.lines.length;
-    const lineIdx = Math.floor(
-      (lineCount * (mouseY - targetBounds.y)) / targetBounds.height,
-    );
-    let offset = 0;
-    for (let idx = 0; idx < lineIdx; ++idx) {
-      offset += measuredText.lines[idx][0].length;
-    }
-    const rtl = targetStyle.direction === 'rtl';
-    const line = measuredText.lines[lineIdx];
-    const lineText = line[0];
-    let x = 0;
-    let found = false;
-    for (let i = 0; i < lineText.length; ++i) {
-      const charW = measuredText.characterWidths[offset + i];
-      if (
-        x + charW >
-        (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
-      ) {
-        offset += i;
-        found = true;
-        break;
-      }
-      x += charW;
-    }
-    if (!found) {
-      offset += lineText.length;
-    }
-    if (!body.ranges) {
-      body.ranges = {};
-    }
-    body.ranges[selectionId] = {
-      anchor: {
-        node,
-        offset,
-      },
-      focus: {
-        node,
-        offset,
-      },
-      dir: PointerDirection.None,
-      expiration: expirationForSelection(),
-    };
-    return body;
+  const targetBounds = target.getBoundingClientRect();
+  const targetStyle = getComputedStyle(target);
+  const lineCount = ctx.lineCount;
+  const lineIdx = Math.floor(
+    (lineCount * (mouseY - targetBounds.y)) / targetBounds.height,
+  );
+  let offset = 0;
+  for (let idx = 0; idx < lineIdx; ++idx) {
+    offset += ctx.lines[idx][0].length;
   }
-  return undefined;
+  const rtl = targetStyle.direction === 'rtl';
+  const line = ctx.lines[lineIdx];
+  const lineText = line[0];
+  let x = 0;
+  let found = false;
+  for (let i = 0; i < lineText.length; ++i) {
+    const charW = ctx.characterWidths[offset + i];
+    if (
+      x + charW >
+      (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
+    ) {
+      offset += i;
+      found = true;
+      break;
+    }
+    x += charW;
+  }
+  if (!found) {
+    offset += lineText.length;
+  }
+  if (!body.ranges) {
+    body.ranges = {};
+  }
+  body.ranges[selectionId] = {
+    anchor: {
+      node: ctx.nodes[0],
+      offset,
+    },
+    focus: {
+      node: ctx.nodes[0],
+      offset,
+    },
+    dir: PointerDirection.None,
+    expiration: expirationForSelection(),
+  };
+  return body;
 }
 
 function onMouseUpOutsideSpan(
@@ -156,8 +145,8 @@ export function onMouseUp(
 ): void {
   const proxy = note.getVertexProxy();
   const body = docClone(proxy.body);
-  if (e.target instanceof HTMLSpanElement) {
-    const updatedBody = onMouseUpInSpan(
+  if (e.target instanceof HTMLCanvasElement) {
+    const updatedBody = onMouseUpInText(
       e.target,
       body,
       selectionId,

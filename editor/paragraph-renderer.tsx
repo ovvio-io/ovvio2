@@ -49,11 +49,19 @@ export class ParagraphRendererContext {
     return this._lines?.length || 0;
   }
 
+  get lines(): readonly (readonly [string, Rect2D])[] {
+    return this._lines || [];
+  }
+
   get characterRects(): Rect2D[] {
     if (!this._characterRects) {
       this.measureText();
     }
     return this._characterRects || [];
+  }
+
+  get characterWidths(): readonly number[] {
+    return this._characterWidths || [];
   }
 
   get nodes(): SpanNode[] {

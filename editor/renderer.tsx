@@ -464,6 +464,7 @@ ParagraphElementNode) {
 
   return (
     <div
+      key={`${id}-container`}
       className={cn(
         styles.paragraphElement,
         showNewTaskHint && styles.paragraphElementContainer,
@@ -476,6 +477,7 @@ ParagraphElementNode) {
         id={htmlId}
         data-ovv-key={id}
         dir={dir}
+        data-ovv-node-key={ctx.doc.nodeKeys.keyFor(element).id}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         // width="100%"

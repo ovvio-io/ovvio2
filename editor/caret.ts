@@ -182,8 +182,8 @@ function renderCaret(ctx: RenderContext) {
     return; // TODO: Range selection
   }
 
-  const spanId = domIdFromNodeKey(ctx, path[path.length - 1]);
-  const canvas = document.getElementById(spanId) as
+  const canvasId = domIdFromNodeKey(ctx, path[path.length - 1]);
+  const canvas = document.getElementById(canvasId) as
     | HTMLCanvasElement
     | undefined;
 
@@ -192,7 +192,6 @@ function renderCaret(ctx: RenderContext) {
     return;
   }
   const paragraphCtx = getParagraphRenderer(canvas);
-  debugger;
   if (!paragraphCtx) {
     caretDiv.hidden = true;
     return;
