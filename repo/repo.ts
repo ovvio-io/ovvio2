@@ -713,6 +713,10 @@ export class Repository<
   private createMergeRecord(
     commitsToMerge: Commit[],
   ): [CFDSRecord, Commit | undefined] {
+    commitsToMerge = commitsToMerge.filter((c) => this.hasRecordForCommit(c));
+    if (!commitsToMerge.length) {
+      return [CFDSRecord.nullRecord(), undefined];
+    }
     const session = this.trustPool.currentSession.id;
     const roots = commitsToMerge.filter((c) => c.parents.length === 0);
     commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
@@ -732,7 +736,7 @@ export class Repository<
         this.findMergeBase(commitsToMerge);
     }
     if (commitsToMerge.length === 0 && !foundRoot && roots.length === 0) {
-      throw serviceUnavailable();
+      return [CFDSRecord.nullRecord(), undefined];
     }
     // If no LCA is found then we're dealing with concurrent writers who all
     // created of the same key unaware of each other.
