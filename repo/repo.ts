@@ -329,9 +329,9 @@ export class Repository<
         scheme = s;
       }
     }
-    if (result && commits.includes(result)) {
-      result = undefined;
-    }
+    // if (result && commits.includes(result)) {
+    //   result = undefined;
+    // }
     return [includedCommits, result, scheme, reachedRoot];
   }
 
@@ -717,8 +717,12 @@ export class Repository<
       return [CFDSRecord.nullRecord(), undefined];
     }
     const session = this.trustPool.currentSession.id;
-    const roots = commitsToMerge.filter((c) => c.parents.length === 0);
-    commitsToMerge = commitsToMerge.filter((c) => c.parents.length > 0);
+    const roots = commitsToMerge
+      .filter((c) => c.parents.length === 0)
+      .sort(compareCommitsAsc);
+    commitsToMerge = commitsToMerge
+      .filter((c) => c.parents.length > 0)
+      .sort(compareCommitsAsc);
     // Find the base for our N-way merge
     let lca: Commit | undefined, scheme: Scheme, foundRoot: boolean;
     // When merging roots, we use the null record as the merge base
@@ -1302,12 +1306,15 @@ function commitsWithUniqueRecords(commits: Iterable<Commit>): Commit[] {
 }
 
 function compareCommitsDesc(c1: Commit, c2: Commit): number {
+  return compareCommitsAsc(c1, c2) * -1;
+}
+
+function compareCommitsAsc(c1: Commit, c2: Commit): number {
   // Use the commit id as a consistent tie breaker when timestamps are equal
   if (coreValueEquals(c1.timestamp, c2.timestamp)) {
     return coreValueCompare(c1.id, c2.id);
   }
-  // Reverse order so we get descending timestamps
-  return coreValueCompare(c2.timestamp, c1.timestamp);
+  return coreValueCompare(c1.timestamp, c2.timestamp);
 }
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {
