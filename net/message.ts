@@ -224,19 +224,25 @@ export class SyncMessage<T extends SyncValueType>
     includeMissing = true,
   ): SyncMessage<T> {
     const numberOfEntries = Math.max(1, localSize, peerSize);
-    // The expected number of sync cycles is log base (1/fpr) over number of
-    // entries. Thus we can work out the False-Positive-Rate based on the
-    // desired sync cycles:
+    // To calculate the desired False-Positive-Rate (fpr), we use the following
+    // approximation: 2log[fpr](numberOfEntries) = expectedSyncCycles
+    // This appears to hold well in practice, while producing compact enough
+    // filters.
     //
-    // Log[fpr](numberOfEntries) = expectedSyncCycles      =>
-    // fpr = expectedSyncCycles'th root of numberOfEntries =>
-    // fpr = numberOfEntries ^ (1 / expectedSyncCycles)
+    // 2log[fpr](N) = C =>
+    // log[fpr](N) = 0.5 * C =>
+    // fpr ^ 0.5C = N =>
+    // fpr = sqr[0.5C](N) =>
+    // fpr = N ^ (1 / 0.5C)
     //
-    // Finally, a bloom filter with FPR greater than 0.5 isn't very useful
-    // (more than 50% false positives), so we cap the computed value at 0.5.
+    // Note that the resulting FPR is a ratio rather than a fraction, so the
+    // final value is 1 / fpr.
+    //
+    // Finally, a bloom filter with fpr >= 0.5 isn't very useful (more than 50%
+    // false positives), so we cap the computed value at 0.5.
     const fpr = Math.min(
       0.5,
-      Math.pow(numberOfEntries, 1 / expectedSyncCycles),
+      1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles)),
     );
     const localFilter = new BloomFilter({
       size: numberOfEntries,

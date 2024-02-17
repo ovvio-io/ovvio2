@@ -629,6 +629,9 @@ export class GraphManager
   }
 
   private _processPendingMutations(): void {
+    if (!this.rootKey) {
+      return;
+    }
     if (this._pendingMutations.size > 0) {
       const mutations: [VertexManager, MutationPack][] = new Array(
         this._pendingMutations.size,

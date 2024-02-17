@@ -29,7 +29,7 @@ export class EmailService extends BaseService<ServerServices> {
       return false;
     }
     const req: SendEmailCommandInput = {
-      FromEmailAddress: 'system@ovvio.io',
+      FromEmailAddress: '"Ovvio" <system@ovvio.io>',
       Destination: {
         ToAddresses: [message.to],
       },
