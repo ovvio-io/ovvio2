@@ -392,13 +392,7 @@ export function decodedDataChanges(dec: DecodedDataChange) {
 
   for (const key in dec) {
     changes[key] = (dec[key] as ReadonlyDecodedArray).map((v) =>
-      decodeChange(
-        isDecoder(v)
-          ? v
-          : new JSONCyclicalDecoder(
-              (v as ReadonlyJSONObject)._data as ReadonlyJSONObject,
-            ),
-      ),
+      decodeChange(v as Decoder),
     );
   }
 
