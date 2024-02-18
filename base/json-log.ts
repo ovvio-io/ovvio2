@@ -2,6 +2,8 @@ import * as path from 'std/path/mod.ts';
 import { assert } from './error.ts';
 import { JSONObject, ReadonlyJSONObject } from './interfaces.ts';
 import { SerialScheduler } from './serial-scheduler.ts';
+import { allocateBuffer } from './buffer.ts';
+import { cacheBufferForReuse } from './buffer.ts';
 
 const FILE_READ_BUF_SIZE_BYTES = 1024 * 8; // 8KB
 const PAGE_SIZE = 4 * 1024; // 4KB
@@ -87,7 +89,7 @@ export class JSONLogFile {
     let fileOffset = 0;
     const readBuf = new Uint8Array(FILE_READ_BUF_SIZE_BYTES);
     const textDecoder = new TextDecoder();
-    let objectBuf = new Uint8Array(PAGE_SIZE);
+    let objectBuf = allocateBuffer(PAGE_SIZE);
     let objectBufOffset = 0;
     let lastGoodFileOffset = 0;
     for (
@@ -172,10 +174,11 @@ function appendBytes(
   dstOffset: number,
 ): Uint8Array {
   if (dstOffset + srcLen > dst.byteLength) {
-    const newDst = new Uint8Array(
+    const newDst = allocateBuffer(
       Math.ceil(((dstOffset + srcLen) * 2) / PAGE_SIZE) * PAGE_SIZE,
     );
     newDst.set(dst);
+    cacheBufferForReuse(dst);
     dst = newDst;
   }
   dst.set(src.subarray(srcOffset, srcOffset + srcLen), dstOffset);

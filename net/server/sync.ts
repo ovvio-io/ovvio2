@@ -158,6 +158,11 @@ export class SyncService extends BaseService<ServerServices> {
     );
     this._backupForRepo.set(repoId, backup);
     this.loadRepoFromBackup(repoId, repo, backup);
+    if (repo.indexes) {
+      for (const idx of Object.values(repo.indexes)) {
+        idx.activate();
+      }
+    }
     assert(!this._clientsForRepo.has(repoId)); // Sanity check
     const clients: RepoClient<MemRepoStorage>[] = [];
     for (let i = 0; i < this.services.serverProcessCount; ++i) {
@@ -200,7 +205,6 @@ export class SyncService extends BaseService<ServerServices> {
     repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
       const clients = this._clientsForRepo.get(repoId);
-      debugger;
       if (
         this._rendezvousHash.peerForKey(c.key) ===
         this.services.serverProcessIndex
@@ -507,16 +511,10 @@ export async function setupTrustPool(
   trustPool: TrustPool,
   sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): Promise<void> {
-  fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
-    const session = await decodeSession(encodedSesion);
-    await trustPool.addSession(session, sysDir.headForKey(session.id)!);
-  });
-  // Second, load all sessions (signed by root)
-  for (const key of sysDir.keys()) {
-    const record = sysDir.valueForKey(key);
-    if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-      const session = await sessionFromRecord(record);
-      await trustPool.addSession(session, sysDir.headForKey(key)!);
-    }
-  }
+  await Promise.allSettled(
+    fetchEncodedRootSessions(sysDir).map(async (encodedSession) => {
+      const session = await decodeSession(encodedSession);
+      trustPool.addSessionUnsafe(session);
+    }),
+  );
 }

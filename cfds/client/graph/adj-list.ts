@@ -9,7 +9,7 @@ export interface Edge {
 }
 
 function hashEdge(edge: Edge): string {
-  return edge.vertex + '/' + edge.fieldName;
+  return `${edge.vertex}/${edge.fieldName}`;
 }
 
 function eqEdges(e1: Edge, e2: Edge): boolean {

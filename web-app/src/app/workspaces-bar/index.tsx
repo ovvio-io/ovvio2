@@ -72,6 +72,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { getOrganizationId } from '../../../../net/rest-api.ts';
 import { assert } from '../../../../base/error.ts';
 import { verifyRequestSignature } from '../../../../auth/session.ts';
+import { resolveWritingDirection } from '../../../../base/string.ts';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
@@ -354,6 +355,10 @@ const useStyles = makeStyles(
       display: 'flex',
       justifyContent: 'flex-end',
       padding: '16px',
+    },
+    rtl: {
+      direction: 'rtl',
+      textAlign: 'left',
     },
   }),
   'workspaces-bar_881015'
@@ -672,6 +677,7 @@ function WorkspaceListItem({
     'name',
     'isTemplate',
   ]);
+  const dir = resolveWritingDirection(name);
   const styles = useStyles();
   const strings = useStrings();
   const graph = useGraphManager();
@@ -785,7 +791,10 @@ function WorkspaceListItem({
           onClick={toggleSelected}
           // onContextMenu={toggleSelected}
         >
-          <div ref={textRef} className={cn(styles.itemText)}>
+          <div
+            ref={textRef}
+            className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
+          >
             {name}
           </div>
           <WorkspaceCheckbox toggled={isSelected} />
@@ -1156,17 +1165,17 @@ function WorkspaceBarInternal({
   }, [view, logger, query]);
 
   // Clear view settings when no workspace is selected
-  useEffect(() => {
-    if (view.selectedWorkspaces.size === 0) {
-      const activeView = activeViewMgr.getVertexProxy();
-      activeView.clearFilters();
-      activeView.clearContentsDisplaySettings();
-    }
-  }, [activeViewMgr, view.selectedWorkspaces]);
+  // useEffect(() => {
+  //   if (view.selectedWorkspaces.size === 0) {
+  //     const activeView = activeViewMgr.getVertexProxy();
+  //     activeView.clearFilters();
+  //     activeView.clearContentsDisplaySettings();
+  //   }
+  // }, [activeViewMgr, view.selectedWorkspaces]);
 
   const unselectAll = useCallback(() => {
     // view.clear();
-    view.clearContentsDisplaySettings();
+    // view.clearContentsDisplaySettings();
     view.selectedWorkspaces.clear();
     logger.log({
       severity: 'EVENT',

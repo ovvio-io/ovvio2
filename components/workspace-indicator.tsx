@@ -7,6 +7,7 @@ import { styleguide } from '../styles/styleguide.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { useWorkspaceColor } from '../web-app/src/shared/workspace-icon/index.tsx';
 import { VertexId } from '../cfds/client/graph/vertex.ts';
+import { resolveWritingDirection } from '../base/string.ts';
 
 const useStyles = makeStyles(() => ({
   workspaceIndicator: {
@@ -42,6 +43,10 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 2,
     borderRadius: styleguide.gridbase * 2,
   },
+  rtl: {
+    direction: 'rtl',
+    textAlign: 'left',
+  },
 }));
 
 export type WorkspaceIndicatorType = 'color' | 'full';
@@ -69,6 +74,7 @@ export function WorkspaceIndicator({
   if (!type) {
     type = 'full';
   }
+  const rtl = resolveWritingDirection(name) === 'rtl';
   return (
     <div
       className={cn(styles.workspaceIndicator, className)}
@@ -85,7 +91,7 @@ export function WorkspaceIndicator({
           }}
         >
           <span
-            className={cn(styles.text)}
+            className={cn(styles.text, rtl && styles.rtl)}
             style={{
               ...(ofSettings ? { fontSize: '13px' } : {}),
             }}

@@ -300,7 +300,7 @@ const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -320,7 +320,7 @@ export interface KanbanCardProps {
 
 export const KanbanCard = React.forwardRef(function CardItemView(
   { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -337,7 +337,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view)
+    calculateIsExpanded(card, view),
   );
 
   useEffect(() => {
@@ -381,7 +381,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           styles.card,
           isTask && styles.taskCard,
           styles[size],
-          styles.hoverableRow
+          styles.hoverableRow,
         )}
         onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
@@ -409,7 +409,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone
+                    isDone && styles.strikethroughDone,
                   )}
                 >
                   {word}{' '}
@@ -501,7 +501,7 @@ export function MoreButtonCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   return (
     <div
@@ -528,10 +528,8 @@ const CardMenu = ({
   const colorWs = useWorkspaceColor(cardWs);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const toggleMenu: React.MouseEventHandler<HTMLDivElement> = (e) => {
+  const toggleMenu = () => {
     setMenuOpen(!menuOpen);
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   return (

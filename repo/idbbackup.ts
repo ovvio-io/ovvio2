@@ -49,6 +49,7 @@ export class IDBRepositoryBackup {
   private static _didLogout = false;
   private readonly _commitPersistedTs: Map<string, number>;
   private readonly _backupTimer: EaseInOutSineTimer;
+  private _openPromise: Promise<IDBPDatabase<RepoBackupSchema>> | undefined;
 
   static async logout(): Promise<never> {
     this._didLogout = true;
@@ -97,18 +98,21 @@ export class IDBRepositoryBackup {
   }
 
   private open(): Promise<IDBPDatabase<RepoBackupSchema>> {
-    return openDB<RepoBackupSchema>(this.dbName, K_DB_VERSION, {
-      upgrade(db) {
-        db.createObjectStore('commits', { keyPath: 'id' });
-      },
-    });
+    if (!this._openPromise) {
+      this._openPromise = openDB<RepoBackupSchema>(this.dbName, K_DB_VERSION, {
+        upgrade(db) {
+          db.createObjectStore('commits', { keyPath: 'id' });
+        },
+      });
+    }
+    return this._openPromise;
   }
 
   persistCommits(commits: Iterable<Commit>): Promise<number> {
     if (IDBRepositoryBackup._didLogout) {
       return Promise.resolve(0);
     }
-    return SerialScheduler.get('idb').run(async () => {
+    return SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
       const db = await this.open();
       const txn = db.transaction('commits', 'readwrite', {
         durability: 'relaxed',
@@ -151,13 +155,14 @@ export class IDBRepositoryBackup {
         await p;
       }
       await txn.done;
-      db.close();
+      // db.close();
       return result;
     });
   }
 
   loadCommits(): Promise<Commit[]> {
-    return SerialScheduler.get('idb').run(async () => {
+    // debugger;
+    return SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
       try {
         const startTime = performance.now();
         const db = await this.open();
@@ -168,7 +173,7 @@ export class IDBRepositoryBackup {
               decoder: new JSONCyclicalDecoder(json),
             }),
         );
-        db.close();
+        // db.close();
         console.log(
           `Loading from IDB Backup took ${
             performance.now() - startTime

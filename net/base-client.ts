@@ -266,13 +266,13 @@ export abstract class BaseClient<
    */
   async sync(): Promise<void> {
     // const syncConfig = this.syncConfig;
-    const cycleCount = this.syncCycles + 1;
+    const cycleCount = this.syncCycles;
     // We need to do a minimum number of successful sync cycles in order to make
     // sure everything is sync'ed. Also need to make sure we don't have any
     // local commits that our peer doesn't have (local changes or peer recovery).
     let i = 0;
     do {
-      if (await this.sendSyncMessage(true)) {
+      if (await this.sendSyncMessage()) {
         ++i;
       }
     } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
@@ -292,7 +292,7 @@ export abstract class BaseClient<
   }
 
   touch(): void {
-    if (!this._scheduled) {
+    if (!this._scheduled || !this.ready) {
       return;
     }
     this._timer.reset();
