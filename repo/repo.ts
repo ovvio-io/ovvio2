@@ -89,6 +89,7 @@ export class Repository<
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
   private readonly _cachedRecordForCommit: Map<string, CFDSRecord>;
+  private readonly _cachedValueForKey: Map<string | null, CFDSRecord>;
   private readonly _adjList: AdjacencyList;
   private readonly _pendingMergePromises: Map<
     string | null,
@@ -125,6 +126,7 @@ export class Repository<
     this.allowedNamespaces = allowedNamespaces;
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
+    this._cachedValueForKey = new Map();
     this._commitsCache = new Map();
     this._nsForKey = new Map();
     this._cachedRecordForCommit = new Map();
@@ -932,14 +934,21 @@ export class Repository<
     merge = true,
     readonly?: boolean,
   ): CFDSRecord {
-    const head = this.headForKey(key, session, merge);
-    if (!head) {
-      const leaves = this.leavesForKey(key);
-      return leaves.length > 0
-        ? this.createMergeRecord(leaves)[0]
-        : CFDSRecord.nullRecord();
+    let result = this._cachedValueForKey.get(key);
+    if (!result) {
+      const head = this.headForKey(key, session, merge);
+      if (head) {
+        result = this.recordForCommit(head, readonly);
+      } else {
+        const leaves = this.leavesForKey(key);
+        result =
+          leaves.length > 0
+            ? this.createMergeRecord(leaves)[0]
+            : CFDSRecord.nullRecord();
+      }
+      this._cachedValueForKey.set(key, result);
     }
-    return this.recordForCommit(head, readonly);
+    return result.clone();
   }
 
   valueForKeyReadonlyUnsafe(key: string | null, session?: string): CFDSRecord {
@@ -1149,8 +1158,13 @@ export class Repository<
         for (const p of c.parents) {
           adjList.addEdge(c.id, p, 'parent');
         }
+        // Invalidate temporary merge values on every commit change
+        if (!this._cachedHeadsByKey.has(c.key)) {
+          this._cachedValueForKey.delete(c.key);
+        }
       }
     }
+
     const leaves = result.filter((c) => this.commitIsLeaf(c));
     for (const c of leaves) {
       this._cachedHeadsByKey.delete(c.key);
