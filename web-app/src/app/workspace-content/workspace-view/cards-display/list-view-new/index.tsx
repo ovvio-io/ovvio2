@@ -93,7 +93,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
     },
     [docRouter]
   );
-  const [yLimit, setYLimit] = useState(3);
+  const [yLimit, setYLimit] = useState(8);
 
   useEffect(() => {
     if (unpinnedQuery) {

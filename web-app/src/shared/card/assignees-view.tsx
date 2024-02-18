@@ -218,6 +218,7 @@ function DefaultAvatar({
   const styles = useStyles();
   return <Avatar user={user} size={size} className={cn(styles.assignee)} />;
 }
+
 const DEFAULT_RENDER: RenderAssignee = ({ isOpen, user, size }) => {
   return <DefaultAvatar user={user} isOpen={isOpen} size={size} />;
 };

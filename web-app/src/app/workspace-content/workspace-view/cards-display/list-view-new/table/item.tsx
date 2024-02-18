@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { formatTimeDiff } from '../../../../../../../../base/date.ts';
@@ -38,6 +39,7 @@ import {
 } from '../../../../../../../../styles/components/typography.tsx';
 import {
   cn,
+  keyframes,
   makeStyles,
 } from '../../../../../../../../styles/css-objects/index.ts';
 import {
@@ -62,8 +64,12 @@ import {
 } from '../../../../../../shared/card/assignees-view.tsx';
 import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
 import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
-import TagButton from '../../../../../../shared/tags/tag-button.tsx';
-import TagView from '../../../../../../shared/tags/tag-view.tsx';
+import TagButton, {
+  TagShowMoreButton,
+} from '../../../../../../shared/tags/tag-button.tsx';
+import TagView, {
+  TagPillView,
+} from '../../../../../../shared/tags/tag-view.tsx';
 import { assignNote } from '../../../../../../shared/utils/assignees.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import { WorkspaceIndicatorButtonProps } from '../../card-item/workspace-indicator.tsx';
@@ -73,9 +79,20 @@ import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
 import { WorkspaceIndicator } from '../../../../../../../../components/workspace-indicator.tsx';
 import { IconCollapseExpand } from '../../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { DueDateIndicator } from '../../card-item/card-footer.tsx';
+import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
-
+const showAnim = keyframes({
+  '0%': {
+    opacity: 0,
+  },
+  '99%': {
+    opacity: 0,
+  },
+  '100%': {
+    opacity: 1,
+  },
+});
 const useStyles = makeStyles(
   () => ({
     row: {
@@ -119,11 +136,11 @@ const useStyles = makeStyles(
       basedOn: [layout.row],
       paddingLeft: '8px',
     },
-
     iconCell: {
       width: styleguide.gridbase * 4,
       display: 'flex',
       justifyContent: 'center',
+      paddingLeft: '8px',
     },
     childPadding: {
       width: styleguide.gridbase * 5,
@@ -142,23 +159,48 @@ const useStyles = makeStyles(
       width: styleguide.gridbase * 2,
     },
     wsColumn: {
-      width: '16%',
+      width: '17%',
       padding: [0, styleguide.gridbase * 0.5],
     },
     assigneeColumn: {
-      width: '8%',
+      width: '6%',
       overflow: 'hidden',
+      display: 'flex',
+      flexWrap: 'wrap',
+      maxHeight: '34px',
+      gap: '1px',
     },
     assignee: {
       marginRight: styleguide.gridbase * 0.5,
     },
     tagsColumn: {
-      width: '16%',
-      overflow: 'hidden',
+      width: '17%',
       padding: [0, styleguide.gridbase],
     },
     tag: {
+      direction: 'ltr',
+      backgroundColor: theme.mono.m1,
+      height: styleguide.gridbase * 2,
+      padding: [0, styleguide.gridbase],
+      flexShrink: 0,
+      fontSize: 10,
+      borderRadius: 15,
+      ...styleguide.transition.short,
+      transitionProperty: 'all',
+      whiteSpace: 'nowrap',
+      boxSizing: 'border-box',
+      display: 'flex',
+      alignItems: 'center',
+      flexDirection: 'row',
       marginRight: styleguide.gridbase * 0.5,
+    },
+    tagName: {
+      marginLeft: styleguide.gridbase * 0.75,
+      marginRight: styleguide.gridbase / 2,
+      color: theme.colors.text,
+      animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
+      userSelect: 'none',
+      basedOn: [useTypographyStyles.textSmall],
     },
     dateColumn: {
       padding: [0, styleguide.gridbase * 0.5],
@@ -273,28 +315,6 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   isChild?: boolean;
   groupBy?: string;
 }
-
-// type CellProps = React.PropsWithChildren<{
-//   className?: string;
-//   innerClassName?: string;
-//   colSpan?: number;
-//   onClick?: MouseEventHandler;
-// }>;
-
-// export function Cell({
-//   children,
-//   className,
-//   innerClassName,
-//   ...rest
-// }: CellProps) {
-//   const styles = useStyles();
-
-//   return (
-//     <td className={cn(styles.cell, className)} {...rest}>
-//       <div className={cn(styles.cellInner, innerClassName)}>{children}</div>
-//     </td>
-//   );
-// }
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
   function ({ groupBy, note, isChild, onClick = () => {}, attributes }, ref) {
@@ -458,6 +478,12 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
 
 const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
+  const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
+
+  const [overflow, setOverflow] = useState(false);
+
   const { tags } = usePartialVertex(note, ['tags', 'workspace']);
   const managers = useMemo(() => {
     const result = [];
@@ -469,6 +495,7 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     }
     return result;
   }, [tags]);
+
   const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
   for (const [p, c] of tags) {
     tagsMng.set(
@@ -482,6 +509,61 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     },
     [note]
   );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastWidthRef = useRef<number | null>(null);
+  useEffect(() => {
+    const calculateVisibleTags = () => {
+      let availableWidth = containerWidth;
+      const updatedVisibleTags = [];
+      const updatedHiddenTags = [];
+      let hasOverflow = false;
+      const tagWidth = 70;
+
+      for (const tag of managers) {
+        if (availableWidth >= tagWidth) {
+          updatedVisibleTags.push(tag);
+          availableWidth -= tagWidth;
+        } else {
+          updatedHiddenTags.push(tag);
+          hasOverflow = true;
+        }
+      }
+      setVisibleTags(updatedVisibleTags);
+      setHiddenTags(updatedHiddenTags);
+      setOverflow(hasOverflow);
+    };
+
+    // Setup ResizeObserver
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const newWidth = entry.contentRect.width;
+        if (lastWidthRef.current !== newWidth) {
+          setContainerWidth(newWidth);
+          lastWidthRef.current = newWidth; // Update the last observed width
+          calculateVisibleTags(); // Recalculate tags since width has changed
+        }
+      }
+    });
+
+    if (containerRef.current) {
+      const initialWidth = containerRef.current.offsetWidth;
+      if (lastWidthRef.current !== initialWidth) {
+        setContainerWidth(initialWidth);
+        lastWidthRef.current = initialWidth;
+      }
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [managers]);
+
+  const hiddenTagsText = hiddenTags
+    .map((tag) => tag.getVertexProxy().name)
+    .join(', ');
+
   const onTag = useCallback(
     (tag: Tag) => {
       const vert = note.getVertexProxy();
@@ -492,8 +574,8 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     [note]
   );
   return (
-    <div className={cn(styles.tagsColumn, styles.cell)}>
-      {managers.map((x) => (
+    <div ref={containerRef} className={cn(styles.tagsColumn, styles.cell)}>
+      {visibleTags.map((x) => (
         <TagView
           className={cn(styles.tag)}
           showMenu="hover"
@@ -503,6 +585,13 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           onDelete={onDelete}
         />
       ))}
+      {/* {overflow && <TagShowMoreButton hiddenTags={hiddenTags} />} */}
+      {overflow && (
+        <Tooltip text={hiddenTagsText} position="top" align="center">
+          <div className={cn(styles.tag, styles.tagName)}>...</div>
+        </Tooltip>
+      )}
+
       <TagButton
         onTagged={onTag}
         className={cn(styles.visibleOnHover)}
@@ -546,7 +635,7 @@ function TitleCell({
   const styles = useStyles();
   const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
   return (
-    <div className={cn(styles.title)} onClick={onClick}>
+    <div className={cn(styles.cell, styles.title)} onClick={onClick}>
       <Text>{titlePlaintext}</Text>
     </div>
   );
@@ -607,31 +696,6 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
 //   );
 // };
 
-const DateCell = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
-  const { dueDate, isChecked } = usePartialVertex(note, [
-    'dueDate',
-    'isChecked',
-  ]);
-  let content = null;
-  const isLate = dueDate instanceof Date && dueDate < new Date() && !isChecked;
-
-  if (dueDate) {
-    content = (
-      <React.Fragment>
-        <IconDueDate
-          className={cn(styles.dueDateIcon, styles.cell)}
-          state={isLate ? DueDateState.Late : DueDateState.None}
-        />
-        <TextSm className={isLate ? styles.overdueDateText : undefined}>
-          {formatTimeDiff(dueDate)}
-        </TextSm>
-      </React.Fragment>
-    );
-  }
-  return <div className={cn(styles.dateColumn)}>{content}</div>;
-};
-
 export const PinCell = ({
   note,
   isMouseOver,
@@ -678,3 +742,59 @@ const MenuCell = ({
     </div>
   );
 };
+
+// const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
+//   const styles = useStyles();
+//   const { tags } = usePartialVertex(note, ['tags', 'workspace']);
+//   const managers = useMemo(() => {
+//     const result = [];
+//     for (const [parent, child] of tags) {
+//       if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
+//         continue;
+//       }
+//       result.push(child.manager);
+//     }
+//     return result;
+//   }, [tags]);
+//   const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
+//   for (const [p, c] of tags) {
+//     tagsMng.set(
+//       p.manager as VertexManager<Tag>,
+//       c.manager as VertexManager<Tag>
+//     );
+//   }
+//   const onDelete = useCallback(
+//     (tag: Tag) => {
+//       note.getVertexProxy().tags.delete(tag.parentTag || tag);
+//     },
+//     [note]
+//   );
+//   const onTag = useCallback(
+//     (tag: Tag) => {
+//       const vert = note.getVertexProxy();
+//       const tags = vert.tags;
+//       const parent = tag.parentTag || tag;
+//       tags.set(parent, tag);
+//     },
+//     [note]
+//   );
+//   return (
+//     <div className={cn(styles.tagsColumn, styles.cell)}>
+//       {managers.map((x) => (
+//         <TagView
+//           className={cn(styles.tag)}
+//           showMenu="hover"
+//           key={x.key}
+//           tag={x}
+//           onSelected={onTag}
+//           onDelete={onDelete}
+//         />
+//       ))}
+//       <TagButton
+//         onTagged={onTag}
+//         className={cn(styles.visibleOnHover)}
+//         noteId={note}
+//       />
+//     </div>
+//   );
+// };

@@ -38,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
     // padding: styleguide.gridbase,
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
-    zIndex: '10',
+    zIndex: '1',
   },
   stickyShadow: {
     boxShadow: theme.shadows.z1,
@@ -224,6 +224,7 @@ export function SectionTable({ groupBy, children, header }: SectionTableProps) {
         onCreateCard={() => {}}
       />
       <div>{children}</div>
+      Show More
     </div>
   );
 }
