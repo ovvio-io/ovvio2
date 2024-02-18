@@ -37,7 +37,6 @@ import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
-const MERGE_GRACE_PERIOD_MS = 5 * kMinuteMs;
 
 type RepositoryEvent = 'NewCommit';
 
@@ -438,10 +437,10 @@ export class Repository<
     c1: Commit,
     c2: Commit,
   ): [base: Commit | undefined, reachedRoot: boolean] {
-    if (Math.abs(c1.timestamp.getTime() - Date.now()) < MERGE_GRACE_PERIOD_MS) {
+    if (commitInGracePeriod(c1)) {
       return [undefined, false];
     }
-    if (Math.abs(c2.timestamp.getTime() - Date.now()) < MERGE_GRACE_PERIOD_MS) {
+    if (commitInGracePeriod(c2)) {
       return [undefined, false];
     }
     const minTs = Math.min(c1.timestamp.getTime(), c2.timestamp.getTime());
@@ -877,7 +876,7 @@ export class Repository<
     if (this.allowMerge && mergeLeaderSession === session) {
       const mergeParents = new Set<string>(commitsToMerge.map((c) => c.id));
       for (const l of leaves) {
-        if (Date.now() - l.timestamp.getTime() > MERGE_GRACE_PERIOD_MS) {
+        if (!commitInGracePeriod(l)) {
           mergeParents.add(l.id);
         }
       }
@@ -1423,4 +1422,14 @@ function pickLatestCommitBySession(commits: Commit[]): Commit[] {
     }
   }
   return Array.from(commitBySession.values());
+}
+
+const gFirstSeenCommit = new Map<string, number>();
+function commitInGracePeriod(c: Commit): boolean {
+  let firstSeen = gFirstSeenCommit.get(c.id);
+  if (!firstSeen) {
+    firstSeen = Date.now();
+    gFirstSeenCommit.set(c.id, firstSeen);
+  }
+  return Date.now() - firstSeen > 3 * kSecondMs;
 }
