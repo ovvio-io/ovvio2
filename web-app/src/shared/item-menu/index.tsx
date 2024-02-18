@@ -111,7 +111,7 @@ export default function CardMenuView({
       {allowsEdit && (
         <EditCardAction cardManager={cardManager} source={source} />
       )}
-      <EditDueDateAction cardManager={cardManager} source={source} />
+      {/* <EditDueDateAction cardManager={cardManager} source={source} /> */}
       {partialNote.dueDate && (
         <ClearDueDateAction cardManager={cardManager} source={source} />
       )}

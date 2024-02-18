@@ -317,7 +317,6 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     const isExpanded =
       (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
-    //TODO: needs to create a new component for dueDate and set it width to 104px even if there is not due date.
     return (
       <React.Fragment>
         <div
@@ -348,12 +347,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           />
           <AssigneesCell note={note} />
           <TagsCell note={note} />
-          {/* <DateCell note={note} /> */}
-
           <DueDateIndicator
             card={note}
             className={styles.dueDate}
             source={'list'}
+            isMouseOver={isMouseOver}
           />
           <PinCell isChild={isChild} note={note} isMouseOver={isMouseOver} />
           <MenuCell note={note} />

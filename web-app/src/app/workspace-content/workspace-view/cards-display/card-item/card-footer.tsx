@@ -38,9 +38,12 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   footerItem: {
+    display: 'flex',
+    justifyContent: 'flex-start',
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
     gap: styleguide.gridbase * 0.5,
+    width: '104px',
   },
   tagsAndAssignees: {
     display: 'flex',
@@ -77,6 +80,7 @@ export interface CardFooterProps {
   size?: CardSize;
   className?: string;
   isExpanded?: boolean;
+  isMouseOver?: boolean;
 }
 
 // function Attachments({ card, source }: CardFooterProps) {
@@ -121,18 +125,30 @@ export interface CardFooterProps {
 //   );
 // }
 
-export function DueDateIndicator({ card, source, className }: CardFooterProps) {
+export function DueDateIndicator({
+  card,
+  source,
+  className,
+  isMouseOver,
+}: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
-  const logger = useLogger();
-  if (!dueDate) {
-    return null;
-  }
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
     dueDateEditor!.edit(card.getVertexProxy());
   };
+  if (!dueDate) {
+    return (
+      <Button className={cn(styles.footerItem, className)} onClick={onClick}>
+        {isMouseOver ? (
+          <img src="/icons/design-system/dueDate/addDueDateHovered.svg" />
+        ) : (
+          <img src="/icons/design-system/dueDate/addDueDate.svg" />
+        )}
+      </Button>
+    );
+  }
 
   const today = new Date();
   const isDueDateToday =

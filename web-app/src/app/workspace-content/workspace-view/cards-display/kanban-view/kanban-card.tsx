@@ -441,7 +441,11 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               </div>
             )}
             {childCards.length == 0 && <div></div>}
-            <DueDateIndicator card={card} source={source} />
+            <DueDateIndicator
+              card={card}
+              source={source}
+              isMouseOver={isMouseOver}
+            />
           </div>
         </div>
       </div>
