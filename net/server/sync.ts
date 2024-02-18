@@ -158,6 +158,11 @@ export class SyncService extends BaseService<ServerServices> {
     );
     this._backupForRepo.set(repoId, backup);
     this.loadRepoFromBackup(repoId, repo, backup);
+    if (repo.indexes) {
+      for (const idx of Object.values(repo.indexes)) {
+        idx.activate();
+      }
+    }
     assert(!this._clientsForRepo.has(repoId)); // Sanity check
     const clients: RepoClient<MemRepoStorage>[] = [];
     for (let i = 0; i < this.services.serverProcessCount; ++i) {

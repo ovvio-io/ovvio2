@@ -292,7 +292,7 @@ export abstract class BaseClient<
   }
 
   touch(): void {
-    if (!this._scheduled) {
+    if (!this._scheduled || !this.ready) {
       return;
     }
     this._timer.reset();

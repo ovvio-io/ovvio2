@@ -18,6 +18,9 @@ import { Change, EncodedChange } from '../change/index.ts';
 import { decodeChange } from '../change/decode.ts';
 import { CoreObject, Encoder } from '../../base/core-types/index.ts';
 import { log } from '../../logging/log.ts';
+import { isDecoder } from '../../base/core-types/encoding/types.ts';
+import { JSONCyclicalDecoder } from '../../base/core-types/encoding/json.ts';
+import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 
 export function isValidData(scheme: Scheme, data: DataType) {
   const requiredFields = scheme.getRequiredFields();
@@ -389,7 +392,9 @@ export function decodedDataChanges(dec: DecodedDataChange) {
 
   for (const key in dec) {
     changes[key] = (dec[key] as ReadonlyDecodedArray).map((v) =>
-      decodeChange(v as Decoder)
+      decodeChange(
+        isDecoder(v) ? v : new JSONCyclicalDecoder(v as ReadonlyJSONObject),
+      ),
     );
   }
 

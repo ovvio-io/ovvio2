@@ -231,6 +231,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       result = new Commit({ decoder });
       result._frozen = true;
       FROZEN_COMMITS.set(id, result);
+      SERIALIZED_COMMITS.set(id, obj);
     }
     return result;
   }
