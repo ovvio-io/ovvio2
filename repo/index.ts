@@ -27,7 +27,11 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
     this._headIdForKey = new Map();
     this._tempRecordForKey = new Map();
     this._includedKeys = new Set();
-    repo.attach('NewCommit', (c: Commit) => this.onNewCommit(c));
+  }
+
+  public activate(): void {
+    this.scanRepo();
+    this.repo.attach('NewCommit', (c: Commit) => this.onNewCommit(c));
   }
 
   private onNewCommit(commit: Commit): void {
