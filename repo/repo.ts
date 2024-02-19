@@ -315,10 +315,10 @@ export class Repository<
       }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
       reachedRoot = reachedRoot || foundRoot;
-      if (!newBase) {
-        [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
-        reachedRoot = reachedRoot || foundRoot;
-      }
+      // if (!newBase) {
+      //   [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
+      //   reachedRoot = reachedRoot || foundRoot;
+      // }
       if (!newBase) {
         continue;
       }
