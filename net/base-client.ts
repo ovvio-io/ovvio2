@@ -169,10 +169,10 @@ export abstract class BaseClient<
     return this;
   }
 
-  private sendSyncMessage(priority?: boolean): Promise<boolean> {
+  private sendSyncMessage(): Promise<boolean> {
     let result = this._pendingSyncPromise;
     if (!result) {
-      const promise = this._sendSyncMessageImpl(priority).finally(() => {
+      const promise = this._sendSyncMessageImpl().finally(() => {
         if (this._pendingSyncPromise === promise) {
           this._pendingSyncPromise = undefined;
         }
@@ -183,12 +183,16 @@ export abstract class BaseClient<
     return result;
   }
 
-  private async _sendSyncMessageImpl(priority?: boolean): Promise<boolean> {
+  private async _sendSyncMessageImpl(): Promise<boolean> {
     if (this.closed) {
       return false;
     }
     const startingStatus = this.status;
-    const reqMsg = await this.buildSyncMessage(priority !== true);
+    const priority =
+      // this.storage === 'sys' ||
+      // this.storage === 'user' ||
+      this.needsReplication();
+    const reqMsg = await this.buildSyncMessage(priority);
 
     let syncResp: SyncMessage<ValueType>;
     try {

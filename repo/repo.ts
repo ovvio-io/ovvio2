@@ -315,10 +315,10 @@ export class Repository<
       }
       let [newBase, foundRoot] = this._findLCAMergeBase(result, c);
       reachedRoot = reachedRoot || foundRoot;
-      if (!newBase) {
-        [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
-        reachedRoot = reachedRoot || foundRoot;
-      }
+      // if (!newBase) {
+      //   [newBase, foundRoot] = this._findChronologicalMergeBase(result, c);
+      //   reachedRoot = reachedRoot || foundRoot;
+      // }
       if (!newBase) {
         continue;
       }
@@ -557,40 +557,35 @@ export class Repository<
       } else {
         const contents: DeltaContents = c.contents as DeltaContents;
         result = this.recordForCommit(contents.base).clone();
-        // let commitCorrupted = false;
-        // if (result.checksum === contents.edit.srcChecksum) {
+        let commitCorrupted = false;
+        if (result.checksum === contents.edit.srcChecksum) {
+          result.patch(contents.edit.changes);
+          if (result.checksum !== contents.edit.dstChecksum) {
+            commitCorrupted = true;
+          }
+        } else {
+          commitCorrupted = true;
+        }
+        if (commitCorrupted) {
+          const goodCommitsToMerge = this.findNonCorruptedParentsFromCommits(
+            c.parents,
+          );
+          debugger;
+          if (goodCommitsToMerge.length > 0) {
+            // If any of the checksums didn't match, we create a new commit that
+            // reverts the bad one we've just found. While discarding data, this
+            // allows parties to continue their work without being stuck.
+            this.createMergeCommit(goodCommitsToMerge, undefined, c.id, false);
+          }
+          const lastGoodCommit = this.findLatestNonCorruptedCommitForKey(c.key);
+          // No good parents are available. This key is effectively null.
+          return lastGoodCommit
+            ? this.recordForCommit(lastGoodCommit)
+            : CFDSRecord.nullRecord();
+        }
+        // assert(result.checksum === contents.edit.srcChecksum);
         // result.patch(contents.edit.changes);
-        //   if (result.checksum !== contents.edit.dstChecksum) {
-        //     commitCorrupted = true;
-        //   }
-        // } else {
-        //   commitCorrupted = true;
-        // }
-        // if (commitCorrupted) {
-        //   const goodCommitsToMerge = this.findNonCorruptedParentsFromCommits(
-        //     c.parents,
-        //   );
-        //   if (goodCommitsToMerge.length > 0) {
-        //     // If any of the checksums didn't match, we create a new commit that
-        //     // reverts the bad one we've just found. While discarding data, this
-        //     // allows parties to continue their work without being stuck.
-        //     this.createMergeCommit(
-        //       goodCommitsToMerge,
-        //       [...goodCommitsToMerge.map((x) => x.id), c.id],
-        //       undefined,
-        //       c.id,
-        //       false,
-        //     );
-        //   }
-        //   const lastGoodCommit = this.findLatestNonCorruptedCommitForKey(c.key);
-        //   // No good parents are available. This key is effectively null.
-        //   return lastGoodCommit
-        //     ? this.recordForCommit(lastGoodCommit)
-        //     : CFDSRecord.nullRecord();
-        // }
-        assert(result.checksum === contents.edit.srcChecksum);
-        result.patch(contents.edit.changes);
-        assert(result.checksum === contents.edit.dstChecksum);
+        // assert(result.checksum === contents.edit.dstChecksum);
       }
       this._cachedRecordForCommit.set(c.id, result);
     }
