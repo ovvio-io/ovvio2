@@ -113,7 +113,7 @@ export class ParagraphRendererContext {
     this.applyStylesToCanvas();
     // ctx.scale(1, -1);
     // ctx.translate(0, -this.height);
-    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.scale(this.pixelRatio, this.pixelRatio);
     // ctx.strokeRect(0, 0, this.width, this.height);
     // ctx.fillRect(0, 0, 5, 5);
     const lineHeight = this.lineHeight;
@@ -144,13 +144,18 @@ export class ParagraphRendererContext {
     ctx.textBaseline = 'bottom';
   }
 
+  get pixelRatio(): number {
+    return Math.max(2, devicePixelRatio);
+  }
+
   measure(): void {
     const canvas = this.canvas;
     const parent = canvas.parentElement;
     const w = parent?.clientWidth || 0;
     const h = this.lineCount * (this.lineHeight + 2);
-    canvas.width = w * devicePixelRatio;
-    canvas.height = h * devicePixelRatio;
+    const pixelRatio = this.pixelRatio;
+    canvas.width = w * pixelRatio;
+    canvas.height = h * pixelRatio;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     this.measureText();
@@ -195,7 +200,7 @@ export class ParagraphRendererContext {
       return;
     }
     const text = this.nodes[0].text;
-    const width = this.width / devicePixelRatio;
+    const width = this.width / this.pixelRatio;
     const bidiEmbeddingLevels = getEmbeddingLevels(text, 'auto');
     const dir = getBaseDirectionFromBidiLevels(bidiEmbeddingLevels.levels);
     this._bidiEmbeddingLevels = bidiEmbeddingLevels;
@@ -219,10 +224,7 @@ export class ParagraphRendererContext {
       const w = charWidths[i];
       if (lineWidth + w > width) {
         const prevWordBoundary = findValueBefore(i, wordEdges) || i;
-        const line = bidiReversedText.substring(
-          prevLineBreak,
-          prevWordBoundary,
-        );
+        const line = text.substring(prevLineBreak, prevWordBoundary);
         let actualWidth = 0;
         for (let j = prevLineBreak; j < prevWordBoundary; ++j) {
           const w2 = charWidths[j];
@@ -251,10 +253,7 @@ export class ParagraphRendererContext {
       }
     }
     if (prevLineBreak < bidiReversedText.length) {
-      const line = bidiReversedText.substring(
-        prevLineBreak,
-        bidiReversedText.length,
-      );
+      const line = text.substring(prevLineBreak, bidiReversedText.length);
       let actualWidth = 0;
       for (let j = prevLineBreak; j < bidiReversedText.length; ++j) {
         const w2 = charWidths[j];
