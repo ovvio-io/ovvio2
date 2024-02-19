@@ -442,7 +442,7 @@ export class SyncEndpoint implements Endpoint {
 
   private async doSync<T extends SyncValueType>(
     services: ServerServices,
-    storageType: string,
+    storageType: RepositoryType,
     resourceId: string,
     userSession: Session,
     json: JSONObject,
@@ -454,19 +454,19 @@ export class SyncEndpoint implements Endpoint {
       async (values) =>
         (
           await syncService
-            .getRepository(storageType as RepositoryType, resourceId)
+            .getRepository(storageType, resourceId)
             .persistCommits(values)
         ).length,
       () =>
         mapIterable(
           syncService
-            .getRepository(storageType as RepositoryType, resourceId)
+            .getRepository(storageType, resourceId)
             .commits(userSession),
           (c) => [c.id, c],
         ),
       () =>
         syncService
-          .getRepository(storageType as RepositoryType, resourceId)
+          .getRepository(storageType, resourceId)
           .numberOfCommits(userSession),
       syncService.clientsForRepo(resourceId),
       true,

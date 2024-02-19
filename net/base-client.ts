@@ -195,7 +195,7 @@ export abstract class BaseClient<
       (this.storage === 'sys' ||
         this.storage === 'user' ||
         this.needsReplication());
-    const reqMsg = await this.buildSyncMessage(priority);
+    const reqMsg = await this.buildSyncMessage(true);
 
     let syncResp: SyncMessage<ValueType>;
     try {
