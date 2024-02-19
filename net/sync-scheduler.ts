@@ -41,8 +41,15 @@ export function syncConfigGetCycles(
   config: SyncConfig,
   actualSyncFreqMs = 0,
 ): number {
-  return Math.floor(
-    config.syncDurationMs / Math.max(actualSyncFreqMs, config.minSyncFreqMs),
+  return Math.min(
+    3,
+    Math.max(
+      1,
+      Math.floor(
+        config.syncDurationMs /
+          Math.max(actualSyncFreqMs, config.minSyncFreqMs),
+      ),
+    ),
   );
 }
 
