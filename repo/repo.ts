@@ -40,7 +40,7 @@ const HEAD_CACHE_EXPIRATION_MS = 1000;
 
 type RepositoryEvent = 'NewCommit';
 
-export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
+export const kRepositoryTypes = ['sys', 'data', 'user', 'events'] as const;
 export type RepositoryType = (typeof kRepositoryTypes)[number];
 
 export interface RepoStorage<T extends RepoStorage<T>> {
@@ -109,6 +109,8 @@ export class Repository<
         return [SchemeNamespace.NOTES, SchemeNamespace.TAGS];
       case 'user':
         return [SchemeNamespace.USER_SETTINGS, SchemeNamespace.VIEWS];
+      case 'events':
+        return [SchemeNamespace.EVENTS];
     }
   }
 
@@ -1031,12 +1033,12 @@ export class Repository<
           mergeLeader: fullCommit.mergeLeader,
           revert: fullCommit.revert,
         });
-        log({
-          severity: 'METRIC',
-          name: 'DeltaFormatSavings',
-          value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
-          unit: 'Percent',
-        });
+        // log({
+        //   severity: 'METRIC',
+        //   name: 'DeltaFormatSavings',
+        //   value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
+        //   unit: 'Percent',
+        // });
       }
     }
     return deltaCommit || fullCommit;

@@ -141,6 +141,7 @@ export class SyncService extends BaseService<ServerServices> {
         break;
 
       case 'user':
+      case 'events':
         authorizer = createUserAuthorizer(this.getRepository('sys', 'dir'), id);
         break;
     }
@@ -296,7 +297,10 @@ export class SyncEndpoint implements Endpoint {
     if (path.length === 2 && path[1] === 'batch-sync') {
       return true;
     }
-    if (path.length !== 4 || ![...kRepositoryTypes, 'log'].includes(path[1])) {
+    if (
+      path.length !== 4 ||
+      !(kRepositoryTypes as readonly string[]).includes(path[1])
+    ) {
       return false;
     }
     return true;
@@ -372,14 +376,14 @@ export class SyncEndpoint implements Endpoint {
     const resourceId = path[2];
     const cmd = path[3];
     const json = await req.json();
-    runGC();
     let resp: Response;
     switch (cmd) {
       case 'sync': {
         if (
           storageType === 'data' ||
           storageType === 'sys' ||
-          storageType === 'user'
+          storageType === 'user' ||
+          storageType === 'events'
         ) {
           const sig = req.headers.get('x-ovvio-sig');
           if (!sig) {

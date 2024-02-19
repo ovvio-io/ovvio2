@@ -95,7 +95,6 @@ export function CfdsClientProvider({
   children,
   graphManager,
 }: CfdsClientProviderProps) {
-  const logger = useLogger();
   const trustPool = useTrustPool();
   const device = useCurrentDevice();
   // Don't run any setup until a successful login
@@ -195,24 +194,15 @@ export function CfdsClientProvider({
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {
-    const sessionIntervalId = setInterval(() => {
-      logger.log({
-        severity: 'EVENT',
-        event: 'SessionAlive',
-        foreground: document.visibilityState === 'visible',
-      });
-    }, 10 * 1000);
-
     const clientData: ClientData = getClientData() || {
       graphManager,
     };
     setClientData(clientData);
 
     return () => {
-      clearInterval(sessionIntervalId);
       setClientData(undefined);
     };
-  }, [logger, graphManager]);
+  }, [graphManager]);
 
   const ctx = useMemo<ContextProps>(
     () => ({
