@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   makeStyles,
   cn,
@@ -7,12 +7,41 @@ import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../../core/react-utils/scrolling.tsx';
 import Layer from '../../../../../../../../styles/components/layer.tsx';
 import { layout } from '../../../../../../../../styles/layout.ts';
-import { H4 } from '../../../../../../../../styles/components/typography.tsx';
+import {
+  H4,
+  useTypographyStyles,
+} from '../../../../../../../../styles/components/typography.tsx';
 import { lightColorWheel } from '../../../../../../../../styles/theme.tsx';
 import { Row } from './item.tsx';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import { ExpanderIcon } from '../../../../../workspaces-bar/index.tsx';
+import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts';
+import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { treeIsSubtree } from '../../../../../../../../cfds/richtext/tree.ts';
 
 const useStyles = makeStyles((theme) => ({
+  container: {
+    display: 'grid',
+  },
+  table: {
+    width: '100%',
+    // borderCollapse: 'collapse',
+    paddingBottom: styleguide.gridbase,
+    ':hover': {
+      backgroundColor: '#F5ECDC',
+    },
+    marginTop: styleguide.gridbase,
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    marginRight: styleguide.gridbase * 2,
+    backgroundColor: lightColorWheel.secondary.s1,
+    borderRadius: '4px',
+    borderStyle: 'solid',
+    borderWidth: '2px',
+    borderColor: lightColorWheel.secondary.s2,
+    padding: [0, 0, styleguide.gridbase, 0],
+  },
   column: {
     marginTop: styleguide.gridbase,
     position: 'relative',
@@ -78,6 +107,31 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: '#F5ECDC',
     },
   },
+  expander: {
+    height: styleguide.gridbase * 4,
+    padding: [0, styleguide.gridbase * 2],
+    boxSizing: 'border-box',
+    alignItems: 'left',
+    gap: '4px',
+    basedOn: [layout.row],
+    color: 'black',
+    ':disabled': {
+      color: 'grey',
+    },
+  },
+  expanderText: {
+    color: 'inherit',
+    basedOn: [layout.flexSpacer, useTypographyStyles.bold],
+    textAlign: 'left',
+  },
+  expanderIcon: {
+    color: 'inherit',
+    marginRight: styleguide.gridbase,
+    transform: 'rotate(90deg)',
+  },
+  expanderIconOpen: {
+    transform: 'rotate(270deg)',
+  },
 }));
 
 export enum GridColumns {
@@ -94,44 +148,17 @@ export enum GridColumns {
   Menu = 'menu',
 }
 
-export const useGridStyles = makeStyles(
-  () => ({
-    container: {
-      display: 'grid',
-    },
-    table: {
-      width: '100%',
-      // borderCollapse: 'collapse',
-      paddingBottom: styleguide.gridbase,
-      ':hover': {
-        backgroundColor: '#F5ECDC',
-      },
-      marginTop: styleguide.gridbase,
-      flexShrink: 0,
-      boxSizing: 'border-box',
-      marginRight: styleguide.gridbase * 2,
-      backgroundColor: lightColorWheel.secondary.s1,
-      borderRadius: '4px',
-      borderStyle: 'solid',
-      borderWidth: '2px',
-      borderColor: lightColorWheel.secondary.s2,
-      padding: [0, 0, styleguide.gridbase, 0],
-    },
-  }),
-  'table_01387e'
-);
-
 export type ItemsTableProps = React.PropsWithChildren<{
   className?: string;
 }>;
 
 export function _ItemsTable({ children, className }: ItemsTableProps) {
-  const styles = useGridStyles();
+  const styles = useStyles();
   return <div className={cn(styles.container)}>{children}</div>;
 }
 
 export function ItemsTable({ children, className }: ItemsTableProps) {
-  const styles = useGridStyles();
+  const styles = useStyles();
   return (
     <div className={cn(styles.table)}>
       <div>{children}</div>
@@ -145,6 +172,7 @@ export type SectionTableProps = React.PropsWithChildren<{
   isHovered?: boolean;
   onCreateCard?: () => void;
   className?: string;
+  allUnpinned?: QueryResults<Note> | undefined;
 }>;
 
 function SectionTitle({ header, onCreateCard, isHovered }: SectionTableProps) {
@@ -200,7 +228,12 @@ function SectionTitle({ header, onCreateCard, isHovered }: SectionTableProps) {
   );
 }
 
-export function SectionTable({ groupBy, children, header }: SectionTableProps) {
+export function SectionTable({
+  groupBy,
+  children,
+  header,
+  allUnpinned,
+}: SectionTableProps) {
   const [isSectionHovered, setIsSectionHovered] = useState(false);
 
   const handleMouseEnter = () => {
@@ -209,8 +242,8 @@ export function SectionTable({ groupBy, children, header }: SectionTableProps) {
   const handleMouseLeave = () => {
     setIsSectionHovered(false);
   };
-
-  const styles = useGridStyles();
+  const toggleExpanded = useCallback(() => {}, []);
+  const styles = useStyles();
   return (
     <div
       className={cn(styles.table)}
@@ -224,7 +257,21 @@ export function SectionTable({ groupBy, children, header }: SectionTableProps) {
         onCreateCard={() => {}}
       />
       <div>{children}</div>
-      Show More
+      <Button
+        className={cn(styles.expander)}
+        disabled={allUnpinned && allUnpinned.length > 0 ? false : true}
+        onClick={() => toggleExpanded()}
+      >
+        <div className={cn(styles.expanderText)}>
+          Show More
+          {allUnpinned && allUnpinned.length > 0
+            ? ` [${allUnpinned.length}]`
+            : ''}
+        </div>
+        <ExpanderIcon
+          className={cn(styles.expanderIcon, styles.expanderIconOpen)}
+        />
+      </Button>{' '}
     </div>
   );
 }

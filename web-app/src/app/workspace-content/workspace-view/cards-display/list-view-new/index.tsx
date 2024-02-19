@@ -48,7 +48,7 @@ export interface ListViewNewProps {
   className?: string;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 3;
 
 function headerForGroupId(gid: CoreValue): React.ReactNode {
   let header = null;
@@ -93,7 +93,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
     },
     [docRouter]
   );
-  const [yLimit, setYLimit] = useState(8);
+  const [yLimit, setYLimit] = useState(3);
 
   useEffect(() => {
     if (unpinnedQuery) {
@@ -120,7 +120,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
     <Scroller>
       {(ref) => (
         <div ref={ref} className={cn(styles.listRoot, className)}>
-          {groups.slice(0, yLimit).map((group, index) => (
+          {groups.map((group, index) => (
             <SectionTable
               header={headerForGroupId(group)}
               groupBy={groupBy}
@@ -131,25 +131,23 @@ export function ListViewNew({ className }: ListViewNewProps) {
                   ? group.getVertexProxy().name
                   : 'Untitled'
               }
+              allUnpinned={unpinnedQuery?.group(group)}
             >
-              {pinnedQuery
-                ?.group(group)
-                .slice(0, yLimit)
-                .map((noteMgr) => (
-                  <ItemRow
-                    index={index}
-                    note={noteMgr}
-                    key={`list/pinned/row/${noteMgr.key}`}
-                    onClick={onNoteSelected}
-                    groupBy={groupBy}
-                  />
-                ))}
+              {pinnedQuery?.group(group).map((noteMgr) => (
+                <ItemRow
+                  index={index}
+                  note={noteMgr}
+                  key={`list/pinned/row/${noteMgr.key}`}
+                  onClick={onNoteSelected}
+                  groupBy={groupBy}
+                />
+              ))}
               {unpinnedQuery && pinnedQuery && (
                 <div style={{ height: '8px' }}></div>
               )}
               {unpinnedQuery
                 ?.group(group)
-                .slice(0, yLimit)
+                .slice(0, limit)
                 .map((noteMgr) => (
                   <ItemRow
                     note={noteMgr}
@@ -160,6 +158,8 @@ export function ListViewNew({ className }: ListViewNewProps) {
                 ))}
             </SectionTable>
           ))}
+          //TODO: maybe use this scroll only for the sections and not for the
+          notes in them.
           <InfiniteVerticalScroll
             limit={limit}
             setLimit={setLimit}

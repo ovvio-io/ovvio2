@@ -39,11 +39,14 @@ const useStyles = makeStyles((theme) => ({
   },
   footerItem: {
     display: 'flex',
-    justifyContent: 'flex-start',
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
     gap: styleguide.gridbase * 0.5,
     width: '104px',
+    justifyContent: 'flex-end',
+  },
+  footerItemBoard: {
+    justifyContent: 'flex-end',
   },
   tagsAndAssignees: {
     display: 'flex',
@@ -140,7 +143,14 @@ export function DueDateIndicator({
   };
   if (!dueDate) {
     return (
-      <Button className={cn(styles.footerItem, className)} onClick={onClick}>
+      <Button
+        className={cn(
+          styles.footerItem,
+          className,
+          source === 'board' ? styles.footerItemBoard : ''
+        )}
+        onClick={onClick}
+      >
         {isMouseOver ? (
           <img src="/icons/design-system/dueDate/addDueDateHovered.svg" />
         ) : (
@@ -162,7 +172,14 @@ export function DueDateIndicator({
   const fontSize = '10px';
 
   return (
-    <Button className={cn(styles.footerItem, className)} onClick={onClick}>
+    <Button
+      className={cn(
+        styles.footerItem,
+        className,
+        source === 'board' ? styles.footerItemBoard : ''
+      )}
+      onClick={onClick}
+    >
       <IconDueDate
         state={
           isOverdue

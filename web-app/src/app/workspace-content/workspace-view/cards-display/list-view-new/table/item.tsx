@@ -115,6 +115,9 @@ const useStyles = makeStyles(
         visibleOnHover: {
           opacity: 1,
         },
+        itemMenu: {
+          opacity: 1,
+        },
       },
     },
     doneIndicator: {
@@ -167,6 +170,7 @@ const useStyles = makeStyles(
       overflow: 'hidden',
       display: 'flex',
       flexWrap: 'wrap',
+      justifyContent: 'flex-end',
       maxHeight: '34px',
       gap: '1px',
     },
@@ -175,6 +179,8 @@ const useStyles = makeStyles(
     },
     tagsColumn: {
       width: '17%',
+      display: 'flex',
+      justifyContent: 'flex-end',
       padding: [0, styleguide.gridbase],
     },
     tag: {
@@ -275,6 +281,14 @@ const useStyles = makeStyles(
       padding: [styleguide.gridbase, 0, 0, 0],
       display: 'flex',
       alignItems: 'center',
+    },
+    itemMenu: {
+      opacity: 0,
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity',
+    },
+    itemMenuOpen: {
+      opacity: 1,
     },
   }),
   'item_1cda8c'
@@ -682,20 +696,6 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
   );
 }
 
-// const WorkspaceCell = ({
-//   note,
-//   groupBy,
-// }: {
-//   note: VertexManager<Note>;
-//   groupBy: string | undefined;
-//   onWorkspaceMoved?: (note: VertexManager<Note>) => void;
-// }) => {
-//   const styles = useStyles();
-//   return (
-//       <WorkspaceIndicatorComponent note={note} groupBy={groupBy} />
-//   );
-// };
-
 export const PinCell = ({
   note,
   isMouseOver,
@@ -735,10 +735,30 @@ const MenuCell = ({
   isMouseOver?: boolean;
 }) => {
   const styles = useStyles();
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  const renderButton = useCallback(
+    ({ isOpen }: { isOpen: boolean }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
+      </div>
+    ),
+    []
+  );
   return (
-    <div className={cn(styles.iconCell, styles.visibleOnHover)}>
-      <CardMenuView visible={isMouseOver} cardManager={note} source="list" />
+    <div className={cn(styles.iconCell)} onClick={toggleMenu}>
+      <CardMenuView
+        visible={isMouseOver}
+        cardManager={note}
+        source="list"
+        toggleMenu={toggleMenu}
+        isOpen={menuOpen}
+        renderButton={renderButton}
+      />
     </div>
   );
 };
