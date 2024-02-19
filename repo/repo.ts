@@ -1146,6 +1146,8 @@ export class Repository<
   persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
     const adjList = this._adjList;
     const result: Commit[] = [];
+    const commitsAffectingTmpRecords: Commit[] = [];
+
     for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
       for (const c of batch) {
@@ -1155,6 +1157,7 @@ export class Repository<
         // Invalidate temporary merge values on every commit change
         if (!this._cachedHeadsByKey.has(c.key)) {
           this._cachedValueForKey.delete(c.key);
+          commitsAffectingTmpRecords.push(c);
         }
       }
     }
@@ -1163,7 +1166,10 @@ export class Repository<
     for (const c of leaves) {
       this._cachedHeadsByKey.delete(c.key);
     }
-    for (const c of leaves) {
+    for (const c of SetUtils.unionIter(
+      commitsAffectingTmpRecords,
+      result.filter((c) => this.commitIsLeaf(c)),
+    )) {
       this._runUpdatesOnNewLeafCommit(c);
     }
     for (const c of result) {
