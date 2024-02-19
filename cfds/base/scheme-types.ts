@@ -12,6 +12,7 @@ export enum SchemeNamespace {
   USER_SETTINGS = 'user-settings',
   VIEWS = 'views',
   SESSIONS = 'sessions',
+  EVENTS = 'events',
   Null = '',
 }
 
@@ -33,6 +34,7 @@ export const NS_USERS = SchemeNamespace.USERS;
 export const NS_USER_SETTINGS = SchemeNamespace.USER_SETTINGS;
 export const NS_VIEWS = SchemeNamespace.VIEWS;
 export const NS_SESSIONS = SchemeNamespace.SESSIONS;
+export const NS_EVENTS = SchemeNamespace.EVENTS;
 
 export const TYPE_STR = ValueType.STRING;
 export const TYPE_NUMBER = ValueType.NUMBER;
@@ -67,7 +69,7 @@ export type FieldType = keyof FieldValue;
 
 export type ExtendedField<
   T extends FieldType,
-  K extends FieldValue[T] = FieldValue[T]
+  K extends FieldValue[T] = FieldValue[T],
 > = {
   type: T;
   default?: (rec: RecordObj) => K;
@@ -103,7 +105,7 @@ export class SchemeDef<T extends SchemeObject> {
   constructor(
     namespace: SchemeNamespace,
     fieldDescriptors: T,
-    repositoryFieldName?: string
+    repositoryFieldName?: string,
   ) {
     this.namespace = namespace;
     this.fieldDescriptors = fieldDescriptors;
@@ -114,11 +116,11 @@ export class SchemeDef<T extends SchemeObject> {
     namespace: SchemeNamespace,
     fields: B,
     removeFields?: (keyof Omit<T, keyof B>)[],
-    repositoryFieldName?: keyof B
+    repositoryFieldName?: keyof B,
   ): SchemeDef<Override<T, B>> {
     const newFields = Object.assign(
       Object.assign({}, this.fieldDescriptors),
-      fields
+      fields,
     );
     if (removeFields) {
       for (const f of removeFields) {
@@ -128,7 +130,7 @@ export class SchemeDef<T extends SchemeObject> {
     return new SchemeDef(
       namespace || this.namespace,
       newFields,
-      (repositoryFieldName || this.repositoryFieldName) as string
+      (repositoryFieldName || this.repositoryFieldName) as string,
     );
   }
 }
@@ -154,7 +156,7 @@ export interface ISchemeManagerRegister {
     version: number,
     schemeDefs: SchemeDef<any>[],
     extraNamespaces: SchemeNamespace[],
-    upFunc?: (namespace: string, data: any) => void
+    upFunc?: (namespace: string, data: any) => void,
   ): void;
 }
 
@@ -256,7 +258,7 @@ export type TagId = string;
 
 export function encodeTagId(
   parentName?: string | null,
-  childName?: string | null
+  childName?: string | null,
 ): TagId {
   return (
     (parentName ? encodeURIComponent(parentName) : 'null') +
@@ -266,7 +268,7 @@ export function encodeTagId(
 }
 
 export function decodeTagId(
-  id: string
+  id: string,
 ): [parent: string | null, child: string | null] {
   const comps = id.split('/');
   if (!comps.length) {

@@ -40,7 +40,7 @@ const HEAD_CACHE_EXPIRATION_MS = 1000;
 
 type RepositoryEvent = 'NewCommit';
 
-export const kRepositoryTypes = ['sys', 'data', 'user'] as const;
+export const kRepositoryTypes = ['sys', 'data', 'user', 'events'] as const;
 export type RepositoryType = (typeof kRepositoryTypes)[number];
 
 export interface RepoStorage<T extends RepoStorage<T>> {
@@ -109,6 +109,8 @@ export class Repository<
         return [SchemeNamespace.NOTES, SchemeNamespace.TAGS];
       case 'user':
         return [SchemeNamespace.USER_SETTINGS, SchemeNamespace.VIEWS];
+      case 'events':
+        return [SchemeNamespace.EVENTS];
     }
   }
 
@@ -380,8 +382,8 @@ export class Repository<
     }
     const parents1 = new Set<string>(c1.parents);
     const parents2 = new Set<string>(c2.parents);
-    parents1.add(c1.id);
-    parents2.add(c2.id);
+    // parents1.add(c1.id);
+    // parents2.add(c2.id);
 
     let reachedRoot = false;
     while (true) {
@@ -1031,12 +1033,12 @@ export class Repository<
           mergeLeader: fullCommit.mergeLeader,
           revert: fullCommit.revert,
         });
-        log({
-          severity: 'METRIC',
-          name: 'DeltaFormatSavings',
-          value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
-          unit: 'Percent',
-        });
+        // log({
+        //   severity: 'METRIC',
+        //   name: 'DeltaFormatSavings',
+        //   value: Math.round((100 * (fullLength - deltaLength)) / fullLength),
+        //   unit: 'Percent',
+        // });
       }
     }
     return deltaCommit || fullCommit;
@@ -1146,6 +1148,8 @@ export class Repository<
   persistVerifiedCommits(commits: Iterable<Commit>): Commit[] {
     const adjList = this._adjList;
     const result: Commit[] = [];
+    const commitsAffectingTmpRecords: Commit[] = [];
+
     for (const batch of ArrayUtils.slices(commits, 50)) {
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
       for (const c of batch) {
@@ -1155,6 +1159,7 @@ export class Repository<
         // Invalidate temporary merge values on every commit change
         if (!this._cachedHeadsByKey.has(c.key)) {
           this._cachedValueForKey.delete(c.key);
+          commitsAffectingTmpRecords.push(c);
         }
       }
     }
@@ -1163,7 +1168,10 @@ export class Repository<
     for (const c of leaves) {
       this._cachedHeadsByKey.delete(c.key);
     }
-    for (const c of leaves) {
+    for (const c of SetUtils.unionIter(
+      commitsAffectingTmpRecords,
+      result.filter((c) => this.commitIsLeaf(c)),
+    )) {
       this._runUpdatesOnNewLeafCommit(c);
     }
     for (const c of result) {

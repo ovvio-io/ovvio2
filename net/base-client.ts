@@ -191,10 +191,11 @@ export abstract class BaseClient<
     }
     const startingStatus = this.status;
     const priority =
-      this.storage === 'sys' ||
-      this.storage === 'user' ||
-      this.needsReplication();
-    const reqMsg = await this.buildSyncMessage(priority);
+      this.storage !== 'events' &&
+      (this.storage === 'sys' ||
+        this.storage === 'user' ||
+        this.needsReplication());
+    const reqMsg = await this.buildSyncMessage(true);
 
     let syncResp: SyncMessage<ValueType>;
     try {
