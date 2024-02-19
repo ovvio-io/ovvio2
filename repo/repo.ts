@@ -380,8 +380,8 @@ export class Repository<
     }
     const parents1 = new Set<string>(c1.parents);
     const parents2 = new Set<string>(c2.parents);
-    parents1.add(c1.id);
-    parents2.add(c2.id);
+    // parents1.add(c1.id);
+    // parents2.add(c2.id);
 
     let reachedRoot = false;
     while (true) {
