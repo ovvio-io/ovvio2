@@ -103,7 +103,9 @@ export abstract class BaseClient<
   }
 
   get syncCycles(): number {
-    return syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
+    return this.needsReplication()
+      ? 1
+      : syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
   }
 
   get serverVersion(): VersionNumber {
@@ -189,8 +191,8 @@ export abstract class BaseClient<
     }
     const startingStatus = this.status;
     const priority =
-      // this.storage === 'sys' ||
-      // this.storage === 'user' ||
+      this.storage === 'sys' ||
+      this.storage === 'user' ||
       this.needsReplication();
     const reqMsg = await this.buildSyncMessage(priority);
 
