@@ -234,7 +234,10 @@ function setBrowserSelectionToDocument(
       range.setEnd(realAnchorNode, desiredStartOffset);
       offsetShift = range.endOffset - desiredStartOffset;
     } else {
-      range.setStart(realAnchorNode, desiredStartOffset);
+      range.setStart(
+        realAnchorNode,
+        Math.min(desiredStartOffset, realAnchorNode.textContent?.length || 0),
+      );
       offsetShift = range.startOffset - desiredStartOffset;
     }
 
