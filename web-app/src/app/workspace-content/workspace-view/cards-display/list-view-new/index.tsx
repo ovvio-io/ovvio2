@@ -90,8 +90,6 @@ export function ListViewNew({ className }: ListViewNewProps) {
     },
     [docRouter]
   );
-  const [yLimit, setYLimit] = useState(3);
-
   useEffect(() => {
     if (unpinnedQuery) {
       unpinnedQuery.limit = limit + PAGE_SIZE;
@@ -150,7 +148,15 @@ export function ListViewNew({ className }: ListViewNewProps) {
                   )}
                   {unpinnedQuery
                     ?.group(group)
-                    .slice(0, expandedSection.has(groupKey) ? 100 : 3)
+                    .slice(
+                      0,
+                      expandedSection.has(groupKey)
+                        ? 100
+                        : Math.max(
+                            3 - (pinnedQuery?.group(group).length || 0),
+                            0
+                          )
+                    )
                     .map((noteMgr) => (
                       <ItemRow
                         note={noteMgr}

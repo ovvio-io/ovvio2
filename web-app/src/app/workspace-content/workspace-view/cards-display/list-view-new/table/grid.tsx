@@ -77,7 +77,8 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: '600',
     letterSpacing: '0.087px',
     lineHeight: '21px',
-    padding: styleguide.gridbase,
+    paddingTop: styleguide.gridbase,
+    paddingBottom: styleguide.gridbase * 0.5,
   },
   columnContent: {
     boxSizing: 'border-box',
@@ -222,10 +223,8 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
   const styles = useStyles();
   const view = usePartialView('expandedGroupIds');
 
-  const toggleExpanded = useCallback(
+  const toggleExpandedShowMore = useCallback(
     (section: string) => {
-      console.log(typeof section);
-
       const expandedGroupIds = view.expandedGroupIds;
       if (expandedGroupIds.has(section)) {
         expandedGroupIds.delete(section);
@@ -235,13 +234,14 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
     },
     [view]
   );
+
   const expanded = view.expandedGroupIds.has(expandKey);
 
   return (
     <Button
       className={cn(styles.expander)}
       disabled={allUnpinned && allUnpinned.length - 3 > 0 ? false : true}
-      onClick={() => toggleExpanded(expandKey)}
+      onClick={() => toggleExpandedShowMore(expandKey)}
     >
       <div className={cn(styles.expanderText)}>
         Show More

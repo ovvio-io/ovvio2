@@ -58,6 +58,7 @@ import { WorkspaceIndicator } from '../../../../../../../../components/workspace
 import { IconCollapseExpand } from '../../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { DueDateIndicator } from '../../card-item/card-footer.tsx';
 import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx';
+import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -87,6 +88,8 @@ const useStyles = makeStyles(
       boxShadow: theme.shadows.z2,
     },
     itemRow: {
+      basedOn: [layout.row],
+
       position: 'relative',
       transform: 'scale(1)',
       ':hover': {
@@ -104,7 +107,6 @@ const useStyles = makeStyles(
       width: '96%',
       left: '4%',
       position: 'relative',
-      borderStyle: 'none',
       borderColor: 'transparent',
       borderRadius: '2px',
       alignItems: 'center',
@@ -135,47 +137,54 @@ const useStyles = makeStyles(
     doneIndicatorActive: {
       width: `calc(100% - ${styleguide.gridbase * 8}px)`,
     },
-    cell: {
-      alignItems: 'center',
-      basedOn: [layout.row],
-      paddingLeft: '8px',
-    },
     iconCell: {
       width: styleguide.gridbase * 4,
       display: 'flex',
       justifyContent: 'center',
-      paddingLeft: '8px',
+      paddingLeft: styleguide.gridbase,
     },
     title: {
-      width: '60%',
+      flexGrow: '1',
+      flexShrink: '0',
+      flexBasis: 'auto',
+      // maxWidth: '50%',
+      // width: 'calc(50% - 232px)',
+      width: '45%',
       cursor: 'pointer',
       position: 'relative',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
-    },
-    expanderColumn: {
-      cursor: 'pointer',
-      width: styleguide.gridbase * 2,
+      paddingLeft: styleguide.gridbase * 0.5,
     },
     wsColumn: {
-      width: '17%',
+      // width: 'calc(20% - 232px)',
+      // maxWidth: '20%',
+      width: '20%',
+      basedOn: [layout.row],
+      alignItems: 'center',
+
       padding: [0, styleguide.gridbase * 0.5],
     },
     assigneeColumn: {
-      width: '6%',
-      overflow: 'hidden',
+      // width: 'calc(10% - 232px)',
+      // maxWidth: '10%',
+      width: '10%',
+      // overflow: 'hidden',
       display: 'flex',
       flexWrap: 'wrap',
       justifyContent: 'flex-end',
       maxHeight: '34px',
       gap: '1px',
+      paddingLeft: styleguide.gridbase,
     },
     assignee: {
       marginRight: styleguide.gridbase * 0.5,
     },
     tagsColumn: {
-      width: '17%',
+      // width: 'calc(20% - 232px)',
+      // maxWidth: '20%',
+      width: '25%',
       display: 'flex',
       justifyContent: 'flex-end',
       padding: [0, styleguide.gridbase],
@@ -315,10 +324,7 @@ const ExpanderCell = ({
   const { childCards } = usePartialVertex(note, ['childCards']);
 
   return (
-    <div
-      className={cn(styles.expanderColumn, styles.cell)}
-      onClick={() => toggleExpanded()}
-    >
+    <div className={cn(styles.iconCell)} onClick={() => toggleExpanded()}>
       {!!childCards?.length && <IconCollapseExpand on={isExpanded} />}
     </div>
   );
@@ -349,7 +355,7 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
   );
 
   return (
-    <div className={cn(styles.assigneeColumn, styles.cell)}>
+    <div className={cn(styles.assigneeColumn)}>
       {managers.map((x) => (
         <Assignee
           key={x.key}
@@ -468,7 +474,7 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     [note]
   );
   return (
-    <div ref={containerRef} className={cn(styles.tagsColumn, styles.cell)}>
+    <div ref={containerRef} className={cn(styles.tagsColumn)}>
       {visibleTags.map((x) => (
         <TagView
           className={cn(styles.tag)}
@@ -529,7 +535,7 @@ function TitleCell({
   const styles = useStyles();
   const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
   return (
-    <div className={cn(styles.cell, styles.title)} onClick={onClick}>
+    <div className={cn(styles.title)} onClick={onClick}>
       <Text>{titlePlaintext}</Text>
     </div>
   );
@@ -549,7 +555,7 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
   const isTask = pNote.type === NoteType.Task;
 
   return (
-    <div className={cn(styles.wsColumn, styles.cell)}>
+    <div className={cn(styles.wsColumn)}>
       {groupBy !== 'workspace' ? (
         <WorkspaceIndicator
           className={cn(styles.workspaceIndicator)}
