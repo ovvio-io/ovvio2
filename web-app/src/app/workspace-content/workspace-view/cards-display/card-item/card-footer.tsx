@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
     height: FOOTER_HEIGHT,
     gap: styleguide.gridbase * 0.5,
     width: '104px',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   footerItemBoard: {
     justifyContent: 'flex-end',

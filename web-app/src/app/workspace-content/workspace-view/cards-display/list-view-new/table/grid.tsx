@@ -19,6 +19,8 @@ import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts
 import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { treeIsSubtree } from '../../../../../../../../cfds/richtext/tree.ts';
+import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -173,6 +175,8 @@ export type SectionTableProps = React.PropsWithChildren<{
   onCreateCard?: () => void;
   className?: string;
   allUnpinned?: QueryResults<Note> | undefined;
+  groupString?: string;
+  expandKey: string;
 }>;
 
 function SectionTitle({ header, onCreateCard, isHovered }: SectionTableProps) {
@@ -233,8 +237,11 @@ export function SectionTable({
   children,
   header,
   allUnpinned,
+  expandKey,
 }: SectionTableProps) {
+  const styles = useStyles();
   const [isSectionHovered, setIsSectionHovered] = useState(false);
+  const view = usePartialView('expandedGroupIds');
 
   const handleMouseEnter = () => {
     setIsSectionHovered(true);
@@ -242,8 +249,23 @@ export function SectionTable({
   const handleMouseLeave = () => {
     setIsSectionHovered(false);
   };
-  const toggleExpanded = useCallback(() => {}, []);
-  const styles = useStyles();
+
+  const toggleExpanded = useCallback(
+    (section: string) => {
+      console.log(typeof section);
+
+      const expandedGroupIds = view.expandedGroupIds;
+      if (expandedGroupIds.has(section)) {
+        expandedGroupIds.delete(section);
+      } else if (section) {
+        expandedGroupIds.add(section);
+      }
+    },
+    [view]
+  );
+
+  const expanded = view.expandedGroupIds.has(expandKey);
+
   return (
     <div
       className={cn(styles.table)}
@@ -255,21 +277,25 @@ export function SectionTable({
         groupBy={groupBy}
         isHovered={isSectionHovered}
         onCreateCard={() => {}}
+        expandKey={''}
       />
       <div>{children}</div>
       <Button
         className={cn(styles.expander)}
-        disabled={allUnpinned && allUnpinned.length > 0 ? false : true}
-        onClick={() => toggleExpanded()}
+        disabled={allUnpinned && allUnpinned.length - 3 > 0 ? false : true}
+        onClick={() => toggleExpanded(expandKey)}
       >
         <div className={cn(styles.expanderText)}>
           Show More
-          {allUnpinned && allUnpinned.length > 0
+          {allUnpinned && allUnpinned.length - 3 > 0
             ? ` [${allUnpinned.length}]`
-            : ''}
+            : ' 0'}
         </div>
         <ExpanderIcon
-          className={cn(styles.expanderIcon, styles.expanderIconOpen)}
+          className={cn(
+            styles.expanderIcon,
+            expanded && styles.expanderIconOpen
+          )}
         />
       </Button>{' '}
     </div>

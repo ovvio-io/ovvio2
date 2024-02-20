@@ -48,7 +48,7 @@ export interface ListViewNewProps {
   className?: string;
 }
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 5;
 
 function headerForGroupId(gid: CoreValue): React.ReactNode {
   let header = null;
@@ -81,9 +81,9 @@ export function ListViewNew({ className }: ListViewNewProps) {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const filteredNotes = useFilteredNotes('listView');
   const docRouter = useDocumentRouter();
-  const view = usePartialView('noteType');
+  const view = usePartialView('noteType', 'expandedGroupIds');
   const groupBy = view.groupBy;
-
+  const expandedSection = view.expandedGroupIds;
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
 
@@ -101,8 +101,6 @@ export function ListViewNew({ className }: ListViewNewProps) {
     }
   }, [unpinnedQuery, limit]);
 
-  console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
-
   const groups = useMemo(() => {
     const s = new Set<CoreValue>();
     if (pinnedQuery) {
@@ -116,56 +114,62 @@ export function ListViewNew({ className }: ListViewNewProps) {
     );
   }, [pinnedQuery, unpinnedQuery]);
 
+  let groupKey = '';
+  const getGroupStringKey = (group: CoreValue, index: number): string => {
+    return typeof group === 'string'
+      ? group + { index }
+      : group instanceof VertexManager
+      ? group.getVertexProxy().name
+      : 'Untitled';
+  };
   return (
     <Scroller>
       {(ref) => (
         <div ref={ref} className={cn(styles.listRoot, className)}>
-          {groups.map((group, index) => (
-            <SectionTable
-              header={headerForGroupId(group)}
-              groupBy={groupBy}
-              key={
-                typeof group === 'string'
-                  ? group + { index }
-                  : group instanceof VertexManager
-                  ? group.getVertexProxy().name
-                  : 'Untitled'
-              }
-              allUnpinned={unpinnedQuery?.group(group)}
-            >
-              {pinnedQuery?.group(group).map((noteMgr) => (
-                <ItemRow
-                  index={index}
-                  note={noteMgr}
-                  key={`list/pinned/row/${noteMgr.key}`}
-                  onClick={onNoteSelected}
+          {groups.map(
+            (group, index) => (
+              (groupKey = getGroupStringKey(group, index)),
+              (
+                <SectionTable
+                  header={headerForGroupId(group)}
                   groupBy={groupBy}
-                />
-              ))}
-              {unpinnedQuery && pinnedQuery && (
-                <div style={{ height: '8px' }}></div>
-              )}
-              {unpinnedQuery
-                ?.group(group)
-                .slice(0, limit)
-                .map((noteMgr) => (
-                  <ItemRow
-                    note={noteMgr}
-                    key={`list/unpinned/row/${noteMgr.key}`}
-                    onClick={onNoteSelected}
-                    groupBy={groupBy}
-                  />
-                ))}
-            </SectionTable>
-          ))}
-          //TODO: maybe use this scroll only for the sections and not for the
-          notes in them.
+                  key={groupKey}
+                  allUnpinned={unpinnedQuery?.group(group)}
+                  expandKey={groupKey}
+                >
+                  {pinnedQuery?.group(group).map((noteMgr) => (
+                    <ItemRow
+                      index={index}
+                      note={noteMgr}
+                      key={`list/pinned/row/${noteMgr.key}`}
+                      onClick={onNoteSelected}
+                      groupBy={groupBy}
+                    />
+                  ))}
+                  {unpinnedQuery && pinnedQuery && (
+                    <div style={{ height: '8px' }}></div>
+                  )}
+                  {unpinnedQuery
+                    ?.group(group)
+                    .slice(0, expandedSection.has(groupKey) ? 100 : 3)
+                    .map((noteMgr) => (
+                      <ItemRow
+                        note={noteMgr}
+                        key={`list/unpinned/row/${noteMgr.key}`}
+                        onClick={onNoteSelected}
+                        groupBy={groupBy}
+                      />
+                    ))}
+                </SectionTable>
+              )
+            )
+          )}
           <InfiniteVerticalScroll
             limit={limit}
             setLimit={setLimit}
             pageSize={PAGE_SIZE}
             recordsLength={unpinnedQuery?.count || 0}
-            isVisible={false}
+            isVisible={true}
           />
         </div>
       )}
