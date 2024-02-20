@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import * as SetUtils from '../../../../../../../base/set.ts';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
   useVertexByKey,
@@ -209,7 +210,13 @@ export const Step2: React.FC<Step2Props> = ({
         </div>
       </div>
       <WorkspaceTable
-        workspaces={workspaces}
+        workspaces={workspaces.filter(
+          (ws) =>
+            SetUtils.intersectionSize(
+              SetUtils.map(ws.users, (u) => u.key),
+              selectedUsers,
+            ) !== selectedUsers.size,
+        )}
         onRowSelect={handleRowSelect}
         showSelection={true}
         selectedUsers={selectedUsers}
