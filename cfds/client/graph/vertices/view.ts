@@ -325,7 +325,6 @@ export class View extends BaseVertex {
     origin: MutationOrigin,
     oldValue: NoteType | undefined
   ): MutationPack {
-    debugger;
     return ['noteType', origin, oldValue];
   }
 

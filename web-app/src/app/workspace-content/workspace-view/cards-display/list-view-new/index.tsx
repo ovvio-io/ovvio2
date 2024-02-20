@@ -1,21 +1,12 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import * as SetUtils from '../../../../../../../base/set.ts';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
-import {
-  Note,
-  NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import {
   makeStyles,
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import {
-  useFilteredNotes,
-  FilteredNotes,
-} from '../../../../../core/cfds/react/filter.ts';
+import { useFilteredNotes } from '../../../../../core/cfds/react/filter.ts';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
@@ -76,12 +67,18 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
   }
   return header;
 }
+
 export function ListViewNew({ className }: ListViewNewProps) {
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
   const filteredNotes = useFilteredNotes('listView');
   const docRouter = useDocumentRouter();
-  const view = usePartialView('noteType', 'expandedGroupIds');
+  const view = usePartialView(
+    'noteType',
+    'expandedGroupIds',
+    'notesExpandOverride',
+    'notesExpandBase'
+  );
   const groupBy = view.groupBy;
   const expandedSection = view.expandedGroupIds;
   const pinnedQuery = useQuery2(filteredNotes[0]);
@@ -122,6 +119,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
       ? group.getVertexProxy().name
       : 'Untitled';
   };
+
   return (
     <Scroller>
       {(ref) => (
@@ -146,6 +144,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
                       groupBy={groupBy}
                     />
                   ))}
+
                   {unpinnedQuery && pinnedQuery && (
                     <div style={{ height: '8px' }}></div>
                   )}

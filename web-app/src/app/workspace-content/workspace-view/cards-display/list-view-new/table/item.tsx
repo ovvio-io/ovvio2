@@ -8,7 +8,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { formatTimeDiff } from '../../../../../../../../base/date.ts';
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -18,21 +17,9 @@ import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
 import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
-import IconDelete from '../../../../../../../../styles/components/icons/IconDelete.tsx';
-import IconNote from '../../../../../../../../styles/components/icons/IconNote.tsx';
-import {
-  CheckBox,
-  TaskCheckbox,
-} from '../../../../../../../../components/task.tsx';
-import { IconArrowDown } from '../../../../../../../../styles/components/new-icons/icon-arrow-down.tsx';
-import { IconContent } from '../../../../../../../../styles/components/new-icons/icon-content.tsx';
-import {
-  DueDateState,
-  IconDueDate,
-} from '../../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import { TaskCheckbox } from '../../../../../../../../components/task.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
-import { useToastController } from '../../../../../../../../styles/components/toast/index.tsx';
 import {
   TextSm,
   useTypographyStyles,
@@ -42,10 +29,7 @@ import {
   keyframes,
   makeStyles,
 } from '../../../../../../../../styles/css-objects/index.ts';
-import {
-  lightColorWheel,
-  brandLightTheme as theme,
-} from '../../../../../../../../styles/theme.tsx';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { layout } from '../../../../../../../../styles/layout.ts';
 import { Text } from '../../../../../../../../styles/components/texts.tsx';
 import { styleguide } from '../../../../../../../../styles/styleguide.ts';
@@ -70,12 +54,6 @@ import TagButton, {
 import TagView, {
   TagPillView,
 } from '../../../../../../shared/tags/tag-view.tsx';
-import { assignNote } from '../../../../../../shared/utils/assignees.ts';
-import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
-import { WorkspaceIndicatorButtonProps } from '../../card-item/workspace-indicator.tsx';
-import { GridColumns, useGridStyles } from './grid.tsx';
-import localization from '../list.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../../core/cfds/react/logger.tsx';
 import { WorkspaceIndicator } from '../../../../../../../../components/workspace-indicator.tsx';
 import { IconCollapseExpand } from '../../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
 import { DueDateIndicator } from '../../card-item/card-footer.tsx';
@@ -120,6 +98,29 @@ const useStyles = makeStyles(
         },
       },
     },
+    childRow: {
+      height: ROW_HEIGHT,
+      basedOn: [layout.row],
+      width: '96%',
+      left: '4%',
+      position: 'relative',
+      borderStyle: 'none',
+      borderColor: 'transparent',
+      borderRadius: '2px',
+      alignItems: 'center',
+      boxSizing: 'border-box',
+      backgroundColor: theme.colors.background,
+      boxShadow: theme.shadows.z2,
+      marginBottom: '1px',
+    },
+    isChild: {
+      width: '100%',
+      borderRadius: '2px',
+      borderColor: 'transparent',
+      boxSizing: 'border-box',
+      backgroundColor: 'rgb(139 197 238 / 43%)',
+    },
+
     doneIndicator: {
       pointerEvents: 'none',
       position: 'absolute',
@@ -144,10 +145,6 @@ const useStyles = makeStyles(
       display: 'flex',
       justifyContent: 'center',
       paddingLeft: '8px',
-    },
-    childPadding: {
-      width: styleguide.gridbase * 5,
-      backgroundColor: '#8BC5EE',
     },
     title: {
       width: '60%',
@@ -231,10 +228,8 @@ const useStyles = makeStyles(
     pinOffOver: {
       opacity: 1,
     },
-
     plusButton: {
       height: styleguide.gridbase * 2,
-      // width: styleguide.gridbase * 2,
       borderRadius: styleguide.gridbase,
       backgroundColor: theme.mono.m1,
       opacity: 0,
@@ -292,118 +287,6 @@ const useStyles = makeStyles(
     },
   }),
   'item_1cda8c'
-);
-
-export type RowProps = React.PropsWithChildren<{
-  className?: string;
-  style?: CSSProperties;
-  onMouseEnter?: React.MouseEventHandler<HTMLTableRowElement>;
-  onMouseLeave?: React.MouseEventHandler<HTMLTableRowElement>;
-}>;
-
-export function Row({
-  children,
-  className,
-  style,
-  onMouseEnter,
-  onMouseLeave,
-}: RowProps) {
-  const styles = useStyles();
-
-  return (
-    <div
-      className={cn(styles.row, className)}
-      style={style}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <div>{children}</div>
-    </div>
-  );
-}
-
-export interface ItemRowProps extends Partial<RenderDraggableProps> {
-  note: VertexManager<Note>;
-  index?: number;
-  onClick?: (note: VertexManager<Note>) => void;
-  isChild?: boolean;
-  groupBy?: string;
-}
-
-export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
-  function ({ groupBy, note, isChild, onClick = () => {}, attributes }, ref) {
-    const styles = useStyles();
-    const [isMouseOver, setIsMouseOver] = useState(false);
-    const { childCards } = usePartialVertex(note, ['childCards']);
-    const onMouseOver = useCallback(() => setIsMouseOver(true), []);
-    const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
-    const onClickImpl: MouseEventHandler = (e) => {
-      e.stopPropagation();
-      onClick(note);
-    };
-    const view = usePartialView('notesExpandOverride', 'notesExpandBase');
-
-    if (note.scheme.isNull) {
-      return null;
-    }
-
-    const hasOverride = view.notesExpandOverride.has(note.key);
-    const isExpanded =
-      (view.notesExpandBase && !hasOverride) ||
-      (!view.notesExpandBase && hasOverride);
-    return (
-      <React.Fragment>
-        <div
-          className={cn(styles.row, styles.itemRow, styles.hoverableRow)}
-          ref={ref}
-          onMouseOver={onMouseOver}
-          onMouseLeave={onMouseLeave}
-        >
-          {isChild ? (
-            <React.Fragment>
-              <div className={cn(styles.childPadding)} />
-              <TypeCell note={note} />
-              <TitleCell note={note} onClick={onClickImpl} />
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <TypeCell note={note} />
-              <TitleCell note={note} onClick={onClickImpl} />
-              <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
-            </React.Fragment>
-          )}
-          <ExpanderCell
-            note={note}
-            isExpanded={isExpanded}
-            toggleExpanded={() =>
-              view.setNoteExpandOverride(note.key, !hasOverride)
-            }
-          />
-          <AssigneesCell note={note} />
-          <TagsCell note={note} />
-          <DueDateIndicator
-            card={note}
-            className={styles.dueDate}
-            source={'list'}
-            isMouseOver={isMouseOver}
-          />
-          <PinCell isChild={isChild} note={note} isMouseOver={isMouseOver} />
-          <MenuCell note={note} />
-          <DoneIndicator note={note} />
-        </div>
-        {isExpanded &&
-          childCards.map((x) => (
-            <ItemRow
-              note={x.manager as VertexManager<Note>}
-              key={x.key}
-              onClick={onClick}
-              isChild={true}
-              groupBy={groupBy}
-            />
-          ))}
-      </React.Fragment>
-    );
-  }
 );
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
@@ -547,14 +430,13 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       setOverflow(hasOverflow);
     };
 
-    // Setup ResizeObserver
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const newWidth = entry.contentRect.width;
         if (lastWidthRef.current !== newWidth) {
           setContainerWidth(newWidth);
-          lastWidthRef.current = newWidth; // Update the last observed width
-          calculateVisibleTags(); // Recalculate tags since width has changed
+          lastWidthRef.current = newWidth;
+          calculateVisibleTags();
         }
       }
     });
@@ -567,8 +449,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       }
       resizeObserver.observe(containerRef.current);
     }
-
-    // Cleanup
     return () => {
       resizeObserver.disconnect();
     };
@@ -763,58 +643,120 @@ const MenuCell = ({
   );
 };
 
-// const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
-//   const styles = useStyles();
-//   const { tags } = usePartialVertex(note, ['tags', 'workspace']);
-//   const managers = useMemo(() => {
-//     const result = [];
-//     for (const [parent, child] of tags) {
-//       if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
-//         continue;
-//       }
-//       result.push(child.manager);
-//     }
-//     return result;
-//   }, [tags]);
-//   const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
-//   for (const [p, c] of tags) {
-//     tagsMng.set(
-//       p.manager as VertexManager<Tag>,
-//       c.manager as VertexManager<Tag>
-//     );
-//   }
-//   const onDelete = useCallback(
-//     (tag: Tag) => {
-//       note.getVertexProxy().tags.delete(tag.parentTag || tag);
-//     },
-//     [note]
-//   );
-//   const onTag = useCallback(
-//     (tag: Tag) => {
-//       const vert = note.getVertexProxy();
-//       const tags = vert.tags;
-//       const parent = tag.parentTag || tag;
-//       tags.set(parent, tag);
-//     },
-//     [note]
-//   );
-//   return (
-//     <div className={cn(styles.tagsColumn, styles.cell)}>
-//       {managers.map((x) => (
-//         <TagView
-//           className={cn(styles.tag)}
-//           showMenu="hover"
-//           key={x.key}
-//           tag={x}
-//           onSelected={onTag}
-//           onDelete={onDelete}
-//         />
-//       ))}
-//       <TagButton
-//         onTagged={onTag}
-//         className={cn(styles.visibleOnHover)}
-//         noteId={note}
-//       />
-//     </div>
-//   );
-// };
+export type RowProps = React.PropsWithChildren<{
+  className?: string;
+  style?: CSSProperties;
+  onMouseEnter?: React.MouseEventHandler<HTMLTableRowElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLTableRowElement>;
+}>;
+
+export function Row({
+  children,
+  className,
+  style,
+  onMouseEnter,
+  onMouseLeave,
+}: RowProps) {
+  const styles = useStyles();
+
+  return (
+    <div
+      className={cn(styles.row, className)}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div>{children}</div>
+    </div>
+  );
+}
+
+export interface ItemRowProps extends Partial<RenderDraggableProps> {
+  note: VertexManager<Note>;
+  index?: number;
+  onClick?: (note: VertexManager<Note>) => void;
+  isChild?: boolean;
+  groupBy?: string;
+}
+
+export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
+  function ({ groupBy, note, isChild, onClick = () => {}, attributes }, ref) {
+    const styles = useStyles();
+    const [isMouseOver, setIsMouseOver] = useState(false);
+    const { childCards } = usePartialVertex(note, ['childCards']);
+    const onMouseOver = useCallback(() => setIsMouseOver(true), []);
+    const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
+    const onClickImpl: MouseEventHandler = (e) => {
+      e.stopPropagation();
+      onClick(note);
+    };
+    const view = usePartialView('notesExpandOverride', 'notesExpandBase');
+
+    if (note.scheme.isNull) {
+      return null;
+    }
+
+    const hasOverride = view.notesExpandOverride.has(note.key);
+    const isExpanded =
+      (view.notesExpandBase && !hasOverride) ||
+      (!view.notesExpandBase && hasOverride);
+    return (
+      <React.Fragment>
+        <div className={cn(isChild ? styles.isChild : '')}>
+          <div
+            className={cn(
+              isChild ? styles.childRow : styles.row,
+              styles.itemRow,
+              styles.hoverableRow
+            )}
+            ref={ref}
+            onMouseOver={onMouseOver}
+            onMouseLeave={onMouseLeave}
+          >
+            {isChild ? (
+              <React.Fragment>
+                <TypeCell note={note} />
+                <TitleCell note={note} onClick={onClickImpl} />
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <TypeCell note={note} />
+                <TitleCell note={note} onClick={onClickImpl} />
+                <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
+              </React.Fragment>
+            )}
+
+            <ExpanderCell
+              note={note}
+              isExpanded={isExpanded}
+              toggleExpanded={() =>
+                view.setNoteExpandOverride(note.key, !hasOverride)
+              }
+            />
+            <AssigneesCell note={note} />
+            <TagsCell note={note} />
+            <DueDateIndicator
+              card={note}
+              className={styles.dueDate}
+              source={'list'}
+              isMouseOver={isMouseOver}
+            />
+            <PinCell isChild={isChild} note={note} isMouseOver={isMouseOver} />
+            <MenuCell note={note} />
+            <DoneIndicator note={note} />
+          </div>
+        </div>
+        {isExpanded &&
+          childCards.map((x) => (
+            <ItemRow
+              note={x.manager as VertexManager<Note>}
+              key={x.key}
+              onClick={onClick}
+              isChild={true}
+              groupBy={groupBy}
+            />
+          ))}
+      </React.Fragment>
+    );
+  }
+);
