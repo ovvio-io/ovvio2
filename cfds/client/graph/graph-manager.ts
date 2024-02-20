@@ -233,12 +233,7 @@ export class GraphManager
         if (backup) {
           const commits = await backup.loadCommits();
           if (commits instanceof Array) {
-            repo.allowMerge = false;
-            try {
-              repo.persistVerifiedCommits(commits);
-            } finally {
-              repo.allowMerge = true;
-            }
+            repo.persistVerifiedCommits(commits);
           } else {
             console.log(`Unexpected IDB result: ${commits}`);
           }
@@ -274,6 +269,7 @@ export class GraphManager
       await this.loadRepository(id);
       if (client && client.isOnline) {
         await client.sync();
+        plumbing.repo.allowMerge = true;
         // Load all keys from this repo
         for (const key of plumbing.repo.keys()) {
           this.getVertexManager(key).touch();
@@ -309,6 +305,7 @@ export class GraphManager
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
       );
+      repo.allowMerge = false;
       plumbing = {
         repo,
         backup: new IDBRepositoryBackup(id, repo),

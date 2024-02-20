@@ -914,16 +914,16 @@ export class Repository<
     if (commitsToMerge.length === 1) {
       // Is possible that a buggy session had created a broken branch. To
       // recover, we force merge it the latest value
-      if (leaves.length > 1 && mergeLeaderSession === session) {
-        const mergeCommit = await this.createMergeCommit(
-          commitsToMerge,
-          // leaves.map((c) => c.id),
-          mergeLeaderSession,
-        );
-        if (mergeCommit) {
-          return this.cacheHeadForKey(key, mergeCommit);
-        }
-      }
+      // if (leaves.length > 1 && mergeLeaderSession === session) {
+      //   const mergeCommit = await this.createMergeCommit(
+      //     commitsToMerge,
+      //     // leaves.map((c) => c.id),
+      //     mergeLeaderSession,
+      //   );
+      //   if (mergeCommit) {
+      //     return this.cacheHeadForKey(key, mergeCommit);
+      //   }
+      // }
       return this.cacheHeadForKey(key, commitsToMerge[0]);
     }
 
