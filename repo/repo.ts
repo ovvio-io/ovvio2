@@ -825,7 +825,7 @@ export class Repository<
     const adjList = this._adjList;
     const ancestors = new Set<string>();
     for (const commit of this.commitsForKey(key)) {
-      if (adjList.hasInEdges(commit.key!)) {
+      if (adjList.hasInEdges(commit.id)) {
         ancestors.add(commit.id);
       }
     }
