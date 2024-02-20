@@ -6,7 +6,7 @@ import {
 import { kSecondMs } from '../base/date.ts';
 import { assert } from '../base/error.ts';
 import { ReadonlyJSONArray, ReadonlyJSONObject } from '../base/interfaces.ts';
-import { MovingAverage } from '../base/math.ts';
+import { MovingAverage, randomInt } from '../base/math.ts';
 import { SerialScheduler } from '../base/serial-scheduler.ts';
 import { retry } from '../base/time.ts';
 import { serviceUnavailable } from '../cfds/base/errors.ts';
@@ -41,8 +41,15 @@ export function syncConfigGetCycles(
   config: SyncConfig,
   actualSyncFreqMs = 0,
 ): number {
-  return Math.floor(
-    config.syncDurationMs / Math.max(actualSyncFreqMs, config.minSyncFreqMs),
+  return Math.min(
+    3,
+    Math.max(
+      1,
+      Math.floor(
+        config.syncDurationMs /
+          Math.max(actualSyncFreqMs, config.minSyncFreqMs),
+      ),
+    ),
   );
 }
 
@@ -157,13 +164,15 @@ export class SyncScheduler {
 
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);
-      log({
-        severity: 'METRIC',
-        name: 'PeerResponseTime',
-        value: syncDurationMs,
-        unit: 'Milliseconds',
-        url: this.url,
-      });
+      if (randomInt(0, 20) === 0) {
+        log({
+          severity: 'METRIC',
+          name: 'PeerResponseTime',
+          value: syncDurationMs,
+          unit: 'Milliseconds',
+          url: this.url,
+        });
+      }
     } catch (e) {
       log({
         severity: 'INFO',

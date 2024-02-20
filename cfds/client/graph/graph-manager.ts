@@ -259,6 +259,9 @@ export class GraphManager
         //     client.startSyncing();
         //   }
         // }
+        if (Repository.parseId(id)[0] === 'events') {
+          this.syncRepository(id);
+        }
       },
     );
     return plumbing.loadingPromise;

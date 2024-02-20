@@ -282,6 +282,13 @@ const SCHEME_SESSION_1 = new SchemeDef(SchemeNamespace.SESSIONS, {
   owner: TYPE_REF, // NOTE: Anonymous sessions don't have an owner
 });
 
+const SCHEME_EVENT_1 = new SchemeDef(SchemeNamespace.EVENTS, {
+  json: {
+    type: TYPE_STR,
+    required: true,
+  },
+});
+
 export {
   SCHEME_BASE_1 as BASE_RECORD_SCHEME,
   SCHEME_CONTENT_BASE_1 as BASE_CONTENT_SCHEME,
@@ -291,6 +298,7 @@ export {
   SCHEME_USER_1 as USER_SCHEME,
   SCHEME_VIEW_1 as VIEW_SCHEME,
   SCHEME_WORKSPACE_3 as WORKSPACE_SCHEME,
+  SCHEME_EVENT_1 as EVENT_SCHEME,
 };
 
 export function runRegister(manager: ISchemeManagerRegister) {
@@ -367,7 +375,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   //V6
   manager.register(
     6,
-    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_SESSION_1],
+    [SCHEME_USER_2, SCHEME_USER_SETTINGS_1, SCHEME_SESSION_1, SCHEME_EVENT_1],
     [
       SchemeNamespace.NOTES,
       SchemeNamespace.TAGS,
