@@ -103,7 +103,8 @@ export class BloomFilter implements Encodable, Decodable {
       this._hashes = [];
       this.deserialize(options.decoder);
     } else {
-      const { size, fpr, maxHashes } = options;
+      const { fpr, maxHashes } = options;
+      const size = Math.max(1, options.size);
       let { m, k } = options;
       if (m === undefined) {
         assert(fpr !== undefined);
@@ -148,14 +149,19 @@ export class BloomFilter implements Encodable, Decodable {
   /**
    * Adds a value to the filter
    */
-  add(value: string): void {
-    const buf = this._filter;
-    const size = buf.bitSize;
-    for (const h of this._hashes) {
-      h.hash(value);
-      const v = h.result();
-      buf.set(v % size, true);
-      h.reset();
+  add(values: string | Iterable<string>): void {
+    if (typeof values === 'string') {
+      values = [values];
+    }
+    for (const val of values) {
+      const buf = this._filter;
+      const size = buf.bitSize;
+      for (const h of this._hashes) {
+        h.hash(val);
+        const v = h.result();
+        buf.set(v % size, true);
+        h.reset();
+      }
     }
   }
 
