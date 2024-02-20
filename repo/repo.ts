@@ -1,4 +1,5 @@
 import { Emitter } from '../base/emitter.ts';
+import { BloomFilter } from '../base/bloom.ts';
 import {
   Session,
   sessionFromRecord,
@@ -242,11 +243,46 @@ export class Repository<
     return false;
   }
 
-  commitIsLeaf(c: Commit | string): boolean {
-    if (c instanceof Commit) {
-      c = c.id;
+  commitIsHighProbabilityLeaf(candidate: Commit | string): boolean {
+    const id = typeof candidate === 'string' ? candidate : candidate.id;
+    if (this._adjList.hasInEdges(id)) {
+      return false;
     }
-    return !this._adjList.hasInEdges(c);
+    if (typeof candidate === 'string') {
+      if (!this.hasCommit(id)) {
+        return false;
+      }
+      candidate = this.getCommit(id);
+    }
+    const commitsForKey = Array.from(this.commitsForKey(candidate.key)).sort(
+      compareCommitsDesc,
+    );
+    const graphSize = Math.max(
+      commitsForKey.length,
+      commitsForKey[commitsForKey.length - 1].ancestorsCount,
+    );
+    const agreementSize = 2 * (Math.log2(graphSize) / Math.log2(4));
+    if (commitsForKey.length < agreementSize) {
+      return false;
+    }
+    const dateCutoff = candidate.timestamp.getTime();
+    for (
+      let i = commitsForKey.length - 1;
+      i > commitsForKey.length - agreementSize - 1;
+      --i
+    ) {
+      const c = commitsForKey[i];
+      if (c.timestamp.getTime() <= dateCutoff) {
+        return false;
+      }
+      if (!c.ancestorsFilter.has(id)) {
+        return (
+          c.session === this.trustPool.currentSession.id ||
+          !commitInGracePeriod(c)
+        );
+      }
+    }
+    return false;
   }
 
   leavesForKey(key: string | null, session?: Session): Commit[] {
@@ -785,6 +821,24 @@ export class Repository<
     return [base, lca];
   }
 
+  private ancestorsFilterForKey(key: string | null): [BloomFilter, number] {
+    const adjList = this._adjList;
+    const ancestors = new Set<string>();
+    for (const commit of this.commitsForKey(key)) {
+      if (adjList.hasInEdges(commit.key!)) {
+        ancestors.add(commit.id);
+      }
+    }
+    const result = new BloomFilter({
+      size: ancestors.size,
+      fpr: 0.25,
+    });
+    for (const id of ancestors) {
+      result.add(id);
+    }
+    return [result, ancestors.size];
+  }
+
   private async _createMergeCommitImpl(
     commitsToMerge: Commit[],
     // parents?: string[],
@@ -797,6 +851,7 @@ export class Repository<
     }
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
+    const [ancestorsFilter, ancestorsCount] = this.ancestorsFilterForKey(key);
     try {
       const [merge, base] = this.createMergeRecord(commitsToMerge);
       let mergeCommit = new Commit({
@@ -804,6 +859,8 @@ export class Repository<
         key,
         contents: merge,
         parents: commitsToMerge.map((c) => c.id),
+        ancestorsFilter,
+        ancestorsCount,
         mergeBase: base?.id,
         mergeLeader,
         revert,
@@ -980,11 +1037,14 @@ export class Repository<
     if (headRecord?.isEqual(value)) {
       return false;
     }
+    const [ancestorsFilter, ancestorsCount] = this.ancestorsFilterForKey(key);
     let commit = new Commit({
       session: session.id,
       key,
       contents: value.clone(),
       parents: head?.id,
+      ancestorsFilter,
+      ancestorsCount,
     });
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
@@ -1029,6 +1089,8 @@ export class Repository<
           key,
           contents: { base: lastRecordCommit.id, edit },
           parents: fullCommit.parents,
+          ancestorsFilter: fullCommit.ancestorsFilter,
+          ancestorsCount: fullCommit.ancestorsCount,
           mergeBase: fullCommit.mergeBase,
           mergeLeader: fullCommit.mergeLeader,
           revert: fullCommit.revert,
@@ -1164,13 +1226,13 @@ export class Repository<
       }
     }
 
-    const leaves = result.filter((c) => this.commitIsLeaf(c));
+    const leaves = result.filter((c) => this.commitIsHighProbabilityLeaf(c));
     for (const c of leaves) {
       this._cachedHeadsByKey.delete(c.key);
     }
     for (const c of SetUtils.unionIter(
       commitsAffectingTmpRecords,
-      result.filter((c) => this.commitIsLeaf(c)),
+      result.filter((c) => this.commitIsHighProbabilityLeaf(c)),
     )) {
       this._runUpdatesOnNewLeafCommit(c);
     }

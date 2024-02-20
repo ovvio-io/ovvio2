@@ -24,8 +24,7 @@ import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
 } from '../base/core-types/encoding/json.ts';
-import { HashMap } from '../base/collections/hash-map.ts';
-import { coreValueHash } from '../base/core-types/encoding/hash.ts';
+import { BloomFilter } from '../base/bloom.ts';
 
 export type CommitResolver = (commitId: string) => Commit;
 
@@ -50,6 +49,8 @@ export interface CommitConfig {
   key?: string | null;
   contents: Record | CommitContents;
   parents?: string | Iterable<string>;
+  ancestorsFilter: BloomFilter;
+  ancestorsCount: number;
   timestamp?: Date;
   buildVersion?: VersionNumber;
   signature?: string;
@@ -72,6 +73,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _session!: string;
   private _key: string | undefined;
   private _parents: string[] | undefined;
+  private _ancestorsFilter?: BloomFilter;
+  private _ancestorsCount?: number;
   private _timestamp!: Date;
   private _contents!: CommitContents;
   private _signature?: string;
@@ -104,6 +107,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       this._session = config.session;
       this._key = config.key || undefined;
       this._parents = Array.from(parents);
+      this._ancestorsFilter = config.ancestorsFilter;
+      this._ancestorsCount = config.ancestorsCount;
       this._timestamp = config.timestamp || new Date();
       this._contents = commitContentsClone(contents);
       // Actively ensure nobody tries to mutate our record. Commits must be
@@ -134,6 +139,14 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
 
   get parents(): string[] {
     return this._parents || [];
+  }
+
+  get ancestorsFilter(): BloomFilter {
+    return this._ancestorsFilter || new BloomFilter({ size: 1, fpr: 0.5 });
+  }
+
+  get ancestorsCount(): number {
+    return this._ancestorsCount || 0;
   }
 
   get timestamp(): Date {
@@ -196,6 +209,12 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     if (parents.length > 0) {
       encoder.set('p', parents);
     }
+    if (this._ancestorsFilter) {
+      encoder.set('af', this.ancestorsFilter);
+    }
+    if (this._ancestorsCount) {
+      encoder.set('ac', this.ancestorsCount);
+    }
     const contentsEncoder = encoder.newEncoder();
     commitContentsSerialize(this.contents, contentsEncoder);
     encoder.set('c', contentsEncoder.getOutput());
@@ -243,6 +262,12 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._session = decoder.get<string>('s', 'unknown-' + uniqueId())!;
     this._timestamp = decoder.get<Date>('ts', new Date())!;
     this._parents = decoder.get<string[]>('p');
+    this._ancestorsFilter = decoder.has('af')
+      ? new BloomFilter({
+          decoder: decoder.getDecoder('af'),
+        })
+      : undefined;
+    this._ancestorsCount = decoder.get<number>('ac');
     this._contents = commitContentsDeserialize(decoder.getDecoder('c'));
     this._signature = decoder.get<string | undefined>('sig');
     this._mergeBase = decoder.get<string | undefined>('mb');
