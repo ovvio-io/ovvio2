@@ -266,11 +266,7 @@ export class Repository<
       return false;
     }
     const dateCutoff = candidate.timestamp.getTime();
-    for (
-      let i = commitsForKey.length - 1;
-      i > commitsForKey.length - agreementSize - 1;
-      --i
-    ) {
+    for (let i = 0; i <= agreementSize; ++i) {
       const c = commitsForKey[i];
       if (c.timestamp.getTime() <= dateCutoff) {
         return c.session === this.trustPool.currentSession.id;
