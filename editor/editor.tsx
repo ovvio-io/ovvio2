@@ -267,10 +267,16 @@ function setBrowserSelectionToDocument(
             desiredStartOffset = indexInParent + 1;
           }
         }
-        range.setStart(realFocusNode, offset);
+        range.setStart(
+          realFocusNode,
+          Math.min(realFocusNode.textContent?.length || 0, offset),
+        );
       } else {
         const offset = state.ranges![selectionId].focus.offset + offsetShift;
-        range.setEnd(realFocusNode, offset);
+        range.setEnd(
+          realFocusNode,
+          Math.min(realFocusNode.textContent?.length || 0, offset),
+        );
       }
     }
     if (
