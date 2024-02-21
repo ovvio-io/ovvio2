@@ -269,11 +269,11 @@ export class GraphManager
       await this.loadRepository(id);
       if (client && client.isOnline) {
         await client.sync();
-        plumbing.repo.allowMerge = true;
         // Load all keys from this repo
         for (const key of plumbing.repo.keys()) {
           this.getVertexManager(key).touch();
         }
+        plumbing.repo.allowMerge = true;
         plumbing.syncFinished = true;
         client.ready = true;
         client.startSyncing();

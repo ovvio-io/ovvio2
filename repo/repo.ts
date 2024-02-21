@@ -273,7 +273,7 @@ export class Repository<
     ) {
       const c = commitsForKey[i];
       if (c.timestamp.getTime() <= dateCutoff) {
-        return false;
+        return c.session === this.trustPool.currentSession.id;
       }
       if (!c.ancestorsFilter.has(id)) {
         return (
@@ -908,8 +908,9 @@ export class Repository<
     const mergeLeaderSession =
       mergeLeaderFromLeaves(leavesBySession) || session;
     // Filter out any commits with equal records
-    const commitsToMerge =
-      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
+    const commitsToMerge = commitsWithUniqueRecords(leaves)
+      .sort(coreValueCompare)
+      .filter((c) => this.commitIsHighProbabilityLeaf(c));
     // If our leaves converged on a single value, we can simply return it.
     if (commitsToMerge.length === 1) {
       // Is possible that a buggy session had created a broken branch. To
@@ -1028,6 +1029,9 @@ export class Repository<
       return false;
     }
     assert(this.allowedNamespaces.includes(value.scheme.namespace));
+    if (this.valueForKey(key).isEqual(value)) {
+      return false;
+    }
     const session = this.trustPool.currentSession;
     const head = await this.mergeIfNeeded(key);
     if (!head && this.keyExists(key)) {

@@ -25,22 +25,7 @@ import { makeStyles } from '../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../styles/styleguide.ts';
 import { notFound } from '../../../../cfds/base/errors.ts';
 
-const useStyles = makeStyles(() => ({
-  itemMenu: {
-    opacity: 0,
-    ...styleguide.transition.short,
-    transitionProperty: 'opacity',
-    marginRight: styleguide.gridbase,
-  },
-  itemMenuOpen: {
-    opacity: 1,
-    padding: '0px 6px 0px 0px',
-  },
-  ofCard: {
-    position: 'relative',
-    top: '3px',
-  },
-}));
+const useStyles = makeStyles(() => ({}));
 
 export interface CardMenuViewProps {
   cardManager: VertexManager<Note>;
@@ -52,9 +37,9 @@ export interface CardMenuViewProps {
   direction?: 'in' | 'out';
   position?: 'top' | 'bottom' | 'left' | 'right';
   visible?: boolean;
-  colorWs?: string;
   isOpen?: boolean;
   toggleMenu?: () => void;
+  renderButton?: any;
 }
 
 export default function CardMenuView({
@@ -67,11 +52,10 @@ export default function CardMenuView({
   direction,
   position,
   visible,
-  colorWs,
   isOpen,
   toggleMenu,
+  renderButton,
 }: CardMenuViewProps) {
-  const logger = useLogger();
   const styles = useStyles();
   const partialNote = usePartialVertex(cardManager, [
     'dueDate',
@@ -85,20 +69,6 @@ export default function CardMenuView({
     return null;
   }
 
-  const renderButton = useCallback(
-    () => (
-      <div
-        className={
-          (visible ? styles.itemMenu : styles.itemMenuOpen,
-          source === 'board' ? styles.ofCard : '')
-        }
-      >
-        <IconMore color={colorWs} />
-      </div>
-    ),
-    [styles],
-  );
-
   return (
     <Menu
       isOpen={isOpen}
@@ -111,7 +81,7 @@ export default function CardMenuView({
       {allowsEdit && (
         <EditCardAction cardManager={cardManager} source={source} />
       )}
-      <EditDueDateAction cardManager={cardManager} source={source} />
+      {/* <EditDueDateAction cardManager={cardManager} source={source} /> */}
       {partialNote.dueDate && (
         <ClearDueDateAction cardManager={cardManager} source={source} />
       )}

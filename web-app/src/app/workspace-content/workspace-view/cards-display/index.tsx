@@ -20,6 +20,7 @@ import { ListView } from './list-view/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
 import { KanbanView } from './kanban-view/index.tsx';
 import { useFilteredNotes } from '../../../../core/cfds/react/filter.ts';
+import { ListViewNew } from './list-view-new/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -86,7 +87,8 @@ export function CardsDisplay() {
   const view = usePartialView('viewType', 'selectedTabId');
   let content = null;
   if (view.viewType === 'list') {
-    content = <ListView key={'list'} className={cn(styles.contentView)} />;
+    // content = <ListView key={'list'} className={cn(styles.contentView)} />;
+    content = <ListViewNew key={'list'} className={cn(styles.contentView)} />;
   } else if (view.viewType === 'board') {
     content = (
       <KanbanView className={cn(styles.contentView)} />

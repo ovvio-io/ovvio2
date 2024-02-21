@@ -144,7 +144,6 @@ function TabView({ category }: any) {
     }
   }, [category]);
 
-  debugger;
   return (
     <div>
       <TabsHeader

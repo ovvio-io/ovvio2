@@ -899,7 +899,7 @@ function WorkspaceListItem({
   );
 }
 
-function ExpanderIcon({ className }: { className?: string }) {
+export function ExpanderIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
