@@ -77,9 +77,14 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: '600',
     letterSpacing: '0.087px',
     lineHeight: '21px',
+    padding: styleguide.gridbase,
+  },
+  wsTitle: {
     paddingTop: styleguide.gridbase,
     paddingBottom: styleguide.gridbase * 0.5,
+    paddingLeft: 0,
   },
+
   columnContent: {
     boxSizing: 'border-box',
     padding: styleguide.gridbase,
@@ -159,7 +164,12 @@ export function ItemsTable({ children, className }: ItemsTableProps) {
   );
 }
 
-function SectionTitle({ header, onCreateCard, isHovered }: SectionTableProps) {
+function SectionTitle({
+  header,
+  onCreateCard,
+  isHovered,
+  groupBy,
+}: SectionTableProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
@@ -201,7 +211,14 @@ function SectionTitle({ header, onCreateCard, isHovered }: SectionTableProps) {
       style={{ position: 'sticky' }}
     >
       <div className={cn(styles.columnHeader)}>
-        <div className={cn(styles.titleText)}>{header}</div>
+        <div
+          className={cn(
+            styles.titleText,
+            groupBy === 'workspace' && styles.wsTitle
+          )}
+        >
+          {header}
+        </div>
         <div className={cn(layout.flexSpacer)} />
         <Button onClick={onCreateCard}>
           {isHovered && <div className={cn(styles.newTaskText)}>New Task</div>}

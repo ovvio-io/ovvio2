@@ -102,7 +102,7 @@ const useStyles = makeStyles(
       },
     },
     childRow: {
-      height: ROW_HEIGHT,
+      height: ROW_HEIGHT - 1,
       basedOn: [layout.row],
       width: '96%',
       left: '4%',
@@ -117,10 +117,11 @@ const useStyles = makeStyles(
     },
     isChild: {
       width: '100%',
-      borderRadius: '2px',
+      // borderRadius: '2px',
       borderColor: 'transparent',
       boxSizing: 'border-box',
       backgroundColor: 'rgb(139 197 238 / 43%)',
+      height: '44px',
     },
 
     doneIndicator: {
@@ -723,6 +724,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               <React.Fragment>
                 <TypeCell note={note} />
                 <TitleCell note={note} onClick={onClickImpl} />
+                <div className={cn(styles.wsColumn)} style={{ left: '2px' }} />
               </React.Fragment>
             ) : (
               <React.Fragment>
