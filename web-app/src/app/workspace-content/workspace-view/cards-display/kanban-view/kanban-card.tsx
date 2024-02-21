@@ -41,9 +41,7 @@ import CardMenuView from '../../../../../shared/item-menu/index.tsx';
 import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
-import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
-
-const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
+import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
 
 export enum CardSize {
   Regular = 'regular',
@@ -64,6 +62,23 @@ const useStyles = makeStyles((theme) => ({
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
     display: 'flex',
     flexDirection: 'column',
+    ':hover': {
+      itemMenu: {
+        opacity: 1,
+      },
+    },
+  },
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: 'opacity',
+    position: 'relative',
+    top: '3px',
+  },
+  itemMenuOpen: {
+    opacity: 1,
+    position: 'relative',
+    top: '3px',
   },
   [CardSize.Regular]: {
     preview: {
@@ -176,7 +191,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   workspaceIndicator: {
-    maxWidth: styleguide.gridbase * 15,
+    maxWidth: styleguide.gridbase * 12,
   },
   RightHoverMoreButton: {
     position: 'absolute',
@@ -211,13 +226,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export interface CardHeaderPartProps extends KanbanCardProps {
+interface CardHeaderPartProps extends KanbanCardProps {
   isExpanded?: boolean;
   source: UISource;
   hideMenu?: boolean;
 }
 
-export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
+function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
   const styles = useStyles();
   const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
   const note = useVertex(card);
@@ -229,6 +244,7 @@ export function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
         <WorkspaceIndicator
           className={cn(styles.workspaceIndicator)}
           workspace={pCard.workspace.manager}
+          ofSettings={false}
         />
       )}
       {isTask && (
@@ -301,7 +317,7 @@ const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -321,7 +337,7 @@ export interface KanbanCardProps {
 
 export const KanbanCard = React.forwardRef(function CardItemView(
   { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>,
+  ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -338,7 +354,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view),
+    calculateIsExpanded(card, view)
   );
 
   useEffect(() => {
@@ -382,17 +398,13 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           styles.card,
           isTask && styles.taskCard,
           styles[size],
-          styles.hoverableRow,
+          styles.hoverableRow
         )}
         onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
       >
-        {isMouseOver && (
-          <div className={cn(styles.RightHoverMoreButton)}>
-            <CardMenu card={card} isMouseOver={isMouseOver} />
-          </div>
-        )}
+        {isMouseOver && <CardMenu card={card} isMouseOver={isMouseOver} />}
         <div className={cn(styles.headerContainer)}>
           <div className={cn(styles.taskCheckBoxContainer)}>
             {isTask ? (
@@ -410,7 +422,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone,
+                    isDone && styles.strikethroughDone
                   )}
                 >
                   {word}{' '}
@@ -442,7 +454,11 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               </div>
             )}
             {childCards.length == 0 && <div></div>}
-            {dueDate && <DueDateIndicator card={card} source={source} />}
+            <DueDateIndicator
+              card={card}
+              source={source}
+              isMouseOver={isMouseOver}
+            />
           </div>
         </div>
       </div>
@@ -474,7 +490,7 @@ interface ChildCardProps {
   isVisible: boolean;
 }
 
-function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
+function ChildCard({ card, size }: ChildCardProps) {
   const styles = useStyles();
 
   return <KanbanCard size={size} card={card} className={cn(styles.child)} />;
@@ -498,17 +514,24 @@ export function MoreButtonCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onClick;
+  };
   return (
     <div
-      className={cn(styles.cardTab, styles.cardMoreTabSelected)}
+      className={cn(
+        styles.cardTab,
+        styles.cardMoreTabSelected,
+        styles.RightHoverMoreButton
+      )}
       style={style}
-      onClick={onClick}
+      onClick={handleClick}
     >
-      <Tooltip text={'name'} disabled={true} position="right">
-        <div className={cn(styles.cardMoreTab)}>{children}</div>
-      </Tooltip>
+      <div className={cn(styles.cardMoreTab)}>{children}</div>
     </div>
   );
 }
@@ -524,20 +547,29 @@ const CardMenu = ({
   const cardWs = pCard.workspace.manager;
   const colorWs = useWorkspaceColor(cardWs);
   const [menuOpen, setMenuOpen] = useState(false);
+  const styles = useStyles();
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
+  const renderButton = useCallback(
+    ({ isOpen }: { isOpen: boolean }) => (
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+        <IconMore color={colorWs.inactive} />
+      </div>
+    ),
+    []
+  );
   return (
     <MoreButtonCard workspace={cardWs} onClick={toggleMenu}>
       <CardMenuView
         visible={isMouseOver}
         cardManager={card}
         source="board"
-        colorWs={colorWs.inactive}
         isOpen={menuOpen}
         toggleMenu={toggleMenu}
+        renderButton={renderButton}
       />
     </MoreButtonCard>
   );

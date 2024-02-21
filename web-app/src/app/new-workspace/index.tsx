@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
@@ -66,7 +65,7 @@ export const CreateWorkspaceView = ({
       view.selectedWorkspaces.add(view.graph.getVertex<Workspace>(result));
       navigate('/');
     },
-    [view, navigate],
+    [view, navigate]
   );
 
   return (

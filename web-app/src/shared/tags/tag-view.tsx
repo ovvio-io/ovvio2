@@ -18,7 +18,6 @@ import {
   usePartialVertices,
 } from '../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
-import { IconClose } from '../../../../styles/components/new-icons/icon-close.tsx';
 
 const showAnim = keyframes({
   '0%': {
@@ -107,7 +106,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface TagPillViewProps {
-  tagMng: VertexManager<Tag>;
+  tagMng?: VertexManager<Tag>;
   className?: string;
   showMenu?: boolean | 'hover';
 }
@@ -125,7 +124,7 @@ export function TagPillView({
   const ref = useRef<any>();
 
   let style = useAnimateWidth(ref, showMenu);
-  const tagName = partialTag.name;
+  const tagName = partialTag ? partialTag.name : '...';
   const menuOnHover = showMenu === 'hover';
   if (menuOnHover) {
     style = NOOP_STYLE;
@@ -145,15 +144,6 @@ export function TagPillView({
       }}
     >
       <div className={cn(styles.tagName)}>{tagName}</div>
-      <div className={cn(layout.flexSpacer)} />
-      <div
-        className={cn(
-          styles.tagDelete,
-          !menuOnHover && !showMenu && styles.hide
-        )}
-      >
-        <IconDropDownArrow className="" />
-      </div>
     </div>
   );
 }

@@ -38,9 +38,16 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-end',
   },
   footerItem: {
+    display: 'flex',
     marginTop: styleguide.gridbase * 0.5,
     height: FOOTER_HEIGHT,
+    paddingLeft: styleguide.gridbase * 0.5,
     gap: styleguide.gridbase * 0.5,
+    width: '150px',
+    justifyContent: 'flex-start',
+  },
+  footerItemBoard: {
+    justifyContent: 'flex-end',
   },
   tagsAndAssignees: {
     display: 'flex',
@@ -77,6 +84,7 @@ export interface CardFooterProps {
   size?: CardSize;
   className?: string;
   isExpanded?: boolean;
+  isMouseOver?: boolean;
 }
 
 // function Attachments({ card, source }: CardFooterProps) {
@@ -121,18 +129,37 @@ export interface CardFooterProps {
 //   );
 // }
 
-export function DueDateIndicator({ card, source }: CardFooterProps) {
+export function DueDateIndicator({
+  card,
+  source,
+  className,
+  isMouseOver,
+}: CardFooterProps) {
   const styles = useStyles();
   const { dueDate } = usePartialVertex(card, ['dueDate']);
   const dueDateEditor = useDueDate();
-  const logger = useLogger();
-  if (!dueDate) {
-    return null;
-  }
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
     dueDateEditor!.edit(card.getVertexProxy());
   };
+  if (!dueDate) {
+    return (
+      <Button
+        className={cn(
+          styles.footerItem,
+          className,
+          source === 'board' ? styles.footerItemBoard : ''
+        )}
+        onClick={onClick}
+      >
+        {isMouseOver ? (
+          <img src="/icons/design-system/dueDate/addDueDateHovered.svg" />
+        ) : (
+          <img src="/icons/design-system/dueDate/addDueDate.svg" />
+        )}
+      </Button>
+    );
+  }
 
   const today = new Date();
   const isDueDateToday =
@@ -146,7 +173,14 @@ export function DueDateIndicator({ card, source }: CardFooterProps) {
   const fontSize = '10px';
 
   return (
-    <Button className={cn(styles.footerItem)} onClick={onClick}>
+    <Button
+      className={cn(
+        styles.footerItem,
+        className,
+        source === 'board' ? styles.footerItemBoard : ''
+      )}
+      onClick={onClick}
+    >
       <IconDueDate
         state={
           isOverdue

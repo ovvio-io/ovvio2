@@ -1,0 +1,28 @@
+{
+  "en": {
+    "pinnedTasks": "My Pinned Tasks",
+    "pinTaskCta": "Pin your top tasks to organize your task list",
+    "pinnedNotes": "My Pinned Notes",
+    "pinNotesCta": "Pin your top notes to organize your notes",
+    "newTask": "New Task",
+    "saveDraft": "Save to",
+    "cardMoved": "Card moved to {workspace}",
+    "draftSaved": "Task saved to {workspace}",
+
+    "userNotInWorkspace": "Selected user is not a part of {workspace} workspace",
+    "tagNotInWorkspace": "Tag `{tag}` does not exist in `{workspace}` workspace",
+    "invite": "Invite",
+    "unassigned": "Unassigned",
+    "dragNotSupported": "Drag and drop is not allowed in this view",
+    "Overdue": "Overdue",
+    "Today": "Today",
+    "ThreeDays": "3 Days",
+    "RestOfWeek": "This Week",
+    "TwoWeeks": "2 Weeks",
+    "ThreeWeeks": "3 Weeks",
+    "Month": "This Month",
+    "Rest": "Later",
+    "NoDueDate": "No Due Date",
+    "standaloneTask": "Standalone Tasks"
+  }
+}

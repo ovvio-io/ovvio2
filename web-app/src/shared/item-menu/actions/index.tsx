@@ -384,8 +384,6 @@ export function ClearDueDateAction({
       IconComponent={(props: IconDueDateProps) =>
         IconDueDate({ ...props, state: DueDateState.Clear })
       }
-      // iconHeight="25"
-      // iconWidth="20"
       onClick={() => {
         delete cardManager.getVertexProxy().dueDate;
         toastController.displayToast({
