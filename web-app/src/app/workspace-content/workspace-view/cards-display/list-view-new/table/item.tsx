@@ -4,6 +4,7 @@ import React, {
   MouseEventHandler,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -78,6 +79,7 @@ const useStyles = makeStyles(
       height: ROW_HEIGHT,
       width: '100%',
       basedOn: [layout.row],
+
       alignItems: 'center',
       borderRadius: '2px',
       borderStyle: 'solid',
@@ -89,7 +91,6 @@ const useStyles = makeStyles(
     },
     itemRow: {
       basedOn: [layout.row],
-
       position: 'relative',
       transform: 'scale(1)',
       ':hover': {
@@ -145,12 +146,8 @@ const useStyles = makeStyles(
       paddingLeft: styleguide.gridbase,
     },
     title: {
-      flexGrow: '1',
-      flexShrink: '0',
-      flexBasis: 'auto',
-      // maxWidth: '50%',
-      // width: 'calc(50% - 232px)',
-      width: '45%',
+      basedOn: [layout.flexSpacer],
+      width: 'calc(50% - 208px)',
       cursor: 'pointer',
       position: 'relative',
       textOverflow: 'ellipsis',
@@ -159,33 +156,30 @@ const useStyles = makeStyles(
       paddingLeft: styleguide.gridbase * 0.5,
     },
     wsColumn: {
-      // width: 'calc(20% - 232px)',
-      // maxWidth: '20%',
-      width: '20%',
-      basedOn: [layout.row],
+      width: 'calc(20% - 208px)',
+      basedOn: [layout.row, layout.flexSpacer],
       alignItems: 'center',
 
       padding: [0, styleguide.gridbase * 0.5],
     },
     assigneeColumn: {
-      // width: 'calc(10% - 232px)',
-      // maxWidth: '10%',
-      width: '10%',
-      // overflow: 'hidden',
+      width: 'calc(10% - 208px)',
+      basedOn: [layout.flexSpacer],
+      overflow: 'clip',
       display: 'flex',
       flexWrap: 'wrap',
-      justifyContent: 'flex-end',
+      justifyContent: 'flex-start',
       maxHeight: '34px',
       gap: '1px',
       paddingLeft: styleguide.gridbase,
     },
     assignee: {
-      marginRight: styleguide.gridbase * 0.5,
+      marginRight: styleguide.gridbase * 0.25,
     },
     tagsColumn: {
-      // width: 'calc(20% - 232px)',
-      // maxWidth: '20%',
-      width: '25%',
+      width: 'calc(20% - 208px)',
+      basedOn: [layout.flexSpacer],
+      overflow: 'clip',
       display: 'flex',
       justifyContent: 'flex-end',
       padding: [0, styleguide.gridbase],
@@ -214,37 +208,6 @@ const useStyles = makeStyles(
       animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
       userSelect: 'none',
       basedOn: [useTypographyStyles.textSmall],
-    },
-    dateColumn: {
-      padding: [0, styleguide.gridbase * 0.5],
-      whiteSpace: 'nowrap',
-      width: styleguide.gridbase * 9,
-    },
-    dueDateIcon: {
-      marginRight: styleguide.gridbase * 0.5,
-    },
-    overdueDateText: {
-      color: theme.supporting.O4,
-    },
-    dueDate: {
-      width: styleguide.gridbase * 13,
-    },
-
-    pinOff: {
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-    },
-    pinOffOver: {
-      opacity: 1,
-    },
-    plusButton: {
-      height: styleguide.gridbase * 2,
-      borderRadius: styleguide.gridbase,
-      backgroundColor: theme.mono.m1,
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
     },
     visibleOnHover: {
       opacity: 0,
@@ -385,7 +348,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
   const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
-
   const [overflow, setOverflow] = useState(false);
 
   const { tags } = usePartialVertex(note, ['tags', 'workspace']);
@@ -415,13 +377,14 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const lastWidthRef = useRef<number | null>(null);
-  useEffect(() => {
+
+  useLayoutEffect(() => {
     const calculateVisibleTags = () => {
       let availableWidth = containerWidth;
       const updatedVisibleTags = [];
       const updatedHiddenTags = [];
       let hasOverflow = false;
-      const tagWidth = 70;
+      const tagWidth = 60;
 
       for (const tag of managers) {
         if (availableWidth >= tagWidth) {
@@ -741,11 +704,10 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
                 view.setNoteExpandOverride(note.key, !hasOverride)
               }
             />
-            <AssigneesCell note={note} />
+            {/* <AssigneesCell note={note} /> */}
             <TagsCell note={note} />
             <DueDateIndicator
               card={note}
-              className={styles.dueDate}
               source={'list'}
               isMouseOver={isMouseOver}
             />

@@ -187,7 +187,6 @@ export function KanbanView({ className }: { className?: string }) {
 
   let maxColSize = 0;
   if (unpinnedQuery) {
-    //TODO: need to change to union of pinned and unpinned.
     for (const gid of unpinnedQuery.groups()) {
       maxColSize = Math.max(maxColSize, unpinnedQuery.countForGroup(gid));
     }
