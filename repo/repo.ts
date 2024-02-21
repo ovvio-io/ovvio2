@@ -1028,6 +1028,9 @@ export class Repository<
       return false;
     }
     assert(this.allowedNamespaces.includes(value.scheme.namespace));
+    if (this.valueForKey(key).isEqual(value)) {
+      return false;
+    }
     const session = this.trustPool.currentSession;
     const head = await this.mergeIfNeeded(key);
     if (!head && this.keyExists(key)) {
