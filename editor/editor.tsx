@@ -236,7 +236,10 @@ function setBrowserSelectionToDocument(
     } else {
       range.setStart(
         realAnchorNode,
-        Math.min(desiredStartOffset, realAnchorNode.textContent?.length || 0),
+        Math.min(
+          desiredStartOffset,
+          Math.max(0, (realAnchorNode.textContent?.length || 0) - 1),
+        ),
       );
       offsetShift = range.startOffset - desiredStartOffset;
     }
@@ -269,7 +272,10 @@ function setBrowserSelectionToDocument(
         }
         range.setStart(
           realFocusNode,
-          Math.min(realFocusNode.textContent?.length || 0, offset),
+          Math.min(
+            Math.max(0, (realFocusNode.textContent?.length || 0) - 1),
+            offset,
+          ),
         );
       } else {
         const offset = state.ranges![selectionId].focus.offset + offsetShift;
