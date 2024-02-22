@@ -197,7 +197,7 @@ function SectionTitle({
           }
         }
       },
-      { threshold: [0], root: scrollParent }
+      { threshold: [0], root: scrollParent },
     );
     observer.observe(sentinel);
     return () => {
@@ -214,16 +214,16 @@ function SectionTitle({
         <div
           className={cn(
             styles.titleText,
-            groupBy === 'workspace' && styles.wsTitle
+            groupBy === 'workspace' && styles.wsTitle,
           )}
         >
           {header}
         </div>
         <div className={cn(layout.flexSpacer)} />
-        <Button onClick={onCreateCard}>
+        {/* <Button onClick={onCreateCard}>
           {isHovered && <div className={cn(styles.newTaskText)}>New Task</div>}
           <img key="IconNewTaskBoard" src="/icons/board/New-Task-plus.svg" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
@@ -249,7 +249,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         expandedGroupIds.add(section);
       }
     },
-    [view]
+    [view],
   );
 
   const expanded = view.expandedGroupIds.has(expandKey);
