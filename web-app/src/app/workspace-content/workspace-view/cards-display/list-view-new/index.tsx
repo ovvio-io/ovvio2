@@ -144,12 +144,16 @@ export function ListViewNew({ className }: ListViewNewProps) {
                       key={`list/pinned/row/${noteMgr.key}`}
                       onClick={onNoteSelected}
                       groupBy={groupBy}
+                      nestingLevel={0}
                     />
                   ))}
 
-                  {unpinnedQuery && pinnedQuery && (
+                  {pinnedQuery &&
+                  pinnedQuery.group(group).length > 0 &&
+                  unpinnedQuery &&
+                  unpinnedQuery.group(group).length > 0 ? (
                     <div style={{ height: '8px' }}></div>
-                  )}
+                  ) : undefined}
                   {unpinnedQuery
                     ?.group(group)
                     .slice(
@@ -167,6 +171,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
                         key={`list/unpinned/row/${noteMgr.key}`}
                         onClick={onNoteSelected}
                         groupBy={groupBy}
+                        nestingLevel={0}
                       />
                     ))}
                 </SectionTable>
