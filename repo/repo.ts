@@ -633,17 +633,15 @@ export class Repository<
     if (!head) {
       return undefined;
     }
-    if (
-      commitContentsIsDelta(head.contents) &&
-      !this.hasCommit(head.contents.base)
-    ) {
-      const ancestors = this.findNonCorruptedParentsFromCommits(head.parents);
-      if (!ancestors || ancestors.length === 0) {
-        head = this.findLatestNonCorruptedCommitForKey(head.key);
-      } else {
-        ancestors.sort(compareCommitsDesc);
-        head = ancestors[0];
-      }
+    if (!this.hasRecordForCommit(head)) {
+      return undefined;
+      // const ancestors = this.findNonCorruptedParentsFromCommits(head.parents);
+      // if (!ancestors || ancestors.length === 0) {
+      //   head = this.findLatestNonCorruptedCommitForKey(head.key);
+      // } else {
+      //   ancestors.sort(compareCommitsDesc);
+      //   head = ancestors[0];
+      // }
     }
     if (head) {
       this._cachedHeadsByKey.set(key, {
@@ -907,7 +905,22 @@ export class Repository<
       session ? this.trustPool.getSession(session) : undefined,
     );
     if (leaves.length < 1) {
-      // No commit history found. Return the null record as a starting point
+      // No valid leaves found. Find the last reasonable value we can work with
+      const allCommits = Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      );
+      // Find the last good value we wrote
+      for (const c of allCommits) {
+        if (c.session === session && this.hasRecordForCommit(c)) {
+          return c;
+        }
+      }
+      // Find the last good value anyone wrote
+      for (const c of allCommits) {
+        if (this.hasRecordForCommit(c)) {
+          return c;
+        }
+      }
       return undefined;
     }
     // In order to keep merges simple and reduce conflicts and races,
