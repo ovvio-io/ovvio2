@@ -485,11 +485,18 @@ export class SyncEndpoint implements Endpoint {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(msgJSON),
     });
+    let syncCycles = syncConfigGetCycles(kSyncConfigServer);
     if (msg.values.length > 0) {
-      if ((await persistValues(msg.values)) > 0 && replicas) {
-        // Sync changes with replicas
-        for (const c of replicas) {
-          c.touch();
+      if ((await persistValues(msg.values)) > 0) {
+        // If we got a new commit from our client, we increase our filter's
+        // accuracy to the maximum to avoid false-leaves at the tip of the
+        // commit graph.
+        syncCycles = 1;
+        if (replicas) {
+          // Sync changes with replicas
+          for (const c of replicas) {
+            c.touch();
+          }
         }
       }
     }
@@ -499,7 +506,7 @@ export class SyncEndpoint implements Endpoint {
       fetchAll(),
       getLocalCount(),
       msg.size,
-      syncConfigGetCycles(kSyncConfigServer),
+      syncCycles,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
     );

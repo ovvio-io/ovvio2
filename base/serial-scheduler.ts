@@ -1,9 +1,14 @@
+import { NextEventLoopCycleTimer } from './timer.ts';
+
 export class SerialScheduler {
   private static readonly _namedSchedulers = new Map<string, SerialScheduler>();
-  private _pendingFunctions: (() => Promise<unknown>)[];
-  private _runningPromise: Promise<unknown> | undefined;
+  private readonly _timer: NextEventLoopCycleTimer;
+  private readonly _pendingFunctions: (() => Promise<unknown>)[];
 
   constructor() {
+    this._timer = new NextEventLoopCycleTimer(() =>
+      this.processPendingFunctions(),
+    );
     this._pendingFunctions = [];
   }
 
@@ -16,13 +21,15 @@ export class SerialScheduler {
     return scheduler;
   }
 
-  private async wrapFn<T>(fn: () => Promise<T>): Promise<T> {
-    try {
-      return await fn();
-    } finally {
-      const nextFn = this._pendingFunctions.shift();
-      if (nextFn) {
-        this._runningPromise = this.wrapFn(nextFn);
+  private async processPendingFunctions(): Promise<void> {
+    const nextFn = this._pendingFunctions.shift();
+    if (nextFn) {
+      try {
+        await nextFn();
+      } finally {
+        if (this._pendingFunctions.length) {
+          this._timer.schedule();
+        }
       }
     }
   }
@@ -38,20 +45,10 @@ export class SerialScheduler {
         resolve!(await fn());
       } catch (err: unknown) {
         reject!(err);
-      } finally {
-        const nextFn = this._pendingFunctions.shift();
-        if (nextFn) {
-          this._runningPromise = this.wrapFn(nextFn);
-        } else {
-          this._runningPromise = undefined;
-        }
       }
     };
-    if (!this._runningPromise) {
-      this._runningPromise = wrapper();
-    } else {
-      this._pendingFunctions.push(wrapper);
-    }
+    this._pendingFunctions.push(wrapper);
+    this._timer.schedule();
     return result;
   }
 }
@@ -79,7 +76,7 @@ export class MultiSerialScheduler {
 
   constructor(concurrency?: number) {
     if (!concurrency) {
-      concurrency = navigator.hardwareConcurrency * 2;
+      concurrency = navigator.hardwareConcurrency;
     }
     this._schedulers = [];
     for (let i = 0; i < concurrency; ++i) {

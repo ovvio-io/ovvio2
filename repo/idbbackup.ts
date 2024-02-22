@@ -16,6 +16,9 @@ import { Repository, MemRepoStorage } from './repo.ts';
 import { EaseInOutSineTimer } from '../base/timer.ts';
 import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { notReached } from '../base/error.ts';
+import { filterIterable } from '../base/common.ts';
+import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
+import { slices } from '../base/array.ts';
 
 const K_DB_VERSION = 1;
 
@@ -47,7 +50,7 @@ interface RepoBackupSchema extends DBSchema {
 
 export class IDBRepositoryBackup {
   private static _didLogout = false;
-  private readonly _commitPersistedTs: Map<string, number>;
+  private readonly _persistedCommitIds: Set<string>;
   private readonly _backupTimer: EaseInOutSineTimer;
   private _openPromise: Promise<IDBPDatabase<RepoBackupSchema>> | undefined;
 
@@ -68,7 +71,7 @@ export class IDBRepositoryBackup {
     readonly dbName: string,
     readonly repo: Repository<MemRepoStorage>,
   ) {
-    this._commitPersistedTs = new Map();
+    this._persistedCommitIds = new Set();
     this._backupTimer = new EaseInOutSineTimer(
       kSecondMs,
       kMinuteMs,
@@ -112,78 +115,102 @@ export class IDBRepositoryBackup {
     if (IDBRepositoryBackup._didLogout) {
       return Promise.resolve(0);
     }
-    return SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
-      const db = await this.open();
-      const txn = db.transaction('commits', 'readwrite', {
-        durability: 'relaxed',
-      });
-      const store = txn.objectStore('commits');
-      const promises: Promise<void>[] = [];
-      let result = 0;
-      for (const c of commits) {
-        if (IDBRepositoryBackup._didLogout) {
-          return result;
-        }
-        promises.push(
-          (async () => {
-            try {
-              if ((await store.getKey(c.id)) === undefined) {
-                if (IDBRepositoryBackup._didLogout) {
-                  return;
-                }
-                await store.put(
-                  JSONCyclicalEncoder.serialize(c) as EncodedCommit,
-                );
-                ++result;
-              }
-            } catch (e) {
-              this._backupTimer.reset();
-              log({
-                severity: 'ERROR',
-                error: 'BackupWriteFailed',
-                message: e.message,
-                trace: e.stack,
-                repo: this.dbName,
-                commit: c.id,
-              });
-              throw e;
+    return MultiSerialScheduler.get('idb-write', 3).run(() =>
+      SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
+        const db = await this.open();
+        const txn = db.transaction('commits', 'readwrite', {
+          durability: 'relaxed',
+        });
+        const store = txn.objectStore('commits');
+        const promises: Promise<void>[] = [];
+        let result = 0;
+        for (const chunk of slices(
+          filterIterable(commits, (c) => !this._persistedCommitIds.has(c.id)),
+          50,
+        )) {
+          for (const c of chunk) {
+            if (IDBRepositoryBackup._didLogout) {
+              txn.abort();
+              return result;
             }
-          })(),
-        );
-      }
-      for (const p of promises) {
-        await p;
-      }
-      await txn.done;
-      // db.close();
-      return result;
-    });
+            promises.push(
+              (async () => {
+                try {
+                  if ((await store.getKey(c.id)) === undefined) {
+                    if (IDBRepositoryBackup._didLogout) {
+                      return;
+                    }
+                    await store.put(
+                      JSONCyclicalEncoder.serialize(c) as EncodedCommit,
+                    );
+                    this._persistedCommitIds.add(c.id);
+                    ++result;
+                  }
+                } catch (e) {
+                  this._backupTimer.reset();
+                  log({
+                    severity: 'ERROR',
+                    error: 'BackupWriteFailed',
+                    message: e.message,
+                    trace: e.stack,
+                    repo: this.dbName,
+                    commit: c.id,
+                  });
+                  throw e;
+                }
+              })(),
+            );
+          }
+        }
+        for (const p of promises) {
+          await p;
+        }
+        if (result > 0) {
+          txn.commit();
+        }
+        // else {
+        //   txn.abort();
+        // }
+        await txn.done;
+        // db.close();
+        return result;
+      }),
+    );
   }
 
   loadCommits(): Promise<Commit[]> {
     // debugger;
-    return SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
-      try {
-        const startTime = performance.now();
-        const db = await this.open();
-        const txn = db.transaction('commits', 'readonly');
-        const result = ((await txn.store.getAll()) || []).map(
-          (json) =>
-            new Commit({
+    return MultiSerialScheduler.get('idb-load').run(() =>
+      SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
+        try {
+          console.log(`Starting IDB load for ${this.dbName}...`);
+          const startTime = performance.now();
+          const db = await this.open();
+          const txn = db.transaction('commits', 'readonly', {
+            durability: 'relaxed',
+          });
+          const entries = (await txn.store.getAll()) || [];
+          // txn.abort();
+          console.log(
+            `Loading from IDB Backup took ${
+              performance.now() - startTime
+            }ms for ${this.dbName}`,
+          );
+          const result: Commit[] = [];
+          for (const json of entries) {
+            const commit = new Commit({
               decoder: new JSONCyclicalDecoder(json),
-            }),
-        );
-        // db.close();
-        console.log(
-          `Loading from IDB Backup took ${
-            performance.now() - startTime
-          }ms for ${this.dbName}`,
-        );
-        return result || [];
-      } catch (err: unknown) {
-        console.log('IDB error: ' + err);
-        return [];
-      }
-    });
+            });
+            this._persistedCommitIds.add(commit.id);
+            result.push(commit);
+          }
+          // db.close();
+          return result || [];
+        } catch (err: unknown) {
+          console.log('IDB error: ' + err);
+          return [];
+        }
+      }),
+    );
   }
 }
