@@ -427,7 +427,9 @@ export class GraphManager
     }
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
-    return plumbing?.syncFinished === true;
+    return (
+      plumbing?.syncFinished === true || plumbing?.loadedLocalContents === true
+    );
   }
 
   /**
