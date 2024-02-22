@@ -81,7 +81,7 @@ const useStyles = makeStyles((theme) => ({
   },
   wsTitle: {
     paddingTop: styleguide.gridbase,
-    paddingBottom: styleguide.gridbase * 0.5,
+    paddingBottom: styleguide.gridbase,
     paddingLeft: 0,
   },
 
@@ -261,10 +261,12 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
       onClick={() => toggleExpandedShowMore(expandKey)}
     >
       <div className={cn(styles.expanderText)}>
-        Show More
-        {allUnpinned && allUnpinned.length - 3 > 0
+        {expanded ? 'Show Less' : 'Show More'}
+        {allUnpinned && !expanded && allUnpinned.length - 3 > 0
           ? ` [${allUnpinned.length}]`
-          : ' 0'}
+          : expanded
+          ? undefined
+          : ' [0]'}
       </div>
       <ExpanderIcon
         className={cn(styles.expanderIcon, expanded && styles.expanderIconOpen)}

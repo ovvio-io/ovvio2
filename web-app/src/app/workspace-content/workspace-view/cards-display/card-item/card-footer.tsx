@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
     height: FOOTER_HEIGHT,
     paddingLeft: styleguide.gridbase * 0.5,
     gap: styleguide.gridbase * 0.5,
-    width: '150px',
+    width: '86px',
     justifyContent: 'flex-start',
   },
   footerItemBoard: {
@@ -53,6 +53,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    gap: '8px',
   },
   attachments: {
     alignItems: 'center',

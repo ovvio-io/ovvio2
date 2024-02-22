@@ -4,6 +4,7 @@ import React, {
   MouseEventHandler,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -38,10 +39,6 @@ import {
   usePartialVertex,
   useVertex,
 } from '../../../../../../core/cfds/react/vertex.ts';
-import {
-  createUseStrings,
-  format,
-} from '../../../../../../core/localization/index.tsx';
 import {
   AssignButton,
   Assignee,
@@ -89,7 +86,6 @@ const useStyles = makeStyles(
     },
     itemRow: {
       basedOn: [layout.row],
-
       position: 'relative',
       transform: 'scale(1)',
       ':hover': {
@@ -104,8 +100,8 @@ const useStyles = makeStyles(
     childRow: {
       height: ROW_HEIGHT - 1,
       basedOn: [layout.row],
-      width: '96%',
-      left: '4%',
+      width: '97%',
+      left: '3%',
       position: 'relative',
       borderColor: 'transparent',
       borderRadius: '2px',
@@ -117,13 +113,11 @@ const useStyles = makeStyles(
     },
     isChild: {
       width: '100%',
-      // borderRadius: '2px',
       borderColor: 'transparent',
       boxSizing: 'border-box',
-      backgroundColor: 'rgb(139 197 238 / 43%)',
+      backgroundColor: 'rgba(139, 197, 251, 0.35)',
       height: '44px',
     },
-
     doneIndicator: {
       pointerEvents: 'none',
       position: 'absolute',
@@ -139,18 +133,17 @@ const useStyles = makeStyles(
       width: `calc(100% - ${styleguide.gridbase * 8}px)`,
     },
     iconCell: {
-      width: styleguide.gridbase * 4,
+      width: styleguide.gridbase * 3,
       display: 'flex',
       justifyContent: 'center',
       paddingLeft: styleguide.gridbase,
     },
     title: {
+      // basedOn: [layout.flexSpacer],
       flexGrow: '1',
-      flexShrink: '0',
+      flexShrink: '2',
       flexBasis: 'auto',
-      // maxWidth: '50%',
-      // width: 'calc(50% - 232px)',
-      width: '45%',
+      width: 'calc(50% - 176px)',
       cursor: 'pointer',
       position: 'relative',
       textOverflow: 'ellipsis',
@@ -159,33 +152,38 @@ const useStyles = makeStyles(
       paddingLeft: styleguide.gridbase * 0.5,
     },
     wsColumn: {
-      // width: 'calc(20% - 232px)',
-      // maxWidth: '20%',
-      width: '20%',
+      width: 'calc(25% - 176px)',
       basedOn: [layout.row],
+      flexGrow: '1',
+      flexShrink: '1',
+      flexBasis: 'auto',
       alignItems: 'center',
-
       padding: [0, styleguide.gridbase * 0.5],
     },
+
     assigneeColumn: {
-      // width: 'calc(10% - 232px)',
-      // maxWidth: '10%',
-      width: '10%',
-      // overflow: 'hidden',
+      width: 'calc(5% - 176px)',
+      // basedOn: [layout.flexSpacer],
+      flexGrow: '1',
+      flexShrink: '2',
+      flexBasis: 'auto',
+      overflow: 'clip',
       display: 'flex',
       flexWrap: 'wrap',
-      justifyContent: 'flex-end',
+      justifyContent: 'flex-start',
       maxHeight: '34px',
       gap: '1px',
       paddingLeft: styleguide.gridbase,
     },
     assignee: {
-      marginRight: styleguide.gridbase * 0.5,
+      marginRight: styleguide.gridbase * 0.25,
     },
     tagsColumn: {
-      // width: 'calc(20% - 232px)',
-      // maxWidth: '20%',
-      width: '25%',
+      width: 'calc(20% - 176px)',
+      flexGrow: '2',
+      flexShrink: '1',
+      flexBasis: 'auto',
+      overflow: 'clip',
       display: 'flex',
       justifyContent: 'flex-end',
       padding: [0, styleguide.gridbase],
@@ -214,37 +212,6 @@ const useStyles = makeStyles(
       animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
       userSelect: 'none',
       basedOn: [useTypographyStyles.textSmall],
-    },
-    dateColumn: {
-      padding: [0, styleguide.gridbase * 0.5],
-      whiteSpace: 'nowrap',
-      width: styleguide.gridbase * 9,
-    },
-    dueDateIcon: {
-      marginRight: styleguide.gridbase * 0.5,
-    },
-    overdueDateText: {
-      color: theme.supporting.O4,
-    },
-    dueDate: {
-      width: styleguide.gridbase * 13,
-    },
-
-    pinOff: {
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-    },
-    pinOffOver: {
-      opacity: 1,
-    },
-    plusButton: {
-      height: styleguide.gridbase * 2,
-      borderRadius: styleguide.gridbase,
-      backgroundColor: theme.mono.m1,
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
     },
     visibleOnHover: {
       opacity: 0,
@@ -382,10 +349,123 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
 
 const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef(new Map());
+  const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
+  const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
+  const [overflow, setOverflow] = useState(false);
+
+  const { tags } = usePartialVertex(note, ['tags']);
+
+  const managers = useMemo(() => {
+    const result = [];
+    for (const [parent, child] of tags) {
+      if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
+        continue;
+      }
+      result.push(child.manager);
+    }
+    return result;
+  }, [tags]);
+
+  const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
+  for (const [p, c] of tags) {
+    tagsMng.set(
+      p.manager as VertexManager<Tag>,
+      c.manager as VertexManager<Tag>
+    );
+  }
+  const onDelete = useCallback(
+    (tag: Tag) => {
+      note.getVertexProxy().tags.delete(tag.parentTag || tag);
+    },
+    [note]
+  );
+
+  useLayoutEffect(() => {
+    const updateTagsDisplay = () => {
+      const containerWidth = containerRef.current.offsetWidth;
+      let availableWidth = containerWidth;
+      const updatedVisibleTags: VertexManager<Tag>[] = [];
+      const updatedHiddenTags: VertexManager<Tag>[] = [];
+      managers.forEach((tag) => {
+        const tagWidth = tagsRef.current.get(tag)?.offsetWidth || 0;
+        if (availableWidth >= tagWidth) {
+          updatedVisibleTags.push(tag);
+          availableWidth -= tagWidth;
+        } else {
+          updatedHiddenTags.push(tag);
+        }
+      });
+
+      setVisibleTags(updatedVisibleTags);
+      setHiddenTags(updatedHiddenTags);
+      setOverflow(updatedHiddenTags.length > 0);
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateTagsDisplay();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const onTag = useCallback(
+    (tag: Tag) => {
+      const vert = note.getVertexProxy();
+      const tags = vert.tags;
+      const parent = tag.parentTag || tag;
+      tags.set(parent, tag);
+    },
+    [note]
+  );
+
+  return (
+    <div ref={containerRef} className={cn(styles.tagsColumn)}>
+      {visibleTags.map((tag, index) => (
+        <div
+          ref={(el) => tagsRef.current.set(tag, el)}
+          key={index}
+          className={cn(styles.tag)}
+        >
+          <TagView
+            className={cn(styles.tag)}
+            showMenu="hover"
+            key={tag.key}
+            tag={tag}
+            onSelected={onTag}
+            onDelete={onDelete}
+          />
+        </div>
+      ))}
+      {overflow && (
+        <Tooltip
+          text={hiddenTags.map((tag) => tag.getVertexProxy().name).join(', ')}
+          position="top"
+          align="center"
+        >
+          <div className={cn(styles.tag, styles.tagName)}>...</div>
+        </Tooltip>
+      )}
+
+      <TagButton
+        onTagged={onTag}
+        className={cn(styles.visibleOnHover)}
+        noteId={note}
+      />
+    </div>
+  );
+};
+
+const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
+  const styles = useStyles();
   const [containerWidth, setContainerWidth] = useState(0);
   const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
   const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
-
   const [overflow, setOverflow] = useState(false);
 
   const { tags } = usePartialVertex(note, ['tags', 'workspace']);
@@ -415,13 +495,14 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const lastWidthRef = useRef<number | null>(null);
-  useEffect(() => {
+
+  useLayoutEffect(() => {
     const calculateVisibleTags = () => {
       let availableWidth = containerWidth;
       const updatedVisibleTags = [];
       const updatedHiddenTags = [];
       let hasOverflow = false;
-      const tagWidth = 70;
+      const tagWidth = 60;
 
       for (const tag of managers) {
         if (availableWidth >= tagWidth) {
@@ -436,7 +517,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       setHiddenTags(updatedHiddenTags);
       setOverflow(hasOverflow);
     };
-
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const newWidth = entry.contentRect.width;
@@ -486,7 +566,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           onDelete={onDelete}
         />
       ))}
-      {/* {overflow && <TagShowMoreButton hiddenTags={hiddenTags} />} */}
       {overflow && (
         <Tooltip text={hiddenTagsText} position="top" align="center">
           <div className={cn(styles.tag, styles.tagName)}>...</div>
@@ -556,7 +635,7 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
   const isTask = pNote.type === NoteType.Task;
 
   return (
-    <div className={cn(styles.wsColumn)}>
+    <div className={styles.wsColumn}>
       {groupBy !== 'workspace' ? (
         <WorkspaceIndicator
           className={cn(styles.workspaceIndicator)}
@@ -684,10 +763,14 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   onClick?: (note: VertexManager<Note>) => void;
   isChild?: boolean;
   groupBy?: string;
+  nestingLevel: number;
 }
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
-  function ({ groupBy, note, isChild, onClick = () => {}, attributes }, ref) {
+  function (
+    { groupBy, note, isChild, onClick = () => {}, nestingLevel, attributes },
+    ref
+  ) {
     const styles = useStyles();
     const [isMouseOver, setIsMouseOver] = useState(false);
     const { childCards } = usePartialVertex(note, ['childCards']);
@@ -699,23 +782,29 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     };
     const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
+    const childWidth = `${100 - 3 * nestingLevel}%`;
+    const leftIndentation = `${3 * nestingLevel}%`;
+
     if (note.scheme.isNull) {
       return null;
     }
-
     const hasOverride = view.notesExpandOverride.has(note.key);
     const isExpanded =
       (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
     return (
       <React.Fragment>
-        <div className={cn(isChild ? styles.isChild : '')}>
+        <div className={cn(isChild ? styles.isChild : undefined)}>
           <div
             className={cn(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
               styles.hoverableRow
             )}
+            style={{
+              width: isChild ? childWidth : undefined,
+              left: isChild ? leftIndentation : undefined,
+            }}
             ref={ref}
             onMouseOver={onMouseOver}
             onMouseLeave={onMouseLeave}
@@ -730,10 +819,13 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               <React.Fragment>
                 <TypeCell note={note} />
                 <TitleCell note={note} onClick={onClickImpl} />
-                <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
+                <WorkspaceIndicatorCell
+                  note={note}
+                  groupBy={groupBy}
+                  nestingLevel={nestingLevel}
+                />
               </React.Fragment>
             )}
-
             <ExpanderCell
               note={note}
               isExpanded={isExpanded}
@@ -745,7 +837,6 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             <TagsCell note={note} />
             <DueDateIndicator
               card={note}
-              className={styles.dueDate}
               source={'list'}
               isMouseOver={isMouseOver}
             />
@@ -762,6 +853,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               onClick={onClick}
               isChild={true}
               groupBy={groupBy}
+              nestingLevel={nestingLevel + 1}
             />
           ))}
       </React.Fragment>

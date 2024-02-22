@@ -25,6 +25,8 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.row],
     height: styleguide.gridbase * 3,
     alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
   },
   standard: {
     flexDirection: 'row-reverse',
