@@ -29,7 +29,8 @@ const useStyles = makeStyles((theme) => ({
   },
   listRoot: {
     height: '100%',
-    overflowY: 'auto',
+    overflowY: 'scroll',
+    overflowX: 'clip',
   },
 }));
 
@@ -39,7 +40,7 @@ export interface ListViewNewProps {
   className?: string;
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 function headerForGroupId(gid: CoreValue): React.ReactNode {
   let header = null;
@@ -90,11 +91,14 @@ export function ListViewNew({ className }: ListViewNewProps) {
     },
     [docRouter]
   );
-  useEffect(() => {
-    if (unpinnedQuery) {
-      unpinnedQuery.limit = limit + PAGE_SIZE;
-    }
-  }, [unpinnedQuery, limit]);
+
+  // useEffect(() => {
+  //   if (unpinnedQuery) {
+  //     unpinnedQuery.limit = limit + PAGE_SIZE;
+  //   }
+  // }, [unpinnedQuery, limit]);
+
+  // console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
 
   const groups = useMemo(() => {
     const s = new Set<CoreValue>();
@@ -122,7 +126,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
     <Scroller>
       {(ref) => (
         <div ref={ref} className={cn(styles.listRoot, className)}>
-          {groups.map(
+          {groups.slice(0, limit).map(
             (group, index) => (
               (groupKey = getGroupStringKey(group, index)),
               (
@@ -140,12 +144,16 @@ export function ListViewNew({ className }: ListViewNewProps) {
                       key={`list/pinned/row/${noteMgr.key}`}
                       onClick={onNoteSelected}
                       groupBy={groupBy}
+                      nestingLevel={0}
                     />
                   ))}
 
-                  {unpinnedQuery && pinnedQuery && (
+                  {pinnedQuery &&
+                  pinnedQuery.group(group).length > 0 &&
+                  unpinnedQuery &&
+                  unpinnedQuery.group(group).length > 0 ? (
                     <div style={{ height: '8px' }}></div>
-                  )}
+                  ) : undefined}
                   {unpinnedQuery
                     ?.group(group)
                     .slice(
@@ -163,6 +171,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
                         key={`list/unpinned/row/${noteMgr.key}`}
                         onClick={onNoteSelected}
                         groupBy={groupBy}
+                        nestingLevel={0}
                       />
                     ))}
                 </SectionTable>
@@ -174,7 +183,7 @@ export function ListViewNew({ className }: ListViewNewProps) {
             setLimit={setLimit}
             pageSize={PAGE_SIZE}
             recordsLength={unpinnedQuery?.count || 0}
-            isVisible={true}
+            isVisible={false}
           />
         </div>
       )}

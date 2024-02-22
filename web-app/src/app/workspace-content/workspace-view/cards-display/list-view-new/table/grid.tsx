@@ -81,7 +81,7 @@ const useStyles = makeStyles((theme) => ({
   },
   wsTitle: {
     paddingTop: styleguide.gridbase,
-    paddingBottom: styleguide.gridbase * 0.5,
+    paddingBottom: styleguide.gridbase,
     paddingLeft: 0,
   },
 
@@ -197,7 +197,7 @@ function SectionTitle({
           }
         }
       },
-      { threshold: [0], root: scrollParent }
+      { threshold: [0], root: scrollParent },
     );
     observer.observe(sentinel);
     return () => {
@@ -214,16 +214,16 @@ function SectionTitle({
         <div
           className={cn(
             styles.titleText,
-            groupBy === 'workspace' && styles.wsTitle
+            groupBy === 'workspace' && styles.wsTitle,
           )}
         >
           {header}
         </div>
         <div className={cn(layout.flexSpacer)} />
-        <Button onClick={onCreateCard}>
+        {/* <Button onClick={onCreateCard}>
           {isHovered && <div className={cn(styles.newTaskText)}>New Task</div>}
           <img key="IconNewTaskBoard" src="/icons/board/New-Task-plus.svg" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
@@ -249,7 +249,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         expandedGroupIds.add(section);
       }
     },
-    [view]
+    [view],
   );
 
   const expanded = view.expandedGroupIds.has(expandKey);
@@ -261,10 +261,12 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
       onClick={() => toggleExpandedShowMore(expandKey)}
     >
       <div className={cn(styles.expanderText)}>
-        Show More
-        {allUnpinned && allUnpinned.length - 3 > 0
+        {expanded ? 'Show Less' : 'Show More'}
+        {allUnpinned && !expanded && allUnpinned.length - 3 > 0
           ? ` [${allUnpinned.length}]`
-          : ' 0'}
+          : expanded
+          ? undefined
+          : ' [0]'}
       </div>
       <ExpanderIcon
         className={cn(styles.expanderIcon, expanded && styles.expanderIconOpen)}
