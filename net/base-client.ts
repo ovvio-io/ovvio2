@@ -42,6 +42,7 @@ export abstract class BaseClient<
   private _scheduled: boolean;
   private _closed = false;
   private _pendingSyncPromise: Promise<boolean> | undefined;
+  private _syncActive = false;
 
   constructor(
     readonly storage: RepositoryType,
@@ -53,7 +54,7 @@ export abstract class BaseClient<
     this._timer = new EaseInExpoTimer(
       syncConfig.minSyncFreqMs,
       syncConfig.maxSyncFreqMs,
-      syncConfig.maxSyncFreqMs,
+      syncConfig.pollingBackoffDurationMs,
       () => {
         if (!this.ready) {
           return;
@@ -69,7 +70,7 @@ export abstract class BaseClient<
       },
       true,
       `Sync timer ${storage}/${id}`,
-      true,
+      // true,
     );
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(this.syncConfig) * 2,
@@ -91,7 +92,7 @@ export abstract class BaseClient<
     if (!this.isOnline) {
       return 'offline';
     }
-    return this.needsReplication() ? 'sync' : 'idle';
+    return this._syncActive || this.needsReplication() ? 'sync' : 'idle';
   }
 
   get previousServerFilter(): BloomFilter | undefined {
@@ -103,7 +104,7 @@ export abstract class BaseClient<
   }
 
   get syncCycles(): number {
-    return this.needsReplication()
+    return this.needsReplication() || this._syncActive
       ? 1
       : syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
   }
@@ -254,6 +255,10 @@ export abstract class BaseClient<
       return false;
     }
 
+    if (!this._syncActive && (persistedCount > 0 || this.needsReplication())) {
+      this.touch();
+    }
+
     // if (persistedCount > 0 || this.needsReplication()) {
     //   this.touch();
     // }
@@ -272,17 +277,22 @@ export abstract class BaseClient<
    * communication (which rely on indefinite polling loop).
    */
   async sync(): Promise<void> {
-    // const syncConfig = this.syncConfig;
-    const cycleCount = this.syncCycles;
-    // We need to do a minimum number of successful sync cycles in order to make
-    // sure everything is sync'ed. Also need to make sure we don't have any
-    // local commits that our peer doesn't have (local changes or peer recovery).
-    let i = 0;
-    do {
-      if (await this.sendSyncMessage()) {
-        ++i;
-      }
-    } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
+    this._syncActive = true;
+    try {
+      // const syncConfig = this.syncConfig;
+      const cycleCount = this.syncCycles;
+      // We need to do a minimum number of successful sync cycles in order to make
+      // sure everything is sync'ed. Also need to make sure we don't have any
+      // local commits that our peer doesn't have (local changes or peer recovery).
+      let i = 0;
+      do {
+        if (await this.sendSyncMessage()) {
+          ++i;
+        }
+      } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
+    } finally {
+      this._syncActive = false;
+    }
   }
 
   needsReplication(): boolean {

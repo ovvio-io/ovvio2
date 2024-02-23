@@ -21,12 +21,14 @@ export interface SyncConfig {
   minSyncFreqMs: number;
   maxSyncFreqMs: number;
   syncDurationMs: number;
+  pollingBackoffDurationMs: number;
 }
 
 export const kSyncConfigClient: SyncConfig = {
-  minSyncFreqMs: 300,
-  maxSyncFreqMs: 3000,
-  syncDurationMs: 1000,
+  minSyncFreqMs: 0.3 * kSecondMs,
+  maxSyncFreqMs: 3 * kSecondMs,
+  syncDurationMs: kSecondMs,
+  pollingBackoffDurationMs: 20 * kSecondMs,
 };
 
 // export const kSyncConfigServer: SyncConfig = {

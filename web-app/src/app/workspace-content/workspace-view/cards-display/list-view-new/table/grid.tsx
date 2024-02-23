@@ -263,7 +263,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
       <div className={cn(styles.expanderText)}>
         {expanded ? 'Show Less' : 'Show More'}
         {allUnpinned && !expanded && allUnpinned.length - 3 > 0
-          ? ` [${allUnpinned.length}]`
+          ? ` [${allUnpinned.length.toLocaleString()}]`
           : expanded
           ? undefined
           : ' [0]'}
