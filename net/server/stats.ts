@@ -67,12 +67,18 @@ export class StatsEndpoint implements Endpoint {
       wauIds: new Set<string>(),
       mauIds: new Set<string>(),
     };
+    const operatorEmails = services.settings.operatorEmails;
     let eventCount = 0;
     for (const [userId, userRecord] of sysDir.indexes!.users.values()) {
-      if (!userRecord) {
+      if (
+        !userId ||
+        !userRecord ||
+        userRecord.isNull ||
+        operatorEmails.includes(userRecord.get('email'))
+      ) {
         continue;
       }
-      const repo = services.sync.getRepository('events', userId!);
+      const repo = services.sync.getRepository('events', userId);
       for (const key of repo.keys()) {
         const head = repo.headForKey(key);
         if (!head) {
@@ -85,7 +91,7 @@ export class StatsEndpoint implements Endpoint {
         const entry = JSON.parse(
           record.get<string>('json')!,
         ) as NormalizedLogEntry<ClientEventEntry>;
-        this.processEvent(entry, reducer, head.session);
+        this.processEvent(entry, reducer, userId);
         ++eventCount;
         yield;
       }
@@ -99,17 +105,17 @@ export class StatsEndpoint implements Endpoint {
   private processEvent(
     event: NormalizedLogEntry<ClientEventEntry>,
     reducer: StatsReducer,
-    sessionId: string,
+    userId: string,
   ) {
     const dayTs = Date.now() - kDayMs;
     const weekTs = Date.now() - kWeekMs;
     const monthTs = Date.now() - 30 * kDayMs;
     if (event.timestamp >= monthTs) {
-      reducer.mauIds.add(sessionId);
+      reducer.mauIds.add(userId);
       if (event.timestamp >= weekTs) {
-        reducer.wauIds.add(sessionId);
+        reducer.wauIds.add(userId);
         if (event.timestamp >= dayTs) {
-          reducer.dauIds.add(sessionId);
+          reducer.dauIds.add(userId);
         }
       }
     }
