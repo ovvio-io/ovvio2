@@ -344,35 +344,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     recalculateTagVisibility();
   });
 
-  // const recalculateTagVisibility = () => {
-  //   const containerWidth =
-  //     containerRef.current?.getBoundingClientRect().width || 0;
-  //   let cumulativeWidth = 0;
-  //   const updatedVisibleTags: VertexManager<Tag>[] = [];
-  //   const updatedHiddenTags: VertexManager<Tag>[] = [];
-  //   let hasOverflow = false;
-  //   managers.forEach((manager, index) => {
-  //     const tagElement = tagsRef.current.get(manager);
-
-  //     const tagWidth =
-  //       tagsRef.current.get(manager)?.getBoundingClientRect().width || 0;
-  //     debugger;
-
-  //     if (cumulativeWidth + tagWidth <= containerWidth) {
-  //       cumulativeWidth += tagWidth;
-  //       updatedVisibleTags.push(manager);
-  //       if (tagElement) tagElement.style.visibility = 'visible';
-  //     } else {
-  //       updatedHiddenTags.push(manager);
-  //       hasOverflow = true;
-  //       if (tagElement) tagElement.style.visibility = 'hidden';
-  //     }
-  //   });
-  //   setOverflow(hasOverflow);
-  //   setVisibleTags(updatedVisibleTags);
-  //   setHiddenTags(updatedHiddenTags);
-  // };
-
   const recalculateTagVisibility = () => {
     const containerWidth =
       containerRef.current?.getBoundingClientRect().width || 0;
@@ -468,6 +439,35 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   );
 };
 
+// const recalculateTagVisibility = () => {
+//   const containerWidth =
+//     containerRef.current?.getBoundingClientRect().width || 0;
+//   let cumulativeWidth = 0;
+//   const updatedVisibleTags: VertexManager<Tag>[] = [];
+//   const updatedHiddenTags: VertexManager<Tag>[] = [];
+//   let hasOverflow = false;
+//   managers.forEach((manager, index) => {
+//     const tagElement = tagsRef.current.get(manager);
+
+//     const tagWidth =
+//       tagsRef.current.get(manager)?.getBoundingClientRect().width || 0;
+//     debugger;
+
+//     if (cumulativeWidth + tagWidth <= containerWidth) {
+//       cumulativeWidth += tagWidth;
+//       updatedVisibleTags.push(manager);
+//       if (tagElement) tagElement.style.visibility = 'visible';
+//     } else {
+//       updatedHiddenTags.push(manager);
+//       hasOverflow = true;
+//       if (tagElement) tagElement.style.visibility = 'hidden';
+//     }
+//   });
+//   setOverflow(hasOverflow);
+//   setVisibleTags(updatedVisibleTags);
+//   setHiddenTags(updatedHiddenTags);
+// };
+
 // useLayoutEffect(() => {
 //   const updateTagsDisplay = () => {
 //     const containerWidth = containerRef.current.offsetWidth;
@@ -497,6 +497,7 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
 
 //   return () => resizeObserver.disconnect();
 // }, [managers]);
+
 const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const [containerWidth, setContainerWidth] = useState(0);
