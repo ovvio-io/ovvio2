@@ -22,10 +22,6 @@ import { TaskCheckbox } from '../../../../../../../../components/task.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import {
-  TextSm,
-  useTypographyStyles,
-} from '../../../../../../../../styles/components/typography.tsx';
-import {
   cn,
   keyframes,
   makeStyles,
@@ -56,6 +52,8 @@ import { IconCollapseExpand } from '../../../../../../../../styles/components/ne
 import { DueDateIndicator } from '../../card-item/card-footer.tsx';
 import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx';
 import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js';
+import { debounce } from '../../../../../../../../base/debounce.ts';
+import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -69,202 +67,177 @@ const showAnim = keyframes({
     opacity: 1,
   },
 });
-const useStyles = makeStyles(
-  () => ({
-    row: {
-      height: ROW_HEIGHT,
-      width: '100%',
-      basedOn: [layout.row],
-      alignItems: 'center',
-      borderRadius: '2px',
-      borderStyle: 'solid',
-      borderColor: 'transparent',
-      boxSizing: 'border-box',
-      marginBottom: '1px',
-      backgroundColor: theme.colors.background,
-      boxShadow: theme.shadows.z2,
-    },
-    itemRow: {
-      basedOn: [layout.row],
-      position: 'relative',
-      transform: 'scale(1)',
-      ':hover': {
-        visibleOnHover: {
-          opacity: 1,
-        },
-        itemMenu: {
-          opacity: 1,
-        },
+const useStyles = makeStyles(() => ({
+  row: {
+    height: ROW_HEIGHT,
+    width: '100%',
+    basedOn: [layout.row],
+    alignItems: 'center',
+    borderRadius: '2px',
+    borderStyle: 'solid',
+    borderColor: 'transparent',
+    boxSizing: 'border-box',
+    marginBottom: '1px',
+    backgroundColor: theme.colors.background,
+    boxShadow: theme.shadows.z2,
+  },
+  itemRow: {
+    basedOn: [layout.row],
+    position: 'relative',
+    transform: 'scale(1)',
+    ':hover': {
+      visibleOnHover: {
+        opacity: 1,
+      },
+      itemMenu: {
+        opacity: 1,
       },
     },
-    childRow: {
-      height: ROW_HEIGHT - 1,
-      basedOn: [layout.row],
-      width: '97%',
-      left: '3%',
-      position: 'relative',
-      borderColor: 'transparent',
-      borderRadius: '2px',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      backgroundColor: theme.colors.background,
-      boxShadow: theme.shadows.z2,
-      marginBottom: '1px',
+  },
+  childRow: {
+    height: ROW_HEIGHT - 1,
+    basedOn: [layout.row],
+    width: '97%',
+    left: '3%',
+    position: 'relative',
+    borderColor: 'transparent',
+    borderRadius: '2px',
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    backgroundColor: theme.colors.background,
+    boxShadow: theme.shadows.z2,
+    marginBottom: '1px',
+  },
+  isChild: {
+    width: '100%',
+    borderColor: 'transparent',
+    boxSizing: 'border-box',
+    backgroundColor: 'rgba(139, 197, 251, 0.35)',
+    height: '44px',
+  },
+  doneIndicator: {
+    pointerEvents: 'none',
+    position: 'absolute',
+    top: '50%',
+    left: styleguide.gridbase * 4,
+    width: 0,
+    height: 1,
+    backgroundColor: theme.mono.m4,
+    ...styleguide.transition.standard,
+    transitionProperty: 'width',
+  },
+  doneIndicatorActive: {
+    width: `calc(100% - ${styleguide.gridbase * 8}px)`,
+  },
+  iconCell: {
+    width: styleguide.gridbase * 3,
+    display: 'flex',
+    justifyContent: 'center',
+    paddingLeft: styleguide.gridbase,
+  },
+  title: {
+    // basedOn: [layout.flexSpacer],
+    flexGrow: '1',
+    flexShrink: '2',
+    flexBasis: 'auto',
+    width: 'calc(50% - 176px)',
+    cursor: 'pointer',
+    position: 'relative',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    paddingLeft: styleguide.gridbase * 0.5,
+  },
+  wsColumn: {
+    width: 'calc(25% - 176px)',
+    basedOn: [layout.row],
+    flexGrow: '1',
+    flexShrink: '1',
+    flexBasis: 'auto',
+    alignItems: 'center',
+    padding: [0, styleguide.gridbase * 0.5],
+  },
+  assigneeColumn: {
+    width: 'calc(5% - 176px)',
+    // basedOn: [layout.flexSpacer],
+    flexGrow: '1',
+    flexShrink: '2',
+    flexBasis: 'auto',
+    overflow: 'clip',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    maxHeight: '34px',
+    gap: '1px',
+    paddingLeft: styleguide.gridbase,
+  },
+  assignee: {
+    marginRight: styleguide.gridbase * 0.25,
+  },
+  tagsColumn: {
+    width: 'calc(20% - 176px)',
+    flexGrow: '2',
+    flexShrink: '1',
+    flexBasis: 'auto',
+    overflow: 'clip',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: [0, styleguide.gridbase],
+  },
+  tag: {
+    minWidth: '0',
+    marginRight: styleguide.gridbase * 0.5,
+  },
+  visibleOnHover: {
+    opacity: 0,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  checkbox: {
+    margin: styleguide.gridbase * 2,
+  },
+  breadCrumbsTitle: {
+    fontSize: '10px',
+    color: '#262626',
+    position: 'relative',
+    top: '1px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+  },
+  breadCrumbsSlash: {
+    position: 'relative',
+    top: '2px',
+    marginRight: styleguide.gridbase / 2,
+    marginLeft: styleguide.gridbase / 2,
+  },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#FBF6EF',
     },
-    isChild: {
-      width: '100%',
-      borderColor: 'transparent',
-      boxSizing: 'border-box',
-      backgroundColor: 'rgba(139, 197, 251, 0.35)',
-      height: '44px',
-    },
-    doneIndicator: {
-      pointerEvents: 'none',
-      position: 'absolute',
-      top: '50%',
-      left: styleguide.gridbase * 4,
-      width: 0,
-      height: 1,
-      backgroundColor: theme.mono.m4,
-      ...styleguide.transition.standard,
-      transitionProperty: 'width',
-    },
-    doneIndicatorActive: {
-      width: `calc(100% - ${styleguide.gridbase * 8}px)`,
-    },
-    iconCell: {
-      width: styleguide.gridbase * 3,
-      display: 'flex',
-      justifyContent: 'center',
-      paddingLeft: styleguide.gridbase,
-    },
-    title: {
-      // basedOn: [layout.flexSpacer],
-      flexGrow: '1',
-      flexShrink: '2',
-      flexBasis: 'auto',
-      width: 'calc(50% - 176px)',
-      cursor: 'pointer',
-      position: 'relative',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      paddingLeft: styleguide.gridbase * 0.5,
-    },
-    wsColumn: {
-      width: 'calc(25% - 176px)',
-      basedOn: [layout.row],
-      flexGrow: '1',
-      flexShrink: '1',
-      flexBasis: 'auto',
-      alignItems: 'center',
-      padding: [0, styleguide.gridbase * 0.5],
-    },
-
-    assigneeColumn: {
-      width: 'calc(5% - 176px)',
-      // basedOn: [layout.flexSpacer],
-      flexGrow: '1',
-      flexShrink: '2',
-      flexBasis: 'auto',
-      overflow: 'clip',
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-start',
-      maxHeight: '34px',
-      gap: '1px',
-      paddingLeft: styleguide.gridbase,
-    },
-    assignee: {
-      marginRight: styleguide.gridbase * 0.25,
-    },
-    tagsColumn: {
-      width: 'calc(20% - 176px)',
-      flexGrow: '2',
-      flexShrink: '1',
-      flexBasis: 'auto',
-      overflow: 'clip',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      padding: [0, styleguide.gridbase],
-    },
-    tag: {
-      direction: 'ltr',
-      backgroundColor: theme.mono.m1,
-      height: styleguide.gridbase * 2,
-      padding: [0, styleguide.gridbase],
-      flexShrink: 0,
-      fontSize: 10,
-      borderRadius: 15,
-      ...styleguide.transition.short,
-      transitionProperty: 'all',
-      whiteSpace: 'nowrap',
-      boxSizing: 'border-box',
-      display: 'flex',
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginRight: styleguide.gridbase * 0.5,
-    },
-    tagName: {
-      marginLeft: styleguide.gridbase * 0.75,
-      marginRight: styleguide.gridbase / 2,
-      color: theme.colors.text,
-      animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
-      userSelect: 'none',
-      basedOn: [useTypographyStyles.textSmall],
-    },
-    visibleOnHover: {
-      opacity: 0,
-    },
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    },
-    checkbox: {
-      margin: styleguide.gridbase * 2,
-    },
-    breadCrumbsTitle: {
-      fontSize: '10px',
-      color: '#262626',
-      position: 'relative',
-      top: '1px',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-    },
-    breadCrumbsSlash: {
-      position: 'relative',
-      top: '2px',
-      marginRight: styleguide.gridbase / 2,
-      marginLeft: styleguide.gridbase / 2,
-    },
-    hoverableRow: {
-      ':hover': {
-        backgroundColor: '#FBF6EF',
-      },
-    },
-    workspaceIndicator: {
-      maxWidth: styleguide.gridbase * 12,
-    },
-    cardMiddle: {
-      padding: [styleguide.gridbase, 0, 0, 0],
-      display: 'flex',
-      alignItems: 'center',
-    },
-    itemMenu: {
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-    },
-    itemMenuOpen: {
-      opacity: 1,
-    },
-  }),
-  'item_1cda8c'
-);
+  },
+  workspaceIndicator: {
+    maxWidth: styleguide.gridbase * 12,
+  },
+  cardMiddle: {
+    padding: [styleguide.gridbase, 0, 0, 0],
+    display: 'flex',
+    alignItems: 'center',
+  },
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: 'opacity',
+  },
+  itemMenuOpen: {
+    opacity: 1,
+  },
+}));
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
@@ -354,7 +327,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
   const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
   const [overflow, setOverflow] = useState(false);
-
   const { tags } = usePartialVertex(note, ['tags']);
 
   const managers = useMemo(() => {
@@ -368,49 +340,81 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     return result;
   }, [tags]);
 
-  const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
-  for (const [p, c] of tags) {
-    tagsMng.set(
-      p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>
-    );
-  }
-  const onDelete = useCallback(
-    (tag: Tag) => {
-      note.getVertexProxy().tags.delete(tag.parentTag || tag);
-    },
-    [note]
-  );
-
   useLayoutEffect(() => {
-    const updateTagsDisplay = () => {
-      const containerWidth = containerRef.current.offsetWidth;
-      let availableWidth = containerWidth;
-      const updatedVisibleTags: VertexManager<Tag>[] = [];
-      const updatedHiddenTags: VertexManager<Tag>[] = [];
-      managers.forEach((tag) => {
-        const tagWidth = tagsRef.current.get(tag)?.offsetWidth || 0;
-        if (availableWidth >= tagWidth) {
-          updatedVisibleTags.push(tag);
-          availableWidth -= tagWidth;
-        } else {
-          updatedHiddenTags.push(tag);
-        }
-      });
+    recalculateTagVisibility();
+  });
 
-      setVisibleTags(updatedVisibleTags);
-      setHiddenTags(updatedHiddenTags);
-      setOverflow(updatedHiddenTags.length > 0);
-    };
+  // const recalculateTagVisibility = () => {
+  //   const containerWidth =
+  //     containerRef.current?.getBoundingClientRect().width || 0;
+  //   let cumulativeWidth = 0;
+  //   const updatedVisibleTags: VertexManager<Tag>[] = [];
+  //   const updatedHiddenTags: VertexManager<Tag>[] = [];
+  //   let hasOverflow = false;
+  //   managers.forEach((manager, index) => {
+  //     const tagElement = tagsRef.current.get(manager);
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateTagsDisplay();
+  //     const tagWidth =
+  //       tagsRef.current.get(manager)?.getBoundingClientRect().width || 0;
+  //     debugger;
+
+  //     if (cumulativeWidth + tagWidth <= containerWidth) {
+  //       cumulativeWidth += tagWidth;
+  //       updatedVisibleTags.push(manager);
+  //       if (tagElement) tagElement.style.visibility = 'visible';
+  //     } else {
+  //       updatedHiddenTags.push(manager);
+  //       hasOverflow = true;
+  //       if (tagElement) tagElement.style.visibility = 'hidden';
+  //     }
+  //   });
+  //   setOverflow(hasOverflow);
+  //   setVisibleTags(updatedVisibleTags);
+  //   setHiddenTags(updatedHiddenTags);
+  // };
+
+  const recalculateTagVisibility = () => {
+    const containerWidth =
+      containerRef.current?.getBoundingClientRect().width || 0;
+    let cumulativeWidth = 0;
+    const updatedVisibleTags: VertexManager<Tag>[] = [];
+    const updatedHiddenTags: VertexManager<Tag>[] = [];
+    let hasOverflow = false;
+    managers.forEach((manager) => {
+      const tagElement = tagsRef.current.get(manager);
+      const tagWidth = tagElement?.getBoundingClientRect().width || 0;
+      if (cumulativeWidth + tagWidth <= containerWidth) {
+        cumulativeWidth += tagWidth;
+        updatedVisibleTags.push(manager);
+        if (tagElement) tagElement.style.visibility = 'visible';
+      } else {
+        updatedHiddenTags.push(manager);
+        hasOverflow = true;
+        if (tagElement) tagElement.style.visibility = 'hidden';
+      }
+
+      if (containerRef.current) {
+        containerRef.current.style.overflow = hasOverflow ? 'clip' : 'visible';
+      }
     });
 
+    if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+      // if (updatedVisibleTags !== visibleTags)
+      setVisibleTags(updatedVisibleTags);
+    }
+    if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+      setHiddenTags(updatedHiddenTags);
+      setOverflow(hasOverflow);
+    }
+  };
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      recalculateTagVisibility();
+    });
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
-
     return () => resizeObserver.disconnect();
   }, []);
 
@@ -424,14 +428,17 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     [note]
   );
 
+  const onDelete = useCallback(
+    (tag: Tag) => {
+      note.getVertexProxy().tags.delete(tag.parentTag || tag);
+    },
+    [note]
+  );
+
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
       {visibleTags.map((tag, index) => (
-        <div
-          ref={(el) => tagsRef.current.set(tag, el)}
-          key={index}
-          className={cn(styles.tag)}
-        >
+        <div ref={(el) => tagsRef.current.set(tag, el)} key={index}>
           <TagView
             className={cn(styles.tag)}
             showMenu="hover"
@@ -448,7 +455,7 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           position="top"
           align="center"
         >
-          <div className={cn(styles.tag, styles.tagName)}>...</div>
+          <TagPillView className={cn(styles.tag)} />
         </Tooltip>
       )}
 
@@ -461,6 +468,35 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   );
 };
 
+// useLayoutEffect(() => {
+//   const updateTagsDisplay = () => {
+//     const containerWidth = containerRef.current.offsetWidth;
+//     let availableWidth = containerWidth;
+//     const updatedVisibleTags: VertexManager<Tag>[] = [];
+//     const updatedHiddenTags: VertexManager<Tag>[] = [];
+//     managers.forEach((tag) => {
+//       const tagWidth = tagsRef.current.get(tag)?.offsetWidth || 0;
+//       if (availableWidth >= tagWidth) {
+//         updatedVisibleTags.push(tag);
+//         availableWidth -= tagWidth;
+//       } else {
+//         updatedHiddenTags.push(tag);
+//       }
+//     });
+//     setVisibleTags(updatedVisibleTags);
+//     setHiddenTags(updatedHiddenTags);
+//     setOverflow(updatedHiddenTags.length > 0);
+//   };
+
+//   const resizeObserver = new ResizeObserver(() => {
+//     updateTagsDisplay();
+//   });
+//   if (containerRef.current) {
+//     resizeObserver.observe(containerRef.current);
+//   }
+
+//   return () => resizeObserver.disconnect();
+// }, [managers]);
 const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const [containerWidth, setContainerWidth] = useState(0);
@@ -554,6 +590,7 @@ const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
     },
     [note]
   );
+
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
       {visibleTags.map((x) => (
@@ -631,7 +668,6 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
   const styles = useStyles();
   const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext']);
   const vNote = useVertex(note);
-
   const isTask = pNote.type === NoteType.Task;
 
   return (

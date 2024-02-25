@@ -36,8 +36,8 @@ const useStyles = makeStyles(() => ({
     direction: 'ltr',
     backgroundColor: theme.mono.m1,
     height: styleguide.gridbase * 2,
-    minWidth: styleguide.gridbase * 5,
-    padding: [0, styleguide.gridbase],
+    minWidth: styleguide.gridbase * 3,
+    padding: [0, styleguide.gridbase * 0.5],
     flexShrink: 0,
     fontSize: 12,
     borderRadius: styleguide.gridbase,
@@ -50,7 +50,7 @@ const useStyles = makeStyles(() => ({
     flexDirection: 'row',
   },
   tagName: {
-    marginLeft: styleguide.gridbase * 0.75,
+    marginLeft: styleguide.gridbase * 0.5,
     marginRight: styleguide.gridbase / 2,
     color: theme.colors.text,
     animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
@@ -134,10 +134,10 @@ export function TagPillView({
     <div
       ref={ref}
       className={cn(
+        className,
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
-        menuOnHover && styles.onHover,
-        className
+        menuOnHover && styles.onHover
       )}
       style={{
         ...style,
@@ -178,7 +178,6 @@ export default function TagView({
     partialTag.parentTag?.childTags || [],
     ['name']
   );
-
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
       onDelete(tag.getVertexProxy());

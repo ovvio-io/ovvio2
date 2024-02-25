@@ -220,10 +220,10 @@ function SectionTitle({
           {header}
         </div>
         <div className={cn(layout.flexSpacer)} />
-        <Button onClick={onCreateCard}>
+        {/* <Button onClick={onCreateCard}>
           {isHovered && <div className={cn(styles.newTaskText)}>New Task</div>}
           <img key="IconNewTaskBoard" src="/icons/board/New-Task-plus.svg" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
@@ -231,11 +231,13 @@ function SectionTitle({
 interface ShowMoreButtonProps {
   allUnpinned: QueryResults<Note> | undefined;
   expandKey: string;
+  show?: boolean;
 }
 
 const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
   allUnpinned,
   expandKey,
+  show,
 }) => {
   const styles = useStyles();
   const view = usePartialView('expandedGroupIds');
@@ -260,17 +262,20 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
       disabled={allUnpinned && allUnpinned.length - 3 > 0 ? false : true}
       onClick={() => toggleExpandedShowMore(expandKey)}
     >
-      <div className={cn(styles.expanderText)}>
-        {expanded ? 'Show Less' : 'Show More'}
-        {allUnpinned && !expanded && allUnpinned.length - 3 > 0
-          ? ` [${allUnpinned.length}]`
-          : expanded
-          ? undefined
-          : ' [0]'}
-      </div>
-      <ExpanderIcon
-        className={cn(styles.expanderIcon, expanded && styles.expanderIconOpen)}
-      />
+      {show ? (
+        <>
+          <div className={cn(styles.expanderText)}>
+            {expanded ? 'Show Less' : !expanded ? 'Show More ' : undefined}
+            {expanded ? undefined : ` [${allUnpinned && allUnpinned.length}]`}
+          </div>
+          <ExpanderIcon
+            className={cn(
+              styles.expanderIcon,
+              expanded && styles.expanderIconOpen
+            )}
+          />
+        </>
+      ) : undefined}
     </Button>
   );
 };
@@ -317,7 +322,11 @@ export function SectionTable({
         expandKey={''}
       />
       <div>{children}</div>
-      <ShowMoreButton allUnpinned={allUnpinned} expandKey={expandKey} />
+      <ShowMoreButton
+        allUnpinned={allUnpinned}
+        expandKey={expandKey}
+        show={allUnpinned && allUnpinned.length - 3 > 0}
+      />
     </div>
   );
 }
