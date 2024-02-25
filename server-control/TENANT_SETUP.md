@@ -15,17 +15,19 @@ assume this account is being used.
 3. Click _Create VPC_
 4. Choose _VPC and more_ in the wizard
 5. Enter tenant id in _Name tag auto generation_
-6. Choose _2 Availability Zones_
-7. Choose _2 number of public subnets_
-8. Choose _0 number of private subnets_
-9. Choose _0 NAT Gateways_ as NAT is used only for installations during machine
-   setup.
-10. Choose _No endpoints_
-11. Add an additional tag named `OvvioTenantId` with the value of the tenant id
+6. Choose _No IPv6 CIDR block_
+7. Choose _Tenancy Default_
+8. Choose _2 Availability Zones_
+9. Choose _2 number of public subnets_
+10. Choose _0 number of private subnets_
+11. Choose _0 NAT Gateways_ as NAT is used only for installations during machine
+    setup.
+12. Choose _No endpoints_
+13. Add an additional tag named `OvvioTenantId` with the value of the tenant id
 
 Finally, wait for VPC to finish setting up.
 
-## Create Security Groups
+## EC2: Create Security Groups
 
 ### Create Internal Security Group
 
@@ -103,7 +105,7 @@ Wait for instance to launch
 
 1. Name: `tenant id`-alb
 2. Scheme: Internet Facing
-3. IP Addresses: Dualstack
+3. IP Addresses: IPv4
 4. Choose correct VPC and assign to all subnets
 5. Set correct security group
 6. Add previously created target group to an HTTPS listener

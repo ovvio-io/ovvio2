@@ -33,6 +33,7 @@ import { VCurrent } from '../../base/version-number.ts';
 import { tuple4ToString } from '../../base/tuple.ts';
 import { BuildInfo, generateBuildInfo } from '../../server/build-info.ts';
 import { prettyJSON } from '../../base/common.ts';
+import { StatsEndpoint } from './stats.ts';
 
 export const ENV_REPLICAS = 'REPLICAS';
 
@@ -260,13 +261,15 @@ export class Server {
     this.registerEndpoint(new HealthCheckEndpoint());
     // Auth
     this.registerEndpoint(new AuthEndpoint());
-    // Static Assets
-    this.registerEndpoint(new StaticAssetsEndpoint());
+    // Stats
+    this.registerEndpoint(new StatsEndpoint());
     // Sync
     this.registerEndpoint(new SyncEndpoint());
     // CORS Support
     this.registerMiddleware(new CORSMiddleware());
     this.registerEndpoint(new CORSEndpoint());
+    // Static Assets
+    this.registerEndpoint(new StaticAssetsEndpoint());
     // Logs
     // this.registerEndpoint(new LogsEndpoint());
   }
