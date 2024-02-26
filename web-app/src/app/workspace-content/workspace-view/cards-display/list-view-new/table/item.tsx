@@ -22,10 +22,6 @@ import { TaskCheckbox } from '../../../../../../../../components/task.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import {
-  TextSm,
-  useTypographyStyles,
-} from '../../../../../../../../styles/components/typography.tsx';
-import {
   cn,
   keyframes,
   makeStyles,
@@ -37,6 +33,7 @@ import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
+  usePartialVertices,
   useVertex,
 } from '../../../../../../core/cfds/react/vertex.ts';
 import {
@@ -56,6 +53,8 @@ import { IconCollapseExpand } from '../../../../../../../../styles/components/ne
 import { DueDateIndicator } from '../../card-item/card-footer.tsx';
 import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx';
 import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js';
+import { debounce } from '../../../../../../../../base/debounce.ts';
+import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -69,202 +68,198 @@ const showAnim = keyframes({
     opacity: 1,
   },
 });
-const useStyles = makeStyles(
-  () => ({
-    row: {
-      height: ROW_HEIGHT,
-      width: '100%',
-      basedOn: [layout.row],
-      alignItems: 'center',
-      borderRadius: '2px',
-      borderStyle: 'solid',
-      borderColor: 'transparent',
-      boxSizing: 'border-box',
-      marginBottom: '1px',
-      backgroundColor: theme.colors.background,
-      boxShadow: theme.shadows.z2,
-    },
-    itemRow: {
-      basedOn: [layout.row],
-      position: 'relative',
-      transform: 'scale(1)',
-      ':hover': {
-        visibleOnHover: {
-          opacity: 1,
-        },
-        itemMenu: {
-          opacity: 1,
-        },
+const useStyles = makeStyles(() => ({
+  tag2: {
+    direction: 'ltr',
+    backgroundColor: theme.mono.m1,
+    height: styleguide.gridbase * 2,
+    minWidth: styleguide.gridbase * 3,
+    padding: [0, styleguide.gridbase],
+    flexShrink: 0,
+    fontSize: 12,
+    borderRadius: styleguide.gridbase,
+    ...styleguide.transition.short,
+    transitionProperty: 'all',
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  tagName: {
+    color: theme.colors.text,
+    animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
+    userSelect: 'none',
+  },
+  row: {
+    height: ROW_HEIGHT,
+    width: '100%',
+    basedOn: [layout.row],
+    alignItems: 'center',
+    borderRadius: '2px',
+    borderStyle: 'solid',
+    borderColor: 'transparent',
+    boxSizing: 'border-box',
+    marginBottom: '1px',
+    backgroundColor: theme.colors.background,
+    boxShadow: theme.shadows.z2,
+  },
+  itemRow: {
+    basedOn: [layout.row],
+    // position: 'relative',
+    transform: 'scale(1)',
+    ':hover': {
+      visibleOnHover: {
+        opacity: 1,
+      },
+      itemMenu: {
+        opacity: 1,
       },
     },
-    childRow: {
-      height: ROW_HEIGHT - 1,
-      basedOn: [layout.row],
-      width: '97%',
-      left: '3%',
-      position: 'relative',
-      borderColor: 'transparent',
-      borderRadius: '2px',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      backgroundColor: theme.colors.background,
-      boxShadow: theme.shadows.z2,
-      marginBottom: '1px',
+  },
+  childRow: {
+    height: ROW_HEIGHT - 1,
+    basedOn: [layout.row],
+    width: '97%',
+    left: '3%',
+    position: 'relative',
+    borderColor: 'transparent',
+    borderRadius: '2px',
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    backgroundColor: theme.colors.background,
+    boxShadow: theme.shadows.z2,
+    marginBottom: '1px',
+  },
+  isChild: {
+    width: '100%',
+    borderColor: 'transparent',
+    boxSizing: 'border-box',
+    backgroundColor: 'rgba(139, 197, 251, 0.35)',
+    height: '44px',
+  },
+  doneIndicator: {
+    pointerEvents: 'none',
+    position: 'absolute',
+    top: '50%',
+    left: styleguide.gridbase * 4,
+    width: 0,
+    height: 1,
+    backgroundColor: theme.mono.m4,
+    ...styleguide.transition.standard,
+    transitionProperty: 'width',
+  },
+  doneIndicatorActive: {
+    width: `calc(100% - ${styleguide.gridbase * 8}px)`,
+  },
+  iconCell: {
+    width: styleguide.gridbase * 3,
+    display: 'flex',
+    justifyContent: 'center',
+    paddingLeft: styleguide.gridbase,
+  },
+  title: {
+    flexGrow: '1',
+    flexShrink: '2',
+    flexBasis: 'auto',
+    width: 'calc(50% - 156px)',
+    cursor: 'pointer',
+    position: 'relative',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    paddingLeft: styleguide.gridbase * 0.5,
+  },
+  wsColumn: {
+    width: 'calc(25% - 156px)',
+    basedOn: [layout.row],
+    flexGrow: '1',
+    flexShrink: '1',
+    flexBasis: 'auto',
+    alignItems: 'center',
+    padding: [0, styleguide.gridbase * 0.5],
+  },
+  assigneeColumn: {
+    width: 'calc(5% - 156px)',
+    flexGrow: '1',
+    flexShrink: '2',
+    flexBasis: 'auto',
+    overflow: 'clip',
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    maxHeight: '34px',
+    gap: '1px',
+    paddingLeft: styleguide.gridbase,
+  },
+  assignee: {
+    marginRight: styleguide.gridbase * 0.25,
+  },
+  tagsColumn: {
+    width: 'calc(20% - 156px)',
+    flexGrow: '2',
+    flexShrink: '1',
+    flexBasis: 'auto',
+    overflow: 'clip',
+    display: 'flex',
+    position: 'relative',
+    padding: [0, styleguide.gridbase],
+    minHeight: styleguide.gridbase * 2,
+  },
+  tag: {
+    minWidth: '0',
+    marginRight: styleguide.gridbase * 0.5,
+  },
+  visibleOnHover: {
+    opacity: 0,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  checkbox: {
+    margin: styleguide.gridbase * 2,
+  },
+  breadCrumbsTitle: {
+    fontSize: '10px',
+    color: '#262626',
+    position: 'relative',
+    top: '1px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+  },
+  breadCrumbsSlash: {
+    position: 'relative',
+    top: '2px',
+    marginRight: styleguide.gridbase / 2,
+    marginLeft: styleguide.gridbase / 2,
+  },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#FBF6EF',
     },
-    isChild: {
-      width: '100%',
-      borderColor: 'transparent',
-      boxSizing: 'border-box',
-      backgroundColor: 'rgba(139, 197, 251, 0.35)',
-      height: '44px',
-    },
-    doneIndicator: {
-      pointerEvents: 'none',
-      position: 'absolute',
-      top: '50%',
-      left: styleguide.gridbase * 4,
-      width: 0,
-      height: 1,
-      backgroundColor: theme.mono.m4,
-      ...styleguide.transition.standard,
-      transitionProperty: 'width',
-    },
-    doneIndicatorActive: {
-      width: `calc(100% - ${styleguide.gridbase * 8}px)`,
-    },
-    iconCell: {
-      width: styleguide.gridbase * 3,
-      display: 'flex',
-      justifyContent: 'center',
-      paddingLeft: styleguide.gridbase,
-    },
-    title: {
-      // basedOn: [layout.flexSpacer],
-      flexGrow: '1',
-      flexShrink: '2',
-      flexBasis: 'auto',
-      width: 'calc(50% - 176px)',
-      cursor: 'pointer',
-      position: 'relative',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      paddingLeft: styleguide.gridbase * 0.5,
-    },
-    wsColumn: {
-      width: 'calc(25% - 176px)',
-      basedOn: [layout.row],
-      flexGrow: '1',
-      flexShrink: '1',
-      flexBasis: 'auto',
-      alignItems: 'center',
-      padding: [0, styleguide.gridbase * 0.5],
-    },
-
-    assigneeColumn: {
-      width: 'calc(5% - 176px)',
-      // basedOn: [layout.flexSpacer],
-      flexGrow: '1',
-      flexShrink: '2',
-      flexBasis: 'auto',
-      overflow: 'clip',
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-start',
-      maxHeight: '34px',
-      gap: '1px',
-      paddingLeft: styleguide.gridbase,
-    },
-    assignee: {
-      marginRight: styleguide.gridbase * 0.25,
-    },
-    tagsColumn: {
-      width: 'calc(20% - 176px)',
-      flexGrow: '2',
-      flexShrink: '1',
-      flexBasis: 'auto',
-      overflow: 'clip',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      padding: [0, styleguide.gridbase],
-    },
-    tag: {
-      direction: 'ltr',
-      backgroundColor: theme.mono.m1,
-      height: styleguide.gridbase * 2,
-      padding: [0, styleguide.gridbase],
-      flexShrink: 0,
-      fontSize: 10,
-      borderRadius: 15,
-      ...styleguide.transition.short,
-      transitionProperty: 'all',
-      whiteSpace: 'nowrap',
-      boxSizing: 'border-box',
-      display: 'flex',
-      alignItems: 'center',
-      flexDirection: 'row',
-      marginRight: styleguide.gridbase * 0.5,
-    },
-    tagName: {
-      marginLeft: styleguide.gridbase * 0.75,
-      marginRight: styleguide.gridbase / 2,
-      color: theme.colors.text,
-      animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
-      userSelect: 'none',
-      basedOn: [useTypographyStyles.textSmall],
-    },
-    visibleOnHover: {
-      opacity: 0,
-    },
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    },
-    checkbox: {
-      margin: styleguide.gridbase * 2,
-    },
-    breadCrumbsTitle: {
-      fontSize: '10px',
-      color: '#262626',
-      position: 'relative',
-      top: '1px',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-    },
-    breadCrumbsSlash: {
-      position: 'relative',
-      top: '2px',
-      marginRight: styleguide.gridbase / 2,
-      marginLeft: styleguide.gridbase / 2,
-    },
-    hoverableRow: {
-      ':hover': {
-        backgroundColor: '#FBF6EF',
-      },
-    },
-    workspaceIndicator: {
-      maxWidth: styleguide.gridbase * 12,
-    },
-    cardMiddle: {
-      padding: [styleguide.gridbase, 0, 0, 0],
-      display: 'flex',
-      alignItems: 'center',
-    },
-    itemMenu: {
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-    },
-    itemMenuOpen: {
-      opacity: 1,
-    },
-  }),
-  'item_1cda8c'
-);
+  },
+  workspaceIndicator: {
+    maxWidth: styleguide.gridbase * 12,
+  },
+  cardMiddle: {
+    padding: [styleguide.gridbase, 0, 0, 0],
+    display: 'flex',
+    alignItems: 'center',
+  },
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: 'opacity',
+  },
+  itemMenuOpen: {
+    opacity: 1,
+  },
+}));
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
@@ -351,68 +346,87 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const containerRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef(new Map());
-  const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
-  const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
-  const [overflow, setOverflow] = useState(false);
-
   const { tags } = usePartialVertex(note, ['tags']);
+  const tooltipRef = useRef<HTMLElement>(null);
+  const tagButtonRef = useRef<HTMLElement>(null);
 
-  const managers = useMemo(() => {
-    const result = [];
-    for (const [parent, child] of tags) {
-      if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
-        continue;
-      }
-      result.push(child.manager);
+  const managers = Array.from(tags.values()).map((tag) => tag.manager);
+  usePartialVertices(managers, ['name']);
+
+  const recalculateTagVisibility = useCallback(() => {
+    if (!containerRef.current) {
+      return;
     }
-    return result;
-  }, [tags]);
-
-  const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
-  for (const [p, c] of tags) {
-    tagsMng.set(
-      p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>
-    );
-  }
-  const onDelete = useCallback(
-    (tag: Tag) => {
-      note.getVertexProxy().tags.delete(tag.parentTag || tag);
-    },
-    [note]
-  );
-
-  useLayoutEffect(() => {
-    const updateTagsDisplay = () => {
-      const containerWidth = containerRef.current.offsetWidth;
-      let availableWidth = containerWidth;
-      const updatedVisibleTags: VertexManager<Tag>[] = [];
-      const updatedHiddenTags: VertexManager<Tag>[] = [];
-      managers.forEach((tag) => {
-        const tagWidth = tagsRef.current.get(tag)?.offsetWidth || 0;
-        if (availableWidth >= tagWidth) {
-          updatedVisibleTags.push(tag);
-          availableWidth -= tagWidth;
-        } else {
-          updatedHiddenTags.push(tag);
+    const parentRect = containerRef.current.getBoundingClientRect();
+    const parentRight =
+      parentRect.right -
+      (tagButtonRef.current
+        ? tagButtonRef.current?.getBoundingClientRect().width
+        : 0) -
+      (tooltipRef.current
+        ? tooltipRef.current.getBoundingClientRect().width
+        : 0);
+    let lastChildRight = 0;
+    if (containerRef.current) {
+      for (const tag of containerRef.current?.children) {
+        const tagKey = tag.getAttribute('data-tag-key');
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        if (tagElement) {
+          const tagRect = tagElement.getBoundingClientRect();
+          if (tagRect.right + 6 >= parentRight || tagRect.x >= parentRight) {
+            if (!lastChildRight) {
+              lastChildRight = tagRect.x - parentRect.x;
+            }
+            tagElement.style.visibility = 'hidden';
+          } else {
+            tagElement.style.visibility = 'visible';
+          }
         }
-      });
+      }
 
-      setVisibleTags(updatedVisibleTags);
-      setHiddenTags(updatedHiddenTags);
-      setOverflow(updatedHiddenTags.length > 0);
-    };
+      if (tagButtonRef.current) tagButtonRef.current.style.right = '8px';
+      if (tooltipRef.current) {
+        if (!lastChildRight) {
+          tooltipRef.current.style.visibility = 'hidden';
+        } else {
+          tooltipRef.current.style.translate = `${lastChildRight - 8}px 0px`;
+          tooltipRef.current.style.visibility = 'visible';
+        }
+      }
+    }
+  }, []);
 
+  const getHiddenTags = () => {
+    const hiddenTags = [];
+    if (containerRef.current) {
+      for (const tag of containerRef.current.children) {
+        const tagKey = tag.getAttribute('data-tag-key');
+        const tagName = tag.getAttribute('data-tag-name');
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        if (tagElement) {
+          const displayStyle = window.getComputedStyle(tagElement).visibility;
+          if (displayStyle === 'hidden') {
+            hiddenTags.push(tagName);
+          }
+        }
+      }
+    }
+    return hiddenTags.join(',  ');
+  };
+
+  useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
-      updateTagsDisplay();
+      recalculateTagVisibility();
     });
-
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
-
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [containerRef.current]);
+
+  useLayoutEffect(() => {
+    recalculateTagVisibility();
+  });
 
   const onTag = useCallback(
     (tag: Tag) => {
@@ -424,13 +438,21 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
     [note]
   );
 
+  const onDelete = useCallback(
+    (tag: Tag) => {
+      note.getVertexProxy().tags.delete(tag.parentTag || tag);
+    },
+    [note]
+  );
+
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
-      {visibleTags.map((tag, index) => (
+      {managers.map((tag, index) => (
         <div
-          ref={(el) => tagsRef.current.set(tag, el)}
+          ref={(el) => el && tagsRef.current.set(tag.key, el)}
+          data-tag-key={tag.key}
           key={index}
-          className={cn(styles.tag)}
+          data-tag-name={tag.getVertexProxy().name}
         >
           <TagView
             className={cn(styles.tag)}
@@ -442,25 +464,64 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           />
         </div>
       ))}
-      {overflow && (
-        <Tooltip
-          text={hiddenTags.map((tag) => tag.getVertexProxy().name).join(', ')}
-          position="top"
-          align="center"
-        >
-          <div className={cn(styles.tag, styles.tagName)}>...</div>
+      <div ref={tooltipRef} style={{ position: 'absolute' }}>
+        <Tooltip text={getHiddenTags()} position="top" align="center">
+          <div className={cn(styles.tag2, styles.tagName)}>...</div>
         </Tooltip>
-      )}
-
-      <TagButton
-        onTagged={onTag}
-        className={cn(styles.visibleOnHover)}
-        noteId={note}
-      />
+      </div>
+      <div ref={tagButtonRef} style={{ position: 'absolute' }}>
+        <TagButton
+          onTagged={onTag}
+          className={cn(styles.visibleOnHover)}
+          noteId={note}
+        />
+      </div>
     </div>
   );
 };
+// const recalculateTagVisibility = () => {
+//   const containerWidth =
+//     containerRef.current?.getBoundingClientRect().width || 0;
+//   let cumulativeWidth = 0;
+//   const updatedVisibleTags: VertexManager<Tag>[] = [];
+//   const updatedHiddenTags: VertexManager<Tag>[] = [];
+//   let hasOverflow = false;
+//   managers.forEach((manager) => {
+//     const tagElement = tagsRef.current.get(manager);
+//     const tagWidth = tagElement?.getBoundingClientRect().width || 0;
+//     if (cumulativeWidth + tagWidth <= containerWidth) {
+//       cumulativeWidth += tagWidth;
+//       updatedVisibleTags.push(manager);
+//       if (tagElement) tagElement.style.visibility = 'visible';
+//     } else {
+//       updatedHiddenTags.push(manager);
+//       hasOverflow = true;
+//       if (tagElement) tagElement.style.visibility = 'hidden';
+//     }
+//   });
 
+//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+//     setVisibleTags(updatedVisibleTags);
+//   }
+//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+//     setHiddenTags(updatedHiddenTags);
+//     setOverflow(hasOverflow);
+//   }
+// };
+
+// useEffect(() => {
+//   const resizeObserver = new ResizeObserver(() => {
+//     recalculateTagVisibility();
+//   });
+//   if (containerRef.current) {
+//     resizeObserver.observe(containerRef.current);
+//   }
+//   return () => resizeObserver.disconnect();
+// }, []);
+
+// useLayoutEffect(() => {
+//   recalculateTagVisibility();
+// });
 const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const [containerWidth, setContainerWidth] = useState(0);
@@ -554,6 +615,7 @@ const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
     },
     [note]
   );
+
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
       {visibleTags.map((x) => (
@@ -631,7 +693,6 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
   const styles = useStyles();
   const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext']);
   const vNote = useVertex(note);
-
   const isTask = pNote.type === NoteType.Task;
 
   return (
