@@ -55,6 +55,7 @@ import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx
 import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js';
 import { debounce } from '../../../../../../../../base/debounce.ts';
 import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
+import { filter } from '../../../../../../../../base/set.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -349,9 +350,15 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const { tags } = usePartialVertex(note, ['tags']);
   const tooltipRef = useRef<HTMLElement>(null);
   const tagButtonRef = useRef<HTMLElement>(null);
+  const vNote = useVertex(note);
 
-  const managers = Array.from(tags.values()).map((tag) => tag.manager);
-  usePartialVertices(managers, ['name']);
+  const parentNoteTitle = vNote.parentNote?.titlePlaintext;
+
+  const managers = Array.from(tags.values())
+    .filter((tag) => {
+      return tag.name !== parentNoteTitle;
+    })
+    .map((tag) => tag.manager);
 
   const recalculateTagVisibility = useCallback(() => {
     if (!containerRef.current) {
@@ -476,169 +483,6 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           noteId={note}
         />
       </div>
-    </div>
-  );
-};
-// const recalculateTagVisibility = () => {
-//   const containerWidth =
-//     containerRef.current?.getBoundingClientRect().width || 0;
-//   let cumulativeWidth = 0;
-//   const updatedVisibleTags: VertexManager<Tag>[] = [];
-//   const updatedHiddenTags: VertexManager<Tag>[] = [];
-//   let hasOverflow = false;
-//   managers.forEach((manager) => {
-//     const tagElement = tagsRef.current.get(manager);
-//     const tagWidth = tagElement?.getBoundingClientRect().width || 0;
-//     if (cumulativeWidth + tagWidth <= containerWidth) {
-//       cumulativeWidth += tagWidth;
-//       updatedVisibleTags.push(manager);
-//       if (tagElement) tagElement.style.visibility = 'visible';
-//     } else {
-//       updatedHiddenTags.push(manager);
-//       hasOverflow = true;
-//       if (tagElement) tagElement.style.visibility = 'hidden';
-//     }
-//   });
-
-//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
-//     setVisibleTags(updatedVisibleTags);
-//   }
-//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
-//     setHiddenTags(updatedHiddenTags);
-//     setOverflow(hasOverflow);
-//   }
-// };
-
-// useEffect(() => {
-//   const resizeObserver = new ResizeObserver(() => {
-//     recalculateTagVisibility();
-//   });
-//   if (containerRef.current) {
-//     resizeObserver.observe(containerRef.current);
-//   }
-//   return () => resizeObserver.disconnect();
-// }, []);
-
-// useLayoutEffect(() => {
-//   recalculateTagVisibility();
-// });
-const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
-  const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
-  const [overflow, setOverflow] = useState(false);
-
-  const { tags } = usePartialVertex(note, ['tags', 'workspace']);
-  const managers = useMemo(() => {
-    const result = [];
-    for (const [parent, child] of tags) {
-      if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
-        continue;
-      }
-      result.push(child.manager);
-    }
-    return result;
-  }, [tags]);
-
-  const tagsMng = new Map<VertexManager<Tag>, VertexManager<Tag>>();
-  for (const [p, c] of tags) {
-    tagsMng.set(
-      p.manager as VertexManager<Tag>,
-      c.manager as VertexManager<Tag>
-    );
-  }
-  const onDelete = useCallback(
-    (tag: Tag) => {
-      note.getVertexProxy().tags.delete(tag.parentTag || tag);
-    },
-    [note]
-  );
-  const containerRef = useRef<HTMLDivElement>(null);
-  const lastWidthRef = useRef<number | null>(null);
-
-  useLayoutEffect(() => {
-    const calculateVisibleTags = () => {
-      let availableWidth = containerWidth;
-      const updatedVisibleTags = [];
-      const updatedHiddenTags = [];
-      let hasOverflow = false;
-      const tagWidth = 60;
-
-      for (const tag of managers) {
-        if (availableWidth >= tagWidth) {
-          updatedVisibleTags.push(tag);
-          availableWidth -= tagWidth;
-        } else {
-          updatedHiddenTags.push(tag);
-          hasOverflow = true;
-        }
-      }
-      setVisibleTags(updatedVisibleTags);
-      setHiddenTags(updatedHiddenTags);
-      setOverflow(hasOverflow);
-    };
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const newWidth = entry.contentRect.width;
-        if (lastWidthRef.current !== newWidth) {
-          setContainerWidth(newWidth);
-          lastWidthRef.current = newWidth;
-          calculateVisibleTags();
-        }
-      }
-    });
-
-    if (containerRef.current) {
-      const initialWidth = containerRef.current.offsetWidth;
-      if (lastWidthRef.current !== initialWidth) {
-        setContainerWidth(initialWidth);
-        lastWidthRef.current = initialWidth;
-      }
-      resizeObserver.observe(containerRef.current);
-    }
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [managers]);
-
-  const hiddenTagsText = hiddenTags
-    .map((tag) => tag.getVertexProxy().name)
-    .join(', ');
-
-  const onTag = useCallback(
-    (tag: Tag) => {
-      const vert = note.getVertexProxy();
-      const tags = vert.tags;
-      const parent = tag.parentTag || tag;
-      tags.set(parent, tag);
-    },
-    [note]
-  );
-
-  return (
-    <div ref={containerRef} className={cn(styles.tagsColumn)}>
-      {visibleTags.map((x) => (
-        <TagView
-          className={cn(styles.tag)}
-          showMenu="hover"
-          key={x.key}
-          tag={x}
-          onSelected={onTag}
-          onDelete={onDelete}
-        />
-      ))}
-      {overflow && (
-        <Tooltip text={hiddenTagsText} position="top" align="center">
-          <div className={cn(styles.tag, styles.tagName)}>...</div>
-        </Tooltip>
-      )}
-
-      <TagButton
-        onTagged={onTag}
-        className={cn(styles.visibleOnHover)}
-        noteId={note}
-      />
     </div>
   );
 };
