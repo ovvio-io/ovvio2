@@ -522,7 +522,9 @@ function TitleCell({
   const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
   return (
     <div className={cn(styles.title)} onClick={onClick}>
-      <Text>{titlePlaintext}</Text>
+      <Tooltip text={titlePlaintext} position="top" align="center">
+        <Text onClick={onClick}>{titlePlaintext}</Text>
+      </Tooltip>
     </div>
   );
 }
@@ -555,9 +557,15 @@ function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
           {vNote.parentNote && (
             <>
               <span className={cn(styles.breadCrumbsSlash)}>/</span>
-              <Text className={cn(styles.breadCrumbsTitle)}>
-                {vNote.parentNote.titlePlaintext}
-              </Text>
+              <Tooltip
+                text={vNote.parentNote.titlePlaintext}
+                position="top"
+                align="center"
+              >
+                <div className={cn(styles.breadCrumbsTitle)}>
+                  {vNote.parentNote.titlePlaintext}
+                </div>
+              </Tooltip>
             </>
           )}
         </>
