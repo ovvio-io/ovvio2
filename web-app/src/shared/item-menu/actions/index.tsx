@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate } from 'react-router';
 import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -30,8 +36,8 @@ import {
 } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
 import { IconColor } from '../../../../../styles/components/new-icons/types.ts';
 import { IconLink } from '../../../../../styles/components/icons/index.ts';
-import { MenuAction } from '../../../../../styles/components/menu.tsx';
-import { H3, Text } from '../../../../../styles/components/texts.tsx';
+import Menu, { MenuAction } from '../../../../../styles/components/menu.tsx';
+
 import {
   toastContext,
   useToastController,
@@ -51,6 +57,65 @@ import {
   IconCheckAll,
   CheckAllState,
 } from '../../../../../styles/components/new-icons/icon-check-all.tsx';
+import { RemoveButton } from '../../../app/settings/components/settings-buttons.tsx';
+import { CancelButton } from '../../../app/settings/components/settings-buttons.tsx';
+import { makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../styles/styleguide.ts';
+import { layout } from '../../../../../styles/layout.ts';
+import { cn } from '../../../../../styles/css-objects/index.ts';
+
+const useStyles = makeStyles(() => ({
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: 'opacity',
+  },
+  itemMenuOpen: {
+    opacity: 1,
+  },
+  deleteConfirmation: {
+    marginBottom: styleguide.gridbase,
+    display: 'flex',
+    width: '324px',
+    alignItems: 'center',
+    gap: '8px',
+    borderRadius: '18px',
+    background:
+      'radial-gradient(130.54% 130.54% at 7.69% 7.69%, rgba(255, 255, 255, 0.30) 0%, rgba(229, 229, 229, 0.30) 100%)',
+    boxShadow: '0px 0px 1px 0px rgba(0, 0, 0, 0.20)',
+    backdropFilter: 'blur(0.5px)',
+  },
+  deleteWsButton: {
+    width: '178px',
+  },
+  deleteContainer: {
+    basedOn: [layout.column],
+    marginTop: '69px',
+    width: '324px',
+  },
+  hidden: {
+    display: 'none',
+  },
+  popup: {
+    maxWidth: styleguide.gridbase * 21,
+    maxHeight: styleguide.gridbase * 21,
+    flexShrink: 0,
+  },
+  confirmation: {
+    display: 'flex',
+    padding: '8px 10px 10px ',
+    flexDirection: 'column',
+    alignItems: 'center',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
+  confirmationButtons: {
+    display: 'flex',
+    padding: '16px 0px 16px 0px',
+    flexDirection: 'column',
+    width: '180px',
+  },
+}));
 
 interface CardActionProps {
   cardManager: VertexManager<Note>;
@@ -155,106 +220,172 @@ export function cardHasChildren(card: Note) {
   return false;
 }
 
-interface DeleteCardActionProps extends CardActionProps {
+interface DeleteNoteProp extends CardActionProps {
   onDeleted?: () => void;
+  showConfirmation: boolean;
+  setShowConfirmation: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
 export function DeleteCardAction({
+  onDeleted,
   cardManager,
-  source,
-  onDeleted = () => {},
-  ...props
-}: DeleteCardActionProps) {
-  const [open, setOpen] = useState(false);
-  const resolveRef = useRef(() => {});
-  const logger = useLogger();
-  const card = useVertex(cardManager);
-  const navigate = useNavigate();
+  showConfirmation,
+  setShowConfirmation,
+}: DeleteNoteProp) {
+  const styles = useStyles();
+  const [removeUserStep, setRemoveUserStep] = useState('startRemove');
+  const note = useVertex(cardManager);
 
-  const onOpen = useCallback(() => {
-    setOpen(true);
-    logger.log({
-      severity: 'EVENT',
-      event: 'Start',
-      flow: 'delete',
-      vertex: card.key,
-      source: source || 'menu:note:delete',
-    });
-    return new Promise<void>((resolve) => {
-      resolveRef.current = () => {
-        resolve();
-        resolveRef.current = () => {};
-      };
-    });
-  }, [setOpen, logger, card, source]);
+  const handleDeleteClick = () => {
+    setShowConfirmation(true); // Show the confirmation dialog
+  };
+  const handleCancelClick = () => {
+    setShowConfirmation(false); // Show the confirmation dialog
+  };
+  const handleConfirmDelete = () => {
+    note.isDeleted = 1;
+    setShowConfirmation(false);
+  };
 
-  const closeDialog = useCallback(
-    (isCancelled: boolean) => {
-      setOpen(false);
-      resolveRef.current();
-      if (isCancelled) {
-        logger.log({
-          severity: 'EVENT',
-          event: 'Cancel',
-          flow: 'delete',
-          vertex: card.key,
-          source: source || 'menu:note:delete',
-        });
-      }
-    },
-    [setOpen, logger, card, source]
-  );
+  interface ImageIconProps {
+    width?: string;
+    height?: string;
+    src: string;
+    alt?: string;
+  }
 
-  const onDeleteClick = useCallback(() => {
-    card.isDeleted = 1;
-    logger.log({
-      severity: 'EVENT',
-      event: 'End',
-      flow: 'delete',
-      vertex: card.key,
-      source: source || 'menu:note:delete',
-    });
-    closeDialog(false);
-    onDeleted && onDeleted();
-    navigate('/');
-    // if (source === 'title' || source === 'editor:title') {
-    //   const prevState = history.getRouteInformation(1);
-    //   if (prevState === undefined || prevState === null) {
-    //     history.replace(LOGIN);
-    //   } else {
-    //     history.pop();
-    //   }
-    // }
-  }, [card, logger, closeDialog, onDeleted, source, navigate]);
-  const hasChildren = cardHasChildren(card);
-  const msg = hasChildren
-    ? 'Deleting this item is permanent and will include the data it contains; including text and items'
-    : 'Deleting this item is permanent';
-  const deleteText = hasChildren ? 'Delete Items' : 'Delete';
+  const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
+    return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
+  };
+
   return (
     <React.Fragment>
-      <MenuAction
-        {...props}
-        onClick={onOpen}
-        IconComponent={IconDelete}
-        text="Delete"
-      />
-      <Dialog
-        open={open}
-        onClickOutside={() => closeDialog(true)}
-        onClose={() => closeDialog(true)}
-      >
-        <DialogContent>
-          <H3>Are you sure?</H3>
-          <Text>{msg}</Text>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => closeDialog(true)}>Cancel</Button>
-          <RaisedButton onClick={onDeleteClick}>{deleteText}</RaisedButton>
-        </DialogActions>
-      </Dialog>
+      {!showConfirmation ? (
+        <MenuAction
+          IconComponent={(props: ImageIconProps) => (
+            <ImageIcon
+              {...props}
+              src="/icons/settings/Delete.svg"
+              alt="Delete"
+            />
+          )}
+          text="Delete"
+          iconWidth="16px"
+          iconHeight="16px"
+          onClick={() => {
+            handleDeleteClick();
+          }}
+        />
+      ) : (
+        <div className={cn(styles.confirmationButtons)}>
+          <RemoveButton onRemove={() => handleConfirmDelete()} />
+          <CancelButton onCancel={() => handleCancelClick()} />
+        </div>
+      )}
     </React.Fragment>
   );
 }
+
+interface DeleteCardActionProps1 extends CardActionProps {
+  onDeleted?: () => void;
+}
+// export function DeleteCardAction1({
+//   cardManager,
+//   source,
+//   onDeleted = () => {},
+//   ...props
+// }: DeleteCardActionProps1) {
+//   const [open, setOpen] = useState(false);
+//   const resolveRef = useRef(() => {});
+//   const logger = useLogger();
+//   const card = useVertex(cardManager);
+//   const navigate = useNavigate();
+
+//   const onOpen = useCallback(() => {
+//     setOpen(true);
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'Start',
+//       flow: 'delete',
+//       vertex: card.key,
+//       source: source || 'menu:note:delete',
+//     });
+//     return new Promise<void>((resolve) => {
+//       resolveRef.current = () => {
+//         resolve();
+//         resolveRef.current = () => {};
+//       };
+//     });
+//   }, [setOpen, logger, card, source]);
+
+//   const closeDialog = useCallback(
+//     (isCancelled: boolean) => {
+//       setOpen(false);
+//       resolveRef.current();
+//       if (isCancelled) {
+//         logger.log({
+//           severity: 'EVENT',
+//           event: 'Cancel',
+//           flow: 'delete',
+//           vertex: card.key,
+//           source: source || 'menu:note:delete',
+//         });
+//       }
+//     },
+//     [setOpen, logger, card, source]
+//   );
+
+//   const onDeleteClick = useCallback(() => {
+//     card.isDeleted = 1;
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'End',
+//       flow: 'delete',
+//       vertex: card.key,
+//       source: source || 'menu:note:delete',
+//     });
+//     closeDialog(false);
+//     onDeleted && onDeleted();
+//     navigate('/');
+//     // if (source === 'title' || source === 'editor:title') {
+//     //   const prevState = history.getRouteInformation(1);
+//     //   if (prevState === undefined || prevState === null) {
+//     //     history.replace(LOGIN);
+//     //   } else {
+//     //     history.pop();
+//     //   }
+//     // }
+//   }, [card, logger, closeDialog, onDeleted, source, navigate]);
+//   const hasChildren = cardHasChildren(card);
+//   const msg = hasChildren
+//     ? 'Deleting this item is permanent and will include the data it contains; including text and items'
+//     : 'Deleting this item is permanent';
+//   const deleteText = hasChildren ? 'Delete Items' : 'Delete';
+//   return (
+//     <React.Fragment>
+//       <MenuAction
+//         {...props}
+//         onClick={onOpen}
+//         IconComponent={IconDelete}
+//         text="Delete"
+//       />
+//       <Dialog
+//         open={open}
+//         onClickOutside={() => closeDialog(true)}
+//         onClose={() => closeDialog(true)}
+//       >
+//         <DialogContent>
+//           <H3>Are you sure?</H3>
+//           <Text>{msg}</Text>
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => closeDialog(true)}>Cancel</Button>
+//           <RaisedButton onClick={onDeleteClick}>{deleteText}</RaisedButton>
+//         </DialogActions>
+//       </Dialog>
+//     </React.Fragment>
+//   );
+// }
 
 interface DuplicateCardActionProps extends CardActionProps {
   editorRootKey?: string;

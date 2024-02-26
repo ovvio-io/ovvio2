@@ -185,6 +185,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
 
     if (removeUserStep === 'removeProcessing') {
       timeoutId = setTimeout(() => {
+        debugger;
         setRemoveUserStep('confirmRemove');
       }, 10);
     }
