@@ -33,6 +33,7 @@ import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
 import {
   usePartialVertex,
+  usePartialVertices,
   useVertex,
 } from '../../../../../../core/cfds/react/vertex.ts';
 import {
@@ -68,6 +69,28 @@ const showAnim = keyframes({
   },
 });
 const useStyles = makeStyles(() => ({
+  tag2: {
+    direction: 'ltr',
+    backgroundColor: theme.mono.m1,
+    height: styleguide.gridbase * 2,
+    minWidth: styleguide.gridbase * 3,
+    padding: [0, styleguide.gridbase],
+    flexShrink: 0,
+    fontSize: 12,
+    borderRadius: styleguide.gridbase,
+    ...styleguide.transition.short,
+    transitionProperty: 'all',
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  tagName: {
+    color: theme.colors.text,
+    animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
+    userSelect: 'none',
+  },
   row: {
     height: ROW_HEIGHT,
     width: '100%',
@@ -83,7 +106,7 @@ const useStyles = makeStyles(() => ({
   },
   itemRow: {
     basedOn: [layout.row],
-    position: 'relative',
+    // position: 'relative',
     transform: 'scale(1)',
     ':hover': {
       visibleOnHover: {
@@ -136,11 +159,10 @@ const useStyles = makeStyles(() => ({
     paddingLeft: styleguide.gridbase,
   },
   title: {
-    // basedOn: [layout.flexSpacer],
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
-    width: 'calc(50% - 176px)',
+    width: 'calc(50% - 156px)',
     cursor: 'pointer',
     position: 'relative',
     textOverflow: 'ellipsis',
@@ -149,7 +171,7 @@ const useStyles = makeStyles(() => ({
     paddingLeft: styleguide.gridbase * 0.5,
   },
   wsColumn: {
-    width: 'calc(25% - 176px)',
+    width: 'calc(25% - 156px)',
     basedOn: [layout.row],
     flexGrow: '1',
     flexShrink: '1',
@@ -158,8 +180,7 @@ const useStyles = makeStyles(() => ({
     padding: [0, styleguide.gridbase * 0.5],
   },
   assigneeColumn: {
-    width: 'calc(5% - 176px)',
-    // basedOn: [layout.flexSpacer],
+    width: 'calc(5% - 156px)',
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
@@ -175,14 +196,15 @@ const useStyles = makeStyles(() => ({
     marginRight: styleguide.gridbase * 0.25,
   },
   tagsColumn: {
-    width: 'calc(20% - 176px)',
+    width: 'calc(20% - 156px)',
     flexGrow: '2',
     flexShrink: '1',
     flexBasis: 'auto',
     overflow: 'clip',
     display: 'flex',
-    justifyContent: 'flex-end',
+    position: 'relative',
     padding: [0, styleguide.gridbase],
+    minHeight: styleguide.gridbase * 2,
   },
   tag: {
     minWidth: '0',
@@ -324,59 +346,72 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const containerRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef(new Map());
-  const [visibleTags, setVisibleTags] = useState<VertexManager<Tag>[]>([]);
-  const [hiddenTags, setHiddenTags] = useState<VertexManager<Tag>[]>([]);
-  const [overflow, setOverflow] = useState(false);
   const { tags } = usePartialVertex(note, ['tags']);
+  const tooltipRef = useRef<HTMLElement>(null);
+  const tagButtonRef = useRef<HTMLElement>(null);
 
-  const managers = useMemo(() => {
-    const result = [];
-    for (const [parent, child] of tags) {
-      if (parent instanceof Tag && parent.name?.toLowerCase() === 'status') {
-        continue;
-      }
-      result.push(child.manager);
+  const managers = Array.from(tags.values()).map((tag) => tag.manager);
+  usePartialVertices(managers, ['name']);
+
+  const recalculateTagVisibility = useCallback(() => {
+    if (!containerRef.current) {
+      return;
     }
-    return result;
-  }, [tags]);
-
-  useLayoutEffect(() => {
-    recalculateTagVisibility();
-  });
-
-  const recalculateTagVisibility = () => {
-    const containerWidth =
-      containerRef.current?.getBoundingClientRect().width || 0;
-    let cumulativeWidth = 0;
-    const updatedVisibleTags: VertexManager<Tag>[] = [];
-    const updatedHiddenTags: VertexManager<Tag>[] = [];
-    let hasOverflow = false;
-    managers.forEach((manager) => {
-      const tagElement = tagsRef.current.get(manager);
-      const tagWidth = tagElement?.getBoundingClientRect().width || 0;
-      if (cumulativeWidth + tagWidth <= containerWidth) {
-        cumulativeWidth += tagWidth;
-        updatedVisibleTags.push(manager);
-        if (tagElement) tagElement.style.visibility = 'visible';
-      } else {
-        updatedHiddenTags.push(manager);
-        hasOverflow = true;
-        if (tagElement) tagElement.style.visibility = 'hidden';
+    const parentRect = containerRef.current.getBoundingClientRect();
+    const parentRight =
+      parentRect.right -
+      (tagButtonRef.current
+        ? tagButtonRef.current?.getBoundingClientRect().width
+        : 0) -
+      (tooltipRef.current
+        ? tooltipRef.current.getBoundingClientRect().width
+        : 0);
+    let lastChildRight = 0;
+    if (containerRef.current) {
+      for (const tag of containerRef.current?.children) {
+        const tagKey = tag.getAttribute('data-tag-key');
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        if (tagElement) {
+          const tagRect = tagElement.getBoundingClientRect();
+          if (tagRect.right + 6 >= parentRight || tagRect.x >= parentRight) {
+            if (!lastChildRight) {
+              lastChildRight = tagRect.x - parentRect.x;
+            }
+            tagElement.style.visibility = 'hidden';
+          } else {
+            tagElement.style.visibility = 'visible';
+          }
+        }
       }
 
-      if (containerRef.current) {
-        containerRef.current.style.overflow = hasOverflow ? 'clip' : 'visible';
+      if (tagButtonRef.current) tagButtonRef.current.style.right = '8px';
+      if (tooltipRef.current) {
+        if (!lastChildRight) {
+          tooltipRef.current.style.visibility = 'hidden';
+        } else {
+          tooltipRef.current.style.translate = `${lastChildRight - 8}px 0px`;
+          tooltipRef.current.style.visibility = 'visible';
+        }
       }
-    });
+    }
+  }, []);
 
-    if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
-      // if (updatedVisibleTags !== visibleTags)
-      setVisibleTags(updatedVisibleTags);
+  const getHiddenTags = () => {
+    const hiddenTags = [];
+    if (containerRef.current) {
+      for (const tag of containerRef.current.children) {
+        const tagKey = tag.getAttribute('data-tag-key');
+        const tagName = tag.getAttribute('data-tag-name');
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        if (tagElement) {
+          const displayStyle = window.getComputedStyle(tagElement).visibility;
+          if (displayStyle === 'hidden') {
+            hiddenTags.push(tagName);
+          }
+        }
+      }
     }
-    if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
-      setHiddenTags(updatedHiddenTags);
-      setOverflow(hasOverflow);
-    }
+    return hiddenTags.join(',  ');
   };
 
   useEffect(() => {
@@ -387,7 +422,11 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       resizeObserver.observe(containerRef.current);
     }
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [containerRef.current]);
+
+  useLayoutEffect(() => {
+    recalculateTagVisibility();
+  });
 
   const onTag = useCallback(
     (tag: Tag) => {
@@ -408,8 +447,13 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
 
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
-      {visibleTags.map((tag, index) => (
-        <div ref={(el) => tagsRef.current.set(tag, el)} key={index}>
+      {managers.map((tag, index) => (
+        <div
+          ref={(el) => el && tagsRef.current.set(tag.key, el)}
+          data-tag-key={tag.key}
+          key={index}
+          data-tag-name={tag.getVertexProxy().name}
+        >
           <TagView
             className={cn(styles.tag)}
             showMenu="hover"
@@ -420,25 +464,21 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           />
         </div>
       ))}
-      {overflow && (
-        <Tooltip
-          text={hiddenTags.map((tag) => tag.getVertexProxy().name).join(', ')}
-          position="top"
-          align="center"
-        >
-          <TagPillView className={cn(styles.tag)} />
+      <div ref={tooltipRef} style={{ position: 'absolute' }}>
+        <Tooltip text={getHiddenTags()} position="top" align="center">
+          <div className={cn(styles.tag2, styles.tagName)}>...</div>
         </Tooltip>
-      )}
-
-      <TagButton
-        onTagged={onTag}
-        className={cn(styles.visibleOnHover)}
-        noteId={note}
-      />
+      </div>
+      <div ref={tagButtonRef} style={{ position: 'absolute' }}>
+        <TagButton
+          onTagged={onTag}
+          className={cn(styles.visibleOnHover)}
+          noteId={note}
+        />
+      </div>
     </div>
   );
 };
-
 // const recalculateTagVisibility = () => {
 //   const containerWidth =
 //     containerRef.current?.getBoundingClientRect().width || 0;
@@ -446,13 +486,9 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
 //   const updatedVisibleTags: VertexManager<Tag>[] = [];
 //   const updatedHiddenTags: VertexManager<Tag>[] = [];
 //   let hasOverflow = false;
-//   managers.forEach((manager, index) => {
+//   managers.forEach((manager) => {
 //     const tagElement = tagsRef.current.get(manager);
-
-//     const tagWidth =
-//       tagsRef.current.get(manager)?.getBoundingClientRect().width || 0;
-//     debugger;
-
+//     const tagWidth = tagElement?.getBoundingClientRect().width || 0;
 //     if (cumulativeWidth + tagWidth <= containerWidth) {
 //       cumulativeWidth += tagWidth;
 //       updatedVisibleTags.push(manager);
@@ -463,41 +499,29 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
 //       if (tagElement) tagElement.style.visibility = 'hidden';
 //     }
 //   });
-//   setOverflow(hasOverflow);
-//   setVisibleTags(updatedVisibleTags);
-//   setHiddenTags(updatedHiddenTags);
+
+//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+//     setVisibleTags(updatedVisibleTags);
+//   }
+//   if (!coreValueEquals(updatedVisibleTags, visibleTags)) {
+//     setHiddenTags(updatedHiddenTags);
+//     setOverflow(hasOverflow);
+//   }
 // };
 
-// useLayoutEffect(() => {
-//   const updateTagsDisplay = () => {
-//     const containerWidth = containerRef.current.offsetWidth;
-//     let availableWidth = containerWidth;
-//     const updatedVisibleTags: VertexManager<Tag>[] = [];
-//     const updatedHiddenTags: VertexManager<Tag>[] = [];
-//     managers.forEach((tag) => {
-//       const tagWidth = tagsRef.current.get(tag)?.offsetWidth || 0;
-//       if (availableWidth >= tagWidth) {
-//         updatedVisibleTags.push(tag);
-//         availableWidth -= tagWidth;
-//       } else {
-//         updatedHiddenTags.push(tag);
-//       }
-//     });
-//     setVisibleTags(updatedVisibleTags);
-//     setHiddenTags(updatedHiddenTags);
-//     setOverflow(updatedHiddenTags.length > 0);
-//   };
-
+// useEffect(() => {
 //   const resizeObserver = new ResizeObserver(() => {
-//     updateTagsDisplay();
+//     recalculateTagVisibility();
 //   });
 //   if (containerRef.current) {
 //     resizeObserver.observe(containerRef.current);
 //   }
-
 //   return () => resizeObserver.disconnect();
-// }, [managers]);
+// }, []);
 
+// useLayoutEffect(() => {
+//   recalculateTagVisibility();
+// });
 const TagsCellCore = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
   const [containerWidth, setContainerWidth] = useState(0);
