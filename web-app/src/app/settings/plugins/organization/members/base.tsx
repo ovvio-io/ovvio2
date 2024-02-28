@@ -3,7 +3,7 @@ import { Step0 } from './step0.tsx';
 import { Step1 } from './step1.tsx';
 import { Step2 } from './step2.tsx';
 import Wizard from '../../../components/wizard.tsx';
-import { Edit } from './edit.tsx';
+import { AddMembers } from './addMembers.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Step3 } from './step3.tsx';
 
@@ -23,7 +23,7 @@ export default function MembersTabContent() {
         <Wizard onClose={handleCloseWizard} currentStepIndex={step} />
       )}
       {step === 0 && <Step0 setStep={setStep} />}
-      {step === 5 && <Edit setStep={setStep} onClose={handleCloseWizard} />}
+      {step === 5 && <AddMembers onClose={handleCloseWizard} />}
       {step === 1 && (
         <Step1
           setStep={setStep}

@@ -6,7 +6,6 @@ import {
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { TextSm, Text } from '../../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
-import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 import { useWorkspaceColor } from '../../../shared/workspace-icon/index.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
@@ -81,7 +80,8 @@ const RowInTable: React.FC<RowInTableProps> = ({
     },
     otherColumnStyle: {
       display: 'flex',
-      width: '176px',
+      // width: '176px',
+      width: '500px',
       height: '17px',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -121,7 +121,6 @@ const RowInTable: React.FC<RowInTableProps> = ({
   }
   function WorkspaceColor({ workspace }: WorkspaceColorProps) {
     const styles = useStyles();
-    const { name } = usePartialVertex(workspace, ['name']);
     const color = useWorkspaceColor(workspace)?.background || 'transparent';
     return (
       <div
@@ -227,20 +226,26 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
   }));
   const styles = useStyles2();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filteredWorkspaces, setFilteredWorkspaces] = useState<Workspace[]>([]);
   const [isSearching, setIsSearching] = useState(showSearch ? true : false);
 
-  useEffect(() => {
-    if (workspaces) {
-      const filtered = suggestResults(
-        searchTerm,
-        workspaces,
-        (t) => t.name,
-        Number.MAX_SAFE_INTEGER
-      );
-      setFilteredWorkspaces(filtered);
-    }
-  }, [searchTerm, workspaces]);
+  // useEffect(() => {
+  //   if (workspaces) {
+  //     const filtered = suggestResults(
+  //       searchTerm,
+  //       workspaces,
+  //       (t) => t.name,
+  //       Number.MAX_SAFE_INTEGER
+  //     );
+  //     setFilteredWorkspaces(filtered);
+  //   }
+  // }, [searchTerm, workspaces]);
+
+  const filtered = suggestResults(
+    searchTerm,
+    workspaces,
+    (t) => t.name,
+    Number.MAX_SAFE_INTEGER
+  );
 
   const wsKey = 'SettingWs_';
   const graph = useGraphManager();
@@ -257,7 +262,7 @@ const WorkspaceTable: React.FC<WorkspaceTableProps> = ({
           />
         )}
         {/* <div className={styles.scrollTable}> */}
-        {filteredWorkspaces.map(
+        {filtered.map(
           (ws: Workspace) =>
             ws.key !== personalWsKey && (
               <RowInTable

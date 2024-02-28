@@ -9,7 +9,8 @@ const useStyles = makeStyles(() => ({
     boxSizing: 'border-box',
     borderRadius: 20,
     fontSize: 14,
-    fontWeight: 500,
+    // fontWeight: 500,
+    fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
     borderStyle: 'solid',
     borderWidth: 1,
     color: theme.mono.m0,
@@ -44,7 +45,7 @@ export interface ActionButtonProps extends React.ComponentProps<'button'> {
 
 export const ActionButton = React.forwardRef(function ActionButton(
   props: ActionButtonProps,
-  ref: React.Ref<HTMLButtonElement>
+  ref: React.Ref<HTMLButtonElement>,
 ) {
   const styles = useStyles();
   const { onClick, enabled, mode, className, children, icon } = props;

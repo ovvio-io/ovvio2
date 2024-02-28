@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3';
-import { EaseInOutSineTimer } from '../base/timer.ts';
+import { EaseInExpoTimer, EaseInOutSineTimer } from '../base/timer.ts';
 import { BloomFilter } from '../base/bloom.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { log } from '../logging/log.ts';
@@ -12,7 +12,6 @@ import {
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
-import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -43,6 +42,7 @@ export abstract class BaseClient<
   private _scheduled: boolean;
   private _closed = false;
   private _pendingSyncPromise: Promise<boolean> | undefined;
+  private _syncActive = false;
 
   constructor(
     readonly storage: RepositoryType,
@@ -51,10 +51,10 @@ export abstract class BaseClient<
     readonly scheduler: SyncScheduler,
   ) {
     super();
-    this._timer = new EaseInOutSineTimer(
+    this._timer = new EaseInExpoTimer(
       syncConfig.minSyncFreqMs,
       syncConfig.maxSyncFreqMs,
-      syncConfig.maxSyncFreqMs,
+      syncConfig.pollingBackoffDurationMs,
       () => {
         if (!this.ready) {
           return;
@@ -70,7 +70,7 @@ export abstract class BaseClient<
       },
       true,
       `Sync timer ${storage}/${id}`,
-      true,
+      // true,
     );
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(this.syncConfig) * 2,
@@ -92,7 +92,7 @@ export abstract class BaseClient<
     if (!this.isOnline) {
       return 'offline';
     }
-    return this.needsReplication() ? 'sync' : 'idle';
+    return this._syncActive || this.needsReplication() ? 'sync' : 'idle';
   }
 
   get previousServerFilter(): BloomFilter | undefined {
@@ -104,7 +104,9 @@ export abstract class BaseClient<
   }
 
   get syncCycles(): number {
-    return syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
+    return this.needsReplication() || this._syncActive
+      ? 1
+      : syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
   }
 
   get serverVersion(): VersionNumber {
@@ -170,10 +172,10 @@ export abstract class BaseClient<
     return this;
   }
 
-  private sendSyncMessage(priority?: boolean): Promise<boolean> {
+  private sendSyncMessage(): Promise<boolean> {
     let result = this._pendingSyncPromise;
     if (!result) {
-      const promise = this._sendSyncMessageImpl(priority).finally(() => {
+      const promise = this._sendSyncMessageImpl().finally(() => {
         if (this._pendingSyncPromise === promise) {
           this._pendingSyncPromise = undefined;
         }
@@ -184,12 +186,17 @@ export abstract class BaseClient<
     return result;
   }
 
-  private async _sendSyncMessageImpl(priority?: boolean): Promise<boolean> {
+  private async _sendSyncMessageImpl(): Promise<boolean> {
     if (this.closed) {
       return false;
     }
     const startingStatus = this.status;
-    const reqMsg = await this.buildSyncMessage(priority !== true);
+    const priority =
+      this.storage !== 'events' &&
+      (this.storage === 'sys' ||
+        this.storage === 'user' ||
+        this.needsReplication());
+    const reqMsg = await this.buildSyncMessage(true);
 
     let syncResp: SyncMessage<ValueType>;
     try {
@@ -248,6 +255,10 @@ export abstract class BaseClient<
       return false;
     }
 
+    if (!this._syncActive && (persistedCount > 0 || this.needsReplication())) {
+      this.touch();
+    }
+
     // if (persistedCount > 0 || this.needsReplication()) {
     //   this.touch();
     // }
@@ -255,7 +266,7 @@ export abstract class BaseClient<
     if (this.status !== startingStatus) {
       this.emit(EVENT_STATUS_CHANGED);
     }
-    return persistedCount > 0;
+    return true;
   }
 
   /**
@@ -266,29 +277,31 @@ export abstract class BaseClient<
    * communication (which rely on indefinite polling loop).
    */
   async sync(): Promise<void> {
-    // const syncConfig = this.syncConfig;
-    const cycleCount = this.syncCycles + 1;
-    // We need to do a minimum number of successful sync cycles in order to make
-    // sure everything is sync'ed. Also need to make sure we don't have any
-    // local commits that our peer doesn't have (local changes or peer recovery).
-    let i = 0;
-    let emptyCount = 0;
-    do {
-      if ((await this.sendSyncMessage(true)) === false) {
-        if (++emptyCount === 2) {
-          break;
+    this._syncActive = true;
+    try {
+      // const syncConfig = this.syncConfig;
+      const cycleCount = this.syncCycles;
+      // We need to do a minimum number of successful sync cycles in order to make
+      // sure everything is sync'ed. Also need to make sure we don't have any
+      // local commits that our peer doesn't have (local changes or peer recovery).
+      let i = 0;
+      do {
+        if (await this.sendSyncMessage()) {
+          ++i;
         }
-      } else {
-        emptyCount = 0;
-      }
-      ++i;
-    } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
+      } while (!this.closed && i <= cycleCount /*|| this.needsReplication()*/);
+    } finally {
+      this._syncActive = false;
+    }
   }
 
   needsReplication(): boolean {
     const serverFilter = this._previousServerFilter;
+    if (!serverFilter) {
+      return false;
+    }
     for (const id of this.localIds()) {
-      if (!serverFilter || !serverFilter.has(id)) {
+      if (!serverFilter.has(id)) {
         return true;
       }
     }
@@ -296,7 +309,7 @@ export abstract class BaseClient<
   }
 
   touch(): void {
-    if (!this._scheduled) {
+    if (!this._scheduled || !this.ready) {
       return;
     }
     this._timer.reset();

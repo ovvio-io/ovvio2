@@ -63,9 +63,11 @@ const useStyles = makeStyles(() => ({
   textWrapper: {
     color: theme.primary.p9,
     fontFamily: styleguide.textStyles['h3-headline'].fontFamily,
-    fontSize: styleguide.textStyles['h3-headline'].fontSize,
+    // fontSize: styleguide.textStyles['h3-headline'].fontSize,
+    fontSize: '18px',
     fontStyle: styleguide.textStyles['h3-headline'].fontStyle,
-    fontWeight: styleguide.textStyles['h3-headline'].fontWeight,
+    // fontWeight: styleguide.textStyles['h3-headline'].fontWeight,
+    fontWeight: '400',
     height: '24px',
     left: '-2px',
     letterSpacing: styleguide.textStyles['h3-headline'].letterSpacing,
@@ -79,11 +81,30 @@ const useStyles = makeStyles(() => ({
   div: {
     color: theme.primary.p9,
     fontFamily: styleguide.textStyles['h3-headline'].fontFamily,
-    fontSize: styleguide.textStyles['h3-headline'].fontSize,
+    // fontSize: styleguide.textStyles['h3-headline'].fontSize,
     fontStyle: styleguide.textStyles['h3-headline'].fontStyle,
-    fontWeight: styleguide.textStyles['h3-headline'].fontWeight,
+    fontSize: '18px',
+    // fontWeight: styleguide.textStyles['h3-headline'].fontWeight,
+    fontWeight: '400',
     height: '24px',
-    left: '7px',
+    left: '8px',
+    letterSpacing: styleguide.textStyles['h3-headline'].letterSpacing,
+    lineHeight: styleguide.textStyles['h3-headline'].lineHeight,
+    opacity: 0.6,
+    position: 'absolute',
+    top: '0',
+    whiteSpace: 'nowrap',
+  },
+  div3: {
+    color: theme.primary.p9,
+    fontFamily: styleguide.textStyles['h3-headline'].fontFamily,
+    // fontSize: styleguide.textStyles['h3-headline'].fontSize,
+    fontSize: '18px',
+    fontStyle: styleguide.textStyles['h3-headline'].fontStyle,
+    // fontWeight: styleguide.textStyles['h3-headline'].fontWeight,
+    fontWeight: '400',
+    height: '24px',
+    left: '17px',
     letterSpacing: styleguide.textStyles['h3-headline'].letterSpacing,
     lineHeight: styleguide.textStyles['h3-headline'].lineHeight,
     opacity: 0.6,
@@ -99,6 +120,18 @@ const useStyles = makeStyles(() => ({
   },
   uploadWorkspaceLabel: {
     position: 'absolute',
+  },
+
+  oneInitial: {
+    left: '16px',
+  },
+
+  twoInitials: {
+    left: '10px',
+  },
+
+  threeInitials: {
+    left: '7px',
   },
 }));
 
@@ -172,14 +205,43 @@ export const IconAvatar: React.FC = () => {
   const styles = useStyles();
   const userData = usePartialRootUser('name', 'email');
 
+  // const initials = getInitials(userData.name, userData.email);
+
   const initials = getInitials(userData.name, userData.email);
+  let initialsClass = '';
+  switch (initials.length) {
+    case 1:
+      initialsClass = styles.oneInitial;
+      break;
+    case 2:
+      initialsClass = styles.twoInitials;
+
+      break;
+    case 3:
+      initialsClass = styles.threeInitials;
+      break;
+    default:
+    // default class or handling
+  }
 
   return (
     <div className={styles.iconAvatar}>
-      <div className={styles.group}>
+      <div className={`${styles.group}  ${initialsClass}`}>
         <div className={styles.overlapGroup}>
-          <div className={styles.textWrapper}>{initials[0]}</div>
-          <div className={styles.div}>{initials[1]}</div>
+          {initials.split('').map((initial, index) => (
+            <div
+              key={index}
+              className={
+                index === 0
+                  ? styles.textWrapper
+                  : index === 1
+                  ? styles.div
+                  : styles.div3
+              }
+            >
+              {initial}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -192,13 +254,10 @@ function getInitials(name: string, email: string): string {
   }
 
   const names = name.split(' ');
-  let initials = names[0].substring(0, 1).toUpperCase();
-
-  if (names.length > 1) {
-    initials += names[names.length - 1].substring(0, 1).toUpperCase();
-  } else if (names[0].length > 1) {
-    initials += names[0].substring(1, 2).toUpperCase();
-  }
+  let initials = names
+    .slice(0, 3)
+    .map((n) => n && n[0].toUpperCase())
+    .join('');
 
   return initials;
 }

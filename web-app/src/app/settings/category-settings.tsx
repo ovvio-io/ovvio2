@@ -34,10 +34,16 @@ export function CategorySettings(props: CategorySettingsProps) {
         {category === 'workspaces-info' ? (
           <div className={styles.wsBar}>
             <WorkspacesBar key={'wsbar'} ofSettings={true} />
-            <div>
+            <div style={{ overflow: 'hidden' }}>
               <div className={cn(styles.dialogHeader)}>
-                {strings[category]}
-                {ws && <WorkspaceIndicator key={ws.key} workspace={ws} />}
+                {strings[category + 'S']}
+                {ws && (
+                  <WorkspaceIndicator
+                    key={ws.key}
+                    workspace={ws}
+                    ofSettings={true}
+                  />
+                )}
               </div>
               <div className={cn(styles.barRow, styles.viewRow)}>
                 <TabView category={category} />

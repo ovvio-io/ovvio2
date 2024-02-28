@@ -101,12 +101,15 @@ export function EditDueDateAction({
   const onClick = () => {
     dueDateEditor.edit(cardManager.getVertexProxy());
   };
+  const partialNote = usePartialVertex(cardManager, ['dueDate']);
+  const hasDueDate = partialNote.dueDate;
+
   return (
     <MenuAction
       {...props}
       onClick={onClick}
       IconComponent={IconAddDueDate}
-      text="Add Due Date"
+      text={hasDueDate != undefined ? 'Edit Due Date' : 'Add Due Date'}
     />
   );
 }
@@ -198,7 +201,7 @@ export function DeleteCardAction({
         });
       }
     },
-    [setOpen, logger, card, source],
+    [setOpen, logger, card, source]
   );
 
   const onDeleteClick = useCallback(() => {
@@ -381,8 +384,6 @@ export function ClearDueDateAction({
       IconComponent={(props: IconDueDateProps) =>
         IconDueDate({ ...props, state: DueDateState.Clear })
       }
-      // iconHeight="25"
-      // iconWidth="20"
       onClick={() => {
         delete cardManager.getVertexProxy().dueDate;
         toastController.displayToast({
@@ -427,7 +428,7 @@ export function ToggleSubTasksAction({
       iconHeight="25"
       iconWidth="20"
       onClick={onClick}
-      text={partialNote.isChecked ? 'Uncheck All Tasks' : 'Check All Tasks'}
+      text={partialNote.isChecked ? ' Uncheck All Tasks' : '   Check All Tasks'}
     />
   );
 }

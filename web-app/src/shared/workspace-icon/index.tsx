@@ -23,8 +23,7 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'content-box',
     backgroundColor: '#9cb2cd',
     color: theme.background[0],
-    fontFamily: 'Roboto',
-    fontWeight: '900',
+    fontFamily: 'PoppinsBold, HeeboBold',
     borderRadius: '50%',
     textDecoration: 'none',
     border: `1px solid ${theme.background[0]}`,
@@ -181,7 +180,9 @@ export default function WorkspaceIcon({
         backgroundColor: icon ? '#4f8df9' : color.active,
       }}
     >
-      {icon ? <img src={icon} className={cn(styles.wsIcon)} alt={ws.name} /> : (
+      {icon ? (
+        <img src={icon} className={cn(styles.wsIcon)} alt={ws.name} />
+      ) : (
         (ws.name || '')[0]
       )}
     </div>

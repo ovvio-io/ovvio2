@@ -14,6 +14,7 @@ import { App, SkeletonApp } from '../styles/components/app.tsx';
 import { CfdsClientProvider } from '../web-app/src/core/cfds/react/graph.tsx';
 import { GraphManager } from '../cfds/client/graph/graph-manager.ts';
 import { Repository } from '../repo/repo.ts';
+import { LoggerProvider } from '../web-app/src/core/cfds/react/logger.tsx';
 
 const kRootBannerHeight = styleguide.gridbase * 6;
 
@@ -24,7 +25,8 @@ const useStyles = makeStyles((theme) => ({
     height: kRootBannerHeight,
     backgroundColor: 'red',
     color: 'white',
-    fontWeight: 700,
+    // fontWeight: 700,
+    fontFamily: 'PoppinsBold, HeeboBold',
     textAlign: 'center',
     fontSize: 24,
     margin: 'auto',
@@ -182,9 +184,8 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
   if (!trustPool.currentSession.owner) {
     return <LoginView session={trustPool.currentSession} />;
   }
-  const banner = trustPool.currentSession.owner !== 'root'
-    ? null
-    : (
+  const banner =
+    trustPool.currentSession.owner !== 'root' ? null : (
       <div className={cn(styles.rootUserBanner)}>
         WARNING: Running as root user
       </div>
@@ -193,15 +194,17 @@ export function SessionProvider({ children, className }: SessionProviderProps) {
     <SkeletonApp>
       <sessionContext.Provider value={{ trustPool }}>
         <CfdsClientProvider graphManager={graph!}>
-          {banner}
-          <div
-            className={cn(
-              banner ? styles.contentsAreaWithBanner : styles.contentsArea,
-              className,
-            )}
-          >
-            {children}
-          </div>
+          <LoggerProvider>
+            {banner}
+            <div
+              className={cn(
+                banner ? styles.contentsAreaWithBanner : styles.contentsArea,
+                className,
+              )}
+            >
+              {children}
+            </div>
+          </LoggerProvider>
         </CfdsClientProvider>
       </sessionContext.Provider>
     </SkeletonApp>

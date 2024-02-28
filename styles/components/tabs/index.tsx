@@ -225,7 +225,7 @@ const useStyles = makeStyles(
       transitionTimingFunction: 'linear',
       basedOn: [layout.row, layout.centerCenter, useTypographyStyles.h5],
       ':hover': {
-        fontWeight: 'bold',
+        fontFamily: 'PoppinsBold, HeeboBold',
       },
     },
     selected: {

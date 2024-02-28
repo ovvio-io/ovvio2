@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { makeStyles, cn } from '../../../../styles/css-objects/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
 import Toolbar from '../workspace-content/workspace-view/toolbar/index.tsx';
-import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceForm } from './workspace-form.tsx';
 import { UISource } from '../../../../logging/client-events.ts';
@@ -69,23 +68,15 @@ export const CreateWorkspaceView = ({
     [view, navigate]
   );
 
-  const closeView = useCallback(() => {
-    navigate('/login');
-  }, [navigate]);
-
   return (
     <div className={cn(styles.root)}>
       <Toolbar />
       <div className={cn(styles.content)}>
         <div className={cn(styles.card)}>
-          {/* {ws ? (
-            <InviteForm showOnboard={true} close={closeView} source={source} />
-          ) : ( */}
           <WorkspaceForm
             source={source}
             onWorkspaceCreated={onWorkspaceCreated || onCreated}
           />
-          {/* )} */}
         </div>
       </div>
     </div>

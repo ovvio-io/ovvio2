@@ -17,6 +17,8 @@ import {
 } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { Dictionary } from '../../../../../base/collections/dict.ts';
 import { WsTagsSettings } from './my-workspaces/ws-tags.tsx';
+import { getOvvioConfig } from '../../../../../server/config.ts';
+import { tuple4ToString } from '../../../../../base/tuple.ts';
 
 export interface SettingsTabPlugin {
   title: SettingsTabId;
@@ -45,11 +47,11 @@ export const tabPlugins: SettingsTabPlugin[] = [
     render: () => <WsTagsSettings />,
     category: 'workspaces-info',
   },
-  {
-    title: 'roles-details',
-    render: () => <DetailsTabContent />,
-    category: 'workspaces-info',
-  },
+  // {
+  //   title: 'roles-details',
+  //   render: () => <DetailsTabContent />,
+  //   category: 'workspaces-info',
+  // },
   // {
   //   title: 'general-organization',
   //   render: () => <GeneralOrgTabContent />,
@@ -89,6 +91,9 @@ export function GeneralTabContent() {
       <div className={cn(styles.userId)}>
         <div className={cn(styles.idTitleText)}>User I.D </div>
         <div className={cn(styles.userIdText)}> {userData.key}</div>
+        <div className={cn(styles.userIdText)}>
+          &nbsp;&nbsp; {tuple4ToString(getOvvioConfig().version)}
+        </div>
       </div>
     </div>
   );

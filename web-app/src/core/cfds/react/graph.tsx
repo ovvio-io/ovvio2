@@ -1,4 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router';
+
 import {
   encodeTagId,
   NS_USERS,
@@ -37,7 +39,7 @@ export function useRootUser(): VertexManager<User> {
   const key = graph.rootKey;
   const user = useMemo<VertexManager<User>>(
     () => graph && graph.getVertexManager<User>(key),
-    [graph, key]
+    [graph, key],
   );
   return user;
 }
@@ -64,12 +66,12 @@ export function useUserSettings(): UserSettings {
 }
 
 export function usePartialUserSettings<K extends keyof UserSettings>(
-  keys?: K[]
+  keys?: K[],
 ) {
   const u = usePartialCurrentUser(['settings']);
   return usePartialVertex(
     u.settings.manager as VertexManager<UserSettings>,
-    keys || []
+    keys || [],
   );
 }
 
@@ -93,7 +95,6 @@ export function CfdsClientProvider({
   children,
   graphManager,
 }: CfdsClientProviderProps) {
-  const logger = useLogger();
   const trustPool = useTrustPool();
   const device = useCurrentDevice();
   // Don't run any setup until a successful login
@@ -110,7 +111,7 @@ export function CfdsClientProvider({
       {
         owner: graphManager.rootKey,
       },
-      lastUsedKey
+      lastUsedKey,
     );
   }
   graphManager.createVertex(
@@ -118,39 +119,39 @@ export function CfdsClientProvider({
     {
       name: 'My Workspace',
     },
-    `${graphManager.rootKey}-ws`
+    `${graphManager.rootKey}-ws`,
   );
   // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
   const globalView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey },
     'ViewGlobal',
-    true
+    true,
   );
   const tasksView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewTasks',
-    true
+    true,
   ).manager;
   const notesView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewNotes',
-    true
+    true,
   ).manager;
   const overviewView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewOverview',
-    true
+    true,
   ).manager;
 
   const wsSettingsView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey },
     'ViewWsSettings',
-    true
+    true,
   ).manager;
 
   const lastUsed = graphManager.getVertex<View>(lastUsedKey);
@@ -183,7 +184,7 @@ export function CfdsClientProvider({
     if (saveViewTimeout) {
       clearTimeout(saveViewTimeout);
     }
-    saveViewTimeout = setTimeout(timeoutCallback, 10 * kSecondMs);
+    saveViewTimeout = setTimeout(timeoutCallback, 3 * kSecondMs);
   };
   globalView.onVertexChanged(changeCallback);
   notesView.onVertexChanged(changeCallback);
@@ -193,30 +194,21 @@ export function CfdsClientProvider({
   // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {
-    const sessionIntervalId = setInterval(() => {
-      logger.log({
-        severity: 'EVENT',
-        event: 'SessionAlive',
-        foreground: document.visibilityState === 'visible',
-      });
-    }, 10 * 1000);
-
     const clientData: ClientData = getClientData() || {
       graphManager,
     };
     setClientData(clientData);
 
     return () => {
-      clearInterval(sessionIntervalId);
       setClientData(undefined);
     };
-  }, [logger, graphManager]);
+  }, [graphManager]);
 
   const ctx = useMemo<ContextProps>(
     () => ({
       graphManager: graphManager,
     }),
-    [graphManager]
+    [graphManager],
   );
 
   return <CFDSContext.Provider value={ctx}>{children}</CFDSContext.Provider>;
@@ -237,11 +229,17 @@ export function usePartialView<K extends ViewProp>(
 export function useActiveViewManager(): VertexManager<View> {
   const graph = useGraphManager();
   const { selectedTabId } = usePartialGlobalView('selectedTabId');
-  return graph.getVertexManager<View>(
-    selectedTabId === 'notes'
-      ? 'ViewNotes'
-      : selectedTabId === 'overview'
-      ? 'ViewOverview'
-      : 'ViewTasks'
-  );
+  const loc = useLocation();
+  const pathParts = loc.pathname.split('/');
+  if (pathParts[1] === 'settings') {
+    return graph.getVertexManager<View>('ViewWsSettings');
+  } else {
+    return graph.getVertexManager<View>(
+      selectedTabId === 'notes'
+        ? 'ViewNotes'
+        : selectedTabId === 'overview'
+        ? 'ViewOverview'
+        : 'ViewTasks',
+    );
+  }
 }

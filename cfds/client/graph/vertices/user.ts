@@ -6,6 +6,7 @@ import { UserSettings } from './user-settings.ts';
 import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
+import { MutationPack } from '../mutations.ts';
 
 export type UserMetadataKey = 'companyRoles' | 'comments' | 'team';
 
@@ -116,4 +117,18 @@ export class User extends BaseVertex {
     const roles = (this.metadata.get('companyRoles') || '').split(',');
     return roles.filter((v) => v.length > 0);
   }
+  get teams(): string[] {
+    return parseTeams(this.metadata.get('team'));
+  }
+
+  metadataDidMutate(
+    local: boolean,
+    oldValue: Dictionary<UserMetadataKey, string> | undefined,
+  ): MutationPack {
+    return ['teams', local, parseTeams(oldValue?.get('team'))];
+  }
+}
+
+function parseTeams(str: string | undefined): string[] {
+  return (str || '').split(',').filter((x) => x.length > 0);
 }

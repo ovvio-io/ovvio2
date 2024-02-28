@@ -189,7 +189,7 @@ function SortByDropDown() {
       {SORT_BY.map((x) => (
         <DropDownItem value={x} key={x}>
           <Text>{strings[x]}</Text>
-          {view.sortBy === x && <IconCheck color={'blue'} />}
+          {view.sortBy === x && <IconCheck />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -268,7 +268,7 @@ function DateFilterDropdown() {
   const renderSelected = useCallback(
     () => (
       <div className={cn(styles.dropDownButton, styles.iconItem)}>
-        <IconDueDate state={DueDateState.Default} />
+        <IconDueDate state={DueDateState.None} />
 
         <Text className={cn(styles.dropDownButtonText)}>{text}</Text>
         <IconDropDownArrow />
@@ -339,7 +339,7 @@ function ShowPinnedButton() {
   );
 }
 
-function CollapseExpandeToggle() {
+export function CollapseExpandeToggle() {
   const view = usePartialView('notesExpandBase');
   const styles = useStyles();
 
@@ -375,7 +375,7 @@ function ExtraFilters() {
     items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
   }
   items.push(<DateFilterDropdown />);
-  if (view.selectedTabId !== 'overview' && view.noteType === NoteType.Task) {
+  if (view.selectedTabId !== 'overview') {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
@@ -387,13 +387,13 @@ function ExtraFilters() {
     }
     items.push(<SortByDropDown />);
   }
-  if (view.selectedTabId !== 'overview' && view.viewType === 'board') {
+  if (view.selectedTabId !== 'overview') {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }
     items.push(<GroupByDropDown />);
   }
-  if (view.selectedTabId !== 'overview' && view.viewType === 'list') {
+  if (view.selectedTabId !== 'overview') {
     if (items.length > 0) {
       items.push(<div className={cn(styles.extraFiltersSeparator)}></div>);
     }

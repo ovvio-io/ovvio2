@@ -23,7 +23,7 @@
     "checked": "Checked",
     "unchecked": "Unchecked",
     "checked-unchecked": "All",
-    "groupByTag": "Tag...",
+    "groupByTag": "Tag",
     "filter": "Filter",
     "searchResults": "Search Results",
     "compose": "Compose",
@@ -43,6 +43,7 @@
     "week": "Week",
     "month": "Month",
     "thisPrefix": "This",
-    "all": "All"
+    "all": "All",
+    "team": "Team"
   }
 }

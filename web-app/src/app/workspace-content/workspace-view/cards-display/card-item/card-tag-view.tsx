@@ -23,12 +23,18 @@ import {
 import { CardHeaderPartProps, CardSize } from './index.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
+import {
+  brandLightTheme,
+  lightColorWheel,
+} from '../../../../../../../styles/theme.tsx';
 
 const useStyles = makeStyles((theme) => ({
   tagsView: {
     // height: styleguide.gridbase * 3,
     alignItems: 'center',
-    basedOn: [layout.row],
+    // basedOn: [layout.row],
+    display: 'flex',
+    flexDirection: 'row',
   },
   tagsWrap: {
     flexWrap: 'wrap',
@@ -44,6 +50,9 @@ const useStyles = makeStyles((theme) => ({
   hide: {
     opacity: 0,
   },
+  tagText: {
+    color: lightColorWheel.mono.m4,
+  },
 }));
 
 interface TagPillProps {
@@ -51,9 +60,10 @@ interface TagPillProps {
   setTag: (tag: VertexManager<Tag>) => void;
   isExpanded: boolean;
   onDelete: () => void;
+  ofBoard?: boolean;
 }
 
-function TagPill({ tag, setTag, onDelete, isExpanded }: TagPillProps) {
+function TagPill({ tag, setTag, onDelete, isExpanded, ofBoard }: TagPillProps) {
   const styles = useStyles();
   const { name } = usePartialVertex(tag, ['name']);
   const renderSelected = useCallback(
@@ -64,7 +74,11 @@ function TagPill({ tag, setTag, onDelete, isExpanded }: TagPillProps) {
         pillStyle={isExpanded ? PillStyle.Border : PillStyle.None}
       >
         <PillContent>
-          <Text>#{name}</Text>
+          {ofBoard && !ofBoard ? (
+            <Text>#{name}</Text>
+          ) : (
+            <div className={styles.tagText}>#{name}</div>
+          )}
         </PillContent>
         <PillAction>
           <IconDropDownArrow />
@@ -172,6 +186,7 @@ export function CardTags({
           onDelete={() => onDelete(tag.manager as VertexManager<Tag>)}
           setTag={onTag}
           isExpanded={isExpanded}
+          ofBoard={true}
         />
       ))}
       <TagButton

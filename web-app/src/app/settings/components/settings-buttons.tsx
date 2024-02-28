@@ -224,22 +224,39 @@ export function AssignWsButton({
     </Button>
   );
 }
-
-interface EditSaveButtonProps {
-  onSaveEditClick?: () => void;
-  disable: boolean;
-}
-
-export function EditSaveButton({
-  onSaveEditClick,
+export function AssignWsBlueButton({
+  AssignWsClick,
   disable,
-}: EditSaveButtonProps) {
+}: AssignWsButtonProps) {
   const styles = useStyles();
   const isDisabled = disable;
 
   return (
     <Button
-      onClick={isDisabled ? undefined : onSaveEditClick}
+      onClick={isDisabled ? undefined : AssignWsClick}
+      className={cn(styles.compose, isDisabled ? styles.disabled : styles.blue)}
+    >
+      <img
+        key="InviteUserSettings"
+        src="/icons/settings/InviteWhite.svg"
+        onClick={() => {}}
+      />
+      <span className={cn(styles.textWhite)}>{'Assign'}</span>
+    </Button>
+  );
+}
+
+interface SaveAddButtonProps {
+  onSaveAddClick?: () => void;
+  disable: boolean;
+}
+
+export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
+
+  return (
+    <Button
       className={cn(
         styles.compose,
         isDisabled ? styles.disabled : styles.available
@@ -248,9 +265,9 @@ export function EditSaveButton({
       <img
         key="CheckEditSettings"
         src="/icons/settings/Check.svg"
-        onClick={() => {}}
+        onClick={onSaveAddClick}
       />
-      <span className={cn(styles.text)}>{'Save changes'}</span>
+      <span className={cn(styles.text)}>{'Done'}</span>
     </Button>
   );
 }
@@ -268,7 +285,20 @@ export function EditButton({ onEditClick }: EditButtonProps) {
     </Button>
   );
 }
+interface AddMemberButtonProps {
+  onAddClick?: () => void;
+}
 
+export function AddMemberButton({ onAddClick }: AddMemberButtonProps) {
+  const styles = useStyles();
+
+  return (
+    <Button onClick={onAddClick} className={cn(styles.compose, styles.blue)}>
+      <img key="AddMemberSettings" src="/icons/settings/InviteWhite.svg" />
+      <span className={cn(styles.textWhite)}>{'Add members'}</span>
+    </Button>
+  );
+}
 type UserPillProps = {
   user: string;
   selectedUsers: Set<string>;
@@ -335,16 +365,18 @@ export function CancelButton({ onCancel }: CancelButtonProps) {
 }
 
 interface DeleteWsButtonProps {
-  wsMng: VertexManager<Workspace>;
-  onDeleteClick: (ws: VertexManager<Workspace>) => void;
+  onDeleteClick: () => void;
   disabled: boolean;
+  isConfirmed: boolean;
+  ref: any;
   className: any;
 }
 
 export function DeleteWsButton({
-  wsMng,
+  ref,
   onDeleteClick,
   disabled,
+  isConfirmed,
   className,
 }: DeleteWsButtonProps) {
   const isDisabled = disabled;
@@ -352,16 +384,20 @@ export function DeleteWsButton({
 
   return (
     <Button
-      onClick={!isDisabled ? () => onDeleteClick(wsMng) : undefined}
+      ref={ref}
+      onClick={isConfirmed ? onDeleteClick : onDeleteClick}
       className={cn(
         styles.compose,
         className,
-
-        isDisabled ? styles.disabled : styles.available
+        isDisabled && !isConfirmed ? styles.disabled : styles.available
       )}
     >
       <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
-      <span className={cn(styles.text)}>{'Delete Workspace'}</span>
+      <span className={cn(styles.text)}>
+        {/* {isConfirmed === true ? 'true' : 'false'} */}
+
+        {'Delete Workspace'}
+      </span>
     </Button>
   );
 }

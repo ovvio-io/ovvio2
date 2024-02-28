@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: 'white',
     boxSizing: 'border-box',
     height: styleguide.gridbase * 4,
-    minWidth: styleguide.gridbase * 12,
+    minWidth: styleguide.gridbase * 15,
     maxWidth: styleguide.gridbase * 27,
     padding: '8px 16px 8px 8px',
     color: theme.background.text,
@@ -134,6 +134,10 @@ const MenuContext = React.createContext({
   hasParent: false,
 });
 
+export function useMenuContext() {
+  return useContext(MenuContext);
+}
+
 type DivProps = React.ComponentPropsWithoutRef<'div'>;
 
 export type SecondaryMenuItemProps = React.PropsWithChildren<{
@@ -152,7 +156,17 @@ export function SecondaryMenuItem({
       <div className={cn(className, styles.item)}>
         <Text>{text}</Text>
         <div className={cn(layout.flexSpacer)} />
-        <IconExpander className={cn(styles.secondaryIcon)} />
+        <img
+          key="iconExpender"
+          src="/icons/list/icon-expender.svg"
+          style={{
+            transform: 'rotate(0deg)',
+            position: 'relative',
+            left: '8px',
+          }}
+          className={cn(styles.secondaryIcon)}
+        />
+        {/* <IconExpander className={cn(styles.secondaryIcon)} /> */}
       </div>
     );
   }, [text, className, styles]);
@@ -163,6 +177,7 @@ export function SecondaryMenuItem({
       position="right"
       direction="out"
       align="start"
+      withoutArrow={true}
     >
       {children}
     </Menu>
@@ -194,7 +209,7 @@ export const MenuItem = React.forwardRef<
     icon: IconItem = null,
     ...props
   },
-  ref
+  ref,
 ) {
   const styles = useStyles();
   const ctx = useContext(MenuContext);
@@ -238,7 +253,7 @@ export const MenuAction = React.forwardRef<
   MenuActionProps & DivProps & MenuItemProps
 >(function MenuAction(
   { IconComponent, text, iconWidth, iconHeight, ...props },
-  ref
+  ref,
 ) {
   const styles = useStyles();
   return (
@@ -274,7 +289,7 @@ export const Backdrop = React.forwardRef<
           className={cn(
             className,
             styles.backdrop,
-            visible && styles.backdropVisible
+            visible && styles.backdropVisible,
           )}
           style={{ zIndex, marginBottom: '8px' }}
           {...rest}
@@ -283,7 +298,7 @@ export const Backdrop = React.forwardRef<
         </div>
       )}
     </Layer>,
-    document.getElementById('root')!
+    document.getElementById('root')!,
   );
 });
 
@@ -307,6 +322,10 @@ interface MenuProps {
   style?: {};
   isItemHovered?: boolean;
   openImmediately?: boolean;
+  withoutArrow?: boolean;
+
+  isOpen?: boolean;
+  toggleMenu?: () => void;
 }
 
 function isElement(x: HTMLElement | null | undefined): x is HTMLElement {
@@ -325,28 +344,53 @@ export default function Menu({
   direction,
   onClick = () => {},
   sizeByButton = false,
-  style = {},
+  style,
   isItemHovered,
   openImmediately,
+  withoutArrow,
+
+  isOpen,
+  toggleMenu,
 }: MenuProps) {
   const styles = useStyles();
-  const [open, setOpen] = useState(openImmediately ? true : false);
+  // const [open, setOpen] = useState(openImmediately ? true : false);
   const anchor = useRef(null);
   const backdrop = useRef(null);
   const [minWidthStyle, setMinWidthStyle] = useState({});
-  const menuCtx = useContext(MenuContext);
+  const menuCtx = useMenuContext();
+
+  const [internalOpen, setInternalOpen] = useState(
+    openImmediately ? true : false,
+  );
+  const open = isOpen !== undefined ? isOpen : internalOpen;
 
   const close = useCallback(
     (e?: MouseEvent) => {
-      setOpen(false);
+      if (toggleMenu) {
+        toggleMenu();
+      } else {
+        setInternalOpen(false);
+      }
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
       menuCtx.close();
     },
-    [menuCtx]
+    [menuCtx, toggleMenu],
   );
+
+  // const close = useCallback(
+  //   (e?: MouseEvent) => {
+  //     setOpen(false);
+  //     if (e) {
+  //       e.preventDefault();
+  //       e.stopPropagation();
+  //     }
+  //     menuCtx.close();
+  //   },
+  //   [menuCtx]
+  // );
 
   const newContext = useMemo(
     () => ({
@@ -355,15 +399,26 @@ export default function Menu({
       },
       hasParent: true,
     }),
-    [close]
+    [close],
   );
 
   const openMenu = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setOpen((x) => !x);
+    if (toggleMenu) {
+      toggleMenu();
+    } else {
+      setInternalOpen((x) => !x);
+    }
     onClick();
   };
+
+  // const openMenu = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   e.preventDefault();
+  //   setOpen((x) => !x);
+  //   onClick();
+  // };
 
   useLayoutEffect(() => {
     if (isElement(anchor.current) && sizeByButton) {
@@ -394,12 +449,14 @@ export default function Menu({
             </React.Fragment>
           ))}
         </div>
-        <Arrow
-          containerPosition={`${position!}ArrowContainer`}
-          position={position!}
-          shadowPosition={`${position!}Shadow`}
-          oneCellMenu={oneCellMenu}
-        />
+        {!withoutArrow && (
+          <Arrow
+            containerPosition={`${position!}ArrowContainer`}
+            position={position!}
+            shadowPosition={`${position!}Shadow`}
+            oneCellMenu={oneCellMenu}
+          />
+        )}
       </div>
     </Popper>
   );

@@ -224,13 +224,13 @@ export class AuthEndpoint implements Endpoint {
   ): Promise<Response> {
     const encodedToken = new URL(req.url).searchParams.get('t');
     if (!encodedToken) {
-      return responseForError('AccessDenied');
+      return this.redirectHome(services);
     }
     try {
       const signature = decodeSignature<TemporaryLoginToken>(encodedToken);
       const signerId = signature.sessionId;
       if (!signerId) {
-        return responseForError('AccessDenied');
+        return this.redirectHome(services);
       }
       const signerSession = fetchSessionById(services, signerId);
       if (
@@ -238,34 +238,38 @@ export class AuthEndpoint implements Endpoint {
         signerSession.owner !== 'root' || // Only root may sign login tokens
         !(await verifyData(signerSession, signature))
       ) {
-        return responseForError('AccessDenied');
+        return this.redirectHome(services);
       }
       const userKey = signature.data.u;
       const repo = services.sync.getSysDir();
       const userRecord = repo.valueForKey(userKey);
       if (!userRecord || userRecord.isNull) {
-        return responseForError('AccessDenied');
+        return this.redirectHome(services);
       }
       const session = fetchSessionById(services, signature.data.s);
       if (!session) {
-        return responseForError('AccessDenied');
+        return this.redirectHome(services);
       }
       if (session.owner !== undefined) {
-        return responseForError('AccessDenied');
+        return this.redirectHome(services);
       }
       session.owner = userKey;
       repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
-      return new Response(null, {
-        status: 307,
-        headers: {
-          Location: getBaseURL(services),
-        },
-      });
+      return this.redirectHome(services);
     } catch (_: unknown) {
-      return responseForError('AccessDenied');
+      return this.redirectHome(services);
     }
+  }
+
+  private redirectHome(services: ServerServices): Response {
+    return new Response(null, {
+      status: 307,
+      headers: {
+        Location: getBaseURL(services),
+      },
+    });
   }
 }
 

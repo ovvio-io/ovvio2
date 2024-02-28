@@ -7,7 +7,8 @@ export const useStyles = makeStyles(
       margin: 0,
       padding: 0,
       fontSize: 40,
-      fontWeight: '600',
+      // fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontStyle: 'normal',
       fontStretch: 'normal',
       lineHeight: 'normal',
@@ -18,7 +19,7 @@ export const useStyles = makeStyles(
       margin: 0,
       padding: 0,
       fontSize: 30,
-      fontWeight: 'bold',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontStyle: 'normal',
       fontStretch: 'normal',
       lineHeight: 'normal',
@@ -29,7 +30,7 @@ export const useStyles = makeStyles(
       margin: 0,
       padding: 0,
       fontSize: 20,
-      fontWeight: 'bold',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontStyle: 'normal',
       fontStretch: 'normal',
       lineHeight: 'normal',
@@ -40,7 +41,7 @@ export const useStyles = makeStyles(
       margin: 0,
       padding: 0,
       fontSize: 16,
-      fontWeight: 'bold',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontStyle: 'normal',
       fontStretch: 'normal',
       lineHeight: 'normal',
@@ -55,7 +56,7 @@ export const useStyles = makeStyles(
       lineHeight: 1.5,
     },
   }),
-  'texts_8b5438'
+  'texts_8b5438',
 );
 
 interface TextProps {
@@ -70,7 +71,7 @@ const H1 = React.forwardRef<HTMLHeadingElement, TextProps & H1Props>(
         {children}
       </h1>
     );
-  }
+  },
 );
 type H2Props = React.ComponentPropsWithoutRef<'h2'>;
 const H2 = React.forwardRef<HTMLHeadingElement, TextProps & H2Props>(
@@ -81,7 +82,7 @@ const H2 = React.forwardRef<HTMLHeadingElement, TextProps & H2Props>(
         {children}
       </h2>
     );
-  }
+  },
 );
 type H3Props = React.ComponentPropsWithoutRef<'h3'>;
 const H3 = React.forwardRef<HTMLHeadingElement, TextProps & H3Props>(
@@ -92,7 +93,7 @@ const H3 = React.forwardRef<HTMLHeadingElement, TextProps & H3Props>(
         {children}
       </h3>
     );
-  }
+  },
 );
 type H4Props = React.ComponentPropsWithoutRef<'h4'>;
 export const H4 = React.forwardRef<HTMLHeadingElement, TextProps & H4Props>(
@@ -103,14 +104,14 @@ export const H4 = React.forwardRef<HTMLHeadingElement, TextProps & H4Props>(
         {children}
       </h4>
     );
-  }
+  },
 );
 type SpanProps = React.ComponentPropsWithoutRef<'span'>;
 const Text = React.forwardRef<HTMLSpanElement, TextProps & SpanProps>(
   ({ className, ...rest }, ref) => {
     const styles = useStyles();
     return <span className={cn(className, styles.text)} {...rest} ref={ref} />;
-  }
+  },
 );
 
 const Bold = React.forwardRef<HTMLSpanElement, TextProps & SpanProps>(
@@ -121,7 +122,7 @@ const Bold = React.forwardRef<HTMLSpanElement, TextProps & SpanProps>(
         {children}
       </span>
     );
-  }
+  },
 );
 
 export { H1, H2, H3, Text, Bold };

@@ -7,6 +7,8 @@ import { useFocusOnMount } from '../web-app/src/core/react-utils/index.ts';
 import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { TextField } from '../styles/components/inputs/index.ts';
+import { useMenuContext } from '../styles/components/menu.tsx';
+import Input from './input.tsx';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -28,19 +30,20 @@ const useStyles = makeStyles(() => ({
     fontSize: 13,
     lineHeight: '18px',
     letterSpacing: '0.0.75px',
-    fontWeight: '400',
   },
   hoverableRow: {
+    cursor: 'pointer',
     ':hover': {
       backgroundColor: '#FBF6EF',
     },
   },
   row: {
     padding: '6px 6px 6px 10px',
-    alignItems: 'center',
+    alignItems: 'start',
     gap: '8px',
     width: '100%',
     borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
+    display: 'flex',
   },
   searchRowStyle: {
     display: 'flex',
@@ -70,25 +73,31 @@ const useStyles = makeStyles(() => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  removeIcon: {
+    marginTop: 2,
+  },
 }));
 
 type MemberPickerProps = {
   users: User[];
   onRowSelect: (user: User) => void;
-  isSearching?: boolean;
-  setIsSearching?: (b: boolean) => void;
+  showSearch?: boolean;
+  onRemove?: () => void;
 };
 
-export const MemberPicker: React.FC<MemberPickerProps> = ({
+export function MemberPicker({
   users,
   onRowSelect,
-}) => {
+  showSearch,
+  onRemove,
+}: MemberPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  useFocusOnMount(inputRef); //CHECK
+  const menuCtx = useMenuContext();
+  useFocusOnMount(inputRef);
 
   useEffect(() => {
     if (users) {
@@ -96,24 +105,20 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER
+        Number.MAX_SAFE_INTEGER,
       );
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+    setSearchTerm(event.target.value || '');
   };
 
   const handleRowClick = (user: User) => {
     onRowSelect(user);
   };
-  const [isVisible, setIsVisible] = useState(true);
 
-  const close = () => {
-    setIsVisible(false);
-  };
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowUp':
@@ -130,14 +135,14 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
         if (!searchTerm) {
           e.preventDefault();
           e.stopPropagation();
-          close();
+          menuCtx.close();
         }
         break;
       case 'Escape':
         e.preventDefault();
         e.stopPropagation();
         if (!searchTerm) {
-          close();
+          menuCtx.close();
         }
         break;
       case 'Enter':
@@ -151,13 +156,13 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
   };
 
   return (
-    isVisible && (
-      <div className={cn(styles.tableContainer)}>
+    <div className={cn(styles.tableContainer)}>
+      {showSearch !== false && (
         <div className={cn(styles.searchRowStyle)}>
           <div className={cn(styles.iconContainer)}>
             <IconSearch />
           </div>
-          <TextField
+          <Input
             ref={inputRef}
             type="text"
             placeholder={'Type name:'}
@@ -167,28 +172,42 @@ export const MemberPicker: React.FC<MemberPickerProps> = ({
             className={styles.InputTextStyle}
           />
         </div>
-        <Scroller>
-          {(inputRef) => (
-            <div className={cn(styles.tableContent)} ref={inputRef}>
-              {filteredUsers.map((user: User, index: number) => (
-                <React.Fragment key={user.key}>
-                  <div
-                    key={user.key}
-                    className={cn(styles.row, styles.hoverableRow, {
-                      [styles.hoverableRow]: selectedIndex === index,
-                    })}
-                    onClick={() => handleRowClick(user)}
-                  >
-                    <div className={cn(styles.rowItem)}>
-                      {user ? user.name : null}
-                    </div>
+      )}
+      <Scroller>
+        {(inputRef) => (
+          <div className={cn(styles.tableContent)} ref={inputRef}>
+            {filteredUsers.map((user: User, index: number) => (
+              <React.Fragment key={user.key}>
+                <div
+                  key={user.key}
+                  className={cn(styles.row, styles.hoverableRow, {
+                    [styles.hoverableRow]: selectedIndex === index,
+                  })}
+                  onClick={() => handleRowClick(user)}
+                >
+                  <div className={cn(styles.rowItem)}>
+                    {user ? user.name : null}
                   </div>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </Scroller>
-      </div>
-    )
+                </div>
+              </React.Fragment>
+            ))}
+            {onRemove && (
+              <div
+                className={cn(styles.row, styles.hoverableRow)}
+                onClick={onRemove}
+              >
+                <div className={cn(styles.iconContainer)}>
+                  <img
+                    className={cn(styles.removeIcon)}
+                    src="/icons/design-system/Close.svg"
+                  />
+                </div>
+                <div className={cn(styles.rowItem)}>Remove</div>
+              </div>
+            )}
+          </div>
+        )}
+      </Scroller>
+    </div>
   );
-};
+}

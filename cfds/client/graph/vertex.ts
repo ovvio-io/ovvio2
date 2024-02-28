@@ -190,9 +190,8 @@ export class Vertex implements Comparable {
     this._manager = mgr as VertexManager<typeof this>;
     this._compositeFieldsCache = new Map();
     this._cachedDepth = -1;
-    this._isLocal = prevVertex !== undefined
-      ? prevVertex._isLocal
-      : config?.isLocal === true;
+    this._isLocal =
+      prevVertex !== undefined ? prevVertex._isLocal : config?.isLocal === true;
     this.isDemoData = prevVertex !== undefined ? prevVertex.isDemoData : false;
   }
 
@@ -375,9 +374,8 @@ export class Vertex implements Comparable {
     let remainingMutations = mutationPackClone(pack);
 
     while (!mutationPackIsEmpty(remainingMutations)) {
-      const [fieldName, local, oldValue] = mutationPackGetFirst(
-        remainingMutations,
-      )!;
+      const [fieldName, local, oldValue] =
+        mutationPackGetFirst(remainingMutations)!;
       const handlerName = getDidMutateMethodName(fieldName);
       if (typeof (this as any)[handlerName] === 'function') {
         result = mutationPackAppend(
@@ -541,7 +539,12 @@ export function keyDictToVertDict<K extends Vertex, V extends Vertex>(
 ): Dictionary<K, V> {
   const result = new Map<K, V>();
   for (const [k, v] of keyDict) {
-    result.set(graph.getVertex(k), graph.getVertex(v));
+    const keyVert = graph.getVertex<K>(k);
+    const valVert = graph.getVertex<V>(v);
+    if (keyVert.isDeleted || valVert.isDeleted) {
+      continue;
+    }
+    result.set(keyVert, valVert);
   }
   return result;
 }
@@ -551,6 +554,9 @@ export function vertDictToKeyDict(
 ): Dictionary<string, string> {
   const result = new Map<string, string>();
   for (const [k, v] of vertDict) {
+    if (k.isDeleted || v.isDeleted) {
+      continue;
+    }
     result.set(k.key, v.key);
   }
   return result;

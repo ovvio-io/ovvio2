@@ -29,7 +29,7 @@ import { uniqueId } from '../base/common.ts';
 import { coreValueClone } from '../base/core-types/clone.ts';
 import { applyShortcuts } from '../cfds/richtext/shortcuts.ts';
 import { deleteCurrentSelection } from './delete.ts';
-import { expirationForSelection } from './editor.tsx';
+import { expirationForSelection } from './utils.ts';
 
 export function handleNewline(
   document: Document,
@@ -91,14 +91,15 @@ export function handleNewline(
     }
   }
 
-  const taskNode = prevElement &&
+  const taskNode =
+    prevElement &&
     pathToNode(document.root, prevElement)?.find(
       (node) => node.tagName === 'ref',
     );
 
   const isAtEndOfElement = isDepthMarker(mergeCtx.origValues[end! + 1]);
-  const isEmptyElement = isAtEndOfElement &&
-    isDepthMarker(mergeCtx.at(end! - 1));
+  const isEmptyElement =
+    isAtEndOfElement && isDepthMarker(mergeCtx.at(end! - 1));
   // Special case: newline at the beginning of an element.
   if (!isEmptyElement && isDepthMarker(mergeCtx.at(end! - 1))) {
     mergeCtx.insert(end! - 3, [
@@ -117,8 +118,8 @@ export function handleNewline(
     return docFromRT(finalRt);
   }
   let didSetSelection = false;
-  const prevElementIsSticky = prevElement &&
-    STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
+  const prevElementIsSticky =
+    prevElement && STICKY_ELEMENT_TAGS.includes(prevElement.tagName as string);
   const focusPath = pathToNode(document.root, selection.focus.node);
   const isStartOfDocument =
     document.root.children[0] === (focusPath && focusPath[0]);
@@ -151,12 +152,12 @@ export function handleNewline(
       },
       kElementSpacer,
       ((prevElementIsSticky && !isEmptyElement) || !isAtEndOfElement) &&
-        prevElement
+      prevElement
         ? prevElement
         : {
-          children: [],
-          tagName: 'p',
-        },
+            children: [],
+            tagName: 'p',
+          },
       {
         depthMarker: startDepth + 1,
       },
@@ -204,71 +205,85 @@ export function handleNewline(
   return docFromRT(finalRt);
 }
 
+const NEWLINE_REGEX = /[\n\r]+/g;
+
 export function handleInsertTextInputEvent(
   document: Document,
   event: InputEvent | KeyboardEvent | ClipboardEvent,
   selectionId: string,
 ): Document {
-  let insertData = '';
+  let rawInsertData = '';
   if (event instanceof ClipboardEvent) {
-    insertData = event.clipboardData?.getData('text/plain') || '';
+    rawInsertData = event.clipboardData?.getData('text/plain') || '';
   } else if (event instanceof KeyboardEvent) {
-    insertData = event.key;
+    rawInsertData = event.key;
   } else {
-    insertData = event.data || '';
+    rawInsertData = event.data || '';
   }
-  if (!insertData.length) {
+  if (!rawInsertData.length) {
     return document;
   }
-  if (insertData === '\n') {
+  if (rawInsertData === '\n') {
     return handleNewline(document, selectionId);
   }
-  let result = coreValueClone(document);
-  let selection = result.ranges && result.ranges[selectionId];
-  if (!selection) {
-    const lastNode = findEndOfDocument(result);
-    let textNode: TextNode;
-    if (isElementNode(lastNode)) {
-      textNode = { text: '' };
-      lastNode.children.push(textNode);
+  const paragraphs = rawInsertData.split(NEWLINE_REGEX);
+  let result: Document = document;
+  debugger;
+  for (let i = 0; i < paragraphs.length; ++i) {
+    if (i > 0) {
+      result = handleNewline(result, selectionId);
+    }
+    const insertData = paragraphs[i];
+    result = coreValueClone(result);
+    let selection = result.ranges && result.ranges[selectionId];
+    if (!selection) {
+      const lastNode = findEndOfDocument(result);
+      let textNode: TextNode;
+      if (isElementNode(lastNode)) {
+        textNode = { text: '' };
+        lastNode.children.push(textNode);
+      } else {
+        textNode = lastNode;
+      }
+      textNode.text += insertData;
+      if (!result.ranges) {
+        result.ranges = {};
+      }
+      result.ranges[selectionId] = {
+        anchor: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        focus: {
+          node: textNode,
+          offset: textNode.text.length,
+        },
+        dir: PointerDirection.None,
+        expiration: expirationForSelection(),
+      };
     } else {
-      textNode = lastNode;
+      const textNode = selection.focus.node;
+      const text = textNode.text;
+      textNode.text =
+        text.substring(0, selection.focus.offset) +
+        insertData +
+        text.substring(selection.focus.offset);
+      if (
+        selection.anchor.node !== selection.focus.node ||
+        selection.anchor.offset !== selection.focus.offset
+      ) {
+        result = deleteCurrentSelection(result, selectionId);
+        selection = (result.ranges && result.ranges[selectionId])!;
+      }
+      selection.anchor.offset += insertData.length;
+      selection.focus.offset += insertData.length;
     }
-    textNode.text += insertData;
-    if (!result.ranges) {
-      result.ranges = {};
-    }
-    result.ranges[selectionId] = {
-      anchor: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      focus: {
-        node: textNode,
-        offset: textNode.text.length,
-      },
-      dir: PointerDirection.None,
-      expiration: expirationForSelection(),
-    };
-  } else {
-    const textNode = selection.focus.node;
-    const text = textNode.text;
-    textNode.text = text.substring(0, selection.focus.offset) +
-      insertData +
-      text.substring(selection.focus.offset);
-    if (
-      selection.anchor.node !== selection.focus.node ||
-      selection.anchor.offset !== selection.focus.offset
-    ) {
-      result = deleteCurrentSelection(result, selectionId);
-      selection = (result.ranges && result.ranges[selectionId])!;
-    }
-    selection.anchor.offset += insertData.length;
-    selection.focus.offset += insertData.length;
+    // Run any shortcuts
+    result = docFromRT(
+      reconstructRichText(
+        applyShortcuts(flattenRichText(docToRT(result), true)),
+      ),
+    );
   }
-  // Run any shortcuts
-  result = docFromRT(
-    reconstructRichText(applyShortcuts(flattenRichText(docToRT(result), true))),
-  );
   return result;
 }

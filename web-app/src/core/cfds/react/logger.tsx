@@ -19,6 +19,9 @@ import { NormalizedLogEntry } from '../../../../../logging/entry.ts';
 import { LogStream } from '../../../../../logging/log.ts';
 import { ConsoleLogStream } from '../../../../../logging/console-stream.ts';
 import { OwnedSession } from '../../../../../auth/session.ts';
+import { RepoLogStream } from '../../../../../logging/repo-log-stream.ts';
+import { useGraphManager } from './graph.tsx';
+import { Repository } from '../../../../../repo/repo.ts';
 
 interface LoggerContext {
   logger: Logger;
@@ -29,42 +32,29 @@ const loggerContext = React.createContext<LoggerContext>({
 });
 
 interface LoggerProviderProps {
-  session?: OwnedSession;
-  baseServerUrl?: string;
   children: React.ReactNode;
 }
-export function LoggerProvider({
-  session,
-  children,
-  baseServerUrl,
-}: LoggerProviderProps) {
+export function LoggerProvider({ children }: LoggerProviderProps) {
   const [ctx, setCtx] = useState<LoggerContext>({ logger: GlobalLogger });
+  const graphManager = useGraphManager();
   useEffect(() => {
-    if (!session) {
-      setCtx({ logger: GlobalLogger });
-      return;
-    }
-
-    // const storage = new LogClientIDBStorage(
-    //   '/logs/' + session.owner || 'anonymous',
-    // );
-    // const client = baseServerUrl
-    //   ? new LogClient(storage, baseServerUrl, kSyncConfigClient)
-    //   : undefined;
-    const client: any | undefined = undefined;
     // Rather than using a different logger, we change the GlobalLogger's
     // streams to match the current user. This diverts logs from the entire
     // client stack rather than just UI stuff rendered with react.
-    const streams: LogStream[] = [new ConsoleLogStream('DEBUG')];
-    if (client) {
-      streams.unshift(client);
-    }
+    const streams: LogStream[] = [
+      new ConsoleLogStream('DEBUG'),
+      new RepoLogStream(
+        graphManager.repository(Repository.id('events', graphManager.rootKey)),
+      ),
+    ];
+    // if (client) {
+    //   streams.unshift(client);
+    // }
     setGlobalLoggerStreams(streams);
     // const clientLogger = newLogger([client, new ConsoleLogStream('DEBUG')]);
     // setCtx({ logger: clientLogger });
     const unloadHandler = () => {
       resetGlobalLoggerStreams();
-      client?.close();
       // storage.close();
     };
 
@@ -78,18 +68,30 @@ export function LoggerProvider({
       });
       // Reset our global logger to default mode
       resetGlobalLoggerStreams();
-      if (client) {
-        client.sync().finally(() => {
-          client.close();
-          // storage.close();
-        });
-      } else {
-        // storage.close();
-      }
     };
-  }, [session]);
-  return <loggerContext.Provider value={ctx}>{children}
-  </loggerContext.Provider>;
+  }, [graphManager]);
+
+  useEffect(() => {
+    ctx.logger.log({
+      severity: 'EVENT',
+      event: 'SessionAlive',
+      foreground: document.visibilityState === 'visible',
+    });
+    const sessionIntervalId = setInterval(() => {
+      ctx.logger.log({
+        severity: 'EVENT',
+        event: 'SessionAlive',
+        foreground: document.visibilityState === 'visible',
+      });
+    }, 10 * 1000);
+
+    return () => {
+      clearInterval(sessionIntervalId);
+    };
+  }, [ctx, graphManager]);
+  return (
+    <loggerContext.Provider value={ctx}>{children}</loggerContext.Provider>
+  );
 }
 
 export function useLogger(): Logger {

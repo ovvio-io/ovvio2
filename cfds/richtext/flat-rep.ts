@@ -91,7 +91,7 @@ export function isElementSpacer(obj: CoreValue): obj is ElementSpacer {
 }
 
 export function isPointerValue<T extends PointerValue>(
-  obj: CoreValue
+  obj: CoreValue,
 ): obj is T {
   return (
     isReadonlyCoreObject(obj) &&
@@ -116,7 +116,7 @@ const gFrozenTextNodes: Dictionary<
       ...kCoreValueTreeNodeOpts,
       fieldCloneOverride: (
         obj: ReadonlyCoreObject | CoreDictionary,
-        key: string
+        key: string,
       ) => {
         if (getCoreType(obj) === CoreType.Dictionary) {
           return key === 'children' ? [] : (obj as CoreDictionary).get(key);
@@ -124,7 +124,7 @@ const gFrozenTextNodes: Dictionary<
         return key === 'children' ? [] : (obj as ReadonlyCoreObject)[key];
       },
     });
-  }
+  },
 );
 
 /**
@@ -176,7 +176,7 @@ function* pointersForNode(
   ptrSet: Iterable<Pointer> | undefined,
   node: TextNode,
   local: boolean,
-  offset?: number
+  offset?: number,
 ): Generator<Pointer> {
   if (ptrSet === undefined) {
     return;
@@ -201,7 +201,7 @@ export function* flattenTextNode(
   node: TextNode,
   local: boolean,
   sortedPointers?: Pointer[],
-  trailingTextNode = true
+  trailingTextNode = true,
 ): Generator<TextNode | PointerValue> {
   // Go over each character in the text. We're using for...of on a string so the
   // code natively accounts for unicode surrogate pairs.
@@ -245,11 +245,14 @@ export function* flattenTextNode(
  * @param node The node to split to atoms.
  * @param local Whether to include local pointers or not.
  * @param sortedPointers All pointers available in the rich text.
+ * @param direction Whether to emit the pointers before their respective node
+ *                  or after (default).
  */
-function* splitTextNodeOnPointers(
+export function* splitTextNodeOnPointers(
   node: TextNode,
   local: boolean,
-  sortedPointers?: Pointer[]
+  sortedPointers?: Pointer[],
+  direction: 'before' | 'after' = 'after',
 ): Generator<TextNode | PointerValue> {
   if (!sortedPointers || !sortedPointers.length) {
     yield Object.freeze(coreValueClone(node));
@@ -257,15 +260,16 @@ function* splitTextNodeOnPointers(
   }
   // First, get a list of all pointers for this node sorted by offset
   const sortedPtrsForNode = Array.from(
-    pointersForNode(sortedPointers, node, local)
+    pointersForNode(sortedPointers, node, local),
   ).sort((p1, p2) =>
-    p1.offset === p2.offset ? comparePointers(p1, p2) : p1.offset - p2.offset
+    p1.offset === p2.offset ? comparePointers(p1, p2) : p1.offset - p2.offset,
   );
   // Break the node to a stream of text nodes and pointer values
   const nodeText = node.text;
   let start = 0;
   for (const ptr of sortedPtrsForNode) {
     const offset = ptr.offset;
+    let emittedPtr = false;
     if (offset >= start) {
       // The reconstruction logic assumes pointer values appear after single
       // character text nodes. Thus, we can keep everything before the pointer's
@@ -276,17 +280,23 @@ function* splitTextNodeOnPointers(
           text: nodeText.substring(start, offset),
         });
       }
+      if (direction === 'before') {
+        yield ptr as PointerValue;
+        emittedPtr = true;
+      }
       // The actual single character target of our pointer
       yield getFrozenTextNode(
         node,
-        offset < nodeText.length ? nodeText[offset] : ''
+        offset < nodeText.length ? nodeText[offset] : '',
       );
       // Don't repeat the text nodes if there are multiple pointers at the same
       // offset
       start = ptr.offset + 1;
     }
-    // The actual pointer can be returned
-    yield ptr as PointerValue;
+    if (!emittedPtr || direction !== 'before') {
+      // The actual pointer can be returned
+      yield ptr as PointerValue;
+    }
   }
   // Handle any remaining text after the last pointer
   if (start < node.text.length) {
@@ -315,7 +325,7 @@ function* flattenChildNodes(
   parentDepth: number,
   local: boolean,
   sortedPointers: Pointer[] | undefined,
-  flattenText: boolean
+  flattenText: boolean,
 ): Generator<FlatRepAtom> {
   const children = parent.children;
   let didOpen = false;
@@ -338,7 +348,7 @@ function* flattenChildNodes(
       parentDepth + 1,
       local,
       sortedPointers,
-      flattenText
+      flattenText,
     )) {
       yield atom;
     }
@@ -366,7 +376,7 @@ function* flattenTreeNode(
   depth: number,
   local: boolean,
   sortedPointers: Pointer[] | undefined,
-  flattenText: boolean
+  flattenText: boolean,
 ): Generator<FlatRepAtom> {
   if (!local && node.isLocal === true) {
     return;
@@ -390,7 +400,7 @@ function* flattenTreeNode(
       depth,
       local,
       sortedPointers,
-      flattenText
+      flattenText,
     )) {
       yield v;
     }
@@ -406,21 +416,21 @@ function* flattenTreeNode(
 export function flattenRichText(
   rt: RichText,
   local: boolean,
-  flattenText = true
+  flattenText = true,
 ): Generator<FlatRepAtom> {
   return flattenSiblingNodes(
     rt.root.children,
     0,
     local,
     rt.pointers,
-    flattenText
+    flattenText,
   );
 }
 
-function stripDuplicatePointers(ptrs: Set<Pointer>): Set<Pointer> {
+export function stripDuplicatePointers(ptrs: Set<Pointer>): Set<Pointer> {
   const result = new HashSet<Pointer>(
     encodableValueHash,
-    (p1, p2) => comparePointers(p1, p2) === 0
+    (p1, p2) => comparePointers(p1, p2) === 0,
   );
   for (const p of ptrs) {
     result.add(p);
@@ -440,14 +450,14 @@ export function* flattenSiblingNodes(
   parentDepth: number,
   local: boolean,
   pointers: Set<Pointer> | undefined,
-  flattenText: boolean
+  flattenText: boolean,
 ): Generator<FlatRepAtom> {
   // Sort all pointers so our flat representation is consistent where multiple
   // pointers are present at the same location.
   const sortedPointers =
     pointers !== undefined
       ? Array.from<Pointer>(stripDuplicatePointers(pointers)).sort(
-          comparePointers
+          comparePointers,
         )
       : undefined;
   for (const atom of iter) {
@@ -456,7 +466,7 @@ export function* flattenSiblingNodes(
       parentDepth,
       local,
       sortedPointers,
-      flattenText
+      flattenText,
     )) {
       yield flatAtom;
     }
@@ -466,7 +476,7 @@ export function* flattenSiblingNodes(
 function cleanCloneTreeAtomField(
   obj: ReadonlyCoreObject | CoreDictionary,
   key: string,
-  _opts?: CoreValueCloneOpts
+  _opts?: CoreValueCloneOpts,
 ): CoreValue {
   if (key === 'children' && isElementNode(obj as CoreValue)) {
     return [];
@@ -492,7 +502,7 @@ function cleanCloneTreeAtomField(
  */
 function* reconstructPointers(
   flatRep: Iterable<FlatRepAtom>,
-  outPtrs: Map<TextNode, Set<Pointer>>
+  outPtrs: Map<TextNode, Set<Pointer>>,
 ): Generator<FlatRepAtom> {
   let pendingTextNode: TextNode | undefined;
   for (const atom of flatRep) {
@@ -555,8 +565,8 @@ export function* reconstructTextNodes(
   ptrOffsetter?: (
     deletedNode: TextNode,
     newNode: TextNode,
-    newOffset: number
-  ) => void
+    newOffset: number,
+  ) => void,
 ): Generator<FlatRepAtom> {
   let lastTextNode: TextNode | undefined;
   for (const atom of flatRep) {
@@ -684,7 +694,7 @@ const kCoreValuePtrToValue: CoreValueCloneOpts = {
  * Converts pointers to pointer values.
  */
 export function* convertPtrsToValues(
-  flatRep: Iterable<FlatRepAtom>
+  flatRep: Iterable<FlatRepAtom>,
 ): Generator<FlatRepAtom> {
   for (const atom of flatRep) {
     if (isPointer(atom)) {
@@ -716,7 +726,7 @@ function keysFromPointers(pointers: Set<Pointer> | undefined): Set<string> {
 export type IndexedPointerValue = [index: number, ptr: PointerValue];
 
 function* filterExpiredPointers(
-  flatRep: Iterable<FlatRepAtom>
+  flatRep: Iterable<FlatRepAtom>,
 ): Generator<FlatRepAtom> {
   for (const atom of flatRep) {
     if (!isPointerValue(atom) || !isExpiredPointer(atom)) {
@@ -739,7 +749,7 @@ function* filterExpiredPointers(
 export function* filteredPointersRep(
   flatRep: Iterable<FlatRepAtom>,
   filter: (ptr: PointerValue) => boolean,
-  outFilteredPointers?: IndexedPointerValue[]
+  outFilteredPointers?: IndexedPointerValue[],
 ): Generator<FlatRepAtom> {
   let idx = 0;
   for (let atom of flatRep) {
@@ -761,7 +771,7 @@ export function* filteredPointersRep(
 function flatDestForPointerProjection(
   dstRt: RichText,
   needFilter: boolean,
-  filter: (ptr: PointerValue) => boolean
+  filter: (ptr: PointerValue) => boolean,
 ) {
   const flat = flattenRichText(dstRt, true, true);
   if (needFilter) {
@@ -778,7 +788,7 @@ export function pointerIsExpired(ptr: PointerValue): boolean {
 function hasPointersToProject(
   ptrSet: Set<Pointer>,
   filter: (ptr: PointerValue) => boolean,
-  skipExpired: boolean
+  skipExpired: boolean,
 ): boolean {
   for (const ptr of ptrSet) {
     if (filter(ptr) && (!skipExpired || !pointerIsExpired(ptr))) {
@@ -804,7 +814,7 @@ export function projectPointers(
   dstRt: RichText,
   filter: (ptr: PointerValue) => boolean,
   skipExpired = true,
-  filterDest = false
+  filterDest = false,
 ): RichText {
   // Shortcut if we don't need to do any work
   if (
@@ -833,13 +843,13 @@ export function projectPointers(
   const str1 = strRep.encode(flatRepSrc);
 
   const str2 = strRep.encode(
-    flatDestForPointerProjection(dstRt, filterDest, filter)
+    flatDestForPointerProjection(dstRt, filterDest, filter),
   );
   // Compute a diff from our filtered source to our unmodified destination
   const textDiffs = kDMP.diff_main(str1, str2, true);
   const mergeCtx = new MergeContext(
     flatDestForPointerProjection(dstRt, filterDest, filter),
-    kCoreValueTreeNodeOpts
+    kCoreValueTreeNodeOpts,
   );
   // For every pointer that need to be projected, we take its index in the
   // filtered source, project it to an index in the destination text, then
@@ -892,7 +902,7 @@ export function projectPointers(
  * @param flatRep
  */
 export function* stripFormattingFilter(
-  flatRep: Iterable<FlatRepAtom>
+  flatRep: Iterable<FlatRepAtom>,
 ): Generator<FlatRepAtom> {
   let depth = 0;
   let hasOpenParagraph = false;

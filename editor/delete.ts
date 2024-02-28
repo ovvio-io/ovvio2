@@ -14,11 +14,13 @@ import {
 import { MergeContext } from '../cfds/richtext/merge-context.ts';
 import { normalizeRichText } from '../cfds/richtext/normalize/index.ts';
 import { initRichTextRoot, pathToNode } from '../cfds/richtext/tree.ts';
+import { PointerDirection } from '../cfds/richtext/tree.ts';
+import { expirationForSelection } from './utils.ts';
 
 const EMPTY_DOCUMENT_ROOT = initRichTextRoot();
 export function deleteCurrentSelection(
   document: Document,
-  selectionId: string
+  selectionId: string,
 ): Document {
   if (coreValueEquals(EMPTY_DOCUMENT_ROOT, document.root)) {
     return document;
@@ -34,8 +36,8 @@ export function deleteCurrentSelection(
       (ptr) => {
         return true;
       },
-      pointers
-    )
+      pointers,
+    ),
   );
   let start, end: number | undefined;
   for (const [idx, ptr] of pointers) {
@@ -63,9 +65,9 @@ export function deleteCurrentSelection(
   }
   if (start === end) {
     start = start!;
-    const prevAtom = mergeCtx.at(start - 1);
+    const prevAtom = mergeCtx.at(start);
     if (isDepthMarker(prevAtom)) {
-      mergeCtx.deleteRange(start - 4, start);
+      mergeCtx.deleteRange(start - 3, start);
 
       const path = pathToNode(document.root, selection.anchor.node);
       assert(path !== undefined);
@@ -74,8 +76,8 @@ export function deleteCurrentSelection(
         const childIndex = parent.children.indexOf(path[path.length - 1]);
         const newDepth = prevAtom.depthMarker - 1;
         if (childIndex === 0) {
-          mergeCtx.delete(start - 5);
-          mergeCtx.insert(start - 5, [
+          mergeCtx.delete(start - 4);
+          mergeCtx.insert(start - 4, [
             { tagName: 'p', children: [] },
             { depthMarker: newDepth },
           ]);
@@ -95,11 +97,25 @@ export function deleteCurrentSelection(
   } else {
     mergeCtx.deleteRange(start!, end!);
   }
+  mergeCtx.insert(start! + 1, [
+    {
+      key: selectionId,
+      type: 'anchor',
+      dir: PointerDirection.None,
+      expiration: expirationForSelection(),
+    },
+    {
+      key: selectionId,
+      type: 'focus',
+      dir: PointerDirection.None,
+      expiration: expirationForSelection(),
+    },
+  ]);
   const rtWithDeletions = reconstructRichText(mergeCtx.finalize());
   const finalRt = projectPointers(
     docToRT(document),
     rtWithDeletions,
-    () => true
+    (ptr) => ptr.key !== selectionId,
   );
   return docFromRT(finalRt);
 }

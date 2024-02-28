@@ -82,7 +82,8 @@ export default function Toolbar({ children }: ToolbarProps) {
           <div className={cn(layout.flexSpacer)} />
           <ChangesIndicator />
           <div className={cn(styles.externalContainer)} id={TOOLBAR_RIGHT_ID} />
-          <IconNotification />
+          {/* <IconNotification /> */}
+          <div style={{ width: '20px' }}></div>
           <ToolbarMenu className={cn(styles.menu)} />
         </div>
       )}

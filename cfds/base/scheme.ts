@@ -1,20 +1,20 @@
-import { assert } from "../../base/error.ts";
-import { isString, isNoValue } from "../../base/comparisons.ts";
-import { JSONValue, ReadonlyJSONObject } from "../../base/interfaces.ts";
+import { assert } from '../../base/error.ts';
+import { isString, isNoValue } from '../../base/comparisons.ts';
+import { JSONValue, ReadonlyJSONObject } from '../../base/interfaces.ts';
 import {
   Encodable,
   Encoder,
   coreValueEquals,
-} from "../../base/core-types/index.ts";
+} from '../../base/core-types/index.ts';
 import {
   ConstructorDecoderConfig,
   isDecoderConfig,
-} from "../../base/core-types/encoding/index.ts";
+} from '../../base/core-types/encoding/index.ts';
 import {
   JSONDecoder,
   JSONEncoder,
-} from "../../base/core-types/encoding/json.ts";
-import { clone } from "./object.ts";
+} from '../../base/core-types/encoding/json.ts';
+import { clone } from './object.ts';
 import {
   SchemeDef,
   ISchemeManagerRegister,
@@ -27,9 +27,9 @@ import {
   DataType,
   kRecordIdField,
   SchemeNamespace,
-} from "./scheme-types.ts";
-import { runRegister } from "./scheme-versions.ts";
-import { isRefValueType, ValueType } from "./types/index.ts";
+} from './scheme-types.ts';
+import { runRegister } from './scheme-versions.ts';
+import { isRefValueType, ValueType } from './types/index.ts';
 
 export function normalizeFieldDescriptors(descriptors: any) {
   //TODO: changed to export
@@ -71,10 +71,10 @@ export class Scheme implements Encodable {
   constructor(config: SchemeConfig | ConstructorDecoderConfig<EncodedScheme>) {
     if (isDecoderConfig(config)) {
       const decoder = config.decoder;
-      const namespace: string = decoder.get<string>("ns")!;
-      const version: number = decoder.get<number>("version")!;
+      const namespace: string = decoder.get<string>('ns')!;
+      const version: number = decoder.get<number>('version')!;
 
-      if (namespace === "" && version === 0) {
+      if (namespace === '' && version === 0) {
         this.copyFrom(Scheme.nullScheme());
         return;
       }
@@ -132,7 +132,7 @@ export class Scheme implements Encodable {
     const type: ValueType | undefined = this.getFields()[fieldName];
     assert(
       !isNoValue(type),
-      `Unknown field ${this.getNamespace()}/${fieldName}`
+      `Unknown field ${this.getNamespace()}/${fieldName}`,
     );
     return type;
   }
@@ -255,13 +255,13 @@ export class Scheme implements Encodable {
 
     return coreValueEquals(
       this._fieldDescriptors,
-      otherScheme._fieldDescriptors
+      otherScheme._fieldDescriptors,
     );
   }
 
   serialize(encoder: Encoder): void {
-    encoder.set("ns", this.getNamespace());
-    encoder.set("version", this.getVersion());
+    encoder.set('ns', this.getNamespace());
+    encoder.set('version', this.getVersion());
   }
 
   private copyFrom(other: Scheme) {
@@ -295,36 +295,42 @@ export class Scheme implements Encodable {
 
   static workspace(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_WORKSPACE);
-    if (!scheme) throw new Error("Workspace scheme not found");
+    if (!scheme) throw new Error('Workspace scheme not found');
     return scheme;
   }
 
   static note(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_NOTES);
-    if (!scheme) throw new Error("Note scheme not found");
+    if (!scheme) throw new Error('Note scheme not found');
     return scheme;
   }
 
   static tag(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_TAGS);
-    if (!scheme) throw new Error("Tag scheme not found");
+    if (!scheme) throw new Error('Tag scheme not found');
     return scheme;
   }
 
   static user(): Scheme {
     const scheme = SchemeManager.instance.getScheme(NS_USERS);
-    if (!scheme) throw new Error("User scheme not found");
+    if (!scheme) throw new Error('User scheme not found');
     return scheme;
   }
 
   static view(): Scheme {
     const scheme = SchemeManager.instance.getScheme(SchemeNamespace.VIEWS);
-    if (!scheme) throw new Error("View scheme not found");
+    if (!scheme) throw new Error('View scheme not found');
     return scheme;
   }
 
   static session(): Scheme {
     const scheme = SchemeManager.instance.getScheme(SchemeNamespace.SESSIONS);
+    if (!scheme) throw new Error('Session scheme not found');
+    return scheme;
+  }
+
+  static event(): Scheme {
+    const scheme = SchemeManager.instance.getScheme(SchemeNamespace.EVENTS);
     if (!scheme) throw new Error('Session scheme not found');
     return scheme;
   }
@@ -339,13 +345,13 @@ export class Scheme implements Encodable {
     const keyLen = key.length;
     let start = 0;
     let end;
-    for (start = 0; start < keyLen && key[start] === "/"; ++start) {
+    for (start = 0; start < keyLen && key[start] === '/'; ++start) {
       // Skip leading slashes
     }
-    for (end = start; end < keyLen && key[end] !== "/"; ++end) {
+    for (end = start; end < keyLen && key[end] !== '/'; ++end) {
       // Find the end of the type part
     }
-    assert(start <= end || start >= keyLen, "Unsupported key format");
+    assert(start <= end || start >= keyLen, 'Unsupported key format');
     const type = key.substring(start, end);
     switch (type) {
       case NS_WORKSPACE:
@@ -376,7 +382,7 @@ class SchemeVersion {
 
   constructor(
     version: number,
-    upFunc?: (namespace: string, data: any) => void
+    upFunc?: (namespace: string, data: any) => void,
   ) {
     this._version = version;
     this._namespaces = new Map<string, Scheme>();
@@ -424,7 +430,7 @@ let managerLoadFunc = (manager: ISchemeManagerRegister) => {
 };
 
 export function overrideManagerRegistration(
-  func: (manager: ISchemeManagerRegister) => void
+  func: (manager: ISchemeManagerRegister) => void,
 ) {
   managerLoadFunc = func;
 }
@@ -468,7 +474,7 @@ export class SchemeManager implements ISchemeManagerRegister {
     version: number,
     schemeDefs: SchemeDef<SchemeObject>[],
     extraNamespaces: string[],
-    upFunc?: (namespace: string, data: any) => void
+    upFunc?: (namespace: string, data: any) => void,
   ) {
     assert(this._currVersion + 1 === version);
     if (version === 1) {

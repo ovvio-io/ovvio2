@@ -7,7 +7,6 @@ import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { usePartialView } from '../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../core/localization/index.tsx';
 import { ToolbarCenterItem } from '../toolbar/index.tsx';
-import { BoardView } from './board-view/index.tsx';
 import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
 import { FiltersView } from './display-bar/filters/index.tsx';
 import {
@@ -19,6 +18,9 @@ import {
 import { ListView } from './list-view/index.tsx';
 import localization from './cards-display.strings.json' assert { type: 'json' };
 import { Dashboard } from '../dashboard/dashboard.tsx';
+import { KanbanView } from './kanban-view/index.tsx';
+import { useFilteredNotes } from '../../../../core/cfds/react/filter.ts';
+import { ListViewNew } from './list-view-new/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -80,19 +82,21 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const useStrings = createUseStrings(localization);
-
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
-
   let content = null;
+
   if (view.selectedTabId === 'overview') {
     content = <Dashboard />;
   } else if (view.viewType === 'list') {
-    content = <ListView key={'list'} className={cn(styles.contentView)} />;
+    // content = <ListView key={'list'} className={cn(styles.contentView)} />;
+    content = <ListViewNew key={'list'} className={cn(styles.contentView)} />;
   } else if (view.viewType === 'board') {
-    content = <BoardView className={cn(styles.contentView)} />;
+    content = (
+      <KanbanView className={cn(styles.contentView)} />
+      // <BoardView className={cn(styles.contentView)} />
+    );
   }
   return (
     <div className={cn(styles.displayRoot)}>

@@ -2,10 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Tag } from '../../../../cfds/client/graph/vertices/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
-import {
-  IconClose,
-  IconDropDownArrow,
-} from '../../../../styles/components/icons/index.ts';
+import { IconDropDownArrow } from '../../../../styles/components/icons/index.ts';
 import DropDown, {
   DropDownItem,
 } from '../../../../styles/components/inputs/drop-down.tsx';
@@ -39,8 +36,8 @@ const useStyles = makeStyles(() => ({
     direction: 'ltr',
     backgroundColor: theme.mono.m1,
     height: styleguide.gridbase * 2,
-    minWidth: styleguide.gridbase * 5,
-    padding: [0, styleguide.gridbase],
+    minWidth: styleguide.gridbase * 3,
+    padding: [0, styleguide.gridbase * 0.5],
     flexShrink: 0,
     fontSize: 12,
     borderRadius: styleguide.gridbase,
@@ -53,7 +50,7 @@ const useStyles = makeStyles(() => ({
     flexDirection: 'row',
   },
   tagName: {
-    marginLeft: styleguide.gridbase * 0.75,
+    marginLeft: styleguide.gridbase * 0.5,
     marginRight: styleguide.gridbase / 2,
     color: theme.colors.text,
     animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
@@ -109,7 +106,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface TagPillViewProps {
-  tagMng: VertexManager<Tag>;
+  tagMng?: VertexManager<Tag>;
   className?: string;
   showMenu?: boolean | 'hover';
 }
@@ -127,7 +124,7 @@ export function TagPillView({
   const ref = useRef<any>();
 
   let style = useAnimateWidth(ref, showMenu);
-  const tagName = partialTag.name;
+  const tagName = partialTag ? partialTag.name : '...';
   const menuOnHover = showMenu === 'hover';
   if (menuOnHover) {
     style = NOOP_STYLE;
@@ -137,25 +134,16 @@ export function TagPillView({
     <div
       ref={ref}
       className={cn(
+        className,
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
-        menuOnHover && styles.onHover,
-        className,
+        menuOnHover && styles.onHover
       )}
       style={{
         ...style,
       }}
     >
       <div className={cn(styles.tagName)}>{tagName}</div>
-      <div className={cn(layout.flexSpacer)} />
-      <div
-        className={cn(
-          styles.tagDelete,
-          !menuOnHover && !showMenu && styles.hide,
-        )}
-      >
-        <IconDropDownArrow className="" />
-      </div>
     </div>
   );
 }
@@ -188,9 +176,8 @@ export default function TagView({
   const partialTag = usePartialVertex(tag, ['parentTag']);
   const siblings = usePartialVertices<Tag>(
     partialTag.parentTag?.childTags || [],
-    ['name'],
+    ['name']
   );
-
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
       onDelete(tag.getVertexProxy());
@@ -217,19 +204,14 @@ export default function TagView({
       {siblings.map((t) => (
         <DropDownItem value={t} key={t.key}>
           <div className={cn(styles.circleContainer)}>
-            <div
-              className={cn(styles.circle)}
-              // style={{
-              //   backgroundColor: t.color,
-              // }}
-            />
+            <div className={cn(styles.circle)} />#
           </div>
           <span className={cn(styles.tagDropDownName)}>{t.name}</span>
         </DropDownItem>
       ))}
       <DropDownItem value={DELETE_TAG}>
         <div className={cn(styles.circleContainer)}>
-          <IconClose className="" />
+          <img src="/icons/design-system/Close.svg" />
         </div>
         <span className={cn(styles.tagDropDownName)}>Remove Tag</span>
       </DropDownItem>

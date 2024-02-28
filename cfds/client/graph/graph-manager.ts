@@ -18,6 +18,7 @@ import {
 } from './vertex-manager.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
 import { MicroTaskTimer } from '../../../base/timer.ts';
+import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
 import {
@@ -49,6 +50,7 @@ import {
   MultiSerialScheduler,
   SerialScheduler,
 } from '../../../base/serial-scheduler.ts';
+import { slices } from '../../../base/array.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -233,12 +235,7 @@ export class GraphManager
         if (backup) {
           const commits = await backup.loadCommits();
           if (commits instanceof Array) {
-            repo.allowMerge = false;
-            try {
-              repo.persistVerifiedCommits(commits);
-            } finally {
-              repo.allowMerge = true;
-            }
+            repo.persistVerifiedCommits(commits);
           } else {
             console.log(`Unexpected IDB result: ${commits}`);
           }
@@ -246,35 +243,55 @@ export class GraphManager
           console.log(`Backup disabled for repo: ${id}`);
         }
         // Load all keys from this repo
-        for (const key of repo.keys()) {
-          this.getVertexManager(key).touch();
-        }
+        CoroutineScheduler.sharedScheduler().map(
+          slices(repo.keys(), 10),
+          (keys) => {
+            for (const k of keys) {
+              this.getVertexManager(k).touch();
+            }
+          },
+        );
+        // for (const key of repo.keys()) {
+        //   this.getVertexManager(key).touch();
+        // }
         plumbing.active = true;
         plumbing.loadingFinished = true;
-        // const numberOfCommits = repo.numberOfCommits();
-        // if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
-        //   plumbing.loadedLocalContents = true;
-        //   if (client) {
-        //     client.ready = true;
-        //     client.startSyncing();
-        //   }
-        // }
+        const numberOfCommits = repo.numberOfCommits();
+        if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
+          plumbing.loadedLocalContents = true;
+          if (client) {
+            client.ready = true;
+            client.startSyncing();
+          }
+        }
+        if (Repository.parseId(id)[0] === 'events') {
+          this.syncRepository(id);
+        }
       },
     );
     return plumbing.loadingPromise;
   }
 
   async syncRepository(id: string): Promise<void> {
-    return SerialScheduler.get('RepoSync').run(async () => {
+    return MultiSerialScheduler.get('RepoSync').run(async () => {
       const plumbing = this.plumbingForRepository(id);
       const client = plumbing.client;
       await this.loadRepository(id);
       if (client && client.isOnline) {
         await client.sync();
         // Load all keys from this repo
-        for (const key of plumbing.repo.keys()) {
-          this.getVertexManager(key).touch();
-        }
+        CoroutineScheduler.sharedScheduler().map(
+          slices(plumbing.repo.keys(), 10),
+          (keys) => {
+            for (const k of keys) {
+              this.getVertexManager(k).touch();
+            }
+          },
+        );
+        // for (const key of plumbing.repo.keys()) {
+        //   this.getVertexManager(key).touch();
+        // }
+        plumbing.repo.allowMerge = true;
         plumbing.syncFinished = true;
         client.ready = true;
         client.startSyncing();
@@ -289,9 +306,14 @@ export class GraphManager
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
-    if (plumbing.loadedLocalContents !== true) {
-      await this.syncRepository(repoId);
-      this.startSyncing(repoId);
+
+    if (!plumbing.syncFinished) {
+      if (plumbing.loadedLocalContents) {
+        this.syncRepository(repoId).finally(() => this.startSyncing(repoId));
+      } else {
+        await this.syncRepository(repoId);
+        this.startSyncing(repoId);
+      }
     } else {
       this.startSyncing(repoId);
     }
@@ -306,6 +328,7 @@ export class GraphManager
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
       );
+      repo.allowMerge = false;
       plumbing = {
         repo,
         backup: new IDBRepositoryBackup(id, repo),
@@ -317,10 +340,11 @@ export class GraphManager
           return;
         }
         plumbing!.backup?.persistCommits([c]);
-        // if (c.session === this.trustPool.currentSession.id) {
-        //   plumbing!.client?.touch();
-        // }
-        if (!c.key || !repo.commitIsLeaf(c) || !this.repositoryReady(id)) {
+        const repoReady = this.repositoryReady(id);
+        if (repoReady) {
+          plumbing!.client?.touch();
+        }
+        if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
           return;
         }
         // The following line does two major things:
@@ -335,13 +359,16 @@ export class GraphManager
           repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
         ) {
           const mgr = this.getVertexManager(c.key);
-          if (c.session !== this.trustPool.currentSession.id) {
-            if (plumbing.syncFinished && mgr.hasPendingChanges) {
-              mgr.commit();
-            } else {
-              mgr.touch();
-            }
+          // if (
+          //   c.session !== this.trustPool.currentSession.id ||
+          //   c.parents.length > 1
+          // ) {
+          if (plumbing.syncFinished && mgr.hasPendingChanges) {
+            mgr.commit();
+          } else {
+            mgr.touch();
           }
+          // }
           // else {
           //   mgr.touch();
           // }
@@ -401,7 +428,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
     return (
-      plumbing?.loadedLocalContents === true || plumbing?.syncFinished === true
+      plumbing?.syncFinished === true || plumbing?.loadedLocalContents === true
     );
   }
 
@@ -627,6 +654,9 @@ export class GraphManager
   }
 
   private _processPendingMutations(): void {
+    if (!this.rootKey) {
+      return;
+    }
     if (this._pendingMutations.size > 0) {
       const mutations: [VertexManager, MutationPack][] = new Array(
         this._pendingMutations.size,

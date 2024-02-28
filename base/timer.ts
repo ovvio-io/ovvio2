@@ -1,5 +1,5 @@
 import { assert } from './error.ts';
-import { easeInOutSine } from './time.ts';
+import { easeInExpo, easeInOutSine } from './time.ts';
 import { SortedQueue } from './collections/queue.ts';
 
 const MAX_TIMER_PROCESSING_MS = 30;
@@ -278,6 +278,12 @@ export abstract class BaseDynamicTimer extends BaseTimer {
 export class EaseInOutSineTimer extends BaseDynamicTimer {
   timingFunc(f: number): number {
     return easeInOutSine(f);
+  }
+}
+
+export class EaseInExpoTimer extends BaseDynamicTimer {
+  timingFunc(f: number): number {
+    return easeInExpo(f);
   }
 }
 

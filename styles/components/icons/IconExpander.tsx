@@ -4,22 +4,31 @@ import IconBase from './IconBase.tsx';
 interface IconExpanderProps {
   fill?: string;
   className?: string;
+  isMouseOver?: boolean;
 }
-const IconExpander = ({ fill = '#121212', className }: IconExpanderProps) => (
-  <IconBase size="big" className={className}>
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M16.59 8.59L12 13.17L7.41 8.59L6 10L12 16L18 10L16.59 8.59Z"
-        fill={fill}
-        fillOpacity="0.6"
-      />
-    </svg>
-  </IconBase>
+const IconExpander = ({
+  fill = '#121212',
+  className,
+  isMouseOver,
+}: IconExpanderProps) => (
+  <div>
+    {/* {isMouseOver && ( */}
+    <IconBase size="big" className={className}>
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M16.59 8.59L12 13.17L7.41 8.59L6 10L12 16L18 10L16.59 8.59Z"
+          fill={fill}
+          fillOpacity="0.6"
+        />
+      </svg>
+    </IconBase>
+    {/* )} */}
+  </div>
 );
 export default IconExpander;

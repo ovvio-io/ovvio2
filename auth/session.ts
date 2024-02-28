@@ -290,6 +290,8 @@ export async function signCommit(
     contents: commit.contents,
     timestamp: commit.timestamp,
     parents: commit.parents,
+    ancestorsFilter: commit.ancestorsFilter,
+    ancestorsCount: commit.ancestorsCount,
     signature,
     mergeBase: commit.mergeBase,
     mergeLeader: commit.mergeLeader,

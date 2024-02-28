@@ -141,6 +141,7 @@ export class SyncService extends BaseService<ServerServices> {
         break;
 
       case 'user':
+      case 'events':
         authorizer = createUserAuthorizer(this.getRepository('sys', 'dir'), id);
         break;
     }
@@ -158,6 +159,11 @@ export class SyncService extends BaseService<ServerServices> {
     );
     this._backupForRepo.set(repoId, backup);
     this.loadRepoFromBackup(repoId, repo, backup);
+    if (repo.indexes) {
+      for (const idx of Object.values(repo.indexes)) {
+        idx.activate();
+      }
+    }
     assert(!this._clientsForRepo.has(repoId)); // Sanity check
     const clients: RepoClient<MemRepoStorage>[] = [];
     for (let i = 0; i < this.services.serverProcessCount; ++i) {
@@ -200,7 +206,6 @@ export class SyncService extends BaseService<ServerServices> {
     repo.allowMerge = true;
     repo.attach('NewCommit', (c: Commit) => {
       const clients = this._clientsForRepo.get(repoId);
-      debugger;
       if (
         this._rendezvousHash.peerForKey(c.key) ===
         this.services.serverProcessIndex
@@ -292,7 +297,10 @@ export class SyncEndpoint implements Endpoint {
     if (path.length === 2 && path[1] === 'batch-sync') {
       return true;
     }
-    if (path.length !== 4 || ![...kRepositoryTypes, 'log'].includes(path[1])) {
+    if (
+      path.length !== 4 ||
+      !(kRepositoryTypes as readonly string[]).includes(path[1])
+    ) {
       return false;
     }
     return true;
@@ -368,14 +376,14 @@ export class SyncEndpoint implements Endpoint {
     const resourceId = path[2];
     const cmd = path[3];
     const json = await req.json();
-    runGC();
     let resp: Response;
     switch (cmd) {
       case 'sync': {
         if (
           storageType === 'data' ||
           storageType === 'sys' ||
-          storageType === 'user'
+          storageType === 'user' ||
+          storageType === 'events'
         ) {
           const sig = req.headers.get('x-ovvio-sig');
           if (!sig) {
@@ -434,7 +442,7 @@ export class SyncEndpoint implements Endpoint {
 
   private async doSync<T extends SyncValueType>(
     services: ServerServices,
-    storageType: string,
+    storageType: RepositoryType,
     resourceId: string,
     userSession: Session,
     json: JSONObject,
@@ -446,19 +454,19 @@ export class SyncEndpoint implements Endpoint {
       async (values) =>
         (
           await syncService
-            .getRepository(storageType as RepositoryType, resourceId)
+            .getRepository(storageType, resourceId)
             .persistCommits(values)
         ).length,
       () =>
         mapIterable(
           syncService
-            .getRepository(storageType as RepositoryType, resourceId)
+            .getRepository(storageType, resourceId)
             .commits(userSession),
           (c) => [c.id, c],
         ),
       () =>
         syncService
-          .getRepository(storageType as RepositoryType, resourceId)
+          .getRepository(storageType, resourceId)
           .numberOfCommits(userSession),
       syncService.clientsForRepo(resourceId),
       true,
@@ -477,11 +485,18 @@ export class SyncEndpoint implements Endpoint {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(msgJSON),
     });
+    let syncCycles = syncConfigGetCycles(kSyncConfigServer);
     if (msg.values.length > 0) {
-      if ((await persistValues(msg.values)) > 0 && replicas) {
-        // Sync changes with replicas
-        for (const c of replicas) {
-          c.touch();
+      if ((await persistValues(msg.values)) > 0) {
+        // If we got a new commit from our client, we increase our filter's
+        // accuracy to the maximum to avoid false-leaves at the tip of the
+        // commit graph.
+        syncCycles = 1;
+        if (replicas) {
+          // Sync changes with replicas
+          for (const c of replicas) {
+            c.touch();
+          }
         }
       }
     }
@@ -491,7 +506,7 @@ export class SyncEndpoint implements Endpoint {
       fetchAll(),
       getLocalCount(),
       msg.size,
-      syncConfigGetCycles(kSyncConfigServer),
+      syncCycles,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
     );
@@ -507,16 +522,10 @@ export async function setupTrustPool(
   trustPool: TrustPool,
   sysDir: Repository<MemRepoStorage, SysDirIndexes>,
 ): Promise<void> {
-  fetchEncodedRootSessions(sysDir).forEach(async (encodedSesion) => {
-    const session = await decodeSession(encodedSesion);
-    await trustPool.addSession(session, sysDir.headForKey(session.id)!);
-  });
-  // Second, load all sessions (signed by root)
-  for (const key of sysDir.keys()) {
-    const record = sysDir.valueForKey(key);
-    if (record.scheme.namespace === SchemeNamespace.SESSIONS) {
-      const session = await sessionFromRecord(record);
-      await trustPool.addSession(session, sysDir.headForKey(key)!);
-    }
-  }
+  await Promise.allSettled(
+    fetchEncodedRootSessions(sysDir).map(async (encodedSession) => {
+      const session = await decodeSession(encodedSession);
+      trustPool.addSessionUnsafe(session);
+    }),
+  );
 }

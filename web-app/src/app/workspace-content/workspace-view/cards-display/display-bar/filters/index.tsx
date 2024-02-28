@@ -197,7 +197,7 @@ export function FiltersView({ className }: FiltersViewProps) {
               )}
               style={{ zIndex: style.zIndex + 1 }}
             >
-              <InternalFiltersView />
+              <InternalFiltersView hidden={!view.showFilters} />
             </div>
           </React.Fragment>
         )}
@@ -366,6 +366,9 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
     const result: UnifiedTagDisplay[] = [];
     const selectedWorkspaces = view.selectedWorkspaces;
     for (const name of parentTagsByName.groups()) {
+      if (!name) {
+        continue;
+      }
       const values = new Set<string>();
       for (const parent of parentTagsByName.group(name)) {
         const t = parent.getVertexProxy();
@@ -397,32 +400,46 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
   return result;
 }
 
-function InternalFiltersView() {
+function UnifiedTagsFilterViewSection() {
+  const unifiedTags = useUnifiedTags();
+  return (
+    <>
+      {unifiedTags.map(([title, ...values]) =>
+        title === 'Status' ? null : <TagSection parentTagName={title} />,
+      )}
+    </>
+  );
+}
+
+interface InternalFiltersViewProps {
+  hidden?: boolean;
+}
+
+function InternalFiltersView({ hidden }: InternalFiltersViewProps) {
   const styles = useStyles();
   const strings = useStrings();
   const [showMore, setShowMore] = useState(false);
   const [assignees, hasMore] = useUnifiedAssignees(showMore);
-  const unifiedTags = useUnifiedTags();
 
   return (
     <div className={cn(styles.filtersView)}>
-      <div className={cn(styles.section)}>
-        <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-        {...assignees.map((assignee) => (
-          <AssigneeView user={assignee.manager} />
-        ))}
-        {hasMore && (
-          <div
-            onClick={() => setShowMore((x) => !x)}
-            className={cn(styles.showMore)}
-          >
-            {showMore ? strings.showLess : strings.showMore}
-          </div>
-        )}
-      </div>
-      {unifiedTags.map(([title, ...values]) =>
-        title === 'Status' ? null : <TagSection parentTagName={title} />,
+      {hidden !== true && (
+        <div className={cn(styles.section)}>
+          <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
+          {...assignees.map((assignee) => (
+            <AssigneeView user={assignee.manager} />
+          ))}
+          {hasMore && (
+            <div
+              onClick={() => setShowMore((x) => !x)}
+              className={cn(styles.showMore)}
+            >
+              {showMore ? strings.showLess : strings.showMore}
+            </div>
+          )}
+        </div>
       )}
+      {hidden !== true && <UnifiedTagsFilterViewSection />}
     </div>
   );
 }

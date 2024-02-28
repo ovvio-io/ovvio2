@@ -148,7 +148,6 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
 
   const navigateToCategory = (category: string) => {
     const categoryTabs = categories[category];
-    console.log('VIEW -', view.selectedSettingsTabId);
     if (categoryTabs && categoryTabs.length > 0) {
       navigate(`/settings/${category}/${strings[categoryTabs[0].title]}`);
     }

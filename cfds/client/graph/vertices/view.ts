@@ -49,6 +49,7 @@ export const kViewPropsTab: readonly (keyof View)[] = [
   'notesExpandOverride',
   'notesExpandBase',
   'dateFilter',
+  'expandedGroupIds',
 ] as const;
 
 export const kViewPersistentProps: readonly (keyof View)[] = [
@@ -77,7 +78,7 @@ const kDefaultNoteType: NoteType = NoteType.Task;
 const kDefaultGroupBy: GroupBy = 'dueDate';
 const kDefaultViewType: ViewType = 'list';
 const kDefaultTabId: TabId = 'tasks';
-const kDefaultSettingsTabId: SettingsTabId = 'generalPersonal';
+const kDefaultSettingsTabId: SettingsTabId = 'general-personal';
 
 export class View extends BaseVertex {
   public showFilters: boolean = false;
@@ -203,7 +204,7 @@ export class View extends BaseVertex {
   ): MutationPack {
     return ['selectedWorkspaces', origin, oldValue];
   }
-  go;
+
   // New, added 24.12 .------------------------------------------------------------v
 
   // get selectedSettingsWorkspaces(): Set<Workspace> {
@@ -417,18 +418,6 @@ export class View extends BaseVertex {
 
   get groupBy(): GroupBy {
     const groupByValue = this.record.get('groupBy');
-    if (groupByValue === 'team') {
-      const metaDataDictionary: Dictionary<UserMetadataKey, string> =
-        this.record.get('metadata');
-      // Check if 'team' metadata exists and is one of the valid GroupBy values
-      const teamValue = metaDataDictionary
-        ? metaDataDictionary.get('team')
-        : null;
-      if (teamValue && kGroupBy.includes(teamValue as any)) {
-        return teamValue as GroupBy;
-      }
-      return kDefaultGroupBy; // Default value if 'team' metadata is not valid
-    }
     return groupByValue || kDefaultGroupBy;
   }
 
@@ -442,6 +431,15 @@ export class View extends BaseVertex {
 
   clearGroupBy(): void {
     this.groupBy = kDefaultGroupBy;
+  }
+
+  groupByDidMutate(
+    origin: boolean,
+    oldGroupBy: Set<String> | undefined
+  ): MutationPack {
+    const oldValue: any = this.expandedGroupIds;
+    this.expandedGroupIds.clear();
+    return ['expandedGroupIds', origin, oldValue];
   }
 
   get pivot(): string | undefined {
@@ -477,6 +475,18 @@ export class View extends BaseVertex {
       this.record.set('notesExpandOverride', s);
     } else {
       this.record.delete('notesExpandOverride');
+    }
+  }
+
+  get expandedGroupIds(): Set<string> {
+    return this.record.get('expandedGroupIds') || new Set();
+  }
+
+  set expandedGroupIds(s: Set<string>) {
+    if (s.size > 0) {
+      this.record.set('expandedGroupIds', s);
+    } else {
+      this.record.delete('expandedGroupIds');
     }
   }
 

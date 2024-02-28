@@ -254,15 +254,16 @@ export function decomposeRanges(doc: UnkeyedDocument): Set<Pointer> {
     // }
     const anchorNodeOffset = nodesToIndexes.get(range.anchor.node)!;
     const focusNodeOffset = nodesToIndexes.get(range.focus.node)!;
-    const dir = anchorNodeOffset < focusNodeOffset
-      ? PointerDirection.Forward
-      : anchorNodeOffset > focusNodeOffset
-      ? PointerDirection.Backward
-      : range.anchor.offset < range.focus.offset
-      ? PointerDirection.Forward
-      : range.anchor.offset > range.focus.offset
-      ? PointerDirection.Backward
-      : PointerDirection.None;
+    const dir =
+      anchorNodeOffset < focusNodeOffset
+        ? PointerDirection.Forward
+        : anchorNodeOffset > focusNodeOffset
+        ? PointerDirection.Backward
+        : range.anchor.offset < range.focus.offset
+        ? PointerDirection.Forward
+        : range.anchor.offset > range.focus.offset
+        ? PointerDirection.Backward
+        : PointerDirection.None;
     result.add(buildRangePointer(key, range, 'anchor', dir));
     result.add(buildRangePointer(key, range, 'focus', dir));
   }
@@ -393,16 +394,16 @@ export function writingDirectionAtNode(
     const path = pathToNode<MarkupElement>(doc.root, node)!;
     // For tasks, look at the previous task and copy its direction, meaning
     // first tasks dictates the direction.
-    if (!path.length && isRefNode(node)) {
-      const root = doc.root;
-      const idx = root.children.indexOf(node);
-      if (idx > 0) {
-        const maybePrevRef = root.children[idx - 1];
-        if (isRefNode(maybePrevRef)) {
-          return writingDirectionAtNode(doc, maybePrevRef, baseDirection);
-        }
-      }
-    }
+    // if (!path.length && isRefNode(node)) {
+    //   const root = doc.root;
+    //   const idx = root.children.indexOf(node);
+    //   if (idx > 0) {
+    //     const maybePrevRef = root.children[idx - 1];
+    //     if (isRefNode(maybePrevRef)) {
+    //       return writingDirectionAtNode(doc, maybePrevRef, baseDirection);
+    //     }
+    //   }
+    // }
     for (const parent of path) {
       const dir = writingDirectionAtNode(doc, parent, baseDirection);
       if (dir !== 'auto') {
