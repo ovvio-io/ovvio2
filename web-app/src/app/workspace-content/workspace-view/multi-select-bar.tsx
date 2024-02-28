@@ -85,7 +85,7 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   const MultiSelectBarStyle: CSSProperties = {
     top: '0px',
     right: '0px',
-    height: '64px',
+    height: '73px',
     position: 'absolute',
     width: '100%',
     backgroundColor: '#3184dd',

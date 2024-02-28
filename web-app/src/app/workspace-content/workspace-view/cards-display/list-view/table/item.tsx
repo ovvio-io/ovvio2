@@ -59,6 +59,7 @@ import { coreValueEquals } from '../../../../../../../../base/core-types/equals.
 import { filter } from '../../../../../../../../base/set.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
+import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -272,24 +273,24 @@ const useStyles = makeStyles(() => ({
     cursor: 'cell',
   },
   cardMoreTabSelected: {
-    backgroundColor: 'var(--ws-background)',
+    // backgroundColor: 'var(--ws-background)',
   },
 }));
 
-interface SelectIconProps {
+interface SelectIconContainerProps {
   workspace: VertexId<Workspace>;
   isSelected: boolean;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
   handleSelectClick: (card: string) => void;
   cardKey: string;
 }
-function SelectIcon({
+function SelectIconContainer({
   onClick,
   workspace,
   isSelected,
   handleSelectClick,
   cardKey,
-}: SelectIconProps) {
+}: SelectIconContainerProps) {
   const styles = useStyles();
   const color = useWorkspaceColor(workspace);
   const style = useMemo<any>(
@@ -308,12 +309,15 @@ function SelectIcon({
       onClick={() => handleSelectClick(cardKey)}
     >
       {isSelected ? (
-        <img
-          key="SelectedRowSettings"
-          src="/icons/settings/hover-select2.svg"
+        <SelectIcon
+          rectColor={'var(--ws-background)'}
+          circleColor={'var(--ws-active)'}
         />
       ) : (
-        <img key="HoveredRowSettings" src="/icons/settings/hover-select.svg" />
+        <SelectedIcon
+          rectColor={'var(--ws-background)'}
+          circleColor={'var(--ws-active)'}
+        />
       )}
     </div>
   );
@@ -780,7 +784,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     return (
       <div className={cn(styles.rowContainer)}>
         {isMouseOver || isSelected ? (
-          <SelectIcon
+          <SelectIconContainer
             workspace={workspace}
             isSelected={isSelected}
             handleSelectClick={handleSelectClick}
