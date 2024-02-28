@@ -1,39 +1,26 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import * as SetUtils from '../../../../../../../base/set.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
-import {
-  Note,
-  NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { useToastController } from '../../../../../../../styles/components/toast/index.tsx';
-import { LabelSm } from '../../../../../../../styles/components/typography.tsx';
+import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import {
   makeStyles,
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import {
-  useFilteredNotes,
-  FilteredNotes,
-} from '../../../../../core/cfds/react/filter.ts';
+import { useFilteredNotes } from '../../../../../core/cfds/react/filter.ts';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { useQuery2 } from '../../../../../core/cfds/react/query.ts';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import CANCELLATION_REASONS from '../../../../../shared/dragndrop/cancellation-reasons.tsx';
-import { Draggable } from '../../../../../shared/dragndrop/draggable.tsx';
-import {
-  DragSource,
-  DragAndDropContext,
-} from '../../../../../shared/dragndrop/index.ts';
 import { InfiniteVerticalScroll } from './infinite-scroll.tsx';
-import { InlineTaskButton } from './inline-task-button.tsx';
-import { ItemsTable } from './table/grid.tsx';
+import { ItemsTable, SectionTable } from './table/grid.tsx';
 import { Row, ItemRow } from './table/item.tsx';
 import localization from './list.strings.json' assert { type: 'json' };
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
+import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
+import { CoreValue } from '../../../../../../../base/core-types/base.ts';
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
+import { WorkspaceIndicatorCard } from '../kanban-view/index.tsx';
+import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -42,41 +29,62 @@ const useStyles = makeStyles((theme) => ({
   },
   listRoot: {
     height: '100%',
-    overflowY: 'auto',
+    overflowY: 'scroll',
+    overflowX: 'clip',
   },
 }));
 
 const useStrings = createUseStrings(localization);
 
-export interface ListViewProps {
+export interface ListViewNewProps {
   className?: string;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
-export function ListView({ className }: ListViewProps) {
-  const filteredNotes = useFilteredNotes('listView');
-  return (
-    <ListViewInternal className={className} filteredNotes={filteredNotes} />
-  );
-}
-
-interface ListViewInternalProps extends ListViewProps {
-  filteredNotes: FilteredNotes;
-}
-
-function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
+function headerForGroupId(gid: CoreValue): React.ReactNode {
+  let header = null;
   const strings = useStrings();
+  if (gid == null) {
+    header = strings.unassigned;
+  } else {
+    if (typeof gid === 'string') {
+      // deno-lint-ignore no-prototype-builtins
+      if (strings.hasOwnProperty(gid)) {
+        header = <div> {strings[gid as keyof typeof strings]}</div>;
+      } else {
+        header = <div> {gid}</div>;
+      }
+    }
+    if (gid instanceof VertexManager) {
+      const vert = gid.getVertexProxy();
+      if (vert instanceof Workspace) {
+        header = <WorkspaceIndicatorCard workspace={vert} />;
+      }
+      if (vert instanceof User) {
+        header = <div>{vert.name}</div>;
+      }
+    }
+  }
+  return header;
+}
+
+export function ListViewNew({ className }: ListViewNewProps) {
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const logger = useLogger();
-  const toastController = useToastController();
-  // const containerRef = useRef();
+  const filteredNotes = useFilteredNotes('listView');
   const docRouter = useDocumentRouter();
-  const view = usePartialView('noteType');
-
+  const view = usePartialView(
+    'noteType',
+    'expandedGroupIds',
+    'notesExpandOverride',
+    'notesExpandBase'
+  );
+  const groupBy = view.groupBy;
+  const expandedSection = view.expandedGroupIds;
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
+
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
@@ -84,137 +92,101 @@ function ListViewInternal({ className, filteredNotes }: ListViewInternalProps) {
     [docRouter]
   );
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   if (unpinnedQuery) {
+  //     unpinnedQuery.limit = limit + PAGE_SIZE;
+  //   }
+  // }, [unpinnedQuery, limit]);
+
+  // console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
+
+  const groups = useMemo(() => {
+    const s = new Set<CoreValue>();
+    if (pinnedQuery) {
+      SetUtils.update(s, pinnedQuery.groups());
+    }
     if (unpinnedQuery) {
-      unpinnedQuery.limit = limit + PAGE_SIZE;
+      SetUtils.update(s, unpinnedQuery.groups());
     }
-  }, [unpinnedQuery, limit]);
+    return Array.from(s).sort(
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
+    );
+  }, [pinnedQuery, unpinnedQuery]);
 
-  console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
-
-  const [draft, setDraft] = useState<VertexManager<Note> | null>(null);
-
-  const onDragStarted = () => {};
-
-  const onReportDrop = () => {};
-
-  const onDragCancelled = ({ reason }: { reason: string }) => {
-    if (reason === CANCELLATION_REASONS.DISABLED) {
-      toastController.displayToast({
-        text: `Drag and drop is not supported in the selected sort mode`,
-        duration: 5000,
-      });
-    }
+  let groupKey = '';
+  const getGroupStringKey = (group: CoreValue, index: number): string => {
+    return typeof group === 'string'
+      ? group + { index }
+      : group instanceof VertexManager
+      ? group.getVertexProxy().name
+      : 'Untitled';
   };
 
-  // if (unpinnedQuery.isLoading || pinnedQuery.isLoading) {
-  //   return null;
-  // }
-
-  let headerText = '';
-  if (view.noteType === NoteType.Note) {
-    headerText =
-      pinnedQuery.count > 0 ? strings.pinnedNotes : strings.pinNotesCta;
-  } else if (view.noteType === NoteType.Task) {
-    headerText =
-      pinnedQuery.count > 0 ? strings.pinnedTasks : strings.pinTaskCta;
-  }
   return (
-    <DragAndDropContext
-      disabled={true}
-      onDragStarted={onDragStarted}
-      onDrop={onReportDrop}
-      onDragCancelled={onDragCancelled}
-    >
-      <Scroller>
-        {(ref) => (
-          <div ref={ref} className={cn(styles.listRoot, className)}>
-            <ItemsTable>
-              {!!headerText && (
-                <Row>
-                  <LabelSm>{headerText}</LabelSm>
-                </Row>
-              )}
-              {/* <Droppable items={cards.pinned} onDrop={onDrop}>
-                    {({ attributes }) => (
-                      <div {...attributes} style={{ display: 'contents' }}> */}
-              {pinnedQuery?.map((c, index) => (
-                <Draggable
-                  key={`list/pinned/draggable/${c.key}`}
-                  index={index}
-                  data={c}
+    <Scroller>
+      {(ref) => (
+        <div ref={ref} className={cn(styles.listRoot, className)}>
+          {groups.slice(0, limit).map(
+            (group, index) => (
+              (groupKey = getGroupStringKey(group, index)),
+              (
+                <SectionTable
+                  header={headerForGroupId(group)}
+                  groupBy={groupBy}
+                  key={groupKey}
+                  allUnpinned={unpinnedQuery?.group(group)}
+                  expandKey={groupKey}
                 >
-                  {(
-                    draggableProps,
-                    ref: React.MutableRefObject<HTMLTableRowElement>
-                  ) => (
+                  {pinnedQuery?.group(group).map((noteMgr) => (
                     <ItemRow
                       index={index}
-                      note={c.manager}
-                      ref={ref}
-                      key={`list/pinned/row/${c.key}`}
+                      note={noteMgr}
+                      key={`list/pinned/row/${noteMgr.key}`}
                       onClick={onNoteSelected}
-                      {...draggableProps}
+                      groupBy={groupBy}
+                      nestingLevel={0}
                     />
-                  )}
-                </Draggable>
-              ))}
-              <Row>{/* <RaisedButton>Bla</RaisedButton> */}</Row>
-              {/* {view.noteType === NoteType.Task && (
-                <InlineTaskButton
-                  key={`list/inline-task`}
-                  draft={draft}
-                  setDraft={setDraft}
-                />
-              )} */}
-              {unpinnedQuery?.results.slice(0, limit).map((c) => (
-                <ItemRow
-                  note={c}
-                  key={`list/unpinned/row/${c.key}`}
-                  onClick={onNoteSelected}
-                />
-              ))}
-            </ItemsTable>
-            <InfiniteVerticalScroll
-              limit={limit}
-              setLimit={setLimit}
-              pageSize={PAGE_SIZE}
-              recordsLength={unpinnedQuery?.count || 0}
-              isVisible={false}
-            />
-            {/* <Droppable items={visibleCards} onDrop={onDrop}>
-              {({ attributes }) => (
-                <div {...attributes} ref={containerRef}>
-                  {visibleCards.map((c, index) => (
-                    <Draggable key={c.key} data={c} index={index}>
-                      {(
-                        draggableProps,
-                        ref: React.MutableRefObject<HTMLDivElement>
-                      ) => (
-                        <DraggableCard
-                          className={cn(styles.item)}
-                          card={c}
-                          size={cardSize}
-                          ref={ref}
-                          showChildCards={true}
-                          {...draggableProps}
-                        />
-                      )}
-                    </Draggable>
                   ))}
-                </div>
-              )}
-            </Droppable>
-            <InfiniteScroll
-              limit={limit}
-              setLimit={setLimit}
-              pageSize={PAGE_SIZE}
-              recordsLength={cards.length}
-              isVisible={true}
-            /> */}
-          </div>
-        )}
-      </Scroller>
-    </DragAndDropContext>
+
+                  {pinnedQuery &&
+                  pinnedQuery.group(group).length > 0 &&
+                  unpinnedQuery &&
+                  unpinnedQuery.group(group).length > 0 ? (
+                    <div style={{ height: '8px' }}></div>
+                  ) : undefined}
+                  {unpinnedQuery
+                    ?.group(group)
+                    .slice(
+                      0,
+                      expandedSection.has(groupKey)
+                        ? 100
+                        : Math.max(
+                            3 - (pinnedQuery?.group(group).length || 0),
+                            0
+                          )
+                    )
+                    .map((noteMgr) => (
+                      <ItemRow
+                        note={noteMgr}
+                        key={`list/unpinned/row/${noteMgr.key}`}
+                        onClick={onNoteSelected}
+                        groupBy={groupBy}
+                        nestingLevel={0}
+                      />
+                    ))}
+                </SectionTable>
+              )
+            )
+          )}
+          <InfiniteVerticalScroll
+            limit={limit}
+            setLimit={setLimit}
+            pageSize={PAGE_SIZE}
+            recordsLength={unpinnedQuery?.count || 0}
+            isVisible={false}
+          />
+        </div>
+      )}
+    </Scroller>
   );
 }

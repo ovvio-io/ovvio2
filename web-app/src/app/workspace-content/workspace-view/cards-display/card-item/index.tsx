@@ -32,7 +32,7 @@ import { TaskCheckbox } from '../../../../../../../components/task.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { Cell } from '../list-view-new/table/item.tsx';
+import { Cell } from '../list-view/table/item.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
