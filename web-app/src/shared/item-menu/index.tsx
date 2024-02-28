@@ -39,6 +39,7 @@ export interface CardMenuViewProps {
   visible?: boolean;
   isOpen?: boolean;
   toggleMenu?: () => void;
+  isTask?: boolean;
   renderButton?: any;
 }
 
@@ -50,6 +51,7 @@ export default function CardMenuView({
   editorRootKey,
   isOpen,
   toggleMenu,
+  isTask,
   renderButton,
 }: CardMenuViewProps) {
   const styles = useStyles();
@@ -106,7 +108,6 @@ export default function CardMenuView({
       ) : (
         <Menu
           isOpen={true}
-          // toggleMenu={toggleMenu}
           renderButton={renderButton}
           direction="out"
           position={source === 'list' ? 'left' : 'right'}
@@ -118,6 +119,7 @@ export default function CardMenuView({
             onDeleted={onDeleted}
             showConfirmation={showConfirmation}
             setShowConfirmation={setShowConfirmation}
+            isTask={isTask}
           />
         </Menu>
       )}

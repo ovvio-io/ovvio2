@@ -224,6 +224,7 @@ interface DeleteNoteProp extends CardActionProps {
   onDeleted?: () => void;
   showConfirmation: boolean;
   setShowConfirmation: React.Dispatch<React.SetStateAction<boolean>>;
+  isTask?: boolean;
 }
 
 export function DeleteCardAction({
@@ -231,44 +232,27 @@ export function DeleteCardAction({
   cardManager,
   showConfirmation,
   setShowConfirmation,
+  isTask,
 }: DeleteNoteProp) {
   const styles = useStyles();
-  const [removeUserStep, setRemoveUserStep] = useState('startRemove');
   const note = useVertex(cardManager);
 
   const handleDeleteClick = () => {
-    setShowConfirmation(true); // Show the confirmation dialog
+    setShowConfirmation(true);
   };
   const handleCancelClick = () => {
-    setShowConfirmation(false); // Show the confirmation dialog
+    setShowConfirmation(false);
   };
   const handleConfirmDelete = () => {
     note.isDeleted = 1;
     setShowConfirmation(false);
   };
 
-  interface ImageIconProps {
-    width?: string;
-    height?: string;
-    src: string;
-    alt?: string;
-  }
-
-  const ImageIcon: React.FC<ImageIconProps> = ({ width, height, src, alt }) => {
-    return <img src={src} alt={alt || 'icon'} width={width} height={height} />;
-  };
-
   return (
     <React.Fragment>
       {!showConfirmation ? (
         <MenuAction
-          IconComponent={(props: ImageIconProps) => (
-            <ImageIcon
-              {...props}
-              src="/icons/settings/Delete.svg"
-              alt="Delete"
-            />
-          )}
+          IconComponent={IconDelete}
           text="Delete"
           iconWidth="16px"
           iconHeight="16px"
@@ -277,9 +261,12 @@ export function DeleteCardAction({
           }}
         />
       ) : (
-        <div className={cn(styles.confirmationButtons)}>
-          <RemoveButton onRemove={() => handleConfirmDelete()} />
-          <CancelButton onCancel={() => handleCancelClick()} />
+        <div className={cn(styles.confirmation)}>
+          {isTask ? 'Delete Task?' : 'Delete Note?'}
+          <div className={cn(styles.confirmationButtons)}>
+            <RemoveButton onRemove={() => handleConfirmDelete()} />
+            <CancelButton onCancel={() => handleCancelClick()} />
+          </div>
         </div>
       )}
     </React.Fragment>
@@ -289,103 +276,6 @@ export function DeleteCardAction({
 interface DeleteCardActionProps1 extends CardActionProps {
   onDeleted?: () => void;
 }
-// export function DeleteCardAction1({
-//   cardManager,
-//   source,
-//   onDeleted = () => {},
-//   ...props
-// }: DeleteCardActionProps1) {
-//   const [open, setOpen] = useState(false);
-//   const resolveRef = useRef(() => {});
-//   const logger = useLogger();
-//   const card = useVertex(cardManager);
-//   const navigate = useNavigate();
-
-//   const onOpen = useCallback(() => {
-//     setOpen(true);
-//     logger.log({
-//       severity: 'EVENT',
-//       event: 'Start',
-//       flow: 'delete',
-//       vertex: card.key,
-//       source: source || 'menu:note:delete',
-//     });
-//     return new Promise<void>((resolve) => {
-//       resolveRef.current = () => {
-//         resolve();
-//         resolveRef.current = () => {};
-//       };
-//     });
-//   }, [setOpen, logger, card, source]);
-
-//   const closeDialog = useCallback(
-//     (isCancelled: boolean) => {
-//       setOpen(false);
-//       resolveRef.current();
-//       if (isCancelled) {
-//         logger.log({
-//           severity: 'EVENT',
-//           event: 'Cancel',
-//           flow: 'delete',
-//           vertex: card.key,
-//           source: source || 'menu:note:delete',
-//         });
-//       }
-//     },
-//     [setOpen, logger, card, source]
-//   );
-
-//   const onDeleteClick = useCallback(() => {
-//     card.isDeleted = 1;
-//     logger.log({
-//       severity: 'EVENT',
-//       event: 'End',
-//       flow: 'delete',
-//       vertex: card.key,
-//       source: source || 'menu:note:delete',
-//     });
-//     closeDialog(false);
-//     onDeleted && onDeleted();
-//     navigate('/');
-//     // if (source === 'title' || source === 'editor:title') {
-//     //   const prevState = history.getRouteInformation(1);
-//     //   if (prevState === undefined || prevState === null) {
-//     //     history.replace(LOGIN);
-//     //   } else {
-//     //     history.pop();
-//     //   }
-//     // }
-//   }, [card, logger, closeDialog, onDeleted, source, navigate]);
-//   const hasChildren = cardHasChildren(card);
-//   const msg = hasChildren
-//     ? 'Deleting this item is permanent and will include the data it contains; including text and items'
-//     : 'Deleting this item is permanent';
-//   const deleteText = hasChildren ? 'Delete Items' : 'Delete';
-//   return (
-//     <React.Fragment>
-//       <MenuAction
-//         {...props}
-//         onClick={onOpen}
-//         IconComponent={IconDelete}
-//         text="Delete"
-//       />
-//       <Dialog
-//         open={open}
-//         onClickOutside={() => closeDialog(true)}
-//         onClose={() => closeDialog(true)}
-//       >
-//         <DialogContent>
-//           <H3>Are you sure?</H3>
-//           <Text>{msg}</Text>
-//         </DialogContent>
-//         <DialogActions>
-//           <Button onClick={() => closeDialog(true)}>Cancel</Button>
-//           <RaisedButton onClick={onDeleteClick}>{deleteText}</RaisedButton>
-//         </DialogActions>
-//       </Dialog>
-//     </React.Fragment>
-//   );
-// }
 
 interface DuplicateCardActionProps extends CardActionProps {
   editorRootKey?: string;

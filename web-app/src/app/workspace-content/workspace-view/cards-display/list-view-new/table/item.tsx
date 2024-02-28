@@ -615,6 +615,8 @@ const MenuCell = ({
 }) => {
   const styles = useStyles();
   const [menuOpen, setMenuOpen] = useState(false);
+  const pNote = usePartialVertex(note, ['type']);
+  const isTask = pNote.type === NoteType.Task;
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -637,6 +639,7 @@ const MenuCell = ({
         toggleMenu={toggleMenu}
         isOpen={menuOpen}
         renderButton={renderButton}
+        isTask={isTask}
       />
     </div>
   );
