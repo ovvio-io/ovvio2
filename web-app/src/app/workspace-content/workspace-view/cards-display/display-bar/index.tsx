@@ -54,6 +54,8 @@ import {
   DueDateState,
   IconDueDate,
 } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import Wizard from '../../../../settings/components/wizard.tsx';
+import MultiSelectBar from '../../multi-select-bar.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -164,7 +166,7 @@ function SortByDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onChange = useCallback(
@@ -177,7 +179,7 @@ function SortByDropDown() {
       });
       view.sortBy = val;
     },
-    [view, logger],
+    [view, logger]
   );
 
   return (
@@ -212,7 +214,7 @@ function ShowCheckedDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onOpen = () => {
@@ -229,7 +231,7 @@ function ShowCheckedDropDown() {
       // });
       view.showChecked = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -274,7 +276,7 @@ function DateFilterDropdown() {
         <IconDropDownArrow />
       </div>
     ),
-    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text],
+    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text]
   );
 
   const onOpen = () => {
@@ -291,7 +293,7 @@ function DateFilterDropdown() {
       // });
       view.dateFilter = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -451,7 +453,7 @@ function TabView() {
       }
       view.closeFiltersDrawer();
     },
-    [view],
+    [view]
   );
   const tabs: React.ReactElement[] = [];
   for (const tabId of ['tasks', 'notes'] as TabId[]) {
@@ -470,10 +472,11 @@ function TabView() {
 
 export type DisplayBarProps = {
   className?: string;
+  selectedCards?: Set<string>;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {
-  const { className, ...rest } = props || {};
+  const { className, selectedCards, ...rest } = props || {};
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
@@ -497,7 +500,16 @@ export function DisplayBar(props?: DisplayBarProps) {
   return (
     <div className={cn(styles.bar, className)}>
       <div className={cn(styles.barRow, styles.viewRow)}>
-        <TabView />
+        {selectedCards && selectedCards?.size > 0 ? (
+          <MultiSelectBar
+            selectedCards={selectedCards.size}
+            onClose={function (): void {
+              throw new Error('Function not implemented.');
+            }}
+          />
+        ) : (
+          <TabView />
+        )}
       </div>
       <div className={cn(styles.barRow)}>
         {view.selectedTabId !== 'overview' ? leftHand : null}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../../styles/responsive.ts';
@@ -79,9 +79,31 @@ const useStyles = makeStyles((theme) => ({
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   let content = null;
+
+  const handleSelectClick = (user?: string) => {
+    if (user) {
+      const updatedSelectedCards = new Set(selectedCards);
+      if (updatedSelectedCards.has(user)) {
+        updatedSelectedCards.delete(user);
+      } else {
+        updatedSelectedCards.add(user);
+      }
+      setSelectedCards(updatedSelectedCards);
+    }
+  };
+
   if (view.viewType === 'list') {
-    content = <ListViewNew key={'list'} className={cn(styles.contentView)} />;
+    content = (
+      <ListViewNew
+        key={'list'}
+        className={cn(styles.contentView)}
+        selectedCards={selectedCards}
+        setSelectedCards={setSelectedCards}
+        handleSelectClick={handleSelectClick}
+      />
+    );
   } else if (view.viewType === 'board') {
     content = <KanbanView className={cn(styles.contentView)} />;
   }
@@ -89,7 +111,7 @@ export function CardsDisplay() {
   return (
     <div className={cn(styles.displayRoot)}>
       <div className={cn(styles.displayMain)}>
-        <DisplayBar />
+        <DisplayBar selectedCards={selectedCards} />
         <ToolbarCenterItem
           className={cn(layout.flexSpacer)}
         ></ToolbarCenterItem>

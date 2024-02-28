@@ -2,6 +2,7 @@ import React, {
   CSSProperties,
   KeyboardEventHandler,
   MouseEventHandler,
+  ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -56,6 +57,8 @@ import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/l
 import { debounce } from '../../../../../../../../base/debounce.ts';
 import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
 import { filter } from '../../../../../../../../base/set.ts';
+import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
+import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -259,7 +262,62 @@ const useStyles = makeStyles(() => ({
   itemMenuOpen: {
     opacity: 1,
   },
+  rowContainer: {
+    position: 'relative',
+  },
+  selectedIconContainer: {
+    position: 'absolute',
+    left: '-50px',
+    top: '10px',
+    cursor: 'cell',
+  },
+  cardMoreTabSelected: {
+    backgroundColor: 'var(--ws-background)',
+  },
 }));
+
+interface SelectIconProps {
+  workspace: VertexId<Workspace>;
+  isSelected: boolean;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  handleSelectClick: (card: string) => void;
+  cardKey: string;
+}
+function SelectIcon({
+  onClick,
+  workspace,
+  isSelected,
+  handleSelectClick,
+  cardKey,
+}: SelectIconProps) {
+  const styles = useStyles();
+  const color = useWorkspaceColor(workspace);
+  const style = useMemo<any>(
+    () => ({
+      '--ws-background': color.background,
+      '--ws-inactive': color.inactive,
+      '--ws-active': color.active,
+    }),
+    [color]
+  );
+
+  return (
+    <div
+      className={cn(styles.selectedIconContainer, styles.cardMoreTabSelected)}
+      style={style}
+      onClick={() => handleSelectClick(cardKey)}
+    >
+      {isSelected ? (
+        <img
+          key="SelectedRowSettings"
+          src="/icons/settings/hover-select2.svg"
+        />
+      ) : (
+        <img key="HoveredRowSettings" src="/icons/settings/hover-select.svg" />
+      )}
+    </div>
+  );
+}
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
   const styles = useStyles();
@@ -679,11 +737,21 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   isChild?: boolean;
   groupBy?: string;
   nestingLevel: number;
+  handleSelectClick: (card: string) => void;
+  isSelected: boolean;
 }
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
   function (
-    { groupBy, note, isChild, onClick = () => {}, nestingLevel, attributes },
+    {
+      groupBy,
+      note,
+      isChild,
+      handleSelectClick,
+      onClick = () => {},
+      nestingLevel,
+      isSelected,
+    },
     ref
   ) {
     const styles = useStyles();
@@ -695,6 +763,8 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       e.stopPropagation();
       onClick(note);
     };
+    const { workspace } = usePartialVertex(note, ['workspace']);
+
     const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
     const childWidth = `${100 - 3 * nestingLevel}%`;
@@ -708,7 +778,15 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
     return (
-      <React.Fragment>
+      <div className={cn(styles.rowContainer)}>
+        {isMouseOver || isSelected ? (
+          <SelectIcon
+            workspace={workspace}
+            isSelected={isSelected}
+            handleSelectClick={handleSelectClick}
+            cardKey={note.key}
+          />
+        ) : undefined}
         <div className={cn(isChild ? styles.isChild : undefined)}>
           <div
             className={cn(
@@ -723,6 +801,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             ref={ref}
             onMouseOver={onMouseOver}
             onMouseLeave={onMouseLeave}
+            onClick={() => handleSelectClick(note.key)}
           >
             {isChild ? (
               <React.Fragment>
@@ -738,6 +817,8 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
                   note={note}
                   groupBy={groupBy}
                   nestingLevel={nestingLevel}
+                  handleSelectClick={() => {}}
+                  isSelected={false}
                 />
               </React.Fragment>
             )}
@@ -769,9 +850,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               isChild={true}
               groupBy={groupBy}
               nestingLevel={nestingLevel + 1}
+              handleSelectClick={handleSelectClick}
+              isSelected={isSelected}
             />
           ))}
-      </React.Fragment>
+      </div>
     );
   }
 );

@@ -38,6 +38,9 @@ const useStrings = createUseStrings(localization);
 
 export interface ListViewNewProps {
   className?: string;
+  selectedCards: Set<string>;
+  setSelectedCards: (users: Set<string>) => void;
+  handleSelectClick: (card: string) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -69,7 +72,11 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
   return header;
 }
 
-export function ListViewNew({ className }: ListViewNewProps) {
+export function ListViewNew({
+  className,
+  handleSelectClick,
+  selectedCards,
+}: ListViewNewProps) {
   const styles = useStyles();
   const [limit, setLimit] = useState(PAGE_SIZE);
   const filteredNotes = useFilteredNotes('listView');
@@ -137,6 +144,8 @@ export function ListViewNew({ className }: ListViewNewProps) {
                       onClick={onNoteSelected}
                       groupBy={groupBy}
                       nestingLevel={0}
+                      handleSelectClick={handleSelectClick}
+                      isSelected={selectedCards.has(noteMgr.key)}
                     />
                   ))}
 
@@ -164,6 +173,8 @@ export function ListViewNew({ className }: ListViewNewProps) {
                         onClick={onNoteSelected}
                         groupBy={groupBy}
                         nestingLevel={0}
+                        handleSelectClick={handleSelectClick}
+                        isSelected={selectedCards.has(noteMgr.key)}
                       />
                     ))}
                 </SectionTable>
