@@ -107,7 +107,6 @@ const useStyles = makeStyles(() => ({
   },
   itemRow: {
     basedOn: [layout.row],
-    // position: 'relative',
     transform: 'scale(1)',
     ':hover': {
       visibleOnHover: {

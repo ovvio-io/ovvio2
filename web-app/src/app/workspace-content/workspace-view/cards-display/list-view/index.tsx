@@ -92,14 +92,6 @@ export function ListViewNew({ className }: ListViewNewProps) {
     [docRouter]
   );
 
-  // useEffect(() => {
-  //   if (unpinnedQuery) {
-  //     unpinnedQuery.limit = limit + PAGE_SIZE;
-  //   }
-  // }, [unpinnedQuery, limit]);
-
-  // console.log('==== Unpinned count: ' + (unpinnedQuery?.count || 0));
-
   const groups = useMemo(() => {
     const s = new Set<CoreValue>();
     if (pinnedQuery) {

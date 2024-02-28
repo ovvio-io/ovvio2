@@ -23,17 +23,12 @@ import {
   useTheme,
 } from '../../../../../../../styles/theme.tsx';
 import { CardFooter } from './card-footer.tsx';
-import { CardTags } from './card-tag-view.tsx';
-import { CardWorkspaceIndicator } from './workspace-indicator.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
 import { TaskCheckbox } from '../../../../../../../components/task.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/index.ts';
-import { Cell } from '../list-view/table/item.tsx';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
 
 const TITLE_LINE_HEIGHT = styleguide.gridbase * 3;
 
@@ -122,7 +117,7 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
   },
   strikethroughDone: {
-    textDecoration: 'line-through' /* This creates the strikethrough effect */,
+    textDecoration: 'line-through',
   },
   status: {
     marginRight: styleguide.gridbase,
@@ -134,7 +129,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 13,
     fontWeight: '400',
     lineHeight: `${TITLE_LINE_HEIGHT}px`,
-    display: 'inline' /* Make sure it doesn't take up the full width */,
+    display: 'inline',
     ...styleguide.transition.short,
   },
   preview: {
@@ -215,11 +210,7 @@ function Title({
     <div>
       {titlePlaintext.split(' ').map((word, index) => (
         <Text
-          className={cn(
-            styles.titleText,
-            styles.strikethrough,
-            isDone && styles.strikethroughDone
-          )}
+          className={cn(styles.titleText, isDone && styles.strikethroughDone)}
         >
           {word}{' '}
         </Text>
@@ -228,17 +219,6 @@ function Title({
   );
 }
 
-// function Title({ source, card, isDone }) {
-//   const styles = useStyles();
-//   const { titlePlaintext } = usePartialVertex(card, ['titlePlaintext']);
-//   const words = titlePlaintext.split(' ').map((word, index) => (
-//     <span key={index} style={isDone ? { textDecoration: 'line-through' } : {}}>
-//       {word}{' '}
-//     </span>
-//   ));
-
-//   return <div className={styles.titleTextContainer}>{words}</div>;
-// }
 export interface CardHeaderPartProps extends CardItemProps {
   isExpanded?: boolean;
   source?: UISource;
@@ -260,12 +240,6 @@ export function CardHeader({
 
   return (
     <div className={styles.cardMiddle}>
-      {/* <div className={cn(styles.header)}> */}
-      {/* <CardWorkspaceIndicator
-          card={card}
-          source={source}
-          isExpanded={isExpanded}
-        /> */}
       <WorkspaceIndicator
         workspace={pCard.workspace.manager}
         ofSettings={false}
@@ -279,30 +253,7 @@ export function CardHeader({
         </>
       )}
       <div className={cn(layout.flexSpacer)} />
-      {/* <AssigneesView
-          cardManager={card}
-          cardType="small"
-          source={source}
-          isExpanded={isExpanded}
-        />
-        {!hideMenu && (
-          <CardMenuView
-            cardManager={card}
-            allowsEdit={true}
-            source={source}
-            className={cn(styles.menu, isExpanded && styles.menuVisible)}
-          />
-        )} */}
     </div>
-    // {/* {size === CardSize.Small && (
-    //   <CardTags
-    //     size={size}
-    //     card={card}
-    //     isExpanded={isExpanded}
-    //     source={source}
-    //   />
-    // )} */}
-    // </div>
   );
 }
 
@@ -418,7 +369,6 @@ export const CardItem = React.forwardRef(function CardItemView(
       >
         <div className={cn(styles.headerContainer)}>
           {/* <PinCell isChild={isChild} note={note} onMouseEnter={onMouseEnter} /> */}
-
           <div className={cn(styles.taskCheckBoxContainer)}>
             <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
             <div className={cn(styles.titleTextContainer)}>

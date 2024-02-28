@@ -7,7 +7,6 @@ import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../../core/react-utils/scrolling.tsx';
 import { layout } from '../../../../../../../../styles/layout.ts';
 import { lightColorWheel } from '../../../../../../../../styles/theme.tsx';
-import { Row } from './item.tsx';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
 import { ExpanderIcon } from '../../../../../workspaces-bar/index.tsx';
 import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts';

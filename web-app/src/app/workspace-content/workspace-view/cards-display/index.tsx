@@ -1,13 +1,10 @@
 import React from 'react';
-import { H2 } from '../../../../../../styles/components/typography.tsx';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { usePartialView } from '../../../../core/cfds/react/graph.tsx';
-import { createUseStrings } from '../../../../core/localization/index.tsx';
 import { ToolbarCenterItem } from '../toolbar/index.tsx';
-import { BoardView } from './board-view/index.tsx';
 import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
 import { FiltersView } from './display-bar/filters/index.tsx';
 import {
@@ -16,9 +13,7 @@ import {
   MOBILE_PADDING,
   DisplayBar,
 } from './display-bar/index.tsx';
-import localization from './cards-display.strings.json' assert { type: 'json' };
 import { KanbanView } from './kanban-view/index.tsx';
-import { useFilteredNotes } from '../../../../core/cfds/react/filter.ts';
 import { ListViewNew } from './list-view/index.tsx';
 
 const useStyles = makeStyles((theme) => ({
@@ -88,10 +83,7 @@ export function CardsDisplay() {
   if (view.viewType === 'list') {
     content = <ListViewNew key={'list'} className={cn(styles.contentView)} />;
   } else if (view.viewType === 'board') {
-    content = (
-      <KanbanView className={cn(styles.contentView)} />
-      // <BoardView className={cn(styles.contentView)} />
-    );
+    content = <KanbanView className={cn(styles.contentView)} />;
   }
 
   return (

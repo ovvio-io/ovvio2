@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
-// import Menu, {
-//   MenuItem,
-// } from '../../../../../../../styles/components/menu.tsx';
 import { IconCompose } from '../../../../../../../styles/components/new-icons/icon-compose.tsx';
 import { useTypographyStyles } from '../../../../../../../styles/components/typography.tsx';
 import {
@@ -20,7 +16,6 @@ import {
 } from '../../../../../core/cfds/react/graph.tsx';
 import { createUseStrings } from '../../../../../core/localization/index.tsx';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-// import { SelectWorkspaceMenu } from '../card-item/workspace-indicator.tsx';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { createNewNote } from '../../../../../shared/card/create.ts';
 import localization from '../cards-display.strings.json' assert { type: 'json' };
@@ -144,6 +139,7 @@ export function ComposeButton() {
             className={cn(styles.colorIndicator)}
             workspace={ws.manager as VertexManager<Workspace>}
             type="color"
+            ofSettings={false}
           />
           {ws.name}
         </MenuItem>
