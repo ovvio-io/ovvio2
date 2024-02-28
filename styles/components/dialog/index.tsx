@@ -23,7 +23,7 @@ const show = keyframes(
       transform: 'translateY(0)',
     },
   },
-  'index_90a70e'
+  'index_90a70e',
 );
 
 const hideAnim = keyframes(
@@ -37,7 +37,7 @@ const hideAnim = keyframes(
       transform: 'translateY(-50%)',
     },
   },
-  'dialog_a096ea'
+  'dialog_a096ea',
 );
 
 const backdropShow = keyframes(
@@ -49,7 +49,7 @@ const backdropShow = keyframes(
       opacity: 1,
     },
   },
-  'dialog_dca075'
+  'dialog_dca075',
 );
 
 const backdropHide = keyframes(
@@ -61,7 +61,7 @@ const backdropHide = keyframes(
       opacity: 0,
     },
   },
-  'dialog_0aa5dd'
+  'dialog_0aa5dd',
 );
 
 const useStyles = makeStyles(
@@ -123,7 +123,7 @@ const useStyles = makeStyles(
       padding: [0, styleguide.gridbase * 4],
       height: styleguide.gridbase * 5,
       fontSize: styleguide.gridbase * 2,
-      fontWeight: 600,
+      fontFamily: 'PoppinsBold, HeeboBold',
       borderRadius: styleguide.gridbase * 2.5,
       backgroundColor: theme.primary[500],
       color: theme.background[0],
@@ -133,7 +133,7 @@ const useStyles = makeStyles(
       },
     },
   }),
-  'dialog_90852c'
+  'dialog_90852c',
 );
 
 interface DialogButtonProps {
@@ -253,7 +253,7 @@ export function Dialog({
         </div>
       )}
     </Layer>,
-    root
+    root,
   );
 }
 

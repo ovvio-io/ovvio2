@@ -21,7 +21,7 @@ import {
   domIdFromNodeKey,
   RenderContext,
   RichTextRenderer,
-} from '../cfds/richtext/react.tsx';
+} from './renderer.tsx';
 import {
   docClone,
   docFromRT,
@@ -48,6 +48,11 @@ import { uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
 import { onKeyboardArrow } from './caret.ts';
+import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
+import { onMouseUp } from './mouse.ts';
+import { useCaret } from './caret.ts';
+
+export const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
 
 const useStyles = makeStyles(() => ({
   mainContainer: {
@@ -80,9 +85,9 @@ const useStyles = makeStyles(() => ({
     height: styleguide.gridbase * 3,
     width: styleguide.gridbase * 40,
     outline: 'none',
-    fontFamily: 'Poppins',
+    fontFamily: 'Heebo-SemiBold, Poppins-SemiBold',
     fontSize: '30px',
-    fontWeight: '600',
+    // fontWeight: '600',
     lineHeight: styleguide.gridbase * 3,
     textAlign: 'center',
     border: 'none',
@@ -93,12 +98,16 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     height: `calc(100% - ${HEADER_HEIGHT}px)`,
     whiteSpace: 'pre-wrap',
-    padding: styleguide.gridbase * 11,
+    padding: CONTENTEDITABLE_PADDING,
     outline: 'none',
     cursor: 'text',
     boxSizing: 'border-box',
     overflowY: 'scroll',
     scrollBehavior: 'instant',
+    caretColor: 'transparent',
+    '::selection': {
+      background: 'transparent',
+    },
   },
 }));
 
@@ -107,13 +116,6 @@ const DELETE_INPUT_TYPES = [
   'deleteContent',
   'deleteContentForward',
 ] as const;
-
-export const SELECTION_TTL_MS = 10 * kSecondMs;
-export function expirationForSelection(): Date {
-  const d = new Date();
-  d.setTime(d.getTime() + SELECTION_TTL_MS);
-  return d;
-}
 
 function handleTextInputEvent(
   document: Document,
@@ -182,119 +184,6 @@ function handleTabPressed(
   //   return coreValueClone(doc);
   // }
 }
-function setBrowserSelectionToDocument(
-  ctx: RenderContext,
-  editorDivNode: HTMLDivElement | undefined | null,
-): void {
-  const selection = getSelection();
-  if (!editorDivNode || document.activeElement !== editorDivNode) {
-    return;
-  }
-  // try {
-  //   if (
-  //     state.ranges![selectionId].focus.offset !=
-  //     state.ranges![selectionId].anchor.offset
-  //   )
-  //     debugger;
-  // } catch (_: unknown) {}
-  if (selection) {
-    const state = ctx.doc;
-    const selectionId = ctx.selectionId;
-    if (!state.ranges || !state.ranges[selectionId]) {
-      if (selection.type !== 'None') {
-        selection.removeAllRanges();
-      }
-      return;
-    }
-    const cfdsRange = state.ranges[selectionId];
-    const range = document.createRange();
-    let offsetShift = 0;
-    let desiredStartOffset = cfdsRange.anchor.offset;
-    const origAnchorNode: HTMLElement | null | undefined =
-      document.getElementById(domIdFromNodeKey(ctx, cfdsRange.anchor.node));
-    if (!origAnchorNode) {
-      return;
-    }
-    let anchorNode = origAnchorNode;
-    if (anchorNode instanceof Text && anchorNode.data.length === 0) {
-      const newAnchor = anchorNode.parentNode as unknown as ChildNode;
-      const origAnchorIdx = Array.from(newAnchor.childNodes).indexOf(
-        anchorNode,
-      );
-      if (cfdsRange.dir === PointerDirection.Backward) {
-        desiredStartOffset = origAnchorIdx + 1;
-      } else {
-        desiredStartOffset = origAnchorIdx - 1;
-      }
-      anchorNode = newAnchor as HTMLElement;
-    }
-    const realAnchorNode =
-      anchorNode.childNodes.length > 0 ? anchorNode.childNodes[0] : anchorNode;
-    if (cfdsRange.dir === PointerDirection.Backward) {
-      range.setEnd(realAnchorNode, desiredStartOffset);
-      offsetShift = range.endOffset - desiredStartOffset;
-    } else {
-      range.setStart(
-        realAnchorNode,
-        Math.min(desiredStartOffset, realAnchorNode.textContent?.length || 0),
-      );
-      offsetShift = range.startOffset - desiredStartOffset;
-    }
-
-    let focusNode: ChildNode | null = document.getElementById(
-      domIdFromNodeKey(ctx, cfdsRange.focus.node),
-    );
-    if (!focusNode) {
-      focusNode = origAnchorNode;
-    }
-    if (focusNode instanceof Text && focusNode.data.length === 0) {
-      focusNode = focusNode.parentNode as unknown as ChildNode;
-    }
-    if (focusNode) {
-      const realFocusNode =
-        focusNode.childNodes.length > 0 ? focusNode.childNodes[0] : focusNode;
-      if (cfdsRange.dir === PointerDirection.Backward) {
-        const offset = state.ranges![selectionId].focus.offset + offsetShift;
-        if (focusNode instanceof Text && offset === focusNode.data.length) {
-          const parent = focusNode.parentNode!;
-          const indexInParent = Array.from(parent.childNodes).indexOf(
-            focusNode,
-          );
-          focusNode = parent as unknown as ChildNode;
-          if (cfdsRange.dir === PointerDirection.Backward) {
-            desiredStartOffset = indexInParent - 1;
-          } else {
-            desiredStartOffset = indexInParent + 1;
-          }
-        }
-        range.setStart(realFocusNode, offset);
-      } else {
-        const offset = state.ranges![selectionId].focus.offset + offsetShift;
-        range.setEnd(realFocusNode, offset);
-      }
-    }
-    if (
-      selection.anchorNode !== range.startContainer ||
-      selection.focusNode !== range.endContainer ||
-      selection.anchorOffset !== range.startOffset ||
-      selection.focusOffset !== range.endOffset
-    ) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const focusNode = selection.focusNode;
-      if (focusNode && editorDivNode) {
-        let scrollTarget = focusNode;
-        while (scrollTarget.parentElement !== editorDivNode) {
-          scrollTarget = scrollTarget.parentElement!;
-        }
-        editorDivNode.scroll({
-          top: (scrollTarget as HTMLElement).offsetTop,
-          behavior: 'smooth',
-        });
-      }
-    }
-  }
-}
 
 export interface RichTextEditorProps {
   note: VertexManager<Note>;
@@ -323,14 +212,8 @@ export const RichTextEditor = forwardRef<
       editorId,
       baseDirection,
     };
-  }, [partialNote, partialNote.body, selectionId, editorId, baseDirection]);
+  }, [partialNote, selectionId, editorId, baseDirection]);
   const undoContext = useUndoContext(note, 'body', true);
-  let blockSelectionUpdate = false;
-
-  const updateSelectionToCurrentState = useCallback(() => {
-    blockSelectionUpdate = true;
-    setBrowserSelectionToDocument(ctx, editorDivRef.current);
-  }, [ctx, editorDivRef, editorDivRef.current]);
 
   useImperativeHandle(
     ref,
@@ -342,117 +225,6 @@ export const RichTextEditor = forwardRef<
       };
     },
     [editorDivRef.current],
-  );
-
-  useLayoutEffect(updateSelectionToCurrentState, [
-    partialNote,
-    selectionId,
-    updateSelectionToCurrentState,
-  ]);
-
-  const onSelectionChanged = useCallback(
-    (event: Event) => {
-      if (blockSelectionUpdate) {
-        blockSelectionUpdate = false;
-        return;
-      }
-      const editorDivNode = editorDivRef.current;
-      if (!editorDivNode || document.activeElement !== editorDivNode) {
-        return;
-      }
-      const selection = getSelection();
-      const state = docClone(note.getVertexProxy().body);
-      if (!selection) {
-        if (state.ranges && state.ranges[selectionId]) {
-          delete state.ranges[selectionId];
-          partialNote.body = state;
-        }
-        return;
-      }
-      try {
-        const selectionAnchorNode = selection.anchorNode;
-        if (!selectionAnchorNode) {
-          updateSelectionToCurrentState();
-          return;
-        }
-        let anchorNode = state.nodeKeys.nodeFromKey(
-          (
-            (selectionAnchorNode instanceof Text
-              ? selectionAnchorNode.parentNode!
-              : selectionAnchorNode) as HTMLElement
-          ).dataset.ovvKey!,
-        );
-        if (!anchorNode) {
-          setBrowserSelectionToDocument(ctx, editorDivRef.current);
-          return;
-        }
-        const selectionFocusNode = selection.focusNode || selection.anchorNode;
-        let focusNode = state.nodeKeys.nodeFromKey(
-          (
-            (selectionFocusNode instanceof Text
-              ? selectionFocusNode.parentNode!
-              : selectionFocusNode) as HTMLElement
-          ).dataset.ovvKey!,
-        );
-        if (anchorNode || focusNode) {
-          if (!state.ranges) {
-            state.ranges = {};
-          }
-          let { anchorOffset, focusOffset } = selection;
-          if (isElementNode(anchorNode)) {
-            for (const [node] of dfs(anchorNode)) {
-              if (isTextNode(node)) {
-                if (focusNode === anchorNode) {
-                  focusNode = node;
-                  focusOffset = 0;
-                }
-                anchorNode = node;
-                anchorOffset = 0;
-                break;
-              }
-            }
-          }
-          if (isElementNode(focusNode)) {
-            for (const [node] of dfs(focusNode)) {
-              if (isTextNode(node)) {
-                focusNode = node;
-                focusOffset = 0;
-                break;
-              }
-            }
-          }
-          if (!isTextNode(anchorNode)) {
-            updateSelectionToCurrentState();
-            return;
-          }
-          if (!isTextNode(focusNode)) {
-            focusNode = anchorNode;
-            focusOffset = anchorOffset;
-          }
-          state.ranges[selectionId] = {
-            anchor: {
-              node: anchorNode as TextNode,
-              offset: anchorOffset,
-            },
-            focus: {
-              node: focusNode as TextNode,
-              offset: focusOffset,
-            },
-            dir: PointerDirection.None,
-            expiration: expirationForSelection(),
-          };
-          const result = docFromRT(docToRT(state));
-          if (coreValueEquals(note.getVertexProxy().body, result)) {
-            updateSelectionToCurrentState();
-          } else {
-            note.getVertexProxy().body = result;
-          }
-        }
-      } catch (err: unknown) {
-        debugger;
-      }
-    },
-    [note, ctx, updateSelectionToCurrentState],
   );
 
   const onBeforeInput = useCallback(
@@ -553,20 +325,15 @@ export const RichTextEditor = forwardRef<
     return () => clearTimeout(timeoutId);
   }, [editorDivRef.current]);
 
-  useEffect(() => {
-    document.addEventListener('selectionchange', onSelectionChanged);
-    return () =>
-      document.removeEventListener('selectionchange', onSelectionChanged);
-  }, [onSelectionChanged]);
-
-  // const onBlur = useCallback(() => {
-  //   const body = docClone(partialNote.body);
-  //   if (body.ranges) {
-  //     delete body.ranges[selectionId];
-  //     partialNote.body = body;
-  //   }
-  // }, [partialNote, selectionId]);
-
+  const onBlur = useCallback(() => {
+    const body = docClone(partialNote.body);
+    if (body.ranges) {
+      delete body.ranges[selectionId];
+      partialNote.body = body;
+    }
+  }, [partialNote, selectionId]);
+  debugger;
+  useCaret(ctx);
   return (
     <div
       id={editorId}
@@ -578,7 +345,12 @@ export const RichTextEditor = forwardRef<
       onBeforeInput={onBeforeInput}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
-      // onBlur={onBlur}
+      onSelect={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onMouseUp={(e) => onMouseUp(e, note, selectionId)}
+      onBlur={onBlur}
     >
       <RichTextRenderer
         ctx={ctx}

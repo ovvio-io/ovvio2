@@ -53,7 +53,7 @@ export interface RefUpdater {
 export function composeRichText(
   resolver: RefResolver,
   rt: RichText,
-  local = true
+  local = true,
 ): RichText {
   // First, do a full tree scan and check if the composition will have pointers
   // in it.
@@ -72,15 +72,18 @@ export function composeRichText(
 export function decomposeRichText(
   updater: RefUpdater,
   rt: RichText,
-  local = true
+  local = true,
 ): RichText {
-  return reconstructRichText(decomposeFlatRichText(updater, rt, local));
+  const atoms = Array.from(decomposeFlatRichText(updater, rt, local));
+  debugger;
+  return reconstructRichText(atoms);
+  // return reconstructRichText(decomposeFlatRichText(updater, rt, local));
 }
 
 function* composeFlatRichText(
   resolver: RefResolver,
   rt: RichText,
-  local: boolean
+  local: boolean,
 ): Generator<FlatRepAtom> {
   let depth = 0;
   for (const v of flattenRichText(rt, local, false)) {
@@ -151,7 +154,7 @@ function* composeFlatRichText(
 
 function fastComposeRichTextTreeNoPointers(
   resolver: RefResolver,
-  parent: ElementNode
+  parent: ElementNode,
 ): void {
   const children = parent.children;
   for (let idx = 0; idx < children.length; ++idx) {
@@ -183,7 +186,7 @@ function fastComposeRichTextTreeNoPointers(
       } else {
         assert(
           replacementRT.pointers === undefined ||
-            replacementRT.pointers.size === 0
+            replacementRT.pointers.size === 0,
         );
         // Dynamically replace the ref marker with a RefNode element followed by
         // the inner rich text contents
@@ -208,7 +211,7 @@ function fastComposeRichTextTreeNoPointers(
  */
 function compositeRichTextHasPointers(
   resolver: RefResolver,
-  rt: RichText
+  rt: RichText,
 ): boolean {
   if (rt.pointers !== undefined && rt.pointers.size > 0) {
     return true;
@@ -231,7 +234,7 @@ function compositeRichTextHasPointers(
 function* decomposeFlatRichText(
   updater: RefUpdater,
   rt: RichText,
-  local: boolean
+  local: boolean,
 ): Generator<FlatRepAtom> {
   let depth = 0;
   const flatRepGenerator = flattenRichText(rt, local, false);
@@ -244,7 +247,7 @@ function* decomposeFlatRichText(
         atom.ref,
         flatRepGenerator,
         depth,
-        atom.isLocal === true
+        atom.isLocal === true,
       );
     } else if (isRefMarker(atom)) {
       // Clean the loading flag from ref markers
@@ -271,7 +274,7 @@ function _updateLinkedDoc(
   key: string,
   flatRepGenerator: Iterator<FlatRepAtom>,
   markerDepth: number,
-  local: boolean
+  local: boolean,
 ): RefMarker {
   const innerAtoms: FlatRepAtom[] = [];
   // Fast forward our flat rep until we reach the end of this ref element
@@ -306,7 +309,7 @@ function _updateLinkedDoc(
 export function extractRefs(
   root: ElementNode,
   local: boolean,
-  outSet?: Set<string>
+  outSet?: Set<string>,
 ): Set<string> {
   if (outSet === undefined) {
     outSet = new Set();
@@ -325,7 +328,7 @@ export function extractRefs(
 export function extractOrderedRefs(
   root: ElementNode,
   local: boolean,
-  outKeys?: string[]
+  outKeys?: string[],
 ): string[] {
   if (outKeys === undefined) {
     outKeys = [];

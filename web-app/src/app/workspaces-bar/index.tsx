@@ -104,10 +104,10 @@ const useStyles = makeStyles(
       fontFeatureSettings: "'clig' off, 'liga' off",
       padding: '8px 16px 8px 8px',
       backgroundColor: theme.secondary.s0,
-      fontFamily: 'Poppins',
+      // fontFamily: 'Poppins',
       fontSize: '14px',
       fontStyle: 'normal',
-      fontWeight: '500',
+      fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
       lineHeight: 'normal',
     },
 

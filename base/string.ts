@@ -214,3 +214,13 @@ export function decodeBase32URLString(value: string): string {
   const decoder = new TextDecoder();
   return decoder.decode(decodeBase32URL(value));
 }
+
+export function searchAll(str: string, regex: RegExp): number[] {
+  const result: number[] = [];
+  regex.lastIndex = 0;
+  while (regex.exec(str) !== null) {
+    result.push(regex.lastIndex);
+    ++regex.lastIndex;
+  }
+  return result;
+}

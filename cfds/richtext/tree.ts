@@ -279,8 +279,8 @@ export function pointFromAbsOffset(
         node: candidate,
         // If we landed on a previous node, place the pointer at its end.
         // If we landed on a later node, place the pointer at its start.
-        offset: offsetsMap.get(candidate)! +
-          (dir < 0 ? candidate.text.length : 0),
+        offset:
+          offsetsMap.get(candidate)! + (dir < 0 ? candidate.text.length : 0),
       };
     }
   }

@@ -88,7 +88,7 @@ type TableRowProps = {
     userKey: string,
     name: string,
     email: string,
-    metadata: { [key: string]: string }
+    metadata: { [key: string]: string },
   ) => void;
 };
 const TableRow: React.FC<TableRowProps> = ({
@@ -162,7 +162,6 @@ const TableRow: React.FC<TableRowProps> = ({
       fontSize: 13,
       lineHeight: '18px',
       letterSpacing: '0.0.75px',
-      fontWeight: '400',
     },
     otherColumnStyle: {
       display: 'flex',
@@ -173,7 +172,6 @@ const TableRow: React.FC<TableRowProps> = ({
       fontSize: 10,
       color: theme.colors.text,
       lineHeight: '14px',
-      fontWeight: '400',
     },
     editLine: {
       width: '480px',
@@ -296,7 +294,7 @@ const TableRow: React.FC<TableRowProps> = ({
             className={cn(
               styles.selectedRow,
               styles.rowRight,
-              styles.hoverableRow
+              styles.hoverableRow,
             )}
           >
             <EditableColumn
@@ -386,7 +384,7 @@ const TableRow: React.FC<TableRowProps> = ({
             className={cn(
               styles.rowRight,
               styles.hoverableRow,
-              isSelected && styles.selectedRow
+              isSelected && styles.selectedRow,
             )}
           >
             <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
@@ -409,7 +407,7 @@ const TableRow: React.FC<TableRowProps> = ({
             className={cn(
               styles.selectedRow,
               styles.rowRight,
-              styles.hoverableRow
+              styles.hoverableRow,
             )}
           >
             <EditableColumn
@@ -463,7 +461,7 @@ type UserTableProps = {
     userKey: string,
     name: string,
     email: string,
-    metadata: { [key: string]: string }
+    metadata: { [key: string]: string },
   ) => void;
 };
 
@@ -549,7 +547,7 @@ const UserTable: React.FC<UserTableProps> = ({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER
+        Number.MAX_SAFE_INTEGER,
       );
       setFilteredUsers(filtered);
     }

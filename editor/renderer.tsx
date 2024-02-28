@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react';
-import * as ArrayUtils from '../../base/array.ts';
-import { docClone, Document } from './doc-state.ts';
+import React, { useCallback, useEffect, useState } from 'react';
+import * as ArrayUtils from '../base/array.ts';
+import { docClone, Document } from '../cfds/richtext/doc-state.ts';
 import {
   ElementNode,
   findLastTextNode,
@@ -11,28 +11,35 @@ import {
   PointerDirection,
   TextNode,
   TreeNode,
-} from './tree.ts';
-import { isRefNode, MarkupElement, MarkupNode, RefNode } from './model.ts';
-import { cn, makeStyles } from '../../styles/css-objects/index.ts';
+  Pointer,
+  comparePointers,
+} from '../cfds/richtext/tree.ts';
 import {
-  resolveWritingDirection,
-  WritingDirection,
-} from '../../base/string.ts';
-import { brandLightTheme as theme } from '../../styles/theme.tsx';
-import { styleguide } from '../../styles/styleguide.ts';
-import { CoreObject, CoreValue } from '../../base/core-types/base.ts';
-import { writingDirectionAtNode } from './doc-state.ts';
-import { CheckBox } from '../../components/task.tsx';
-import { usePartialVertex } from '../../web-app/src/core/cfds/react/vertex.ts';
-import { VertexManager } from '../client/graph/vertex-manager.ts';
-import { Note } from '../client/graph/vertices/note.ts';
-import { useGraphManager } from '../../web-app/src/core/cfds/react/graph.tsx';
-import { uniqueId } from '../../base/common.ts';
-import { coreValueCompare } from '../../base/core-types/comparable.ts';
-import { AssigneeChip } from '../../components/assignee-chip.tsx';
-import Menu from '../../styles/components/menu.tsx';
-import { MemberPicker } from '../../components/member-picker.tsx';
-import { TagChip } from '../../components/tag-chip.tsx';
+  isRefNode,
+  MarkupElement,
+  MarkupNode,
+  RefNode,
+} from '../cfds/richtext/model.ts';
+import { cn, makeStyles, keyframes } from '../styles/css-objects/index.ts';
+import { resolveWritingDirection, WritingDirection } from '../base/string.ts';
+import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../styles/styleguide.ts';
+import { CoreObject, CoreValue } from '../base/core-types/base.ts';
+import { writingDirectionAtNode } from '../cfds/richtext/doc-state.ts';
+import { CheckBox } from '../components/task.tsx';
+import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
+import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { Note } from '../cfds/client/graph/vertices/note.ts';
+import { useGraphManager } from '../web-app/src/core/cfds/react/graph.tsx';
+import { uniqueId } from '../base/common.ts';
+import { coreValueCompare } from '../base/core-types/comparable.ts';
+import { AssigneeChip } from '../components/assignee-chip.tsx';
+import Menu from '../styles/components/menu.tsx';
+import { MemberPicker } from '../components/member-picker.tsx';
+import { TagChip } from '../components/tag-chip.tsx';
+import { stripDuplicatePointers } from '../cfds/richtext/flat-rep.ts';
+import { docToRT } from '../cfds/richtext/doc-state.ts';
+import { ParagraphRenderer } from './paragraph-renderer.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -144,37 +151,37 @@ const useStyles = makeStyles(() => ({
     top: 2,
   },
   p: {
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     fontSize: '13px',
     lineHeight: '18px',
   },
   h1: {
-    fontWeight: '700',
+    fontFamily: 'PoppinsBold, HeeboBold',
     fontSize: '18px',
     lineHeight: '24px',
   },
   h2: {
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     fontSize: '16px',
     lineHeight: '22px',
   },
   h3: {
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
     fontSize: '18px',
     lineHeight: '24px',
   },
   h4: {
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     fontSize: '18px',
     lineHeight: '24px',
   },
   h5: {
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     fontSize: '16px',
     lineHeight: '22px',
   },
   h6: {
-    fontWeight: '400',
+    fontFamily: 'Poppins, Heebo',
     fontSize: '14px',
     lineHeight: '21px',
   },
@@ -188,13 +195,18 @@ const useStyles = makeStyles(() => ({
     width: styleguide.gridbase * 3,
     height: styleguide.gridbase * 3,
     display: 'flex',
-    alignItmes: 'center',
+    alignItems: 'center',
     alignContent: 'center',
   },
   paragraphElement: {
     overflow: 'visible',
     display: 'flex',
     alignItems: 'flex-start',
+    width: '100%',
+  },
+  paragraphRenderer: {
+    position: 'relative',
+    top: 2,
   },
   h1Element: {
     marginTop: 0,
@@ -212,55 +224,32 @@ const useStyles = makeStyles(() => ({
     marginTop: 0,
     marginBottom: styleguide.gridbase * 2,
   },
+  cursor: {
+    backgroundColor: theme.mono.m4,
+    width: 2,
+    height: styleguide.gridbase * 2,
+    position: 'relative',
+    borderRadius: 1,
+    top: 1,
+    boxSizing: 'border-box',
+    border: `1px solid ${theme.mono.m4}`,
+    zIndex: 100,
+  },
+  editorSpan: {
+    '::selection': {
+      background: 'transparent',
+    },
+  },
 }));
 
 export interface RenderContext {
   doc: Document;
   selectionId: string;
   editorId: string;
+  sortedPointers?: Pointer[];
   baseDirection?: WritingDirection;
   onNewTask?: () => void;
 }
-
-function focusOnLastTextNode(
-  element: ElementNode,
-  doc: Document,
-  selectionId: string
-): void {
-  const textNode = findLastTextNode(element);
-  if (textNode) {
-    if (!doc.ranges) {
-      doc.ranges = {};
-    }
-    const curSelection = doc.ranges[selectionId];
-    if (
-      !curSelection ||
-      (curSelection.anchor.node !== textNode &&
-        curSelection.focus.node !== textNode)
-    ) {
-      doc.ranges[selectionId] = {
-        anchor: {
-          node: textNode,
-          offset: textNode.text.length,
-        },
-        focus: {
-          node: textNode,
-          offset: textNode.text.length,
-        },
-        dir: PointerDirection.None,
-      };
-    }
-  }
-}
-
-// interface TaskElementButtonsProps {
-//   task: VertexManager<Note>;
-// }
-//
-// function TaskElementButtons({ task }: TaskElementButtonsProps) {
-//   const styles = useStyles();
-//   return <div></div>;
-// }
 
 type TaskElementProps = React.PropsWithChildren<{
   id: string;
@@ -274,17 +263,8 @@ type TaskElementProps = React.PropsWithChildren<{
 
 const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
   function TaskElement(
-    {
-      children,
-      className,
-      dir,
-      id,
-      task,
-      ctx,
-      focused,
-      onChange,
-    }: TaskElementProps,
-    ref
+    { children, className, dir, id, task, ctx, focused, onChange },
+    ref,
   ) {
     const styles = useStyles();
     const partialTask = usePartialVertex(task, [
@@ -296,30 +276,19 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
     const partialWorkspace = usePartialVertex(partialTask.workspace.manager, [
       'users',
     ]);
-    const onClick = useCallback(() => {
-      const doc = docClone(ctx.doc);
-      const refNode = findNode(
-        doc.root,
-        (n) => isRefNode(n) && n.ref === task.key
-      );
-      if (refNode) {
-        focusOnLastTextNode(refNode[0] as ElementNode, doc, ctx.selectionId);
-        onChange(doc);
-      }
-    }, [ctx, task]);
+
     return (
       <div
         className={cn(
           styles.taskElement,
           className,
-          focused ? styles.focusedTask : styles.unfocusedTask
+          focused ? styles.focusedTask : styles.unfocusedTask,
         )}
         ref={ref}
         dir={dir}
         key={id}
         id={id}
         data-ovv-key={id}
-        onClick={onClick}
       >
         <div className={cn(styles.taskCheckboxContainer)}>
           <CheckBox
@@ -350,7 +319,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                       >
                         <MemberPicker
                           users={Array.from(partialWorkspace.users).filter(
-                            (wsUser) => !partialTask.assignees.has(wsUser)
+                            (wsUser) => !partialTask.assignees.has(wsUser),
                           )}
                           onRowSelect={(updatedAssignee) => {
                             const assignees = partialTask.assignees;
@@ -392,16 +361,17 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 interface EditorSpanProps {
   node: TextNode;
   ctx: RenderContext;
   focused?: boolean;
+  dir: WritingDirection;
 }
 
-function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
+function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
   const styles = useStyles();
   const htmlId = domIdFromNodeKey(ctx, node);
   const path = pathToNode<MarkupElement>(ctx.doc.root, node)!;
@@ -412,6 +382,7 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
   const classNames: (string | undefined | boolean | null)[] = [
     node.text.length === 0 && styles.emptySpan,
   ];
+
   switch (path[path.length - 1]!.tagName) {
     case 'h1':
       classNames.push(styles.h1);
@@ -453,19 +424,21 @@ function EditorSpan({ node, ctx, focused }: EditorSpanProps) {
       focused && styles.focusedTaskText,
     ]);
   }
+
   return (
     <span
-      className={cn(...classNames)}
-      key={ctx.doc.nodeKeys.keyFor(node).id}
+      className={cn(...classNames, styles.editorSpan)}
+      key={htmlId}
       id={htmlId}
-      data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+      data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
     >
       {node.text}
     </span>
   );
 }
 
-type ParagraphElementNode = React.PropsWithChildren<{
+type ParagraphElementNode = {
+  element: MarkupElement;
   id: string;
   htmlId: string;
   dir?: WritingDirection;
@@ -473,9 +446,10 @@ type ParagraphElementNode = React.PropsWithChildren<{
   showNewTaskHint?: boolean;
   ctx: RenderContext;
   onChange: (doc: Document) => void;
-}>;
+};
 
 function ParagraphElementNode({
+  element,
   id,
   htmlId,
   dir,
@@ -483,33 +457,33 @@ function ParagraphElementNode({
   showNewTaskHint,
   ctx,
   onChange,
-  children,
-}: ParagraphElementNode) {
+}: // children,
+ParagraphElementNode) {
   const styles = useStyles();
   const [hover, setHover] = useState(false);
-  const onClick = useCallback(() => {
-    const doc = docClone(ctx.doc);
-    const node = doc.nodeKeys.nodeFromKey(id);
-    if (isElementNode(node)) {
-      focusOnLastTextNode(node, doc, ctx.selectionId);
-      onChange(doc);
-    }
-  }, [ctx, onChange]);
+
   return (
     <div
-      key={id}
-      id={htmlId}
-      data-ovv-key={id}
-      dir={dir}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={onClick}
+      key={`${id}-container`}
       className={cn(
         styles.paragraphElement,
-        showNewTaskHint && styles.paragraphElementContainer
+        showNewTaskHint && styles.paragraphElementContainer,
       )}
     >
-      {/* {showNewTaskHint && (
+      <ParagraphRenderer
+        element={element}
+        className={cn(styles.paragraphRenderer)}
+        key={id}
+        id={htmlId}
+        data-ovv-key={id}
+        dir={dir}
+        data-ovv-node-key={ctx.doc.nodeKeys.keyFor(element).id}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        // width="100%"
+        // height="100%"
+      >
+        {/* {showNewTaskHint && (
         <div
           className={cn(styles.newTaskHint)}
           onClick={onNewTask}
@@ -522,7 +496,8 @@ function ParagraphElementNode({
           <img src="/icons/design-system/checkbox/selected.svg" />
         </div>
       )} */}
-      {children}
+        {/* {children} */}
+      </ParagraphRenderer>
     </div>
   );
 }
@@ -541,17 +516,20 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const styles = useStyles();
   const graph = useGraphManager();
   const htmlId = domIdFromNodeKey(ctx, node);
+  const dir =
+    writingDirectionAtNode(ctx.doc, node, ctx.baseDirection) ||
+    ctx.baseDirection ||
+    'auto';
 
   if (isTextNode(node)) {
     const selection = ctx.doc.ranges && ctx.doc.ranges[ctx.selectionId];
     const focused =
       selection &&
       (selection.anchor?.node === node || selection.focus?.node === node);
-    return <EditorSpan node={node} ctx={ctx} focused={focused} />;
+    return <EditorSpan node={node} ctx={ctx} focused={focused} dir={dir} />;
   }
 
   let children: JSX.Element[] | undefined;
-  let dir = writingDirectionAtNode(ctx.doc, node, ctx.baseDirection);
   if (isElementNode(node)) {
     children = node.children.map((n) => {
       return (
@@ -573,10 +551,6 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const elementInFocusPath = focusPath?.includes(node) === true;
   const indexInRoot = ctx.doc.root.children.indexOf(node);
   const isChildOfRoot = indexInRoot >= 0;
-
-  if (!dir) {
-    dir = ctx.baseDirection || 'auto';
-  }
 
   switch (node.tagName) {
     case 'h1':
@@ -721,7 +695,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           ctx={ctx}
           className={cn(
             isLastTask && styles.lastTaskElement,
-            isFirstTask && styles.firstTaskElement
+            isFirstTask && styles.firstTaskElement,
           )}
         >
           {children}
@@ -733,13 +707,14 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     default:
       return (
         <ParagraphElementNode
+          element={node}
           id={ctx.doc.nodeKeys.keyFor(node).id}
           htmlId={htmlId}
           dir={dir}
           onNewTask={() => {
             const newDoc = docClone(ctx.doc);
             const newNode = newDoc.nodeKeys.nodeFromKey(
-              ctx.doc.nodeKeys.keyFor(node).id
+              ctx.doc.nodeKeys.keyFor(node).id,
             )! as MarkupElement;
             (newNode as CoreObject).tagName = 'ref';
             (newNode as CoreObject).ref = uniqueId();
@@ -750,7 +725,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           onChange={onChange}
           ctx={ctx}
         >
-          {children}
+          {/* {children} */}
         </ParagraphElementNode>
       );
   }
@@ -762,6 +737,14 @@ export interface RichTextRendererProps {
 }
 
 export function RichTextRenderer({ ctx, onChange }: RichTextRendererProps) {
+  const rt = docToRT(ctx.doc);
+  const pointers = rt.pointers;
+  ctx.sortedPointers =
+    pointers !== undefined
+      ? Array.from<Pointer>(stripDuplicatePointers(pointers)).sort(
+          comparePointers,
+        )
+      : undefined;
   return ctx.doc.root.children.map((node) => {
     return (
       <EditorNode

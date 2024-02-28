@@ -44,3 +44,7 @@ export function randomInt(min: number, max: number): number {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min;
 }
+
+export type Point2D = { x: number; y: number };
+export type Size2D = { width: number; height: number };
+export type Rect2D = Size2D & Point2D;

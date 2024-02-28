@@ -14,7 +14,7 @@ export const useStyles = makeStyles(
     h1: {
       margin: 0,
       padding: 0,
-      fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontSize: 34,
       lineHeight: '40px',
       color: theme.colors.text,
@@ -37,7 +37,7 @@ export const useStyles = makeStyles(
       color: theme.colors.text,
       margin: 0,
       padding: 0,
-      fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontSize: 24,
       lineHeight: '30px',
       letterSpacing: 0.15,
@@ -63,7 +63,6 @@ export const useStyles = makeStyles(
 
       margin: 0,
       padding: 0,
-      fontWeight: '400',
       fontSize: 16,
       lineHeight: '22px',
       letterSpacing: 0.1,
@@ -75,12 +74,10 @@ export const useStyles = makeStyles(
     },
     h5: {
       fontSize: 16,
-      fontWeight: '400',
       lineHeight: '22px',
     },
     h6: {
       fontSize: 14,
-      fontWeight: '400',
       lineHeight: '21px',
       letterSpacing: 0.1,
     },
@@ -90,17 +87,17 @@ export const useStyles = makeStyles(
       fontSize: 16,
       lineHeight: '24px',
       letterSpacing: 0.9,
-      fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
     },
     labelSmall: {
       fontSize: 14,
       lineHeight: '20px',
-      fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
     },
     button: {
       fontSize: 14,
       lineHeight: '20px',
-      fontWeight: '500',
+      fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
     },
     text: {
       color: theme.colors.text,
@@ -111,11 +108,10 @@ export const useStyles = makeStyles(
     textSmall: {
       fontSize: 10,
       lineHeight: '14px',
-      fontWeight: '400',
     },
     bold: {
       color: theme.colors.text,
-      fontWeight: '600',
+      fontFamily: 'PoppinsBold, HeeboBold',
       fontSize: 13,
       lineHeight: '18px',
       letterSpacing: 0.07,
@@ -125,8 +121,7 @@ export const useStyles = makeStyles(
 );
 export { useStyles as useTypographyStyles };
 type TypographyProps<T extends ElementType> =
-  & React.ComponentPropsWithoutRef<T>
-  & { className?: string };
+  React.ComponentPropsWithoutRef<T> & { className?: string };
 
 export const H1 = React.forwardRef(
   (

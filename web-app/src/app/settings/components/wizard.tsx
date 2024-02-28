@@ -35,10 +35,9 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
   stepNumber,
 }) => {
   const textStyles = {
-    fontFamily: 'Poppins',
     fontSize: '14px',
     fontStyle: 'normal',
-    fontWeight: '600',
+    fontFamily: 'PoppinsBold, HeeboBold',
     lineHeight: '21px',
     letterSpacing: '0.087px',
   };
