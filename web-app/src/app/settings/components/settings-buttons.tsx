@@ -60,6 +60,7 @@ const useStyles = makeStyles(() => ({
     [MediaQueries.TabletAndMobile]: {
       display: 'none',
     },
+    fontSize: '13px',
   },
   filtersView: {
     alignItems: 'center',
@@ -393,9 +394,7 @@ export function DeleteWsButton({
       )}
     >
       <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
-      <span className={cn(styles.text)}>
-        {/* {isConfirmed === true ? 'true' : 'false'} */}
-
+      <span className={cn(styles.text)} style={{ fontSize: '13px' }}>
         {'Delete Workspace'}
       </span>
     </Button>

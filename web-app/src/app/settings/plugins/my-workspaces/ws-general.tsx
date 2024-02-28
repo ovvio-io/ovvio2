@@ -134,7 +134,7 @@ const useStyles = makeStyles(() => ({
   },
   deleteContainer: {
     basedOn: [layout.column],
-    marginTop: '69px',
+    marginTop: '250px',
     width: '324px',
   },
   hidden: {
