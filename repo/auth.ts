@@ -86,9 +86,6 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
       case SchemeNamespace.USERS: {
-        if (write) {
-          debugger;
-        }
         // Operators are allowed to access all users
         if (isOperator) {
           return true;
@@ -114,7 +111,6 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
           if (!write) {
             return true;
           }
-          debugger;
           const changedFields = repo.changedFieldsInCommit(commit);
           // Wait for the full commit graph before allowing dangerous changes
           if (!changedFields) {
