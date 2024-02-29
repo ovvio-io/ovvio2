@@ -28,6 +28,7 @@ import { copyToClipboard } from '../../base/development.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../repo/repo.ts';
 import { SysDirIndexes } from './sync.ts';
+import { kAllUserPermissions } from '../../cfds/base/scheme-types.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -305,16 +306,33 @@ function fetchUserByEmail(
   const repo = services.sync.getSysDir();
   let row = repo.indexes!.users.find((_k, r) => r.get('email') === email, 1)[0];
   // Lazily create operator records
-  if (!row && services.settings.operatorEmails.includes(email)) {
-    const record = new Record({
-      scheme: Scheme.user(),
-      data: {
-        email,
-      },
-    });
-    const key = uniqueId();
-    repo.setValueForKey(key, record);
-    row = [key, record];
+  if (services.settings.operatorEmails.includes(email)) {
+    if (!row) {
+      const record = new Record({
+        scheme: Scheme.user(),
+        data: {
+          email,
+          permissions: new Set(kAllUserPermissions),
+        },
+      });
+      const key = uniqueId();
+      repo.setValueForKey(key, record);
+      row = [key, record];
+    } else {
+      const permissions =
+        row[1].get<Set<string>>('permissions') || new Set<string>();
+      let updated = false;
+      for (const p of kAllUserPermissions) {
+        if (!permissions.has(p)) {
+          permissions.add(p);
+          updated = true;
+        }
+      }
+      if (updated) {
+        row[1].set('permissions', permissions);
+        repo.setValueForKey(row[0], row[1]);
+      }
+    }
   }
   return row ? [row[0]!, row[1]] : [undefined, undefined];
 }
