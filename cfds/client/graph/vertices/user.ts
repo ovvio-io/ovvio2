@@ -3,10 +3,15 @@ import { Vertex } from '../vertex.ts';
 import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { UserSettings } from './user-settings.ts';
-import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
+import {
+  NS_USER_SETTINGS,
+  UserPermission,
+} from '../../../base/scheme-types.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
+import * as SetUtils from '../../../../base/set.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
 import { MutationPack } from '../mutations.ts';
+import { kAllUserPermissions } from '../../../base/scheme-types.ts';
 
 export type UserMetadataKey = 'companyRoles' | 'comments' | 'team';
 
@@ -126,6 +131,23 @@ export class User extends BaseVertex {
     oldValue: Dictionary<UserMetadataKey, string> | undefined,
   ): MutationPack {
     return ['teams', local, parseTeams(oldValue?.get('team'))];
+  }
+
+  get permissions(): Set<UserPermission> {
+    return this.record.get('permissions') || new Set();
+  }
+
+  set permissions(s: Set<UserPermission>) {
+    s = SetUtils.filter(s, (v) => kAllUserPermissions.includes(v));
+    if (s.size > 0) {
+      this.record.set('permissions', s);
+    } else {
+      this.record.delete('permissions');
+    }
+  }
+
+  clearPermissions(): void {
+    this.record.delete('permissions');
   }
 }
 

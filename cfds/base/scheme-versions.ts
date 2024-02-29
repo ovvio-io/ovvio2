@@ -84,7 +84,7 @@ const SCHEME_WORKSPACE_2 = SCHEME_WORKSPACE_1.derive(
       type: TYPE_REF,
     },
   },
-  ['owner']
+  ['owner'],
 );
 
 const SCHEME_WORKSPACE_3 = SCHEME_WORKSPACE_2.derive(NS_WORKSPACE, {
@@ -133,6 +133,7 @@ const SCHEME_USER_1 = SCHEME_BASE_1.derive(NS_USERS, {
     type: TYPE_NUMBER,
     init: () => OnboardingStep.Start,
   },
+  permissions: TYPE_STR_SET,
 });
 
 const SCHEME_USER_2 = SCHEME_USER_1.derive(
@@ -148,7 +149,7 @@ const SCHEME_USER_2 = SCHEME_USER_1.derive(
     'pinnedWorkspaces',
     'onboardingStep',
     'seenTutorials',
-  ]
+  ],
 );
 
 const SCHEME_USER_SETTINGS_1 = SCHEME_BASE_1.derive(NS_USER_SETTINGS, {
@@ -306,7 +307,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
   manager.register(
     1,
     [SCHEME_WORKSPACE_1, SCHEME_USER_1, SCHEME_NOTE_1, SCHEME_TAG_1],
-    []
+    [],
   );
 
   //V2
@@ -331,7 +332,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
           data.tags = tagMap;
         }
       }
-    }
+    },
   );
 
   //V3
@@ -348,7 +349,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
       //       data.body = migrationToRichtextV3(data.body);
       //     }
       //   }
-    }
+    },
   );
 
   //V4
@@ -361,7 +362,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
         data.createdBy = data.owner;
         delete data.owner;
       }
-    }
+    },
   );
 
   //V5
@@ -369,7 +370,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
     5,
     [SCHEME_WORKSPACE_3, SCHEME_NOTE_4, SCHEME_VIEW_1],
     [SchemeNamespace.TAGS, SchemeNamespace.USERS],
-    (namespace, data) => {}
+    (namespace, data) => {},
   );
 
   //V6
@@ -402,7 +403,7 @@ export function runRegister(manager: ISchemeManagerRegister) {
       } else if (namespace === NS_NOTES) {
         delete data.status;
       }
-    }
+    },
   );
 
   //Next Version Here

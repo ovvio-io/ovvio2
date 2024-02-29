@@ -243,6 +243,50 @@ export class Repository<
     return false;
   }
 
+  /**
+   * This method computes a quick diff between the given commit and all of its
+   * parents. It determines which fields were changed in this commit, rather
+   * than what the changes were.
+   *
+   * @param commit The commit to inspect.
+   * @returns An array of fields changed in this commit or null if the full
+   *          information isn't yet available for this commit due to partial
+   *          commit graph.
+   */
+  changedFieldsInCommit(commit: Commit | string): string[] | null {
+    if (typeof commit === 'string') {
+      if (!this.hasCommit(commit)) {
+        return null;
+      }
+      commit = this.getCommit(commit);
+    }
+    if (!this.hasRecordForCommit(commit)) {
+      return null;
+    }
+    const finalRecord = this.recordForCommit(commit);
+    const fields = new Set<string>();
+    for (const p of commit.parents) {
+      if (!this.hasRecordForCommit(p)) {
+        return null;
+      }
+      const rec = this.recordForCommit(p);
+      SetUtils.update(fields, rec.diffKeys(finalRecord, false));
+    }
+    return Array.from(fields);
+  }
+
+  /**
+   * This method determines, to a high probability, whether the given commit is
+   * a leaf commit or not, even when the full graph isn't available.
+   *
+   * It works by inspecting the bloom filters of the newest 2log[4](N) commits,
+   * and checking for the presence of the candidate commit. If present in all
+   * filters, the commit guaranteed not to be a leaf.
+   *
+   * @param candidate The commit to inspect.
+   * @returns true if the commit is a leaf and can be safely included in a merge
+   *          commit, false otherwise.
+   */
   commitIsHighProbabilityLeaf(candidate: Commit | string): boolean {
     const id = typeof candidate === 'string' ? candidate : candidate.id;
     if (this._adjList.hasInEdges(id)) {
@@ -261,8 +305,13 @@ export class Repository<
       commitsForKey.length,
       commitsForKey[commitsForKey.length - 1].ancestorsCount,
     );
+    // 2log[fpr](N) = K. Since FPR = 0.25, we're using 2log[4](N).
     const agreementSize = 2 * (Math.log2(graphSize) / Math.log2(4));
     if (commitsForKey.length < agreementSize) {
+      // We must consider the newest commits leaves, otherwise we'd deadlock
+      // and not converge on all branches. These cases work out OK because the
+      // merge will take the latest commit per session thus skipping temporary
+      // gaps in the graph.
       return true;
     }
     const dateCutoff = candidate.timestamp.getTime();

@@ -1,4 +1,5 @@
 import { sessionIdFromSignature } from '../auth/session.ts';
+import { UserPermission } from '../cfds/base/scheme-types.ts';
 import { SchemeNamespace } from '../cfds/base/scheme-types.ts';
 import { Authorizer, Repository, RepoStorage } from './repo.ts';
 
@@ -84,7 +85,10 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
 
       // Readonly access to everyone. Operators are transparent to everyone but
       // other operators.
-      case SchemeNamespace.USERS:
+      case SchemeNamespace.USERS: {
+        if (write) {
+          debugger;
+        }
         // Operators are allowed to access all users
         if (isOperator) {
           return true;
@@ -97,12 +101,40 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         if (operatorEmails.includes(record.get('email'))) {
           return false;
         }
-        // Users are allowed to update their own records
+        const userPermissions =
+          userRecord.get<Set<UserPermission>>('permissions');
+
+        // manage:users grants full write access to all user records
+        if (userPermissions?.has('manage:users') === true) {
+          return true;
+        }
+        // Users are allowed to update their own records, as long as they don't
+        // touch protected fields
         if (userKey === commit.key) {
+          if (!write) {
+            return true;
+          }
+          debugger;
+          const changedFields = repo.changedFieldsInCommit(commit);
+          // Wait for the full commit graph before allowing dangerous changes
+          if (!changedFields) {
+            return false;
+          }
+          // Regular users aren't allowed to edit their own email to avoid
+          // privileges escalation.
+          if (changedFields.includes('email')) {
+            return false;
+          }
+          // Users can't edit their own permissions
+          if (changedFields.includes('permissions')) {
+            return false;
+          }
+          // All other fields are OK to be edited by their owner
           return true;
         }
         // Readonly access for everyone else
         return write === false;
+      }
 
       // Readonly access to everyone. Only root is allowed to update sessions.
       case SchemeNamespace.SESSIONS:
