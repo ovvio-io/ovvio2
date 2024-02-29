@@ -96,6 +96,7 @@ type TableRowProps = {
   editMode: boolean;
   addMemberMode: boolean;
   isEditValid?: boolean;
+  enabled?: boolean;
 };
 const TableRow: React.FC<TableRowProps> = ({
   user,
@@ -104,6 +105,7 @@ const TableRow: React.FC<TableRowProps> = ({
   onRowSelect,
   editMode,
   addMemberMode,
+  enabled,
 }) => {
   const useStyles = makeStyles(() => ({
     rowContainer: {
@@ -199,7 +201,7 @@ const TableRow: React.FC<TableRowProps> = ({
   const [localName, setLocalName] = useState(user.name);
   const [localEmail, setLocalEmail] = useState(user.email);
   const [localMetadata, setLocalMetadata] = useState(
-    convertDictionaryToObject(user.metadata)
+    convertDictionaryToObject(user.metadata),
   );
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [editNow, setEditNow] = useState(false);
@@ -211,7 +213,7 @@ const TableRow: React.FC<TableRowProps> = ({
     userKey: string,
     name: string,
     email: string,
-    metadata: { [key: string]: string }
+    metadata: { [key: string]: string },
   ) => {
     let isValid = true;
     if (!name || name.trim() === '') {
@@ -290,7 +292,7 @@ const TableRow: React.FC<TableRowProps> = ({
         <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
       </div>
     ),
-    []
+    [],
   );
   const handleMouseEnter = () => {
     if (!isSelected) setIsRowHovered(true);
@@ -323,7 +325,7 @@ const TableRow: React.FC<TableRowProps> = ({
   };
   return (
     <div ref={rowRef} className={cn(styles.rowContainer)}>
-      {!addMemberMode && !editMode && isRowHovered && (
+      {enabled !== false && !addMemberMode && !editMode && isRowHovered && (
         <div className={cn(styles.rowLeft, styles.rowLeftHover)}>
           <img
             key="HoveredRowSettings"
@@ -344,10 +346,10 @@ const TableRow: React.FC<TableRowProps> = ({
           className={cn(
             isSelected && styles.selectedRow,
             styles.rowRight,
-            !isSelected && !newUser && !editNow && styles.hoverableRow
+            !isSelected && !newUser && !editNow && styles.hoverableRow,
           )}
           onClick={() => {
-            user && handleRowSelect(user.key);
+            enabled !== false && user && handleRowSelect(user.key);
           }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -392,7 +394,7 @@ const TableRow: React.FC<TableRowProps> = ({
           className={cn(
             styles.selectedRow,
             styles.rowRight,
-            styles.hoverableRow
+            styles.hoverableRow,
           )}
         >
           <EditableColumn
@@ -466,6 +468,7 @@ type UserTableProps = {
   showSearch: boolean;
   editMode: boolean;
   addMemberMode: boolean;
+  enabled?: boolean;
 };
 
 const UserTable: React.FC<UserTableProps> = ({
@@ -475,6 +478,7 @@ const UserTable: React.FC<UserTableProps> = ({
   showSearch,
   editMode,
   addMemberMode,
+  enabled,
 }) => {
   const useStyles2 = makeStyles(() => ({
     tableContainer: {
@@ -543,13 +547,13 @@ const UserTable: React.FC<UserTableProps> = ({
     searchTerm,
     usersWithNewFirst,
     (t) => t.name,
-    Number.MAX_SAFE_INTEGER
+    Number.MAX_SAFE_INTEGER,
   );
 
   const handleNewMember = useCallback(() => {
     const createdVertex = graphManager.createVertex<User>(
       SchemeNamespace.USERS,
-      {}
+      {},
     );
     setNewUser(createdVertex.manager);
 
@@ -591,6 +595,7 @@ const UserTable: React.FC<UserTableProps> = ({
             isSelected={showSelection && selectedUsers.has(user.key)}
             editMode={editMode}
             addMemberMode={addMemberMode}
+            enabled={enabled}
           />
         ))}
       </div>
