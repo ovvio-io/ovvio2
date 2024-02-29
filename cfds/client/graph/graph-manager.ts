@@ -17,7 +17,8 @@ import {
   VertexManager,
 } from './vertex-manager.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
-import { MicroTaskTimer } from '../../../base/timer.ts';
+import { MicroTaskTimer, Timer } from '../../../base/timer.ts';
+import { CoroutineTimer } from '../../../base/coroutine-timer.ts';
 import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
@@ -51,6 +52,7 @@ import {
   SerialScheduler,
 } from '../../../base/serial-scheduler.ts';
 import { slices } from '../../../base/array.ts';
+import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -101,9 +103,9 @@ export class GraphManager
   private readonly _trustPool: TrustPool;
   private readonly _adjList: AdjacencyList;
   private readonly _vertManagers: Dictionary<string, VertexManager>;
-  private readonly _pendingMutations: Dictionary<string, MutationPack>;
+  private readonly _pendingMutations: OrderedMap<string, MutationPack>;
   private readonly _undoManager: UndoManager;
-  private readonly _processPendingMutationsTimer: MicroTaskTimer;
+  private readonly _processPendingMutationsTimer: Timer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
@@ -115,9 +117,13 @@ export class GraphManager
     this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    this._pendingMutations = new Map();
-    this._processPendingMutationsTimer = new MicroTaskTimer(() =>
-      this._processPendingMutations(),
+    this._pendingMutations = new OrderedMap();
+    // this._processPendingMutationsTimer = new MicroTaskTimer(() =>
+    //   this._processPendingMutations(),
+    // );
+    this._processPendingMutationsTimer = new CoroutineTimer(
+      CoroutineScheduler.sharedScheduler(),
+      () => this._processPendingMutations(),
     );
     this._executedFieldTriggers = new Map();
     this._undoManager = new UndoManager(this);
@@ -301,6 +307,10 @@ export class GraphManager
 
   startSyncing(repoId: string): void {
     this.plumbingForRepository(repoId).client?.startSyncing();
+  }
+
+  stopSyncing(repoId: string): void {
+    this.plumbingForRepository(repoId).client?.stopSyncing();
   }
 
   async prepareRepositoryForUI(repoId: string): Promise<void> {
@@ -658,24 +668,23 @@ export class GraphManager
       return;
     }
     if (this._pendingMutations.size > 0) {
-      const mutations: [VertexManager, MutationPack][] = new Array(
-        this._pendingMutations.size,
-      );
-      let i = 0;
-      for (const [key, mut] of this._pendingMutations) {
-        mutations[i++] = [
-          this.getVertexManager(key),
-          mutationPackOptimize(mut),
-        ];
+      const batchSize = 100;
+      const mutations: [VertexManager, MutationPack][] = [];
+      for (let i = 0; i < batchSize; ++i) {
+        const key = this._pendingMutations.startKey;
+        if (!key) {
+          break;
+        }
+        const mut = this._pendingMutations.get(key);
+        mutations[i] = [this.getVertexManager(key), mutationPackOptimize(mut)];
+        this._pendingMutations.delete(key);
       }
-      const pendingMutations = Array.from(this._pendingMutations.entries());
-      this._pendingMutations.clear();
 
       //Send mutations to index/query/undo ...
       this._undoManager.update(mutations);
 
       this._executedFieldTriggers.clear();
-      for (const [key, pack] of pendingMutations) {
+      for (const [key, pack] of mutations) {
         this.emit('vertex-changed', key, pack);
       }
     }
