@@ -34,6 +34,16 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
     this.repo.attach('NewCommit', (c: Commit) => this.onNewCommit(c));
   }
 
+  private recordIncludedInIndex(key: string | null, record: Record): boolean {
+    if (
+      record.scheme.hasField('isDeleted') &&
+      record.get('isDeleted', 0) !== 0
+    ) {
+      return false;
+    }
+    return this.predicate(key, record);
+  }
+
   private onNewCommit(commit: Commit): void {
     const repo = this.repo;
     const key = commit.key;
@@ -50,7 +60,7 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
         this._cachedValues = undefined;
         this._headIdForKey.set(key, currentHead!.id);
         this._tempRecordForKey.delete(key);
-        if (this.predicate(key, currentRecord)) {
+        if (this.recordIncludedInIndex(key, currentRecord)) {
           this._includedKeys.add(key);
         } else if (this._includedKeys.has(key)) {
           this._includedKeys.delete(key);
@@ -72,7 +82,7 @@ export class RepositoryIndex<T extends RepoStorage<T>> {
       this._cachedValues = undefined;
       this._tempRecordForKey.set(key, record);
       this._headIdForKey.delete(key);
-      if (this.predicate(key, record)) {
+      if (this.recordIncludedInIndex(key, record)) {
         this._includedKeys.add(key);
       } else if (this._includedKeys.has(key)) {
         this._includedKeys.delete(key);

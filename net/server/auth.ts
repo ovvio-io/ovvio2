@@ -387,6 +387,9 @@ export async function requireSignedUser(
   if (userRecord === undefined) {
     throw accessDenied();
   }
+  if (userRecord.get('isDeleted', 0) !== 0) {
+    throw accessDenied();
+  }
   if (role === 'operator') {
     const email = userRecord.get<string>('email');
     if (email === undefined || email.length <= 0) {
