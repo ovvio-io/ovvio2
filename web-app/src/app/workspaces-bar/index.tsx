@@ -1043,9 +1043,9 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             ofSettings={ofSettings}
           />,
         );
-        if (contents.length >= limit) {
-          break;
-        }
+        // if (contents.length >= limit) {
+        //   break;
+        // }
       }
     }
   }
@@ -1055,13 +1055,13 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
       {(ref) => (
         <div ref={ref} className={cn(styles.list)}>
           {contents}
-          <InfiniteVerticalScroll
+          {/* <InfiniteVerticalScroll
             limit={limit}
             setLimit={setLimit}
             pageSize={PAGE_SIZE}
             recordsLength={query?.count || 0}
             isVisible={false}
-          />
+          /> */}
         </div>
       )}
     </Scroller>
