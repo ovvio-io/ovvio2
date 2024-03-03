@@ -9,7 +9,7 @@ export interface IndeterminateProgressIndicatorProps {
 }
 
 export function IndeterminateProgressIndicator(
-  props?: IndeterminateProgressIndicatorProps
+  props?: IndeterminateProgressIndicatorProps,
 ) {
   return (
     <CanvasAnimation
@@ -23,7 +23,7 @@ export function IndeterminateProgressIndicator(
           height / 2.0,
           Math.min(width, height) / 2.0 - lineWidth,
           0,
-          2 * Math.PI
+          2 * Math.PI,
         );
         ctx.stroke();
 
@@ -35,7 +35,7 @@ export function IndeterminateProgressIndicator(
           height / 2.0,
           Math.min(width, height) / 2.0 - lineWidth,
           start,
-          start + 0.4 * Math.PI
+          start + 0.4 * Math.PI,
         );
         ctx.stroke();
       }}
@@ -44,6 +44,7 @@ export function IndeterminateProgressIndicator(
       width={16}
       height={16}
       className={props?.className}
+      randomOffset={true}
     />
   );
 }
