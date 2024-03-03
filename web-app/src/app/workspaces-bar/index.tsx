@@ -670,10 +670,12 @@ function WorkspaceListItem({
   workspace,
   groupId,
   ofSettings,
+  visible,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
   ofSettings: boolean | undefined;
+  visible?: boolean;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -807,7 +809,7 @@ function WorkspaceListItem({
       </Tooltip>
       <div /*className={cn(layout.flexSpacer)}*/ />
       {!view.workspaceBarCollapsed &&
-        (!loaded ? (
+        (!loaded && visible !== false ? (
           <div
             className={cn(
               isSelected ? styles.loadingIndicatorContainer : styles.hidden,
@@ -948,6 +950,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     'workspaceGrouping',
   );
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     if (query) {
@@ -1033,6 +1036,9 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         if (ofSettings && ws.key === personalWsKey) {
           continue;
         }
+        console.log(
+          `Item count = ${contents.length}, limit = ${limit}, offset = ${scrollY}`,
+        );
         contents.push(
           <WorkspaceListItem
             key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
@@ -1041,6 +1047,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             workspace={ws}
             groupId={gid}
             ofSettings={ofSettings}
+            visible={contents.length < limit}
           />,
         );
         // if (contents.length >= limit) {
@@ -1051,17 +1058,17 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   }
 
   return (
-    <Scroller>
+    <Scroller onScroll={(x, y) => setScrollY(y)}>
       {(ref) => (
         <div ref={ref} className={cn(styles.list)}>
           {contents}
-          {/* <InfiniteVerticalScroll
+          <InfiniteVerticalScroll
             limit={limit}
             setLimit={setLimit}
             pageSize={PAGE_SIZE}
             recordsLength={query?.count || 0}
             isVisible={false}
-          /> */}
+          />
         </div>
       )}
     </Scroller>
