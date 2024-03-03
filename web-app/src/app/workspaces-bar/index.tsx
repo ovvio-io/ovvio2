@@ -1036,9 +1036,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         if (ofSettings && ws.key === personalWsKey) {
           continue;
         }
-        console.log(
-          `Item count = ${contents.length}, limit = ${limit}, offset = ${scrollY}`,
-        );
         contents.push(
           <WorkspaceListItem
             key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/${
