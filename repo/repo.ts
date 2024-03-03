@@ -37,6 +37,7 @@ import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
 import { CoroutineScheduler } from '../base/coroutine.ts';
+import { SchedulerPriority } from '../base/coroutine.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -1335,8 +1336,10 @@ export class Repository<
     )) {
       this._runUpdatesOnNewLeafCommit(c);
     }
-    CoroutineScheduler.sharedScheduler().map(result, (c) =>
-      this.emit('NewCommit', c),
+    CoroutineScheduler.sharedScheduler().map(
+      result,
+      (c) => this.emit('NewCommit', c),
+      SchedulerPriority.Background,
     );
     // for (const c of result) {
     //   // Notify everyone else
