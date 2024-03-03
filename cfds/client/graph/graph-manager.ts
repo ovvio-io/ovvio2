@@ -22,6 +22,7 @@ import { CoroutineTimer } from '../../../base/coroutine-timer.ts';
 import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
+import { kDayMs } from '../../../base/date.ts';
 import {
   SharedQueriesManager,
   SharedQueryName,
@@ -53,6 +54,7 @@ import {
 } from '../../../base/serial-scheduler.ts';
 import { slices } from '../../../base/array.ts';
 import { OrderedMap } from '../../../base/collections/orderedmap.ts';
+import { downloadJSON } from '../../../base/browser.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -93,6 +95,13 @@ interface RepositoryPlumbing {
   loadingFinished?: true;
   syncFinished?: true;
   active: boolean;
+}
+
+export interface OrganizationStats extends JSONObject {
+  assigneeChange: number;
+  tagChange: number;
+  dueDateChange: number;
+  pinChange: number;
 }
 
 export class GraphManager
@@ -213,6 +222,12 @@ export class GraphManager
       return 'sync';
     }
     return offlineCount === this._repoById.size ? 'offline' : 'idle';
+  }
+
+  *repositories(): Generator<[string, Repository<MemRepoStorage>]> {
+    for (const [key, plumbing] of this._repoById) {
+      yield [key, plumbing.repo];
+    }
   }
 
   async loadRepository(id: string): Promise<void> {
@@ -843,5 +858,64 @@ export class GraphManager
     console.log('Key Mapping:');
     console.log(keysMapping);
     return result;
+  }
+
+  downloadOrgStats(days = 1): void {
+    const startTs = Date.now() - kDayMs * days;
+    const stats = new Map<string, OrganizationStats>();
+    const sysDir = this.getSysDir();
+
+    for (const [repoId, repo] of this.repositories()) {
+      if (Repository.parseId(repoId)[0] !== 'data') {
+        continue;
+      }
+      for (const key of repo.keys()) {
+        if (repo.valueForKey(key).scheme.namespace === SchemeNamespace.NOTES) {
+          for (const c of repo.commitsForKey(key)) {
+            if (c.timestamp.getTime() < startTs) {
+              continue;
+            }
+            const session = this.trustPool.getSession(c.session);
+            if (!session) {
+              continue;
+            }
+            assert(session.owner !== undefined);
+            const userRecord = sysDir.valueForKey(session.owner);
+            const domain = userRecord.has('email')
+              ? userRecord.get<string>('email')!.split('@')[1]
+              : 'unknown';
+            let domainStats = stats.get(domain);
+            if (!domainStats) {
+              domainStats = {
+                assigneeChange: 0,
+                tagChange: 0,
+                dueDateChange: 0,
+                pinChange: 0,
+              };
+              stats.set(domain, domainStats);
+            }
+            const changedFields = repo.changedFieldsInCommit(c);
+            if (changedFields?.includes('assignees')) {
+              ++domainStats.assigneeChange;
+            }
+            if (changedFields?.includes('tags')) {
+              ++domainStats.tagChange;
+            }
+            if (changedFields?.includes('dueDate')) {
+              ++domainStats.dueDateChange;
+            }
+            if (changedFields?.includes('pinnedBy')) {
+              ++domainStats.pinChange;
+            }
+          }
+        }
+      }
+    }
+
+    const result: JSONObject = {};
+    for (const [k, v] of stats) {
+      result[k] = v;
+    }
+    downloadJSON('stats.json', result);
   }
 }
