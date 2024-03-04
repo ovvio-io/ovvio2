@@ -11,6 +11,8 @@ import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { useDueDate } from '../../../shared/components/due-date-editor/index.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -243,6 +245,52 @@ export function AssignWsBlueButton({
         onClick={() => {}}
       />
       <span className={cn(styles.textWhite)}>{'Assign'}</span>
+    </Button>
+  );
+}
+export interface DueDatePickerProps {
+  cards: Set<Note>;
+  className?: string;
+  dueDateClick?: () => void;
+}
+
+export function DueDateMultiSelect({
+  cards,
+  className,
+  dueDateClick,
+}: DueDatePickerProps) {
+  const styles = useStyles();
+  const dueDateEditor = useDueDate();
+  const onClick = (e: MouseEvent) => {
+    e.stopPropagation();
+  };
+  return (
+    <Button onClick={dueDateClick} className={cn(styles.compose, styles.blue)}>
+      {<img src="/icons/design-system/dueDate/addDueDateWhite.svg" />}
+      <span className={cn(styles.textWhite)}>{'Due-Date'}</span>
+    </Button>
+  );
+}
+
+export interface AddTagMultiButtonProps {
+  cards: Set<Note>;
+  className?: string;
+  addTagClick?: () => void;
+}
+
+export function AddTagMultiButton({
+  cards,
+  className,
+  addTagClick,
+}: AddTagMultiButtonProps) {
+  const styles = useStyles();
+  const onClick = (e: MouseEvent) => {
+    e.stopPropagation();
+  };
+  return (
+    <Button onClick={addTagClick} className={cn(styles.compose, styles.blue)}>
+      {<img src="/icons/design-system/tag/addTagWhite.svg" />}
+      <span className={cn(styles.textWhite)}>{'Tag'}</span>
     </Button>
   );
 }

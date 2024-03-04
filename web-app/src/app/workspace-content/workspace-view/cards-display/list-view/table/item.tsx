@@ -36,6 +36,7 @@ import {
   usePartialVertex,
   usePartialVertices,
   useVertex,
+  useVertexByKey,
 } from '../../../../../../core/cfds/react/vertex.ts';
 import {
   AssignButton,
@@ -142,6 +143,12 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'rgba(139, 197, 251, 0.35)',
     height: '44px',
   },
+  selectedRow: {
+    backgroundColor: '#F5F9FB',
+    border: '1px solid #CCE3ED',
+    boxSizing: 'border-box',
+    hover: 'none',
+  },
   doneIndicator: {
     pointerEvents: 'none',
     position: 'absolute',
@@ -166,7 +173,7 @@ const useStyles = makeStyles(() => ({
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
-    width: 'calc(50% - 156px)',
+    width: 'calc(45% - 156px)',
     cursor: 'pointer',
     position: 'relative',
     textOverflow: 'ellipsis',
@@ -200,7 +207,7 @@ const useStyles = makeStyles(() => ({
     marginRight: styleguide.gridbase * 0.25,
   },
   tagsColumn: {
-    width: 'calc(20% - 156px)',
+    width: 'calc(25% - 156px)',
     flexGrow: '2',
     flexShrink: '1',
     flexBasis: 'auto',
@@ -281,7 +288,9 @@ interface SelectIconContainerProps {
   workspace: VertexId<Workspace>;
   isSelected: boolean;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
-  handleSelectClick: (card: string) => void;
+  // handleSelectClick: (card: string) => void;
+  handleSelectClick: (card: Note) => void;
+
   cardKey: string;
 }
 function SelectIconContainer({
@@ -301,12 +310,13 @@ function SelectIconContainer({
     }),
     [color]
   );
-
+  const card: Note = useVertexByKey(cardKey);
   return (
     <div
       className={cn(styles.selectedIconContainer, styles.cardMoreTabSelected)}
       style={style}
-      onClick={() => handleSelectClick(cardKey)}
+      // onClick={() => handleSelectClick(cardKey)}
+      onClick={() => handleSelectClick(card)}
     >
       {isSelected ? (
         <SelectIcon
@@ -741,7 +751,9 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   isChild?: boolean;
   groupBy?: string;
   nestingLevel: number;
-  handleSelectClick: (card: string) => void;
+  // handleSelectClick: (card: string) => void;
+  handleSelectClick: (card: Note) => void;
+
   isSelected: boolean;
 }
 
@@ -783,7 +795,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       (!view.notesExpandBase && hasOverride);
     return (
       <div className={cn(styles.rowContainer)}>
-        {isMouseOver || isSelected ? (
+        {!isChild && (isMouseOver || isSelected) ? (
           <SelectIconContainer
             workspace={workspace}
             isSelected={isSelected}
@@ -796,7 +808,8 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             className={cn(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
-              styles.hoverableRow
+
+              isSelected ? styles.selectedRow : styles.hoverableRow
             )}
             style={{
               width: isChild ? childWidth : undefined,
@@ -805,7 +818,10 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             ref={ref}
             onMouseOver={onMouseOver}
             onMouseLeave={onMouseLeave}
-            onClick={() => handleSelectClick(note.key)}
+            onClick={() => {
+              // !isChild ? handleSelectClick(note.key) : undefined;
+              !isChild ? handleSelectClick(note.vertex) : undefined;
+            }}
           >
             {isChild ? (
               <React.Fragment>

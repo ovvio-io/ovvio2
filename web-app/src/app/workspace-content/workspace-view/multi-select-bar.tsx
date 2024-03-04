@@ -1,7 +1,46 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { Button } from '../../../../../styles/components/buttons.tsx';
-import { H4 } from '../../../../../styles/components/typography.tsx';
+import {
+  H4,
+  TextSm,
+  useTypographyStyles,
+} from '../../../../../styles/components/typography.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
+import {
+  AddTagMultiButton,
+  AssignWsBlueButton,
+  DueDateMultiSelect,
+  RemoveButton,
+  SaveAddButton,
+} from '../../settings/components/settings-buttons.tsx';
+import { MemberPicker } from '../../../../../components/member-picker.tsx';
+import Menu from '../../../../../styles/components/menu.tsx';
+import {
+  Note,
+  User,
+  Workspace,
+} from '../../../../../cfds/client/graph/vertices/index.ts';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import {
+  usePartialVertex,
+  usePartialVertices,
+  useVertexByKey,
+  useVertices,
+} from '../../../core/cfds/react/vertex.ts';
+import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
+import { layout } from '../../../../../styles/layout.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import * as SetUtils from '../../../../../base/set.ts';
+
+const useStyles = makeStyles(() => ({
+  popup: {
+    // backgroundColor: theme.colors.background,
+    maxWidth: styleguide.gridbase * 21,
+    maxHeight: styleguide.gridbase * 21,
+    flexShrink: 0,
+  },
+}));
 
 interface IconVectorProps {
   color: 'done' | 'notDone';
@@ -72,61 +111,164 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
     </svg>
   );
 };
+interface AddSelectionButtonProps<T> {
+  className?: string;
+  //   selectedCards: Set<string>;
+  selectedCards: Set<Note>;
+}
+export function AssignMultiButton<T>({
+  className,
+  selectedCards,
+}: AddSelectionButtonProps<T>) {
+  const styles = useStyles();
+  const [menuOpen, setMenuOpen] = useState(true);
+  const cardsSet = new Set<Note>();
+
+  // const cardData: Note = useVertexByKey(card);
+
+  const allWorkspaces: Set<Workspace> = new Set();
+  usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
+    allWorkspaces.add(card.workspace)
+  );
+
+  const allUsers: Set<User> = new Set();
+
+  usePartialVertices(allWorkspaces, ['users']).forEach((ws) => {
+    console.log(ws.users);
+
+    SetUtils.update(allUsers, ws.users);
+  });
+
+  const allUsersArray = Array.from(allUsers);
+  console.log(allUsersArray);
+
+  const onRowSelect = (user: User) => {
+    cardsSet.forEach((card) => {
+      card.assignees.add(user);
+    });
+  };
+
+  return (
+    menuOpen && (
+      <Menu
+        renderButton={() => <AssignWsBlueButton disable={false} />}
+        position="bottom"
+        align="start"
+        direction="out"
+        className={className}
+        popupClassName={cn(styles.popup)}
+      >
+        <MemberPicker users={allUsersArray} onRowSelect={onRowSelect} />
+      </Menu>
+    )
+  );
+}
 
 export interface MultiSelectBarProps {
   onClose: () => void;
-  selectedCards: number;
+  //   selectedCards: Set<string>;
+  selectedCards: Set<Note>;
 }
 
 export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   onClose,
   selectedCards,
 }) => {
-  const MultiSelectBarStyle: CSSProperties = {
-    top: '0px',
-    right: '0px',
-    height: '73px',
-    position: 'absolute',
-    width: '100%',
-    backgroundColor: '#3184dd',
-    padding: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  };
-  const wizardContainerStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    margin: '8px',
-    position: 'relative',
-    left: '150px',
-    color: '#FFF',
-  };
+  const useStyles = makeStyles(
+    () => ({
+      MultiSelectBarStyle: {
+        top: '0px',
+        right: '0px',
+        height: '73px',
+        position: 'absolute',
+        width: '100%',
+        backgroundColor: '#3184dd',
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+      },
+      wizardContainerStyle: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'space-between',
+        marginLeft: '10%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: '5%',
+        position: 'relative',
+        color: '#FFF',
+      },
+      functionContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        position: 'relative',
+        color: '#FFF',
+        gap: '32px',
+      },
+      doneContainer: {
+        position: 'relative',
+      },
+      closeIcon: {
+        paddingRight: styleguide.gridbase * 4,
+        paddingLeft: styleguide.gridbase * 2,
+      },
+      toggleViewButton: {
+        cursor: 'pointer',
+        textDecoration: 'underline',
+        basedOn: [useTypographyStyles.text],
+      },
+      toggleViewButtonDisabled: {
+        cursor: 'not-allowed',
+        color: theme.colors.placeholderText,
+      },
+      toggleActions: {
+        marginTop: styleguide.gridbase,
+        marginLeft: styleguide.gridbase,
+        marginRight: styleguide.gridbase * 3.5,
+        justifyContent: 'space-between',
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '8px',
+      },
+      separateLine: {
+        fontSize: '16px',
+      },
+    }),
+    'multiSelect-wizard_291877'
+  );
+  const styles = useStyles();
 
-  const closeIcon: CSSProperties = {
-    paddingRight: styleguide.gridbase * 4,
-    paddingLeft: styleguide.gridbase * 2,
-  };
-  const labelStyle: CSSProperties = {
-    paddingLeft: '8px',
-  };
+  const selectAll = useCallback(() => {}, []);
 
   return (
-    <div style={MultiSelectBarStyle}>
-      <Button onClick={onClose} style={closeIcon}>
-        <img
-          key="CloseCircleWhiteSettings"
-          src="/icons/settings/Close-circle-white.svg"
-          onClick={onClose}
-        />
-      </Button>
+    <div className={styles.MultiSelectBarStyle}>
+      <div className={styles.wizardContainerStyle}>
+        <div className={styles.toggleActions}>
+          {<img src="/icons/design-system/selectedCheck.svg" />}
 
-      <div style={wizardContainerStyle}>
-        <div style={labelStyle}>{selectedCards} selected</div>
+          <TextSm>{selectedCards.size} selected </TextSm>
+          <div className={styles.separateLine}> | </div>
+          <TextSm
+            onClick={selectAll}
+            className={cn(
+              styles.toggleViewButton,
+              selectedCards.size === 1 && styles.toggleViewButtonDisabled
+            )}
+          >
+            Select All
+          </TextSm>
+        </div>
+        <div className={styles.functionContainer}>
+          <AssignMultiButton selectedCards={selectedCards} />
+          <AddTagMultiButton cards={selectedCards} />
+          <DueDateMultiSelect cards={selectedCards} />
+          <RemoveButton />
+        </div>
+        <SaveAddButton onSaveAddClick={onClose} disable={false} />
       </div>
     </div>
   );
 };
-
-export default MultiSelectBar;

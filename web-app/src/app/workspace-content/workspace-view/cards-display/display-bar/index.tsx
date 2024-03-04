@@ -8,7 +8,10 @@ import {
   SortBy,
   TabId,
 } from '../../../../../../../cfds/base/scheme-types.ts';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import {
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
@@ -55,7 +58,7 @@ import {
   IconDueDate,
 } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 import Wizard from '../../../../settings/components/wizard.tsx';
-import MultiSelectBar from '../../multi-select-bar.tsx';
+import { MultiSelectBar } from '../../multi-select-bar.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -472,7 +475,8 @@ function TabView() {
 
 export type DisplayBarProps = {
   className?: string;
-  selectedCards?: Set<string>;
+  // selectedCards?: Set<string>;
+  selectedCards?: Set<Note>;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {
@@ -502,7 +506,7 @@ export function DisplayBar(props?: DisplayBarProps) {
       <div className={cn(styles.barRow, styles.viewRow)}>
         {selectedCards && selectedCards?.size > 0 ? (
           <MultiSelectBar
-            selectedCards={selectedCards.size}
+            selectedCards={selectedCards}
             onClose={function (): void {
               throw new Error('Function not implemented.');
             }}

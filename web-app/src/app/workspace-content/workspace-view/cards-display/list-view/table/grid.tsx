@@ -265,7 +265,9 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         <>
           <div className={cn(styles.expanderText)}>
             {expanded ? 'Show Less' : !expanded ? 'Show More ' : undefined}
-            {expanded ? undefined : ` [${allUnpinned && allUnpinned.length}]`}
+            {expanded
+              ? undefined
+              : ` [${allUnpinned && allUnpinned.length - 3}]`}
           </div>
           <ExpanderIcon
             className={cn(

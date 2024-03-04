@@ -38,9 +38,12 @@ const useStrings = createUseStrings(localization);
 
 export interface ListViewNewProps {
   className?: string;
-  selectedCards: Set<string>;
-  setSelectedCards: (users: Set<string>) => void;
-  handleSelectClick: (card: string) => void;
+  // selectedCards: Set<string>;
+  // setSelectedCards: (card: Set<string>) => void;
+  // handleSelectClick: (card: string) => void;
+  selectedCards: Set<Note>;
+  setSelectedCards: (card: Set<Note>) => void;
+  handleSelectClick: (card: Note) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -145,7 +148,8 @@ export function ListViewNew({
                       groupBy={groupBy}
                       nestingLevel={0}
                       handleSelectClick={handleSelectClick}
-                      isSelected={selectedCards.has(noteMgr.key)}
+                      // isSelected={selectedCards.has(noteMgr)}
+                      isSelected={selectedCards.has(noteMgr.vertex)}
                     />
                   ))}
 
@@ -174,7 +178,8 @@ export function ListViewNew({
                         groupBy={groupBy}
                         nestingLevel={0}
                         handleSelectClick={handleSelectClick}
-                        isSelected={selectedCards.has(noteMgr.key)}
+                        // isSelected={selectedCards.has(noteMgr.key)}
+                        isSelected={selectedCards.has(noteMgr.vertex)}
                       />
                     ))}
                 </SectionTable>
