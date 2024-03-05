@@ -59,6 +59,7 @@ import {
 } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 import Wizard from '../../../../settings/components/wizard.tsx';
 import { MultiSelectBar } from '../../multi-select-bar.tsx';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -476,7 +477,8 @@ function TabView() {
 export type DisplayBarProps = {
   className?: string;
   // selectedCards?: Set<string>;
-  selectedCards?: Set<Note>;
+  // selectedCards?: Set<Note>;
+  selectedCards?: Set<VertexManager<Note>>;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {

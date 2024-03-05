@@ -6,9 +6,9 @@ import { styleguide } from '../styles/styleguide.ts';
 import { useFocusOnMount } from '../web-app/src/core/react-utils/index.ts';
 import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
-import { TextField } from '../styles/components/inputs/index.ts';
 import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import Input from './input.tsx';
+import { Tag } from '../cfds/client/graph/vertices/tag.ts';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -18,7 +18,7 @@ const useStyles = makeStyles(() => ({
   tableContent: {
     width: '100%',
     overflowY: 'auto',
-    overflowX: 'auto',
+    overflowX: 'clip',
     display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
@@ -77,47 +77,47 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-type MemberPickerProps = {
-  users: User[];
-  onRowSelect: (user: User) => void;
+type TagPickerProps = {
+  tags: Tag[];
+  onRowSelect: (tag: Tag) => void;
   showSearch?: boolean;
   onRemove?: () => void;
-  onClearAssignees?: () => void;
+  onClearTags?: () => void;
 };
 
-export function MemberPicker({
-  users,
+export default function TagPicker({
+  tags,
   onRowSelect,
   showSearch,
   onRemove,
-  onClearAssignees,
-}: MemberPickerProps) {
+  onClearTags,
+}: TagPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
 
   useEffect(() => {
-    if (users) {
+    if (tags) {
       const filtered = suggestResults(
         searchTerm,
-        users,
+        tags,
         (t) => t.name,
         Number.MAX_SAFE_INTEGER
       );
-      setFilteredUsers(filtered);
+      setFilteredTags(filtered);
     }
-  }, [searchTerm, users]);
+  }, [searchTerm, tags]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value || '');
   };
 
-  const handleRowClick = (user: User) => {
-    onRowSelect(user);
+  const handleRowClick = (tag: Tag) => {
+    onRowSelect(tag);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -125,12 +125,12 @@ export function MemberPicker({
       case 'ArrowUp':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((x) => (x - 1 < 0 ? filteredUsers.length - 1 : x - 1));
+        setSelectedIndex((x) => (x - 1 < 0 ? filteredTags.length - 1 : x - 1));
         break;
       case 'ArrowDown':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((x) => (x + 1) % filteredUsers.length);
+        setSelectedIndex((x) => (x + 1) % filteredTags.length);
         break;
       case 'Backspace':
         if (!searchTerm) {
@@ -149,7 +149,7 @@ export function MemberPicker({
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
-        onRowSelect(filteredUsers[selectedIndex]);
+        onRowSelect(filteredTags[selectedIndex]);
         break;
       default:
         return;
@@ -166,7 +166,7 @@ export function MemberPicker({
           <Input
             ref={inputRef}
             type="text"
-            placeholder={'Type name:'}
+            placeholder={'Search:'}
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={onKeyDown}
@@ -177,17 +177,22 @@ export function MemberPicker({
       <Scroller>
         {(inputRef) => (
           <div className={cn(styles.tableContent)} ref={inputRef}>
-            {filteredUsers.map((user: User, index: number) => (
-              <React.Fragment key={user.key}>
+            {filteredTags.map((tag: Tag, index: number) => (
+              <React.Fragment key={tag.key}>
                 <div
-                  key={user.key}
+                  key={tag.key}
                   className={cn(styles.row, styles.hoverableRow, {
                     [styles.hoverableRow]: selectedIndex === index,
                   })}
-                  onClick={() => handleRowClick(user)}
+                  onClick={() => handleRowClick(tag)}
                 >
                   <div className={cn(styles.rowItem)}>
-                    {user ? user.name : null}
+                    {tag ? (
+                      <span>
+                        #&nbsp;
+                        <span style={{ marginLeft: '8px' }}>{tag.name}</span>
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <LineSeparator />
@@ -212,13 +217,13 @@ export function MemberPicker({
                 </div>
               </>
             )}
-            {onClearAssignees && (
+            {onClearTags && (
               <>
                 <div style={{ height: '8px', display: 'list-item' }}></div>
                 <LineSeparator />
                 <div
                   className={cn(styles.row, styles.hoverableRow)}
-                  onClick={onClearAssignees}
+                  onClick={onClearTags}
                 >
                   <div className={cn(styles.iconContainer)}>
                     <img
@@ -226,7 +231,7 @@ export function MemberPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.rowItem)}>Clear Assignees</div>
+                  <div className={cn(styles.rowItem)}>Clear Tags</div>
                 </div>
               </>
             )}

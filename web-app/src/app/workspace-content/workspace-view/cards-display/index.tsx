@@ -16,6 +16,8 @@ import {
 import { KanbanView } from './kanban-view/index.tsx';
 import { ListViewNew } from './list-view/index.tsx';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { Vertex } from '../../../../../../cfds/client/graph/vertex.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -80,29 +82,19 @@ const useStyles = makeStyles((theme) => ({
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
-  // const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
-  const [selectedCards, setSelectedCards] = useState<Set<Note>>(new Set());
-  let content = null;
+  const [selectedCards, setSelectedCards] = useState<Set<VertexManager<Note>>>(
+    new Set()
+  );
 
-  // const handleSelectClick = (card?: string) => {
-  //   if (card) {
-  //     const updatedSelectedCards = new Set(selectedCards);
-  //     if (updatedSelectedCards.has(card)) {
-  //       updatedSelectedCards.delete(card);
-  //     } else {
-  //       updatedSelectedCards.add(card);
-  //     }
-  //     setSelectedCards(updatedSelectedCards);
-  //   }
-  // };
+  let content = null;
 
   const handleSelectClick = (card?: Note) => {
     if (card) {
       const updatedSelectedCards = new Set(selectedCards);
-      if (updatedSelectedCards.has(card)) {
-        updatedSelectedCards.delete(card);
+      if (updatedSelectedCards.has(card.manager)) {
+        updatedSelectedCards.delete(card.manager);
       } else {
-        updatedSelectedCards.add(card);
+        updatedSelectedCards.add(card.manager);
       }
       setSelectedCards(updatedSelectedCards);
     }

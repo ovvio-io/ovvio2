@@ -7,16 +7,16 @@ import {
 } from '../../../../../styles/components/typography.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import {
-  AddTagMultiButton,
+  AddTagMultiButton2,
   AssignWsBlueButton,
   DueDateMultiSelect,
   RemoveButton,
   SaveAddButton,
 } from '../../settings/components/settings-buttons.tsx';
-import { MemberPicker } from '../../../../../components/member-picker.tsx';
 import Menu from '../../../../../styles/components/menu.tsx';
 import {
   Note,
+  Tag,
   User,
   Workspace,
 } from '../../../../../cfds/client/graph/vertices/index.ts';
@@ -32,6 +32,10 @@ import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 import { layout } from '../../../../../styles/layout.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import * as SetUtils from '../../../../../base/set.ts';
+import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx';
+import { DatePicker } from '../../../../../styles/components/inputs/index.ts';
+import TagPicker from '../../../../../components/tag-picker.tsx';
+import { MemberPicker } from '../../../../../components/member-picker.tsx';
 
 const useStyles = makeStyles(() => ({
   popup: {
@@ -113,8 +117,9 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
 };
 interface AddSelectionButtonProps<T> {
   className?: string;
-  selectedCards: Set<Note>;
+  selectedCards: Set<VertexManager<Note>>;
 }
+
 export function AssignMultiButton<T>({
   className,
   selectedCards,
@@ -142,12 +147,12 @@ export function AssignMultiButton<T>({
 
   const onRowSelect = (user: User) => {
     selectedCards.forEach((card) => {
-      card.assignees.add(user);
+      card.vertex.assignees.add(user);
     });
   };
   const onClearAssignees = () => {
     selectedCards.forEach((card) => {
-      card.assignees.clear();
+      card.vertex.assignees.clear();
     });
   };
 
@@ -168,11 +173,70 @@ export function AssignMultiButton<T>({
     </Menu>
   );
 }
+export function AddTagMultiButton<T>({
+  className,
+  selectedCards,
+}: AddSelectionButtonProps<T>) {
+  const styles = useStyles();
+  const allWorkspaces: Set<Workspace> = new Set();
+
+  usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
+    allWorkspaces.add(card.workspace)
+  );
+
+  const parentTagsSet = usePartialVertices(allWorkspaces, ['parentTags']);
+  let parentTagsSetIntersection = new Set<Tag>();
+
+  if (parentTagsSet.length > 0) {
+    parentTagsSetIntersection = new Set(parentTagsSet[0].parentTags);
+
+    parentTagsSet.forEach((parentTags, index) => {
+      if (index > 0) {
+        parentTagsSetIntersection = SetUtils.intersection(
+          parentTagsSetIntersection,
+          new Set(parentTags.parentTags)
+        );
+      }
+    });
+  }
+  let intersectionTagsArray: Tag[] = [];
+  parentTagsSetIntersection.forEach((parentTag) => {
+    intersectionTagsArray = [...intersectionTagsArray, ...parentTag.childTags];
+  });
+
+  const onRowSelect = (tag: Tag) => {
+    selectedCards.forEach((card) => {
+      const parent = tag.parentTag || tag;
+      card.vertex.tags.set(parent, tag);
+    });
+  };
+  const onClearTags = () => {
+    selectedCards.forEach((tag) => {
+      tag.vertex.tags.clear();
+    });
+  };
+
+  return (
+    <Menu
+      renderButton={() => <AddTagMultiButton2 />}
+      position="bottom"
+      align="end"
+      direction="out"
+      className={className}
+      popupClassName={cn(styles.popup)}
+    >
+      <TagPicker
+        tags={intersectionTagsArray}
+        onRowSelect={onRowSelect}
+        onClearTags={onClearTags}
+      />
+    </Menu>
+  );
+}
 
 export interface MultiSelectBarProps {
   onClose: () => void;
-  //   selectedCards: Set<string>;
-  selectedCards: Set<Note>;
+  selectedCards: Set<VertexManager<Note>>;
 }
 
 export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
@@ -268,8 +332,8 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
         </div>
         <div className={styles.functionContainer}>
           <AssignMultiButton selectedCards={selectedCards} />
-          <AddTagMultiButton cards={selectedCards} />
-          <DueDateMultiSelect cards={selectedCards} />
+          <AddTagMultiButton selectedCards={selectedCards} />
+          {/* <DueDateMultiSelect cards={selectedCards} /> */}
           <RemoveButton />
         </div>
         <SaveAddButton onSaveAddClick={onClose} disable={false} />

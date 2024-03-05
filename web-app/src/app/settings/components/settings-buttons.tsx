@@ -278,7 +278,7 @@ export interface AddTagMultiButtonProps {
   addTagClick?: () => void;
 }
 
-export function AddTagMultiButton({
+export function AddTagMultiButton2({
   cards,
   className,
   addTagClick,

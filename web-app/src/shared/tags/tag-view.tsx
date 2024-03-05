@@ -18,6 +18,7 @@ import {
   usePartialVertices,
 } from '../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
+import { AddTagMultiButton } from '../../app/settings/components/settings-buttons.tsx';
 
 const showAnim = keyframes({
   '0%': {
