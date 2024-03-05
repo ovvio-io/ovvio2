@@ -36,7 +36,6 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     padding: '6px 8px 6px 10px',
     alignItems: 'center',
-    // gap: '8px',
     flexShrink: 0,
     background: 'var(--secondary-secondary-s-0, #FFFBF5)',
   },

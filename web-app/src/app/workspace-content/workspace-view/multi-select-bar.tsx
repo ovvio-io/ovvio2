@@ -113,7 +113,6 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
 };
 interface AddSelectionButtonProps<T> {
   className?: string;
-  //   selectedCards: Set<string>;
   selectedCards: Set<Note>;
 }
 export function AssignMultiButton<T>({
@@ -121,46 +120,52 @@ export function AssignMultiButton<T>({
   selectedCards,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
-  const [menuOpen, setMenuOpen] = useState(true);
-  const cardsSet = new Set<Note>();
-
   // const cardData: Note = useVertexByKey(card);
-
   const allWorkspaces: Set<Workspace> = new Set();
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
     allWorkspaces.add(card.workspace)
   );
 
-  const allUsers: Set<User> = new Set();
+  const workspaceUserSets = usePartialVertices(allWorkspaces, ['users']);
+  let intersectionUsers = new Set<User>();
 
-  usePartialVertices(allWorkspaces, ['users']).forEach((ws) => {
-    console.log(ws.users);
+  if (workspaceUserSets.length > 0) {
+    intersectionUsers = new Set(workspaceUserSets[0].users);
 
-    SetUtils.update(allUsers, ws.users);
-  });
-
-  const allUsersArray = Array.from(allUsers);
-  console.log(allUsersArray);
+    workspaceUserSets.forEach((ws, index) => {
+      if (index > 0) {
+        intersectionUsers = SetUtils.intersection(intersectionUsers, ws.users);
+      }
+    });
+  }
+  const intersectionUsersArray = Array.from(intersectionUsers);
 
   const onRowSelect = (user: User) => {
-    cardsSet.forEach((card) => {
+    selectedCards.forEach((card) => {
       card.assignees.add(user);
+    });
+  };
+  const onClearAssignees = () => {
+    selectedCards.forEach((card) => {
+      card.assignees.clear();
     });
   };
 
   return (
-    menuOpen && (
-      <Menu
-        renderButton={() => <AssignWsBlueButton disable={false} />}
-        position="bottom"
-        align="start"
-        direction="out"
-        className={className}
-        popupClassName={cn(styles.popup)}
-      >
-        <MemberPicker users={allUsersArray} onRowSelect={onRowSelect} />
-      </Menu>
-    )
+    <Menu
+      renderButton={() => <AssignWsBlueButton disable={false} />}
+      position="bottom"
+      align="end"
+      direction="out"
+      className={className}
+      popupClassName={cn(styles.popup)}
+    >
+      <MemberPicker
+        users={intersectionUsersArray}
+        onRowSelect={onRowSelect}
+        onClearAssignees={onClearAssignees}
+      />
+    </Menu>
   );
 }
 

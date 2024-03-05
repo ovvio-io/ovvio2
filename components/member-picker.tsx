@@ -7,7 +7,7 @@ import { useFocusOnMount } from '../web-app/src/core/react-utils/index.ts';
 import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { TextField } from '../styles/components/inputs/index.ts';
-import { useMenuContext } from '../styles/components/menu.tsx';
+import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import Input from './input.tsx';
 
 const useStyles = makeStyles(() => ({
@@ -16,20 +16,18 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 21,
   },
   tableContent: {
-    overflowY: 'scroll',
+    width: '100%',
+    overflowY: 'auto',
     overflowX: 'clip',
     display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
   },
   rowItem: {
-    display: 'flex',
     height: '20px',
-    flexDirection: 'column',
     justifyContent: 'center',
     fontSize: 13,
     lineHeight: '18px',
-    letterSpacing: '0.0.75px',
   },
   hoverableRow: {
     cursor: 'pointer',
@@ -42,7 +40,8 @@ const useStyles = makeStyles(() => ({
     alignItems: 'start',
     gap: '8px',
     width: '100%',
-    borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
+    minWidth: '120px',
+    // borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
     display: 'flex',
   },
   searchRowStyle: {
@@ -83,6 +82,7 @@ type MemberPickerProps = {
   onRowSelect: (user: User) => void;
   showSearch?: boolean;
   onRemove?: () => void;
+  onClearAssignees?: () => void;
 };
 
 export function MemberPicker({
@@ -90,6 +90,7 @@ export function MemberPicker({
   onRowSelect,
   showSearch,
   onRemove,
+  onClearAssignees,
 }: MemberPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -105,7 +106,7 @@ export function MemberPicker({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER,
+        Number.MAX_SAFE_INTEGER
       );
       setFilteredUsers(filtered);
     }
@@ -189,21 +190,45 @@ export function MemberPicker({
                     {user ? user.name : null}
                   </div>
                 </div>
+                <LineSeparator />
               </React.Fragment>
             ))}
+
             {onRemove && (
-              <div
-                className={cn(styles.row, styles.hoverableRow)}
-                onClick={onRemove}
-              >
-                <div className={cn(styles.iconContainer)}>
-                  <img
-                    className={cn(styles.removeIcon)}
-                    src="/icons/design-system/Close.svg"
-                  />
+              <>
+                <div style={{ height: '8px', display: 'list-item' }}></div>
+                <LineSeparator />
+                <div
+                  className={cn(styles.row, styles.hoverableRow)}
+                  onClick={onRemove}
+                >
+                  <div className={cn(styles.iconContainer)}>
+                    <img
+                      className={cn(styles.removeIcon)}
+                      src="/icons/design-system/Close.svg"
+                    />
+                  </div>
+                  <div className={cn(styles.rowItem)}>Remove</div>
                 </div>
-                <div className={cn(styles.rowItem)}>Remove</div>
-              </div>
+              </>
+            )}
+            {onClearAssignees && (
+              <>
+                <div style={{ height: '8px', display: 'list-item' }}></div>
+                <LineSeparator />
+                <div
+                  className={cn(styles.row, styles.hoverableRow)}
+                  onClick={onClearAssignees}
+                >
+                  <div className={cn(styles.iconContainer)}>
+                    <img
+                      className={cn(styles.removeIcon)}
+                      src="/icons/design-system/Close.svg"
+                    />
+                  </div>
+                  <div className={cn(styles.rowItem)}>Clear Assignees</div>
+                </div>
+              </>
             )}
           </div>
         )}
