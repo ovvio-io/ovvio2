@@ -1,5 +1,4 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { Button } from '../../../../../styles/components/buttons.tsx';
 import {
   H4,
   TextSm,
@@ -7,8 +6,9 @@ import {
 } from '../../../../../styles/components/typography.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import {
-  AddTagMultiButton2,
+  AddTagBlueButton,
   AssignWsBlueButton,
+  CancelButton,
   DueDateMultiSelect,
   RemoveButton,
   SaveAddButton,
@@ -36,6 +36,11 @@ import DueDateEditor from '../../../shared/components/due-date-editor/index.tsx'
 import { DatePicker } from '../../../../../styles/components/inputs/index.ts';
 import TagPicker from '../../../../../components/tag-picker.tsx';
 import { MemberPicker } from '../../../../../components/member-picker.tsx';
+import {
+  useGraphManager,
+  usePartialView,
+} from '../../../core/cfds/react/graph.tsx';
+import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
 
 const useStyles = makeStyles(() => ({
   popup: {
@@ -43,6 +48,20 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 21,
     maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
+  },
+  confirmation: {
+    display: 'flex',
+    padding: '8px 10px 10px ',
+    flexDirection: 'column',
+    alignItems: 'center',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
+  confirmationButtons: {
+    display: 'flex',
+    padding: '16px 0px 16px 0px',
+    flexDirection: 'column',
+    gap: '8px',
   },
 }));
 
@@ -119,7 +138,42 @@ interface AddSelectionButtonProps<T> {
   className?: string;
   selectedCards: Set<VertexManager<Note>>;
 }
+export function RemoveMultiButton<T>({
+  className,
+  selectedCards,
+}: AddSelectionButtonProps<T>) {
+  const styles = useStyles();
+  const handleDeleteClick = () => {
+    selectedCards.forEach((cardM) => {
+      cardM.vertex.isDeleted = 1;
+    });
+  };
+  //TODO: ask Ofri how to get the view type (note/task).
+  const view = usePartialView('selectedTabId');
+  const isTask = view.selectedTabId === 'tasks' ? true : false;
+  const nCards = selectedCards.size;
+  const handleCancelClick = () => {};
 
+  return (
+    <Menu
+      renderButton={() => <RemoveButton />}
+      direction="out"
+      position="bottom"
+      align="end"
+      popupClassName={cn(styles.popup)}
+    >
+      <React.Fragment>
+        <div className={cn(styles.confirmation)}>
+          {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
+          <div className={cn(styles.confirmationButtons)}>
+            <RemoveButton onRemove={() => handleDeleteClick()} text="Delete" />
+            <CancelButton onCancel={() => handleCancelClick()} />
+          </div>
+        </div>
+      </React.Fragment>
+    </Menu>
+  );
+}
 export function AssignMultiButton<T>({
   className,
   selectedCards,
@@ -218,7 +272,7 @@ export function AddTagMultiButton<T>({
 
   return (
     <Menu
-      renderButton={() => <AddTagMultiButton2 />}
+      renderButton={() => <AddTagBlueButton />}
       position="bottom"
       align="end"
       direction="out"
@@ -235,7 +289,7 @@ export function AddTagMultiButton<T>({
 }
 
 export interface MultiSelectBarProps {
-  onClose: () => void;
+  onClose?: () => void;
   selectedCards: Set<VertexManager<Note>>;
 }
 
@@ -312,6 +366,9 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
 
   const selectAll = useCallback(() => {}, []);
 
+  const handleOnClose = () => {
+    onClose && onClose();
+  };
   return (
     <div className={styles.MultiSelectBarStyle}>
       <div className={styles.wizardContainerStyle}>
@@ -333,10 +390,10 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
         <div className={styles.functionContainer}>
           <AssignMultiButton selectedCards={selectedCards} />
           <AddTagMultiButton selectedCards={selectedCards} />
-          {/* <DueDateMultiSelect cards={selectedCards} /> */}
-          <RemoveButton />
+          <DueDateMultiSelect />
+          <RemoveMultiButton selectedCards={selectedCards} />
         </div>
-        <SaveAddButton onSaveAddClick={onClose} disable={false} />
+        <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />
       </div>
     </div>
   );

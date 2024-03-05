@@ -114,6 +114,7 @@ const useStyles = makeStyles(() => ({
     padding: '16px 0px 16px 0px',
     flexDirection: 'column',
     width: '180px',
+    gap: '8px',
   },
 }));
 

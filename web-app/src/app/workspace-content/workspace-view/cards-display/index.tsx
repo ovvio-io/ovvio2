@@ -87,6 +87,9 @@ export function CardsDisplay() {
   );
 
   let content = null;
+  const onCloseMultiSelect = () => {
+    setSelectedCards(new Set());
+  };
 
   const handleSelectClick = (card?: Note) => {
     if (card) {
@@ -117,7 +120,10 @@ export function CardsDisplay() {
   return (
     <div className={cn(styles.displayRoot)}>
       <div className={cn(styles.displayMain)}>
-        <DisplayBar selectedCards={selectedCards} />
+        <DisplayBar
+          selectedCards={selectedCards}
+          onCloseMultiSelect={onCloseMultiSelect}
+        />
         <ToolbarCenterItem
           className={cn(layout.flexSpacer)}
         ></ToolbarCenterItem>

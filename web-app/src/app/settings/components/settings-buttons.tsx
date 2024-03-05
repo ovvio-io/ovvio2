@@ -13,6 +13,11 @@ import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.t
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { useDueDate } from '../../../shared/components/due-date-editor/index.tsx';
+import DatePicker from '../../../../../styles/components/inputs/date-picker.tsx';
+import {
+  DialogContent,
+  DialogHeader,
+} from '../../../../../styles/components/dialog/index.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -249,40 +254,83 @@ export function AssignWsBlueButton({
   );
 }
 export interface DueDatePickerProps {
-  cards: Set<Note>;
   className?: string;
   dueDateClick?: () => void;
 }
 
+// export function DueDateMultiSelect({
+//   className,
+//   dueDateClick,
+// }: DueDatePickerProps) {
+//   const styles = useStyles();
+//   const dueDateEditor = useDueDate();
+//   const onClick = (e: MouseEvent) => {
+//     e.stopPropagation();
+//     <DatePicker value={undefined} onChange={() => {}} />;
+//   };
+//   return (
+//     <Button
+//       onClick={(e) => onClick(e)}
+//       className={cn(styles.compose, styles.blue)}
+//     >
+//       {<img src="/icons/design-system/dueDate/addDueDateWhite.svg" />}
+//       <span className={cn(styles.textWhite)}>{'Due-Date'}</span>
+//     </Button>
+//   );
+// }
 export function DueDateMultiSelect({
-  cards,
   className,
-  dueDateClick,
+  dueDateClick, // Ensure this prop is used or removed if unnecessary
 }: DueDatePickerProps) {
   const styles = useStyles();
-  const dueDateEditor = useDueDate();
-  const onClick = (e: MouseEvent) => {
-    e.stopPropagation();
+  const dueDateEditor = useDueDate(); // Make sure this hook's return value is utilized
+
+  // State to control the visibility of the DatePicker
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
+  // Toggles the visibility of the DatePicker
+  const toggleDatePicker = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the event from bubbling up
+    setDatePickerVisibility(!isDatePickerVisible); // Toggle visibility state
   };
+
   return (
-    <Button onClick={dueDateClick} className={cn(styles.compose, styles.blue)}>
-      {<img src="/icons/design-system/dueDate/addDueDateWhite.svg" />}
-      <span className={cn(styles.textWhite)}>{'Due-Date'}</span>
-    </Button>
+    <>
+      <Button
+        onClick={toggleDatePicker}
+        className={cn(styles.compose, styles.blue)}
+      >
+        <img
+          src="/icons/design-system/dueDate/addDueDateWhite.svg"
+          alt="Due Date"
+        />
+        <span className={cn(styles.textWhite)}>Due-Date</span>
+      </Button>
+      {isDatePickerVisible && (
+        <DialogContent>
+          <DialogHeader>Calendar</DialogHeader>
+
+          <DatePicker
+            value={undefined}
+            onChange={(newValue) => {
+              // Implement the change logic, possibly involving `dueDateEditor` or props
+              setDatePickerVisibility(false); // Optionally hide the picker after selection
+            }}
+          />
+        </DialogContent>
+      )}
+    </>
   );
 }
-
-export interface AddTagMultiButtonProps {
-  cards: Set<Note>;
+export interface AddTagBlueButtonProps {
   className?: string;
   addTagClick?: () => void;
 }
 
-export function AddTagMultiButton2({
-  cards,
+export function AddTagBlueButton({
   className,
   addTagClick,
-}: AddTagMultiButtonProps) {
+}: AddTagBlueButtonProps) {
   const styles = useStyles();
   const onClick = (e: MouseEvent) => {
     e.stopPropagation();
@@ -381,19 +429,18 @@ export const UserPill: React.FC<UserPillProps> = ({
 
 interface RemoveButtonProps {
   onRemove?: () => void;
+  text?: string;
 }
 
-export function RemoveButton({ onRemove }: RemoveButtonProps) {
+export function RemoveButton({ onRemove, text }: RemoveButtonProps) {
   const styles = useStyles();
 
   return (
-    <Button
-      onClick={onRemove}
-      className={cn(styles.compose, styles.blue)}
-      style={{ marginBottom: '8px' }}
-    >
+    <Button onClick={onRemove} className={cn(styles.compose, styles.blue)}>
       <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
-      <span className={cn(styles.textWhite)}>{'Remove'}</span>
+      <span className={cn(styles.textWhite)}>
+        {text ? `${text} ` : 'Remove'}
+      </span>
     </Button>
   );
 }

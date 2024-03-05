@@ -476,13 +476,12 @@ function TabView() {
 
 export type DisplayBarProps = {
   className?: string;
-  // selectedCards?: Set<string>;
-  // selectedCards?: Set<Note>;
+  onCloseMultiSelect: () => void;
   selectedCards?: Set<VertexManager<Note>>;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {
-  const { className, selectedCards, ...rest } = props || {};
+  const { className, selectedCards, onCloseMultiSelect, ...rest } = props || {};
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
@@ -509,9 +508,7 @@ export function DisplayBar(props?: DisplayBarProps) {
         {selectedCards && selectedCards?.size > 0 ? (
           <MultiSelectBar
             selectedCards={selectedCards}
-            onClose={function (): void {
-              throw new Error('Function not implemented.');
-            }}
+            onClose={onCloseMultiSelect}
           />
         ) : (
           <TabView />
