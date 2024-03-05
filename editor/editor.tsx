@@ -332,7 +332,6 @@ export const RichTextEditor = forwardRef<
       partialNote.body = body;
     }
   }, [partialNote, selectionId]);
-  debugger;
   useCaret(ctx);
   return (
     <div
