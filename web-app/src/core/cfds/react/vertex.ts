@@ -37,7 +37,7 @@ function register(
   manager: VertexManager | undefined | null,
   onChange: VertexListenerCallback,
   vertexKeys?: readonly string[],
-  opts: OnChangeOpts = EMPTY_OPTS
+  opts: OnChangeOpts = EMPTY_OPTS,
 ): void | (() => void | undefined) {
   if (manager === undefined || manager === null) {
     return;
@@ -93,7 +93,7 @@ export function useVertexByKey<V extends Vertex>(key: string): V {
 
   const vertexMng = useMemo<VertexManager<V>>(
     () => graph && graph.getVertexManager<V>(key),
-    [graph, key]
+    [graph, key],
   );
 
   return useVertex(vertexMng);
@@ -103,41 +103,41 @@ type StringKeys<T> = string & keyof T;
 
 export function usePartialVertex<
   V extends Vertex,
-  K extends StringKeys<V> = StringKeys<V>
+  K extends StringKeys<V> = StringKeys<V>,
 >(
   vertexId: VertexId<V>,
   keys?: readonly K[],
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): Pick<V, K> & Vertex;
 
 export function usePartialVertex(
   vertexId: null,
   keys?: readonly string[],
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): null;
 
 export function usePartialVertex(
   vertexId: undefined,
   keys?: readonly string[],
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): undefined;
 
 export function usePartialVertex<
   V extends Vertex,
-  K extends StringKeys<V> = StringKeys<V>
+  K extends StringKeys<V> = StringKeys<V>,
 >(
   vertexId: VertexId<V> | undefined | null,
   keys?: readonly K[],
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): undefined | null | (Pick<V, K> & Vertex);
 
 export function usePartialVertex<
   V extends Vertex,
-  K extends StringKeys<V> = StringKeys<V>
+  K extends StringKeys<V> = StringKeys<V>,
 >(
   vertexId: VertexId<V> | undefined | null,
   keys?: readonly K[],
-  opts: OnChangeOpts = EMPTY_OPTS
+  opts: OnChangeOpts = EMPTY_OPTS,
 ): undefined | null | (Pick<V, K> & Vertex) {
   const graph = useGraphManager();
   const vertexMng =
@@ -145,11 +145,18 @@ export function usePartialVertex<
       ? vertexId
       : graph.getVertexManager<V>(vertexId);
   const [result, setResult] = useState<
-    (Pick<V, K> & Vertex) | undefined | null
-  >(vertexMng ? new Proxy(vertexMng.getVertexProxy(), {}) : vertexMng);
+    [string, Pick<V, K> & Vertex] | undefined | null
+  >(
+    vertexMng
+      ? [vertexMng.key, new Proxy(vertexMng.getVertexProxy(), {})]
+      : undefined,
+  );
 
   useEffect(() => {
     if (!vertexMng) {
+      if (result) {
+        setResult(undefined);
+      }
       return;
     }
     return vertexMng.onVertexChanged((mutations: MutationPack) => {
@@ -162,35 +169,42 @@ export function usePartialVertex<
       ) {
         return;
       }
-      setResult(new Proxy(vertexMng.getVertexProxy(), {}));
+      setResult([vertexMng.key, new Proxy(vertexMng.getVertexProxy(), {})]);
     });
   }, [vertexMng, setResult, keys]);
 
-  if (vertexMng && result?.key !== vertexMng?.key) {
-    setResult(new Proxy(vertexMng.getVertexProxy(), {}));
+  if (
+    (vertexMng && (!result || result[0] !== vertexMng?.key)) ||
+    (!vertexMng && result)
+  ) {
+    setResult(
+      vertexMng
+        ? [vertexMng.key, new Proxy(vertexMng.getVertexProxy(), {})]
+        : undefined,
+    );
   }
 
-  return result;
+  return result && result[1];
 }
 
 export function useVertex<V extends Vertex>(
   vertexMng: VertexId<V>,
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): V;
 
 export function useVertex<V extends Vertex>(
   vertexMng: null,
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): null;
 
 export function useVertex<V extends Vertex>(
   vertexMng: undefined,
-  opts?: OnChangeOpts
+  opts?: OnChangeOpts,
 ): undefined;
 
 export function useVertex<V extends Vertex>(
   vertexMng: VertexId<V> | undefined | null,
-  opts: OnChangeOpts = EMPTY_OPTS
+  opts: OnChangeOpts = EMPTY_OPTS,
 ): undefined | null | V {
   // This stupid repeat typing lets the TypeScript compiler understand
   if (vertexMng === null) {
@@ -204,18 +218,18 @@ export function useVertex<V extends Vertex>(
 
 export function useVertices<V extends Vertex>(
   vertexManagers: VertexId<V>[] | Set<VertexId<V>>,
-  opts: OnChangeOpts = EMPTY_OPTS
+  opts: OnChangeOpts = EMPTY_OPTS,
 ): V[] {
   return usePartialVertices(vertexManagers, [], opts) as V[];
 }
 
 export function usePartialVertices<
   V extends Vertex,
-  K extends keyof V = keyof V
+  K extends keyof V = keyof V,
 >(
   vertexManagers: readonly VertexId<V>[] | Set<VertexId<V>>,
   keys: K[],
-  opts: OnChangeOpts = EMPTY_OPTS
+  opts: OnChangeOpts = EMPTY_OPTS,
 ): (Pick<V, K> & Vertex)[] {
   const [, setReload] = useState(0);
   const keysStr = keys.join('-');
@@ -228,7 +242,7 @@ export function usePartialVertices<
         mgr,
         () => setReload((x) => x + 1),
         keys as string[],
-        opts
+        opts,
       );
       if (callback) {
         unSubs.push(callback);
@@ -238,7 +252,7 @@ export function usePartialVertices<
   }, [vertexManagers, opts, keysStr]);
   const result = useMemo(
     () => Array.from(vertexManagers).map((mgr) => graph.getVertex(mgr)),
-    [vertexManagers]
+    [vertexManagers],
   );
   return result;
 }
