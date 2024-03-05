@@ -138,7 +138,7 @@ export class User extends BaseVertex {
   }
 
   set permissions(s: Set<UserPermission>) {
-    s = SetUtils.filter(s, (v) => kAllUserPermissions.includes(v));
+    s = normalizePermissions(s);
     if (s.size > 0) {
       this.record.set('permissions', s);
     } else {
@@ -153,4 +153,12 @@ export class User extends BaseVertex {
 
 function parseTeams(str: string | undefined): string[] {
   return (str || '').split(',').filter((x) => x.length > 0);
+}
+
+function normalizePermissions(s: Set<UserPermission>): Set<UserPermission> {
+  s = SetUtils.filter(s, (v) => kAllUserPermissions.includes(v));
+  if (s.has('manage:users')) {
+    s.add('view:settings:org');
+  }
+  return s;
 }
