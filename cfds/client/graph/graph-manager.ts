@@ -31,7 +31,7 @@ import {
 import { VertexSource, VertexSourceEvent } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
-import { Commit } from '../../../repo/commit.ts';
+import { Commit, commitContentsIsRecord } from '../../../repo/commit.ts';
 import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
 import { RepoClient } from '../../../net/repo-client.ts';
 import {
@@ -102,6 +102,10 @@ export interface OrganizationStats extends JSONObject {
   tagChange: number;
   dueDateChange: number;
   pinChange: number;
+  createNote: number;
+  createTask: number;
+  createSubtask: number;
+  createTag: number;
 }
 
 export class GraphManager
@@ -372,6 +376,9 @@ export class GraphManager
         if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
           return;
         }
+        if (c.createdLocally) {
+          return;
+        }
         // The following line does two major things:
         //
         // 1. It creates the vertex manager if it doesn't already exist.
@@ -380,8 +387,10 @@ export class GraphManager
         //
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
+        const namespace = repo.valueForKey(c.key).scheme.namespace;
         if (
-          repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
+          namespace !== SchemeNamespace.SESSIONS &&
+          namespace !== SchemeNamespace.EVENTS
         ) {
           const mgr = this.getVertexManager(c.key);
           // if (
@@ -872,7 +881,7 @@ export class GraphManager
       for (const key of repo.keys()) {
         if (repo.valueForKey(key).scheme.namespace === SchemeNamespace.NOTES) {
           for (const c of repo.commitsForKey(key)) {
-            if (c.timestamp.getTime() < startTs) {
+            if (c.timestamp.getTime() < startTs || c.parents.length > 1) {
               continue;
             }
             const session = this.trustPool.getSession(c.session);
@@ -891,8 +900,17 @@ export class GraphManager
                 tagChange: 0,
                 dueDateChange: 0,
                 pinChange: 0,
+                createNote: 0,
+                createTask: 0,
+                createSubtask: 0,
+                createTag: 0,
               };
               stats.set(domain, domainStats);
+            }
+            if (c.parents.length === 0) {
+              if (!commitContentsIsRecord(c.contents)) {
+                continue;
+              }
             }
             const changedFields = repo.changedFieldsInCommit(c);
             if (changedFields?.includes('assignees')) {

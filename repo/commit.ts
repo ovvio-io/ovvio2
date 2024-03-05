@@ -67,6 +67,8 @@ export interface CommitSerializeOptions {
 const FROZEN_COMMITS = new Map<string, Commit>();
 const SERIALIZED_COMMITS = new Map<string, ReadonlyJSONObject>();
 
+const CONNECTION_ID = uniqueId();
+
 export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _buildVersion!: VersionNumber;
   private _id!: string;
@@ -84,6 +86,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _cachedJSON?: ReadonlyJSONObject;
   private _cachedChecksum?: string;
   private _frozen: boolean = false;
+  private _connectionId = CONNECTION_ID;
 
   constructor(config: CommitConfig | ConstructorDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -197,6 +200,14 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._frozen;
   }
 
+  get connectionId(): string {
+    return this._connectionId;
+  }
+
+  get createdLocally(): boolean {
+    return this._connectionId === CONNECTION_ID;
+  }
+
   serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
@@ -229,6 +240,9 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     }
     if (this.revert) {
       encoder.set('revert', this.mergeLeader);
+    }
+    if (this.connectionId) {
+      encoder.set('cid', this.connectionId);
     }
   }
 
@@ -275,6 +289,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._revert = decoder.get<string | undefined>('revert');
     this._cachedJSON = undefined;
     this._cachedChecksum = undefined;
+    this._connectionId = decoder.get<string>('cid') || CONNECTION_ID;
   }
 
   isEqual(other: Commit): boolean {
