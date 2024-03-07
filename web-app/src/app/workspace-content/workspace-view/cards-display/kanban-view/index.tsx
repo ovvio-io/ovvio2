@@ -58,7 +58,8 @@ const useStyles = makeStyles((theme) => ({
     minWidth: styleguide.gridbase * 18.5,
     borderBottomRightRadius: styleguide.gridbase * 2,
     borderTopRightRadius: styleguide.gridbase * 2,
-    maxWidth: styleguide.gridbase * 20.5,
+    // maxWidth: styleguide.gridbase * 20.5,
+    maxWidth: 'fit-content',
     paddingLeft: styleguide.gridbase,
     paddingRight: styleguide.gridbase,
     boxSizing: 'border-box',
@@ -73,6 +74,7 @@ const useStyles = makeStyles((theme) => ({
     textOverflow: 'ellipsis',
     fontSize: '13px',
     fontWeight: '400',
+    width: '100%',
   },
   itemToggle: {
     marginLeft: styleguide.gridbase * 0.5,

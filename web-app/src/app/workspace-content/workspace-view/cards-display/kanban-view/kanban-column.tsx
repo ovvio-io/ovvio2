@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme) => ({
     background: 'inherit',
     position: 'sticky',
     top: 0,
-    padding: styleguide.gridbase,
+    padding: [styleguide.gridbase, 0, styleguide.gridbase, 0],
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
   },

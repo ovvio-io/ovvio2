@@ -18,6 +18,7 @@ import { ListViewNew } from './list-view/index.tsx';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
 import { Vertex } from '../../../../../../cfds/client/graph/vertex.ts';
 import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useDisable } from '../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -29,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row],
   },
   displayMain: {
-    position: 'relative',
+    // position: 'relative',
     height: '100%',
     overflow: 'hidden',
     flexShrink: 1,
@@ -85,7 +86,6 @@ export function CardsDisplay() {
   const [selectedCards, setSelectedCards] = useState<Set<VertexManager<Note>>>(
     new Set()
   );
-
   let content = null;
   const onCloseMultiSelect = () => {
     setSelectedCards(new Set());
@@ -124,6 +124,7 @@ export function CardsDisplay() {
           selectedCards={selectedCards}
           onCloseMultiSelect={onCloseMultiSelect}
         />
+
         <ToolbarCenterItem
           className={cn(layout.flexSpacer)}
         ></ToolbarCenterItem>

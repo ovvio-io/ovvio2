@@ -1,4 +1,10 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, {
+  CSSProperties,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   H4,
   TextSm,
@@ -21,7 +27,7 @@ import {
   Workspace,
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { useQuery2, useSharedQuery } from '../../../core/cfds/react/query.ts';
 import {
   usePartialVertex,
   usePartialVertices,
@@ -41,29 +47,106 @@ import {
   usePartialView,
 } from '../../../core/cfds/react/graph.tsx';
 import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
+import { canUnifyParentTags } from './cards-display/display-bar/filters/index.tsx';
+import { Query } from '../../../../../cfds/client/graph/query.ts';
+import {
+  TagId,
+  decodeTagId,
+  encodeTagId,
+} from '../../../../../cfds/base/scheme-types.ts';
+import { getValueFromTextNode } from '../../../../../../../../Library/Caches/deno/npm/registry.npmjs.org/@smithy/smithy-client/2.1.16/dist-types/get-value-from-text-node.d.ts';
+import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
+import { isAbsolute } from 'std/path/is_absolute.ts';
 
-const useStyles = makeStyles(() => ({
-  popup: {
-    // backgroundColor: theme.colors.background,
-    maxWidth: styleguide.gridbase * 21,
-    maxHeight: styleguide.gridbase * 21,
-    flexShrink: 0,
-  },
-  confirmation: {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontWeight: '600',
-    fontSize: '14px',
-  },
-  confirmationButtons: {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-}));
+const useStyles = makeStyles(
+  () => ({
+    popup: {
+      // backgroundColor: theme.colors.background,
+      maxWidth: styleguide.gridbase * 21,
+      maxHeight: styleguide.gridbase * 21,
+      flexShrink: 0,
+    },
+    confirmation: {
+      display: 'flex',
+      padding: '8px 10px 10px ',
+      flexDirection: 'column',
+      alignItems: 'center',
+      fontWeight: '600',
+      fontSize: '14px',
+    },
+    confirmationButtons: {
+      display: 'flex',
+      padding: '16px 0px 16px 0px',
+      flexDirection: 'column',
+      gap: '8px',
+    },
+    MultiSelectBarStyle: {
+      top: '-81px',
+      right: '0px',
+      height: '80px',
+      position: 'absolute',
+      // width: '100%',
+      width: '100vw',
+
+      backgroundColor: '#3184dd',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      zIndex: 9,
+    },
+
+    wizardContainerStyle: {
+      display: 'flex',
+      width: '100%',
+      justifyContent: 'space-between',
+      marginLeft: '5%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: '5%',
+      position: 'relative',
+      color: '#FFF',
+    },
+    functionContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      position: 'relative',
+      color: '#FFF',
+      gap: '32px',
+    },
+    doneContainer: {
+      position: 'relative',
+    },
+    closeIcon: {
+      paddingRight: styleguide.gridbase * 4,
+      paddingLeft: styleguide.gridbase * 2,
+    },
+    toggleViewButton: {
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      basedOn: [useTypographyStyles.text],
+    },
+    toggleViewButtonDisabled: {
+      cursor: 'not-allowed',
+      color: theme.colors.placeholderText,
+    },
+    toggleActions: {
+      marginTop: styleguide.gridbase,
+      marginLeft: styleguide.gridbase,
+      marginRight: styleguide.gridbase,
+      justifyContent: 'space-between',
+      display: 'flex',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: '8px',
+    },
+    separateLine: {
+      fontSize: '16px',
+    },
+  }),
+  'multiSelect-wizard_291877'
+);
 
 interface IconVectorProps {
   color: 'done' | 'notDone';
@@ -148,7 +231,6 @@ export function RemoveMultiButton<T>({
       cardM.vertex.isDeleted = 1;
     });
   };
-  //TODO: ask Ofri how to get the view type (note/task).
   const view = usePartialView('selectedTabId');
   const isTask = view.selectedTabId === 'tasks' ? true : false;
   const nCards = selectedCards.size;
@@ -220,7 +302,12 @@ export function AssignMultiButton<T>({
       popupClassName={cn(styles.popup)}
     >
       <MemberPicker
-        users={intersectionUsersArray}
+        // usersMn={intersectionUsersArray.map((user) => {
+        //   user.manager;
+        // })}
+        usersMn={intersectionUsersArray
+          .filter((user) => user.manager)
+          .map((user) => user.manager)}
         onRowSelect={onRowSelect}
         onClearAssignees={onClearAssignees}
       />
@@ -238,24 +325,54 @@ export function AddTagMultiButton<T>({
     allWorkspaces.add(card.workspace)
   );
 
-  const parentTagsSet = usePartialVertices(allWorkspaces, ['parentTags']);
-  let parentTagsSetIntersection = new Set<Tag>();
+  const graph = useGraphManager();
+  const query = useQuery2(
+    useMemo(
+      () =>
+        new Query<Tag, Tag, string>({
+          source: graph.sharedQueriesManager.childTags,
+          predicate: (tag) => allWorkspaces.has(tag.workspace),
+          contentSensitive: true,
+          contentFields: ['parentTag', 'name'],
+          groupBy: (tag) => tag.workspace.key,
+        }),
+      [
+        Array.from(allWorkspaces)
+          .map((ws) => ws.key)
+          .sort()
+          .join('-'),
+        graph,
+      ]
+    )
+  );
 
-  if (parentTagsSet.length > 0) {
-    parentTagsSetIntersection = new Set(parentTagsSet[0].parentTags);
+  let allEncodedTags: Set<TagId> = new Set();
 
-    parentTagsSet.forEach((parentTags, index) => {
-      if (index > 0) {
-        parentTagsSetIntersection = SetUtils.intersection(
-          parentTagsSetIntersection,
-          new Set(parentTags.parentTags)
-        );
-      }
+  for (const [index, gid] of [...allWorkspaces].entries()) {
+    const wsTags: Set<TagId> = new Set();
+
+    query.group(gid.key).map((tag) => {
+      const x = encodeTagId(tag.vertex.parentTagKey, tag.vertex.key);
+      debugger;
+      wsTags.add(x);
     });
+
+    if (index === 0) {
+      allEncodedTags = wsTags;
+    } else if (allEncodedTags) {
+      allEncodedTags = new Set(
+        [...allEncodedTags].filter((x) => wsTags.has(x))
+      );
+    }
   }
+  allEncodedTags = allEncodedTags || new Set();
+
   let intersectionTagsArray: Tag[] = [];
-  parentTagsSetIntersection.forEach((parentTag) => {
-    intersectionTagsArray = [...intersectionTagsArray, ...parentTag.childTags];
+
+  allEncodedTags.forEach((tagId) => {
+    const [parent, child] = decodeTagId(tagId);
+    const tagChild = graph.getVertex<Tag>(child);
+    intersectionTagsArray = [...intersectionTagsArray, tagChild];
   });
 
   const onRowSelect = (tag: Tag) => {
@@ -287,6 +404,49 @@ export function AddTagMultiButton<T>({
     </Menu>
   );
 }
+// const parentTagsSet = usePartialVertices(allWorkspaces, ['parentTags']);
+
+// let parentTagsSetIntersection = new Set<Tag>();
+
+// if (parentTagsSet.length > 0) {
+//   parentTagsSetIntersection = new Set(parentTagsSet[0].parentTags);
+
+//   parentTagsSet.forEach((parentTags, index) => {
+//     if (index > 0) {
+//       parentTagsSetIntersection = SetUtils.intersection(
+//         parentTagsSetIntersection,
+//         new Set(parentTags.parentTags)
+//       );
+//     }
+//   });
+// }
+
+// function intersectParentTags(parentTagsArrays: Tag[][]): Set<Tag> {
+//   if (parentTagsArrays.length === 0) return new Set();
+//   let currentIntersection = new Set(parentTagsArrays[0]);
+//   parentTagsArrays.slice(1).forEach((parentTags) => {
+//     const newIntersection = new Set<Tag>();
+
+//     currentIntersection.forEach((tagInIntersection) => {
+//       parentTags.forEach((tagToCompare) => {
+//         if (canUnifyParentTags(tagInIntersection, tagToCompare)) {
+//           newIntersection.add(tagToCompare);
+//         }
+//       });
+//     });
+//     currentIntersection = newIntersection;
+//   });
+
+//   return currentIntersection;
+// }
+// const parentTagsSetIntersection = intersectParentTags(
+//   parentTagsSet.map((parentTagsObj) => parentTagsObj.parentTags)
+// );
+
+// let intersectionTagsArray: Tag[] = [];
+// parentTagsSetIntersection.forEach((parentTag) => {
+//   intersectionTagsArray = [...intersectionTagsArray, ...parentTag.childTags];
+// });
 
 export interface MultiSelectBarProps {
   onClose?: () => void;
@@ -297,71 +457,6 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   onClose,
   selectedCards,
 }) => {
-  const useStyles = makeStyles(
-    () => ({
-      MultiSelectBarStyle: {
-        top: '0px',
-        right: '0px',
-        height: '73px',
-        position: 'absolute',
-        width: '100%',
-        backgroundColor: '#3184dd',
-        padding: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-      },
-      wizardContainerStyle: {
-        display: 'flex',
-        width: '100%',
-        justifyContent: 'space-between',
-        marginLeft: '10%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: '5%',
-        position: 'relative',
-        color: '#FFF',
-      },
-      functionContainer: {
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        position: 'relative',
-        color: '#FFF',
-        gap: '32px',
-      },
-      doneContainer: {
-        position: 'relative',
-      },
-      closeIcon: {
-        paddingRight: styleguide.gridbase * 4,
-        paddingLeft: styleguide.gridbase * 2,
-      },
-      toggleViewButton: {
-        cursor: 'pointer',
-        textDecoration: 'underline',
-        basedOn: [useTypographyStyles.text],
-      },
-      toggleViewButtonDisabled: {
-        cursor: 'not-allowed',
-        color: theme.colors.placeholderText,
-      },
-      toggleActions: {
-        marginTop: styleguide.gridbase,
-        marginLeft: styleguide.gridbase,
-        marginRight: styleguide.gridbase * 3.5,
-        justifyContent: 'space-between',
-        display: 'flex',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '8px',
-      },
-      separateLine: {
-        fontSize: '16px',
-      },
-    }),
-    'multiSelect-wizard_291877'
-  );
   const styles = useStyles();
 
   const selectAll = useCallback(() => {}, []);
@@ -390,7 +485,7 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
         <div className={styles.functionContainer}>
           <AssignMultiButton selectedCards={selectedCards} />
           <AddTagMultiButton selectedCards={selectedCards} />
-          <DueDateMultiSelect />
+          {/* <DueDateMultiSelect /> */}
           <RemoveMultiButton selectedCards={selectedCards} />
         </div>
         <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />

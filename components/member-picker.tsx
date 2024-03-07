@@ -9,6 +9,8 @@ import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { TextField } from '../styles/components/inputs/index.ts';
 import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import Input from './input.tsx';
+import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
+import { useVertices } from '../web-app/src/core/cfds/react/vertex.ts';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -78,7 +80,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 type MemberPickerProps = {
-  users: User[];
+  usersMn: VertexManager<User>[];
   onRowSelect: (user: User) => void;
   showSearch?: boolean;
   onRemove?: () => void;
@@ -86,7 +88,7 @@ type MemberPickerProps = {
 };
 
 export function MemberPicker({
-  users,
+  usersMn,
   onRowSelect,
   showSearch,
   onRemove,
@@ -99,6 +101,7 @@ export function MemberPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
+  const users = useVertices(usersMn);
 
   useEffect(() => {
     if (users) {

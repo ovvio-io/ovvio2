@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DateFilter,
   kDateFilters,
@@ -60,6 +60,7 @@ import {
 import Wizard from '../../../../settings/components/wizard.tsx';
 import { MultiSelectBar } from '../../multi-select-bar.tsx';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useDisable } from '../../../../index.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -502,17 +503,27 @@ export function DisplayBar(props?: DisplayBarProps) {
     </>
   );
 
+  const { setDisable } = useDisable()!;
+
+  const multiIsOpen = useMemo(() => {
+    const isOpen = !!selectedCards && selectedCards.size > 0;
+    setDisable(isOpen);
+
+    return isOpen;
+  }, [selectedCards, setDisable]);
+
   return (
     <div className={cn(styles.bar, className)}>
+      {selectedCards && multiIsOpen ? (
+        <MultiSelectBar
+          selectedCards={selectedCards}
+          onClose={onCloseMultiSelect}
+        />
+      ) : (
+        ''
+      )}
       <div className={cn(styles.barRow, styles.viewRow)}>
-        {selectedCards && selectedCards?.size > 0 ? (
-          <MultiSelectBar
-            selectedCards={selectedCards}
-            onClose={onCloseMultiSelect}
-          />
-        ) : (
-          <TabView />
-        )}
+        <TabView />
       </div>
       <div className={cn(styles.barRow)}>
         {view.selectedTabId !== 'overview' ? leftHand : null}

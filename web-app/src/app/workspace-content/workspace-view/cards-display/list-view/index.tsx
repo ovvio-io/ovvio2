@@ -21,6 +21,7 @@ import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { WorkspaceIndicatorCard } from '../kanban-view/index.tsx';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
+import { useDisable } from '../../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -28,9 +29,13 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: '1px',
   },
   listRoot: {
+    position: 'relative',
     height: '100%',
     overflowY: 'scroll',
     overflowX: 'clip',
+  },
+  multiSelectActive: {
+    zIndex: 9,
   },
 }));
 
@@ -94,6 +99,8 @@ export function ListViewNew({
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
 
+  const { isDisabled } = useDisable(); // added 6.3.2024
+
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
@@ -126,7 +133,14 @@ export function ListViewNew({
   return (
     <Scroller>
       {(ref) => (
-        <div ref={ref} className={cn(styles.listRoot, className)}>
+        <div
+          ref={ref}
+          className={cn(
+            styles.listRoot,
+            isDisabled && styles.multiSelectActive, //Added 6.3.24
+            className
+          )}
+        >
           {groups.slice(0, limit).map(
             (group, index) => (
               (groupKey = getGroupStringKey(group, index)),

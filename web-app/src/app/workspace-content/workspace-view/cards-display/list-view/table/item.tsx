@@ -168,12 +168,16 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     justifyContent: 'center',
     paddingLeft: styleguide.gridbase,
+    cursor: 'pointer',
   },
   title: {
     flexGrow: '1',
-    flexShrink: '2',
+    // flexShrink: '2',
+    flexShrink: '1', //7.3.24
     flexBasis: 'auto',
     width: 'calc(45% - 156px)',
+    minWidth: '20%',
+    minHeight: '20px',
     cursor: 'pointer',
     position: 'relative',
     textOverflow: 'ellipsis',
@@ -275,17 +279,17 @@ const useStyles = makeStyles(() => ({
   },
   selectedIconContainer: {
     position: 'absolute',
-    left: '-50px',
+    left: '-30px',
     top: '10px',
     cursor: 'cell',
   },
-  cardMoreTabSelected: {
-    // backgroundColor: 'var(--ws-background)',
+  selectIconContainer: {
+    left: '-72px',
   },
 }));
 
 interface SelectIconContainerProps {
-  workspace: VertexId<Workspace>;
+  workspace: VertexManager<Workspace>;
   isSelected: boolean;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
   // handleSelectClick: (card: string) => void;
@@ -313,7 +317,10 @@ function SelectIconContainer({
   const card: Note = useVertexByKey(cardKey);
   return (
     <div
-      className={cn(styles.selectedIconContainer, styles.cardMoreTabSelected)}
+      className={cn(
+        styles.selectedIconContainer,
+        !isSelected ? styles.selectIconContainer : undefined
+      )}
       style={style}
       // onClick={() => handleSelectClick(cardKey)}
       onClick={() => handleSelectClick(card)}
@@ -594,7 +601,7 @@ function TitleCell({
   return (
     <div className={cn(styles.title)} onClick={onClick}>
       <Tooltip text={titlePlaintext} position="top" align="center">
-        <Text onClick={onClick}>{titlePlaintext}</Text>
+        <Text>{titlePlaintext}</Text>
       </Tooltip>
     </div>
   );
@@ -747,11 +754,10 @@ export function Row({
 export interface ItemRowProps extends Partial<RenderDraggableProps> {
   note: VertexManager<Note>;
   index?: number;
-  onClick?: (note: VertexManager<Note>) => void;
+  onClick: (note: VertexManager<Note>) => void;
   isChild?: boolean;
   groupBy?: string;
   nestingLevel: number;
-  // handleSelectClick: (card: string) => void;
   handleSelectClick: (card: Note) => void;
 
   isSelected: boolean;
@@ -764,7 +770,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       note,
       isChild,
       handleSelectClick,
-      onClick = () => {},
+      onClick,
       nestingLevel,
       isSelected,
     },
@@ -797,7 +803,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       <div className={cn(styles.rowContainer)}>
         {!isChild && (isMouseOver || isSelected) ? (
           <SelectIconContainer
-            workspace={workspace}
+            workspace={workspace.manager}
             isSelected={isSelected}
             handleSelectClick={handleSelectClick}
             cardKey={note.key}
@@ -819,7 +825,6 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             onMouseOver={onMouseOver}
             onMouseLeave={onMouseLeave}
             onClick={() => {
-              // !isChild ? handleSelectClick(note.key) : undefined;
               !isChild ? handleSelectClick(note.vertex) : undefined;
             }}
           >
@@ -839,6 +844,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
                   nestingLevel={nestingLevel}
                   handleSelectClick={() => {}}
                   isSelected={false}
+                  onClick={() => {}}
                 />
               </React.Fragment>
             )}

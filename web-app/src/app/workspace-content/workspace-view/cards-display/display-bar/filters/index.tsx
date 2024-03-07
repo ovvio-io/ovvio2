@@ -35,6 +35,7 @@ import { createUseStrings } from '../../../../../../core/localization/index.tsx'
 import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -113,7 +114,7 @@ const useStyles = makeStyles(
       basedOn: [layout.column, layout.centerCenter],
     },
   }),
-  'filters_965b1f',
+  'filters_965b1f'
 );
 
 const useStrings = createUseStrings(localization);
@@ -163,11 +164,11 @@ function FilterBackdrop({
         onClick();
       }
     },
-    [onClick],
+    [onClick]
   );
 
   return createUniversalPortal(
-    <div style={style} className={styles.backdrop} onClick={click} />,
+    <div style={style} className={styles.backdrop} onClick={click} />
   );
 }
 
@@ -193,7 +194,7 @@ export function FiltersView({ className }: FiltersViewProps) {
               className={cn(
                 className,
                 styles.animator,
-                !view.showFilters && styles.hide,
+                !view.showFilters && styles.hide
               )}
               style={{ zIndex: style.zIndex + 1 }}
             >
@@ -219,7 +220,7 @@ function useUnifiedTagCategory(name: string): UnifiedTagDisplay {
 }
 
 function useTagSectionState(
-  parentName: string,
+  parentName: string
 ): [FilterCheckboxState, () => void] {
   const view = usePartialView('selectedTagIds');
   let [, ...values] = useUnifiedTagCategory(parentName);
@@ -273,7 +274,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
         view.selectedTagIds.add(id);
       }
     },
-    [view, parentTagName],
+    [view, parentTagName]
   );
 
   return (
@@ -321,7 +322,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
         ? -1
         : b.key === rootUser.key
         ? 1
-        : b.name.localeCompare(a.name),
+        : b.name.localeCompare(a.name)
     );
     const hasMore = assignees.length > SECTION_SIZE;
     return [
@@ -334,28 +335,28 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
   useEffect(
     () =>
       view.deleteFromSet('selectedAssignees', (u) => !assignees.includes(u)),
-    [assignees, view],
+    [assignees, view]
   );
 
   return result;
 }
 
-// function canUnifyParentTags(t1: Tag, t2: Tag): boolean {
-//   if (
-//     t1.name !== t2.name ||
-//     t1.childTags.length !== t2.childTags.length ||
-//     t1.childTags.length <= 0
-//   ) {
-//     return false;
-//   }
-//   const names = t1.childTags.map(t => t.name);
-//   for (const child of t2.childTags) {
-//     if (!names.includes(child.name)) {
-//       return false;
-//     }
-//   }
-//   return true;
-// }
+export function canUnifyParentTags(t1: Tag, t2: Tag): boolean {
+  if (
+    t1.name !== t2.name ||
+    t1.childTags.length !== t2.childTags.length ||
+    t1.childTags.length <= 0
+  ) {
+    return false;
+  }
+  const names = t1.childTags.map((t) => t.name);
+  for (const child of t2.childTags) {
+    if (!names.includes(child.name)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 type UnifiedTagDisplay = [name: string, ...value: string[]];
 
@@ -375,7 +376,7 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
         if (selectedWorkspaces.has(t.workspace)) {
           SetUtils.update(
             values,
-            mapIterable(t.childTags, (tag) => tag.name),
+            mapIterable(t.childTags, (tag) => tag.name)
           );
         }
       }
@@ -405,7 +406,7 @@ function UnifiedTagsFilterViewSection() {
   return (
     <>
       {unifiedTags.map(([title, ...values]) =>
-        title === 'Status' ? null : <TagSection parentTagName={title} />,
+        title === 'Status' ? null : <TagSection parentTagName={title} />
       )}
     </>
   );
