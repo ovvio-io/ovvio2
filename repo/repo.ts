@@ -476,8 +476,10 @@ export class Repository<
           .filter((id) => this.hasCommit(id))
           .map((id) => this.getCommit(id))
           .sort(compareCommitsDesc);
-        if (prioritizedBases.length > 0) {
-          return [prioritizedBases[0], reachedRoot];
+        for (const base of prioritizedBases) {
+          if (this.hasRecordForCommit(base)) {
+            return [base, reachedRoot];
+          }
         }
       }
       let updated = false;
@@ -1084,7 +1086,9 @@ export class Repository<
       } else {
         const leaves = this.leavesForKey(key);
         if (leaves) {
-          result = this.createMergeRecord(leaves)[0];
+          [result] = this.createMergeRecord(
+            leaves, //.filter((c) => this.commitIsHighProbabilityLeaf(c)),
+          );
         }
         if (!result || result.isNull) {
           head = this.findHeadForKeyWithoutMerge(key, session);
@@ -1476,6 +1480,27 @@ export class Repository<
       `${key}-${new Date().toISOString()}.json`,
       this.debugNetworkForKey(key),
     );
+  }
+
+  revertAllKeysToBefore(ts: number): void {
+    for (const key of this.keys()) {
+      const commits = Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      );
+      for (let i = 0; i < commits.length; ++i) {
+        const c = commits[i];
+        if (c.timestamp.getTime() <= ts) {
+          if (i === 0) {
+            break;
+          }
+          if (this.hasRecordForCommit(c)) {
+            console.log(`Reverting ${key} to ${c.timestamp.toLocaleString()}`);
+            this.setValueForKey(key, this.recordForCommit(c));
+            break;
+          }
+        }
+      }
+    }
   }
 }
 

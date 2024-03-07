@@ -936,4 +936,10 @@ export class GraphManager
     }
     downloadJSON('stats.json', result);
   }
+
+  revertAllKeysToBefore(ts: number): void {
+    for (const [_repoId, repo] of this.repositories()) {
+      repo.revertAllKeysToBefore(ts);
+    }
+  }
 }
