@@ -347,14 +347,19 @@ export function AddTagMultiButton<T>({
   );
 
   let allEncodedTags: Set<TagId> = new Set();
+  const tagMap = new Map<string, Tag>();
 
   for (const [index, gid] of [...allWorkspaces].entries()) {
     const wsTags: Set<TagId> = new Set();
 
     query.group(gid.key).map((tag) => {
-      const x = encodeTagId(tag.vertex.parentTagKey, tag.vertex.key);
-      debugger;
-      wsTags.add(x);
+      if (!tag.vertex.parentTag) console.log(tag.vertex.parentTag);
+      const encodedTag = encodeTagId(
+        tag.vertex.parentTag?.name,
+        tag.vertex.name
+      );
+      wsTags.add(encodedTag);
+      tagMap.set(encodedTag, tag.vertex);
     });
 
     if (index === 0) {
@@ -368,10 +373,10 @@ export function AddTagMultiButton<T>({
   allEncodedTags = allEncodedTags || new Set();
 
   let intersectionTagsArray: Tag[] = [];
-
   allEncodedTags.forEach((tagId) => {
-    const [parent, child] = decodeTagId(tagId);
-    const tagChild = graph.getVertex<Tag>(child);
+    // const [parent, child] = decodeTagId(tagId);
+    const tagChild = tagMap.get(tagId)!; //TODO: ask ofri about the tagMap (is dont like this impl)
+
     intersectionTagsArray = [...intersectionTagsArray, tagChild];
   });
 
