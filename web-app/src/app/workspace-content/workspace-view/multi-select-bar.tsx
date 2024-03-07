@@ -220,16 +220,19 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
 interface AddSelectionButtonProps<T> {
   className?: string;
   selectedCards: Set<VertexManager<Note>>;
+  setSelectedCards?: (card: Set<VertexManager<Note>>) => void;
 }
 export function RemoveMultiButton<T>({
   className,
   selectedCards,
+  setSelectedCards,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
   const handleDeleteClick = () => {
     selectedCards.forEach((cardM) => {
-      cardM.vertex.isDeleted = 1;
+      cardM.vertex.isDeleted = 1; //TODO: ask ofri if it should be removed auto from selectedCards when isDeleted is set to 1.
     });
+    setSelectedCards!(new Set<VertexManager<Note>>());
   };
   const view = usePartialView('selectedTabId');
   const isTask = view.selectedTabId === 'tasks' ? true : false;
@@ -261,7 +264,6 @@ export function AssignMultiButton<T>({
   selectedCards,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
-  // const cardData: Note = useVertexByKey(card);
   const allWorkspaces: Set<Workspace> = new Set();
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
     allWorkspaces.add(card.workspace)
@@ -302,9 +304,6 @@ export function AssignMultiButton<T>({
       popupClassName={cn(styles.popup)}
     >
       <MemberPicker
-        // usersMn={intersectionUsersArray.map((user) => {
-        //   user.manager;
-        // })}
         usersMn={intersectionUsersArray
           .filter((user) => user.manager)
           .map((user) => user.manager)}
@@ -409,58 +408,17 @@ export function AddTagMultiButton<T>({
     </Menu>
   );
 }
-// const parentTagsSet = usePartialVertices(allWorkspaces, ['parentTags']);
-
-// let parentTagsSetIntersection = new Set<Tag>();
-
-// if (parentTagsSet.length > 0) {
-//   parentTagsSetIntersection = new Set(parentTagsSet[0].parentTags);
-
-//   parentTagsSet.forEach((parentTags, index) => {
-//     if (index > 0) {
-//       parentTagsSetIntersection = SetUtils.intersection(
-//         parentTagsSetIntersection,
-//         new Set(parentTags.parentTags)
-//       );
-//     }
-//   });
-// }
-
-// function intersectParentTags(parentTagsArrays: Tag[][]): Set<Tag> {
-//   if (parentTagsArrays.length === 0) return new Set();
-//   let currentIntersection = new Set(parentTagsArrays[0]);
-//   parentTagsArrays.slice(1).forEach((parentTags) => {
-//     const newIntersection = new Set<Tag>();
-
-//     currentIntersection.forEach((tagInIntersection) => {
-//       parentTags.forEach((tagToCompare) => {
-//         if (canUnifyParentTags(tagInIntersection, tagToCompare)) {
-//           newIntersection.add(tagToCompare);
-//         }
-//       });
-//     });
-//     currentIntersection = newIntersection;
-//   });
-
-//   return currentIntersection;
-// }
-// const parentTagsSetIntersection = intersectParentTags(
-//   parentTagsSet.map((parentTagsObj) => parentTagsObj.parentTags)
-// );
-
-// let intersectionTagsArray: Tag[] = [];
-// parentTagsSetIntersection.forEach((parentTag) => {
-//   intersectionTagsArray = [...intersectionTagsArray, ...parentTag.childTags];
-// });
 
 export interface MultiSelectBarProps {
   onClose?: () => void;
   selectedCards: Set<VertexManager<Note>>;
+  setSelectedCards: (card: Set<VertexManager<Note>>) => void;
 }
 
 export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   onClose,
   selectedCards,
+  setSelectedCards,
 }) => {
   const styles = useStyles();
 
@@ -491,7 +449,10 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
           <AssignMultiButton selectedCards={selectedCards} />
           <AddTagMultiButton selectedCards={selectedCards} />
           {/* <DueDateMultiSelect /> */}
-          <RemoveMultiButton selectedCards={selectedCards} />
+          <RemoveMultiButton
+            selectedCards={selectedCards}
+            setSelectedCards={setSelectedCards}
+          />
         </div>
         <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />
       </div>

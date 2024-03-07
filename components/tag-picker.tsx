@@ -75,6 +75,9 @@ const useStyles = makeStyles(() => ({
   removeIcon: {
     marginTop: 2,
   },
+  selectedItem: {
+    backgroundColor: '#FBF6EF',
+  },
 }));
 
 type TagPickerProps = {
@@ -181,9 +184,11 @@ export default function TagPicker({
               <React.Fragment key={tag.key}>
                 <div
                   key={tag.key}
-                  className={cn(styles.row, styles.hoverableRow, {
-                    [styles.hoverableRow]: selectedIndex === index,
-                  })}
+                  className={cn(
+                    styles.row,
+                    styles.hoverableRow,
+                    selectedIndex === index && styles.selectedItem
+                  )}
                   onClick={() => handleRowClick(tag)}
                 >
                   <div className={cn(styles.rowItem)}>

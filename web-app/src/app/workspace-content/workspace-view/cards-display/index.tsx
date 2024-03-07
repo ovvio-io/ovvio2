@@ -123,6 +123,7 @@ export function CardsDisplay() {
         <DisplayBar
           selectedCards={selectedCards}
           onCloseMultiSelect={onCloseMultiSelect}
+          setSelectedCards={setSelectedCards}
         />
 
         <ToolbarCenterItem

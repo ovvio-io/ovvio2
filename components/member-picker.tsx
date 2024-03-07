@@ -37,6 +37,7 @@ const useStyles = makeStyles(() => ({
       backgroundColor: '#FBF6EF',
     },
   },
+
   row: {
     padding: '6px 6px 6px 10px',
     alignItems: 'start',
@@ -77,6 +78,9 @@ const useStyles = makeStyles(() => ({
   removeIcon: {
     marginTop: 2,
   },
+  selectedItem: {
+    backgroundColor: '#FBF6EF',
+  },
 }));
 
 type MemberPickerProps = {
@@ -102,6 +106,7 @@ export function MemberPicker({
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
   const users = useVertices(usersMn);
+  const componentRef = useRef(null);
 
   useEffect(() => {
     if (users) {
@@ -114,6 +119,26 @@ export function MemberPicker({
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
+
+  //TODO: its new and needs qa
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        componentRef.current &&
+        !componentRef.current.contains(event.target)
+      ) {
+        menuCtx.close();
+      }
+    };
+
+    // Add click event listener
+    document.addEventListener('mousedown', handleClickOutside);
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuCtx]); // Add dependencies if any state or props are used in the handleClickOutside function
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value || '');
@@ -160,7 +185,7 @@ export function MemberPicker({
   };
 
   return (
-    <div className={cn(styles.tableContainer)}>
+    <div ref={componentRef} className={cn(styles.tableContainer)}>
       {showSearch !== false && (
         <div className={cn(styles.searchRowStyle)}>
           <div className={cn(styles.iconContainer)}>
@@ -179,14 +204,20 @@ export function MemberPicker({
       )}
       <Scroller>
         {(inputRef) => (
-          <div className={cn(styles.tableContent)} ref={inputRef}>
+          <div
+            className={cn(styles.tableContent)}
+            ref={inputRef}
+            onKeyDown={onKeyDown}
+          >
             {filteredUsers.map((user: User, index: number) => (
               <React.Fragment key={user.key}>
                 <div
                   key={user.key}
-                  className={cn(styles.row, styles.hoverableRow, {
-                    [styles.hoverableRow]: selectedIndex === index,
-                  })}
+                  className={cn(
+                    styles.row,
+                    styles.hoverableRow,
+                    selectedIndex === index && styles.selectedItem
+                  )}
                   onClick={() => handleRowClick(user)}
                 >
                   <div className={cn(styles.rowItem)}>

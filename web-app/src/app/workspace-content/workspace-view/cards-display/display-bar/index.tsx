@@ -479,10 +479,17 @@ export type DisplayBarProps = {
   className?: string;
   onCloseMultiSelect: () => void;
   selectedCards?: Set<VertexManager<Note>>;
+  setSelectedCards: (card: Set<VertexManager<Note>>) => void;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {
-  const { className, selectedCards, onCloseMultiSelect, ...rest } = props || {};
+  const {
+    className,
+    selectedCards,
+    onCloseMultiSelect,
+    setSelectedCards,
+    ...rest
+  } = props || {};
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
@@ -508,7 +515,6 @@ export function DisplayBar(props?: DisplayBarProps) {
   const multiIsOpen = useMemo(() => {
     const isOpen = !!selectedCards && selectedCards.size > 0;
     setDisable(isOpen);
-
     return isOpen;
   }, [selectedCards, setDisable]);
 
@@ -518,6 +524,7 @@ export function DisplayBar(props?: DisplayBarProps) {
         <MultiSelectBar
           selectedCards={selectedCards}
           onClose={onCloseMultiSelect}
+          setSelectedCards={setSelectedCards!}
         />
       ) : (
         ''

@@ -43,8 +43,6 @@ const useStrings = createUseStrings(localization);
 
 export interface ListViewNewProps {
   className?: string;
-  // selectedCards: Set<Note>;
-  // setSelectedCards: (card: Set<Note>) => void;
   selectedCards: Set<VertexManager<Note>>;
   setSelectedCards: (card: Set<VertexManager<Note>>) => void;
   handleSelectClick: (card: Note) => void;
@@ -99,7 +97,7 @@ export function ListViewNew({
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
 
-  const { isDisabled } = useDisable(); // added 6.3.2024
+  const { isDisabled } = useDisable()!; // added 6.3.2024
 
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
@@ -161,8 +159,8 @@ export function ListViewNew({
                       groupBy={groupBy}
                       nestingLevel={0}
                       handleSelectClick={handleSelectClick}
-                      // isSelected={selectedCards.has(noteMgr)}
                       isSelected={selectedCards.has(noteMgr)}
+                      multiIsActive={selectedCards.size > 0}
                     />
                   ))}
 
@@ -191,8 +189,8 @@ export function ListViewNew({
                         groupBy={groupBy}
                         nestingLevel={0}
                         handleSelectClick={handleSelectClick}
-                        // isSelected={selectedCards.has(noteMgr.key)}
                         isSelected={selectedCards.has(noteMgr)}
+                        multiIsActive={selectedCards.size > 0}
                       />
                     ))}
                 </SectionTable>
