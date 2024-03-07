@@ -48,15 +48,8 @@ export function InfiniteVerticalScroll({
   useEffect(() => {
     if (parentEl && canLoadMore) {
       const handler = () => {
-        // const totalPages = parentEl.scrollHeight / parentEl.clientHeight;
         const pageIdx = Math.ceil(parentEl.scrollTop / parentEl.clientHeight);
-        // const diff =
-        //   parentEl.scrollHeight - (parentEl.scrollTop + parentEl.clientHeight);
-        // debugger;
-        setLimit(pageIdx * pageSize);
-        // if (diff < Y_THRESHOLD) {
-        // setLimit((x) => x + pageSize);
-        // }
+        setLimit((pageIdx + 1) * pageSize);
       };
       parentEl.addEventListener('scroll', handler);
 
