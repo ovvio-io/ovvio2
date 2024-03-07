@@ -7,6 +7,7 @@ import { tuple4ToString } from '../base/tuple.ts';
 import { VCurrent } from '../base/version-number.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { BuildTarget } from '../server/build.ts';
+import { HealthChecker } from './health-check.ts';
 
 const UNHEALTHY_CHECK_COUNT = 5;
 const HEALTH_CHECK_FREQ_MS = kSecondMs;
@@ -19,7 +20,10 @@ const BETA_TENANTS = ['ovvio'];
 const ec2MetadataToken = new EC2MetadataToken();
 
 async function getArchiveURL(target: BuildTarget): Promise<string> {
-  const tenantId = await getTenantId(ec2MetadataToken);
+  const tenantId =
+    Deno.build.os === 'darwin'
+      ? 'localhost'
+      : await getTenantId(ec2MetadataToken);
   let channel = '';
   if (tenantId) {
     if (ALPHA_TENANTS.includes(tenantId)) {
@@ -114,7 +118,7 @@ async function _startChildServerProcess(
     '3',
     path.join(settings.serverBinaryDir, binaryFileName),
     '--silent',
-    // `--port=${port}`,
+    `--port=${port}`,
     `--serverId=${idx}`,
     `--pool=${idx}:${count}`,
     '-d',
@@ -159,28 +163,18 @@ async function _startChildServerProcess(
   }
   console.log(`Server successfully started on port ${port}`);
   // Health check for this process
-  let failureCount = 0;
-  const intervalId = setInterval(async () => {
-    try {
-      const resp = await fetch(`http://localhost:${port}/healthy`);
-      if (resp.status !== 200) {
-        if (++failureCount === UNHEALTHY_CHECK_COUNT) {
-          console.log(`Server failed health check on port ${port}. Killing...`);
-          child.kill('SIGKILL');
-        }
-      } else {
-        failureCount = 0;
-      }
-    } catch (_err: unknown) {
-      if (++failureCount === UNHEALTHY_CHECK_COUNT) {
-        console.log(`Server failed health check on port ${port}. Killing...`);
-        child.kill('SIGKILL');
-      }
-    }
-  }, HEALTH_CHECK_FREQ_MS);
+  const healthChecker = new HealthChecker(
+    `http://localhost:${port}/healthy`,
+    HEALTH_CHECK_FREQ_MS,
+    () => {
+      console.log(`Server failed health check on port ${port}. Killing...`);
+      child.kill('SIGKILL');
+    },
+    UNHEALTHY_CHECK_COUNT,
+  );
   // Cleanup on process termination
   child.status.finally(() => {
-    clearInterval(intervalId);
+    healthChecker.stop();
   });
   return child;
 }
