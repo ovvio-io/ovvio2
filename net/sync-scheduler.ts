@@ -26,7 +26,7 @@ export interface SyncConfig {
 
 export const kSyncConfigClient: SyncConfig = {
   minSyncFreqMs: 0.3 * kSecondMs,
-  maxSyncFreqMs: 3 * kSecondMs,
+  maxSyncFreqMs: 5 * kSecondMs,
   syncDurationMs: kSecondMs,
   pollingBackoffDurationMs: 20 * kSecondMs,
 };
