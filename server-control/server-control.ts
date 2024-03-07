@@ -9,8 +9,8 @@ import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { BuildTarget } from '../server/build.ts';
 import { HealthChecker } from './health-check.ts';
 
-const UNHEALTHY_CHECK_COUNT = 5;
-const HEALTH_CHECK_FREQ_MS = kSecondMs;
+const UNHEALTHY_CHECK_COUNT = 20;
+const HEALTH_CHECK_FREQ_MS = 3 * kSecondMs;
 const CHECK_UPDATED_INTERVAL_MS = 5 * kSecondMs;
 const SERVER_STARTUP_TIMEOUT_MS = kSecondMs;
 

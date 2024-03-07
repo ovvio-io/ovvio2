@@ -19,7 +19,7 @@ export class HealthChecker {
       () => this.doCheck(),
       `HealthChecker:${url}`,
     );
-    this._timeoutIntervalMs = checkFreqMs / 2;
+    this._timeoutIntervalMs = checkFreqMs * 0.9;
     this.start();
   }
 
