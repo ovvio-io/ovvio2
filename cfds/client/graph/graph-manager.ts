@@ -618,10 +618,10 @@ export class GraphManager
   builtinVertexKeys(): string[] {
     const rootKey = this.rootKey;
     return [
-      'ViewGlobal',
-      'ViewTasks',
-      'ViewNotes',
-      'ViewOverview',
+      // 'ViewGlobal',
+      // 'ViewTasks',
+      // 'ViewNotes',
+      // 'ViewOverview',
       'ViewWsSettings',
       `${rootKey}-ws`,
     ];
