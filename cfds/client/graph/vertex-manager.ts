@@ -125,13 +125,17 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     // Run local lookup for this key in all known repositories
-    const hasInitialState = initialState !== undefined;
-    if (!hasInitialState) {
-      const [_id, repo] = graph.repositoryForKey(key);
-      if (repo) {
-        initialState = repo.valueForKey(key);
-      }
+    let repo: Repository<MemRepoStorage> | undefined =
+      graph.repositoryForKey(key)[1];
+    if (!repo && initialState) {
+      repo = graph.repository(
+        repositoryForRecord(key, initialState, graph.rootKey),
+      );
     }
+    if (repo && repo.hasKey(key)) {
+      initialState = repo.valueForKey(key);
+    }
+    const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
     this.rebuildVertex();
     if (hasInitialState) {
@@ -190,7 +194,7 @@ export class VertexManager<V extends Vertex = Vertex>
     const rec = this.record;
     const repo = rec.isNull
       ? undefined
-      : repositoryForRecord(this.key, this.record);
+      : repositoryForRecord(this.key, this.record, this.graph.rootKey);
     return repo || this.graph.repositoryForKey(this.key)[0];
   }
 

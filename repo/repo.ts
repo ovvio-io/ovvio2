@@ -1384,7 +1384,11 @@ export class Repository<
       c = this.getCommit(c);
     }
     const record = this.recordForCommit(c);
-    const repoFieldName = repositoryForRecord(c.key, record);
+    const repoFieldName = repositoryForRecord(
+      c.key,
+      record,
+      this.trustPool.currentSession.owner,
+    );
     if (repoFieldName === kRecordIdField) {
       const commit = typeof c === 'string' ? this.getCommit(c) : c;
       assert(commit !== undefined && commit.key !== undefined);
