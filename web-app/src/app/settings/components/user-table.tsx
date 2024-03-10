@@ -17,6 +17,40 @@ import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
+const useEditableColumnStyles = makeStyles(() => ({
+  columnStyle: {
+    display: 'flex',
+    width: 138,
+    height: '20px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    border: 'none',
+    outline: 'none',
+    background: 'none',
+    color: theme.colors.text,
+    fontSize: 10,
+    lineHeight: '18px',
+    letterSpacing: 0.06,
+    fontFamily: 'Poppins',
+  },
+  columnStyleFirst: {
+    width: 153,
+    fontSizt: 13,
+  },
+  editLine: {
+    width: 135,
+    height: '1px',
+    background: theme.primary.p8,
+    margin: '5px 0px 0px 0px',
+  },
+  editLineFirst: {
+    width: 151,
+  },
+  invalidInput: {
+    border: '1px solid red',
+  },
+}));
+
 type EditableColumnProps = {
   index: number;
   placeholder: string;
@@ -31,33 +65,7 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   value,
   isValid,
 }) => {
-  const useStyles = makeStyles(() => ({
-    columnStyle: {
-      display: 'flex',
-      width: index === 1 ? '153px' : '138px',
-      height: '20px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      border: 'none',
-      outline: 'none',
-      background: 'none',
-      color: theme.colors.text,
-      fontSize: index === 1 ? 13 : 10,
-      lineHeight: '18px',
-      letterSpacing: 0.06,
-      fontFamily: 'Poppins',
-    },
-    editLine: {
-      width: index === 1 ? '151px' : '135px',
-      height: '1px',
-      background: theme.primary.p8,
-      margin: '5px 0px 0px 0px',
-    },
-    invalidInput: {
-      border: '1px solid red',
-    },
-  }));
-  const styles = useStyles();
+  const styles = useEditableColumnStyles();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -75,7 +83,11 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   return (
     <div>
       <input
-        className={cn(styles.columnStyle, !isValid ? styles.invalidInput : '')}
+        className={cn(
+          styles.columnStyle,
+          index === 1 && styles.columnStyleFirst,
+          !isValid ? styles.invalidInput : '',
+        )}
         placeholder={placeholder}
         value={inputValue}
         ref={inputRef}
@@ -83,11 +95,102 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
           setCurrState(event.target.value);
         }}
       ></input>
-      <div className={cn(styles.editLine)}></div>
+      <div
+        className={cn(styles.editLine, index === 1 && styles.editLineFirst)}
+      ></div>
     </div>
   );
 };
 // ============================================================================================================
+
+const useTableRowStyles = makeStyles(() => ({
+  rowContainer: {
+    position: 'relative',
+    left: '-71px',
+    width: '843px',
+  },
+  rowRight: {
+    display: 'flex',
+    position: 'relative',
+    left: '71px',
+    padding: '12px 16px',
+    marginBottom: '1px',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
+    width: '772px',
+    borderRadius: '2px',
+    backgroundColor: '#FFF',
+  },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#FBF6EF',
+      itemMenu: {
+        opacity: 1,
+      },
+    },
+  },
+  rowLeft: {
+    position: 'absolute',
+    width: '71px',
+    left: '40px',
+    top: '9px',
+  },
+  rowLeftHover: {
+    left: '0px',
+  },
+  selectHover: {
+    position: 'absolute',
+    width: '71px',
+    left: '10px',
+    top: '9px',
+  },
+  selectedRow: {
+    backgroundColor: '#F5F9FB',
+    border: '1px solid #CCE3ED',
+    boxSizing: 'border-box',
+    height: '44px',
+    width: '805px',
+    hover: 'none',
+  },
+  firstColumnStyle: {
+    display: 'flex',
+    width: '200px',
+    height: '20px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    color: theme.colors.text,
+    fontSize: 13,
+    lineHeight: '18px',
+    letterSpacing: '0.0.75px',
+    fontWeight: '400',
+  },
+  otherColumnStyle: {
+    display: 'flex',
+    width: '176px',
+    height: '17px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    fontSize: 10,
+    color: theme.colors.text,
+    lineHeight: '14px',
+    fontWeight: '400',
+  },
+  editLine: {
+    width: '480px',
+    height: '1px',
+    background: theme.primary.p8,
+    margin: '5px 0px 0px 0px',
+  },
+  itemMenu: {
+    opacity: 0,
+    ...styleguide.transition.short,
+    transitionProperty: 'opacity',
+  },
+  itemMenuOpen: {
+    opacity: 1,
+  },
+}));
 type TableRowProps = {
   user: User;
   newUser?: boolean;
@@ -98,7 +201,8 @@ type TableRowProps = {
   isEditValid?: boolean;
   enabled?: boolean;
 };
-const TableRow: React.FC<TableRowProps> = ({
+
+function TableRow({
   user,
   newUser,
   isSelected,
@@ -106,97 +210,8 @@ const TableRow: React.FC<TableRowProps> = ({
   editMode,
   addMemberMode,
   enabled,
-}) => {
-  const useStyles = makeStyles(() => ({
-    rowContainer: {
-      position: 'relative',
-      left: '-71px',
-      width: '843px',
-    },
-    rowRight: {
-      display: 'flex',
-      position: 'relative',
-      left: '71px',
-      padding: '12px 16px',
-      marginBottom: '1px',
-      alignItems: 'center',
-      gap: '8px',
-      boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-      width: '772px',
-      borderRadius: '2px',
-      backgroundColor: '#FFF',
-    },
-    hoverableRow: {
-      ':hover': {
-        backgroundColor: '#FBF6EF',
-        itemMenu: {
-          opacity: 1,
-        },
-      },
-    },
-    rowLeft: {
-      position: 'absolute',
-      width: '71px',
-      left: '40px',
-      top: '9px',
-    },
-    rowLeftHover: {
-      left: '0px',
-    },
-    selectHover: {
-      position: 'absolute',
-      width: '71px',
-      left: '10px',
-      top: '9px',
-    },
-    selectedRow: {
-      backgroundColor: '#F5F9FB',
-      border: '1px solid #CCE3ED',
-      boxSizing: 'border-box',
-      height: '44px',
-      width: '805px',
-      hover: 'none',
-    },
-    firstColumnStyle: {
-      display: 'flex',
-      width: '200px',
-      height: '20px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      color: theme.colors.text,
-      fontSize: 13,
-      lineHeight: '18px',
-      letterSpacing: '0.0.75px',
-      fontWeight: '400',
-    },
-    otherColumnStyle: {
-      display: 'flex',
-      width: '176px',
-      height: '17px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      fontSize: 10,
-      color: theme.colors.text,
-      lineHeight: '14px',
-      fontWeight: '400',
-    },
-    editLine: {
-      width: '480px',
-      height: '1px',
-      background: theme.primary.p8,
-      margin: '5px 0px 0px 0px',
-    },
-    itemMenu: {
-      opacity: 0,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-    },
-    itemMenuOpen: {
-      opacity: 1,
-    },
-  }));
-
-  const styles = useStyles();
+}: TableRowProps) {
+  const styles = useTableRowStyles();
   const graphManager = useGraphManager();
   const [localName, setLocalName] = useState(user.name);
   const [localEmail, setLocalEmail] = useState(user.email);
@@ -458,9 +473,65 @@ const TableRow: React.FC<TableRowProps> = ({
       )}
     </div>
   );
-};
+}
 
 //============================================+++++++=====================================================
+
+const useUserTableStyles = makeStyles(() => ({
+  tableContainer: {
+    width: '843px',
+    display: 'flex',
+    position: 'relative',
+  },
+  tableContent: {
+    flex: 1,
+  },
+  rowRight: {
+    padding: '12px 23px 12px 16px',
+    marginBottom: '1px',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
+    width: '115px',
+    borderRadius: '2px',
+    backgroundColor: '#FFF',
+  },
+  firstColumnStyle: {
+    display: 'flex',
+    width: '200px',
+    height: '20px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    color: theme.colors.text,
+    fontSize: 13,
+    lineHeight: '18px',
+    letterSpacing: '0.0.75px',
+    fontWeight: '400',
+  },
+  selectedRow: {
+    backgroundColor: '#F5F9FB',
+    border: '1px solid #CCE3ED',
+    boxSizing: 'border-box',
+    height: '44px',
+    width: '805px',
+    hover: 'none',
+  },
+  hoverableRow: {
+    ':hover': {
+      backgroundColor: '#FBF6EF',
+    },
+  },
+  addMemberButton: {
+    display: 'flex',
+    gap: '8px',
+  },
+  scrollTable: {
+    maxHeight: '100px',
+    overflowY: 'scroll',
+    overflowX: 'visible',
+  },
+}));
+
 type UserTableProps = {
   showSelection: boolean;
   onRowSelect: (user: string) => void;
@@ -471,7 +542,7 @@ type UserTableProps = {
   enabled?: boolean;
 };
 
-const UserTable: React.FC<UserTableProps> = ({
+function UserTable({
   showSelection,
   selectedUsers,
   onRowSelect,
@@ -479,63 +550,8 @@ const UserTable: React.FC<UserTableProps> = ({
   editMode,
   addMemberMode,
   enabled,
-}) => {
-  const useStyles2 = makeStyles(() => ({
-    tableContainer: {
-      width: '843px',
-      display: 'flex',
-      position: 'relative',
-    },
-    tableContent: {
-      flex: 1,
-    },
-    rowRight: {
-      padding: '12px 23px 12px 16px',
-      marginBottom: '1px',
-      alignItems: 'center',
-      gap: '8px',
-      boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-      width: '115px',
-      borderRadius: '2px',
-      backgroundColor: '#FFF',
-    },
-    firstColumnStyle: {
-      display: 'flex',
-      width: '200px',
-      height: '20px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      color: theme.colors.text,
-      fontSize: 13,
-      lineHeight: '18px',
-      letterSpacing: '0.0.75px',
-      fontWeight: '400',
-    },
-    selectedRow: {
-      backgroundColor: '#F5F9FB',
-      border: '1px solid #CCE3ED',
-      boxSizing: 'border-box',
-      height: '44px',
-      width: '805px',
-      hover: 'none',
-    },
-    hoverableRow: {
-      ':hover': {
-        backgroundColor: '#FBF6EF',
-      },
-    },
-    addMemberButton: {
-      display: 'flex',
-      gap: '8px',
-    },
-    scrollTable: {
-      maxHeight: '100px',
-      overflowY: 'scroll',
-      overflowX: 'visible',
-    },
-  }));
-
-  const styles = useStyles2();
+}: UserTableProps) {
+  const styles = useUserTableStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [newUser, setNewUser] = useState<VertexManager>();
   const graphManager = useGraphManager();
@@ -601,5 +617,5 @@ const UserTable: React.FC<UserTableProps> = ({
       </div>
     </div>
   );
-};
+}
 export default UserTable;
