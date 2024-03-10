@@ -145,7 +145,6 @@ export function onKeyboardArrow(
 }
 
 function renderCaret(ctx: RenderContext) {
-  debugger;
   if (!ctx.doc.ranges) {
     const caret = getCaretDiv(ctx, 'p');
     if (caret) {

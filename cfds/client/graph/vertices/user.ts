@@ -3,10 +3,15 @@ import { Vertex } from '../vertex.ts';
 import { assert } from '../../../../base/error.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { UserSettings } from './user-settings.ts';
-import { NS_USER_SETTINGS } from '../../../base/scheme-types.ts';
+import {
+  NS_USER_SETTINGS,
+  UserPermission,
+} from '../../../base/scheme-types.ts';
 import { normalizeEmail } from '../../../../base/string.ts';
+import * as SetUtils from '../../../../base/set.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
 import { MutationPack } from '../mutations.ts';
+import { kAllUserPermissions } from '../../../base/scheme-types.ts';
 
 export type UserMetadataKey = 'companyRoles' | 'comments' | 'team';
 
@@ -113,6 +118,10 @@ export class User extends BaseVertex {
     this.record.set('metadata', d);
   }
 
+  getRoles(): string[] {
+    const roles = (this.metadata.get('companyRoles') || '').split(',');
+    return roles.filter((v) => v.length > 0);
+  }
   get teams(): string[] {
     return parseTeams(this.metadata.get('team'));
   }
@@ -123,8 +132,33 @@ export class User extends BaseVertex {
   ): MutationPack {
     return ['teams', local, parseTeams(oldValue?.get('team'))];
   }
+
+  get permissions(): Set<UserPermission> {
+    return this.record.get('permissions') || new Set();
+  }
+
+  set permissions(s: Set<UserPermission>) {
+    s = normalizePermissions(s);
+    if (s.size > 0) {
+      this.record.set('permissions', s);
+    } else {
+      this.record.delete('permissions');
+    }
+  }
+
+  clearPermissions(): void {
+    this.record.delete('permissions');
+  }
 }
 
 function parseTeams(str: string | undefined): string[] {
   return (str || '').split(',').filter((x) => x.length > 0);
+}
+
+function normalizePermissions(s: Set<UserPermission>): Set<UserPermission> {
+  s = SetUtils.filter(s, (v) => kAllUserPermissions.includes(v));
+  if (s.has('manage:users')) {
+    s.add('view:settings:org');
+  }
+  return s;
 }

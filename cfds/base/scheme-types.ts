@@ -279,3 +279,10 @@ export function decodeTagId(
     comps.length > 1 ? decodeURIComponent(comps[1]) : null,
   ];
 }
+
+export const kAllUserPermissions = [
+  'view:dashboard',
+  'view:settings:org',
+  'manage:users',
+] as const;
+export type UserPermission = (typeof kAllUserPermissions)[number];

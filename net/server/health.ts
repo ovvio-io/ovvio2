@@ -4,7 +4,7 @@ export class HealthCheckEndpoint implements Endpoint {
   filter(
     server: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     if (req.method !== 'GET') {
       return false;
@@ -16,12 +16,15 @@ export class HealthCheckEndpoint implements Endpoint {
   processRequest(
     server: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     return Promise.resolve(
       new Response('OK', {
         status: 200,
-      })
+        headers: {
+          'Cache-control': 'no-store',
+        },
+      }),
     );
   }
 }

@@ -19,7 +19,11 @@ import { Repository, RepositoryType } from './repo.ts';
  *
  * @returns A repository id.
  */
-export function repositoryForRecord(key: string | null, rec: Record): string {
+export function repositoryForRecord(
+  key: string | null,
+  rec: Record,
+  rootKey: string | undefined,
+): string {
   let storage: RepositoryType;
   let id: string;
   switch (rec.scheme.namespace) {
@@ -39,7 +43,7 @@ export function repositoryForRecord(key: string | null, rec: Record): string {
     case SchemeNamespace.USER_SETTINGS:
       assert(
         typeof key === 'string' && key.endsWith(KEY_SUFFIX_SETTINGS),
-        'Invalid key for settings record'
+        'Invalid key for settings record',
       );
       storage = 'user';
       id = key.substring(0, key.length - KEY_SUFFIX_SETTINGS.length);
@@ -48,6 +52,12 @@ export function repositoryForRecord(key: string | null, rec: Record): string {
     case SchemeNamespace.VIEWS:
       storage = 'user';
       id = rec.get<string>('owner')!;
+      break;
+
+    case SchemeNamespace.EVENTS:
+      assert(rootKey !== undefined);
+      storage = 'events';
+      id = rootKey;
       break;
 
     case SchemeNamespace.Null:

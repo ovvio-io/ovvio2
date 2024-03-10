@@ -13,6 +13,7 @@ import {
   MOBILE_PADDING,
   DisplayBar,
 } from './display-bar/index.tsx';
+import { Dashboard } from '../dashboard/dashboard.tsx';
 import { KanbanView } from './kanban-view/index.tsx';
 import { ListViewNew } from './list-view/index.tsx';
 import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
@@ -84,7 +85,7 @@ export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
   const [selectedCards, setSelectedCards] = useState<Set<VertexManager<Note>>>(
-    new Set()
+    new Set(),
   );
   let content = null;
   const onCloseMultiSelect = () => {
@@ -103,7 +104,9 @@ export function CardsDisplay() {
     }
   };
 
-  if (view.viewType === 'list') {
+  if (view.selectedTabId === 'overview') {
+    content = <Dashboard />;
+  } else if (view.viewType === 'list') {
     content = (
       <ListViewNew
         key={'list'}
@@ -116,7 +119,6 @@ export function CardsDisplay() {
   } else if (view.viewType === 'board') {
     content = <KanbanView className={cn(styles.contentView)} />;
   }
-
   return (
     <div className={cn(styles.displayRoot)}>
       <div className={cn(styles.displayMain)}>

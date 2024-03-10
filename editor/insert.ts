@@ -228,7 +228,6 @@ export function handleInsertTextInputEvent(
   }
   const paragraphs = rawInsertData.split(NEWLINE_REGEX);
   let result: Document = document;
-  debugger;
   for (let i = 0; i < paragraphs.length; ++i) {
     if (i > 0) {
       result = handleNewline(result, selectionId);

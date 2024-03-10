@@ -121,30 +121,26 @@ export function CfdsClientProvider({
     },
     `${graphManager.rootKey}-ws`,
   );
-  // manager.getVertexManager(getLastUsedViewKey(manager)).scheduleSync();
+
   const globalView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey },
     'ViewGlobal',
-    true,
   );
   const tasksView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewTasks',
-    true,
   ).manager;
   const notesView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewNotes',
-    true,
   ).manager;
   const overviewView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,
     { owner: graphManager.rootKey, parentView: 'ViewGlobal' },
     'ViewOverview',
-    true,
   ).manager;
 
   const wsSettingsView = graphManager.createVertex<View>(
@@ -153,45 +149,6 @@ export function CfdsClientProvider({
     'ViewWsSettings',
     true,
   ).manager;
-
-  const lastUsed = graphManager.getVertex<View>(lastUsedKey);
-  if (!lastUsed.record.has('workspaceBarCollapsed')) {
-    lastUsed.workspaceBarCollapsed = device <= Devices.Tablet;
-  }
-  globalView.update(kViewPropsGlobal, lastUsed);
-  if (globalView.selectedTabId === 'overview') {
-    overviewView.getVertexProxy().update(kViewPropsTab, lastUsed);
-  } else if (globalView.selectedTabId === 'notes') {
-    notesView.getVertexProxy().update(kViewPropsTab, lastUsed);
-  } else {
-    tasksView.getVertexProxy().update(kViewPropsTab, lastUsed);
-  }
-  let saveViewTimeout: number | undefined;
-  const timeoutCallback = () => {
-    saveViewTimeout = undefined;
-    const globalView = graphManager.getVertex<View>('ViewGlobal');
-    const activeView =
-      globalView.selectedTabId === 'notes'
-        ? notesView
-        : globalView.selectedTabId === 'overview'
-        ? overviewView
-        : tasksView;
-    graphManager
-      .getVertex<View>(lastUsedKey)
-      .update(kViewPersistentProps, globalView, activeView.getVertexProxy());
-  };
-  const changeCallback = () => {
-    if (saveViewTimeout) {
-      clearTimeout(saveViewTimeout);
-    }
-    saveViewTimeout = setTimeout(timeoutCallback, 3 * kSecondMs);
-  };
-  globalView.onVertexChanged(changeCallback);
-  notesView.onVertexChanged(changeCallback);
-  tasksView.onVertexChanged(changeCallback);
-  overviewView.onVertexChanged(changeCallback);
-
-  // kDemoDataPromise.then(data => graphManager.importSubGraph(data, true));
 
   useEffect(() => {
     const clientData: ClientData = getClientData() || {

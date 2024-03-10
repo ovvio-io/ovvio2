@@ -461,7 +461,7 @@ function TabView() {
     [view]
   );
   const tabs: React.ReactElement[] = [];
-  for (const tabId of ['tasks', 'notes'] as TabId[]) {
+  for (const tabId of ['tasks', 'notes', 'overview'] as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
   return (

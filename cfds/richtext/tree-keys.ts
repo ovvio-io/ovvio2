@@ -9,51 +9,44 @@ import {
 import { encodableValueHash } from '../../base/core-types/encoding/index.ts';
 import { dfs, ElementNode, kCoreValueTreeNodeOpts } from './tree.ts';
 import { isElementNode } from './tree.ts';
+import { isTextNode } from './tree.ts';
 
-export type NodeKey = { id: string };
-
-// ID => { id: <ID> } mapping
-const gAllocatedKeys: Dictionary<string, NodeKey> = new Map();
+export type NodeKey = string;
 
 export class TreeKeys implements Clonable, Equatable<TreeKeys> {
   private readonly _root: ElementNode;
-  private readonly _keys: Dictionary<CoreValue, NodeKey>;
-  private readonly _counts: Dictionary<CoreValue, number>;
-  private readonly _nodeByKey: Dictionary<string, CoreValue>;
+  private readonly _nodeToKey: Dictionary<CoreValue, string>;
+  private readonly _keyToNode: Dictionary<string, CoreValue>;
+  private readonly _hashToCount: Dictionary<string, number>;
 
   constructor(root: ElementNode) {
     this._root = root;
-    this._keys = new Map();
-    this._counts = new HashMap<CoreValue, number>(
-      (v) => encodableValueHash(v, kCoreValueTreeNodeOpts),
-      (v1, v2) => coreValueEquals(v1, v2, kCoreValueTreeNodeOpts),
+    this._nodeToKey = new HashMap<CoreValue, string>(
+      encodableValueHash,
+      coreValueEquals,
     );
-    this._nodeByKey = new Map();
+    this._keyToNode = new Map();
+    this._hashToCount = new Map();
     for (const [node] of dfs(root)) {
       this.keyFor(node);
     }
   }
 
   keyFor(node: CoreValue): NodeKey {
-    const keys = this._keys;
-    const nodeByKey = this._nodeByKey;
-    let nodeKey = keys.get(node);
-    if (nodeKey === undefined) {
-      const counts = this._counts;
-      const idx: number = counts.get(node) || 0;
+    let result = this._nodeToKey.get(node);
+    if (!result) {
       const hash = encodableValueHash(node, kCoreValueTreeNodeOpts);
-      const tagName = (isElementNode(node) && node.tagName) || undefined;
-      const id = `${tagName || ''}/${hash}/${idx}`;
-      nodeKey = gAllocatedKeys.get(id);
-      if (nodeKey === undefined) {
-        nodeKey = { id };
-        gAllocatedKeys.set(id, nodeKey);
-      }
-      keys.set(node, nodeKey);
-      counts.set(node, idx + 1);
-      nodeByKey.set(nodeKey.id, node);
+      const idx: number = this._hashToCount.get(hash) || 0;
+      const tagName =
+        (isElementNode(node) && node.tagName) ||
+        (isTextNode(node) && 'text') ||
+        undefined;
+      result = `${tagName || ''}/${hash}/${idx}`;
+      this._hashToCount.set(hash, idx + 1);
+      this._nodeToKey.set(node, result);
+      this._keyToNode.set(result, node);
     }
-    return nodeKey;
+    return result;
   }
 
   clone(): TreeKeys {
@@ -61,8 +54,8 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
   }
 
   isEqual(other: TreeKeys): boolean {
-    const thisCounts = this._counts;
-    const otherCounts = other._counts;
+    const thisCounts = this._nodeToKey;
+    const otherCounts = other._nodeToKey;
     for (const [key, value] of thisCounts) {
       if (otherCounts.get(key) !== value) {
         return false;
@@ -77,6 +70,6 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
   }
 
   nodeFromKey(key: string): CoreValue | undefined {
-    return this._nodeByKey.get(key);
+    return this._keyToNode.get(key);
   }
 }

@@ -295,17 +295,16 @@ export function TabButton({
   );
 }
 
-export type TabsHeaderProps = React.PropsWithChildren<{
-  selected: TabId | SettingsTabId;
-  setSelected: (type: TabId | SettingsTabId) => void;
+export type TabsHeaderProps<
+  T extends TabId | SettingsTabId = TabId | SettingsTabId,
+> = React.PropsWithChildren<{
+  selected: T;
+  setSelected: (type: T) => void;
   className?: string;
 }>;
-export function TabsHeader({
-  children,
-  selected,
-  setSelected,
-  className,
-}: TabsHeaderProps) {
+export function TabsHeader<
+  T extends TabId | SettingsTabId = TabId | SettingsTabId,
+>({ children, selected, setSelected, className }: TabsHeaderProps<T>) {
   const styles = useStyles();
   const ref = useRef<HTMLDivElement>(null);
   const [isFixedWidth, setIsFixedWidth] = useState(true);
