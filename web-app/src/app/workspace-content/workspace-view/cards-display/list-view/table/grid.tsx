@@ -7,6 +7,7 @@ import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../../core/react-utils/scrolling.tsx';
 import { layout } from '../../../../../../../../styles/layout.ts';
 import { lightColorWheel } from '../../../../../../../../styles/theme.tsx';
+import { Row } from './item.tsx';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
 import { ExpanderIcon } from '../../../../../workspaces-bar/index.tsx';
 import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts';
@@ -196,7 +197,7 @@ function SectionTitle({
           }
         }
       },
-      { threshold: [0], root: scrollParent }
+      { threshold: [0], root: scrollParent },
     );
     observer.observe(sentinel);
     return () => {
@@ -213,7 +214,7 @@ function SectionTitle({
         <div
           className={cn(
             styles.titleText,
-            groupBy === 'workspace' && styles.wsTitle
+            groupBy === 'workspace' && styles.wsTitle,
           )}
         >
           {header}
@@ -250,7 +251,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         expandedGroupIds.add(section);
       }
     },
-    [view]
+    [view],
   );
 
   const expanded = view.expandedGroupIds.has(expandKey);
@@ -267,12 +268,14 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
             {expanded ? 'Show Less' : !expanded ? 'Show More ' : undefined}
             {expanded
               ? undefined
-              : ` [${allUnpinned && allUnpinned.length - 3}]`}
+              : ` [${
+                  allUnpinned && (allUnpinned.length - 3).toLocaleString()
+                }]`}
           </div>
           <ExpanderIcon
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconOpen
+              expanded && styles.expanderIconOpen,
             )}
           />
         </>
