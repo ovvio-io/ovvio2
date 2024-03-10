@@ -41,7 +41,6 @@ const useStyles = makeStyles(() => ({
     gap: '8px',
     width: '100%',
     minWidth: '120px',
-    // borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
     display: 'flex',
   },
   searchRowStyle: {
@@ -102,6 +101,7 @@ export default function TagPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (tags) {
@@ -115,11 +115,30 @@ export default function TagPicker({
     }
   }, [searchTerm, tags]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        componentRef.current &&
+        !componentRef.current.contains(event.target as Node)
+      ) {
+        debugger;
+        menuCtx.close();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuCtx]);
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value || '');
   };
 
-  const handleRowClick = (tag: Tag) => {
+  const handleRowClick = (
+    tag: Tag,
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    event.stopPropagation();
     onRowSelect(tag);
   };
 
@@ -160,7 +179,7 @@ export default function TagPicker({
   };
 
   return (
-    <div className={cn(styles.tableContainer)}>
+    <div ref={componentRef} className={cn(styles.tableContainer)}>
       {showSearch !== false && (
         <div className={cn(styles.searchRowStyle)}>
           <div className={cn(styles.iconContainer)}>
@@ -189,7 +208,7 @@ export default function TagPicker({
                     styles.hoverableRow,
                     selectedIndex === index && styles.selectedItem
                   )}
-                  onClick={() => handleRowClick(tag)}
+                  onClick={(event) => handleRowClick(tag, event)}
                 >
                   <div className={cn(styles.rowItem)}>
                     {tag ? (

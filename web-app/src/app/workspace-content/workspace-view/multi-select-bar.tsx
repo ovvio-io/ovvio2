@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -19,7 +20,9 @@ import {
   RemoveButton,
   SaveAddButton,
 } from '../../settings/components/settings-buttons.tsx';
-import Menu from '../../../../../styles/components/menu.tsx';
+import Menu, {
+  useMenuContext,
+} from '../../../../../styles/components/menu.tsx';
 import {
   Note,
   Tag,
@@ -217,6 +220,51 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
     </svg>
   );
 };
+
+interface ConfirmationDialogProps {
+  isTask: boolean;
+  nCards: number;
+  handleDeleteClick: () => void;
+  handleCancelClick: () => void;
+}
+
+export function ConfirmationDialog({
+  isTask,
+  nCards,
+  handleDeleteClick,
+  handleCancelClick,
+}: ConfirmationDialogProps) {
+  const styles = useStyles();
+  const componentRef = useRef<HTMLDivElement>(null);
+  const menuCtx = useMenuContext();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        componentRef.current &&
+        !componentRef.current.contains(event.target as Node)
+      ) {
+        console.log('clicked outside of ref');
+        menuCtx.close();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuCtx]);
+
+  return (
+    <div ref={componentRef} className={cn(styles.confirmation)}>
+      {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
+      <div className={cn(styles.confirmationButtons)}>
+        <RemoveButton onRemove={handleDeleteClick} text="Delete" />
+        <CancelButton onCancel={handleCancelClick} />
+      </div>
+    </div>
+  );
+}
+
 interface AddSelectionButtonProps<T> {
   className?: string;
   selectedCards: Set<VertexManager<Note>>;
@@ -228,34 +276,39 @@ export function RemoveMultiButton<T>({
   setSelectedCards,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
+  const view = usePartialView('selectedTabId');
+  const isTask = view.selectedTabId === 'tasks' ? true : false;
+  const nCards = selectedCards.size;
+
   const handleDeleteClick = () => {
     selectedCards.forEach((cardM) => {
       cardM.vertex.isDeleted = 1; //TODO: ask ofri if it should be removed auto from selectedCards when isDeleted is set to 1.
     });
     setSelectedCards!(new Set<VertexManager<Note>>());
   };
-  const view = usePartialView('selectedTabId');
-  const isTask = view.selectedTabId === 'tasks' ? true : false;
-  const nCards = selectedCards.size;
   const handleCancelClick = () => {};
 
   return (
     <Menu
-      renderButton={() => <RemoveButton />}
+      renderButton={() => <RemoveButton text="Delete" />}
       direction="out"
       position="bottom"
       align="end"
       popupClassName={cn(styles.popup)}
     >
-      <React.Fragment>
-        <div className={cn(styles.confirmation)}>
-          {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
-          <div className={cn(styles.confirmationButtons)}>
-            <RemoveButton onRemove={() => handleDeleteClick()} text="Delete" />
-            <CancelButton onCancel={() => handleCancelClick()} />
-          </div>
+      <ConfirmationDialog
+        isTask={isTask}
+        nCards={nCards}
+        handleDeleteClick={handleDeleteClick}
+        handleCancelClick={handleCancelClick}
+      />
+      {/* <div ref={componentRef} className={cn(styles.confirmation)}>
+        {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
+        <div className={cn(styles.confirmationButtons)}>
+          <RemoveButton onRemove={() => handleDeleteClick()} text="Delete" />
+          <CancelButton onCancel={() => handleCancelClick()} />
         </div>
-      </React.Fragment>
+      </div> */}
     </Menu>
   );
 }

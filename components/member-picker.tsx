@@ -37,7 +37,6 @@ const useStyles = makeStyles(() => ({
       backgroundColor: '#FBF6EF',
     },
   },
-
   row: {
     padding: '6px 6px 6px 10px',
     alignItems: 'start',
@@ -106,7 +105,7 @@ export function MemberPicker({
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
   const users = useVertices(usersMn);
-  const componentRef = useRef(null);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (users) {
@@ -120,31 +119,30 @@ export function MemberPicker({
     }
   }, [searchTerm, users]);
 
-  //TODO: its new and needs qa
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         componentRef.current &&
-        !componentRef.current.contains(event.target)
+        !componentRef.current.contains(event.target as Node)
       ) {
         menuCtx.close();
       }
     };
-
-    // Add click event listener
     document.addEventListener('mousedown', handleClickOutside);
-
-    // Cleanup the event listener on component unmount
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [menuCtx]); // Add dependencies if any state or props are used in the handleClickOutside function
+  }, [menuCtx]);
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value || '');
   };
 
-  const handleRowClick = (user: User) => {
+  const handleRowClick = (
+    user: User,
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    event.stopPropagation();
     onRowSelect(user);
   };
 
@@ -218,7 +216,7 @@ export function MemberPicker({
                     styles.hoverableRow,
                     selectedIndex === index && styles.selectedItem
                   )}
-                  onClick={() => handleRowClick(user)}
+                  onClick={(event) => handleRowClick(user, event)}
                 >
                   <div className={cn(styles.rowItem)}>
                     {user ? user.name : null}
