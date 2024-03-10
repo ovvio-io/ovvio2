@@ -57,9 +57,10 @@ import {
   decodeTagId,
   encodeTagId,
 } from '../../../../../cfds/base/scheme-types.ts';
-import { getValueFromTextNode } from '../../../../../../../../Library/Caches/deno/npm/registry.npmjs.org/@smithy/smithy-client/2.1.16/dist-types/get-value-from-text-node.d.ts';
-import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
-import { isAbsolute } from 'std/path/is_absolute.ts';
+import {
+  ToastProvider,
+  useToastController,
+} from '../../../../../styles/components/toast/index.tsx';
 
 const useStyles = makeStyles(
   () => ({
@@ -302,13 +303,6 @@ export function RemoveMultiButton<T>({
         handleDeleteClick={handleDeleteClick}
         handleCancelClick={handleCancelClick}
       />
-      {/* <div ref={componentRef} className={cn(styles.confirmation)}>
-        {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
-        <div className={cn(styles.confirmationButtons)}>
-          <RemoveButton onRemove={() => handleDeleteClick()} text="Delete" />
-          <CancelButton onCancel={() => handleCancelClick()} />
-        </div>
-      </div> */}
     </Menu>
   );
 }
@@ -318,6 +312,10 @@ export function AssignMultiButton<T>({
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
   const allWorkspaces: Set<Workspace> = new Set();
+  const { displayToast } = useToastController();
+  const view = usePartialView('selectedTabId');
+  const isTask = view.selectedTabId === 'tasks' ? true : false;
+
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
     allWorkspaces.add(card.workspace)
   );
@@ -337,13 +335,60 @@ export function AssignMultiButton<T>({
   const intersectionUsersArray = Array.from(intersectionUsers);
 
   const onRowSelect = (user: User) => {
+    const previousAssignees = new Map<VertexManager<Note>, Set<User>>();
     selectedCards.forEach((card) => {
+      //TODO: ask ofri for a better way.
+      previousAssignees.set(card, new Set(card.vertex.assignees));
       card.vertex.assignees.add(user);
     });
+
+    displayToast({
+      text: `${user.name} assigned to ${selectedCards.size} ${
+        isTask ? 'tasks' : 'notes'
+      }`,
+      duration: 300000,
+      action: {
+        text: 'Undo',
+        fn: (dismiss) => {
+          selectedCards.forEach((card) => {
+            const prevAssignees = previousAssignees.get(card);
+            if (prevAssignees) {
+              card.vertex.assignees = prevAssignees;
+            }
+          });
+          dismiss();
+        },
+      },
+    });
   };
+
   const onClearAssignees = () => {
+    const previousAssignees = new Map<VertexManager<Note>, Set<User>>();
+    selectedCards.forEach((card) => {
+      previousAssignees.set(card, new Set(card.vertex.assignees));
+    });
+
     selectedCards.forEach((card) => {
       card.vertex.assignees.clear();
+    });
+
+    displayToast({
+      text: `Cleared all assignees from ${selectedCards.size} ${
+        isTask ? 'tasks' : 'notes'
+      }`,
+      duration: 3000,
+      action: {
+        text: 'Undo',
+        fn: (dismiss) => {
+          selectedCards.forEach((card) => {
+            const prevAssignees = previousAssignees.get(card);
+            if (prevAssignees) {
+              card.vertex.assignees = prevAssignees;
+            }
+          });
+          dismiss();
+        },
+      },
     });
   };
 
@@ -481,34 +526,36 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
     onClose && onClose();
   };
   return (
-    <div className={styles.MultiSelectBarStyle}>
-      <div className={styles.wizardContainerStyle}>
-        <div className={styles.toggleActions}>
-          {<img src="/icons/design-system/selectedCheck.svg" />}
+    <ToastProvider>
+      <div className={styles.MultiSelectBarStyle}>
+        <div className={styles.wizardContainerStyle}>
+          <div className={styles.toggleActions}>
+            {<img src="/icons/design-system/selectedCheck.svg" />}
 
-          <TextSm>{selectedCards.size} selected </TextSm>
-          <div className={styles.separateLine}> | </div>
-          <TextSm
-            onClick={selectAll}
-            className={cn(
-              styles.toggleViewButton,
-              selectedCards.size === 1 && styles.toggleViewButtonDisabled
-            )}
-          >
-            Select All
-          </TextSm>
+            <TextSm>{selectedCards.size} selected </TextSm>
+            <div className={styles.separateLine}> | </div>
+            <TextSm
+              onClick={selectAll}
+              className={cn(
+                styles.toggleViewButton,
+                selectedCards.size === 1 && styles.toggleViewButtonDisabled
+              )}
+            >
+              Select All
+            </TextSm>
+          </div>
+          <div className={styles.functionContainer}>
+            <AssignMultiButton selectedCards={selectedCards} />
+            <AddTagMultiButton selectedCards={selectedCards} />
+            {/* <DueDateMultiSelect /> */}
+            <RemoveMultiButton
+              selectedCards={selectedCards}
+              setSelectedCards={setSelectedCards}
+            />
+          </div>
+          <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />
         </div>
-        <div className={styles.functionContainer}>
-          <AssignMultiButton selectedCards={selectedCards} />
-          <AddTagMultiButton selectedCards={selectedCards} />
-          {/* <DueDateMultiSelect /> */}
-          <RemoveMultiButton
-            selectedCards={selectedCards}
-            setSelectedCards={setSelectedCards}
-          />
-        </div>
-        <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />
       </div>
-    </div>
+    </ToastProvider>
   );
 };
