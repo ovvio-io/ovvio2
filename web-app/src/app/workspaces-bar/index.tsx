@@ -73,7 +73,7 @@ import { getOrganizationId } from '../../../../net/rest-api.ts';
 import { assert } from '../../../../base/error.ts';
 import { verifyRequestSignature } from '../../../../auth/session.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
-import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view-new/infinite-scroll.tsx';
+import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 const COLLAPSED_WIDTH = styleguide.gridbase * 14;
