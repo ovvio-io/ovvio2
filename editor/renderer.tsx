@@ -286,7 +286,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
         )}
         ref={ref}
         dir={dir}
-        key={id}
+        key={`TaskElementDiv:${id}`}
         id={id}
         data-ovv-key={id}
       >
@@ -307,6 +307,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                     .sort(coreValueCompare)
                     .map((u) => (
                       <Menu
+                        key={`TaskAssignee:${id}:${u.key}`}
                         renderButton={() => (
                           <AssigneeChip
                             className={cn(styles.assigneeChip)}
@@ -338,6 +339,7 @@ const TaskElement = React.forwardRef<HTMLDivElement, TaskElementProps>(
                   .sort(coreValueCompare)
                   .map((tag) => (
                     <Menu
+                      key={`TaskTag:${id}:${tag.key}`}
                       renderButton={() => (
                         <TagChip
                           className={cn(styles.assigneeChip)}
@@ -430,7 +432,7 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
       className={cn(...classNames, styles.editorSpan)}
       key={htmlId}
       id={htmlId}
-      data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node).id}
+      data-ovv-node-key={ctx.doc.nodeKeys.keyFor(node)}
     >
       {node.text}
     </span>
@@ -477,7 +479,7 @@ ParagraphElementNode) {
         id={htmlId}
         data-ovv-key={id}
         dir={dir}
-        data-ovv-node-key={ctx.doc.nodeKeys.keyFor(element).id}
+        data-ovv-node-key={ctx.doc.nodeKeys.keyFor(element)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         // width="100%"
@@ -509,7 +511,7 @@ type EditorNodeProps = React.PropsWithChildren<{
 }>;
 
 export function domIdFromNodeKey(ctx: RenderContext, node: CoreValue): string {
-  return `${ctx.editorId}/${ctx.doc.nodeKeys.keyFor(node).id}`;
+  return `${ctx.editorId}/${ctx.doc.nodeKeys.keyFor(node)}`;
 }
 
 export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
@@ -531,16 +533,14 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
 
   let children: JSX.Element[] | undefined;
   if (isElementNode(node)) {
-    children = node.children.map((n) => {
-      return (
-        <EditorNode
-          node={n as MarkupNode}
-          ctx={ctx}
-          key={ctx.doc.nodeKeys.keyFor(node).id}
-          onChange={onChange}
-        />
-      );
-    });
+    children = node.children.map((n) => (
+      <EditorNode
+        node={n as MarkupNode}
+        ctx={ctx}
+        key={`EditorNode:${ctx.doc.nodeKeys.keyFor(n)}`}
+        onChange={onChange}
+      />
+    ));
   }
 
   const focusNode =
@@ -556,9 +556,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h1':
       return (
         <h1
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h1Element)}
         >
@@ -569,9 +569,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h2':
       return (
         <h2
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h2Element)}
         >
@@ -582,9 +582,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h3':
       return (
         <h3
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h2Element)}
         >
@@ -595,9 +595,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h4':
       return (
         <h4
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h2Element)}
         >
@@ -608,9 +608,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h5':
       return (
         <h5
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h2Element)}
         >
@@ -621,9 +621,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'h6':
       return (
         <h6
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.h2Element)}
         >
@@ -634,9 +634,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'ol':
       return (
         <ol
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           start={node.start}
           dir={dir}
           className={cn(styles.listElement)}
@@ -648,9 +648,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'ul':
       return (
         <ul
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           className={cn(styles.listElement)}
         >
@@ -661,9 +661,9 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     case 'li':
       return (
         <li
-          key={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
           id={htmlId}
-          data-ovv-key={ctx.doc.nodeKeys.keyFor(node).id}
+          data-ovv-key={ctx.doc.nodeKeys.keyFor(node)}
           dir={dir}
           style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
         >
@@ -687,7 +687,8 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
       }
       return (
         <TaskElement
-          id={ctx.doc.nodeKeys.keyFor(node).id}
+          key={ctx.doc.nodeKeys.keyFor(node)}
+          id={ctx.doc.nodeKeys.keyFor(node)}
           task={graph.getVertexManager<Note>(node.ref)}
           dir={dir}
           focused={elementInFocusPath}
@@ -708,13 +709,13 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
       return (
         <ParagraphElementNode
           element={node}
-          id={ctx.doc.nodeKeys.keyFor(node).id}
+          id={ctx.doc.nodeKeys.keyFor(node)}
           htmlId={htmlId}
           dir={dir}
           onNewTask={() => {
             const newDoc = docClone(ctx.doc);
             const newNode = newDoc.nodeKeys.nodeFromKey(
-              ctx.doc.nodeKeys.keyFor(node).id,
+              ctx.doc.nodeKeys.keyFor(node),
             )! as MarkupElement;
             (newNode as CoreObject).tagName = 'ref';
             (newNode as CoreObject).ref = uniqueId();
@@ -745,12 +746,13 @@ export function RichTextRenderer({ ctx, onChange }: RichTextRendererProps) {
           comparePointers,
         )
       : undefined;
+
   return ctx.doc.root.children.map((node) => {
     return (
       <EditorNode
         node={node as MarkupNode}
         ctx={ctx}
-        key={ctx.doc.nodeKeys.keyFor(node).id}
+        key={`EditorNode:${ctx.doc.nodeKeys.keyFor(node)}`}
         onChange={onChange}
       />
     );

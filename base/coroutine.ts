@@ -21,7 +21,7 @@ import { NextEventLoopCycleTimer, Timer } from './timer.ts';
 // Hopefully the UI is running at 60 fps
 const kSingleFrameMs = 1000 / 60;
 // 1/3 of a frame every event loop cycle
-const kSchedulerCycleTimeMs = kSingleFrameMs / 3;
+const kSchedulerCycleTimeMs = kSingleFrameMs / 6;
 
 /**
  * Coroutines wrapped as promises support cancellation out of the box
@@ -63,7 +63,7 @@ export class Coroutine<T = unknown> {
   static pack<T = unknown>(
     id: number,
     g: Generator<T, T>,
-    name?: string
+    name?: string,
   ): [Coroutine<T>, CancellablePromise<T>] {
     let resolve: (v: T | undefined) => void;
     const promise = new Promise<T>((res) => {
@@ -103,7 +103,7 @@ export class Coroutine<T = unknown> {
     readonly id: number,
     generator: Generator<T, T>,
     doneHandler: (v: T | undefined) => void,
-    name?: string
+    name?: string,
   ) {
     this._generator = generator;
     this._doneHandler = doneHandler;
@@ -273,7 +273,7 @@ export interface Scheduler {
   schedule<T>(
     g: Generator<T, T>,
     priority?: SchedulerPriority,
-    name?: string
+    name?: string,
   ): CancellablePromise<T>;
 }
 
@@ -291,6 +291,7 @@ export class CoroutineScheduler implements Scheduler {
   private readonly _cycleTimeMs: number;
   private _scheduledCoroutines: Coroutine<unknown>[][]; // priority -> Coroutine[]
   private _coroutineId: number;
+  private _tickCount = 0;
 
   /**
    * @returns The default, shared, scheduler instance.
@@ -366,6 +367,11 @@ export class CoroutineScheduler implements Scheduler {
    * @returns true if executed something, false if no Coroutines are scheduled.
    */
   private tick(): boolean {
+    if (this._tickCount !== 0) {
+      this._tickCount = (this._tickCount + 1) % 3;
+      return true;
+    }
+    ++this._tickCount;
     const normalStartTime = getRelativeTimestamp();
     const normalQueue = this._scheduledCoroutines[SchedulerPriority.Normal];
     const backgroundQueue =
@@ -394,12 +400,12 @@ export class CoroutineScheduler implements Scheduler {
   schedule<T = unknown>(
     g: Generator<T, T>,
     priority: SchedulerPriority = SchedulerPriority.Normal,
-    name?: string
+    name?: string,
   ): CancellablePromise<T> {
     const [coroutine, promise] = Coroutine.pack<T>(
       ++this._coroutineId,
       g,
-      name
+      name,
     );
     const queue = this._scheduledCoroutines[priority];
     queue.push(coroutine as Coroutine<unknown>);
@@ -423,7 +429,7 @@ export class CoroutineScheduler implements Scheduler {
     iter: Iterable<T>,
     mapper: (v: T) => O,
     priority = SchedulerPriority.Normal,
-    name?: string
+    name?: string,
   ): CancellablePromise<O[]> {
     return this.schedule(mapGenerator(iter, mapper), priority, name);
   }
@@ -433,7 +439,7 @@ const kSharedScheduler = new CoroutineScheduler();
 
 function* mapGenerator<T, O = T>(
   iter: Iterable<T>,
-  mapper: (v: T) => O
+  mapper: (v: T) => O,
 ): Generator<O[], O[]> {
   const result: O[] = [];
   for (const v of iter) {
@@ -473,7 +479,7 @@ export class CoroutineQueue implements Scheduler {
    */
   constructor(
     scheduler?: Scheduler,
-    priority: SchedulerPriority = SchedulerPriority.Normal
+    priority: SchedulerPriority = SchedulerPriority.Normal,
   ) {
     this.scheduler = scheduler || CoroutineScheduler.sharedScheduler();
     this.priority = priority;
@@ -503,7 +509,7 @@ export class CoroutineQueue implements Scheduler {
   schedule<T = unknown>(
     g: Generator<T, T>,
     _priority?: SchedulerPriority,
-    name?: string
+    name?: string,
   ): CancellablePromise<T> {
     const [coroutine, promise] = Coroutine.pack<T>(++this._id, g, name);
     this._queue.push(coroutine as Coroutine<unknown>);

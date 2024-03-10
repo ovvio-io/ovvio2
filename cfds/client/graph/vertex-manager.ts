@@ -41,6 +41,7 @@ import { repositoryForRecord } from '../../../repo/resolver.ts';
 import { serviceUnavailable } from '../../base/errors.ts';
 import { ServerError } from '../../base/errors.ts';
 import { Code } from '../../base/errors.ts';
+import { concatChanges } from '../../base/object.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -124,13 +125,17 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     // Run local lookup for this key in all known repositories
-    const hasInitialState = initialState !== undefined;
-    if (!hasInitialState) {
-      const [_id, repo] = graph.repositoryForKey(key);
-      if (repo) {
-        initialState = repo.valueForKey(key);
-      }
+    let repo: Repository<MemRepoStorage> | undefined =
+      graph.repositoryForKey(key)[1];
+    if (!repo && initialState) {
+      repo = graph.repository(
+        repositoryForRecord(key, initialState, graph.rootKey),
+      );
     }
+    if (repo && repo.hasKey(key)) {
+      initialState = repo.valueForKey(key);
+    }
+    const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
     this.rebuildVertex();
     if (hasInitialState) {
@@ -172,7 +177,7 @@ export class VertexManager<V extends Vertex = Vertex>
       : prevRecord.diffKeys(newRecord, true)) {
       pack = mutationPackAppend(pack, [
         fieldName,
-        false,
+        true,
         (vert as any)[fieldName],
       ]);
     }
@@ -189,7 +194,7 @@ export class VertexManager<V extends Vertex = Vertex>
     const rec = this.record;
     const repo = rec.isNull
       ? undefined
-      : repositoryForRecord(this.key, this.record);
+      : repositoryForRecord(this.key, this.record, this.graph.rootKey);
     return repo || this.graph.repositoryForKey(this.key)[0];
   }
 
@@ -325,18 +330,27 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
-      const startChangeCount = this._localMutationsCount;
-      const updated = await repo.setValueForKey(this.key, this.record);
-      if (this._localMutationsCount !== startChangeCount) {
-        this.scheduleCommitIfNeeded();
-      } else {
+      const baseRecord = this.record;
+      const updated = await repo.setValueForKey(this.key, baseRecord);
+      if (!this.record.isEqual(baseRecord)) {
         if (updated) {
-          this.touch();
-          this._hasLocalEdits = false;
-          this.vertexDidMutate(['hasPendingChanges', true, true]);
+          const repoRecord = repo.valueForKey(this.key);
+          if (repoRecord.isEqual(baseRecord)) {
+            this.scheduleCommitIfNeeded();
+          } else {
+            const localChanges = baseRecord.diff(this.record, true);
+            const remoteChanges = baseRecord.diff(repoRecord, false);
+            baseRecord.patch(concatChanges(remoteChanges, localChanges));
+            this.record = baseRecord;
+            this._hasLocalEdits = true;
+            this.vertexDidMutate(['hasPendingChanges', true, true]);
+          }
           this.graph.client(repoId)?.touch();
+        } else {
+          this.scheduleCommitIfNeeded();
         }
-        this._commitDelayTimer.unschedule();
+      } else {
+        this._hasLocalEdits = false;
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {

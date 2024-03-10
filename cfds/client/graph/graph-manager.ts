@@ -17,10 +17,12 @@ import {
   VertexManager,
 } from './vertex-manager.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
-import { MicroTaskTimer } from '../../../base/timer.ts';
+import { MicroTaskTimer, Timer } from '../../../base/timer.ts';
+import { CoroutineTimer } from '../../../base/coroutine-timer.ts';
 import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
 import { unionIter } from '../../../base/set.ts';
+import { kDayMs } from '../../../base/date.ts';
 import {
   SharedQueriesManager,
   SharedQueryName,
@@ -29,7 +31,7 @@ import {
 import { VertexSource, VertexSourceEvent } from './vertex-source.ts';
 import { AdjacencyList, SimpleAdjacencyList } from './adj-list.ts';
 import { MemRepoStorage, Repository } from '../../../repo/repo.ts';
-import { Commit } from '../../../repo/commit.ts';
+import { Commit, commitContentsIsRecord } from '../../../repo/commit.ts';
 import { IDBRepositoryBackup } from '../../../repo/idbbackup.ts';
 import { RepoClient } from '../../../net/repo-client.ts';
 import {
@@ -51,6 +53,8 @@ import {
   SerialScheduler,
 } from '../../../base/serial-scheduler.ts';
 import { slices } from '../../../base/array.ts';
+import { OrderedMap } from '../../../base/collections/orderedmap.ts';
+import { downloadJSON } from '../../../base/browser.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -93,6 +97,17 @@ interface RepositoryPlumbing {
   active: boolean;
 }
 
+export interface OrganizationStats extends JSONObject {
+  assigneeChange: number;
+  tagChange: number;
+  dueDateChange: number;
+  pinChange: number;
+  createNote: number;
+  createTask: number;
+  createSubtask: number;
+  createTag: number;
+}
+
 export class GraphManager
   extends Emitter<VertexSourceEvent | 'status-changed'>
   implements VertexSource
@@ -101,9 +116,9 @@ export class GraphManager
   private readonly _trustPool: TrustPool;
   private readonly _adjList: AdjacencyList;
   private readonly _vertManagers: Dictionary<string, VertexManager>;
-  private readonly _pendingMutations: Dictionary<string, MutationPack>;
+  private readonly _pendingMutations: OrderedMap<string, MutationPack>;
   private readonly _undoManager: UndoManager;
-  private readonly _processPendingMutationsTimer: MicroTaskTimer;
+  private readonly _processPendingMutationsTimer: Timer;
   private readonly _executedFieldTriggers: Map<string, string[]>;
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
@@ -115,9 +130,13 @@ export class GraphManager
     this._trustPool = trustPool;
     this._adjList = new SimpleAdjacencyList();
     this._vertManagers = new Map();
-    this._pendingMutations = new Map();
-    this._processPendingMutationsTimer = new MicroTaskTimer(() =>
-      this._processPendingMutations(),
+    this._pendingMutations = new OrderedMap();
+    // this._processPendingMutationsTimer = new MicroTaskTimer(() =>
+    //   this._processPendingMutations(),
+    // );
+    this._processPendingMutationsTimer = new CoroutineTimer(
+      CoroutineScheduler.sharedScheduler(),
+      () => this._processPendingMutations(),
     );
     this._executedFieldTriggers = new Map();
     this._undoManager = new UndoManager(this);
@@ -207,6 +226,12 @@ export class GraphManager
       return 'sync';
     }
     return offlineCount === this._repoById.size ? 'offline' : 'idle';
+  }
+
+  *repositories(): Generator<[string, Repository<MemRepoStorage>]> {
+    for (const [key, plumbing] of this._repoById) {
+      yield [key, plumbing.repo];
+    }
   }
 
   async loadRepository(id: string): Promise<void> {
@@ -303,6 +328,10 @@ export class GraphManager
     this.plumbingForRepository(repoId).client?.startSyncing();
   }
 
+  stopSyncing(repoId: string): void {
+    this.plumbingForRepository(repoId).client?.stopSyncing();
+  }
+
   async prepareRepositoryForUI(repoId: string): Promise<void> {
     await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
@@ -347,6 +376,9 @@ export class GraphManager
         if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
           return;
         }
+        if (c.createdLocally) {
+          return;
+        }
         // The following line does two major things:
         //
         // 1. It creates the vertex manager if it doesn't already exist.
@@ -355,8 +387,10 @@ export class GraphManager
         //
         // 2. A commit will be performed if we need to merge some newly
         //    discovered commits.
+        const namespace = repo.valueForKey(c.key).scheme.namespace;
         if (
-          repo.valueForKey(c.key).scheme.namespace !== SchemeNamespace.SESSIONS
+          namespace !== SchemeNamespace.SESSIONS &&
+          namespace !== SchemeNamespace.EVENTS
         ) {
           const mgr = this.getVertexManager(c.key);
           // if (
@@ -584,10 +618,10 @@ export class GraphManager
   builtinVertexKeys(): string[] {
     const rootKey = this.rootKey;
     return [
-      'ViewGlobal',
-      'ViewTasks',
-      'ViewNotes',
-      'ViewOverview',
+      // 'ViewGlobal',
+      // 'ViewTasks',
+      // 'ViewNotes',
+      // 'ViewOverview',
       'ViewWsSettings',
       `${rootKey}-ws`,
     ];
@@ -658,24 +692,23 @@ export class GraphManager
       return;
     }
     if (this._pendingMutations.size > 0) {
-      const mutations: [VertexManager, MutationPack][] = new Array(
-        this._pendingMutations.size,
-      );
-      let i = 0;
-      for (const [key, mut] of this._pendingMutations) {
-        mutations[i++] = [
-          this.getVertexManager(key),
-          mutationPackOptimize(mut),
-        ];
+      const batchSize = 100;
+      const mutations: [VertexManager, MutationPack][] = [];
+      for (let i = 0; i < batchSize; ++i) {
+        const key = this._pendingMutations.startKey;
+        if (!key) {
+          break;
+        }
+        const mut = this._pendingMutations.get(key);
+        mutations[i] = [this.getVertexManager(key), mutationPackOptimize(mut)];
+        this._pendingMutations.delete(key);
       }
-      const pendingMutations = Array.from(this._pendingMutations.entries());
-      this._pendingMutations.clear();
 
       //Send mutations to index/query/undo ...
       this._undoManager.update(mutations);
 
       this._executedFieldTriggers.clear();
-      for (const [key, pack] of pendingMutations) {
+      for (const [key, pack] of mutations) {
         this.emit('vertex-changed', key, pack);
       }
     }
@@ -834,5 +867,79 @@ export class GraphManager
     console.log('Key Mapping:');
     console.log(keysMapping);
     return result;
+  }
+
+  downloadOrgStats(days = 1): void {
+    const startTs = Date.now() - kDayMs * days;
+    const stats = new Map<string, OrganizationStats>();
+    const sysDir = this.getSysDir();
+
+    for (const [repoId, repo] of this.repositories()) {
+      if (Repository.parseId(repoId)[0] !== 'data') {
+        continue;
+      }
+      for (const key of repo.keys()) {
+        if (repo.valueForKey(key).scheme.namespace === SchemeNamespace.NOTES) {
+          for (const c of repo.commitsForKey(key)) {
+            if (c.timestamp.getTime() < startTs || c.parents.length > 1) {
+              continue;
+            }
+            const session = this.trustPool.getSession(c.session);
+            if (!session) {
+              continue;
+            }
+            assert(session.owner !== undefined);
+            const userRecord = sysDir.valueForKey(session.owner);
+            const domain = userRecord.has('email')
+              ? userRecord.get<string>('email')!.split('@')[1]
+              : 'unknown';
+            let domainStats = stats.get(domain);
+            if (!domainStats) {
+              domainStats = {
+                assigneeChange: 0,
+                tagChange: 0,
+                dueDateChange: 0,
+                pinChange: 0,
+                createNote: 0,
+                createTask: 0,
+                createSubtask: 0,
+                createTag: 0,
+              };
+              stats.set(domain, domainStats);
+            }
+            if (c.parents.length === 0) {
+              if (!commitContentsIsRecord(c.contents)) {
+                continue;
+              }
+            }
+            const changedFields = repo.changedFieldsInCommit(c);
+            if (changedFields?.includes('assignees')) {
+              ++domainStats.assigneeChange;
+            }
+            if (changedFields?.includes('tags')) {
+              ++domainStats.tagChange;
+            }
+            if (changedFields?.includes('dueDate')) {
+              ++domainStats.dueDateChange;
+            }
+            if (changedFields?.includes('pinnedBy')) {
+              ++domainStats.pinChange;
+            }
+          }
+        }
+      }
+    }
+
+    const result: JSONObject = {};
+    for (const [k, v] of stats) {
+      result[k] = v;
+    }
+    downloadJSON('stats.json', result);
+  }
+
+  revertAllKeysToBefore(ts: number): void {
+    for (const [_repoId, repo] of this.repositories()) {
+      repo.revertAllKeysToBefore(ts);
+    }
   }
 }

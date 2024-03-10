@@ -36,6 +36,8 @@ import { kMinuteMs, kSecondMs } from '../base/date.ts';
 import { randomInt } from '../base/math.ts';
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { downloadJSON } from '../base/browser.ts';
+import { CoroutineScheduler } from '../base/coroutine.ts';
+import { SchedulerPriority } from '../base/coroutine.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -243,6 +245,50 @@ export class Repository<
     return false;
   }
 
+  /**
+   * This method computes a quick diff between the given commit and all of its
+   * parents. It determines which fields were changed in this commit, rather
+   * than what the changes were.
+   *
+   * @param commit The commit to inspect.
+   * @returns An array of fields changed in this commit or null if the full
+   *          information isn't yet available for this commit due to partial
+   *          commit graph.
+   */
+  changedFieldsInCommit(commit: Commit | string): string[] | null {
+    if (typeof commit === 'string') {
+      if (!this.hasCommit(commit)) {
+        return null;
+      }
+      commit = this.getCommit(commit);
+    }
+    if (!this.hasRecordForCommit(commit)) {
+      return null;
+    }
+    const finalRecord = this.recordForCommit(commit);
+    const fields = new Set<string>();
+    for (const p of commit.parents) {
+      if (!this.hasRecordForCommit(p)) {
+        return null;
+      }
+      const rec = this.recordForCommit(p);
+      SetUtils.update(fields, rec.diffKeys(finalRecord, false));
+    }
+    return Array.from(fields);
+  }
+
+  /**
+   * This method determines, to a high probability, whether the given commit is
+   * a leaf commit or not, even when the full graph isn't available.
+   *
+   * It works by inspecting the bloom filters of the newest 2log[4](N) commits,
+   * and checking for the presence of the candidate commit. If present in all
+   * filters, the commit guaranteed not to be a leaf.
+   *
+   * @param candidate The commit to inspect.
+   * @returns true if the commit is a leaf and can be safely included in a merge
+   *          commit, false otherwise.
+   */
   commitIsHighProbabilityLeaf(candidate: Commit | string): boolean {
     const id = typeof candidate === 'string' ? candidate : candidate.id;
     if (this._adjList.hasInEdges(id)) {
@@ -261,8 +307,13 @@ export class Repository<
       commitsForKey.length,
       commitsForKey[commitsForKey.length - 1].ancestorsCount,
     );
+    // 2log[fpr](N) = K. Since FPR = 0.25, we're using 2log[4](N).
     const agreementSize = 2 * (Math.log2(graphSize) / Math.log2(4));
     if (commitsForKey.length < agreementSize) {
+      // We must consider the newest commits leaves, otherwise we'd deadlock
+      // and not converge on all branches. These cases work out OK because the
+      // merge will take the latest commit per session thus skipping temporary
+      // gaps in the graph.
       return true;
     }
     const dateCutoff = candidate.timestamp.getTime();
@@ -425,8 +476,10 @@ export class Repository<
           .filter((id) => this.hasCommit(id))
           .map((id) => this.getCommit(id))
           .sort(compareCommitsDesc);
-        if (prioritizedBases.length > 0) {
-          return [prioritizedBases[0], reachedRoot];
+        for (const base of prioritizedBases) {
+          if (this.hasRecordForCommit(base)) {
+            return [base, reachedRoot];
+          }
         }
       }
       let updated = false;
@@ -1033,7 +1086,9 @@ export class Repository<
       } else {
         const leaves = this.leavesForKey(key);
         if (leaves) {
-          result = this.createMergeRecord(leaves)[0];
+          [result] = this.createMergeRecord(
+            leaves, //.filter((c) => this.commitIsHighProbabilityLeaf(c)),
+          );
         }
         if (!result || result.isNull) {
           head = this.findHeadForKeyWithoutMerge(key, session);
@@ -1285,10 +1340,15 @@ export class Repository<
     )) {
       this._runUpdatesOnNewLeafCommit(c);
     }
-    for (const c of result) {
-      // Notify everyone else
-      this.emit('NewCommit', c);
-    }
+    CoroutineScheduler.sharedScheduler().map(
+      result,
+      (c) => this.emit('NewCommit', c),
+      SchedulerPriority.Background,
+    );
+    // for (const c of result) {
+    //   // Notify everyone else
+    //   this.emit('NewCommit', c);
+    // }
     return result;
   }
 
@@ -1328,7 +1388,11 @@ export class Repository<
       c = this.getCommit(c);
     }
     const record = this.recordForCommit(c);
-    const repoFieldName = repositoryForRecord(c.key, record);
+    const repoFieldName = repositoryForRecord(
+      c.key,
+      record,
+      this.trustPool.currentSession.owner,
+    );
     if (repoFieldName === kRecordIdField) {
       const commit = typeof c === 'string' ? this.getCommit(c) : c;
       assert(commit !== undefined && commit.key !== undefined);
@@ -1416,6 +1480,27 @@ export class Repository<
       `${key}-${new Date().toISOString()}.json`,
       this.debugNetworkForKey(key),
     );
+  }
+
+  revertAllKeysToBefore(ts: number): void {
+    for (const key of this.keys()) {
+      const commits = Array.from(this.commitsForKey(key)).sort(
+        compareCommitsDesc,
+      );
+      for (let i = 0; i < commits.length; ++i) {
+        const c = commits[i];
+        if (c.timestamp.getTime() <= ts) {
+          if (i === 0) {
+            break;
+          }
+          if (this.hasRecordForCommit(c)) {
+            console.log(`Reverting ${key} to ${c.timestamp.toLocaleString()}`);
+            this.setValueForKey(key, this.recordForCommit(c));
+            break;
+          }
+        }
+      }
+    }
   }
 }
 

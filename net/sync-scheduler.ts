@@ -26,7 +26,7 @@ export interface SyncConfig {
 
 export const kSyncConfigClient: SyncConfig = {
   minSyncFreqMs: 0.3 * kSecondMs,
-  maxSyncFreqMs: 3 * kSecondMs,
+  maxSyncFreqMs: 5 * kSecondMs,
   syncDurationMs: kSecondMs,
   pollingBackoffDurationMs: 20 * kSecondMs,
 };
@@ -152,17 +152,13 @@ export class SyncScheduler {
     try {
       this._fetchInProgress = true;
       const start = performance.now();
-      // respText = await retry(async () => {
-      respText = await (
-        await sendJSONToURL(
-          this.url,
-          this.trustPool.currentSession,
-          reqArr,
-          this.orgId,
-        )
-      ).text();
-      // return await resp.text();
-      // }, 3 * kSecondMs);
+      const resp = await sendJSONToURL(
+        this.url,
+        this.trustPool.currentSession,
+        reqArr,
+        this.orgId,
+      );
+      respText = resp.status === 200 ? await resp.text() : undefined;
 
       const syncDurationMs = performance.now() - start;
       this._syncFreqAvg.addValue(syncDurationMs);

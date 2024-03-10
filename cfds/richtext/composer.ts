@@ -74,10 +74,10 @@ export function decomposeRichText(
   rt: RichText,
   local = true,
 ): RichText {
-  const atoms = Array.from(decomposeFlatRichText(updater, rt, local));
-  debugger;
-  return reconstructRichText(atoms);
-  // return reconstructRichText(decomposeFlatRichText(updater, rt, local));
+  // const atoms = Array.from(decomposeFlatRichText(updater, rt, local));
+  // debugger;
+  // return reconstructRichText(atoms);
+  return reconstructRichText(decomposeFlatRichText(updater, rt, local));
 }
 
 function* composeFlatRichText(

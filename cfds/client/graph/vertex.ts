@@ -24,6 +24,7 @@ import { assert, notImplemented } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { ValueType } from '../../base/types/index.ts';
 import { isGenerator } from '../../../base/comparisons.ts';
+import * as SetUtils from '../../../base/set.ts';
 import {
   Dictionary,
   isDictionary,
@@ -93,6 +94,7 @@ export class Vertex implements Comparable {
 
   private readonly _manager: VertexManager<typeof this>;
   private _isLocal: boolean;
+  private _cachedVertSetsByField: Map<string, Set<VertexManager>>;
   public isDemoData: boolean;
 
   static registerFieldTriggers(
@@ -192,6 +194,7 @@ export class Vertex implements Comparable {
     this._cachedDepth = -1;
     this._isLocal =
       prevVertex !== undefined ? prevVertex._isLocal : config?.isLocal === true;
+    this._cachedVertSetsByField = new Map();
     this.isDemoData = prevVertex !== undefined ? prevVertex.isDemoData : false;
   }
 
@@ -365,6 +368,10 @@ export class Vertex implements Comparable {
     const result = this._dispatchMutationCallback(pack);
     // if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
     this._runFieldTriggers(pack);
+
+    for (const [fieldName] of mutationPackIter(pack)) {
+      this._cachedVertSetsByField.delete(fieldName);
+    }
     // }
     return result;
   }
@@ -499,20 +506,25 @@ export class Vertex implements Comparable {
   }
 
   protected vertSetForField<T extends Vertex>(fieldName: string): Set<T> {
-    const keys = this.record.get(fieldName);
-    if (!keys?.size) {
-      return new Set();
-    }
-
-    const graph = this.graph;
-    const result = new Set<T>();
-    for (const k of keys) {
-      const vert = graph.getVertex<T>(k);
-      if (vert && !vert.isDeleted && !vert.isNull) {
-        result.add(vert);
+    let result: Set<VertexManager> | undefined =
+      this._cachedVertSetsByField.get(fieldName);
+    if (!result) {
+      const keys = this.record.get(fieldName);
+      if (!keys?.size) {
+        result = new Set();
+      } else {
+        const graph = this.graph;
+        result = new Set<VertexManager>();
+        for (const k of keys) {
+          const vert = graph.getVertex<T>(k);
+          if (vert && !vert.isDeleted && !vert.isNull) {
+            result.add(vert.manager);
+          }
+        }
       }
+      this._cachedVertSetsByField.set(fieldName, result);
     }
-    return result;
+    return SetUtils.map(result, (mgr) => mgr.getVertexProxy<T>());
   }
 }
 

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { randomInt } from '../../base/math.ts';
 
 export type CanvasAnimationRenderer = (
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  phase: number
+  phase: number,
 ) => boolean | void;
 
 export interface CanvasAnimationProps {
@@ -16,6 +17,7 @@ export interface CanvasAnimationProps {
   reverse?: boolean; // Defaults to false
   timingFunction?: (x: number) => number; // Defaults to linear
   className?: string;
+  randomOffset?: boolean; // Defaults to false
 }
 
 function linearTiming(x: number): number {
@@ -31,11 +33,20 @@ export function CanvasAnimation({
   reverse,
   timingFunction,
   className,
+  randomOffset,
 }: CanvasAnimationProps) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   let animationId = 0;
   let startTime = 0;
   let cycleCount = 0;
+  const totalFrames = Math.floor(60 * durationMs);
+  const startOffset = useMemo(
+    () =>
+      randomOffset === true
+        ? randomInt(0, Math.floor(60 * durationMs) * 0.17) / totalFrames
+        : 0,
+    [durationMs, randomOffset],
+  );
 
   const renderWrapper = useCallback(
     (now: DOMHighResTimeStamp) => {
@@ -46,18 +57,21 @@ export function CanvasAnimation({
       ctx.save();
       ctx.scale(devicePixelRatio, devicePixelRatio);
       ctx.clearRect(0, 0, width, height);
-      const phase = Math.max(
-        0,
-        Math.min(1, startTime === 0 ? 0 : (now - startTime) / durationMs)
-      );
+      const phase =
+        startOffset +
+        Math.max(
+          0,
+          Math.min(1, startTime === 0 ? 0 : (now - startTime) / durationMs),
+        );
+
       const shouldRepeat =
         render(
           ctx,
           width,
           height,
           (timingFunction || linearTiming)(
-            cycleCount % 2 === 1 && reverse ? 1.0 - phase : phase
-          )
+            cycleCount % 2 === 1 && reverse ? 1.0 - phase : phase,
+          ),
         ) || repeat;
       if (phase < 1 || shouldRepeat) {
         if (startTime === 0) {
@@ -74,7 +88,7 @@ export function CanvasAnimation({
       }
       ctx.restore();
     },
-    [render, ref, durationMs, repeat, width, height]
+    [render, ref, durationMs, repeat, width, height],
   );
 
   useEffect(() => {

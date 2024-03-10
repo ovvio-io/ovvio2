@@ -5,6 +5,7 @@ import {
   AssignButton,
 } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
+import { usePartialRootUser } from '../../../../../core/cfds/react/graph.tsx';
 
 type Step0Props = {
   setStep: (step: number) => void;
@@ -32,13 +33,17 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
     setStep(5);
   };
 
+  const partialRootUser = usePartialRootUser('permissions');
+
   return (
     <div>
       <div style={HeaderContainerStyle}>
         <Bold>Org. Members</Bold>
         <div style={step0ContainerStyle}>
+          {partialRootUser.permissions.has('manage:users') && (
+            <AddMemberButton onAddClick={handleAddMemberClick} />
+          )}
           <AssignButton onAssignClick={handleAssignClick} blue={true} />
-          <AddMemberButton onAddClick={handleAddMemberClick} />
         </div>
       </div>
       <UserTable
@@ -48,6 +53,7 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
         showSearch={true}
         editMode={true}
         addMemberMode={false}
+        enabled={partialRootUser.permissions.has('manage:users')}
       />
     </div>
   );

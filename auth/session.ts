@@ -175,13 +175,11 @@ export async function verifyData<T extends JSONValue>(
   externalData?: JSONValue,
 ): Promise<boolean> {
   if (!signature) {
-    debugger;
     return false;
   }
   const sig =
     typeof signature === 'string' ? decodeSignature(signature) : signature;
   if (!sig || !sig.sessionId || sig.sessionId !== expectedSigner.id) {
-    debugger;
     return false;
   }
   // if (expectedSigner.expiration.getTime() - Date.now() <= 0) {
@@ -189,7 +187,6 @@ export async function verifyData<T extends JSONValue>(
   // }
   // Reject everything signed after the expiration of the signer.
   if (sig.timestamp > expectedSigner.expiration.getTime()) {
-    debugger;
     return false;
   }
   const container: DataToSignContainer = {
@@ -218,9 +215,6 @@ export async function verifyData<T extends JSONValue>(
     buffer,
   );
   gCachedDataVerifications.set(cacheKey, result);
-  if (!result) {
-    debugger;
-  }
   return result;
 }
 
@@ -613,12 +607,10 @@ export class TrustPool {
   async verify(commit: Commit): Promise<boolean> {
     const signerId = signerIdFromCommit(commit);
     if (!signerId) {
-      debugger;
       return false;
     }
     const session = this.getSession(signerId);
     if (!session) {
-      debugger;
       return false;
     }
     return await verifyCommit(session, commit);
