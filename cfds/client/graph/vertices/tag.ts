@@ -4,7 +4,11 @@ import { VertexManager } from '../vertex-manager.ts';
 import { ContentVertex } from './base.ts';
 import { Workspace } from './workspace.ts';
 import { Record } from '../../../base/record.ts';
-import { triggerParent } from '../propagation-triggers.ts';
+import {
+  triggerChildren,
+  triggerParent,
+  triggerCompose,
+} from '../propagation-triggers.ts';
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Query } from '../query.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
@@ -43,10 +47,15 @@ export class Tag extends ContentVertex {
   // }
 
   get childTags(): Tag[] {
-    return Array.from(this.inEdgesManagers<Tag>('parentTag'))
-      .map(([mgr]) => mgr.getVertexProxy())
-      .filter((tag) => tag.isDeleted !== 1)
-      .sort(coreValueCompare);
+    return this.graph
+      .sharedQuery('childTags')
+      .group(this.workspace.key)
+      .filter((mgr) => mgr.getVertexProxy().parentTag?.key === this.key)
+      .map((mgr) => mgr.getVertexProxy());
+    // return Array.from(this.inEdgesManagers<Tag>('parentTag'))
+    //   .map(([mgr]) => mgr.getVertexProxy())
+    //   .filter((tag) => tag.isDeleted !== 1)
+    //   .sort(coreValueCompare);
   }
 
   private _invalidateChildTags(local: boolean): MutationPack {
@@ -163,6 +172,14 @@ export class Tag extends ContentVertex {
       return ['selected', local, true];
     }
   }
+
+  parentTagIsDeletedDidMutate(
+    local: boolean,
+    oldValue: boolean | undefined,
+    parent: Tag,
+  ): MutationPack {
+    return ['parentTag', local, undefined];
+  }
 }
 
 const kFieldTriggersTag: FieldTriggers<Tag> = {
@@ -171,10 +188,18 @@ const kFieldTriggersTag: FieldTriggers<Tag> = {
     'Tag_parent',
     SchemeNamespace.TAGS,
   ),
-  isDeleted: triggerParent(
-    'childIsDeletedDidMutate',
+  isDeleted: triggerCompose(
+    triggerParent(
+      'childIsDeletedDidMutate',
+      'Tag_isDeleted_fromChild',
+      SchemeNamespace.TAGS,
+    ),
+    triggerChildren(
+      'parentTagIsDeletedDidMutate',
+      'Tag_isDeleted_fromParent',
+      SchemeNamespace.TAGS,
+    ),
     'Tag_isDeleted',
-    SchemeNamespace.TAGS,
   ),
   sortStamp: triggerParent(
     'childSortStampDidMutate',
