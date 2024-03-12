@@ -16,7 +16,7 @@ export class Tag extends ContentVertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex && prevVertex instanceof Tag) {
@@ -58,7 +58,7 @@ export class Tag extends ContentVertex {
   childParentTagDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag
+    child: Tag,
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -66,7 +66,7 @@ export class Tag extends ContentVertex {
   childTagIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag
+    child: Tag,
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -96,6 +96,10 @@ export class Tag extends ContentVertex {
     this.selected = false;
   }
 
+  get isChildTag(): boolean {
+    return this.record.has('parentTag');
+  }
+
   get parentTag(): Tag | undefined {
     const key: string | undefined = this.record.get('parentTag');
     const graph = this.graph;
@@ -103,11 +107,6 @@ export class Tag extends ContentVertex {
       return this.graph.getVertex<Tag>(key);
     }
     return undefined;
-  }
-
-  get parentTagKey(): string | undefined {
-    const parentTag = this.parentTag;
-    return parentTag ? parentTag.key : undefined;
   }
 
   set parentTag(parent: Tag | undefined) {
@@ -122,70 +121,41 @@ export class Tag extends ContentVertex {
     this.parentTag = undefined;
   }
 
-  get tagFamily(): Tag[] {
-    if (this._cachedTagFamily === undefined) {
-      const family: Tag[] = [];
-      for (const [neighbor] of this.inEdges('parentTag')) {
-        if (neighbor instanceof Tag && neighbor.isDeleted === 0) {
-          family.push(neighbor);
-        }
-      }
-      family.sort((t1, t2) =>
-        (t1.name || t1.key).localeCompare(t2.name || t2.key)
-      );
-      this._cachedTagFamily = family;
-    }
-    return this._cachedTagFamily;
+  get parentTagKey(): string | undefined {
+    const parentTag = this.parentTag;
+    return parentTag ? parentTag.key : undefined;
   }
 
   // Invalidate our tagFamily when a sub tag joins/leaves our children
   childTagParentDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag
+    child: Tag,
   ): MutationPack {
-    return mutationPackAppend(
-      this._invalidateTagFamily(local),
-      this._invalidateChildTags(local)
-    );
+    return mutationPackAppend(this._invalidateChildTags(local));
   }
 
   childSortStampDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag
+    child: Tag,
   ): MutationPack {
-    return mutationPackAppend(
-      this._invalidateTagFamily(local),
-      this._invalidateChildTags(local)
-    );
-  }
-
-  // Invalidate our tagFamily when a sub tag changes its name
-  childNameDidMutate(
-    local: boolean,
-    oldValue: string | undefined,
-    child: Tag
-  ): MutationPack {
-    return this._invalidateTagFamily(local);
+    return mutationPackAppend(this._invalidateChildTags(local));
   }
 
   // Invalidate our tagFamily when a sub tag's deleted marker changes
   childIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag
+    child: Tag,
   ): MutationPack {
-    return mutationPackAppend(
-      this._invalidateTagFamily(local),
-      this._invalidateChildTags(local)
-    );
+    return mutationPackAppend(this._invalidateChildTags(local));
   }
 
   workspaceSelectedDidMutate(
     local: boolean,
     oldValue: boolean,
-    ws: Workspace
+    ws: Workspace,
   ): MutationPack {
     if (oldValue === true && this.selected) {
       //Workspace has been un-selected > Tag should be un-selected
@@ -193,30 +163,23 @@ export class Tag extends ContentVertex {
       return ['selected', local, true];
     }
   }
-
-  private _invalidateTagFamily(local: boolean): MutationPack {
-    const oldFamily = this.tagFamily;
-    this._cachedTagFamily = undefined;
-    return ['tagFamily', local, oldFamily];
-  }
 }
 
 const kFieldTriggersTag: FieldTriggers<Tag> = {
   parent: triggerParent(
     'childTagParentDidMutate',
     'Tag_parent',
-    SchemeNamespace.TAGS
+    SchemeNamespace.TAGS,
   ),
-  name: triggerParent('childNameDidMutate', 'Tag_name', SchemeNamespace.TAGS),
   isDeleted: triggerParent(
     'childIsDeletedDidMutate',
     'Tag_isDeleted',
-    SchemeNamespace.TAGS
+    SchemeNamespace.TAGS,
   ),
   sortStamp: triggerParent(
     'childSortStampDidMutate',
     'Tag_sortStamp',
-    SchemeNamespace.TAGS
+    SchemeNamespace.TAGS,
   ),
 };
 
