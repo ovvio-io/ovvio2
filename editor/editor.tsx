@@ -122,6 +122,12 @@ function handleTextInputEvent(
   event: InputEvent | KeyboardEvent | ClipboardEvent,
   selectionId: string,
 ): Document {
+  if (event instanceof InputEvent) {
+    if (event.inputType === 'insertParagraph') {
+      return handleInsertTextInputEvent(document, event, selectionId);
+    }
+    return handleInsertTextInputEvent(document, event, selectionId);
+  }
   if (event instanceof KeyboardEvent) {
     if (event.code === 'Space') {
       return handleInsertTextInputEvent(document, event, selectionId);
@@ -129,16 +135,18 @@ function handleTextInputEvent(
     if (event.key === 'Backspace' || event.key === 'Delete') {
       return deleteCurrentSelection(document, selectionId);
     }
-  } else if (event instanceof ClipboardEvent) {
-    return handleInsertTextInputEvent(document, event, selectionId);
-  } else {
-    if (event.type === 'textInput') {
-      return handleInsertTextInputEvent(document, event, selectionId);
-    }
-    if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
-      return deleteCurrentSelection(document, selectionId);
-    }
   }
+  if (event instanceof ClipboardEvent) {
+    return handleInsertTextInputEvent(document, event, selectionId);
+  }
+  // } else {
+  //   if (event.type === 'textInput') {
+  //     return handleInsertTextInputEvent(document, event, selectionId);
+  //   }
+  //   if ((DELETE_INPUT_TYPES as readonly string[]).includes(event.inputType)) {
+  //     return deleteCurrentSelection(document, selectionId);
+  //   }
+  // }
   console.log(event.type);
   debugger;
   return document;
@@ -228,15 +236,11 @@ export const RichTextEditor = forwardRef<
   );
 
   const onBeforeInput = useCallback(
-    (event: React.FormEvent<HTMLDivElement>) => {
+    (event: InputEvent) => {
       const state = note.getVertexProxy().body;
       event.stopPropagation();
       event.preventDefault();
-      const updatedBody = handleTextInputEvent(
-        state,
-        event.nativeEvent as InputEvent,
-        selectionId,
-      );
+      const updatedBody = handleTextInputEvent(state, event, selectionId);
       note.getVertexProxy().body = updatedBody;
     },
     [note],
@@ -333,6 +337,29 @@ export const RichTextEditor = forwardRef<
     }
   }, [partialNote, selectionId]);
   useCaret(ctx);
+
+  useEffect(() => {
+    if (!editorDivRef.current) {
+      return;
+    }
+    const div = editorDivRef.current;
+    div.addEventListener('beforeinput', onBeforeInput);
+    return () => {
+      div.removeEventListener('beforeinput', onBeforeInput);
+    };
+  }, [editorDivRef.current]);
+
+  useLayoutEffect(() => {
+    if (!editorDivRef.current) {
+      return;
+    }
+    const doc = partialNote.body;
+    if (doc.ranges && doc.ranges[selectionId] !== undefined) {
+      editorDivRef.current.focus();
+    } else {
+      editorDivRef.current.blur();
+    }
+  }, [editorDivRef.current, partialNote]);
   return (
     <div
       id={editorId}
@@ -341,7 +368,7 @@ export const RichTextEditor = forwardRef<
       contentEditable={true}
       suppressContentEditableWarning={true}
       dir={baseDirection === 'rtl' ? 'rtl' : undefined}
-      onBeforeInput={onBeforeInput}
+      // onBeforeInput={onBeforeInput}
       onKeyDown={onKeyDown}
       onPaste={onPaste}
       onSelect={(e) => {

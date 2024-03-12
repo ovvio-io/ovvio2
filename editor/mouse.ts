@@ -159,7 +159,6 @@ export function onMouseUp(
       e.clientX,
       e.clientY,
     );
-    debugger;
     if (updatedBody) {
       note.getVertexProxy().body = updatedBody;
     }

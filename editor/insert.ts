@@ -217,8 +217,12 @@ export function handleInsertTextInputEvent(
     rawInsertData = event.clipboardData?.getData('text/plain') || '';
   } else if (event instanceof KeyboardEvent) {
     rawInsertData = event.key;
-  } else {
-    rawInsertData = event.data || '';
+  } else if (event instanceof InputEvent) {
+    if (event.inputType === 'insertParagraph') {
+      rawInsertData = '\n';
+    } else {
+      rawInsertData = event.data || '';
+    }
   }
   if (!rawInsertData.length) {
     return document;
