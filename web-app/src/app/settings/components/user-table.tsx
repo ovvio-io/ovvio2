@@ -34,6 +34,7 @@ const useEditableColumnStyles = makeStyles(() => ({
     fontFamily: 'Poppins',
   },
   columnStyleFirst: {
+    maxWidth: 200,
     width: 200,
     fontSizt: 13,
   },
@@ -48,6 +49,9 @@ const useEditableColumnStyles = makeStyles(() => ({
   },
   invalidInput: {
     border: '1px solid red',
+  },
+  editableColumnContainer: {
+    width: 188,
   },
 }));
 
@@ -81,7 +85,7 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   const inputValue = value !== undefined ? value : '';
 
   return (
-    <div>
+    <div className={cn(styles.editableColumnContainer)}>
       <input
         className={cn(
           styles.columnStyle,
@@ -105,7 +109,7 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
 
 const TABLE_COLUMN_WIDTH_FIRST = 200;
 const TABLE_COLUMN_WIDTH_OTHER = 176;
-const TABLE_COLUMN_WIDTH_PERMISSION = 88;
+const TABLE_COLUMN_WIDTH_PERMISSION = 12 * styleguide.gridbase;
 
 const useTableRowStyles = makeStyles(() => ({
   rowContainer: {
@@ -154,7 +158,7 @@ const useTableRowStyles = makeStyles(() => ({
     border: '1px solid #CCE3ED',
     boxSizing: 'border-box',
     height: '46px',
-    width: 142 * styleguide.gridbase - 71,
+    width: 146 * styleguide.gridbase - 71,
     hover: 'none',
   },
   firstColumnStyle: {
@@ -165,7 +169,6 @@ const useTableRowStyles = makeStyles(() => ({
     lineHeight: '18px',
     letterSpacing: '0.0.75px',
     fontWeight: '400',
-    border: '1px solid red',
   },
   otherColumnStyle: {
     width: TABLE_COLUMN_WIDTH_OTHER,
@@ -174,7 +177,6 @@ const useTableRowStyles = makeStyles(() => ({
     color: theme.colors.text,
     lineHeight: '14px',
     fontWeight: '400',
-    border: '1px solid red',
   },
   editLine: {
     width: '480px',
@@ -489,6 +491,7 @@ const useUserTableStyles = makeStyles(() => ({
     width: 142 * styleguide.gridbase,
     display: 'flex',
     position: 'relative',
+    marginBottom: 4 * styleguide.gridbase,
   },
   tableContent: {
     flex: 1,
@@ -542,7 +545,6 @@ const useUserTableStyles = makeStyles(() => ({
     padding: '12px 16px',
   },
   columnHeaderOther: {
-    border: '1px solid red',
     fontSize: 10,
     width: TABLE_COLUMN_WIDTH_OTHER,
   },
@@ -551,6 +553,7 @@ const useUserTableStyles = makeStyles(() => ({
   },
   columnHeaderPermission: {
     width: TABLE_COLUMN_WIDTH_PERMISSION,
+    textAlign: 'center',
   },
 }));
 

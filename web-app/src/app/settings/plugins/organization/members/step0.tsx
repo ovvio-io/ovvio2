@@ -23,7 +23,7 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
     justifyContent: 'space-between',
     alignItems: 'baseline',
     padding: '50px 0px 29px',
-    maxWidth: '802px',
+    maxWidth: 1136 - 50,
   };
 
   const handleAssignClick = () => {
