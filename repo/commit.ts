@@ -67,7 +67,7 @@ export interface CommitSerializeOptions {
 const FROZEN_COMMITS = new Map<string, Commit>();
 const SERIALIZED_COMMITS = new Map<string, ReadonlyJSONObject>();
 
-const CONNECTION_ID = uniqueId();
+export const CONNECTION_ID = uniqueId();
 
 export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _buildVersion!: VersionNumber;
