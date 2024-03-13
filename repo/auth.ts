@@ -41,10 +41,6 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
     if (userKey === 'root') {
       return true;
     }
-    // A user is always allowed to edit its own record
-    if (userKey === commit.key) {
-      return true;
-    }
     // Operator Access
     const record = repo.valueForKeyReadonlyUnsafe(commit.key);
     const userRecord = repo.valueForKeyReadonlyUnsafe(userKey);
@@ -105,9 +101,9 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         if (userPermissions?.has('manage:users') === true) {
           return true;
         }
-        // Users are allowed to update their own records, as long as they don't
-        // touch protected fields
         if (userKey === commit.key) {
+          // Users are allowed to update their own records, as long as they don't
+          // touch protected fields
           if (!write) {
             return true;
           }
