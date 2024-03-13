@@ -244,9 +244,13 @@ function useStylesInternal(obj: any): Record<string, string> {
   return styles;
 }
 
+export interface ExtendedCSSProperties extends CSSProperties {
+  basedOn?: ExtendedCSSProperties[];
+}
+
 export type StyleDef = Record<
   string,
-  CSSProperties | Record<string, CSSProperties>
+  ExtendedCSSProperties | Record<string, ExtendedCSSProperties>
 >;
 
 export function makeStyles<T extends StyleDef>(
