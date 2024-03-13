@@ -70,7 +70,7 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.column],
   },
   barRow: {
-    padding: `0px ${SIDES_PADDING}`,
+    padding: `0px ${SIDES_PADDING}px`,
     height: styleguide.gridbase * 5,
     basedOn: [layout.row, layout.centerCenter],
   },
@@ -80,12 +80,12 @@ const useStyles = makeStyles(() => ({
     padding: 0,
   },
   filters: {
-    padding: `0px ${SIDES_PADDING}`,
+    padding: `0px ${SIDES_PADDING}px`,
     [MediaQueries.TabletOnly]: {
-      padding: `0px ${TABLET_PADDING}`,
+      padding: `0px ${TABLET_PADDING}px`,
     },
     [MediaQueries.Mobile]: {
-      padding: `0px ${MOBILE_PADDING}`,
+      padding: `0px ${MOBILE_PADDING}px`,
     },
   },
   dropDownButtonText: {
@@ -106,13 +106,13 @@ const useStyles = makeStyles(() => ({
   separator: {
     height: BUTTON_HEIGHT,
     width: 1,
-    margin: `0px ${styleguide.gridbase}`,
+    margin: `0px ${styleguide.gridbase}px`,
     background: theme.secondary.s5,
   },
   filterButton: {
     height: BUTTON_HEIGHT,
     borderRadius: BUTTON_HEIGHT * 0.5,
-    padding: `0px ${styleguide.gridbase * 2}`,
+    padding: `0px ${styleguide.gridbase * 2}px`,
     background: theme.colors.secondaryButton,
     color: theme.colors.text,
     basedOn: [useButtonStyles.button],
