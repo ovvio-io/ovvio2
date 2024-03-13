@@ -28,6 +28,7 @@ import {
 import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { usePartialRootUser } from '../../../core/cfds/react/graph.tsx';
 
 const TABLE_COLUMN_WIDTH_FIRST = 200;
 const TABLE_COLUMN_WIDTH_OTHER = 176;
@@ -268,6 +269,7 @@ function TableRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const [isNameValid, setIsNameValid] = useState(true);
   const [isEmailValid, setIsEmailValid] = useState(true);
+  const partialRootUser = usePartialRootUser('permissions');
 
   const onSaveEdit = (
     userKey: string,
@@ -427,6 +429,7 @@ function TableRow({
         type="checkbox"
         onChange={onPermissionChange('view:dashboard')}
         checked={partialUser.permissions.has('view:dashboard')}
+        disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
     <div key="Perm/ViewOrgSettings" className={cn(styles.permissionsColumn)}>
@@ -434,6 +437,7 @@ function TableRow({
         type="checkbox"
         onChange={onPermissionChange('view:settings:org')}
         checked={partialUser.permissions.has('view:settings:org')}
+        disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
     <div key="Perm/ManageUsers" className={cn(styles.permissionsColumn)}>
@@ -441,6 +445,7 @@ function TableRow({
         type="checkbox"
         onChange={onPermissionChange('manage:users')}
         checked={partialUser.permissions.has('manage:users')}
+        disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
   ];
