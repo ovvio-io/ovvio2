@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 0,
     flexBasis: '33%',
     boxSizing: 'border-box',
-    marginRight: styleguide.gridbase * 2,
+    marginRight: styleguide.gridbase * 3.5,
     backgroundColor: lightColorWheel.secondary.s1,
     borderRadius: '4px',
     borderStyle: 'solid',

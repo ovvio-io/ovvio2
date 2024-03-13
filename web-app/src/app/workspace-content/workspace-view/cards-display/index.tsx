@@ -151,7 +151,15 @@ export function CardsDisplay() {
       />
     );
   } else if (view.viewType === 'board') {
-    content = <KanbanView className={cn(styles.contentView)} />;
+    content = (
+      <KanbanView
+        key={'board'}
+        className={cn(styles.contentView)}
+        selectedCards={selectedCards}
+        setSelectedCards={setSelectedCards}
+        handleSelectClick={handleSelectClick}
+      />
+    );
   }
   return (
     <PendingActionProvider>

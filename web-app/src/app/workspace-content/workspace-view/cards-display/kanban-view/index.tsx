@@ -23,16 +23,22 @@ import {
 import { CoreValue } from '../../../../../../../base/core-types/base.ts';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/index.ts';
+import {
+  Note,
+  User,
+} from '../../../../../../../cfds/client/graph/vertices/index.ts';
 import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 import Tooltip from '../../../../../../../styles/components/tooltip/index.tsx';
 import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { CheckIcon } from '../../../../workspaces-bar/index.tsx';
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
 import { resolveWritingDirection } from '../../../../../../../base/string.ts';
+import { usePendingAction } from '../index.tsx';
+import { useDisable } from '../../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
+    position: 'relative',
     overflowY: 'auto',
     height: '100%',
     paddingBottom: styleguide.gridbase * 2,
@@ -88,6 +94,9 @@ const useStyles = makeStyles((theme) => ({
   rtl: {
     direction: 'rtl',
     textAlign: 'left',
+  },
+  multiSelectActive: {
+    zIndex: 9,
   },
 }));
 const useStrings = createUseStrings(localization);
@@ -156,13 +165,25 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
   return header;
 }
 
-export function KanbanView({ className }: { className?: string }) {
+interface KanbanViewProps {
+  className?: string;
+  selectedCards: Set<VertexManager<Note>>;
+  setSelectedCards: (card: Set<VertexManager<Note>>) => void;
+  handleSelectClick: (card: Note) => void;
+}
+export function KanbanView({
+  className,
+  handleSelectClick,
+  selectedCards,
+}: KanbanViewProps) {
   const styles = useStyles();
   const view = usePartialView('groupBy');
   const groupBy = view.groupBy;
   const filteredNotes = useFilteredNotes('BoardView');
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
+  const { isDisabled } = useDisable()!;
+  const { pendingAction, setPendingAction } = usePendingAction();
 
   const groups = useMemo(() => {
     const s = new Set<CoreValue>();
@@ -202,7 +223,14 @@ export function KanbanView({ className }: { className?: string }) {
   return (
     <Scroller>
       {(ref) => (
-        <div ref={ref} className={cn(styles.boardRoot, className)}>
+        <div
+          ref={ref}
+          className={cn(
+            styles.boardRoot,
+            isDisabled && styles.multiSelectActive,
+            className
+          )}
+        >
           {groups.slice(0, xLimit).map((group, index) => (
             <KanbanColumn
               header={headerForGroupId(group)}
@@ -224,6 +252,10 @@ export function KanbanView({ className }: { className?: string }) {
                     size={CardSize.Small}
                     key={noteMgr.key}
                     showWorkspaceOnCard={showWorkspaceOnCard}
+                    handleSelectClick={handleSelectClick}
+                    isSelected={selectedCards.has(noteMgr)}
+                    multiIsActive={selectedCards.size > 0}
+                    isInAction={pendingAction}
                   />
                 ))}
               {pinnedQuery && pinnedQuery.group(group).length > 0 && (
@@ -239,6 +271,10 @@ export function KanbanView({ className }: { className?: string }) {
                     size={CardSize.Small}
                     key={noteMgr.key + index}
                     showWorkspaceOnCard={showWorkspaceOnCard}
+                    handleSelectClick={handleSelectClick}
+                    isSelected={selectedCards.has(noteMgr)}
+                    multiIsActive={selectedCards.size > 0}
+                    isInAction={pendingAction}
                   />
                 ))}
             </KanbanColumn>

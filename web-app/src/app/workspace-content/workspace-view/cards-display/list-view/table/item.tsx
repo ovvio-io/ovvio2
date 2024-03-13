@@ -279,12 +279,12 @@ const useStyles = makeStyles(() => ({
   },
   selectedIconContainer: {
     position: 'absolute',
-    left: '-30px',
+    left: '-28px',
     top: '10px',
     cursor: 'pointer',
   },
   selectIconContainer: {
-    left: '-72px',
+    left: '-70px',
     cursor: 'cell',
   },
   multiIsActive: {
@@ -296,6 +296,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface SelectIconContainerProps {
+  className?: string;
   workspace: VertexManager<Workspace>;
   isSelected: boolean;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
@@ -303,7 +304,8 @@ interface SelectIconContainerProps {
 
   cardKey: string;
 }
-function SelectIconContainer({
+export function SelectIconContainer({
+  className,
   onClick,
   workspace,
   isSelected,
@@ -325,7 +327,8 @@ function SelectIconContainer({
     <div
       className={cn(
         !isSelected && styles.selectIconContainer,
-        styles.selectedIconContainer
+        styles.selectedIconContainer,
+        className
       )}
       style={style}
       // onClick={() => handleSelectClick(cardKey)}
