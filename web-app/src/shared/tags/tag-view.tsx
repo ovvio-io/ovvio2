@@ -137,7 +137,7 @@ export function TagPillView({
         className,
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
-        menuOnHover && styles.onHover
+        menuOnHover && styles.onHover,
       )}
       style={{
         ...style,
@@ -174,10 +174,12 @@ export default function TagView({
 }: PillViewProps) {
   const styles = useStyles();
   const partialTag = usePartialVertex(tag, ['parentTag']);
-  const siblings = usePartialVertices<Tag>(
-    partialTag.parentTag?.childTags || [],
-    ['name']
-  );
+  const partialParentTag = usePartialVertex(partialTag.parentTag?.manager, [
+    'childTags',
+  ]);
+  const siblings = usePartialVertices<Tag>(partialParentTag?.childTags || [], [
+    'name',
+  ]);
   const onChange = (t: Tag | typeof DELETE_TAG) => {
     if (t === DELETE_TAG) {
       onDelete(tag.getVertexProxy());

@@ -1,23 +1,10 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-  DependencyList,
-} from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   NS_WORKSPACE,
   NS_NOTES,
   NS_TAGS,
 } from '../../../../../cfds/base/scheme-types.ts';
-import { GraphManager } from '../../../../../cfds/client/graph/graph-manager.ts';
-import {
-  SortDescriptor,
-  Query,
-  UnionQuery,
-  Predicate,
-  QueryOptions,
-} from '../../../../../cfds/client/graph/query.ts';
+import { Query, QueryOptions } from '../../../../../cfds/client/graph/query.ts';
 import {
   SharedQueryName,
   SharedQueryType,
@@ -28,10 +15,7 @@ import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { Tag } from '../../../../../cfds/client/graph/vertices/tag.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import { useGraphManager } from './graph.tsx';
-import { usePartialVertex } from './vertex.ts';
-import { assert } from '../../../../../base/error.ts';
 import { CoreValue } from '../../../../../base/core-types/base.ts';
-import { Repository } from '../../../../../repo/repo.ts';
 
 export interface IAsyncQuery {
   called: boolean;
@@ -58,68 +42,18 @@ export interface UseQueryResult<T extends Vertex = Vertex> {
   results: VertexManager<T>[];
 }
 
-function defaultMap(x: any) {
-  return x;
-}
-
-// export function useQuery<IT extends Vertex = Vertex, OT extends IT = IT>(
-//   predicate: Predicate<IT, OT>,
-//   deps: DependencyList,
-//   opts?: QueryOptions<IT, OT>
-// ): UseQueryResult<OT> {
-//   const { sort, listenOn, mapResult = defaultMap } = opts || {};
-//   const graph = useGraphManager();
-//   const filter = useCallback(
-//     (v: IT) => {
-//       return !v.isDeleted && predicate(v);
-//     },
-//     deps // eslint-disable-line
-//   );
-//   const listenOnDep = listenOn && JSON.stringify(listenOn);
-//   const query = useQuery2(
-//     useMemo(
-//       () => new Query<IT, OT>(opts?.source || graph, filter, sort, opts?.name),
-//       [opts?.source, graph, filter, sort, opts?.name, listenOnDep]
-//     )
-//   );
-//   return {
-//     loading: query.isLoading,
-//     results: query.results,
-//   };
-// }
-
+/**
+ * @deprecated
+ */
 export function useExistingQuery<
   IT extends Vertex = Vertex,
   OT extends IT = IT,
 >(query: Query<IT, OT>): UseQueryResult<OT> {
-  const [result, setResult] = useState<UseQueryResult<OT>>({
+  query = useQuery2(query);
+  return {
     loading: query.isLoading,
     results: query.results,
-  });
-
-  useEffect(() => {
-    const listener = () => {
-      console.log(`${query.name || 'Unknown query'} fired`);
-      setResult({
-        loading: query.isLoading,
-        results: query.results,
-      });
-    };
-    query.attach('results-changed', listener);
-
-    // if (!query.isLoading) {
-    setResult({
-      loading: query.isLoading,
-      results: query.results,
-    });
-    // }
-
-    return () => {
-      query.detach('results-changed', listener);
-    };
-  }, [query]);
-
-  return result;
+  };
 }
 
 type SharedQueryResultType<T extends SharedQueryName | undefined = undefined> =
@@ -171,22 +105,15 @@ export function useQuery2<
     return graph.query(queryOrName as QueryOptions<IT, OT, GT>);
   }, [queryOrName]);
   const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(
-    query ? new Proxy(query, {}) : query,
+    query ? new Proxy(query, {}) : undefined,
   );
-  useEffect(() => {
-    if (!query) {
-      return;
-    }
-
-    // setProxy(new Proxy(query, {}));
-    const callback = () => {
-      setProxy(new Proxy(query, {}));
-    };
-    query.attach('results-changed', callback);
-    return () => {
-      query.detach('results-changed', callback);
-    };
-  }, [query]);
+  useEffect(
+    () =>
+      query?.onResultsChanged(() => {
+        setProxy(new Proxy(query, {}));
+      }),
+    [query, setProxy],
+  );
   return query ? proxy || query : undefined;
 }
 
