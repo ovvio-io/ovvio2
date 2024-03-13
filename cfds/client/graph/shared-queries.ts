@@ -115,24 +115,26 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     }).lock();
     this.childTags = new Query<Tag, Tag, string>({
       source: this.tags,
-      predicate: (tag: Tag) => tag.parentTag !== undefined,
+      predicate: (tag: Tag) => tag.isChildTag,
       name: 'SharedChildTags',
       alwaysActive: true,
       groupBy: (tag) => tag.workspace.key,
     }).lock();
     this.parentTagsByName = new Query<Tag, Tag, string>({
       source: this.tags,
-      predicate: (tag) => tag.parentTag === undefined,
+      predicate: (tag) => !tag.isChildTag,
       name: 'SharedParentTags',
       alwaysActive: true,
       groupBy: (tag) => tag.name,
+      contentSensitive: true,
+      contentFields: ['childTags'],
     }).lock();
     this.childTagsByParentName = new Query<Tag, Tag, string>({
       source: this.tags,
-      predicate: (tag) => tag.parentTag !== undefined,
+      predicate: (tag) => tag.isChildTag,
       name: 'SharedChildTags',
       alwaysActive: true,
-      groupBy: (tag) => tag.parentTag!.name,
+      groupBy: (tag) => tag.parentTag?.name || null,
     }).lock();
     this.users = new Query<Vertex, User>({
       source: this.noNotes,
@@ -142,7 +144,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     }).lock();
     this.parentTagsByWorkspace = new Query({
       source: this.tags,
-      predicate: (tag) => typeof tag.parentTag === 'undefined',
+      predicate: (tag) => !tag.isChildTag,
       name: 'SharedTagsByWorkspace',
       groupBy: (tag) => tag.workspace.manager,
       alwaysActive: true,
@@ -172,7 +174,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   getVertexQuery<
     IT extends Vertex = Vertex,
     OT extends IT = IT,
-    GT extends CoreValue = CoreValue
+    GT extends CoreValue = CoreValue,
   >(
     key: string,
     source: VertexSource,
@@ -181,7 +183,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       | SortDescriptor<OT>
       | QueryOptions<IT, OT, GT>
       | Omit<QueryOptions<IT, OT, GT>, 'source' | 'predicate'>,
-    name?: string
+    name?: string,
   ): Query<IT, OT> {
     let queries = this._vertexQueries.get(key);
     if (!queries) {
@@ -193,7 +195,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     }
     assert(
       typeof name !== 'undefined',
-      'Must provide a name for vertex function'
+      'Must provide a name for vertex function',
     );
     let result = queries.get(name);
     const opts: QueryOptions<IT, OT, GT> =

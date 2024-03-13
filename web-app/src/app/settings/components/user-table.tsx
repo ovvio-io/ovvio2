@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
@@ -11,16 +17,26 @@ import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-d
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
 import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../core/cfds/react/vertex.ts';
-import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
+import {
+  usePartialVertex,
+  useVertices,
+} from '../../../core/cfds/react/vertex.ts';
+import {
+  SchemeNamespace,
+  UserPermission,
+} from '../../../../../cfds/base/scheme-types.ts';
 import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
+const TABLE_COLUMN_WIDTH_FIRST = 200;
+const TABLE_COLUMN_WIDTH_OTHER = 176;
+const TABLE_COLUMN_WIDTH_PERMISSION = 12 * styleguide.gridbase;
+
 const useEditableColumnStyles = makeStyles(() => ({
   columnStyle: {
     display: 'flex',
-    width: 138,
+    width: 176,
     height: '20px',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -32,10 +48,13 @@ const useEditableColumnStyles = makeStyles(() => ({
     lineHeight: '18px',
     letterSpacing: 0.06,
     fontFamily: 'Poppins',
+    boxSizing: 'border-box',
+    // border: `1px solid red`,
   },
   columnStyleFirst: {
-    width: 153,
-    fontSizt: 13,
+    // maxWidth: 200,
+    // width: 200,
+    fontSize: 13,
   },
   editLine: {
     width: 135,
@@ -48,6 +67,12 @@ const useEditableColumnStyles = makeStyles(() => ({
   },
   invalidInput: {
     border: '1px solid red',
+  },
+  editableColumnContainer: {
+    width: 176,
+  },
+  editableColumnContainerFirst: {
+    width: TABLE_COLUMN_WIDTH_FIRST,
   },
 }));
 
@@ -81,7 +106,13 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   const inputValue = value !== undefined ? value : '';
 
   return (
-    <div>
+    <div
+      className={cn(
+        index === 1
+          ? styles.editableColumnContainerFirst
+          : styles.editableColumnContainer,
+      )}
+    >
       <input
         className={cn(
           styles.columnStyle,
@@ -107,7 +138,7 @@ const useTableRowStyles = makeStyles(() => ({
   rowContainer: {
     position: 'relative',
     left: '-71px',
-    width: '843px',
+    width: 142 * styleguide.gridbase,
   },
   rowRight: {
     display: 'flex',
@@ -118,7 +149,7 @@ const useTableRowStyles = makeStyles(() => ({
     alignItems: 'center',
     gap: '8px',
     boxShadow: '0px 0px 4px 0px rgba(151, 132, 97, 0.25)',
-    width: '772px',
+    width: 142 * styleguide.gridbase - 71,
     borderRadius: '2px',
     backgroundColor: '#FFF',
   },
@@ -150,15 +181,14 @@ const useTableRowStyles = makeStyles(() => ({
     border: '1px solid #CCE3ED',
     boxSizing: 'border-box',
     height: '44px',
-    width: '805px',
+    // +1 to account for negative left margin
+    width: 146 * styleguide.gridbase - 71 + 1,
     hover: 'none',
+    marginLeft: -1,
   },
   firstColumnStyle: {
-    display: 'flex',
-    width: '200px',
+    width: TABLE_COLUMN_WIDTH_FIRST,
     height: '20px',
-    flexDirection: 'column',
-    justifyContent: 'center',
     color: theme.colors.text,
     fontSize: 13,
     lineHeight: '18px',
@@ -166,21 +196,24 @@ const useTableRowStyles = makeStyles(() => ({
     fontWeight: '400',
   },
   otherColumnStyle: {
-    display: 'flex',
-    width: '176px',
+    width: TABLE_COLUMN_WIDTH_OTHER,
     height: '17px',
-    flexDirection: 'column',
-    justifyContent: 'center',
     fontSize: 10,
     color: theme.colors.text,
     lineHeight: '14px',
     fontWeight: '400',
+    // border: '1px solid red',
   },
   editLine: {
     width: '480px',
     height: '1px',
     background: theme.primary.p8,
     margin: '5px 0px 0px 0px',
+  },
+  menuButton: {
+    position: 'absolute',
+    right: 2 * styleguide.gridbase,
+    top: 2 * styleguide.gridbase,
   },
   itemMenu: {
     opacity: 0,
@@ -190,9 +223,14 @@ const useTableRowStyles = makeStyles(() => ({
   itemMenuOpen: {
     opacity: 1,
   },
+  permissionsColumn: {
+    display: 'flex',
+    justifyContent: 'center',
+    width: 88,
+  },
 }));
 type TableRowProps = {
-  user: User;
+  user: VertexManager<User>;
   newUser?: boolean;
   isSelected: boolean;
   onRowSelect: (user: string) => void;
@@ -213,10 +251,17 @@ function TableRow({
 }: TableRowProps) {
   const styles = useTableRowStyles();
   const graphManager = useGraphManager();
-  const [localName, setLocalName] = useState(user.name);
-  const [localEmail, setLocalEmail] = useState(user.email);
+  const partialUser = usePartialVertex(user, [
+    'name',
+    'email',
+    'metadata',
+    'permissions',
+    'isDeleted',
+  ]);
+  const [localName, setLocalName] = useState(partialUser.name);
+  const [localEmail, setLocalEmail] = useState(partialUser.email);
   const [localMetadata, setLocalMetadata] = useState(
-    convertDictionaryToObject(user.metadata),
+    convertDictionaryToObject(partialUser.metadata),
   );
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [editNow, setEditNow] = useState(false);
@@ -324,7 +369,7 @@ function TableRow({
   };
 
   const removeUserFromOrg = () => {
-    user && (user.isDeleted = 1);
+    user && (partialUser.isDeleted = 1);
   };
 
   const copyToClipboard = () => {
@@ -338,6 +383,67 @@ function TableRow({
           console.error('Failed to copy: ', err);
         });
   };
+
+  const menu = (
+    <Menu
+      renderButton={renderButton}
+      position="right"
+      align="start"
+      direction="out"
+      className={cn(styles.menuButton)}
+    >
+      <MenuItem
+        onClick={() => {
+          copyToClipboard();
+        }}
+      >
+        <IconDuplicate />
+        Copy User ID
+      </MenuItem>
+      <MenuItem
+        onClick={() => {
+          removeUserFromOrg();
+        }}
+      >
+        <IconDelete />
+        Remove from Org.
+      </MenuItem>
+    </Menu>
+  );
+
+  function onPermissionChange(perm: UserPermission) {
+    return (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.checked) {
+        partialUser.permissions.add(perm);
+      } else {
+        partialUser.permissions.delete(perm);
+      }
+    };
+  }
+
+  const permissions = [
+    <div key="Perm/ViewDashboard" className={cn(styles.permissionsColumn)}>
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('view:dashboard')}
+        checked={partialUser.permissions.has('view:dashboard')}
+      />
+    </div>,
+    <div key="Perm/ViewOrgSettings" className={cn(styles.permissionsColumn)}>
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('view:settings:org')}
+        checked={partialUser.permissions.has('view:settings:org')}
+      />
+    </div>,
+    <div key="Perm/ManageUsers" className={cn(styles.permissionsColumn)}>
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('manage:users')}
+        checked={partialUser.permissions.has('manage:users')}
+      />
+    </div>,
+  ];
   return (
     <div ref={rowRef} className={cn(styles.rowContainer)}>
       {enabled !== false && !addMemberMode && !editMode && isRowHovered && (
@@ -359,9 +465,9 @@ function TableRow({
       {!editNow && !newUser ? (
         <div
           className={cn(
-            isSelected && styles.selectedRow,
             styles.rowRight,
             !isSelected && !newUser && !editNow && styles.hoverableRow,
+            isSelected && styles.selectedRow,
           )}
           onClick={() => {
             enabled !== false && user && handleRowSelect(user.key);
@@ -369,40 +475,19 @@ function TableRow({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
-          <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
+          <div className={cn(styles.firstColumnStyle)}>{partialUser.name}</div>
+          <div className={cn(styles.otherColumnStyle)}>{partialUser.email}</div>
           <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('team')}
+            {partialUser.metadata.get('team')}
           </div>
           <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('companyRoles')}
+            {partialUser.metadata.get('companyRoles')}
           </div>
-          <div className={cn(styles.otherColumnStyle)}>
+          {/* <div className={cn(styles.otherColumnStyle)}>
             {user.metadata.get('comments')}
-          </div>
-          <Menu
-            renderButton={renderButton}
-            position="right"
-            align="start"
-            direction="out"
-          >
-            <MenuItem
-              onClick={() => {
-                copyToClipboard();
-              }}
-            >
-              <IconDuplicate />
-              Copy User ID
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                removeUserFromOrg();
-              }}
-            >
-              <IconDelete />
-              Remove from Org.
-            </MenuItem>
-          </Menu>
+          </div> */}
+          {menu}
+          {permissions}
         </div>
       ) : (
         <div
@@ -442,33 +527,12 @@ function TableRow({
             }
             isValid={true}
           />
-          <div className={cn(styles.otherColumnStyle)}>
+          {/* later might be changed for EditableColumn for comments */}
+          {/* <div className={cn(styles.otherColumnStyle)}>
             {user.metadata.get('comments')}
-            {/* later might be changed for EditableColumn for comments */}
-          </div>
-          <Menu
-            renderButton={renderButton}
-            position="right"
-            align="start"
-            direction="out"
-          >
-            <MenuItem
-              onClick={() => {
-                copyToClipboard();
-              }}
-            >
-              <IconDuplicate />
-              Copy User ID
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                removeUserFromOrg();
-              }}
-            >
-              <IconDelete />
-              Remove from Org.
-            </MenuItem>
-          </Menu>
+          </div> */}
+          {menu}
+          {permissions}
         </div>
       )}
     </div>
@@ -479,9 +543,10 @@ function TableRow({
 
 const useUserTableStyles = makeStyles(() => ({
   tableContainer: {
-    width: '843px',
+    width: 142 * styleguide.gridbase,
     display: 'flex',
     position: 'relative',
+    marginBottom: 4 * styleguide.gridbase,
   },
   tableContent: {
     flex: 1,
@@ -500,8 +565,6 @@ const useUserTableStyles = makeStyles(() => ({
     display: 'flex',
     width: '200px',
     height: '20px',
-    flexDirection: 'column',
-    justifyContent: 'center',
     color: theme.colors.text,
     fontSize: 13,
     lineHeight: '18px',
@@ -513,7 +576,7 @@ const useUserTableStyles = makeStyles(() => ({
     border: '1px solid #CCE3ED',
     boxSizing: 'border-box',
     height: '44px',
-    width: '805px',
+    width: 805,
     hover: 'none',
   },
   hoverableRow: {
@@ -530,7 +593,72 @@ const useUserTableStyles = makeStyles(() => ({
     overflowY: 'scroll',
     overflowX: 'visible',
   },
+  columnNames: {
+    display: 'flex',
+    gap: styleguide.gridbase,
+    width: '100%',
+    padding: '12px 16px',
+  },
+  columnHeaderOther: {
+    fontSize: 10,
+    width: TABLE_COLUMN_WIDTH_OTHER,
+  },
+  columnHeaderFirst: {
+    width: TABLE_COLUMN_WIDTH_FIRST,
+  },
+  columnHeaderPermission: {
+    width: TABLE_COLUMN_WIDTH_PERMISSION,
+    textAlign: 'center',
+  },
 }));
+
+type UserTableColumnNamesProps = {
+  showPermissions: boolean;
+};
+
+function UserTableColumnNames({ showPermissions }: UserTableColumnNamesProps) {
+  const styles = useUserTableStyles();
+  return (
+    <div className={cn(styles.columnNames)}>
+      <div className={cn(styles.columnHeaderOther, styles.columnHeaderFirst)}>
+        Full Name
+      </div>
+      <div className={cn(styles.columnHeaderOther)}>E-mail</div>
+      <div className={cn(styles.columnHeaderOther)}>Team</div>
+      <div className={cn(styles.columnHeaderOther)}>Roles</div>
+      {showPermissions && (
+        <div
+          className={cn(
+            styles.columnHeaderOther,
+            styles.columnHeaderPermission,
+          )}
+        >
+          View Dashboard
+        </div>
+      )}
+      {showPermissions && (
+        <div
+          className={cn(
+            styles.columnHeaderOther,
+            styles.columnHeaderPermission,
+          )}
+        >
+          View Org. Settings
+        </div>
+      )}
+      {showPermissions && (
+        <div
+          className={cn(
+            styles.columnHeaderOther,
+            styles.columnHeaderPermission,
+          )}
+        >
+          Manage Users
+        </div>
+      )}
+    </div>
+  );
+}
 
 type UserTableProps = {
   showSelection: boolean;
@@ -583,12 +711,14 @@ function UserTable({
   return (
     <div className={cn(styles.tableContainer)}>
       <div className={cn(styles.tableContent)}>
+        <UserTableColumnNames showPermissions={true} />
         {showSearch && (
           <SearchBar
             users={users}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             isSearching={showSearch}
+            width={142 * styleguide.gridbase - 71}
           />
         )}
         {addMemberMode && (
@@ -605,7 +735,7 @@ function UserTable({
         {filtered.map((user: User) => (
           <TableRow
             key={user.key}
-            user={user}
+            user={user.manager}
             newUser={newUser === user.manager}
             onRowSelect={() => onRowSelect(user.key)}
             isSelected={showSelection && selectedUsers.has(user.key)}

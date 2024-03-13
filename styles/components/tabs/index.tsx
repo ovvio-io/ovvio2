@@ -218,6 +218,7 @@ const useStyles = makeStyles(
     },
     tab: {
       height: styleguide.gridbase * 5,
+      width: styleguide.gridbase * 21,
       color: brandLightTheme.colors.text,
       borderBottom: `1px solid ${brandLightTheme.supporting.O1}`,
       transitionDuration: `${styleguide.transition.duration.standard}ms`,

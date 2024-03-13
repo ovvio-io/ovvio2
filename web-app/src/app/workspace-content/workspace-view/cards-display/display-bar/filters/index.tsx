@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { mapIterable } from '../../../../../../../../base/common.ts';
+import { mapIterable, unionIter } from '../../../../../../../../base/common.ts';
 import * as SetUtils from '../../../../../../../../base/set.ts';
 import { coreValueCompare } from '../../../../../../../../base/core-types/comparable.ts';
 import { notReached } from '../../../../../../../../base/error.ts';
@@ -26,16 +26,21 @@ import { layout } from '../../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../../styles/styleguide.ts';
 import { createUniversalPortal } from '../../../../../../../../styles/utils/ssr.ts';
 import {
+  useGraphManager,
   usePartialView,
   useRootUser,
 } from '../../../../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../../../../core/cfds/react/query.ts';
-import { usePartialVertex } from '../../../../../../core/cfds/react/vertex.ts';
+import {
+  usePartialVertex,
+  usePartialVertices,
+} from '../../../../../../core/cfds/react/vertex.ts';
 import { createUseStrings } from '../../../../../../core/localization/index.tsx';
 import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
-import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/index.ts';
+import { Query } from '../../../../../../../../cfds/client/graph/query.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -216,6 +221,7 @@ function useUnifiedTagCategory(name: string): UnifiedTagDisplay {
       return cat;
     }
   }
+  debugger;
   notReached('Unexpected tag category');
 }
 
@@ -363,6 +369,11 @@ type UnifiedTagDisplay = [name: string, ...value: string[]];
 function useUnifiedTags(): UnifiedTagDisplay[] {
   const view = usePartialView('selectedWorkspaces');
   const parentTagsByName = useSharedQuery('parentTagsByName');
+  const childTagsByWs = useSharedQuery('childTags');
+  const childTags = usePartialVertices(
+    childTagsByWs.transform((t) => view.selectedWorkspaces.has(t.workspace)),
+    ['name', 'parentTag']
+  );
   const result = useMemo(() => {
     const result: UnifiedTagDisplay[] = [];
     const selectedWorkspaces = view.selectedWorkspaces;
@@ -376,7 +387,9 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
         if (selectedWorkspaces.has(t.workspace)) {
           SetUtils.update(
             values,
-            mapIterable(t.childTags, (tag) => tag.name)
+            childTags
+              .filter((child) => child.parentTag === t)
+              .map((t) => t.name)
           );
         }
       }
@@ -385,7 +398,7 @@ function useUnifiedTags(): UnifiedTagDisplay[] {
       }
     }
     return result;
-  }, [view.selectedWorkspaces, parentTagsByName]);
+  }, [view, parentTagsByName]);
 
   useEffect(() => {
     view.deleteFromSet('selectedTagIds', (id) => {

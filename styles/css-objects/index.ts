@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { CSSProperties, useMemo, useState } from 'react';
 import { useEnsureAttached, __CssRegistry } from './context.tsx';
 import { cssTheme, NewTheme, Theme } from '../theme.tsx';
 import { isServerSide, useIsomorphicLayoutEffect } from '../utils/ssr.ts';
@@ -17,7 +17,7 @@ function genId(): string {
 function defaultUnitForProperty(prop: string): string {
   if (
     ['z-index', 'opacity', 'flex-shrink', 'flex-grow', 'line-height'].indexOf(
-      prop
+      prop,
     ) !== -1
   ) {
     return '';
@@ -83,7 +83,7 @@ function toCss<T extends Record<string, any> & CssClass>(
   currentSelector: string,
   isClass: boolean,
   keepSelector: boolean,
-  ns: string
+  ns: string,
 ): CssDefinitions<T> {
   const selector = key.startsWith(':') || keepSelector ? key : `${key}_${ns}`;
   const isMediaQuery = key.startsWith('@media');
@@ -126,17 +126,17 @@ function toCss<T extends Record<string, any> & CssClass>(
       }
 
       const k = key.startsWith('&') ? key.substr(1) : key;
-      result.classes[k as keyof T] = toCss(
+      result.classes![k as keyof T] = toCss(
         val,
         k,
         sel,
         !key.startsWith(':') && !key.startsWith('@'),
         key.startsWith('& '),
-        ns
+        ns,
       );
     } else {
-      result.rules[key] = val;
-      formatKey(key).forEach((k) => {
+      result.rules![key] = val;
+      formatKey(key).forEach((k: string) => {
         currentRuleBuilder.push(`  ${k}: ${stringify(k, val)};`);
       });
     }
@@ -158,7 +158,7 @@ function toCss<T extends Record<string, any> & CssClass>(
   return result as CssDefinitions<T>;
 }
 
-function getStyle(object) {
+function getStyle(object: any) {
   const styles = [];
   if (object.styleRules) {
     styles.push(object.styleRules.join('\n\n'));
@@ -176,16 +176,25 @@ type CssObject<T> = { [K in keyof T]: CssDefinitions<T[K]> } & {
   getCss(): string;
 };
 
-type CssObjectCreator<T> = (
+type CssObjectCreator<T extends StyleDef> = (
   theme: Theme | NewTheme, // amit changed
-  resolveClass?: (className: string) => string
+  resolveClass?: (className: string) => string,
 ) => T;
 
-function isCssFn<T>(x: any): x is CssObjectCreator<T> {
+function isCssFn<T extends StyleDef>(x: any): x is CssObjectCreator<T> {
   return typeof x === 'function';
 }
 
-export function classnames(...arr: any[]) {
+export type CNValue<T> =
+  | string
+  | undefined
+  | number
+  | boolean
+  | null
+  | CssDefinitions<T>
+  | CNValue<T>[];
+
+export function classnames<T>(...arr: CNValue<T>[]): string {
   // const arr = Array.prototype.slice.call(arguments);
   return arr
     .filter((x) => x)
@@ -197,7 +206,10 @@ export function classnames(...arr: any[]) {
         return classnames.apply(null, x);
       }
 
-      return classnames.apply(null, [...(x.basedOn || []), x.className]);
+      return classnames.apply(null, [
+        ...((x as CssDefinitions<T>).basedOn || []),
+        (x as CssDefinitions<T>).className,
+      ]);
     })
     .join(' ');
 }
@@ -208,14 +220,11 @@ export interface CssObjectsOptions {
   debug?: boolean;
 }
 
-export type UseStyles<T> = {
+export type UseStyles<T extends StyleDef> = {
   (): Record<keyof T, string>;
 } & CssObject<T>;
 
-function useStylesInternal<T>(obj: { [key in keyof T]: any }): Record<
-  keyof T,
-  string
-> {
+function useStylesInternal(obj: any): Record<string, string> {
   const ctxAttach = useEnsureAttached();
   useIsomorphicLayoutEffect(() => {
     for (const val of Object.values(obj)) {
@@ -223,21 +232,32 @@ function useStylesInternal<T>(obj: { [key in keyof T]: any }): Record<
     }
   }, [obj, ctxAttach]);
   const [styles] = useState(() =>
-    (Object.entries(obj) as [keyof T, any][]).reduce((accum, [key, val]) => {
-      accum[key] = cn(val);
-      return accum;
-    }, {} as Record<keyof T, string>)
+    (Object.entries(obj) as [keyof typeof obj, any][]).reduce(
+      (accum, [key, val]) => {
+        accum[key] = cn(val);
+        return accum;
+      },
+      {} as Record<keyof typeof obj, string>,
+    ),
   );
 
   return styles;
 }
 
-export function makeStyles<T>(
+export interface ExtendedCSSProperties extends CSSProperties {
+  basedOn?: ExtendedCSSProperties[];
+}
+
+export type StyleDef = Record<
+  string,
+  ExtendedCSSProperties | Record<string, ExtendedCSSProperties>
+>;
+
+export function makeStyles<T extends StyleDef>(
   obj: T | CssObjectCreator<T>,
   ns = genId(),
-  opts?: CssObjectsOptions
 ): UseStyles<T> {
-  if (isCssFn(obj)) {
+  if (typeof obj === 'function') {
     obj = obj(cssTheme, (cname) => `${cname}_${ns}`);
   }
   const useStyles = () => {
@@ -254,7 +274,7 @@ export function makeStyles<T>(
   useStyles.getCss = () =>
     Object.keys(useStyles)
       .filter((x) => x !== 'getCss')
-      .map((k) => getStyle(useStyles[k]))
+      .map((k: string) => getStyle(useStyles[k]))
       .join('\n\n');
 
   return useStyles as unknown as UseStyles<T>;
@@ -266,13 +286,13 @@ export function merge(...args: any[]): any {
 
   return Object.assign.apply(
     null,
-    args.filter((x) => x)
+    args.filter((x) => x),
   );
 }
 
 export function keyframes<T>(
   def: T | CssObjectCreator<T>,
-  ns = genId()
+  ns = genId(),
 ): string {
   const name = `animation_${ns}`;
   if (isCssFn(def)) {
