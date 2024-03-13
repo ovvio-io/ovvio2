@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../../../styles/css-objects/index.ts';
 import { tabsStyles } from './components/tabs-style.tsx';
-import TabView from './plugins/plugin-manager.tsx';
+import TabView from './plugins/tab-view.tsx';
 import { useParams } from 'react-router';
 import { createUseStrings } from '../../core/localization/index.tsx';
 import localization from './settings.strings.json' assert { type: 'json' };

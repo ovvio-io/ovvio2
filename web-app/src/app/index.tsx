@@ -13,7 +13,7 @@ import { Settings } from './settings/index.tsx';
 import { CategorySettings } from './settings/category-settings.tsx';
 import { App } from '../../../styles/components/app.tsx';
 import { NoteEditor } from '../../../editor/editor.tsx';
-import TabView from './settings/plugins/plugin-manager.tsx';
+import TabView from './settings/plugins/tab-view.tsx';
 
 const useStyles = makeStyles((theme) => ({
   blurred: {
