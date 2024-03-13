@@ -107,7 +107,7 @@ interface ToastInfo {
   action?: { text: string; fn: (dismiss: DismissFn) => void };
 }
 
-type DismissFn = () => void;
+export type DismissFn = () => void;
 
 interface ToastController {
   displayToast: (info: ToastInfo) => DismissFn;
@@ -118,6 +118,8 @@ export const toastContext = React.createContext<ToastController>({
     return () => {};
   },
 });
+export type DisplayToastFunction = (info: ToastInfo) => DismissFn;
+export type UndoFunction = () => void;
 
 export const useToastController = () => useContext(toastContext);
 

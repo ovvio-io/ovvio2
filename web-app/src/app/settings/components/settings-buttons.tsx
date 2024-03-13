@@ -365,6 +365,30 @@ export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
     </Button>
   );
 }
+
+interface UndoButtonProps {
+  onUndoClick?: () => void;
+  disable: boolean;
+}
+
+export function UndoButton({ onUndoClick, disable }: UndoButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
+
+  return (
+    <Button
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+      onClick={onUndoClick}
+    >
+      <img key="CheckEditSettings" src="/icons/design-system/Undo.svg" />
+      <span className={cn(styles.text)}>{'Undo'}</span>
+    </Button>
+  );
+}
+
 interface EditButtonProps {
   onEditClick?: () => void;
 }
