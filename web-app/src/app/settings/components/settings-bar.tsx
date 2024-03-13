@@ -10,12 +10,12 @@ import {
 } from '../../../../../styles/components/typography.tsx';
 import { useNavigate, useParams } from 'react-router';
 import { IconMenuClose } from '../../../../../styles/components/new-icons/icon-menu-close.tsx';
-import { PluginManager } from '../plugins/plugin-manager.tsx';
 import { SettingsTabPlugin } from '../plugins/plugins-list.tsx';
 import { createUseStrings } from '../../../core/localization/index.tsx';
 import localization from '../settings.strings.json' assert { type: 'json' };
 import { usePartialView } from '../../../core/cfds/react/graph.tsx';
 import HelpCenter from '../../workspaces-bar/actions.tsx';
+import { useTabPlugins } from '../plugins/plugins-list.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -95,7 +95,7 @@ const useStyles = makeStyles(() => ({
   },
   text: {
     color: theme.colors.primaryButtonText,
-    padding: [0, styleguide.gridbase],
+    padding: `0px ${styleguide.gridbase}px`,
     basedOn: [useTypographyStyles.button],
   },
 }));
@@ -103,7 +103,7 @@ const useStyles = makeStyles(() => ({
 const BackButton = React.forwardRef(
   (
     { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const styles = useStyles();
     const navigate = useNavigate();
@@ -117,7 +117,7 @@ const BackButton = React.forwardRef(
         <span className={cn(styles.text)}>Back</span>
       </div>
     );
-  }
+  },
 );
 
 interface CategoryMap {
@@ -134,7 +134,7 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
   const strings = useStrings();
   const navigate = useNavigate();
   const view = usePartialView('selectedSettingsTabId');
-  const tabPlugins = PluginManager.getTabPlugins();
+  const tabPlugins = useTabPlugins();
   const { category: currentCategory } = useParams<{ category: string }>();
 
   const categories = tabPlugins.reduce<CategoryMap>((acc, plugin) => {
@@ -186,7 +186,7 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
         <div className={cn(styles.actionIcon)}>
           <img
             key="SelectedRowSettings"
-            src={`/icons/settings/${strings[category + 'Bar']}.svg`}
+            src={`/icons/settings/${strings[`${category}Bar`]}.svg`}
           />
         </div>
         <div className={cn(styles.actionText)}>{strings[category]}</div>

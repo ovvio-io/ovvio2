@@ -26,48 +26,40 @@ export interface SettingsTabPlugin {
   category: string;
 }
 
-export const tabPlugins: SettingsTabPlugin[] = [
-  {
-    title: 'general-personal',
-    render: () => <GeneralTabContent />,
-    category: 'personal-info',
-  },
-  {
-    title: 'details',
-    render: () => <DetailsTabContent />,
-    category: 'personal-info',
-  },
-  {
-    title: 'general-workspaces',
-    render: () => <WsGeneralSettings />,
-    category: 'workspaces-info',
-  },
-  {
-    title: 'tags',
-    render: () => <WsTagsSettings />,
-    category: 'workspaces-info',
-  },
-  // {
-  //   title: 'roles-details',
-  //   render: () => <DetailsTabContent />,
-  //   category: 'workspaces-info',
-  // },
-  // {
-  //   title: 'general-organization',
-  //   render: () => <GeneralOrgTabContent />,
-  //   category: 'organization-info',
-  // },
-  {
-    title: 'members',
-    render: () => <MembersTabContent />,
-    category: 'organization-info',
-  },
-  // {
-  //   title: 'billing',
-  //   render: () => <DetailsTabContent />,
-  //   category: 'organization-info',
-  // },
-];
+export function useTabPlugins(): SettingsTabPlugin[] {
+  const partialRootUser = usePartialRootUser('permissions');
+  const result: SettingsTabPlugin[] = [
+    {
+      title: 'general-personal',
+      render: () => <GeneralTabContent />,
+      category: 'personal-info',
+    },
+    {
+      title: 'details',
+      render: () => <DetailsTabContent />,
+      category: 'personal-info',
+    },
+    {
+      title: 'general-workspaces',
+      render: () => <WsGeneralSettings />,
+      category: 'workspaces-info',
+    },
+    {
+      title: 'tags',
+      render: () => <WsTagsSettings />,
+      category: 'workspaces-info',
+    },
+  ];
+
+  if (partialRootUser.permissions.has('view:settings:org')) {
+    result.push({
+      title: 'members',
+      render: () => <MembersTabContent />,
+      category: 'organization-info',
+    });
+  }
+  return result;
+}
 
 export function GeneralTabContent() {
   const styles = tabsStyles();

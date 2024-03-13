@@ -14,6 +14,7 @@ import { SettingsTabPlugin } from './plugins-list.tsx';
 import { EmptyState } from '../../workspace-content/workspace-view/empty-state/index.tsx';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
+import { useTabPlugins } from './plugins-list.tsx';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -31,51 +32,6 @@ const useStyles = makeStyles(() => ({
     background: 'none',
   },
 }));
-
-export class PluginManager {
-  private static tabPlugins: SettingsTabPlugin[];
-
-  static initialize(plugins: SettingsTabPlugin[]) {
-    PluginManager.tabPlugins = plugins;
-  }
-
-  static getTabPlugins() {
-    return PluginManager.tabPlugins;
-  }
-
-  static registerPlugin(plugin: SettingsTabPlugin) {
-    const isExisting = PluginManager.tabPlugins.some(
-      (p) => p.title === plugin.title
-    );
-    if (isExisting) {
-      throw new Error(
-        `Plugin with title ${plugin.title} is already registered.`
-      );
-    }
-    PluginManager.tabPlugins.push(plugin);
-  }
-
-  static getDefaultCategory() {
-    if (this.tabPlugins.length === 0) {
-      return undefined;
-    }
-    return this.tabPlugins[0].category;
-  }
-
-  static getDefaultTab() {
-    const defaultCategory = this.getDefaultCategory();
-    if (!defaultCategory) {
-      return undefined;
-    }
-    const categoryPlugins = this.tabPlugins.filter(
-      (p) => p.category === defaultCategory
-    );
-    if (categoryPlugins.length === 0) {
-      return undefined;
-    }
-    return categoryPlugins[0].title;
-  }
-}
 
 const useStrings = createUseStrings(localization);
 
@@ -112,16 +68,16 @@ function TabView({ category }: any) {
         console.error('Error setting selectedTabId:', error);
       }
     },
-    [view, category, navigate]
+    [view, category, navigate],
   );
 
-  const tabsForCategory = PluginManager.getTabPlugins().filter(
-    (plugin) => plugin.category === category
+  const tabsForCategory = useTabPlugins().filter(
+    (plugin) => plugin.category === category,
   );
 
   const renderSelectedTabContent = () => {
     const selectedTabPlugin = tabsForCategory.find(
-      (plugin) => plugin.title === view.selectedSettingsTabId
+      (plugin) => plugin.title === view.selectedSettingsTabId,
     );
     return selectedTabPlugin ? selectedTabPlugin.render() : null;
   };
