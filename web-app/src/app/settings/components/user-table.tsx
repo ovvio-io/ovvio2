@@ -29,6 +29,10 @@ import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 
+const TABLE_COLUMN_WIDTH_FIRST = 200;
+const TABLE_COLUMN_WIDTH_OTHER = 176;
+const TABLE_COLUMN_WIDTH_PERMISSION = 12 * styleguide.gridbase;
+
 const useEditableColumnStyles = makeStyles(() => ({
   columnStyle: {
     display: 'flex',
@@ -44,10 +48,12 @@ const useEditableColumnStyles = makeStyles(() => ({
     lineHeight: '18px',
     letterSpacing: 0.06,
     fontFamily: 'Poppins',
+    boxSizing: 'border-box',
+    // border: `1px solid red`,
   },
   columnStyleFirst: {
-    maxWidth: 200,
-    width: 200,
+    // maxWidth: 200,
+    // width: 200,
     fontSize: 13,
   },
   editLine: {
@@ -63,7 +69,10 @@ const useEditableColumnStyles = makeStyles(() => ({
     border: '1px solid red',
   },
   editableColumnContainer: {
-    width: 188,
+    width: 176,
+  },
+  editableColumnContainerFirst: {
+    width: TABLE_COLUMN_WIDTH_FIRST,
   },
 }));
 
@@ -97,7 +106,13 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   const inputValue = value !== undefined ? value : '';
 
   return (
-    <div className={cn(styles.editableColumnContainer)}>
+    <div
+      className={cn(
+        index === 1
+          ? styles.editableColumnContainerFirst
+          : styles.editableColumnContainer,
+      )}
+    >
       <input
         className={cn(
           styles.columnStyle,
@@ -118,10 +133,6 @@ const EditableColumn: React.FC<EditableColumnProps> = ({
   );
 };
 // ============================================================================================================
-
-const TABLE_COLUMN_WIDTH_FIRST = 200;
-const TABLE_COLUMN_WIDTH_OTHER = 176;
-const TABLE_COLUMN_WIDTH_PERMISSION = 12 * styleguide.gridbase;
 
 const useTableRowStyles = makeStyles(() => ({
   rowContainer: {
@@ -169,9 +180,11 @@ const useTableRowStyles = makeStyles(() => ({
     backgroundColor: '#F5F9FB',
     border: '1px solid #CCE3ED',
     boxSizing: 'border-box',
-    height: '46px',
-    width: 146 * styleguide.gridbase - 71,
+    height: '44px',
+    // +1 to account for negative left margin
+    width: 146 * styleguide.gridbase - 71 + 1,
     hover: 'none',
+    marginLeft: -1,
   },
   firstColumnStyle: {
     width: TABLE_COLUMN_WIDTH_FIRST,
@@ -189,6 +202,7 @@ const useTableRowStyles = makeStyles(() => ({
     color: theme.colors.text,
     lineHeight: '14px',
     fontWeight: '400',
+    // border: '1px solid red',
   },
   editLine: {
     width: '480px',
@@ -451,9 +465,9 @@ function TableRow({
       {!editNow && !newUser ? (
         <div
           className={cn(
-            isSelected && styles.selectedRow,
             styles.rowRight,
             !isSelected && !newUser && !editNow && styles.hoverableRow,
+            isSelected && styles.selectedRow,
           )}
           onClick={() => {
             enabled !== false && user && handleRowSelect(user.key);
@@ -562,7 +576,7 @@ const useUserTableStyles = makeStyles(() => ({
     border: '1px solid #CCE3ED',
     boxSizing: 'border-box',
     height: '44px',
-    width: '805px',
+    width: 805,
     hover: 'none',
   },
   hoverableRow: {
