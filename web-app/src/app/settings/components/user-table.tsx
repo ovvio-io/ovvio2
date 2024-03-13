@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
@@ -11,8 +17,14 @@ import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-d
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
 import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../core/cfds/react/vertex.ts';
-import { SchemeNamespace } from '../../../../../cfds/base/scheme-types.ts';
+import {
+  usePartialVertex,
+  useVertices,
+} from '../../../core/cfds/react/vertex.ts';
+import {
+  SchemeNamespace,
+  UserPermission,
+} from '../../../../../cfds/base/scheme-types.ts';
 import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -36,7 +48,7 @@ const useEditableColumnStyles = makeStyles(() => ({
   columnStyleFirst: {
     maxWidth: 200,
     width: 200,
-    fontSizt: 13,
+    fontSize: 13,
   },
   editLine: {
     width: 135,
@@ -204,7 +216,7 @@ const useTableRowStyles = makeStyles(() => ({
   },
 }));
 type TableRowProps = {
-  user: User;
+  user: VertexManager<User>;
   newUser?: boolean;
   isSelected: boolean;
   onRowSelect: (user: string) => void;
@@ -225,10 +237,17 @@ function TableRow({
 }: TableRowProps) {
   const styles = useTableRowStyles();
   const graphManager = useGraphManager();
-  const [localName, setLocalName] = useState(user.name);
-  const [localEmail, setLocalEmail] = useState(user.email);
+  const partialUser = usePartialVertex(user, [
+    'name',
+    'email',
+    'metadata',
+    'permissions',
+    'isDeleted',
+  ]);
+  const [localName, setLocalName] = useState(partialUser.name);
+  const [localEmail, setLocalEmail] = useState(partialUser.email);
   const [localMetadata, setLocalMetadata] = useState(
-    convertDictionaryToObject(user.metadata),
+    convertDictionaryToObject(partialUser.metadata),
   );
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [editNow, setEditNow] = useState(false);
@@ -336,7 +355,7 @@ function TableRow({
   };
 
   const removeUserFromOrg = () => {
-    user && (user.isDeleted = 1);
+    user && (partialUser.isDeleted = 1);
   };
 
   const copyToClipboard = () => {
@@ -378,15 +397,37 @@ function TableRow({
     </Menu>
   );
 
+  function onPermissionChange(perm: UserPermission) {
+    return (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.checked) {
+        partialUser.permissions.add(perm);
+      } else {
+        partialUser.permissions.delete(perm);
+      }
+    };
+  }
+
   const permissions = [
     <div key="Perm/ViewDashboard" className={cn(styles.permissionsColumn)}>
-      <input type="checkbox" />
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('view:dashboard')}
+        checked={partialUser.permissions.has('view:dashboard')}
+      />
     </div>,
     <div key="Perm/ViewOrgSettings" className={cn(styles.permissionsColumn)}>
-      <input type="checkbox" />
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('view:settings:org')}
+        checked={partialUser.permissions.has('view:settings:org')}
+      />
     </div>,
     <div key="Perm/ManageUsers" className={cn(styles.permissionsColumn)}>
-      <input type="checkbox" />
+      <input
+        type="checkbox"
+        onChange={onPermissionChange('manage:users')}
+        checked={partialUser.permissions.has('manage:users')}
+      />
     </div>,
   ];
   return (
@@ -420,13 +461,13 @@ function TableRow({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <div className={cn(styles.firstColumnStyle)}>{user.name}</div>
-          <div className={cn(styles.otherColumnStyle)}>{user.email}</div>
+          <div className={cn(styles.firstColumnStyle)}>{partialUser.name}</div>
+          <div className={cn(styles.otherColumnStyle)}>{partialUser.email}</div>
           <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('team')}
+            {partialUser.metadata.get('team')}
           </div>
           <div className={cn(styles.otherColumnStyle)}>
-            {user.metadata.get('companyRoles')}
+            {partialUser.metadata.get('companyRoles')}
           </div>
           {/* <div className={cn(styles.otherColumnStyle)}>
             {user.metadata.get('comments')}
@@ -680,7 +721,7 @@ function UserTable({
         {filtered.map((user: User) => (
           <TableRow
             key={user.key}
-            user={user}
+            user={user.manager}
             newUser={newUser === user.manager}
             onRowSelect={() => onRowSelect(user.key)}
             isSelected={showSelection && selectedUsers.has(user.key)}

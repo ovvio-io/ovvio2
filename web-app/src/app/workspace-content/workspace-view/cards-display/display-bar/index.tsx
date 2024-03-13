@@ -54,6 +54,7 @@ import {
   DueDateState,
   IconDueDate,
 } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import { usePartialRootUser } from '../../../../../core/cfds/react/graph.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
 export const SIDES_PADDING = styleguide.gridbase * 11;
@@ -442,6 +443,7 @@ function TabView() {
   const strings = useStrings();
   const styles = useStyles();
   const view = usePartialView('noteType', 'selectedTabId');
+  const partialUser = usePartialRootUser(['permissions']);
 
   const setSelected = useCallback(
     (tabId: TabId) => {
@@ -454,14 +456,18 @@ function TabView() {
     [view],
   );
   const tabs: React.ReactElement[] = [];
-  for (const tabId of ['tasks', 'notes', 'overview'] as TabId[]) {
+  const availableTabs: TabId[] = ['tasks', 'notes'];
+  if (partialUser.permissions.has('view:dashboard')) {
+    availableTabs.push('overview');
+  }
+  for (const tabId of availableTabs as TabId[]) {
     tabs.push(<TabButton value={tabId}>{strings[tabId]}</TabButton>);
   }
   return (
     <TabsHeader
       selected={view.selectedTabId}
       setSelected={setSelected}
-      className={cn(styles.noteTypeToggleSmall)}
+      // className={cn(styles.noteTypeToggleSmall)}
     >
       {...tabs}
     </TabsHeader>
