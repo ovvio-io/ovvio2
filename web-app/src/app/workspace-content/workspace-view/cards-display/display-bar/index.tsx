@@ -70,7 +70,7 @@ const useStyles = makeStyles(() => ({
     basedOn: [layout.column],
   },
   barRow: {
-    padding: [0, SIDES_PADDING],
+    padding: `0px ${SIDES_PADDING}`,
     height: styleguide.gridbase * 5,
     basedOn: [layout.row, layout.centerCenter],
   },
@@ -80,12 +80,12 @@ const useStyles = makeStyles(() => ({
     padding: 0,
   },
   filters: {
-    padding: [0, SIDES_PADDING],
+    padding: `0px ${SIDES_PADDING}`,
     [MediaQueries.TabletOnly]: {
-      padding: [0, TABLET_PADDING],
+      padding: `0px ${TABLET_PADDING}`,
     },
     [MediaQueries.Mobile]: {
-      padding: [0, MOBILE_PADDING],
+      padding: `0px ${MOBILE_PADDING}`,
     },
   },
   dropDownButtonText: {
@@ -96,7 +96,6 @@ const useStyles = makeStyles(() => ({
     // marginRight: styleguide.gridbase * 3,
     basedOn: [layout.row, layout.centerCenter],
   },
-
   viewToggle: {},
   noteTypeToggleBig: {
     width: styleguide.gridbase * 60,
@@ -107,13 +106,13 @@ const useStyles = makeStyles(() => ({
   separator: {
     height: BUTTON_HEIGHT,
     width: 1,
-    margin: [0, styleguide.gridbase],
+    margin: `0px ${styleguide.gridbase}`,
     background: theme.secondary.s5,
   },
   filterButton: {
     height: BUTTON_HEIGHT,
     borderRadius: BUTTON_HEIGHT * 0.5,
-    padding: [0, styleguide.gridbase * 2],
+    padding: `0px ${styleguide.gridbase * 2}`,
     background: theme.colors.secondaryButton,
     color: theme.colors.text,
     basedOn: [useButtonStyles.button],
@@ -243,7 +242,7 @@ function ShowCheckedDropDown() {
       {kShowChecked.map((x) => (
         <DropDownItem value={x} key={`show-checked/${x}`}>
           <Text>{strings[x]}</Text>
-          {view.showChecked === x && <IconCheck color={'blue'} />}
+          {view.showChecked === x && <IconCheck />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -304,7 +303,7 @@ function DateFilterDropdown() {
     >
       <DropDownItem value={undefined} key={'clearDueDateFilter'}>
         <Text>{strings.all}</Text>
-        {view.dateFilter === undefined && <IconCheck color={'blue'} />}
+        {view.dateFilter === undefined && <IconCheck />}
       </DropDownItem>
       {kDateFilters.map((x) => (
         <DropDownItem value={x} key={x}>
@@ -313,7 +312,7 @@ function DateFilterDropdown() {
               ? ''
               : strings.thisPrefix + ' ') + strings[x]}
           </Text>
-          {view.dateFilter === x && <IconCheck color={'blue'} />}
+          {view.dateFilter === x && <IconCheck />}
         </DropDownItem>
       ))}
     </DropDown>
@@ -443,7 +442,7 @@ function TabView() {
   const strings = useStrings();
   const styles = useStyles();
   const view = usePartialView('noteType', 'selectedTabId');
-  const partialUser = usePartialRootUser(['permissions']);
+  const partialUser = usePartialRootUser('permissions');
 
   const setSelected = useCallback(
     (tabId: TabId) => {
