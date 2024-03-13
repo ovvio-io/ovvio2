@@ -290,6 +290,9 @@ const useStyles = makeStyles(() => ({
   multiIsActive: {
     pointerEvents: 'none',
   },
+  InAction: {
+    backgroundColor: '#FBEAC8',
+  },
 }));
 
 interface SelectIconContainerProps {
@@ -764,6 +767,7 @@ export interface ItemRowProps extends Partial<RenderDraggableProps> {
   handleSelectClick: (card: Note) => void;
   isSelected: boolean;
   multiIsActive: boolean;
+  isInAction: boolean;
 }
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
@@ -777,6 +781,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       nestingLevel,
       isSelected,
       multiIsActive,
+      isInAction,
     },
     ref
   ) {
@@ -817,7 +822,6 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             cardKey={note.key}
           />
         )}
-
         <div
           className={cn(
             isChild && styles.isChild,
@@ -828,8 +832,8 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             className={cn(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
-
-              isSelected ? styles.selectedRow : styles.hoverableRow
+              isSelected ? styles.selectedRow : styles.hoverableRow,
+              isInAction && isSelected && styles.InAction
             )}
             style={{
               width: isChild ? childWidth : undefined,
@@ -855,6 +859,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
                   isSelected={false}
                   onClick={() => {}}
                   multiIsActive={false}
+                  isInAction={false}
                 />
               </React.Fragment>
             )}
@@ -889,6 +894,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               handleSelectClick={handleSelectClick}
               isSelected={isSelected}
               multiIsActive={multiIsActive}
+              isInAction={isInAction}
             />
           ))}
       </div>

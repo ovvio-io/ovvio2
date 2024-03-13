@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useContext,
+} from 'react';
 import * as SetUtils from '../../../../../../../base/set.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../../../../../../../cfds/client/graph/vertices/note.ts';
@@ -22,6 +28,7 @@ import { Workspace } from '../../../../../../../cfds/client/graph/vertices/works
 import { WorkspaceIndicatorCard } from '../kanban-view/index.tsx';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { useDisable } from '../../../../index.tsx';
+import { usePendingAction } from '../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -97,7 +104,8 @@ export function ListViewNew({
   const pinnedQuery = useQuery2(filteredNotes[0]);
   const unpinnedQuery = useQuery2(filteredNotes[1]);
 
-  const { isDisabled } = useDisable()!; // added 6.3.2024
+  const { isDisabled } = useDisable()!;
+  const { pendingAction, setPendingAction } = usePendingAction();
 
   const onNoteSelected = useCallback(
     (note: VertexManager<Note>) => {
@@ -135,7 +143,7 @@ export function ListViewNew({
           ref={ref}
           className={cn(
             styles.listRoot,
-            isDisabled && styles.multiSelectActive, //Added 6.3.24
+            isDisabled && styles.multiSelectActive,
             className
           )}
         >
@@ -161,6 +169,7 @@ export function ListViewNew({
                       handleSelectClick={handleSelectClick}
                       isSelected={selectedCards.has(noteMgr)}
                       multiIsActive={selectedCards.size > 0}
+                      isInAction={pendingAction}
                     />
                   ))}
 
@@ -191,6 +200,7 @@ export function ListViewNew({
                         handleSelectClick={handleSelectClick}
                         isSelected={selectedCards.has(noteMgr)}
                         multiIsActive={selectedCards.size > 0}
+                        isInAction={pendingAction}
                       />
                     ))}
                 </SectionTable>

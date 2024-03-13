@@ -32,12 +32,7 @@ import {
 } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { useQuery2, useSharedQuery } from '../../../core/cfds/react/query.ts';
-import {
-  usePartialVertex,
-  usePartialVertices,
-  useVertexByKey,
-  useVertices,
-} from '../../../core/cfds/react/vertex.ts';
+import { usePartialVertices } from '../../../core/cfds/react/vertex.ts';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 import { layout } from '../../../../../styles/layout.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -65,6 +60,7 @@ import {
   UndoFunction,
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
+import { usePendingAction } from './cards-display/index.tsx';
 
 const useStyles = makeStyles(
   () => ({
@@ -228,6 +224,7 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
 interface ConfirmationDialogProps {
   isTask: boolean;
   nCards: number;
+  itemText: string;
   handleDeleteClick: () => void;
   handleCancelClick: () => void;
 }
@@ -235,6 +232,7 @@ interface ConfirmationDialogProps {
 export function ConfirmationDialog({
   isTask,
   nCards,
+  itemText,
   handleDeleteClick,
   handleCancelClick,
 }: ConfirmationDialogProps) {
@@ -248,7 +246,6 @@ export function ConfirmationDialog({
         componentRef.current &&
         !componentRef.current.contains(event.target as Node)
       ) {
-        console.log('clicked outside of ref');
         menuCtx.close();
       }
     };
@@ -260,7 +257,7 @@ export function ConfirmationDialog({
 
   return (
     <div ref={componentRef} className={cn(styles.confirmation)}>
-      {isTask ? `Delete ${nCards} Tasks?` : `Delete ${nCards} Notes`}
+      {`Delete ${nCards} ${itemText}`}
       <div className={cn(styles.confirmationButtons)}>
         <RemoveButton onRemove={handleDeleteClick} text="Delete" />
         <CancelButton onCancel={handleCancelClick} />
@@ -292,23 +289,44 @@ const displayUndoToast = (
     },
   });
 };
-
 export function RemoveMultiButton<T>({
   className,
   selectedCards,
   setSelectedCards,
 }: AddSelectionButtonProps<T>) {
   const styles = useStyles();
+  const { displayToast } = useToastController();
   const view = usePartialView('selectedTabId');
   const isTask = view.selectedTabId === 'tasks' ? true : false;
   const nCards = selectedCards.size;
+  const { pendingAction, setPendingAction } = usePendingAction();
+
+  const captureSelectedCardsState = () => {
+    //TODO: ask ofri if its ok for undo or do we need to change isDeleted = -1 back for each card.
+    return new Set(selectedCards);
+  };
+  const itemText = isTask
+    ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
+    : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   const handleDeleteClick = () => {
-    selectedCards.forEach((cardM) => {
-      cardM.vertex.isDeleted = 1; //TODO: ask ofri if it should be removed auto from selectedCards when isDeleted is set to 1.
-    });
-    setSelectedCards!(new Set<VertexManager<Note>>());
+    setPendingAction(true);
+
+    setTimeout(() => {
+      const prevState = captureSelectedCardsState();
+      selectedCards.forEach((cardM) => {
+        cardM.vertex.isDeleted = 1;
+      });
+
+      displayUndoToast(
+        displayToast,
+        `Deleted ${selectedCards.size} ${itemText}.`,
+        () => setSelectedCards!(prevState)
+      );
+      setPendingAction(false);
+    }, 2000);
   };
+
   const handleCancelClick = () => {};
 
   return (
@@ -322,12 +340,14 @@ export function RemoveMultiButton<T>({
       <ConfirmationDialog
         isTask={isTask}
         nCards={nCards}
+        itemText={itemText}
         handleDeleteClick={handleDeleteClick}
         handleCancelClick={handleCancelClick}
       />
     </Menu>
   );
 }
+
 export function AssignMultiButton<T>({
   className,
   selectedCards,
@@ -337,10 +357,14 @@ export function AssignMultiButton<T>({
   const { displayToast } = useToastController();
   const view = usePartialView('selectedTabId');
   const isTask = view.selectedTabId === 'tasks' ? true : false;
+  const itemText = isTask
+    ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
+    : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
     allWorkspaces.add(card.workspace)
   );
+  const { pendingAction, setPendingAction } = usePendingAction();
 
   const workspaceUserSets = usePartialVertices(allWorkspaces, ['users']);
   let intersectionUsers = new Set<User>();
@@ -376,31 +400,36 @@ export function AssignMultiButton<T>({
   };
 
   const onRowSelect = (user: User) => {
-    const previousAssignees = captureAssigneeState();
-    selectedCards.forEach((card) => {
-      card.vertex.assignees.add(user);
-    });
-    displayUndoToast(
-      displayToast,
-      `User ${user.name} assigned to ${selectedCards.size} ${
-        selectedCards.size === 1 ? 'note' : 'notes'
-      }.`,
-      () => undoAssigneeAssignment(previousAssignees)
-    );
+    setPendingAction(true);
+    setTimeout(() => {
+      const previousAssignees = captureAssigneeState();
+      selectedCards.forEach((card) => {
+        card.vertex.assignees.add(user);
+      });
+
+      displayUndoToast(
+        displayToast,
+        `User ${user.name} assigned to ${selectedCards.size} ${itemText}.`,
+        () => undoAssigneeAssignment(previousAssignees)
+      );
+      setPendingAction(false);
+    }, 1000);
   };
 
   const onClearAssignees = () => {
-    const previousAssignees = captureAssigneeState();
-    selectedCards.forEach((card) => {
-      card.vertex.assignees.clear();
-    });
-    displayUndoToast(
-      displayToast,
-      `Cleared all assignees from ${selectedCards.size} ${
-        selectedCards.size === 1 ? 'note' : 'notes'
-      }.`,
-      () => undoAssigneeAssignment(previousAssignees)
-    );
+    setPendingAction(true);
+    setTimeout(() => {
+      const previousAssignees = captureAssigneeState();
+      selectedCards.forEach((card) => {
+        card.vertex.assignees.clear();
+      });
+      displayUndoToast(
+        displayToast,
+        `Cleared all assignees from ${selectedCards.size} ${itemText}.`,
+        () => undoAssigneeAssignment(previousAssignees)
+      );
+      setPendingAction(false);
+    }, 1000);
   };
 
   return (
@@ -423,152 +452,6 @@ export function AssignMultiButton<T>({
   );
 }
 
-// export function AddTagMultiButton<T>({
-//   className,
-//   selectedCards,
-// }: AddSelectionButtonProps<T>) {
-//   const styles = useStyles();
-//   const allWorkspaces: Set<Workspace> = new Set();
-//   const { displayToast } = useToastController();
-
-//   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
-//     allWorkspaces.add(card.workspace)
-//   );
-
-//   const graph = useGraphManager();
-//   const query = useQuery2(
-//     useMemo(
-//       () =>
-//         new Query<Tag, Tag, string>({
-//           source: graph.sharedQueriesManager.childTags,
-//           predicate: (tag) => allWorkspaces.has(tag.workspace),
-//           contentSensitive: true,
-//           contentFields: ['parentTag', 'name'],
-//           groupBy: (tag) => tag.workspace.key,
-//         }),
-//       [
-//         Array.from(allWorkspaces)
-//           .map((ws) => ws.key)
-//           .sort()
-//           .join('-'),
-//         graph,
-//       ]
-//     )
-//   );
-
-//   let allEncodedTags: Set<TagId> = new Set();
-//   const tagMap = new Map<string, Tag>();
-
-//   for (const [index, gid] of [...allWorkspaces].entries()) {
-//     const wsTags: Set<TagId> = new Set();
-
-//     query.group(gid.key).map((tag) => {
-//       if (!tag.vertex.parentTag) console.log(tag.vertex.parentTag);
-//       const encodedTag = encodeTagId(
-//         tag.vertex.parentTag?.name,
-//         tag.vertex.name
-//       );
-//       wsTags.add(encodedTag);
-//       tagMap.set(encodedTag, tag.vertex);
-//     });
-
-//     if (index === 0) {
-//       allEncodedTags = wsTags;
-//     } else if (allEncodedTags) {
-//       allEncodedTags = new Set(
-//         [...allEncodedTags].filter((x) => wsTags.has(x))
-//       );
-//     }
-//   }
-//   allEncodedTags = allEncodedTags || new Set();
-
-//   let intersectionTagsArray: Tag[] = [];
-//   allEncodedTags.forEach((tagId) => {
-//     // const [parent, child] = decodeTagId(tagId);
-//     const tagChild = tagMap.get(tagId)!; //TODO: ask ofri about the tagMap (is dont like this impl)
-//     intersectionTagsArray = [...intersectionTagsArray, tagChild];
-//   });
-//   const undoTagAssignment = (
-//     previousTags: Map<VertexManager<Note>, Set<Tag>>
-//   ) => {
-//     selectedCards.forEach((card) => {
-//       const tags = previousTags.get(card);
-//       if (tags) {
-//         card.vertex.tags.clear();
-//         tags.forEach((value, key) => {
-//           card.vertex.tags.set(key, value);
-//         });
-//       }
-//     });
-//   };
-
-//   const onRowSelect = (tag: Tag) => {
-//     const previousTags = new Map<VertexManager<Note>, Set<Tag>>();
-//     selectedCards.forEach((card) => {
-//       previousTags.set(card, new Set([...card.vertex.tags.values()]));
-
-//       const parent = tag.parentTag || tag;
-//       card.vertex.tags.set(parent, tag);
-//     });
-
-//     displayToast({
-//       text: `Tag "${tag.name}" added to ${selectedCards.size} ${
-//         selectedCards.size === 1 ? 'note' : 'notes'
-//       }.`,
-//       duration: 5000,
-//       action: {
-//         text: 'Undo',
-//         fn: (dismiss) => {
-//           undoTagAssignment(previousTags);
-//           dismiss();
-//         },
-//       },
-//     });
-//   };
-
-//   const onClearTags = () => {
-//     const previousTags = new Map<VertexManager<Note>, Set<Tag>>();
-//     selectedCards.forEach((card) => {
-//       const currentTags = new Set(card.vertex.tags.values());
-//       previousTags.set(card, currentTags);
-//     });
-//     selectedCards.forEach((card) => {
-//       card.vertex.tags.clear();
-//     });
-
-//     displayToast({
-//       text: `All tags cleared from ${selectedCards.size} ${
-//         selectedCards.size === 1 ? 'note' : 'notes'
-//       }.`,
-//       duration: 5000,
-//       action: {
-//         text: 'Undo',
-//         fn: (dismiss) => {
-//           undoTagAssignment(previousTags);
-//           dismiss();
-//         },
-//       },
-//     });
-//   };
-
-//   return (
-//     <Menu
-//       renderButton={() => <AddTagBlueButton />}
-//       position="bottom"
-//       align="end"
-//       direction="out"
-//       className={className}
-//       popupClassName={cn(styles.popup)}
-//     >
-//       <TagPicker
-//         tags={intersectionTagsArray}
-//         onRowSelect={onRowSelect}
-//         onClearTags={onClearTags}
-//       />
-//     </Menu>
-//   );
-// }
-
 export function AddTagMultiButton<T>({
   className,
   selectedCards,
@@ -576,6 +459,11 @@ export function AddTagMultiButton<T>({
   const styles = useStyles();
   const allWorkspaces: Set<Workspace> = new Set();
   const { displayToast } = useToastController();
+  const view = usePartialView('selectedTabId');
+  const isTask = view.selectedTabId === 'tasks' ? true : false;
+  const itemText = isTask
+    ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
+    : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
     allWorkspaces.add(card.workspace)
@@ -601,6 +489,7 @@ export function AddTagMultiButton<T>({
       ]
     )
   );
+  const { pendingAction, setPendingAction } = usePendingAction();
 
   let allEncodedTags: Set<TagId> = new Set();
   const tagMap = new Map<string, Tag>();
@@ -609,7 +498,7 @@ export function AddTagMultiButton<T>({
     const wsTags: Set<TagId> = new Set();
 
     query.group(gid.key).map((tag) => {
-      if (!tag.vertex.parentTag) console.log(tag.vertex.parentTag);
+      if (!tag.vertex.parentTag) console.log(tag.vertex.name);
       const encodedTag = encodeTagId(
         tag.vertex.parentTag?.name,
         tag.vertex.name
@@ -662,34 +551,38 @@ export function AddTagMultiButton<T>({
   };
 
   const onRowSelect = (tag: Tag) => {
-    const previousTags = captureTagState();
-    selectedCards.forEach((card) => {
-      const parent = tag.parentTag || tag;
-      card.vertex.tags.set(parent, tag);
-    });
+    setPendingAction(true);
+    setTimeout(() => {
+      const previousTags = captureTagState();
+      selectedCards.forEach((card) => {
+        const parent = tag.parentTag || tag;
+        card.vertex.tags.set(parent, tag);
+      });
 
-    displayUndoToast(
-      displayToast,
-      `Tag "${tag.name}" added to ${selectedCards.size} ${
-        selectedCards.size === 1 ? 'note' : 'notes'
-      }.`,
-      () => undoTagAssignment(previousTags)
-    );
+      displayUndoToast(
+        displayToast,
+        `Tag "${tag.name}" added to ${selectedCards.size} ${itemText}.`,
+        () => undoTagAssignment(previousTags)
+      );
+      setPendingAction(false);
+    }, 1000);
   };
 
   const onClearTags = () => {
-    const previousTags = captureTagState();
-    selectedCards.forEach((card) => {
-      card.vertex.tags.clear();
-    });
+    setPendingAction(true);
+    setTimeout(() => {
+      const previousTags = captureTagState();
+      selectedCards.forEach((card) => {
+        card.vertex.tags.clear();
+      });
 
-    displayUndoToast(
-      displayToast,
-      `All tags cleared from ${selectedCards.size} ${
-        selectedCards.size === 1 ? 'note' : 'notes'
-      }.`,
-      () => undoTagAssignment(previousTags)
-    );
+      displayUndoToast(
+        displayToast,
+        `All tags cleared from ${selectedCards.size} ${itemText}.`,
+        () => undoTagAssignment(previousTags)
+      );
+      setPendingAction(false);
+    }, 1000);
   };
 
   return (

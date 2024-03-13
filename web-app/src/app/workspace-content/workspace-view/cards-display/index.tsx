@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ReactNode, createContext, useContext, useState } from 'react';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../../styles/responsive.ts';
@@ -81,12 +81,46 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+interface PendingActionContextType {
+  pendingAction: boolean;
+  setPendingAction: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const PendingActionContext = createContext<
+  PendingActionContextType | undefined
+>(undefined);
+
+export const usePendingAction = () => {
+  const context = useContext(PendingActionContext);
+  if (!context) {
+    throw new Error('Error in PendingActions');
+  }
+  return context;
+};
+
+interface PendingActionProviderProps {
+  children: ReactNode;
+}
+
+export const PendingActionProvider: React.FC<PendingActionProviderProps> = ({
+  children,
+}) => {
+  const [pendingAction, setPendingAction] = useState<boolean>(false);
+
+  return (
+    <PendingActionContext.Provider value={{ pendingAction, setPendingAction }}>
+      {children}
+    </PendingActionContext.Provider>
+  );
+};
+
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
   const [selectedCards, setSelectedCards] = useState<Set<VertexManager<Note>>>(
-    new Set(),
+    new Set()
   );
+
   let content = null;
   const onCloseMultiSelect = () => {
     setSelectedCards(new Set());
@@ -120,21 +154,23 @@ export function CardsDisplay() {
     content = <KanbanView className={cn(styles.contentView)} />;
   }
   return (
-    <div className={cn(styles.displayRoot)}>
-      <div className={cn(styles.displayMain)}>
-        <DisplayBar
-          selectedCards={selectedCards}
-          onCloseMultiSelect={onCloseMultiSelect}
-          setSelectedCards={setSelectedCards}
-        />
+    <PendingActionProvider>
+      <div className={cn(styles.displayRoot)}>
+        <div className={cn(styles.displayMain)}>
+          <DisplayBar
+            selectedCards={selectedCards}
+            onCloseMultiSelect={onCloseMultiSelect}
+            setSelectedCards={setSelectedCards}
+          />
 
-        <ToolbarCenterItem
-          className={cn(layout.flexSpacer)}
-        ></ToolbarCenterItem>
-        <FiltersView className={cn(styles.filters)} />
-        <ActiveFiltersView className={cn(styles.activeFilters)} />
-        <div className={cn(styles.displayContent)}>{content}</div>
+          <ToolbarCenterItem
+            className={cn(layout.flexSpacer)}
+          ></ToolbarCenterItem>
+          <FiltersView className={cn(styles.filters)} />
+          <ActiveFiltersView className={cn(styles.activeFilters)} />
+          <div className={cn(styles.displayContent)}>{content}</div>
+        </div>
       </div>
-    </div>
+    </PendingActionProvider>
   );
 }
