@@ -197,7 +197,7 @@ function SectionTitle({
           }
         }
       },
-      { threshold: [0], root: scrollParent },
+      { threshold: [0], root: scrollParent }
     );
     observer.observe(sentinel);
     return () => {
@@ -214,7 +214,7 @@ function SectionTitle({
         <div
           className={cn(
             styles.titleText,
-            groupBy === 'workspace' && styles.wsTitle,
+            groupBy === 'workspace' && styles.wsTitle
           )}
         >
           {header}
@@ -251,7 +251,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         expandedGroupIds.add(section);
       }
     },
-    [view],
+    [view]
   );
 
   const expanded = view.expandedGroupIds.has(expandKey);
@@ -275,7 +275,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
           <ExpanderIcon
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconOpen,
+              expanded && styles.expanderIconOpen
             )}
           />
         </>

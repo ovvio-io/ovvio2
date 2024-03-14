@@ -627,7 +627,7 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
           <div className={styles.toggleActions}>
             {<img src="/icons/design-system/selectedCheck.svg" />}
             <TextSm>{selectedCards.size} selected </TextSm>
-            <div className={styles.separateLine}> | </div>
+            {/* <div className={styles.separateLine}> | </div>
             <TextSm
               onClick={selectAll}
               className={cn(
@@ -636,7 +636,7 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
               )}
             >
               Select All
-            </TextSm>
+            </TextSm> */}
           </div>
           <div className={styles.functionContainer}>
             <AssignMultiButton selectedCards={selectedCards} />

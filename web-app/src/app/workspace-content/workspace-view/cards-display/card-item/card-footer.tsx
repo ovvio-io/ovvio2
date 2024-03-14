@@ -218,22 +218,17 @@ export function CardFooter({
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
-  // const { dueDate } = usePartialVertex(card, ['dueDate']);
   return (
-    <div className={cn(styles.footer, className)}>
-      <div className={cn(styles.tagsAndAssignees)}>
-        <AssigneesView
-          cardManager={card}
-          cardType="small"
-          source={source}
-          isExpanded={isExpanded}
-        />
-        <div className={cn(styles.tagsContainer)}>
-          <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
-        </div>
+    <div className={cn(styles.tagsAndAssignees)}>
+      <AssigneesView
+        cardManager={card}
+        cardType="small"
+        source={source}
+        isExpanded={isExpanded}
+      />
+      <div className={cn(styles.tagsContainer)}>
+        <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
       </div>
-      {/* <div className={cn(layout.flexSpacer)} /> */}
-      {/* {dueDate && <DueDateIndicator card={card} source={source} />} */}
     </div>
   );
 }

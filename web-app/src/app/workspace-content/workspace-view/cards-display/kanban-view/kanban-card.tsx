@@ -53,7 +53,9 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
   },
   card: {
+    position: 'relative',
     backgroundColor: '#FFF',
+    border: '1px solid #FFF',
     cursor: 'pointer',
     padding: styleguide.gridbase,
     boxSizing: 'border-box',
@@ -136,14 +138,7 @@ const useStyles = makeStyles((theme) => ({
   childList: {
     paddingLeft: styleguide.gridbase * 4,
     ...styleguide.transition.short,
-    transitionProperty: 'height',
-    paddingBottom: '4px',
-  },
-  hide: {
-    overflow: 'hidden',
-  },
-  child: {
-    margin: [styleguide.gridbase * 2, 0],
+    backgroundColor: '#CCE3ED',
   },
   taskCheckbox: {
     marginTop: 2,
@@ -156,6 +151,7 @@ const useStyles = makeStyles((theme) => ({
   headerContainer: {
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   cardMiddle: {
     padding: [styleguide.gridbase, 0, 0, 0],
@@ -181,10 +177,13 @@ const useStyles = makeStyles((theme) => ({
   },
   footerAndExpand: {
     display: 'flex',
+    width: '100%',
     justifyContent: 'space-between',
+    marginTop: styleguide.gridbase * 1.25,
   },
   expanderAndDate: {
     display: 'flex',
+    flexGrow: 2,
     justifyContent: 'space-between',
     flexDirection: 'Column',
     alignItems: 'flex-end',
@@ -197,7 +196,6 @@ const useStyles = makeStyles((theme) => ({
     top: '8px',
     right: '-15px',
   },
-
   cardTab: {
     height: styleguide.gridbase * 3,
     width: styleguide.gridbase * 2,
@@ -230,21 +228,23 @@ const useStyles = makeStyles((theme) => ({
   selectedRow: {
     backgroundColor: '#F5F9FB',
     border: '1px solid #CCE3ED',
-    boxSizing: 'border-box',
     hover: 'none',
   },
   InAction: {
     backgroundColor: '#FBEAC8',
   },
+  multiIsActive: {
+    pointerEvents: 'none',
+  },
 }));
 
-interface CardHeaderPartProps extends KanbanCardProps {
-  isExpanded?: boolean;
-  source: UISource;
-  hideMenu?: boolean;
-}
-
-function CardHeader({ card, showWorkspaceOnCard }: CardHeaderPartProps) {
+function CardHeader({
+  card,
+  showWorkspaceOnCard,
+}: {
+  card: VertexManager<Note>;
+  showWorkspaceOnCard?: boolean;
+}) {
   const styles = useStyles();
   const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
   const note = useVertex(card);
@@ -319,9 +319,15 @@ export function StatusCheckbox({
     </div>
   );
 }
-const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
+const CollapseExpanderToggle = ({
+  isExpanded,
+  toggleExpanded,
+}: {
+  isExpanded: boolean;
+  toggleExpanded: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}) => {
   return (
-    <Button>
+    <Button onClick={toggleExpanded}>
       <IconCollapseExpand on={isExpanded} />
     </Button>
   );
@@ -338,223 +344,6 @@ const calculateIsExpanded = (
     (!view.notesExpandBase && hasOverride)
   );
 };
-
-export interface KanbanCardProps {
-  card: VertexManager<Note>;
-  size: CardSize;
-  showChildCards?: boolean;
-  className?: string;
-  showWorkspaceOnCard?: boolean;
-  handleSelectClick: (card: Note) => void;
-  isSelected: boolean;
-  multiIsActive: boolean;
-  isInAction: boolean;
-}
-
-export const KanbanCard = React.forwardRef(function CardItemView(
-  {
-    card,
-    className,
-    size,
-    showWorkspaceOnCard,
-    isSelected,
-    multiIsActive,
-    isInAction,
-    handleSelectClick,
-    ...rest
-  }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>
-) {
-  const styles = useStyles();
-  const childListRef = useRef(null);
-  const documentRouter = useDocumentRouter();
-  const pCard = usePartialVertex(card, [
-    'childCards',
-    'tags',
-    'type',
-    'isChecked',
-    'titlePlaintext',
-  ]);
-
-  const { childCards } = pCard;
-  const view = usePartialView('notesExpandOverride', 'notesExpandBase');
-
-  const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view)
-  );
-
-  useEffect(() => {
-    setExpanded(calculateIsExpanded(card, view));
-  }, [card, view]);
-
-  const style = useAnimateHeight(childListRef, expanded);
-  const isTask = pCard.type === NoteType.Task;
-  const isDone = pCard.isChecked;
-  const logger = useLogger();
-  const [isMouseOver, setIsMouseOver] = useState(false);
-  const onMouseOver = useCallback(() => setIsMouseOver(true), []);
-  const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
-  const hasOverride = view.notesExpandOverride.has(card.key);
-  const { dueDate } = usePartialVertex(card, ['dueDate']);
-  const { workspace } = usePartialVertex(card, ['workspace']);
-
-  const source: UISource = 'board';
-
-  const handleExpandCard: MouseEventHandler = (e) => {
-    e.stopPropagation();
-    view.setNoteExpandOverride(card.key, !hasOverride);
-    setExpanded((x) => !x);
-  };
-
-  const onClick = useCallback(() => {
-    documentRouter.goTo(card);
-    logger.log({
-      severity: 'EVENT',
-      event: 'Navigation',
-      type: 'open',
-      source,
-      destination: 'editor',
-      vertex: card.key,
-    });
-  }, [card, documentRouter, logger, source]);
-
-  return (
-    <div
-      className={cn(styles.cardContainer, className)}
-      ref={ref}
-      {...rest}
-      onMouseEnter={onMouseOver}
-      onMouseLeave={onMouseLeave}
-    >
-      {(isMouseOver || isSelected) && (
-        <SelectIconContainer
-          className={styles.SelectIconContainerzIndex}
-          workspace={workspace.manager}
-          isSelected={isSelected}
-          handleSelectClick={handleSelectClick}
-          cardKey={card.key}
-        />
-      )}
-      <div
-        className={cn(
-          styles.card,
-          // isTask && styles.taskCard,
-          // styles[size],
-          isSelected ? styles.selectedRow : styles.hoverableRow,
-          isInAction && isSelected && styles.InAction
-        )}
-        onClick={onClick}
-      >
-        <div className={cn(multiIsActive && styles.multiIsActive)}>
-          {isMouseOver && <CardMenu card={card} isMouseOver={isMouseOver} />}
-          <div className={cn(styles.headerContainer)}>
-            <div className={cn(styles.taskCheckBoxContainer)}>
-              {isTask ? (
-                <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
-              ) : (
-                <img
-                  key="NoteIconBoard"
-                  src="/icons/board/Note.svg"
-                  className={cn(styles.taskCheckbox)}
-                />
-              )}
-              <div className={cn(styles.titleTextContainer)}>
-                {pCard.titlePlaintext.split(' ').map((word, index) => (
-                  <Text
-                    key={index}
-                    className={cn(
-                      styles.titleText,
-                      isDone && styles.strikethroughDone
-                    )}
-                  >
-                    {word}{' '}
-                  </Text>
-                ))}
-              </div>
-            </div>
-            <PinCell isChild={false} note={card} isMouseOver={isMouseOver} />
-          </div>
-          <CardHeader
-            size={size}
-            card={card}
-            isExpanded={isMouseOver}
-            source={source}
-            showWorkspaceOnCard={showWorkspaceOnCard}
-            handleSelectClick={function (card: Note): void {
-              throw new Error('Function not implemented.');
-            }}
-            isSelected={false}
-            multiIsActive={false}
-            isInAction={false}
-          />
-          <div className={cn(styles.preview)} />
-          <div className={cn(styles.footerAndExpand)}>
-            <CardFooter
-              isExpanded={isMouseOver}
-              size={size}
-              card={card}
-              source={source}
-            />
-            <div className={cn(styles.expanderAndDate)}>
-              {!!childCards.length && (
-                <div onClick={(e) => handleExpandCard(e)}>
-                  <CollapseExpanderToggle isExpanded={expanded} />
-                </div>
-              )}
-              {childCards.length == 0 && <div></div>}
-              <DueDateIndicator
-                card={card}
-                source={source}
-                isMouseOver={isMouseOver}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {expanded && (
-        <div
-          className={cn(styles.childList, !expanded && styles.hide)}
-          ref={childListRef}
-          style={style}
-        >
-          {childCards.map((child, index) => (
-            <ChildCard
-              size={size}
-              key={child.key}
-              card={child.manager as VertexManager<Note>}
-              index={index}
-              isVisible={expanded}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-});
-
-interface ChildCardProps {
-  card: VertexManager<Note>;
-  index: number;
-  size: CardSize;
-  isVisible: boolean;
-}
-
-function ChildCard({ card, size }: ChildCardProps) {
-  const styles = useStyles();
-
-  return (
-    <KanbanCard
-      size={size}
-      card={card}
-      className={cn(styles.child)}
-      handleSelectClick={() => {}}
-      isSelected={false}
-      multiIsActive={false}
-      isInAction={false}
-    />
-  );
-}
 
 export interface MoreButtonCardProps {
   workspace: VertexId<Workspace>;
@@ -616,7 +405,7 @@ const CardMenu = ({
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
       <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
-        <IconMore color={colorWs.inactive} />
+        <IconMore color={colorWs.active} />
       </div>
     ),
     []
@@ -634,3 +423,212 @@ const CardMenu = ({
     </MoreButtonCard>
   );
 };
+
+interface ChildCardProps {
+  card: VertexManager<Note>;
+  index: number;
+  size: CardSize;
+  isVisible: boolean;
+  isSelected: boolean;
+  isInAction: boolean;
+  multiIsActive: boolean;
+}
+
+function ChildCard({
+  card,
+  size,
+  isSelected,
+  isInAction,
+  multiIsActive,
+}: ChildCardProps) {
+  const styles = useStyles();
+
+  return (
+    <KanbanCard
+      size={size}
+      card={card}
+      className={cn()}
+      handleSelectClick={() => {}}
+      multiIsActive={multiIsActive}
+      isSelected={isSelected}
+      isInAction={isInAction}
+    />
+  );
+}
+
+export interface KanbanCardProps {
+  card: VertexManager<Note>;
+  size: CardSize;
+  showChildCards?: boolean;
+  className?: string;
+  showWorkspaceOnCard?: boolean;
+  handleSelectClick: (card: Note) => void;
+  isSelected: boolean;
+  multiIsActive: boolean;
+  isInAction: boolean;
+}
+
+export const KanbanCard = React.forwardRef(function CardItemView(
+  {
+    card,
+    className,
+    size,
+    showWorkspaceOnCard,
+    isSelected,
+    multiIsActive,
+    isInAction,
+    handleSelectClick,
+  }: KanbanCardProps,
+  ref: React.ForwardedRef<HTMLDivElement>
+) {
+  const styles = useStyles();
+  const childListRef = useRef(null);
+  const documentRouter = useDocumentRouter();
+  const pCard = usePartialVertex(card, [
+    'childCards',
+    'tags',
+    'type',
+    'isChecked',
+    'titlePlaintext',
+  ]);
+
+  const { childCards } = pCard;
+  const view = usePartialView('notesExpandOverride', 'notesExpandBase');
+  const source: UISource = 'board';
+  const isTask = pCard.type === NoteType.Task;
+  const isDone = pCard.isChecked;
+  const logger = useLogger();
+  const [isMouseOver, setIsMouseOver] = useState(false);
+  const onMouseOver = useCallback(() => setIsMouseOver(true), []);
+  const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
+  const hasOverride = view.notesExpandOverride.has(card.key);
+  const { dueDate } = usePartialVertex(card, ['dueDate']);
+  const { workspace } = usePartialVertex(card, ['workspace']);
+
+  const [expanded, setExpanded] = useState(() =>
+    calculateIsExpanded(card, view)
+  );
+
+  useEffect(() => {
+    setExpanded(calculateIsExpanded(card, view));
+  }, [card, view]);
+
+  const toggleExpanded: MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.stopPropagation();
+    view.setNoteExpandOverride(card.key, !hasOverride);
+    setExpanded((x) => !x);
+  };
+
+  const onClick = useCallback(() => {
+    documentRouter.goTo(card);
+    logger.log({
+      severity: 'EVENT',
+      event: 'Navigation',
+      type: 'open',
+      source,
+      destination: 'editor',
+      vertex: card.key,
+    });
+  }, [card, documentRouter, logger, source]);
+
+  return (
+    <div
+      className={cn(styles.cardContainer, className)}
+      ref={ref}
+      onMouseEnter={onMouseOver}
+      onMouseLeave={onMouseLeave}
+    >
+      {(isMouseOver || isSelected) && !card.vertex.parentNote && (
+        <SelectIconContainer
+          className={styles.SelectIconContainerzIndex}
+          workspace={workspace.manager}
+          isSelected={isSelected}
+          handleSelectClick={handleSelectClick}
+          cardKey={card.key}
+        />
+      )}
+      <div className={cn(multiIsActive && styles.multiIsActive)}>
+        <div
+          className={cn(
+            styles.card,
+            isSelected ? styles.selectedRow : styles.hoverableRow,
+            isInAction && isSelected && styles.InAction
+          )}
+          onClick={onClick}
+        >
+          {isMouseOver && !multiIsActive && (
+            <CardMenu card={card} isMouseOver={isMouseOver} />
+          )}
+          <div className={cn(styles.headerContainer)}>
+            <div className={cn(styles.taskCheckBoxContainer)}>
+              {isTask ? (
+                <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
+              ) : (
+                <img
+                  key="NoteIconBoard"
+                  src="/icons/board/Note.svg"
+                  className={cn(styles.taskCheckbox)}
+                />
+              )}
+              <div className={cn(styles.titleTextContainer)}>
+                {pCard.titlePlaintext.split(' ').map((word, index) => (
+                  <Text
+                    key={index}
+                    className={cn(
+                      styles.titleText,
+                      isDone && styles.strikethroughDone
+                    )}
+                  >
+                    {word}{' '}
+                  </Text>
+                ))}
+              </div>
+            </div>
+            <PinCell isChild={false} note={card} isMouseOver={isMouseOver} />
+          </div>
+          <CardHeader card={card} showWorkspaceOnCard={showWorkspaceOnCard} />
+          <div className={cn(styles.footerAndExpand)}>
+            <CardFooter
+              isExpanded={isMouseOver}
+              size={size}
+              card={card}
+              source={source}
+            />
+            <div className={cn(styles.expanderAndDate)}>
+              {childCards.length > 0 ? (
+                <CollapseExpanderToggle
+                  isExpanded={expanded}
+                  toggleExpanded={toggleExpanded}
+                />
+              ) : (
+                <div></div>
+              )}
+              <DueDateIndicator
+                card={card}
+                source={source}
+                isMouseOver={isMouseOver}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className={cn(styles.childList)} ref={childListRef}>
+          {childCards.map((child, index) => (
+            <ChildCard
+              size={size}
+              key={child.key}
+              card={child.manager as VertexManager<Note>}
+              index={index}
+              isVisible={expanded}
+              isSelected={isSelected}
+              isInAction={isInAction}
+              multiIsActive={multiIsActive}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});

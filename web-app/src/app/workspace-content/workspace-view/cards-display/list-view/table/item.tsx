@@ -279,13 +279,13 @@ const useStyles = makeStyles(() => ({
   },
   selectedIconContainer: {
     position: 'absolute',
-    left: '-28px',
+    left: '-26px',
     top: '10px',
     cursor: 'pointer',
   },
   selectIconContainer: {
-    left: '-70px',
-    cursor: 'cell',
+    left: '-67px',
+    cursor: 'pointer',
   },
   multiIsActive: {
     pointerEvents: 'none',
@@ -331,7 +331,6 @@ export function SelectIconContainer({
         className
       )}
       style={style}
-      // onClick={() => handleSelectClick(cardKey)}
       onClick={() => handleSelectClick(card)}
     >
       {isSelected ? (
