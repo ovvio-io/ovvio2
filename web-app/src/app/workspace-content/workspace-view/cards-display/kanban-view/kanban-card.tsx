@@ -29,7 +29,7 @@ import { useTheme } from '../../../../../../../styles/theme.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
-import { TaskCheckbox } from '../../../../../../../components/task.tsx';
+import { TaskCheckbox } from '../../../../../../../components/checkbox.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import { CardFooter, DueDateIndicator } from '../card-item/card-footer.tsx';
 import { PinCell } from '../list-view/table/item.tsx';
@@ -52,7 +52,6 @@ const useStyles = makeStyles((theme) => ({
   cardContainer: {
     position: 'relative',
   },
-
   card: {
     backgroundColor: '#FFF',
     cursor: 'pointer',
@@ -111,7 +110,7 @@ const useStyles = makeStyles((theme) => ({
     '::before': {},
   },
   titleTextContainer: {
-    padding: [0, styleguide.gridbase * 0],
+    padding: `0px ${styleguide.gridbase * 0}px`,
     position: 'relative',
   },
   strikethroughDone: {
@@ -144,7 +143,7 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'hidden',
   },
   child: {
-    margin: [styleguide.gridbase * 2, 0],
+    margin: `${styleguide.gridbase * 2}px 0px`,
   },
   taskCheckbox: {
     marginTop: 2,
@@ -159,7 +158,7 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
   },
   cardMiddle: {
-    padding: [styleguide.gridbase, 0, 0, 0],
+    padding: `${styleguide.gridbase}px 0px 0px 0px`,
     display: 'flex',
     alignItems: 'center',
   },
@@ -187,7 +186,7 @@ const useStyles = makeStyles((theme) => ({
   expanderAndDate: {
     display: 'flex',
     justifyContent: 'space-between',
-    flexDirection: 'Column',
+    // flexDirection: 'column',
     alignItems: 'flex-end',
   },
   workspaceIndicator: {
@@ -317,7 +316,7 @@ const CollapseExpanderToggle = ({ isExpanded }: { isExpanded: boolean }) => {
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -337,7 +336,7 @@ export interface KanbanCardProps {
 
 export const KanbanCard = React.forwardRef(function CardItemView(
   { card, className, size, showWorkspaceOnCard, ...rest }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -354,7 +353,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const view = usePartialView('notesExpandOverride', 'notesExpandBase');
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view)
+    calculateIsExpanded(card, view),
   );
 
   useEffect(() => {
@@ -398,7 +397,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           styles.card,
           isTask && styles.taskCard,
           styles[size],
-          styles.hoverableRow
+          styles.hoverableRow,
         )}
         onMouseEnter={onMouseOver}
         onMouseLeave={onMouseLeave}
@@ -422,7 +421,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone
+                    isDone && styles.strikethroughDone,
                   )}
                 >
                   {word}{' '}
@@ -514,7 +513,7 @@ export function MoreButtonCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -526,7 +525,7 @@ export function MoreButtonCard({
       className={cn(
         styles.cardTab,
         styles.cardMoreTabSelected,
-        styles.RightHoverMoreButton
+        styles.RightHoverMoreButton,
       )}
       style={style}
       onClick={handleClick}
@@ -559,7 +558,7 @@ const CardMenu = ({
         <IconMore color={colorWs.inactive} />
       </div>
     ),
-    []
+    [],
   );
   return (
     <MoreButtonCard workspace={cardWs} onClick={toggleMenu}>

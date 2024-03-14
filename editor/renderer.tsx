@@ -26,7 +26,7 @@ import { brandLightTheme as theme } from '../styles/theme.tsx';
 import { styleguide } from '../styles/styleguide.ts';
 import { CoreObject, CoreValue } from '../base/core-types/base.ts';
 import { writingDirectionAtNode } from '../cfds/richtext/doc-state.ts';
-import { CheckBox } from '../components/task.tsx';
+import { CheckBox } from '../components/checkbox.tsx';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
