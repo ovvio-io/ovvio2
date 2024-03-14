@@ -29,6 +29,7 @@ import { normalizeEmail } from '../../../../../base/string.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialRootUser } from '../../../core/cfds/react/graph.tsx';
+import { CheckBox } from '../../../../../components/checkbox.tsx';
 
 const TABLE_COLUMN_WIDTH_FIRST = 200;
 const TABLE_COLUMN_WIDTH_OTHER = 176;
@@ -414,8 +415,8 @@ function TableRow({
   );
 
   function onPermissionChange(perm: UserPermission) {
-    return (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) {
+    return (checked: boolean) => {
+      if (checked) {
         partialUser.permissions.add(perm);
       } else {
         partialUser.permissions.delete(perm);
@@ -425,26 +426,23 @@ function TableRow({
 
   const permissions = [
     <div key="Perm/ViewDashboard" className={cn(styles.permissionsColumn)}>
-      <input
-        type="checkbox"
+      <CheckBox
         onChange={onPermissionChange('view:dashboard')}
-        checked={partialUser.permissions.has('view:dashboard')}
+        value={partialUser.permissions.has('view:dashboard')}
         disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
     <div key="Perm/ViewOrgSettings" className={cn(styles.permissionsColumn)}>
-      <input
-        type="checkbox"
+      <CheckBox
         onChange={onPermissionChange('view:settings:org')}
-        checked={partialUser.permissions.has('view:settings:org')}
+        value={partialUser.permissions.has('view:settings:org')}
         disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
     <div key="Perm/ManageUsers" className={cn(styles.permissionsColumn)}>
-      <input
-        type="checkbox"
+      <CheckBox
         onChange={onPermissionChange('manage:users')}
-        checked={partialUser.permissions.has('manage:users')}
+        value={partialUser.permissions.has('manage:users')}
         disabled={!partialRootUser.permissions.has('manage:users')}
       />
     </div>,
