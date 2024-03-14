@@ -64,17 +64,11 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     ':hover': {
+      border: '1px solid #FBF6EF',
       itemMenu: {
         opacity: 1,
       },
     },
-  },
-  itemMenu: {
-    opacity: 0,
-    ...styleguide.transition.short,
-    transitionProperty: 'opacity',
-    position: 'relative',
-    top: '3px',
   },
   itemMenuOpen: {
     opacity: 1,
@@ -404,14 +398,14 @@ const CardMenu = ({
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
-      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
+      <div className={styles.itemMenuOpen}>
         <IconMore color={colorWs.active} />
       </div>
     ),
     []
   );
   return (
-    <MoreButtonCard workspace={cardWs} onClick={toggleMenu}>
+    <MoreButtonCard workspace={cardWs}>
       <CardMenuView
         visible={isMouseOver}
         cardManager={card}
@@ -547,6 +541,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           cardKey={card.key}
         />
       )}
+      {!multiIsActive && <CardMenu card={card} isMouseOver={isMouseOver} />}
       <div className={cn(multiIsActive && styles.multiIsActive)}>
         <div
           className={cn(
@@ -556,9 +551,6 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           )}
           onClick={onClick}
         >
-          {isMouseOver && !multiIsActive && (
-            <CardMenu card={card} isMouseOver={isMouseOver} />
-          )}
           <div className={cn(styles.headerContainer)}>
             <div className={cn(styles.taskCheckBoxContainer)}>
               {isTask ? (
