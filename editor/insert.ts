@@ -162,6 +162,9 @@ export function handleNewline(
         depthMarker: startDepth + 1,
       },
       {
+        text: '',
+      },
+      {
         key: selectionId,
         type: 'anchor',
         dir: PointerDirection.None,

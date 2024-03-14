@@ -35,7 +35,7 @@ export type SharedQueryName =
   | 'tags'
   | 'childTags'
   | 'parentTagsByName'
-  | 'childTagsByParentName'
+  // | 'childTagsByParentName'
   | 'users'
   | 'parentTagsByWorkspace';
 // | 'users'
@@ -53,9 +53,9 @@ export type SharedQueryType<N extends SharedQueryName> = N extends 'notDeleted'
   ? Query<Tag, Tag, string>
   : N extends 'parentTagsByName'
   ? Query<Tag, Tag, string>
-  : N extends 'childTagsByParentName'
-  ? Query<Tag, Tag, string>
-  : N extends 'users'
+  : // : N extends 'childTagsByParentName'
+  // ? Query<Tag, Tag, string>
+  N extends 'users'
   ? Query<Vertex, User>
   : N extends 'parentTagsByWorkspace'
   ? Query<Tag, Tag, VertexManager<Workspace>>
@@ -79,7 +79,7 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
   readonly tags: Query<Vertex, Tag, string>;
   readonly childTags: Query<Tag, Tag, string>;
   readonly parentTagsByName: Query<Tag, Tag, string>;
-  readonly childTagsByParentName: Query<Tag, Tag, string>;
+  // readonly childTagsByParentName: Query<Tag, Tag, string>;
   readonly users: Query<Vertex, User>;
   readonly parentTagsByWorkspace: Query<Tag, Tag, VertexManager<Workspace>>;
 
@@ -127,15 +127,17 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
       alwaysActive: true,
       groupBy: (tag) => tag.name,
       contentSensitive: true,
-      contentFields: ['childTags'],
+      contentFields: ['childTags', 'name'],
     }).lock();
-    this.childTagsByParentName = new Query<Tag, Tag, string>({
-      source: this.tags,
-      predicate: (tag) => tag.isChildTag,
-      name: 'SharedChildTags',
-      alwaysActive: true,
-      groupBy: (tag) => tag.parentTag?.name || null,
-    }).lock();
+    // this.childTagsByParentName = new Query<Tag, Tag, string>({
+    //   source: this.tags,
+    //   predicate: (tag) => tag.isChildTag,
+    //   name: 'SharedChildTags',
+    //   alwaysActive: true,
+    //   groupBy: (tag) => tag.parentTag?.name || null,
+    //   contentSensitive: true,
+    //   contentFields: ['parentTag'],
+    // }).lock();
     this.users = new Query<Vertex, User>({
       source: this.noNotes,
       predicate: (vert) => vert.namespace === NS_USERS,

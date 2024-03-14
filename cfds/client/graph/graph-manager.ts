@@ -708,8 +708,8 @@ export class GraphManager
       this._undoManager.update(mutations);
 
       this._executedFieldTriggers.clear();
-      for (const [key, pack] of mutations) {
-        this.emit('vertex-changed', key, pack);
+      for (const [mgr, pack] of mutations) {
+        this.emit('vertex-changed', mgr.key, pack);
       }
     }
   }

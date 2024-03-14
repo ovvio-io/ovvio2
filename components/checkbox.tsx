@@ -17,20 +17,28 @@ export interface CheckBoxProps {
   value: boolean;
   onChange: (value: boolean) => void;
   className?: string;
+  disabled?: boolean;
 }
 
-export function CheckBox({ value, onChange, className }: CheckBoxProps) {
+export function CheckBox({
+  value,
+  onChange,
+  className,
+  disabled,
+}: CheckBoxProps) {
   const styles = useStyles();
-  const src = `/icons/design-system/checkbox/${
-    value ? '' : 'not-'
-  }selected.svg`;
+  const src = `/icons/design-system/checkbox/${value ? '' : 'not-'}selected${
+    disabled === true ? '-disabled' : ''
+  }.svg`;
   const onClick = useCallback(
     (event: React.MouseEvent<HTMLImageElement>) => {
-      onChange(!value);
+      if (!disabled) {
+        onChange(!value);
+      }
       event.preventDefault();
       event.stopPropagation();
     },
-    [onChange, value]
+    [onChange, value],
   );
 
   return (
