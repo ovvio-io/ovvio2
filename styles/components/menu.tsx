@@ -29,7 +29,7 @@ export const LineSeparator = () => (
       height: '1px',
       backgroundColor: theme1.secondary.s2,
       width: '100%',
-      display: 'list-item',
+      display: 'flex',
     }}
   />
 );
