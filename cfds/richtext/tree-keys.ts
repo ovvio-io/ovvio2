@@ -23,7 +23,7 @@ export class TreeKeys implements Clonable, Equatable<TreeKeys> {
     this._root = root;
     this._nodeToKey = new HashMap<CoreValue, string>(
       encodableValueHash,
-      coreValueEquals,
+      (n1, n2) => n1 === n2,
     );
     this._keyToNode = new Map();
     this._hashToCount = new Map();
