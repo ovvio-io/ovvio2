@@ -19,7 +19,7 @@ import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
 import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { Button } from '../../../../../../../../styles/components/buttons.tsx';
-import { TaskCheckbox } from '../../../../../../../../components/task.tsx';
+import { TaskCheckbox } from '../../../../../../../../components/checkbox.tsx';
 import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
 import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import {
@@ -320,7 +320,7 @@ export function SelectIconContainer({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   const card: Note = useVertexByKey(cardKey);
   return (
@@ -328,7 +328,7 @@ export function SelectIconContainer({
       className={cn(
         !isSelected && styles.selectIconContainer,
         styles.selectedIconContainer,
-        className
+        className,
       )}
       style={style}
       onClick={() => handleSelectClick(card)}
@@ -355,7 +355,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        isChecked && styles.doneIndicatorActive
+        isChecked && styles.doneIndicatorActive,
       )}
     />
   );
@@ -388,20 +388,20 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
   ]);
   const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['users']
+    ['users'],
   );
 
   const userManagers = useMemo(
     () =>
       Array.from(wsAssignees || []).map(
-        (x) => x.manager as VertexManager<User>
+        (x) => x.manager as VertexManager<User>,
       ),
-    [wsAssignees]
+    [wsAssignees],
   );
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
-    [assignees]
+    [assignees],
   );
 
   return (
@@ -528,14 +528,14 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       const parent = tag.parentTag || tag;
       tags.set(parent, tag);
     },
-    [note]
+    [note],
   );
 
   const onDelete = useCallback(
     (tag: Tag) => {
       note.getVertexProxy().tags.delete(tag.parentTag || tag);
     },
-    [note]
+    [note],
   );
 
   return (
@@ -714,7 +714,7 @@ const MenuCell = ({
         <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
       </div>
     ),
-    []
+    [],
   );
   return (
     <div className={cn(styles.iconCell)} onClick={toggleMenu}>
@@ -785,7 +785,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       multiIsActive,
       isInAction,
     },
-    ref
+    ref,
   ) {
     const styles = useStyles();
     const [isMouseOver, setIsMouseOver] = useState(false);
@@ -827,7 +827,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
         <div
           className={cn(
             isChild && styles.isChild,
-            multiIsActive && styles.multiIsActive
+            multiIsActive && styles.multiIsActive,
           )}
         >
           <div
@@ -835,7 +835,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
               isSelected ? styles.selectedRow : styles.hoverableRow,
-              isInAction && isSelected && styles.InAction
+              isInAction && isSelected && styles.InAction,
             )}
             style={{
               width: isChild ? childWidth : undefined,
@@ -901,5 +901,5 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           ))}
       </div>
     );
-  }
+  },
 );
