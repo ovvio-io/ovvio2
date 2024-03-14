@@ -61,6 +61,7 @@ import {
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
 import { usePendingAction } from './cards-display/index.tsx';
+import { useFilteredNotes } from '../../../core/cfds/react/filter.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -129,6 +130,7 @@ const useStyles = makeStyles(
       cursor: 'pointer',
       textDecoration: 'underline',
       basedOn: [useTypographyStyles.text],
+      color: '#FFF',
     },
     toggleViewButtonDisabled: {
       cursor: 'not-allowed',
@@ -614,8 +616,25 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   setSelectedCards,
 }) => {
   const styles = useStyles();
+  const [allCards, setAllCards] = useState<Set<VertexManager<Note>>>(new Set());
+  const view = usePartialView(
+    'noteType',
+    'expandedGroupIds',
+    'selectedWorkspaces'
+  );
 
-  const selectAll = useCallback(() => {}, []);
+  //TODO: CHECK v
+  const filteredNotes = useFilteredNotes('all');
+  const allNotes = view.selectedWorkspaces;
+  const pinnedQuery = useQuery2(filteredNotes[1]);
+  //TODO: CHECK ^
+
+  const selectAll = useCallback(() => {
+    // const allCardsHolder = new Set<VertexManager<Note>>();
+    // allNotes.forEach((ws: Workspace) => {
+    //   allCardsHolder.add(ws.notesQuery.group());
+    // });
+  }, []);
 
   const handleOnClose = () => {
     onClose && onClose();
@@ -627,16 +646,10 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
           <div className={styles.toggleActions}>
             {<img src="/icons/design-system/selectedCheck.svg" />}
             <TextSm>{selectedCards.size} selected </TextSm>
-            {/* <div className={styles.separateLine}> | </div>
-            <TextSm
-              onClick={selectAll}
-              className={cn(
-                styles.toggleViewButton,
-                selectedCards.size === 1 && styles.toggleViewButtonDisabled
-              )}
-            >
+            <div className={styles.separateLine}> | </div>
+            <TextSm onClick={selectAll} className={cn(styles.toggleViewButton)}>
               Select All
-            </TextSm> */}
+            </TextSm>
           </div>
           <div className={styles.functionContainer}>
             <AssignMultiButton selectedCards={selectedCards} />

@@ -94,6 +94,7 @@ export function ListViewNew({
   const filteredNotes = useFilteredNotes('listView');
   const docRouter = useDocumentRouter();
   const view = usePartialView(
+    'groupBy',
     'noteType',
     'expandedGroupIds',
     'notesExpandOverride',

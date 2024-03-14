@@ -84,13 +84,11 @@ const useStyles = makeStyles((theme) => ({
     paddingBottom: styleguide.gridbase,
     paddingLeft: 0,
   },
-
   columnContent: {
     boxSizing: 'border-box',
     padding: styleguide.gridbase,
     width: '100%',
   },
-
   newTaskText: {
     color: '#3184DD',
     fontSize: '10px',
