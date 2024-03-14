@@ -541,7 +541,9 @@ export const KanbanCard = React.forwardRef(function CardItemView(
           cardKey={card.key}
         />
       )}
-      {!multiIsActive && <CardMenu card={card} isMouseOver={isMouseOver} />}
+      {isMouseOver && !multiIsActive && (
+        <CardMenu card={card} isMouseOver={isMouseOver} />
+      )}
       <div className={cn(multiIsActive && styles.multiIsActive)}>
         <div
           className={cn(
