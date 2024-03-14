@@ -86,12 +86,8 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         if (isOperator) {
           return true;
         }
-        if (record.isNull) {
-          // Only root and operators are allowed to create users
-          return false;
-        }
         // Operator users are invisible to all other users
-        if (operatorEmails.includes(record.get('email'))) {
+        if (operatorEmails.includes(userRecord.get('email'))) {
           return false;
         }
         const userPermissions =
@@ -100,6 +96,11 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         // manage:users grants full write access to all user records
         if (userPermissions?.has('manage:users') === true) {
           return true;
+        }
+        // Creating users is only allowed for: root, operators and anyone with
+        // manage:users permission.
+        if (record.isNull) {
+          return false;
         }
         if (userKey === commit.key) {
           // Users are allowed to update their own records, as long as they don't
