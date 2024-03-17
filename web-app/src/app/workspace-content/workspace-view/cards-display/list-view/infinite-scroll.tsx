@@ -37,14 +37,14 @@ export function InfiniteVerticalScroll({
   const previousLimit = useRef(limit);
   const canLoadMore = recordsLength >= limit;
   const [didMount, setDidMount] = useState(false);
-  useEffect(() => {
-    if (limit < previousLimit.current) {
-      if (parentEl) {
-        parentEl.scrollTop = 0;
-      }
-    }
-    previousLimit.current = limit;
-  }, [limit, parentEl]);
+  // useEffect(() => {
+  //   if (limit < previousLimit.current) {
+  //     if (parentEl) {
+  //       parentEl.scrollTop = 0;
+  //     }
+  //   }
+  //   previousLimit.current = limit;
+  // }, [limit, parentEl]);
   useEffect(() => {
     if (parentEl && canLoadMore) {
       const handler = () => {
@@ -63,7 +63,7 @@ export function InfiniteVerticalScroll({
   }, [parentEl, canLoadMore, pageSize, didMount, setLimit]);
   useEffect(() => {
     let canMount = true;
-    window.setTimeout(() => {
+    setTimeout(() => {
       if (canMount) {
         setDidMount(true);
       }
