@@ -638,13 +638,31 @@ export class GraphManager
     if (mgr === undefined) {
       const scheme =
         ns !== undefined ? SchemeManager.instance.getScheme(ns) : undefined;
-      const record =
+      let record =
         scheme !== undefined
           ? new Record({
               scheme: scheme,
               data: initialData!,
             })
           : undefined;
+      if (!record) {
+        const repo = this.repositoryForKey(key)[1];
+        if (repo) {
+          record = repo.valueForKey(key);
+        }
+      }
+      // A lot of places call this method to blindly initialize keys. Some keys,
+      // however, have no meaningful representation in the graph, and thus are
+      // skipped in a graceful way that won't break the base assumptions of the
+      // caller.
+      if (
+        record &&
+        [(SchemeNamespace.SESSIONS, SchemeNamespace.EVENTS)].includes(
+          record.scheme.namespace,
+        )
+      ) {
+        return this.getRootVertexManager();
+      }
       mgr = new VertexManager(this, key, record, local);
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
