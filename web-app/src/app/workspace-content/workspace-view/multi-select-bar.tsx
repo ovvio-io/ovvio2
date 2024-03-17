@@ -326,6 +326,7 @@ export function RemoveMultiButton<T>({
         () => setSelectedCards!(prevState)
       );
       setPendingAction(false);
+      setSelectedCards && setSelectedCards(new Set());
     }, 2000);
   };
 
