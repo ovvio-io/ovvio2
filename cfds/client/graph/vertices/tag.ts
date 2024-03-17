@@ -12,6 +12,7 @@ import {
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Query } from '../query.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { SimpleTimer } from '../../../../base/timer.ts';
 
 export class Tag extends ContentVertex {
   private _cachedTagFamily: Tag[] | undefined;
@@ -50,7 +51,10 @@ export class Tag extends ContentVertex {
     return this.graph
       .sharedQuery('childTags')
       .group(this.workspace.key)
-      .filter((mgr) => mgr.getVertexProxy().parentTag?.key === this.key)
+      .filter((mgr) => {
+        const child = mgr.getVertexProxy();
+        return child.parentTag?.key === this.key && !child.isDeleted;
+      })
       .map((mgr) => mgr.getVertexProxy());
     // return Array.from(this.inEdgesManagers<Tag>('parentTag'))
     //   .map(([mgr]) => mgr.getVertexProxy())
@@ -59,6 +63,13 @@ export class Tag extends ContentVertex {
   }
 
   private _invalidateChildTags(local: boolean): MutationPack {
+    new SimpleTimer(50, false, () =>
+      this.manager.vertexDidMutate(this._invalidateChildTagsImpl(local)),
+    ).schedule();
+    return this._invalidateChildTagsImpl(local);
+  }
+
+  private _invalidateChildTagsImpl(local: boolean): MutationPack {
     const res: MutationPack = ['childTags', local, this._cachedChildTags];
     this._cachedChildTags = undefined;
     return res;

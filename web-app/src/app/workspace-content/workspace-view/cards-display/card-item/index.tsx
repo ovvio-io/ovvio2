@@ -26,7 +26,7 @@ import { CardFooter } from './card-footer.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
-import { TaskCheckbox } from '../../../../../../../components/task.tsx';
+import { TaskCheckbox } from '../../../../../../../components/checkbox.tsx';
 import { IconPin } from '../../../../../../../styles/components/new-icons/icon-pin.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 
@@ -48,7 +48,7 @@ function getStrikethroughSVG(fill: string) {
       TITLE_LINE_HEIGHT / 2
     }' stroke='${fill}'/>
   </svg>
-  `.replace(/\n/g, '')
+  `.replace(/\n/g, ''),
   );
 }
 
@@ -185,13 +185,13 @@ interface TitleElementProps {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: TitleElementProps,
-    ref: React.ForwardedRef<HTMLSpanElement>
+    ref: React.ForwardedRef<HTMLSpanElement>,
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  }
+  },
 );
 
 function Title({
@@ -311,7 +311,7 @@ export interface CardItemProps {
 
 export const CardItem = React.forwardRef(function CardItemView(
   { card, className, showChildCards, size, ...rest }: CardItemProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -377,7 +377,7 @@ export const CardItem = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone
+                    isDone && styles.strikethroughDone,
                   )}
                 >
                   {word}{' '}
@@ -409,7 +409,7 @@ export const CardItem = React.forwardRef(function CardItemView(
           <IconExpander
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconExpanded
+              expanded && styles.expanderIconExpanded,
             )}
           />
         </div>

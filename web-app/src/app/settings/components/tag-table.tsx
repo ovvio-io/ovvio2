@@ -4,12 +4,12 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
+  RefObject,
 } from 'react';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
 import Menu, { MenuAction } from '../../../../../styles/components/menu.tsx';
-import { RefObject } from 'https://esm.sh/v96/@types/react@18.2.15/index.js';
 import {
   Tag,
   Workspace,
@@ -277,6 +277,9 @@ const CategoryPill: React.FC<CategoryPillProps> = ({
       setCategoryName('Untitled');
     }
   };
+  if (category.isDeleted) {
+    return null;
+  }
 
   return (
     <div className={cn(styles.categoryPill, editMode && styles.editPill)}>
