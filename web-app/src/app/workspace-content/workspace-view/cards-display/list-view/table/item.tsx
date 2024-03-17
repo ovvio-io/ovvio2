@@ -184,7 +184,7 @@ const useStyles = makeStyles(() => ({
     paddingLeft: styleguide.gridbase * 0.5,
   },
   wsColumn: {
-    width: 'calc(23% - 156px)',
+    width: 'calc(20% - 156px)',
     basedOn: [layout.row],
     flexGrow: '1',
     flexShrink: '1',
@@ -193,7 +193,7 @@ const useStyles = makeStyles(() => ({
     padding: [0, styleguide.gridbase * 0.5],
   },
   assigneeColumn: {
-    width: 'calc(5% - 156px)',
+    width: 'calc(10% - 156px)',
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
@@ -209,7 +209,7 @@ const useStyles = makeStyles(() => ({
     marginRight: styleguide.gridbase * 0.25,
   },
   tagsColumn: {
-    width: 'calc(22% - 156px)',
+    width: 'calc(20% - 156px)',
     flexGrow: '2',
     flexShrink: '1',
     flexBasis: 'auto',
@@ -317,7 +317,7 @@ export function SelectIconContainer({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const card: Note = useVertexByKey(cardKey);
   return (
@@ -325,7 +325,7 @@ export function SelectIconContainer({
       className={cn(
         !isSelected && styles.selectIconContainer,
         styles.selectedIconContainer,
-        className,
+        className
       )}
       style={style}
       onClick={() => handleSelectClick(card)}
@@ -352,7 +352,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        isChecked && styles.doneIndicatorActive,
+        isChecked && styles.doneIndicatorActive
       )}
     />
   );
@@ -385,24 +385,31 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
   ]);
   const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['users'],
+    ['users']
   );
 
   const userManagers = useMemo(
     () =>
       Array.from(wsAssignees || []).map(
-        (x) => x.manager as VertexManager<User>,
+        (x) => x.manager as VertexManager<User>
       ),
-    [wsAssignees],
+    [wsAssignees]
   );
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
-    [assignees],
+    [assignees]
   );
 
   return (
     <div className={cn(styles.assigneeColumn)}>
+      <AssignButton
+        source={'list'}
+        cardManager={note}
+        users={userManagers}
+        assignees={managers}
+        className={cn(styles.visibleOnHover, styles.assignee)}
+      />
       {managers.map((x) => (
         <Assignee
           key={x.key}
@@ -415,13 +422,6 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
           source={'list'}
         />
       ))}
-      <AssignButton
-        source={'list'}
-        cardManager={note}
-        users={userManagers}
-        assignees={managers}
-        className={cn(styles.visibleOnHover, styles.assignee)}
-      />
     </div>
   );
 };
@@ -525,18 +525,26 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       const parent = tag.parentTag || tag;
       tags.set(parent, tag);
     },
-    [note],
+    [note]
   );
 
   const onDelete = useCallback(
     (tag: Tag) => {
       note.getVertexProxy().tags.delete(tag.parentTag || tag);
     },
-    [note],
+    [note]
   );
 
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
+      {/* <div ref={tagButtonRef} style={{ position: 'absolute' }}> */}
+      <div ref={tagButtonRef} style={{ position: 'relative' }}>
+        <TagButton
+          onTagged={onTag}
+          className={cn(styles.visibleOnHover)}
+          noteId={note}
+        />
+      </div>
       {managers.map((tag, index) => (
         <div
           ref={(el) => el && tagsRef.current.set(tag.key, el)}
@@ -554,17 +562,11 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           />
         </div>
       ))}
+
       <div ref={tooltipRef} style={{ position: 'absolute' }}>
         <Tooltip text={getHiddenTags()} position="top" align="center">
           <div className={cn(styles.tag2, styles.tagName)}>...</div>
         </Tooltip>
-      </div>
-      <div ref={tagButtonRef} style={{ position: 'absolute' }}>
-        <TagButton
-          onTagged={onTag}
-          className={cn(styles.visibleOnHover)}
-          noteId={note}
-        />
       </div>
     </div>
   );
@@ -711,7 +713,7 @@ const MenuCell = ({
         <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
   return (
     <div className={cn(styles.iconCell)} onClick={toggleMenu}>
@@ -782,7 +784,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       multiIsActive,
       isInAction,
     },
-    ref,
+    ref
   ) {
     const styles = useStyles();
     const [isMouseOver, setIsMouseOver] = useState(false);
@@ -847,7 +849,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
         <div
           className={cn(
             isChild && styles.isChild,
-            multiIsActive && styles.multiIsActive,
+            multiIsActive && styles.multiIsActive
           )}
         >
           <div
@@ -855,7 +857,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
               isSelected ? styles.selectedRow : styles.hoverableRow,
-              isInAction && isSelected && styles.InAction,
+              isInAction && isSelected && styles.InAction
             )}
             style={{
               width: isChild ? childWidth : undefined,
@@ -912,5 +914,5 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           ))}
       </div>
     );
-  },
+  }
 );
