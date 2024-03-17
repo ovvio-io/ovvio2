@@ -19,7 +19,6 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'clip',
-    // display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
   },
@@ -207,18 +206,14 @@ export default function TagPicker({
                 <div
                   key={tag.key}
                   className={cn(
-                    styles.row,
                     styles.hoverableRow,
-                    selectedIndex === index && styles.selectedItem
+                    selectedIndex === index && styles.selectedItem,
+                    styles.row
                   )}
                   onClick={(event) => handleRowClick(tag, event)}
                 >
-                  {tag ? (
-                    <span>
-                      #&nbsp;
-                      <span style={{ marginLeft: '8px' }}>{tag.name}</span>
-                    </span>
-                  ) : null}
+                  #&nbsp;
+                  <span style={{ marginLeft: '8px' }}>{tag.name}</span>
                 </div>
                 <LineSeparator />
               </React.Fragment>
