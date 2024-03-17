@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   NS_WORKSPACE,
   NS_NOTES,
@@ -104,17 +104,12 @@ export function useQuery2<
     }
     return graph.query(queryOrName as QueryOptions<IT, OT, GT>);
   }, [queryOrName]);
-  const [proxy, setProxy] = useState<Query<IT, OT, GT> | undefined>(
-    query ? new Proxy(query, {}) : undefined,
-  );
+  const [_, setLastProxy] = useState(query?.proxy);
   useEffect(
-    () =>
-      query?.onResultsChanged(() => {
-        setProxy(new Proxy(query, {}));
-      }),
-    [query, setProxy],
+    () => query?.onResultsChanged(() => setLastProxy(query?.proxy)),
+    [query],
   );
-  return query ? proxy || query : undefined;
+  return query?.proxy;
 }
 
 export function useSharedQuery<T extends SharedQueryName>(

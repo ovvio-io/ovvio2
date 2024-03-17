@@ -107,6 +107,7 @@ export class Query<
   private _limit: number = Number.MAX_SAFE_INTEGER;
   private _isLocked = false;
   private _attached = false;
+  private _proxy: typeof this;
 
   /**
    * A single use async query for the times you only need a one-off and don't
@@ -239,6 +240,7 @@ export class Query<
     }
     this._contentSensitive = opts?.contentSensitive === true;
     this._waitForSource = opts?.waitForSource === true;
+    this._proxy = new Proxy(this, {});
   }
 
   protected suspend(): void {
@@ -367,6 +369,10 @@ export class Query<
       this._groupsLimit = n;
       this._clientsNotifyTimer.schedule();
     }
+  }
+
+  get proxy(): typeof this {
+    return this._proxy;
   }
 
   groups(): GroupId<GT>[] {
@@ -694,6 +700,7 @@ export class Query<
     console.log(
       `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`,
     );
+    this._proxy = new Proxy(this, {});
     this.emit('results-changed');
   }
 }
