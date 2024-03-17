@@ -11,6 +11,13 @@ import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { useDueDate } from '../../../shared/components/due-date-editor/index.tsx';
+import DatePicker from '../../../../../styles/components/inputs/date-picker.tsx';
+import {
+  DialogContent,
+  DialogHeader,
+} from '../../../../../styles/components/dialog/index.tsx';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -60,6 +67,7 @@ const useStyles = makeStyles(() => ({
     [MediaQueries.TabletAndMobile]: {
       display: 'none',
     },
+    fontSize: '13px',
   },
   filtersView: {
     alignItems: 'center',
@@ -245,6 +253,95 @@ export function AssignWsBlueButton({
     </Button>
   );
 }
+export interface DueDatePickerProps {
+  className?: string;
+  dueDateClick?: () => void;
+}
+
+// export function DueDateMultiSelect({
+//   className,
+//   dueDateClick,
+// }: DueDatePickerProps) {
+//   const styles = useStyles();
+//   const dueDateEditor = useDueDate();
+//   const onClick = (e: MouseEvent) => {
+//     e.stopPropagation();
+//     <DatePicker value={undefined} onChange={() => {}} />;
+//   };
+//   return (
+//     <Button
+//       onClick={(e) => onClick(e)}
+//       className={cn(styles.compose, styles.blue)}
+//     >
+//       {<img src="/icons/design-system/dueDate/addDueDateWhite.svg" />}
+//       <span className={cn(styles.textWhite)}>{'Due-Date'}</span>
+//     </Button>
+//   );
+// }
+export function DueDateMultiSelect({
+  className,
+  dueDateClick, // Ensure this prop is used or removed if unnecessary
+}: DueDatePickerProps) {
+  const styles = useStyles();
+  const dueDateEditor = useDueDate(); // Make sure this hook's return value is utilized
+
+  // State to control the visibility of the DatePicker
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
+  // Toggles the visibility of the DatePicker
+  const toggleDatePicker = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the event from bubbling up
+    setDatePickerVisibility(!isDatePickerVisible); // Toggle visibility state
+  };
+
+  return (
+    <>
+      <Button
+        onClick={toggleDatePicker}
+        className={cn(styles.compose, styles.blue)}
+      >
+        <img
+          src="/icons/design-system/dueDate/addDueDateWhite.svg"
+          alt="Due Date"
+        />
+        <span className={cn(styles.textWhite)}>Due-Date</span>
+      </Button>
+      {isDatePickerVisible && (
+        <DialogContent>
+          <DialogHeader>Calendar</DialogHeader>
+
+          <DatePicker
+            value={undefined}
+            onChange={(newValue) => {
+              // Implement the change logic, possibly involving `dueDateEditor` or props
+              setDatePickerVisibility(false); // Optionally hide the picker after selection
+            }}
+          />
+        </DialogContent>
+      )}
+    </>
+  );
+}
+export interface AddTagBlueButtonProps {
+  className?: string;
+  addTagClick?: () => void;
+}
+
+export function AddTagBlueButton({
+  className,
+  addTagClick,
+}: AddTagBlueButtonProps) {
+  const styles = useStyles();
+  const onClick = (e: MouseEvent) => {
+    e.stopPropagation();
+  };
+  return (
+    <Button onClick={addTagClick} className={cn(styles.compose, styles.blue)}>
+      {<img src="/icons/design-system/tag/addTagWhite.svg" />}
+      <span className={cn(styles.textWhite)}>{'Tag'}</span>
+    </Button>
+  );
+}
 
 interface SaveAddButtonProps {
   onSaveAddClick?: () => void;
@@ -261,16 +358,37 @@ export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
         styles.compose,
         isDisabled ? styles.disabled : styles.available
       )}
+      onClick={onSaveAddClick}
     >
-      <img
-        key="CheckEditSettings"
-        src="/icons/settings/Check.svg"
-        onClick={onSaveAddClick}
-      />
+      <img key="CheckEditSettings" src="/icons/settings/Check.svg" />
       <span className={cn(styles.text)}>{'Done'}</span>
     </Button>
   );
 }
+
+interface UndoButtonProps {
+  onUndoClick?: () => void;
+  disable: boolean;
+}
+
+export function UndoButton({ onUndoClick, disable }: UndoButtonProps) {
+  const styles = useStyles();
+  const isDisabled = disable;
+
+  return (
+    <Button
+      className={cn(
+        styles.compose,
+        isDisabled ? styles.disabled : styles.available
+      )}
+      onClick={onUndoClick}
+    >
+      <img key="CheckEditSettings" src="/icons/design-system/Undo.svg" />
+      <span className={cn(styles.text)}>{'Undo'}</span>
+    </Button>
+  );
+}
+
 interface EditButtonProps {
   onEditClick?: () => void;
 }
@@ -332,19 +450,18 @@ export const UserPill: React.FC<UserPillProps> = ({
 
 interface RemoveButtonProps {
   onRemove?: () => void;
+  text?: string;
 }
 
-export function RemoveButton({ onRemove }: RemoveButtonProps) {
+export function RemoveButton({ onRemove, text }: RemoveButtonProps) {
   const styles = useStyles();
 
   return (
-    <Button
-      onClick={onRemove}
-      className={cn(styles.compose, styles.blue)}
-      style={{ marginBottom: '8px' }}
-    >
+    <Button onClick={onRemove} className={cn(styles.compose, styles.blue)}>
       <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
-      <span className={cn(styles.textWhite)}>{'Remove'}</span>
+      <span className={cn(styles.textWhite)}>
+        {text ? `${text} ` : 'Remove'}
+      </span>
     </Button>
   );
 }
@@ -393,9 +510,7 @@ export function DeleteWsButton({
       )}
     >
       <img key="DeleteWsInSettings" src="/icons/settings/Delete.svg" />
-      <span className={cn(styles.text)}>
-        {/* {isConfirmed === true ? 'true' : 'false'} */}
-
+      <span className={cn(styles.text)} style={{ fontSize: '13px' }}>
         {'Delete Workspace'}
       </span>
     </Button>

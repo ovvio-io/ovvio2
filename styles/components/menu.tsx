@@ -29,6 +29,7 @@ export const LineSeparator = () => (
       height: '1px',
       backgroundColor: theme1.secondary.s2,
       width: '100%',
+      display: 'flex',
     }}
   />
 );
@@ -209,7 +210,7 @@ export const MenuItem = React.forwardRef<
     icon: IconItem = null,
     ...props
   },
-  ref,
+  ref
 ) {
   const styles = useStyles();
   const ctx = useContext(MenuContext);
@@ -253,7 +254,7 @@ export const MenuAction = React.forwardRef<
   MenuActionProps & DivProps & MenuItemProps
 >(function MenuAction(
   { IconComponent, text, iconWidth, iconHeight, ...props },
-  ref,
+  ref
 ) {
   const styles = useStyles();
   return (
@@ -289,7 +290,7 @@ export const Backdrop = React.forwardRef<
           className={cn(
             className,
             styles.backdrop,
-            visible && styles.backdropVisible,
+            visible && styles.backdropVisible
           )}
           style={{ zIndex, marginBottom: '8px' }}
           {...rest}
@@ -298,7 +299,7 @@ export const Backdrop = React.forwardRef<
         </div>
       )}
     </Layer>,
-    document.getElementById('root')!,
+    document.getElementById('root')!
   );
 });
 
@@ -348,7 +349,6 @@ export default function Menu({
   isItemHovered,
   openImmediately,
   withoutArrow,
-
   isOpen,
   toggleMenu,
 }: MenuProps) {
@@ -360,7 +360,7 @@ export default function Menu({
   const menuCtx = useMenuContext();
 
   const [internalOpen, setInternalOpen] = useState(
-    openImmediately ? true : false,
+    openImmediately ? true : false
   );
   const open = isOpen !== undefined ? isOpen : internalOpen;
 
@@ -377,7 +377,7 @@ export default function Menu({
       }
       menuCtx.close();
     },
-    [menuCtx, toggleMenu],
+    [menuCtx, toggleMenu]
   );
 
   // const close = useCallback(
@@ -399,7 +399,7 @@ export default function Menu({
       },
       hasParent: true,
     }),
-    [close],
+    [close]
   );
 
   const openMenu = (e: React.MouseEvent) => {
@@ -428,6 +428,7 @@ export default function Menu({
       setMinWidthStyle({});
     }
   }, [children, sizeByButton]);
+
   const content = (
     <Popper
       className={undefined}

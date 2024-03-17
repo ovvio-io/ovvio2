@@ -12,6 +12,7 @@ import { styleguide } from '../../styleguide.ts';
 import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
 import TransitionGroup, { TRANSITION_STATES } from '../transition.tsx';
+import { brandLightTheme as theme } from '../../../styles/theme.tsx';
 
 const enterAnimation = keyframes(
   {
@@ -54,20 +55,23 @@ const exitAnimationLast = keyframes(
 );
 
 const useStyles = makeStyles(
-  (theme) => ({
+  () => ({
     toastList: {
       position: 'absolute',
-      bottom: styleguide.gridbase * 8,
-      left: styleguide.gridbase * 8,
+      bottom: styleguide.gridbase * 4,
+      left: styleguide.gridbase * 4,
       zIndex: 10,
     },
     toast: {
-      color: theme.background[0],
+      // color: theme.background.text,
+      borderColor: theme.primary.p4,
       paddingLeft: styleguide.gridbase * 3,
-      borderRadius: 6,
+      borderRadius: 1,
       alignItems: 'center',
-      backgroundColor: theme.background[800],
+      backgroundColor: theme.primary.p1,
       boxSizing: 'border-box',
+      borderStyle: 'solid',
+
       height: styleguide.gridbase * 7,
       width: styleguide.gridbase * 57,
       animation: `${enterAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
@@ -75,8 +79,16 @@ const useStyles = makeStyles(
       basedOn: [layout.row],
     },
     toastButton: {
-      color: theme.primary[500],
+      color: theme.primary.p10,
       padding: styleguide.gridbase * 3,
+    },
+    messageStyle: {
+      font: styleguide.textStyles['label-small'],
+    },
+    closeIcon: {
+      position: 'relative',
+      right: styleguide.gridbase * 2,
+      bottom: styleguide.gridbase,
     },
     [TRANSITION_STATES.EXITING.toLowerCase()]: {
       animation: `${exitAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
@@ -95,7 +107,7 @@ interface ToastInfo {
   action?: { text: string; fn: (dismiss: DismissFn) => void };
 }
 
-type DismissFn = () => void;
+export type DismissFn = () => void;
 
 interface ToastController {
   displayToast: (info: ToastInfo) => DismissFn;
@@ -106,6 +118,8 @@ export const toastContext = React.createContext<ToastController>({
     return () => {};
   },
 });
+export type DisplayToastFunction = (info: ToastInfo) => DismissFn;
+export type UndoFunction = () => void;
 
 export const useToastController = () => useContext(toastContext);
 
@@ -121,14 +135,19 @@ function Toast({
   const styles = useStyles();
   const [processing, setProcessing] = useState(false);
   const onClick = () => {
-    setProcessing(true);
-    Promise.resolve(message.action.fn(dismiss)).finally(() =>
-      setProcessing(false)
-    );
+    if (message.action) {
+      setProcessing(true);
+      Promise.resolve(message.action.fn(dismiss)).finally(() =>
+        setProcessing(false)
+      );
+    }
   };
   return (
     <div className={cn(styles.toast, styles[transitionState.toLowerCase()])}>
-      <span>{message.text}</span>
+      <div className={styles.closeIcon} onClick={dismiss}>
+        <img src="/icons/design-system/Close-big.svg" />
+      </div>
+      <span className={cn(styles.messageStyle)}>{message.text}</span>
       <div className={cn(layout.flexSpacer)} />
       {message.action && (
         <Button

@@ -1,11 +1,9 @@
-import React from 'react';
-import { H2 } from '../../../../../../styles/components/typography.tsx';
+import React, { ReactNode, createContext, useContext, useState } from 'react';
 import { makeStyles, cn } from '../../../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import { MediaQueries } from '../../../../../../styles/responsive.ts';
 import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { usePartialView } from '../../../../core/cfds/react/graph.tsx';
-import { createUseStrings } from '../../../../core/localization/index.tsx';
 import { ToolbarCenterItem } from '../toolbar/index.tsx';
 import { ActiveFiltersView } from './display-bar/filters/active-filters.tsx';
 import { FiltersView } from './display-bar/filters/index.tsx';
@@ -15,12 +13,13 @@ import {
   MOBILE_PADDING,
   DisplayBar,
 } from './display-bar/index.tsx';
-import { ListView } from './list-view/index.tsx';
-import localization from './cards-display.strings.json' assert { type: 'json' };
 import { Dashboard } from '../dashboard/dashboard.tsx';
 import { KanbanView } from './kanban-view/index.tsx';
-import { useFilteredNotes } from '../../../../core/cfds/react/filter.ts';
-import { ListViewNew } from './list-view-new/index.tsx';
+import { ListViewNew } from './list-view/index.tsx';
+import { Note } from '../../../../../../cfds/client/graph/vertices/note.ts';
+import { Vertex } from '../../../../../../cfds/client/graph/vertex.ts';
+import { VertexManager } from '../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useDisable } from '../../../index.tsx';
 
 const useStyles = makeStyles((theme) => ({
   displayRoot: {
@@ -32,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row],
   },
   displayMain: {
-    position: 'relative',
+    // position: 'relative',
     height: '100%',
     overflow: 'hidden',
     flexShrink: 1,
@@ -82,33 +81,104 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+interface PendingActionContextType {
+  pendingAction: boolean;
+  setPendingAction: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const PendingActionContext = createContext<
+  PendingActionContextType | undefined
+>(undefined);
+
+export const usePendingAction = () => {
+  const context = useContext(PendingActionContext);
+  if (!context) {
+    throw new Error('Error in PendingActions');
+  }
+  return context;
+};
+
+interface PendingActionProviderProps {
+  children: ReactNode;
+}
+
+export const PendingActionProvider: React.FC<PendingActionProviderProps> = ({
+  children,
+}) => {
+  const [pendingAction, setPendingAction] = useState<boolean>(false);
+
+  return (
+    <PendingActionContext.Provider value={{ pendingAction, setPendingAction }}>
+      {children}
+    </PendingActionContext.Provider>
+  );
+};
+
 export function CardsDisplay() {
   const styles = useStyles();
   const view = usePartialView('viewType', 'selectedTabId');
+  const [selectedCards, setSelectedCards] = useState<Set<VertexManager<Note>>>(
+    new Set()
+  );
+
   let content = null;
+  const onCloseMultiSelect = () => {
+    setSelectedCards(new Set());
+  };
+
+  const handleSelectClick = (card?: Note) => {
+    if (card) {
+      const updatedSelectedCards = new Set(selectedCards);
+      if (updatedSelectedCards.has(card.manager)) {
+        updatedSelectedCards.delete(card.manager);
+      } else {
+        updatedSelectedCards.add(card.manager);
+      }
+      setSelectedCards(updatedSelectedCards);
+    }
+  };
 
   if (view.selectedTabId === 'overview') {
     content = <Dashboard />;
   } else if (view.viewType === 'list') {
-    // content = <ListView key={'list'} className={cn(styles.contentView)} />;
-    content = <ListViewNew key={'list'} className={cn(styles.contentView)} />;
+    content = (
+      <ListViewNew
+        key={'list'}
+        className={cn(styles.contentView)}
+        selectedCards={selectedCards}
+        setSelectedCards={setSelectedCards}
+        handleSelectClick={handleSelectClick}
+      />
+    );
   } else if (view.viewType === 'board') {
     content = (
-      <KanbanView className={cn(styles.contentView)} />
-      // <BoardView className={cn(styles.contentView)} />
+      <KanbanView
+        key={'board'}
+        className={cn(styles.contentView)}
+        selectedCards={selectedCards}
+        setSelectedCards={setSelectedCards}
+        handleSelectClick={handleSelectClick}
+      />
     );
   }
   return (
-    <div className={cn(styles.displayRoot)}>
-      <div className={cn(styles.displayMain)}>
-        <DisplayBar />
-        <ToolbarCenterItem
-          className={cn(layout.flexSpacer)}
-        ></ToolbarCenterItem>
-        <FiltersView className={cn(styles.filters)} />
-        <ActiveFiltersView className={cn(styles.activeFilters)} />
-        <div className={cn(styles.displayContent)}>{content}</div>
+    <PendingActionProvider>
+      <div className={cn(styles.displayRoot)}>
+        <div className={cn(styles.displayMain)}>
+          <DisplayBar
+            selectedCards={selectedCards}
+            onCloseMultiSelect={onCloseMultiSelect}
+            setSelectedCards={setSelectedCards}
+          />
+
+          <ToolbarCenterItem
+            className={cn(layout.flexSpacer)}
+          ></ToolbarCenterItem>
+          <FiltersView className={cn(styles.filters)} />
+          <ActiveFiltersView className={cn(styles.activeFilters)} />
+          <div className={cn(styles.displayContent)}>{content}</div>
+        </div>
       </div>
-    </div>
+    </PendingActionProvider>
   );
 }

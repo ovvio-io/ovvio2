@@ -7,10 +7,7 @@ import {
 import { styleguide } from '../../../../../../../styles/index.ts';
 import Dialog from '../../../../../../../styles/components/dialog/index.tsx';
 import { DialogContent } from '../../../../../../../styles/components/dialog/index.tsx';
-import {
-  H2,
-  useTypographyStyles,
-} from '../../../../../../../styles/components/typography.tsx';
+import { H2 } from '../../../../../../../styles/components/typography.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import {
   useVertexByKey,

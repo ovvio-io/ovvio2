@@ -19,13 +19,18 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 0,
     flexBasis: '33%',
     boxSizing: 'border-box',
-    marginRight: styleguide.gridbase * 2,
+    marginRight: styleguide.gridbase * 3 + 1,
     backgroundColor: lightColorWheel.secondary.s1,
     borderRadius: '4px',
     borderStyle: 'solid',
     borderWidth: '1px',
     borderColor: lightColorWheel.secondary.s2,
     padding: [0, 0, styleguide.gridbase, 0],
+    hoverableRow: {
+      ':hover': {
+        backgroundColor: '#F5ECDC',
+      },
+    },
   },
   columnHeader: {
     alignItems: 'center',
@@ -35,9 +40,12 @@ const useStyles = makeStyles((theme) => ({
     background: 'inherit',
     position: 'sticky',
     top: 0,
-    padding: styleguide.gridbase,
+    padding: [styleguide.gridbase, 0, styleguide.gridbase, 0],
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
+  },
+  TextTitle: {
+    padding: '0px 0px 0px 8px',
   },
   stickyShadow: {
     boxShadow: theme.shadows.z1,
@@ -50,15 +58,6 @@ const useStyles = makeStyles((theme) => ({
     top: -styleguide.gridbase,
     height: 1,
   },
-  titleText: {},
-  columnContent: {
-    boxSizing: 'border-box',
-    // padding: styleguide.gridbase,
-    width: '100%',
-  },
-  item: {
-    // marginBottom: styleguide.gridbase * 2,
-  },
   newTaskText: {
     color: '#3184DD',
     fontSize: '10px',
@@ -66,11 +65,6 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: '14px',
     letterSpacing: '-0.1px',
     gap: '4px',
-  },
-  hoverableRow: {
-    ':hover': {
-      backgroundColor: '#F5ECDC',
-    },
   },
 }));
 
@@ -81,7 +75,7 @@ export interface KanbanColumnProps {
   onCreateCard?: () => void;
 }
 
-function ColumnTitle({ header, onCreateCard }: KanbanColumnProps) {
+function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
@@ -125,7 +119,14 @@ function ColumnTitle({ header, onCreateCard }: KanbanColumnProps) {
           style={style}
         >
           <div className={cn(styles.columnHeader)}>
-            <H4 className={cn(styles.titleText)}>{header}</H4>
+            <H4
+              className={cn(
+                styles.titleText,
+                groupBy !== 'workspace' && styles.TextTitle
+              )}
+            >
+              {header}
+            </H4>
             <div className={cn(layout.flexSpacer)} />
             {/* <Button onClick={onCreateCard}>
               {isColumnHovered && (
@@ -162,7 +163,7 @@ export function KanbanColumn({
   };
   return (
     <div
-      className={cn(styles.column, styles.hoverableRow)}
+      className={cn(styles.column)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -172,7 +173,7 @@ export function KanbanColumn({
         isColumnHovered={isColumnHovered}
         onCreateCard={() => {}}
       />
-      <div className={cn(styles.columnContent)}>{children}</div>
+      <div>{children}</div>
     </div>
   );
 }

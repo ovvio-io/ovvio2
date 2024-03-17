@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useMemo } from 'react';
 
 export interface NewTheme {
+  background: BackgroundPallete;
+
   primary: {
     p1: string;
     p2: string;

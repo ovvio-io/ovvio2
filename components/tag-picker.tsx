@@ -8,8 +8,7 @@ import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
 import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import Input from './input.tsx';
-import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
-import { useVertices } from '../web-app/src/core/cfds/react/vertex.ts';
+import { Tag } from '../cfds/client/graph/vertices/tag.ts';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -20,6 +19,7 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'clip',
+    // display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
   },
@@ -33,12 +33,15 @@ const useStyles = makeStyles(() => ({
     paddingLeft: '8px',
     alignItems: 'center',
     width: '100%',
-    minWidth: '120px',
-    display: 'flex',
     height: '32px',
     minHeight: '32px',
+    minWidth: '120px',
+    display: 'flex',
     fontSize: 13,
     lineHeight: '18px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
   },
   searchRowStyle: {
     display: 'flex',
@@ -76,42 +79,41 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-type MemberPickerProps = {
-  usersMn: VertexManager<User>[];
-  onRowSelect: (user: User) => void;
+type TagPickerProps = {
+  tags: Tag[];
+  onRowSelect: (tag: Tag) => void;
   showSearch?: boolean;
   onRemove?: () => void;
-  onClearAssignees?: () => void;
+  onClearTags?: () => void;
 };
 
-export function MemberPicker({
-  usersMn,
+export default function TagPicker({
+  tags,
   onRowSelect,
   showSearch,
   onRemove,
-  onClearAssignees,
-}: MemberPickerProps) {
+  onClearTags,
+}: TagPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuCtx = useMenuContext();
   useFocusOnMount(inputRef);
-  const users = useVertices(usersMn);
   const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (users) {
+    if (tags) {
       const filtered = suggestResults(
         searchTerm,
-        users,
+        tags,
         (t) => t.name,
         Number.MAX_SAFE_INTEGER
       );
-      setFilteredUsers(filtered);
+      setFilteredTags(filtered);
     }
-  }, [searchTerm, users]);
+  }, [searchTerm, tags]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,17 +129,16 @@ export function MemberPicker({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [menuCtx]);
-
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value || '');
   };
 
   const handleRowClick = (
-    user: User,
+    tag: Tag,
     event: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => {
     event.stopPropagation();
-    onRowSelect(user);
+    onRowSelect(tag);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -145,12 +146,12 @@ export function MemberPicker({
       case 'ArrowUp':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((x) => (x - 1 < 0 ? filteredUsers.length - 1 : x - 1));
+        setSelectedIndex((x) => (x - 1 < 0 ? filteredTags.length - 1 : x - 1));
         break;
       case 'ArrowDown':
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((x) => (x + 1) % filteredUsers.length);
+        setSelectedIndex((x) => (x + 1) % filteredTags.length);
         break;
       case 'Backspace':
         if (!searchTerm) {
@@ -169,7 +170,7 @@ export function MemberPicker({
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
-        onRowSelect(filteredUsers[selectedIndex]);
+        onRowSelect(filteredTags[selectedIndex]);
         break;
       default:
         return;
@@ -186,7 +187,7 @@ export function MemberPicker({
           <Input
             ref={inputRef}
             type="text"
-            placeholder={'Type name:'}
+            placeholder={'Search:'}
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={onKeyDown}
@@ -201,18 +202,23 @@ export function MemberPicker({
             ref={inputRef}
             onKeyDown={onKeyDown}
           >
-            {filteredUsers.map((user: User, index: number) => (
-              <React.Fragment key={user.key}>
+            {filteredTags.map((tag: Tag, index: number) => (
+              <React.Fragment key={tag.key}>
                 <div
-                  key={user.key}
+                  key={tag.key}
                   className={cn(
                     styles.row,
                     styles.hoverableRow,
                     selectedIndex === index && styles.selectedItem
                   )}
-                  onClick={(event) => handleRowClick(user, event)}
+                  onClick={(event) => handleRowClick(tag, event)}
                 >
-                  {user ? user.name : null}
+                  {tag ? (
+                    <span>
+                      #&nbsp;
+                      <span style={{ marginLeft: '8px' }}>{tag.name}</span>
+                    </span>
+                  ) : null}
                 </div>
                 <LineSeparator />
               </React.Fragment>
@@ -236,13 +242,13 @@ export function MemberPicker({
                 </div>
               </>
             )}
-            {onClearAssignees && (
+            {onClearTags && (
               <>
                 <div style={{ height: '8px', display: 'list-item' }}></div>
                 <LineSeparator />
                 <div
                   className={cn(styles.row, styles.hoverableRow)}
-                  onClick={onClearAssignees}
+                  onClick={onClearTags}
                 >
                   <div className={cn(styles.iconContainer)}>
                     <img
@@ -250,7 +256,7 @@ export function MemberPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.row)}>Clear Assignees</div>
+                  <div className={cn(styles.row)}>Clear Tags</div>
                 </div>
               </>
             )}

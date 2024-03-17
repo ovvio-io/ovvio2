@@ -57,50 +57,50 @@ export function IconDueDate({
             opacity="0.6"
             d="M14 14H1"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2H1"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M1 2L1 14"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2L14 14"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M10 1L10 3"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M5 1L5 3"
             stroke="#F9B55A"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 6H1"
             stroke="#EFD2AB"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </svg>
       );
@@ -119,50 +119,50 @@ export function IconDueDate({
             opacity="0.6"
             d="M14 14H1"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2H1"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M1 2L1 14"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2L14 14"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M10 1L10 3"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M5 1L5 3"
             stroke="#1960CF"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 6H1"
             stroke="#5793E0"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </svg>
       );
@@ -181,50 +181,50 @@ export function IconDueDate({
             opacity="0.6"
             d="M14 14H1"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2H1"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M1 2L1 14"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2L14 14"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M10 1L10 3"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M5 1L5 3"
             stroke="#B11A04"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 6H1"
             stroke="#E24716"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </svg>
       );
@@ -244,50 +244,50 @@ export function IconDueDate({
             opacity="0.6"
             d="M14 14H1"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2H1"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M1 2L1 14"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 2L14 14"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M10 1L10 3"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M5 1L5 3"
             stroke="#262626"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
           <path
             opacity="0.6"
             d="M14 6H1"
             stroke="#8C8C8C"
-            stroke-width="2"
-            stroke-linecap="round"
+            strokeWidth="2"
+            strokeLinecap="round"
           />
         </svg>
       );

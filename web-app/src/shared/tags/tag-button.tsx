@@ -258,7 +258,7 @@ export default function TagButton({
       )}
       position="bottom"
       align="end"
-      direction="out"
+      // direction="out"
       className={className}
       popupClassName={cn(styles.popup)}
     >

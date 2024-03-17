@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Menu from '../../../../styles/components/menu.tsx';
 import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
@@ -39,6 +39,7 @@ export interface CardMenuViewProps {
   visible?: boolean;
   isOpen?: boolean;
   toggleMenu?: () => void;
+  isTask?: boolean;
   renderButton?: any;
 }
 
@@ -46,17 +47,16 @@ export default function CardMenuView({
   cardManager,
   allowsEdit,
   onDeleted,
-  className,
   source,
   editorRootKey,
-  direction,
-  position,
-  visible,
   isOpen,
   toggleMenu,
+  isTask,
   renderButton,
 }: CardMenuViewProps) {
   const styles = useStyles();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
   const partialNote = usePartialVertex(cardManager, [
     'dueDate',
     'type',
@@ -70,43 +70,59 @@ export default function CardMenuView({
   }
 
   return (
-    <Menu
-      isOpen={isOpen}
-      toggleMenu={toggleMenu}
-      renderButton={renderButton}
-      direction="out"
-      position={source === 'list' ? 'left' : 'right'}
-      align="start"
-    >
-      {allowsEdit && (
-        <EditCardAction cardManager={cardManager} source={source} />
+    <React.Fragment>
+      {!showConfirmation ? (
+        <Menu
+          isOpen={isOpen}
+          toggleMenu={toggleMenu}
+          renderButton={renderButton}
+          direction="out"
+          position={source === 'list' ? 'left' : 'right'}
+          align="start"
+        >
+          {allowsEdit && (
+            <EditCardAction cardManager={cardManager} source={source} />
+          )}
+          {partialNote.dueDate && (
+            <ClearDueDateAction cardManager={cardManager} source={source} />
+          )}
+          {partialNote.parentNote && (
+            <ViewInNoteAction cardManager={cardManager} source={source} />
+          )}
+          <DuplicateCardAction
+            cardManager={cardManager}
+            source={source}
+            editorRootKey={editorRootKey}
+          />
+          {partialNote.childCards.length > 0 && (
+            <ToggleSubTasksAction cardManager={cardManager} source={source} />
+          )}
+          <DeleteCardAction
+            cardManager={cardManager}
+            source={source}
+            onDeleted={onDeleted}
+            showConfirmation={showConfirmation}
+            setShowConfirmation={setShowConfirmation}
+          />
+        </Menu>
+      ) : (
+        <Menu
+          isOpen={true}
+          renderButton={renderButton}
+          direction="out"
+          position={source === 'list' ? 'left' : 'right'}
+          align="start"
+        >
+          <DeleteCardAction
+            cardManager={cardManager}
+            source={source}
+            onDeleted={onDeleted}
+            showConfirmation={showConfirmation}
+            setShowConfirmation={setShowConfirmation}
+            isTask={isTask}
+          />
+        </Menu>
       )}
-      {/* <EditDueDateAction cardManager={cardManager} source={source} /> */}
-      {partialNote.dueDate && (
-        <ClearDueDateAction cardManager={cardManager} source={source} />
-      )}
-
-      {/* <UploadAttachmentAction cardManager={cardManager} source={source} /> */}
-      {partialNote.parentNote && (
-        <ViewInNoteAction cardManager={cardManager} source={source} />
-      )}
-      <DuplicateCardAction
-        cardManager={cardManager}
-        source={source}
-        editorRootKey={editorRootKey}
-      />
-      {/* <ExportMailAction cardManager={cardManager} source={source} />
-      <ExportPdfAction cardManager={cardManager} source={source} /> */}
-      {/* <ConvertNoteAction cardManager={cardManager} source={source} /> */}
-      {partialNote.childCards.length > 0 && (
-        <ToggleSubTasksAction cardManager={cardManager} source={source} />
-      )}
-      <DeleteCardAction
-        cardManager={cardManager}
-        source={source}
-        onDeleted={onDeleted}
-      />
-      {/* <CopyUrlAction cardManager={cardManager} source={source} /> */}
-    </Menu>
+    </React.Fragment>
   );
 }

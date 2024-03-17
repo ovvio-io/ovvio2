@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode, createContext, useContext, useState } from 'react';
 import { Route, RouterProvider } from 'react-router';
 import { createBrowserRouter } from 'react-router-dom';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
@@ -34,6 +34,15 @@ const useStyles = makeStyles((theme) => ({
     height: '100%',
     zIndex: 1,
   },
+  overlay: {
+    zIndex: 9,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255, 251, 245, 0.6)',
+  },
 }));
 
 // const isDarkTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
@@ -42,15 +51,49 @@ const isDarkTheme = false;
 // May 24, 2022
 const CUTOFF_DATE = new Date(1653393858426);
 
+// March 06, 2024
+type DisableContextType = {
+  isDisabled: boolean;
+  setDisable: (disabled: boolean) => void;
+};
+
+const DisableContext = createContext<DisableContextType | null>(null);
+
+export function useDisable() {
+  return useContext(DisableContext);
+}
+
+type DisableProviderProps = {
+  children: ReactNode;
+};
+
+export function DisableProvider({ children }: DisableProviderProps) {
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  const setDisable = (disabled: boolean) => {
+    setIsDisabled(disabled);
+  };
+
+  return (
+    <DisableContext.Provider value={{ isDisabled, setDisable }}>
+      {children}
+    </DisableContext.Provider>
+  );
+}
+
 type RootProps = React.PropsWithChildren<{
   style?: any;
 }>;
 
 function Root({ style, children }: RootProps) {
   const styles = useStyles();
+  const context = useDisable();
+  const isDisabled = context?.isDisabled ?? false;
 
   return (
     <div className={cn(styles.root)} style={style}>
+      {isDisabled && <div className={cn(styles.overlay)}></div>}
+
       <WorkspacesBar key={'wsbar'} />
       <div className={cn(styles.content)}>
         <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
@@ -72,15 +115,27 @@ function SettingsWs({ style, children }: RootProps) {
   );
 }
 
+// const router = createBrowserRouter([
+//   {
+//     path: '/',
+//     element: (
+//       <Root style={lightTheme}>
+//         <CardsDisplay />
+//       </Root>
+//     ),
+//   },
 const router = createBrowserRouter([
   {
     path: '/',
     element: (
-      <Root style={lightTheme}>
-        <CardsDisplay />
-      </Root>
+      <DisableProvider>
+        <Root style={lightTheme}>
+          <CardsDisplay />
+        </Root>
+      </DisableProvider>
     ),
   },
+
   {
     path: '/new',
     element: (

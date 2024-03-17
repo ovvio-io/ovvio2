@@ -117,7 +117,7 @@ export const useStyles = makeStyles(
       letterSpacing: 0.07,
     },
   }),
-  'typography_a4e47a',
+  'typography_a4e47a'
 );
 export { useStyles as useTypographyStyles };
 type TypographyProps<T extends ElementType> =
@@ -126,7 +126,7 @@ type TypographyProps<T extends ElementType> =
 export const H1 = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'h1'>,
-    ref: React.ForwardedRef<HTMLHeadingElement>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
   ) => {
     const styles = useStyles();
 
@@ -135,13 +135,13 @@ export const H1 = React.forwardRef(
         {children}
       </h1>
     );
-  },
+  }
 );
 
 export const H2 = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'h2'>,
-    ref: React.ForwardedRef<HTMLHeadingElement>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
   ) => {
     const styles = useStyles();
 
@@ -150,13 +150,13 @@ export const H2 = React.forwardRef(
         {children}
       </h2>
     );
-  },
+  }
 );
 
 export const H3 = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'h3'>,
-    ref: React.ForwardedRef<HTMLHeadingElement>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
   ) => {
     const styles = useStyles();
 
@@ -165,13 +165,13 @@ export const H3 = React.forwardRef(
         {children}
       </h3>
     );
-  },
+  }
 );
 
 export const H4 = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'h4'>,
-    ref: React.ForwardedRef<HTMLHeadingElement>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
   ) => {
     const styles = useStyles();
 
@@ -180,12 +180,12 @@ export const H4 = React.forwardRef(
         {children}
       </h4>
     );
-  },
+  }
 );
 export const H6 = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'h4'>,
-    ref: React.ForwardedRef<HTMLHeadingElement>,
+    ref: React.ForwardedRef<HTMLHeadingElement>
   ) => {
     const styles = useStyles();
 
@@ -194,12 +194,12 @@ export const H6 = React.forwardRef(
         {children}
       </h4>
     );
-  },
+  }
 );
 export const Text = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
 
@@ -208,13 +208,13 @@ export const Text = React.forwardRef(
         {children}
       </span>
     );
-  },
+  }
 );
 
 export const TextSm = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
 
@@ -223,13 +223,13 @@ export const TextSm = React.forwardRef(
         {children}
       </span>
     );
-  },
+  }
 );
 
 export const Bold = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
 
@@ -238,13 +238,13 @@ export const Bold = React.forwardRef(
         {children}
       </span>
     );
-  },
+  }
 );
 
 export const Label = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
 
@@ -253,13 +253,13 @@ export const Label = React.forwardRef(
         {children}
       </span>
     );
-  },
+  }
 );
 
 export const LabelSm = React.forwardRef(
   (
     { children, className, ...props }: TypographyProps<'span'>,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
 
@@ -268,5 +268,5 @@ export const LabelSm = React.forwardRef(
         {children}
       </span>
     );
-  },
+  }
 );

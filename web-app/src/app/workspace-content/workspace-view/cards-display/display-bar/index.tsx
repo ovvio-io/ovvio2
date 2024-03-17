@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DateFilter,
   kDateFilters,
@@ -8,7 +8,10 @@ import {
   SortBy,
   TabId,
 } from '../../../../../../../cfds/base/scheme-types.ts';
-import { NoteType } from '../../../../../../../cfds/client/graph/vertices/note.ts';
+import {
+  Note,
+  NoteType,
+} from '../../../../../../../cfds/client/graph/vertices/note.ts';
 import { Role } from '../../../../../../../cfds/client/graph/vertices/role.ts';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import {
@@ -54,6 +57,10 @@ import {
   DueDateState,
   IconDueDate,
 } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
+import Wizard from '../../../../settings/components/wizard.tsx';
+import { MultiSelectBar } from '../../multi-select-bar.tsx';
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { useDisable } from '../../../../index.tsx';
 import { usePartialRootUser } from '../../../../../core/cfds/react/graph.tsx';
 
 const BUTTON_HEIGHT = styleguide.gridbase * 4;
@@ -164,7 +171,7 @@ function SortByDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onChange = useCallback(
@@ -177,7 +184,7 @@ function SortByDropDown() {
       });
       view.sortBy = val;
     },
-    [view, logger],
+    [view, logger]
   );
 
   return (
@@ -212,7 +219,7 @@ function ShowCheckedDropDown() {
         <IconDropDownArrow />
       </div>
     ),
-    [strings, view, styles],
+    [strings, view, styles]
   );
 
   const onOpen = () => {
@@ -229,7 +236,7 @@ function ShowCheckedDropDown() {
       // });
       view.showChecked = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -274,7 +281,7 @@ function DateFilterDropdown() {
         <IconDropDownArrow />
       </div>
     ),
-    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text],
+    [styles.dropDownButton, styles.iconItem, styles.dropDownButtonText, text]
   );
 
   const onOpen = () => {
@@ -291,7 +298,7 @@ function DateFilterDropdown() {
       // });
       view.dateFilter = val;
     },
-    [view],
+    [view]
   );
 
   return (
@@ -452,7 +459,7 @@ function TabView() {
       }
       view.closeFiltersDrawer();
     },
-    [view],
+    [view]
   );
   const tabs: React.ReactElement[] = [];
   const availableTabs: TabId[] = ['tasks', 'notes'];
@@ -475,10 +482,19 @@ function TabView() {
 
 export type DisplayBarProps = {
   className?: string;
+  onCloseMultiSelect: () => void;
+  selectedCards?: Set<VertexManager<Note>>;
+  setSelectedCards: (card: Set<VertexManager<Note>>) => void;
 };
 
 export function DisplayBar(props?: DisplayBarProps) {
-  const { className, ...rest } = props || {};
+  const {
+    className,
+    selectedCards,
+    onCloseMultiSelect,
+    setSelectedCards,
+    ...rest
+  } = props || {};
   const styles = useStyles();
   const view = usePartialView('selectedTabId');
   // useSyncedFilter(props);
@@ -499,8 +515,25 @@ export function DisplayBar(props?: DisplayBarProps) {
     </>
   );
 
+  const { setDisable } = useDisable()!;
+
+  const multiIsOpen = useMemo(() => {
+    const isOpen = !!selectedCards && selectedCards.size > 0;
+    setDisable(isOpen);
+    return isOpen;
+  }, [selectedCards, setDisable]);
+
   return (
     <div className={cn(styles.bar, className)}>
+      {selectedCards && multiIsOpen ? (
+        <MultiSelectBar
+          selectedCards={selectedCards}
+          onClose={onCloseMultiSelect}
+          setSelectedCards={setSelectedCards!}
+        />
+      ) : (
+        ''
+      )}
       <div className={cn(styles.barRow, styles.viewRow)}>
         <TabView />
       </div>

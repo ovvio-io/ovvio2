@@ -134,7 +134,7 @@ const useStyles = makeStyles(() => ({
   },
   deleteContainer: {
     basedOn: [layout.column],
-    marginTop: '69px',
+    marginTop: '250px',
     width: '324px',
   },
   hidden: {
@@ -185,6 +185,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
 
     if (removeUserStep === 'removeProcessing') {
       timeoutId = setTimeout(() => {
+        debugger;
         setRemoveUserStep('confirmRemove');
       }, 10);
     }
