@@ -1,8 +1,6 @@
 import React, {
   CSSProperties,
-  KeyboardEventHandler,
   MouseEventHandler,
-  ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -306,7 +304,6 @@ interface SelectIconContainerProps {
 }
 export function SelectIconContainer({
   className,
-  onClick,
   workspace,
   isSelected,
   handleSelectClick,
@@ -615,13 +612,13 @@ function TitleCell({
   );
 }
 
-interface CardHeaderPartProps extends ItemRowProps {
-  isExpanded?: boolean;
-  hideMenu?: boolean;
+function WorkspaceIndicatorCell({
+  note,
+  groupBy,
+}: {
+  note: VertexManager<Note>;
   groupBy?: string;
-}
-
-function WorkspaceIndicatorCell({ note, groupBy }: CardHeaderPartProps) {
+}) {
   const styles = useStyles();
   const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext']);
   const vNote = useVertex(note);
@@ -810,11 +807,34 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     const isExpanded =
       (view.notesExpandBase && !hasOverride) ||
       (!view.notesExpandBase && hasOverride);
+
+    // const handleSelectInMulti()=>{
+    //   if(multiIsActive){
+    //     if(!isChild && (isMouseOver || isSelected)  )
+    //       {
+    //       <SelectIconContainer
+    //       workspace={workspace.manager}
+    //       isSelected={isSelected}
+    //       handleSelectClick={handleSelectClick}
+    //       cardKey={note.key}
+    //     />
+    //     }
+    //   }
+    // }
+
+    const handleSelectInMulti: MouseEventHandler<HTMLDivElement> = (e) => {
+      e.stopPropagation();
+      if (multiIsActive) {
+        handleSelectClick(note.vertex);
+      }
+    };
+
     return (
       <div
         className={cn(styles.rowContainer)}
         onMouseOver={onMouseOver}
         onMouseLeave={onMouseLeave}
+        onClick={handleSelectInMulti}
       >
         {!isChild && (isMouseOver || isSelected) && (
           <SelectIconContainer
@@ -853,16 +873,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               <React.Fragment>
                 <TypeCell note={note} />
                 <TitleCell note={note} onClick={onClickImpl} />
-                <WorkspaceIndicatorCell //TODO: need to change its type.
-                  note={note}
-                  groupBy={groupBy}
-                  nestingLevel={nestingLevel}
-                  handleSelectClick={() => {}}
-                  isSelected={false}
-                  onClick={() => {}}
-                  multiIsActive={false}
-                  isInAction={false}
-                />
+                <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
               </React.Fragment>
             )}
             <ExpanderCell

@@ -616,19 +616,13 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
   setSelectedCards,
 }) => {
   const styles = useStyles();
-  const [allCards, setAllCards] = useState<Set<VertexManager<Note>>>(new Set());
-  const view = usePartialView(
-    'noteType',
-    'expandedGroupIds',
-    'selectedWorkspaces'
-  );
 
-  //TODO: CHECK v
-  const filteredNotes = useFilteredNotes('all');
-  const allNotes = view.selectedWorkspaces;
-  const pinnedQuery = useQuery2(filteredNotes[1]);
-  //TODO: CHECK ^
-
+  // const [allCards, setAllCards] = useState<Set<VertexManager<Note>>>(new Set());
+  // const view = usePartialView(
+  //   'noteType',
+  //   'expandedGroupIds',
+  //   'selectedWorkspaces'
+  // );
   const selectAll = useCallback(() => {
     // const allCardsHolder = new Set<VertexManager<Note>>();
     // allNotes.forEach((ws: Workspace) => {
@@ -646,10 +640,10 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
           <div className={styles.toggleActions}>
             {<img src="/icons/design-system/selectedCheck.svg" />}
             <TextSm>{selectedCards.size} selected </TextSm>
-            <div className={styles.separateLine}> | </div>
+            {/* <div className={styles.separateLine}> | </div>
             <TextSm onClick={selectAll} className={cn(styles.toggleViewButton)}>
               Select All
-            </TextSm>
+            </TextSm> */}
           </div>
           <div className={styles.functionContainer}>
             <AssignMultiButton selectedCards={selectedCards} />

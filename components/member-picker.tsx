@@ -6,7 +6,6 @@ import { styleguide } from '../styles/styleguide.ts';
 import { useFocusOnMount } from '../web-app/src/core/react-utils/index.ts';
 import { Scroller } from '../styles/utils/scrolling/index.tsx';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
-import { TextField } from '../styles/components/inputs/index.ts';
 import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import Input from './input.tsx';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
@@ -20,16 +19,9 @@ const useStyles = makeStyles(() => ({
   tableContent: {
     width: '100%',
     overflowY: 'auto',
-    overflowX: 'auto',
-    display: 'flex',
+    overflowX: 'clip',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
-  },
-  rowItem: {
-    height: '20px',
-    justifyContent: 'center',
-    fontSize: 13,
-    lineHeight: '18px',
   },
   hoverableRow: {
     cursor: 'pointer',
@@ -38,13 +30,15 @@ const useStyles = makeStyles(() => ({
     },
   },
   row: {
-    padding: '6px 6px 6px 10px',
-    alignItems: 'start',
-    gap: '8px',
+    paddingLeft: '8px',
+    alignItems: 'center',
     width: '100%',
     minWidth: '120px',
-    // borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
     display: 'flex',
+    height: '32px',
+    minHeight: '32px',
+    fontSize: 13,
+    lineHeight: '18px',
   },
   searchRowStyle: {
     display: 'flex',
@@ -218,9 +212,7 @@ export function MemberPicker({
                   )}
                   onClick={(event) => handleRowClick(user, event)}
                 >
-                  <div className={cn(styles.rowItem)}>
-                    {user ? user.name : null}
-                  </div>
+                  {user ? user.name : null}
                 </div>
                 <LineSeparator />
               </React.Fragment>
@@ -240,7 +232,7 @@ export function MemberPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.rowItem)}>Remove</div>
+                  <div className={cn(styles.row)}>Remove</div>
                 </div>
               </>
             )}
@@ -258,7 +250,7 @@ export function MemberPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.rowItem)}>Clear Assignees</div>
+                  <div className={cn(styles.row)}>Clear Assignees</div>
                 </div>
               </>
             )}

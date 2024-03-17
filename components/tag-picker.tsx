@@ -19,15 +19,9 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'clip',
-    display: 'flex',
+    // display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
-  },
-  rowItem: {
-    height: '20px',
-    justifyContent: 'center',
-    fontSize: 13,
-    lineHeight: '18px',
   },
   hoverableRow: {
     cursor: 'pointer',
@@ -36,12 +30,18 @@ const useStyles = makeStyles(() => ({
     },
   },
   row: {
-    padding: '6px 6px 6px 10px',
-    alignItems: 'start',
-    gap: '8px',
+    paddingLeft: '8px',
+    alignItems: 'center',
     width: '100%',
+    height: '32px',
+    minHeight: '32px',
     minWidth: '120px',
     display: 'flex',
+    fontSize: 13,
+    lineHeight: '18px',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
   },
   searchRowStyle: {
     display: 'flex',
@@ -121,7 +121,6 @@ export default function TagPicker({
         componentRef.current &&
         !componentRef.current.contains(event.target as Node)
       ) {
-        debugger;
         menuCtx.close();
       }
     };
@@ -198,7 +197,11 @@ export default function TagPicker({
       )}
       <Scroller>
         {(inputRef) => (
-          <div className={cn(styles.tableContent)} ref={inputRef}>
+          <div
+            className={cn(styles.tableContent)}
+            ref={inputRef}
+            onKeyDown={onKeyDown}
+          >
             {filteredTags.map((tag: Tag, index: number) => (
               <React.Fragment key={tag.key}>
                 <div
@@ -210,14 +213,12 @@ export default function TagPicker({
                   )}
                   onClick={(event) => handleRowClick(tag, event)}
                 >
-                  <div className={cn(styles.rowItem)}>
-                    {tag ? (
-                      <span>
-                        #&nbsp;
-                        <span style={{ marginLeft: '8px' }}>{tag.name}</span>
-                      </span>
-                    ) : null}
-                  </div>
+                  {tag ? (
+                    <span>
+                      #&nbsp;
+                      <span style={{ marginLeft: '8px' }}>{tag.name}</span>
+                    </span>
+                  ) : null}
                 </div>
                 <LineSeparator />
               </React.Fragment>
@@ -237,7 +238,7 @@ export default function TagPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.rowItem)}>Remove</div>
+                  <div className={cn(styles.row)}>Remove</div>
                 </div>
               </>
             )}
@@ -255,7 +256,7 @@ export default function TagPicker({
                       src="/icons/design-system/Close.svg"
                     />
                   </div>
-                  <div className={cn(styles.rowItem)}>Clear Tags</div>
+                  <div className={cn(styles.row)}>Clear Tags</div>
                 </div>
               </>
             )}

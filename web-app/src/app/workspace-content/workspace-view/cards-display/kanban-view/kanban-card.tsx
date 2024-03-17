@@ -17,7 +17,6 @@ import {
   useVertex,
 } from '../../../../../core/cfds/react/vertex.ts';
 import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-import { useAnimateHeight } from '../../../../../core/react-utils/animate.ts';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
 import { Text } from '../../../../../../../styles/components/texts.tsx';
@@ -446,6 +445,7 @@ function ChildCard({
       multiIsActive={multiIsActive}
       isSelected={isSelected}
       isInAction={isInAction}
+      isChild={true}
     />
   );
 }
@@ -460,6 +460,7 @@ export interface KanbanCardProps {
   isSelected: boolean;
   multiIsActive: boolean;
   isInAction: boolean;
+  isChild?: boolean;
 }
 
 export const KanbanCard = React.forwardRef(function CardItemView(
@@ -471,6 +472,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
     isSelected,
     multiIsActive,
     isInAction,
+    isChild,
     handleSelectClick,
   }: KanbanCardProps,
   ref: React.ForwardedRef<HTMLDivElement>
@@ -525,14 +527,21 @@ export const KanbanCard = React.forwardRef(function CardItemView(
     });
   }, [card, documentRouter, logger, source]);
 
+  const handleSelectInMulti: MouseEventHandler<HTMLDivElement> = (e) => {
+    e.stopPropagation();
+    if (multiIsActive) {
+      handleSelectClick(card.vertex);
+    }
+  };
   return (
     <div
       className={cn(styles.cardContainer, className)}
       ref={ref}
       onMouseEnter={onMouseOver}
       onMouseLeave={onMouseLeave}
+      onClick={handleSelectInMulti}
     >
-      {(isMouseOver || isSelected) && !card.vertex.parentNote && (
+      {(isMouseOver || isSelected) && !isChild && (
         <SelectIconContainer
           className={styles.SelectIconContainerzIndex}
           workspace={workspace.manager}
