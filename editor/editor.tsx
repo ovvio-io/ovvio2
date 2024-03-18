@@ -103,7 +103,7 @@ const useStyles = makeStyles(() => ({
     cursor: 'text',
     boxSizing: 'border-box',
     overflowY: 'scroll',
-    scrollBehavior: 'instant',
+    // scrollBehavior: 'instant',
     caretColor: 'transparent',
     '::selection': {
       background: 'transparent',
