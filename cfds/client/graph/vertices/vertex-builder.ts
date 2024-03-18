@@ -6,7 +6,6 @@ import { Note } from './note.ts';
 import { Tag } from './tag.ts';
 import { User } from './user.ts';
 import { Workspace } from './workspace.ts';
-import { Role } from './role.ts';
 import { View } from './view.ts';
 import { UserSettings } from './user-settings.ts';
 
@@ -14,7 +13,7 @@ export default function vertexBuilder(
   manager: VertexManager,
   record: Record,
   prevVertex: Vertex | undefined,
-  config: VertexConfig | undefined
+  config: VertexConfig | undefined,
 ): Vertex {
   switch (record.scheme.namespace) {
     case SchemeNamespace.WORKSPACE:
@@ -31,9 +30,6 @@ export default function vertexBuilder(
 
     case SchemeNamespace.NOTES:
       return new Note(manager, prevVertex, config);
-
-    case SchemeNamespace.ROLES:
-      return new Role(manager, prevVertex, config);
 
     case SchemeNamespace.VIEWS:
       return new View(manager, prevVertex, config);
