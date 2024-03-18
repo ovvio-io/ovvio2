@@ -1,46 +1,29 @@
-const gBufferCache = new Map<number, Uint8Array[]>();
-const gLiveBuffersMap = new WeakMap<Uint8Array, Uint8Array>();
+const K_BUFF_UNIT_SIZE = 16 * 1024;
 
-const K_BUFF_UNIT_SIZE = 8 * 1024;
+const gPendingBuffers: Uint8Array[] = [];
+const gLiveBuffers = new Map<Uint8Array, Uint8Array>();
+
+for (let i = 0; i < 10; ++i) {
+  gPendingBuffers.push(new Uint8Array(K_BUFF_UNIT_SIZE));
+}
 
 export function allocateBuffer(minBytes: number): Uint8Array {
-  const allocationSize =
-    Math.ceil(minBytes / K_BUFF_UNIT_SIZE) * K_BUFF_UNIT_SIZE;
-  for (const size of Array.from(gBufferCache.keys()).sort((x, y) => y - x)) {
-    if (size >= minBytes) {
-      const cachedBuffers = gBufferCache.get(size)!;
-      const buffer = cachedBuffers.pop();
-      if (cachedBuffers.length <= 0) {
-        gBufferCache.delete(size);
-      }
-      if (buffer) {
-        buffer.fill(0);
-        const res = buffer.subarray(0, minBytes);
-        gLiveBuffersMap.set(res, buffer);
-        return res;
-      }
-    }
+  const cachedBuff = gPendingBuffers.pop();
+  if (cachedBuff) {
+    cachedBuff.fill(0);
+    const res = cachedBuff.subarray(0, minBytes);
+    gLiveBuffers.set(res, cachedBuff);
+    return res;
   }
-  const buffer = new Uint8Array(allocationSize);
-  const res = buffer.subarray(0, minBytes);
-  gLiveBuffersMap.set(res, buffer);
-  return res;
+  return new Uint8Array(minBytes);
 }
 
 export function cacheBufferForReuse(buff: Uint8Array): void {
-  const size = buff.byteLength;
-  let arr = gBufferCache.get(size);
-  if (!arr) {
-    arr = [];
-    gBufferCache.set(size, arr);
+  const origBuff = gLiveBuffers.get(buff);
+  if (origBuff) {
+    gPendingBuffers.push(origBuff);
+    gLiveBuffers.delete(buff);
   }
-
-  const origBuff = buff;
-  if (gLiveBuffersMap.has(origBuff)) {
-    buff = gLiveBuffersMap.get(origBuff) || buff;
-    gLiveBuffersMap.delete(origBuff);
-  }
-  arr.push(buff);
 }
 
 export function decodeBase64(b64: string): Uint8Array {
@@ -50,5 +33,6 @@ export function decodeBase64(b64: string): Uint8Array {
   for (let i = 0; i < size; i++) {
     bytes[i] = binString.charCodeAt(i);
   }
+  cacheBufferForReuse(bytes);
   return bytes;
 }
