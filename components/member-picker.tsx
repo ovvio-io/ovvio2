@@ -15,6 +15,7 @@ const useStyles = makeStyles(() => ({
   tableContainer: {
     maxHeight: styleguide.gridbase * 21,
     maxWidth: styleguide.gridbase * 21,
+    minWidth: styleguide.gridbase * 20,
   },
   tableContent: {
     width: '100%',
@@ -43,6 +44,7 @@ const useStyles = makeStyles(() => ({
   searchRowStyle: {
     display: 'flex',
     padding: '0px 0px 0px 8px',
+    position: 'absolute',
     marginBottom: 'none',
     alignItems: 'center',
     boxShadow: 'none',
@@ -154,8 +156,6 @@ export function MemberPicker({
         break;
       case 'Backspace':
         if (!searchTerm) {
-          console.log('DOWNNNNN');
-
           e.preventDefault();
           e.stopPropagation();
           menuCtx.close();

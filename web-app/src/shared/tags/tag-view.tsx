@@ -19,6 +19,7 @@ import {
 } from '../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../core/react-utils/animate.ts';
 import { AddTagMultiButton } from '../../app/settings/components/settings-buttons.tsx';
+import { LineSeparator } from '../../../../styles/components/menu.tsx';
 
 const showAnim = keyframes({
   '0%': {
@@ -138,7 +139,7 @@ export function TagPillView({
         className,
         styles.tag,
         !menuOnHover && showMenu && (styles as any).hover,
-        menuOnHover && styles.onHover,
+        menuOnHover && styles.onHover
       )}
       style={{
         ...style,
@@ -170,7 +171,7 @@ export default function TagView({
   onSelected,
   buttonClassName,
   onDelete = () => {},
-  showMenu = false,
+  showMenu = true,
   renderSelected,
 }: PillViewProps) {
   const styles = useStyles();
@@ -212,6 +213,7 @@ export default function TagView({
           <span className={cn(styles.tagDropDownName)}>{t.name}</span>
         </DropDownItem>
       ))}
+      <div style={{ height: '8px' }}></div>
       <DropDownItem value={DELETE_TAG}>
         <div className={cn(styles.circleContainer)}>
           <img src="/icons/design-system/Close.svg" />

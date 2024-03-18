@@ -30,6 +30,7 @@ import DropDown, {
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
 import { useTypographyStyles } from '../../../../styles/components/typography.tsx';
 import TagView, { TagPillView } from './tag-view.tsx';
+import TagPicker from '../../../../components/tag-picker.tsx';
 
 const showAnim = keyframes({
   '0%': {
@@ -83,7 +84,7 @@ const useStyles = makeStyles((theme) => ({
   popup: {
     backgroundColor: '#FFFFFF',
     // width: styleguide.gridbase * 32,
-    width: '100%',
+    // width: '100%',
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
@@ -143,100 +144,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const TAG_NOT_FOUND = 'tag-not-found';
-
-interface AssignActionPopupProps {
-  close?: any;
-  noteId: VertexId<Note>;
-  onTagged: (tagItem: Tag) => void;
-}
-function AddTagActionPopup({
-  close,
-  onTagged,
-  noteId,
-}: AssignActionPopupProps) {
-  const styles = useStyles();
-  const theme = useTheme();
-  const graph = useGraphManager();
-  const partialNote = usePartialVertex(noteId, ['tags', 'workspace']);
-  const existingTags = new Set(
-    unionIter(
-      mapIterable(partialNote.tags.keys(), (t) => t.key),
-      mapIterable(partialNote.tags.values(), (t) => t.key)
-    )
-  );
-  const childTagsQuery = useSharedQuery('childTags');
-
-  const getItems = (filter: string) => {
-    const childTagManagers = childTagsQuery
-      .group(partialNote.workspace.key)
-      .filter(
-        (mgr) =>
-          !existingTags.has(mgr.key) &&
-          !existingTags.has(mgr.getVertexProxy().parentTagKey!)
-      );
-    if (!childTagManagers.length) {
-      return [];
-    }
-
-    const filteredRes: (VertexManager<Tag> | string)[] = suggestResults(
-      filter,
-      childTagManagers,
-      (tag) => tag.getVertexProxy().name
-    );
-
-    if (filteredRes.length === 0) {
-      filteredRes.push(TAG_NOT_FOUND);
-    }
-
-    return filteredRes;
-  };
-  const onSelected = (item: VertexManager<Tag> | string, filter: string) => {
-    if (item === TAG_NOT_FOUND) {
-      if (filter) {
-        if (filter.startsWith('#')) {
-          filter = filter.slice(1);
-        }
-      }
-    } else {
-      onTagged((item as VertexManager<Tag>).getVertexProxy());
-    }
-  };
-  const renderItem: MentionPopupRenderItem<VertexManager<Tag> | string> = (
-    item,
-    props
-  ) => {
-    if (item === TAG_NOT_FOUND) {
-      return (
-        <MentionItem {...props} key={item}>
-          <span className={cn(styles.tagColor)}>
-            <IconCreateNew fill={theme.primary[500]} />
-          </span>
-          <span className={cn(styles.tagName)}>Create tag</span>
-        </MentionItem>
-      );
-    }
-
-    return (
-      <MentionItem {...props} key={(item as VertexManager).key}>
-        <div className={cn(styles.circleContainer)}># </div>
-        <span className={cn(styles.tagName)}>
-          {(item as VertexManager<Tag>).getVertexProxy().name}
-        </span>
-      </MentionItem>
-    );
-  };
-
-  return (
-    <MentionPopup
-      getItems={getItems}
-      trigger="#"
-      onSelected={onSelected}
-      renderItem={renderItem}
-    />
-  );
-}
-
 interface TagButtonProps {
   noteId: VertexId<Note>;
   className?: string;
@@ -250,6 +157,34 @@ export default function TagButton({
   isSmall = true,
 }: TagButtonProps) {
   const styles = useStyles();
+  const partialNote = usePartialVertex(noteId, ['tags', 'workspace']);
+  const existingTags = new Set(
+    unionIter(
+      mapIterable(partialNote.tags.keys(), (t) => t.key),
+      mapIterable(partialNote.tags.values(), (t) => t.key)
+    )
+  );
+  const childTagsQuery = useSharedQuery('childTags');
+
+  const getItems = () => {
+    const childTagManagers = childTagsQuery
+      .group(partialNote.workspace.key)
+      .filter(
+        (mgr) =>
+          !existingTags.has(mgr.key) &&
+          !existingTags.has(mgr.getVertexProxy().parentTagKey!)
+      );
+
+    if (!childTagManagers.length) {
+      return [];
+    }
+
+    const tags = childTagManagers.map((tagManager) => {
+      return tagManager.getVertexProxy();
+    });
+
+    return tags;
+  };
 
   return (
     <Menu
@@ -258,11 +193,15 @@ export default function TagButton({
       )}
       position="bottom"
       align="end"
-      // direction="out"
+      direction="out"
       className={className}
       popupClassName={cn(styles.popup)}
     >
-      <AddTagActionPopup noteId={noteId} onTagged={onTagged} />
+      <TagPicker
+        tags={getItems()}
+        onRowSelect={onTagged}
+        closeAfterClick={true}
+      />
     </Menu>
   );
 }

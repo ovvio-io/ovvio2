@@ -14,6 +14,7 @@ const useStyles = makeStyles(() => ({
       color: theme.colors.placeholderText,
       opacity: 1,
     },
+    width: '140px',
   },
 }));
 

@@ -19,6 +19,8 @@ import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { IconClose } from '../../../../styles/components/new-icons/icon-close.tsx';
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
+import Menu from '../../../../styles/components/menu.tsx';
+import { MemberPicker } from '../../../../components/member-picker.tsx';
 
 const useStyles = makeStyles(() => ({
   list: {
@@ -68,12 +70,12 @@ const useStyles = makeStyles(() => ({
   },
   popup: {
     backgroundColor: theme.colors.background,
-    width: styleguide.gridbase * 16.5,
+    // width: styleguide.gridbase * 16.5,
     marginBottom: styleguide.gridbase * 2,
   },
   popupContent: {
     backgroundColor: theme.colors.background,
-    width: '100%',
+    // width: '100%',
     boxSizing: 'border-box',
     basedOn: [layout.column],
   },
@@ -303,7 +305,6 @@ export function Assignee({
 interface AssignButtonProps {
   cardManager: VertexManager<Note>;
   users: VertexManager<User>[];
-  assignees: VertexManager<User>[];
   className?: string;
   source: UISource;
   style?: {};
@@ -312,45 +313,35 @@ export function AssignButton({
   cardManager,
   className,
   users,
-  assignees,
   source,
   style = {},
 }: AssignButtonProps) {
   const styles = useStyles();
   const logger = useLogger();
 
-  const getItems = useCallback(() => {
-    return users
-      .filter((u) => assignees.find((a) => a.key === u.key) === undefined)
-      .map(
-        (u) =>
-          ({
-            value: u,
-            sortValue: u.getVertexProxy().name,
-          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string })
-      );
-  }, [users, assignees]);
-
-  const onSelected = (selected: VertexManager<User> | ACTION_ITEM) => {
-    if (selected === REMOVE_ASSIGNEE) {
-      return;
-    }
+  const onRowSelect = (user: User) => {
+    // cardManager.vertex.assignees.add(user);
     const card = cardManager.getVertexProxy();
-    const user = selected.getVertexProxy();
-
     assignNote(logger, source, card, user);
   };
 
   return (
-    <SelectionButton
-      getItems={getItems}
-      renderItem={renderItem}
-      onSelected={onSelected}
-      className={cn(styles.selectionButton, className)}
-      style={style}
+    <Menu
+      renderButton={() => (
+        <img key="IconAddAssignee" src="/icons/board/Assignee.svg" />
+      )}
+      position="bottom"
+      align="end"
+      direction="out"
+      className={className}
+      popupClassName={cn(styles.popup)}
     >
-      {() => <img key="IconAddAssignee" src="/icons/board/Assignee.svg" />}
-    </SelectionButton>
+      <MemberPicker
+        showSearch={true}
+        onRowSelect={onRowSelect}
+        usersMn={users}
+      />
+    </Menu>
   );
 }
 
@@ -436,7 +427,6 @@ export default function AssigneesView({
           source={source}
           cardManager={cardManager}
           users={users}
-          assignees={assignees}
           className={cn(!isExpanded && styles.hide, assignClassName)}
         />
       )}

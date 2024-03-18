@@ -59,6 +59,7 @@ import { filter } from '../../../../../../../../base/set.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx';
+import { AssignMultiButton } from '../../../multi-select-bar.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -409,7 +410,6 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
         source={'list'}
         cardManager={note}
         users={userManagers}
-        assignees={managers}
         className={cn(styles.visibleOnHover, styles.assignee)}
       />
       {managers.map((x) => (

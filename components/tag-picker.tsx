@@ -84,6 +84,7 @@ type TagPickerProps = {
   showSearch?: boolean;
   onRemove?: () => void;
   onClearTags?: () => void;
+  closeAfterClick?: boolean;
 };
 
 export default function TagPicker({
@@ -92,6 +93,7 @@ export default function TagPicker({
   showSearch,
   onRemove,
   onClearTags,
+  closeAfterClick,
 }: TagPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -138,6 +140,7 @@ export default function TagPicker({
   ) => {
     event.stopPropagation();
     onRowSelect(tag);
+    if (closeAfterClick) menuCtx.close();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -186,7 +189,7 @@ export default function TagPicker({
           <Input
             ref={inputRef}
             type="text"
-            placeholder={'Search:'}
+            placeholder={'Search tag:'}
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={onKeyDown}
