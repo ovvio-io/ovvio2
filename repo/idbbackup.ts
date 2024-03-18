@@ -14,7 +14,7 @@ import { Commit } from './commit.ts';
 import { SerialScheduler } from '../base/serial-scheduler.ts';
 import { Repository, MemRepoStorage } from './repo.ts';
 import { EaseInOutSineTimer } from '../base/timer.ts';
-import { kMinuteMs, kSecondMs } from '../base/date.ts';
+import { kDayMs, kMinuteMs, kSecondMs } from '../base/date.ts';
 import { notReached } from '../base/error.ts';
 import { filterIterable } from '../base/common.ts';
 import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
@@ -178,7 +178,7 @@ export class IDBRepositoryBackup {
     );
   }
 
-  loadCommits(): Promise<Commit[]> {
+  loadCommits(repoId: string): Promise<Commit[]> {
     // debugger;
     return MultiSerialScheduler.get('idb-load').run(() =>
       SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
@@ -197,7 +197,12 @@ export class IDBRepositoryBackup {
             }ms for ${this.dbName}`,
           );
           const result: Commit[] = [];
+          const [storageType, id] = Repository.parseId(repoId);
+          const now = Date.now();
           for (const json of entries) {
+            // if (storageType === 'events' && json.ts < now - kDayMs * 7) {
+            //   continue;
+            // }
             const commit = new Commit({
               decoder: new JSONCyclicalDecoder(json),
             });

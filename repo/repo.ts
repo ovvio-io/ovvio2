@@ -39,6 +39,8 @@ import { downloadJSON } from '../base/browser.ts';
 import { CoroutineScheduler } from '../base/coroutine.ts';
 import { SchedulerPriority } from '../base/coroutine.ts';
 import { CONNECTION_ID } from './commit.ts';
+import { compareStrings } from '../base/string.ts';
+import { numbersEqual } from '../base/comparisons.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 1000;
 
@@ -1522,10 +1524,8 @@ function compareCommitsDesc(c1: Commit, c2: Commit): number {
 
 function compareCommitsAsc(c1: Commit, c2: Commit): number {
   // Use the commit id as a consistent tie breaker when timestamps are equal
-  if (coreValueEquals(c1.timestamp, c2.timestamp)) {
-    return coreValueCompare(c1.id, c2.id);
-  }
-  return coreValueCompare(c1.timestamp, c2.timestamp);
+  const dt = c1.timestamp.getTime() - c2.timestamp.getTime();
+  return dt === 0 ? compareStrings(c1.id, c2.id) : dt;
 }
 
 function mergeLeaderFromLeaves(leaves: Commit[]): string | undefined {

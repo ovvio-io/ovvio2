@@ -258,7 +258,7 @@ export class GraphManager
     plumbing.loadingPromise = MultiSerialScheduler.get('repoLoad').run(
       async () => {
         if (backup) {
-          const commits = await backup.loadCommits();
+          const commits = await backup.loadCommits(id);
           if (commits instanceof Array) {
             repo.persistVerifiedCommits(commits);
           } else {

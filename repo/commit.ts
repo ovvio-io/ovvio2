@@ -160,6 +160,11 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._contents;
   }
 
+  get record(): Record | undefined {
+    const c = this.contents;
+    return commitContentsIsRecord(c) ? c.record : undefined;
+  }
+
   get contentsChecksum(): string {
     if (!this._cachedChecksum) {
       const contents = this.contents;

@@ -1,5 +1,6 @@
 import { Vertex } from '../../cfds/client/graph/vertex.ts';
 import { notReached } from '../error.ts';
+import { compareStrings } from '../string.ts';
 import { CoreOptions, CoreType, CoreValue } from './base.ts';
 import { encodableValueHash } from './encoding/hash.ts';
 import { Comparable } from './index.ts';
@@ -22,7 +23,7 @@ export interface CompareOptions extends CoreOptions {
 export function coreValueCompare(
   v1: CoreValue,
   v2: CoreValue,
-  options?: CompareOptions
+  options?: CompareOptions,
 ): number {
   if (v1 === v2) return 0;
   if (v1 === MinComparableValue) {
@@ -82,15 +83,7 @@ export function coreValueCompare(
     case CoreType.String:
       type2 = getCoreType(v2 as CoreValue);
       if (type1 === type2) {
-        //@ts-ignore
-        if (v1 < v2) {
-          return -1;
-        }
-        //@ts-ignore
-        if (v1 > v2) {
-          return 1;
-        }
-        return 0;
+        return compareStrings(v1 as string, v2 as string);
       }
       break;
 
@@ -101,7 +94,7 @@ export function coreValueCompare(
         return coreIterableCompare(
           v1 as Iterable<CoreValue>,
           v2 as Iterable<CoreValue>,
-          options
+          options,
         );
       }
       break;
@@ -128,7 +121,7 @@ export function coreValueCompare(
 
       // debugger;
       notReached(
-        `Incomparable classes ${v1?.constructor.name} and ${v2?.constructor.name}`
+        `Incomparable classes ${v1?.constructor.name} and ${v2?.constructor.name}`,
       );
       break;
     }
@@ -148,7 +141,7 @@ export function coreValueCompare(
 function coreIterableCompare(
   i1: Iterable<CoreValue>,
   i2: Iterable<CoreValue>,
-  options?: CompareOptions
+  options?: CompareOptions,
 ): number {
   const iter1 = i1[Symbol.iterator]();
   const iter2 = i2[Symbol.iterator]();

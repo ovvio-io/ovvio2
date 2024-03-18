@@ -56,6 +56,7 @@ import {
 } from '../sync-scheduler.ts';
 import { RendezvousHash } from '../../base/rendezvous-hash.ts';
 import { randomInt } from '../../base/math.ts';
+import { kDayMs } from '../../base/date.ts';
 
 const gSyncSchedulers = new Map<string, SyncScheduler>();
 
@@ -195,7 +196,14 @@ export class SyncService extends BaseService<ServerServices> {
   ): void {
     repo.allowMerge = false;
     const allowedNamespaces = repo.allowedNamespaces;
+    const [storageType, id] = Repository.parseId(repoId);
     for (const c of backup.open()) {
+      // if (
+      //   storageType === 'events' &&
+      //   c.timestamp.getTime() < Date.now() - kDayMs * 7
+      // ) {
+      //   continue;
+      // }
       if (
         c.scheme?.namespace === undefined ||
         allowedNamespaces.includes(c.scheme?.namespace)

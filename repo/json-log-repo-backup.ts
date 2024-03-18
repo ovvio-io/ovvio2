@@ -1,17 +1,17 @@
 import * as path from 'std/path/mod.ts';
 import { JSONLogFile } from '../base/json-log.ts';
-import {
-  JSONCyclicalDecoder,
-  JSONCyclicalEncoder,
-} from '../base/core-types/encoding/json.ts';
+import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import { Commit } from '../repo/commit.ts';
 import { assert } from '../base/error.ts';
 
 export class JSONLogRepoBackup {
+  private readonly _commitIds: Set<string>;
   private _log: JSONLogFile | undefined;
   private _ready = false;
 
-  constructor(readonly repoPath: string, readonly processId: number) {}
+  constructor(readonly repoPath: string, readonly processId: number) {
+    this._commitIds = new Set();
+  }
 
   get ready(): boolean {
     return this._ready;
@@ -37,7 +37,10 @@ export class JSONLogRepoBackup {
       true,
     );
     for (const commit of loadCommitsFromJSONLog(this._log)) {
-      yield commit;
+      if (!this._commitIds.has(commit.id)) {
+        this._commitIds.add(commit.id);
+        yield commit;
+      }
     }
     this._ready = true;
   }
@@ -45,6 +48,10 @@ export class JSONLogRepoBackup {
   appendCommits(commits: Commit[]): Promise<void> {
     const log = this._log;
     assert(log !== undefined, 'Backup not opened yet');
+    commits = commits.filter((c) => !this._commitIds.has(c.id));
+    if (!commits.length) {
+      return Promise.resolve();
+    }
     return log.append(commits.map((c) => JSONCyclicalEncoder.serialize(c)));
   }
 }

@@ -9,6 +9,8 @@ const FILE_READ_BUF_SIZE_BYTES = 1024 * 8; // 8KB
 const PAGE_SIZE = 4 * 1024; // 4KB
 const LINE_DELIMITER_BYTE = 10; // "\n"
 
+export type ProgressUpdateCallback = (value: number) => void;
+
 export class JSONLogFile {
   private readonly _scheduler: SerialScheduler;
   private _file: Deno.FsFile | undefined;
@@ -18,7 +20,7 @@ export class JSONLogFile {
     this._scheduler = new SerialScheduler();
   }
 
-  *open(): Generator<JSONObject> {
+  *open(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
     if (this._file) {
       return;
     }
@@ -41,7 +43,7 @@ export class JSONLogFile {
         return;
       }
     }
-    for (const c of this.scan()) {
+    for (const c of this.scan(progressCallback)) {
       yield c;
     }
   }
@@ -79,12 +81,33 @@ export class JSONLogFile {
     });
   }
 
-  *scan(): Generator<JSONObject> {
+  appendSync(entries: readonly JSONObject[]): void {
+    assert(this.write, 'Attempting to write to a readonly log');
     const file = this._file;
     if (!file) {
       return;
     }
-    const start = performance.now();
+    assert(
+      this._didScan,
+      'Attempting to append to log before initial scan completed',
+    );
+    const encodedEntries =
+      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+    const encodedBuf = new TextEncoder().encode(encodedEntries);
+    let bytesWritten = 0;
+    file.seekSync(0, Deno.SeekMode.End);
+    while (bytesWritten < encodedBuf.byteLength) {
+      const arr = encodedBuf.subarray(bytesWritten);
+      bytesWritten += file.writeSync(arr);
+    }
+  }
+
+  *scan(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
+    const file = this._file;
+    if (!file) {
+      return;
+    }
+    const totalFileBytes = file.seekSync(0, Deno.SeekMode.End);
     file.seekSync(0, Deno.SeekMode.Start);
     let fileOffset = 0;
     const readBuf = new Uint8Array(FILE_READ_BUF_SIZE_BYTES);
@@ -121,6 +144,9 @@ export class JSONLogFile {
             objectBufOffset,
           );
           objectBufOffset += readLen;
+          if (progressCallback) {
+            progressCallback(fileOffset / totalFileBytes);
+          }
         }
         readBufStart = readBufEnd + 1;
         if (
@@ -148,6 +174,7 @@ export class JSONLogFile {
       file.truncateSync(lastGoodFileOffset);
     }
     this._didScan = true;
+    cacheBufferForReuse(objectBuf);
   }
   query(
     predicate: (obj: ReadonlyJSONObject) => boolean,
