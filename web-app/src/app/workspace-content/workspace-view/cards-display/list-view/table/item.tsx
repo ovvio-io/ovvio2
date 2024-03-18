@@ -252,6 +252,7 @@ const useStyles = makeStyles(() => ({
     marginLeft: styleguide.gridbase / 2,
   },
   hoverableRow: {
+    // pointerEvents: 'auto',
     ':hover': {
       backgroundColor: '#FBF6EF',
     },
@@ -287,6 +288,7 @@ const useStyles = makeStyles(() => ({
   },
   multiIsActive: {
     pointerEvents: 'none',
+    cursor: 'pointer',
   },
   InAction: {
     backgroundColor: '#FBEAC8',
@@ -892,7 +894,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               source={'list'}
               isMouseOver={isMouseOver}
             />
-            <PinCell isChild={isChild} note={note} isMouseOver={isMouseOver} />
+            <PinCell
+              isChild={isChild}
+              note={note}
+              isMouseOver={multiIsActive ? false : isMouseOver}
+            />
             <MenuCell note={note} />
             <DoneIndicator note={note} />
           </div>

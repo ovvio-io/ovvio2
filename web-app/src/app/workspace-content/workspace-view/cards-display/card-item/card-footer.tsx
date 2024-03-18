@@ -86,6 +86,7 @@ export interface CardFooterProps {
   className?: string;
   isExpanded?: boolean;
   isMouseOver?: boolean;
+  multiIsActive?: boolean;
 }
 
 // function Attachments({ card, source }: CardFooterProps) {
@@ -215,6 +216,7 @@ export function CardFooter({
   source,
   isExpanded,
   className,
+  multiIsActive,
   size = CardSize.Regular,
 }: CardFooterProps) {
   const styles = useStyles();
@@ -225,9 +227,15 @@ export function CardFooter({
         cardType="small"
         source={source}
         isExpanded={isExpanded}
+        multiIsActive={multiIsActive}
       />
       <div className={cn(styles.tagsContainer)}>
-        <CardTagsNew size={size} card={card} isExpanded={isExpanded} />
+        <CardTagsNew
+          size={size}
+          card={card}
+          isExpanded={isExpanded}
+          multiIsActive={multiIsActive}
+        />
       </div>
     </div>
   );

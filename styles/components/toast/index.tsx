@@ -64,7 +64,6 @@ const useStyles = makeStyles(
       zIndex: 10,
     },
     toast: {
-      // color: theme.background.text,
       borderColor: theme.primary.p4,
       paddingLeft: styleguide.gridbase * 3,
       borderRadius: 1,
@@ -72,9 +71,8 @@ const useStyles = makeStyles(
       backgroundColor: theme.primary.p1,
       boxSizing: 'border-box',
       borderStyle: 'solid',
-
       height: styleguide.gridbase * 7,
-      width: styleguide.gridbase * 57,
+      width: styleguide.gridbase * 48,
       animation: `${enterAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
       boxShadow: theme.shadows.z2,
       basedOn: [layout.row],
@@ -84,7 +82,11 @@ const useStyles = makeStyles(
       padding: styleguide.gridbase * 3,
     },
     messageStyle: {
-      font: styleguide.textStyles['label-small'],
+      textAlign: 'center',
+      fontSize: '14px',
+      fontWeight: '500',
+      lineHeight: '19.5px',
+      fontFamily: 'Poppins',
     },
     closeIcon: {
       position: 'relative',

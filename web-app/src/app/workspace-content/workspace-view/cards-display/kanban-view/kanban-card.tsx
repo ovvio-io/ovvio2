@@ -328,7 +328,7 @@ const CollapseExpanderToggle = ({
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
-  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>,
+  view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
 ) => {
   const hasOverride = view.notesExpandOverride.has(card.key);
 
@@ -356,7 +356,7 @@ export function MoreButtonCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -368,7 +368,7 @@ export function MoreButtonCard({
       className={cn(
         styles.cardTab,
         styles.cardMoreTabSelected,
-        styles.RightHoverMoreButton,
+        styles.RightHoverMoreButton
       )}
       style={style}
       onClick={handleClick}
@@ -401,7 +401,7 @@ const CardMenu = ({
         <IconMore color={colorWs.active} />
       </div>
     ),
-    [],
+    []
   );
   return (
     <MoreButtonCard workspace={cardWs}>
@@ -475,7 +475,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
     isChild,
     handleSelectClick,
   }: KanbanCardProps,
-  ref: React.ForwardedRef<HTMLDivElement>,
+  ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -502,7 +502,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   const { workspace } = usePartialVertex(card, ['workspace']);
 
   const [expanded, setExpanded] = useState(() =>
-    calculateIsExpanded(card, view),
+    calculateIsExpanded(card, view)
   );
 
   useEffect(() => {
@@ -535,7 +535,11 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   };
   return (
     <div
-      className={cn(styles.cardContainer, className)}
+      className={cn(
+        styles.cardContainer,
+        multiIsActive && !isSelected && styles.hoverableRow,
+        className
+      )}
       ref={ref}
       onMouseEnter={onMouseOver}
       onMouseLeave={onMouseLeave}
@@ -557,8 +561,8 @@ export const KanbanCard = React.forwardRef(function CardItemView(
         <div
           className={cn(
             styles.card,
-            isSelected ? styles.selectedRow : styles.hoverableRow,
             isInAction && isSelected && styles.InAction,
+            isSelected ? styles.selectedRow : styles.hoverableRow
           )}
           onClick={onClick}
         >
@@ -579,7 +583,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                     key={index}
                     className={cn(
                       styles.titleText,
-                      isDone && styles.strikethroughDone,
+                      isDone && styles.strikethroughDone
                     )}
                   >
                     {word}{' '}
@@ -587,7 +591,9 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                 ))}
               </div>
             </div>
-            <PinCell isChild={false} note={card} isMouseOver={isMouseOver} />
+            {!multiIsActive && (
+              <PinCell isChild={false} note={card} isMouseOver={isMouseOver} />
+            )}
           </div>
           <CardHeader card={card} showWorkspaceOnCard={showWorkspaceOnCard} />
           <div className={cn(styles.footerAndExpand)}>
@@ -596,6 +602,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               size={size}
               card={card}
               source={source}
+              multiIsActive={multiIsActive}
             />
             <div className={cn(styles.expanderAndDate)}>
               {childCards.length > 0 ? (

@@ -39,6 +39,7 @@ const useStyles = makeStyles(() => ({
     assignee: {
       marginRight: styleguide.gridbase * 0.5,
     },
+    gap: '1px',
   },
   selectionButton: {
     ...styleguide.transition.short,
@@ -362,6 +363,7 @@ interface AssigneesProps {
   source: UISource;
   renderAssignee?: RenderAssignee;
   isExpanded?: boolean;
+  multiIsActive?: boolean;
 }
 
 function calcStyle(isExpanded: boolean, reverse: boolean, index: number) {
@@ -383,6 +385,7 @@ export default function AssigneesView({
   source,
   renderAssignee,
   isExpanded = true,
+  multiIsActive,
 }: AssigneesProps) {
   const styles = useStyles();
   const logger = useLogger();
@@ -425,32 +428,30 @@ export default function AssigneesView({
         styles.list,
         className,
         styles[cardType],
-        reverse ? styles.reverse : styles.standard
+        !reverse ? styles.reverse : styles.standard
       )}
     >
-      {' '}
-      <AssignButton
-        source={source}
-        cardManager={cardManager}
-        users={users}
-        assignees={assignees}
-        className={cn(!isExpanded && styles.hide, assignClassName)}
-        // style={{ padding: '4px' }}
-      />
-      {...assignees.map((user, index) => {
-        return (
-          <Assignee
-            source={source}
-            key={user.key}
-            cardManager={cardManager}
-            users={users}
-            assignees={assignees}
-            user={user}
-            size={size}
-            renderSelected={renderAssignee}
-          />
-        );
-      })}
+      {!multiIsActive && (
+        <AssignButton
+          source={source}
+          cardManager={cardManager}
+          users={users}
+          assignees={assignees}
+          className={cn(!isExpanded && styles.hide, assignClassName)}
+        />
+      )}
+      {...assignees.map((user, index) => (
+        <Assignee
+          source={source}
+          key={user.key}
+          cardManager={cardManager}
+          users={users}
+          assignees={assignees}
+          user={user}
+          size={size}
+          renderSelected={renderAssignee}
+        />
+      ))}
     </div>
   );
 }

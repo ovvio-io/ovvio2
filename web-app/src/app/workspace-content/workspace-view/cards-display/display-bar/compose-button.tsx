@@ -60,9 +60,18 @@ const useStyles = makeStyles(() => ({
   workspacesList: {
     maxHeight: styleguide.gridbase * 30,
     overflowY: 'auto',
+    overflowX: 'clip',
   },
   colorIndicator: {
     marginRight: styleguide.gridbase,
+  },
+  blue: {
+    background: '#3184DD',
+    border: 'none',
+    ':hover': {
+      boxShadow: theme.shadows.z2,
+      background: theme.primary.p10,
+    },
   },
 }));
 
@@ -77,7 +86,7 @@ const ComposeInternalButton = React.forwardRef(
     const strings = useStrings();
 
     return (
-      <div className={cn(styles.compose, className)} ref={ref}>
+      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
         <IconCompose />
         <span className={cn(styles.text)}>{strings.compose}</span>
       </div>
@@ -128,9 +137,9 @@ export function ComposeButton() {
       renderButton={() => (
         <ComposeInternalButton ref={(div) => setContainer(div)} />
       )}
-      position="right"
-      align="center"
-      direction="in"
+      position="left"
+      align="end"
+      direction="out"
       popupClassName={cn(styles.workspacesList)}
     >
       {partialWorkspaces.map((ws) => (

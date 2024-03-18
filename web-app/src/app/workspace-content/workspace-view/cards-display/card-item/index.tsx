@@ -48,7 +48,7 @@ function getStrikethroughSVG(fill: string) {
       TITLE_LINE_HEIGHT / 2
     }' stroke='${fill}'/>
   </svg>
-  `.replace(/\n/g, ''),
+  `.replace(/\n/g, '')
   );
 }
 
@@ -185,13 +185,13 @@ interface TitleElementProps {
 const TitleNode = React.forwardRef(
   (
     { className, ...props }: TitleElementProps,
-    ref: React.ForwardedRef<HTMLSpanElement>,
+    ref: React.ForwardedRef<HTMLSpanElement>
   ) => {
     const styles = useStyles();
     return (
       <Text ref={ref} className={cn(styles.titleText, className)} {...props} />
     );
-  },
+  }
 );
 
 function Title({
@@ -223,6 +223,7 @@ export interface CardHeaderPartProps extends CardItemProps {
   isExpanded?: boolean;
   source?: UISource;
   hideMenu?: boolean;
+  multiIsActive?: boolean;
 }
 
 export function CardHeader({
@@ -311,7 +312,7 @@ export interface CardItemProps {
 
 export const CardItem = React.forwardRef(function CardItemView(
   { card, className, showChildCards, size, ...rest }: CardItemProps,
-  ref: React.ForwardedRef<HTMLDivElement>,
+  ref: React.ForwardedRef<HTMLDivElement>
 ) {
   const styles = useStyles();
   const childListRef = useRef(null);
@@ -377,7 +378,7 @@ export const CardItem = React.forwardRef(function CardItemView(
                   key={index}
                   className={cn(
                     styles.titleText,
-                    isDone && styles.strikethroughDone,
+                    isDone && styles.strikethroughDone
                   )}
                 >
                   {word}{' '}
@@ -409,7 +410,7 @@ export const CardItem = React.forwardRef(function CardItemView(
           <IconExpander
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconExpanded,
+              expanded && styles.expanderIconExpanded
             )}
           />
         </div>

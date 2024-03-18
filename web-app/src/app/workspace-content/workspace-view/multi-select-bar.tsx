@@ -69,6 +69,7 @@ const useStyles = makeStyles(
       // backgroundColor: theme.colors.background,
       maxWidth: styleguide.gridbase * 21,
       maxHeight: styleguide.gridbase * 21,
+      minWidth: styleguide.gridbase * 17.5,
       flexShrink: 0,
     },
     confirmation: {
@@ -81,7 +82,7 @@ const useStyles = makeStyles(
     },
     confirmationButtons: {
       display: 'flex',
-      padding: '16px 0px 16px 0px',
+      padding: '16px 0px 8px 0px',
       flexDirection: 'column',
       gap: '8px',
     },
@@ -91,7 +92,6 @@ const useStyles = makeStyles(
       height: '80px',
       position: 'fixed',
       width: '100vw',
-
       backgroundColor: '#3184dd',
       padding: 0,
       display: 'flex',
@@ -99,7 +99,6 @@ const useStyles = makeStyles(
       justifyContent: 'flex-start',
       zIndex: 9,
     },
-
     wizardContainerStyle: {
       display: 'flex',
       width: '100%',
