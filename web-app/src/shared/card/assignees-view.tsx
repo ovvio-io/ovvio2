@@ -75,7 +75,7 @@ const useStyles = makeStyles(() => ({
   },
   popupContent: {
     backgroundColor: theme.colors.background,
-    // width: '100%',
+    width: '100%',
     boxSizing: 'border-box',
     basedOn: [layout.column],
   },

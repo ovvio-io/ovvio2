@@ -528,8 +528,8 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   }, [card, documentRouter, logger, source]);
 
   const handleSelectInMulti: MouseEventHandler<HTMLDivElement> = (e) => {
-    e.stopPropagation();
     if (multiIsActive) {
+      e.stopPropagation();
       handleSelectClick(card.vertex);
     }
   };

@@ -60,8 +60,6 @@ const useStyles = makeStyles(() => ({
     basedOn: [useTypographyStyles.textSmall],
   },
   tagDropDownName: {
-    marginLeft: styleguide.gridbase * 0.75,
-    marginRight: styleguide.gridbase / 2,
     color: theme.colors.text,
     animation: `${showAnim} ${styleguide.transition.duration.short}ms linear backwards`,
     userSelect: 'none',
@@ -104,6 +102,9 @@ const useStyles = makeStyles(() => ({
     whiteSpace: 'nowrap',
     marginLeft: styleguide.gridbase,
     color: theme.colors.text,
+  },
+  itemWidth: {
+    minWidth: '150px',
   },
 }));
 
@@ -206,7 +207,7 @@ export default function TagView({
       renderSelected={renderButton}
     >
       {siblings.map((t) => (
-        <DropDownItem value={t} key={t.key}>
+        <DropDownItem value={t} key={t.key} className={styles.itemWidth}>
           <div className={cn(styles.circleContainer)}>
             <div className={cn(styles.circle)} />#
           </div>

@@ -1,5 +1,5 @@
-import React, { useContext, useMemo } from "react";
-import Menu, { MenuItem } from "../menu.tsx";
+import React, { useContext, useMemo } from 'react';
+import Menu, { MenuItem } from '../menu.tsx';
 
 interface DropDownItemProps {
   selected?: boolean;
@@ -36,9 +36,9 @@ interface DropDownProps {
   renderSelected: any;
   onOpen?: () => void;
   className?: any;
-  align?: "start" | "center" | "end";
-  position?: "top" | "bottom" | "left" | "right";
-  direction?: "in" | "out";
+  align?: 'start' | 'center' | 'end';
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  direction?: 'in' | 'out';
   popupClassName?: any;
   sizeByButton?: boolean;
 }
@@ -67,7 +67,7 @@ export default function DropDown({
       <Menu
         onClick={onOpen}
         renderButton={renderSelected}
-        direction="out" // TODO: check if good.
+        direction="out"
         align="end"
         position="bottom"
         {...props}

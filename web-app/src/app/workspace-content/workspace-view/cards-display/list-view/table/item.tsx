@@ -174,7 +174,7 @@ const useStyles = makeStyles(() => ({
     // flexShrink: '2',
     flexShrink: '1', //7.3.24
     flexBasis: 'auto',
-    width: 'calc(50% - 156px)',
+    width: 'calc(45% - 156px)',
     minWidth: '20%',
     minHeight: '20px',
     cursor: 'pointer',
@@ -185,7 +185,7 @@ const useStyles = makeStyles(() => ({
     paddingLeft: styleguide.gridbase * 0.5,
   },
   wsColumn: {
-    width: 'calc(20% - 156px)',
+    width: 'calc(22% - 156px)',
     basedOn: [layout.row],
     flexGrow: '1',
     flexShrink: '1',
@@ -193,8 +193,11 @@ const useStyles = makeStyles(() => ({
     alignItems: 'center',
     padding: [0, styleguide.gridbase * 0.5],
   },
+  wsColumnForChild: {
+    width: 'calc(21% - 170px)',
+  },
   assigneeColumn: {
-    width: 'calc(10% - 156px)',
+    width: 'calc(15% - 156px)',
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
@@ -209,8 +212,11 @@ const useStyles = makeStyles(() => ({
   assignee: {
     marginRight: styleguide.gridbase * 0.25,
   },
+  assigneesContainer: {
+    display: 'flex',
+  },
   tagsColumn: {
-    width: 'calc(20% - 156px)',
+    width: 'calc(18% - 156px)',
     flexGrow: '2',
     flexShrink: '1',
     flexBasis: 'auto',
@@ -410,20 +416,23 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
         source={'list'}
         cardManager={note}
         users={userManagers}
+        // className={cn(styles.assignee)}
         className={cn(styles.visibleOnHover, styles.assignee)}
       />
-      {managers.map((x) => (
-        <Assignee
-          key={x.key}
-          user={x}
-          cardManager={note}
-          users={userManagers}
-          assignees={managers}
-          className={cn(styles.assignee)}
-          size="small"
-          source={'list'}
-        />
-      ))}
+      <div className={cn(styles.assigneeColumn)}>
+        {managers.map((x) => (
+          <Assignee
+            key={x.key}
+            user={x}
+            cardManager={note}
+            users={userManagers}
+            assignees={managers}
+            className={cn(styles.assignee)}
+            size="small"
+            source={'list'}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -867,18 +876,12 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             }}
             ref={ref}
           >
+            <TypeCell note={note} />
+            <TitleCell note={note} onClick={onClickImpl} />
             {isChild ? (
-              <React.Fragment>
-                <TypeCell note={note} />
-                <TitleCell note={note} onClick={onClickImpl} />
-                <div className={cn(styles.wsColumn)} style={{ left: '2px' }} />
-              </React.Fragment>
+              <div className={cn(styles.wsColumn, styles.wsColumnForChild)} />
             ) : (
-              <React.Fragment>
-                <TypeCell note={note} />
-                <TitleCell note={note} onClick={onClickImpl} />
-                <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
-              </React.Fragment>
+              <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
             )}
             <ExpanderCell
               note={note}
