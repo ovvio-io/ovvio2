@@ -166,6 +166,19 @@ async function build(
   }
 }
 
+function colorForChannel(channel: BuildChannel): string {
+  switch (channel) {
+    case 'alpha':
+      return 'blue';
+
+    case 'beta':
+      return 'green';
+
+    case 'release':
+      return 'red';
+  }
+}
+
 async function main(): Promise<void> {
   const args: Arguments = yargs(Deno.args)
     .option('upload', {
@@ -195,6 +208,29 @@ async function main(): Promise<void> {
       description: `If supplied, will generate release channel build`,
     })
     .parse();
+
+  let channel: BuildChannel = 'alpha';
+  if (args?.beta === true) {
+    channel = 'beta';
+  } else if (args?.release === true) {
+    channel = 'release';
+  }
+  if (args?.upload === true && args?.linux === true) {
+    console.log(
+      `%cUpdating %c${channel}%c channel...`,
+      'color: default',
+      `color: ${colorForChannel(channel)}`,
+      'color: default',
+    );
+    if (channel === 'beta') {
+      alert('Press enter to start');
+    } else if (channel === 'release') {
+      if (!confirm('Are you sure?')) {
+        return;
+      }
+    }
+  }
+
   console.log(`Building based on version ${tuple4ToString(VCurrent)}`);
   const repoPath = await getRepositoryPath();
   const buildDirPath = path.join(repoPath, 'build');
@@ -207,12 +243,6 @@ async function main(): Promise<void> {
     await defaultAssetsBuild();
   }
 
-  let channel: BuildChannel = 'alpha';
-  if (args?.beta === true) {
-    channel = 'beta';
-  } else if (args?.release === true) {
-    channel = 'release';
-  }
   await Deno.writeTextFile(
     path.join(buildDirPath, 'build-info.json'),
     JSON.stringify(generateBuildInfo(channel)),
