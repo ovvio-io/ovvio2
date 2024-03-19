@@ -124,14 +124,14 @@ async function _startChildServerProcess(
     '-d',
     settings.dataDir,
   ];
-  if (replicas) {
-    // if (idx !== 0) {
-    //   args.push('--follower');
-    // }
-    args.push('--b64replicas');
-    const encodedReplicas = encodeBase64Url(JSON.stringify(replicas || []));
-    args.push(encodedReplicas);
-  }
+  // if (replicas) {
+  //   // if (idx !== 0) {
+  //   //   args.push('--follower');
+  //   // }
+  //   args.push('--b64replicas');
+  //   const encodedReplicas = encodeBase64Url(JSON.stringify(replicas || []));
+  //   args.push(encodedReplicas);
+  // }
   const cmd = new Deno.Command('nice', {
     args,
     stdout: 'piped',
@@ -183,7 +183,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 1; // navigator.hardwareConcurrency;
+  const processCount = 2; // navigator.hardwareConcurrency;
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     // for (let x = 0; x < processCount; ++x) {
