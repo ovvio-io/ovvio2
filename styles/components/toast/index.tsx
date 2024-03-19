@@ -13,6 +13,7 @@ import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
 import TransitionGroup, { TRANSITION_STATES } from '../transition.tsx';
 import { brandLightTheme as theme } from '../../../styles/theme.tsx';
+import { UndoButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 
 const enterAnimation = keyframes(
   {
@@ -63,7 +64,6 @@ const useStyles = makeStyles(
       zIndex: 10,
     },
     toast: {
-      // color: theme.background.text,
       borderColor: theme.primary.p4,
       paddingLeft: styleguide.gridbase * 3,
       borderRadius: 1,
@@ -71,9 +71,8 @@ const useStyles = makeStyles(
       backgroundColor: theme.primary.p1,
       boxSizing: 'border-box',
       borderStyle: 'solid',
-
       height: styleguide.gridbase * 7,
-      width: styleguide.gridbase * 57,
+      width: styleguide.gridbase * 48,
       animation: `${enterAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
       boxShadow: theme.shadows.z2,
       basedOn: [layout.row],
@@ -83,12 +82,19 @@ const useStyles = makeStyles(
       padding: styleguide.gridbase * 3,
     },
     messageStyle: {
-      font: styleguide.textStyles['label-small'],
+      textAlign: 'center',
+      fontSize: '14px',
+      fontWeight: '500',
+      lineHeight: '19.5px',
+      fontFamily: 'Poppins',
     },
     closeIcon: {
       position: 'relative',
       right: styleguide.gridbase * 2,
       bottom: styleguide.gridbase,
+    },
+    actionButton: {
+      padding: styleguide.gridbase,
     },
     [TRANSITION_STATES.EXITING.toLowerCase()]: {
       animation: `${exitAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
@@ -142,6 +148,9 @@ function Toast({
       );
     }
   };
+
+  const isUndoAction = message.action && message.action.text === 'Undo';
+
   return (
     <div className={cn(styles.toast, styles[transitionState.toLowerCase()])}>
       <div className={styles.closeIcon} onClick={dismiss}>
@@ -150,13 +159,19 @@ function Toast({
       <span className={cn(styles.messageStyle)}>{message.text}</span>
       <div className={cn(layout.flexSpacer)} />
       {message.action && (
-        <Button
-          className={cn(styles.toastButton)}
-          onClick={onClick}
-          disabled={processing}
-        >
-          {message.action.text}
-        </Button>
+        <div className={cn(styles.actionButton)}>
+          {isUndoAction ? (
+            <UndoButton onUndoClick={onClick} disable={processing} />
+          ) : (
+            <Button
+              className={cn(styles.toastButton)}
+              onClick={onClick}
+              disabled={processing}
+            >
+              {message.action.text}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

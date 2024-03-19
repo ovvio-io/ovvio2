@@ -16,6 +16,7 @@ import localization from '../settings.strings.json' assert { type: 'json' };
 import { usePartialView } from '../../../core/cfds/react/graph.tsx';
 import HelpCenter from '../../workspaces-bar/actions.tsx';
 import { useTabPlugins } from '../plugins/plugins-list.tsx';
+import { BackButton } from './settings-buttons.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -75,50 +76,13 @@ const useStyles = makeStyles(() => ({
     color: 'currentColor',
     basedOn: [useTypographyStyles.button, layout.column, layout.centerCenter],
   },
-  back: {
-    display: 'flex',
-    width: '85px',
-    // gap: '4px',
-    padding: '5px 0px 5px 14px',
-    background: theme.colors.primaryButton,
-    height: styleguide.gridbase * 4,
-    boxSizing: 'border-box',
-    borderRadius: '37px',
-    ...styleguide.transition.short,
-    transitionProperty: 'box-shadow',
-    ':hover': {
-      boxShadow: theme.shadows.z2,
-    },
-    alignItems: 'center',
-    basedOn: [layout.row],
-    cursor: 'pointer',
-  },
+
   text: {
     color: theme.colors.primaryButtonText,
     padding: `0px ${styleguide.gridbase}px`,
     basedOn: [useTypographyStyles.button],
   },
 }));
-
-const BackButton = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>,
-  ) => {
-    const styles = useStyles();
-    const navigate = useNavigate();
-    const goBack = () => {
-      navigate('/');
-    };
-
-    return (
-      <div className={cn(styles.back, className)} onClick={goBack} ref={ref}>
-        <IconMenuClose />
-        <span className={cn(styles.text)}>Back</span>
-      </div>
-    );
-  },
-);
 
 interface CategoryMap {
   [key: string]: SettingsTabPlugin[];
@@ -207,8 +171,8 @@ export function SettingsBar({ className }: { className?: string }) {
       {(style) => (
         <div style={style} className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
-            <BackButton />
-
+            {/* <BackButton /> */}
+            {<BackButton />}
             <LabelSm>Settings</LabelSm>
           </div>
           <SettingsBarCategories />

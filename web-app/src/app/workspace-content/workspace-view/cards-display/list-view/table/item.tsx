@@ -59,6 +59,7 @@ import { filter } from '../../../../../../../../base/set.ts';
 import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
 import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx';
+import { AssignMultiButton } from '../../../multi-select-bar.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -173,7 +174,7 @@ const useStyles = makeStyles(() => ({
     // flexShrink: '2',
     flexShrink: '1', //7.3.24
     flexBasis: 'auto',
-    width: 'calc(50% - 156px)',
+    width: 'calc(45% - 156px)',
     minWidth: '20%',
     minHeight: '20px',
     cursor: 'pointer',
@@ -184,7 +185,7 @@ const useStyles = makeStyles(() => ({
     paddingLeft: styleguide.gridbase * 0.5,
   },
   wsColumn: {
-    width: 'calc(23% - 156px)',
+    width: 'calc(22% - 156px)',
     basedOn: [layout.row],
     flexGrow: '1',
     flexShrink: '1',
@@ -192,8 +193,11 @@ const useStyles = makeStyles(() => ({
     alignItems: 'center',
     padding: [0, styleguide.gridbase * 0.5],
   },
+  wsColumnForChild: {
+    width: 'calc(21% - 170px)',
+  },
   assigneeColumn: {
-    width: 'calc(5% - 156px)',
+    width: 'calc(15% - 156px)',
     flexGrow: '1',
     flexShrink: '2',
     flexBasis: 'auto',
@@ -208,8 +212,11 @@ const useStyles = makeStyles(() => ({
   assignee: {
     marginRight: styleguide.gridbase * 0.25,
   },
+  assigneesContainer: {
+    display: 'flex',
+  },
   tagsColumn: {
-    width: 'calc(22% - 156px)',
+    width: 'calc(18% - 156px)',
     flexGrow: '2',
     flexShrink: '1',
     flexBasis: 'auto',
@@ -252,6 +259,7 @@ const useStyles = makeStyles(() => ({
     marginLeft: styleguide.gridbase / 2,
   },
   hoverableRow: {
+    // pointerEvents: 'auto',
     ':hover': {
       backgroundColor: '#FBF6EF',
     },
@@ -287,6 +295,7 @@ const useStyles = makeStyles(() => ({
   },
   multiIsActive: {
     pointerEvents: 'none',
+    cursor: 'pointer',
   },
   InAction: {
     backgroundColor: '#FBEAC8',
@@ -317,7 +326,7 @@ export function SelectIconContainer({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const card: Note = useVertexByKey(cardKey);
   return (
@@ -325,7 +334,7 @@ export function SelectIconContainer({
       className={cn(
         !isSelected && styles.selectIconContainer,
         styles.selectedIconContainer,
-        className,
+        className
       )}
       style={style}
       onClick={() => handleSelectClick(card)}
@@ -352,7 +361,7 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
     <div
       className={cn(
         styles.doneIndicator,
-        isChecked && styles.doneIndicatorActive,
+        isChecked && styles.doneIndicatorActive
       )}
     />
   );
@@ -385,43 +394,45 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
   ]);
   const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
-    ['users'],
+    ['users']
   );
 
   const userManagers = useMemo(
     () =>
       Array.from(wsAssignees || []).map(
-        (x) => x.manager as VertexManager<User>,
+        (x) => x.manager as VertexManager<User>
       ),
-    [wsAssignees],
+    [wsAssignees]
   );
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
-    [assignees],
+    [assignees]
   );
 
   return (
     <div className={cn(styles.assigneeColumn)}>
-      {managers.map((x) => (
-        <Assignee
-          key={x.key}
-          user={x}
-          cardManager={note}
-          users={userManagers}
-          assignees={managers}
-          className={cn(styles.assignee)}
-          size="small"
-          source={'list'}
-        />
-      ))}
       <AssignButton
         source={'list'}
         cardManager={note}
         users={userManagers}
-        assignees={managers}
+        // className={cn(styles.assignee)}
         className={cn(styles.visibleOnHover, styles.assignee)}
       />
+      <div className={cn(styles.assigneeColumn)}>
+        {managers.map((x) => (
+          <Assignee
+            key={x.key}
+            user={x}
+            cardManager={note}
+            users={userManagers}
+            assignees={managers}
+            className={cn(styles.assignee)}
+            size="small"
+            source={'list'}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -525,18 +536,26 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
       const parent = tag.parentTag || tag;
       tags.set(parent, tag);
     },
-    [note],
+    [note]
   );
 
   const onDelete = useCallback(
     (tag: Tag) => {
       note.getVertexProxy().tags.delete(tag.parentTag || tag);
     },
-    [note],
+    [note]
   );
 
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
+      {/* <div ref={tagButtonRef} style={{ position: 'absolute' }}> */}
+      <div ref={tagButtonRef} style={{ position: 'relative' }}>
+        <TagButton
+          onTagged={onTag}
+          className={cn(styles.visibleOnHover)}
+          noteId={note}
+        />
+      </div>
       {managers.map((tag, index) => (
         <div
           ref={(el) => el && tagsRef.current.set(tag.key, el)}
@@ -554,17 +573,11 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           />
         </div>
       ))}
+
       <div ref={tooltipRef} style={{ position: 'absolute' }}>
         <Tooltip text={getHiddenTags()} position="top" align="center">
           <div className={cn(styles.tag2, styles.tagName)}>...</div>
         </Tooltip>
-      </div>
-      <div ref={tagButtonRef} style={{ position: 'absolute' }}>
-        <TagButton
-          onTagged={onTag}
-          className={cn(styles.visibleOnHover)}
-          noteId={note}
-        />
       </div>
     </div>
   );
@@ -711,7 +724,7 @@ const MenuCell = ({
         <img key="IconMoreSettings2" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
   return (
     <div className={cn(styles.iconCell)} onClick={toggleMenu}>
@@ -782,7 +795,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
       multiIsActive,
       isInAction,
     },
-    ref,
+    ref
   ) {
     const styles = useStyles();
     const [isMouseOver, setIsMouseOver] = useState(false);
@@ -847,7 +860,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
         <div
           className={cn(
             isChild && styles.isChild,
-            multiIsActive && styles.multiIsActive,
+            multiIsActive && styles.multiIsActive
           )}
         >
           <div
@@ -855,7 +868,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               isChild ? styles.childRow : styles.row,
               styles.itemRow,
               isSelected ? styles.selectedRow : styles.hoverableRow,
-              isInAction && isSelected && styles.InAction,
+              isInAction && isSelected && styles.InAction
             )}
             style={{
               width: isChild ? childWidth : undefined,
@@ -863,18 +876,12 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             }}
             ref={ref}
           >
+            <TypeCell note={note} />
+            <TitleCell note={note} onClick={onClickImpl} />
             {isChild ? (
-              <React.Fragment>
-                <TypeCell note={note} />
-                <TitleCell note={note} onClick={onClickImpl} />
-                <div className={cn(styles.wsColumn)} style={{ left: '2px' }} />
-              </React.Fragment>
+              <div className={cn(styles.wsColumn, styles.wsColumnForChild)} />
             ) : (
-              <React.Fragment>
-                <TypeCell note={note} />
-                <TitleCell note={note} onClick={onClickImpl} />
-                <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
-              </React.Fragment>
+              <WorkspaceIndicatorCell note={note} groupBy={groupBy} />
             )}
             <ExpanderCell
               note={note}
@@ -890,7 +897,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               source={'list'}
               isMouseOver={isMouseOver}
             />
-            <PinCell isChild={isChild} note={note} isMouseOver={isMouseOver} />
+            <PinCell
+              isChild={isChild}
+              note={note}
+              isMouseOver={multiIsActive ? false : isMouseOver}
+            />
             <MenuCell note={note} />
             <DoneIndicator note={note} />
           </div>
@@ -912,5 +923,5 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           ))}
       </div>
     );
-  },
+  }
 );

@@ -73,7 +73,12 @@ function TagPill({ tag, setTag, onDelete, isExpanded, ofBoard }: TagPillProps) {
   );
 }
 
-export function CardTagsNew({ card, size, isExpanded }: CardHeaderPartProps) {
+export function CardTagsNew({
+  card,
+  size,
+  isExpanded,
+  multiIsActive,
+}: CardHeaderPartProps) {
   const { tags, workspace } = usePartialVertex(card, ['tags', 'workspace']);
   const styles = useStyles();
   const logger = useLogger();
@@ -113,6 +118,13 @@ export function CardTagsNew({ card, size, isExpanded }: CardHeaderPartProps) {
 
   return (
     <div className={cn(styles.tagsView, size === CardSize.Small)}>
+      {!multiIsActive && (
+        <TagButton
+          onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
+          noteId={card}
+          className={cn(!isExpanded && styles.hide)}
+        />
+      )}
       {cardTags.sort(coreValueCompare).map((tag) => (
         <TagPill
           key={tag.key}
@@ -123,11 +135,6 @@ export function CardTagsNew({ card, size, isExpanded }: CardHeaderPartProps) {
           ofBoard={true}
         />
       ))}
-      <TagButton
-        onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
-        noteId={card}
-        className={cn(!isExpanded && styles.hide)}
-      />
     </div>
   );
 }

@@ -66,6 +66,7 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: '0.075px',
     border: 'none',
     borderRadius: 0,
+    width: '140px',
   },
   mention: {
     flexShrink: 0,
@@ -226,7 +227,8 @@ export function MentionPopup<T>({
           ref={ref}
         />
       </div>
-
+      <LineSeparator />
+      <LineSeparator />
       <Scroller>
         {(ref) => (
           <div className={cn(styles.list)} ref={ref}>

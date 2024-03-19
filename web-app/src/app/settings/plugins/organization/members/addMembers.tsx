@@ -32,7 +32,7 @@ export const AddMembers: React.FC<AddMembersProps> = ({ onClose }) => {
   const RightRectangleEdit: CSSProperties = {
     position: 'absolute',
     display: 'flex',
-    left: '739px',
+    left: '1106px',
   };
   const closeIcon: CSSProperties = {
     paddingRight: styleguide.gridbase * 4,

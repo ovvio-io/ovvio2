@@ -20,9 +20,11 @@ const COLOR_MAP = {
 
 export interface IconHideProps extends IconProps {
   state?: HideState;
+  color?: HideState.Primary | HideState.Default;
 }
 
 export function IconHide({
+  color,
   size = IconSize.Small,
   className,
   state = HideState.Primary,

@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
 } from '../../../../../styles/components/dialog/index.tsx';
+import { useNavigate } from 'react-router';
 
 const useStyles = makeStyles(() => ({
   compose: {
@@ -31,6 +32,7 @@ const useStyles = makeStyles(() => ({
     borderRadius: '37px',
     border: ' 1px solid var(--primary-p-5, #8BC5EE)',
     display: 'flex',
+    width: 'fit-content',
   },
   available: {
     background: theme.primary.p1,
@@ -531,6 +533,24 @@ export function AddUserButton({ onAddClick }: AddUserButtonProps) {
     >
       <img key="AddUserSettings" src="/icons/settings/InviteWhite.svg" />
       <span className={cn(styles.textWhite)}>{'Add'}</span>
+    </Button>
+  );
+}
+
+interface BackButtonProps {
+  onBackClick?: () => void;
+}
+
+export function BackButton({ onBackClick }: BackButtonProps) {
+  const styles = useStyles();
+  const navigate = useNavigate();
+  const goBack = () => {
+    navigate('/');
+  };
+  return (
+    <Button className={cn(styles.compose, styles.blue)} onClick={goBack}>
+      <img key="BackSettings" src="/icons/design-system/Arrow-down-white.svg" />
+      <span className={cn(styles.textWhite)}>{'Back'}</span>
     </Button>
   );
 }

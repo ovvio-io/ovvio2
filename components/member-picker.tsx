@@ -15,6 +15,7 @@ const useStyles = makeStyles(() => ({
   tableContainer: {
     maxHeight: styleguide.gridbase * 21,
     maxWidth: styleguide.gridbase * 21,
+    minWidth: styleguide.gridbase * 20,
   },
   tableContent: {
     width: '100%',
@@ -43,6 +44,7 @@ const useStyles = makeStyles(() => ({
   searchRowStyle: {
     display: 'flex',
     padding: '0px 0px 0px 8px',
+    position: 'absolute',
     marginBottom: 'none',
     alignItems: 'center',
     boxShadow: 'none',
@@ -175,7 +177,42 @@ export function MemberPicker({
         return;
     }
   };
-
+  const onKeyUp = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((x) => (x - 1 < 0 ? filteredUsers.length - 1 : x - 1));
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((x) => (x + 1) % filteredUsers.length);
+        break;
+      case 'Backspace':
+        if (!searchTerm) {
+          console.log('UPPUPUPUP');
+          // e.preventDefault();
+          // e.stopPropagation();
+          // menuCtx.close();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        if (!searchTerm) {
+          menuCtx.close();
+        }
+        break;
+      case 'Enter':
+        e.preventDefault();
+        e.stopPropagation();
+        onRowSelect(filteredUsers[selectedIndex]);
+        break;
+      default:
+        return;
+    }
+  };
   return (
     <div ref={componentRef} className={cn(styles.tableContainer)}>
       {showSearch !== false && (
@@ -190,6 +227,7 @@ export function MemberPicker({
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
             className={styles.InputTextStyle}
           />
         </div>

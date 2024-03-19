@@ -207,7 +207,7 @@ export const ImageIcon: React.FC<ImageIconProps> = ({
 
 function useOutsideClick<T extends HTMLElement>(
   ref: RefObject<T>,
-  callback: () => void,
+  callback: () => void
 ): void {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -391,7 +391,7 @@ const TagPills: React.FC<TagPillsProps> = ({
           styles.tagPillSize,
           styles.tagPill,
           (editMode || reorderMode) && styles.editPill,
-          highlight && styles.highlightedTag,
+          highlight && styles.highlightedTag
         )
       }
       style={{
@@ -562,7 +562,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
         <img key="MoreButtonTagSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
 
   return (
@@ -663,7 +663,7 @@ export const TagsTable: React.FC<TagsTableProps> = ({
 }) => {
   const styles = useStyles();
   const categoriesQuery = useSharedQuery('parentTagsByWorkspace').group(
-    workspaceManager,
+    workspaceManager
   );
   const [newCategoryVertex, setNewCategoryVertex] = useState<
     VertexManager<Tag> | undefined

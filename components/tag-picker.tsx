@@ -19,7 +19,6 @@ const useStyles = makeStyles(() => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'clip',
-    // display: 'flex',
     flexDirection: 'column',
     maxHeight: styleguide.gridbase * 16,
   },
@@ -85,6 +84,7 @@ type TagPickerProps = {
   showSearch?: boolean;
   onRemove?: () => void;
   onClearTags?: () => void;
+  closeAfterClick?: boolean;
 };
 
 export default function TagPicker({
@@ -93,6 +93,7 @@ export default function TagPicker({
   showSearch,
   onRemove,
   onClearTags,
+  closeAfterClick,
 }: TagPickerProps) {
   const styles = useStyles();
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -139,6 +140,7 @@ export default function TagPicker({
   ) => {
     event.stopPropagation();
     onRowSelect(tag);
+    if (closeAfterClick) menuCtx.close();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -187,7 +189,7 @@ export default function TagPicker({
           <Input
             ref={inputRef}
             type="text"
-            placeholder={'Search:'}
+            placeholder={'Search tag:'}
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={onKeyDown}
@@ -207,18 +209,14 @@ export default function TagPicker({
                 <div
                   key={tag.key}
                   className={cn(
-                    styles.row,
                     styles.hoverableRow,
-                    selectedIndex === index && styles.selectedItem
+                    selectedIndex === index && styles.selectedItem,
+                    styles.row
                   )}
                   onClick={(event) => handleRowClick(tag, event)}
                 >
-                  {tag ? (
-                    <span>
-                      #&nbsp;
-                      <span style={{ marginLeft: '8px' }}>{tag.name}</span>
-                    </span>
-                  ) : null}
+                  #&nbsp;
+                  <span style={{ marginLeft: '8px' }}>{tag.name}</span>
                 </div>
                 <LineSeparator />
               </React.Fragment>

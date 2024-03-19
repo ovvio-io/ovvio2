@@ -59,7 +59,6 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     width: 'auto',
   },
-
   icon: {
     marginRight: styleguide.gridbase,
     width: '16px',
@@ -88,7 +87,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     boxShadow: '0px -1px 3px rgba(0, 0, 0, 0.25)',
     borderRadius: '2px',
-    justifyContent: 'center',
+    // justifyContent: 'center',
     border: '2px solid #F5ECDC',
     font: 'Poppins',
     backgroundColor: 'white',
