@@ -760,10 +760,10 @@ function computeCheckedForNote(
   tags: Dictionary<Tag, Tag> | undefined,
   childCards: Note[] | undefined,
 ): boolean {
-  if (status === NoteStatus.Checked) {
-    return true;
-  }
   if (type === NoteType.Task) {
+    if (status === NoteStatus.Checked) {
+      return true;
+    }
     if (!tags) {
       return false;
     }
