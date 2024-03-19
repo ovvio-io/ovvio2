@@ -204,7 +204,12 @@ export class GraphManager
   get status(): ClientStatus {
     let offlineCount = 0,
       syncingCount = 0;
-    for (const { client } of this._repoById.values()) {
+    for (const [repoId, { client }] of this._repoById) {
+      const [storage, id] = Repository.parseId(repoId);
+      // Hide events status from UI
+      if (storage === 'events') {
+        continue;
+      }
       if (!client) {
         ++offlineCount;
         continue;
