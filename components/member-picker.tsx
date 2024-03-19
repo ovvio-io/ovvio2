@@ -79,7 +79,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 type MemberPickerProps = {
-  usersMn: VertexManager<User>[];
+  users: VertexManager<User>[];
   onRowSelect: (user: User) => void;
   showSearch?: boolean;
   onRemove?: () => void;
@@ -87,7 +87,7 @@ type MemberPickerProps = {
 };
 
 export function MemberPicker({
-  usersMn,
+  users: usersMn,
   onRowSelect,
   showSearch,
   onRemove,
@@ -109,7 +109,7 @@ export function MemberPicker({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER
+        Number.MAX_SAFE_INTEGER,
       );
       setFilteredUsers(filtered);
     }
@@ -136,7 +136,7 @@ export function MemberPicker({
 
   const handleRowClick = (
     user: User,
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
   ) => {
     event.stopPropagation();
     onRowSelect(user);
@@ -246,7 +246,7 @@ export function MemberPicker({
                   className={cn(
                     styles.row,
                     styles.hoverableRow,
-                    selectedIndex === index && styles.selectedItem
+                    selectedIndex === index && styles.selectedItem,
                   )}
                   onClick={(event) => handleRowClick(user, event)}
                 >

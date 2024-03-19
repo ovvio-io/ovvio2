@@ -149,7 +149,7 @@ const useStyles = makeStyles(
       fontSize: '16px',
     },
   }),
-  'multiSelect-wizard_291877'
+  'multiSelect-wizard_291877',
 );
 
 interface IconVectorProps {
@@ -276,7 +276,7 @@ interface AddSelectionButtonProps<T> {
 const displayUndoToast = (
   displayToast: DisplayToastFunction,
   messageText: string,
-  undoFunction: UndoFunction
+  undoFunction: UndoFunction,
 ): void => {
   displayToast({
     text: messageText,
@@ -322,7 +322,7 @@ export function RemoveMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Deleted ${selectedCards.size} ${itemText}.`,
-        () => setSelectedCards!(prevState)
+        () => setSelectedCards!(prevState),
       );
       setPendingAction(false);
       setSelectedCards && setSelectedCards(new Set());
@@ -364,7 +364,7 @@ export function AssignMultiButton<T>({
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
-    allWorkspaces.add(card.workspace)
+    allWorkspaces.add(card.workspace),
   );
   const { pendingAction, setPendingAction } = usePendingAction();
 
@@ -391,7 +391,7 @@ export function AssignMultiButton<T>({
   };
 
   const undoAssigneeAssignment = (
-    previousAssignees: Map<VertexManager<Note>, Set<User>>
+    previousAssignees: Map<VertexManager<Note>, Set<User>>,
   ) => {
     selectedCards.forEach((card) => {
       const assignees = previousAssignees.get(card);
@@ -412,7 +412,7 @@ export function AssignMultiButton<T>({
       displayUndoToast(
         displayToast,
         `User ${user.name} assigned to ${selectedCards.size} ${itemText}.`,
-        () => undoAssigneeAssignment(previousAssignees)
+        () => undoAssigneeAssignment(previousAssignees),
       );
       setPendingAction(false);
     }, 1000);
@@ -428,7 +428,7 @@ export function AssignMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Cleared all assignees from ${selectedCards.size} ${itemText}.`,
-        () => undoAssigneeAssignment(previousAssignees)
+        () => undoAssigneeAssignment(previousAssignees),
       );
       setPendingAction(false);
     }, 1000);
@@ -444,7 +444,7 @@ export function AssignMultiButton<T>({
       popupClassName={cn(styles.popup)}
     >
       <MemberPicker
-        usersMn={intersectionUsersArray
+        users={intersectionUsersArray
           .filter((user) => user.manager)
           .map((user) => user.manager)}
         onRowSelect={onRowSelect}
@@ -468,7 +468,7 @@ export function AddTagMultiButton<T>({
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
-    allWorkspaces.add(card.workspace)
+    allWorkspaces.add(card.workspace),
   );
 
   const graph = useGraphManager();
@@ -488,8 +488,8 @@ export function AddTagMultiButton<T>({
           .sort()
           .join('-'),
         graph,
-      ]
-    )
+      ],
+    ),
   );
   const { pendingAction, setPendingAction } = usePendingAction();
 
@@ -503,7 +503,7 @@ export function AddTagMultiButton<T>({
       if (!tag.vertex.parentTag) console.log(tag.vertex.name);
       const encodedTag = encodeTagId(
         tag.vertex.parentTag?.name,
-        tag.vertex.name
+        tag.vertex.name,
       );
       wsTags.add(encodedTag);
       tagMap.set(encodedTag, tag.vertex);
@@ -513,14 +513,14 @@ export function AddTagMultiButton<T>({
       allEncodedTags = wsTags;
     } else if (allEncodedTags) {
       allEncodedTags = new Set(
-        [...allEncodedTags].filter((x) => wsTags.has(x))
+        [...allEncodedTags].filter((x) => wsTags.has(x)),
       );
     }
   }
   allEncodedTags = allEncodedTags || new Set();
 
   let intersectionTagsArray = Array.from(allEncodedTags).map(
-    (tagId) => tagMap.get(tagId)!
+    (tagId) => tagMap.get(tagId)!,
   );
 
   // let intersectionTagsArray: Tag[] = [];
@@ -539,7 +539,7 @@ export function AddTagMultiButton<T>({
   };
 
   const undoTagAssignment = (
-    previousTags: Map<VertexManager<Note>, Set<Tag>>
+    previousTags: Map<VertexManager<Note>, Set<Tag>>,
   ) => {
     selectedCards.forEach((card) => {
       const tags = previousTags.get(card);
@@ -564,7 +564,7 @@ export function AddTagMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Tag "${tag.name}" added to ${selectedCards.size} ${itemText}.`,
-        () => undoTagAssignment(previousTags)
+        () => undoTagAssignment(previousTags),
       );
       setPendingAction(false);
     }, 1000);
@@ -581,7 +581,7 @@ export function AddTagMultiButton<T>({
       displayUndoToast(
         displayToast,
         `All tags cleared from ${selectedCards.size} ${itemText}.`,
-        () => undoTagAssignment(previousTags)
+        () => undoTagAssignment(previousTags),
       );
       setPendingAction(false);
     }, 1000);

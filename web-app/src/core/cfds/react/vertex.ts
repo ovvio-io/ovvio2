@@ -11,6 +11,7 @@ import {
 import { Vertex, VertexId } from '../../../../../cfds/client/graph/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { useGraphManager } from './graph.tsx';
+import { mapIterable } from '../../../../../base/common.ts';
 
 interface OnChangeOpts {
   errorCallback?: () => void;
@@ -227,13 +228,23 @@ export function usePartialVertices<
   V extends Vertex,
   K extends keyof V = keyof V,
 >(
-  vertexManagers: readonly VertexId<V>[] | Set<VertexId<V>>,
+  vertexIds: readonly VertexId<V>[] | Set<VertexId<V>> | undefined,
   keys: K[],
   opts: OnChangeOpts = EMPTY_OPTS,
 ): (Pick<V, K> & Vertex)[] {
-  const [, setReload] = useState(0);
+  if (!vertexIds) {
+    vertexIds = [];
+  }
+  const [reload, setReload] = useState(0);
   const keysStr = keys.join('-');
   const graph = useGraphManager();
+  const vertexManagers = Array.from(
+    mapIterable(vertexIds, (id) => graph.getVertexManager(id)),
+  );
+  const mgrsStamp = vertexManagers
+    .map((mgr) => mgr.key)
+    .sort()
+    .join('-');
   useEffect(() => {
     const unSubs: (() => void)[] = [];
     for (const id of vertexManagers) {
@@ -249,10 +260,10 @@ export function usePartialVertices<
       }
     }
     return () => unSubs.forEach((fn) => fn());
-  }, [vertexManagers, opts, keysStr]);
+  }, [mgrsStamp, opts, keysStr]);
   const result = useMemo(
     () => Array.from(vertexManagers).map((mgr) => graph.getVertex(mgr)),
-    [vertexManagers],
+    [mgrsStamp, reload],
   );
   return result;
 }

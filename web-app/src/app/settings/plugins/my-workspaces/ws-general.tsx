@@ -178,7 +178,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    []
+    [],
   );
   useEffect(() => {
     let timeoutId: number;
@@ -284,9 +284,8 @@ export default function AddSelectionButton<T>({
   const usersSet = new Set(users);
 
   const newUsersSet = new Set(
-    [...usersSet].filter((user) => !existUsers.has(user))
+    [...usersSet].filter((user) => !existUsers.has(user)),
   );
-  const newUsersArray = Array.from(newUsersSet);
 
   return (
     menuOpen && (
@@ -298,7 +297,10 @@ export default function AddSelectionButton<T>({
         className={className}
         popupClassName={cn(styles.popup)}
       >
-        <MemberPicker users={newUsersArray} onRowSelect={onRowSelect} />
+        <MemberPicker
+          users={Array.from(newUsersSet).map((u) => u.manager)}
+          onRowSelect={onRowSelect}
+        />
       </Menu>
     )
   );

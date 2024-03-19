@@ -246,14 +246,14 @@ export function Assignee({
       .filter(
         (u) =>
           u.key !== user.key &&
-          assignees.find((a) => a.key === u.key) === undefined
+          assignees.find((a) => a.key === u.key) === undefined,
       )
       .map(
         (u) =>
           ({
             value: u,
             sortValue: u.getVertexProxy().name,
-          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string })
+          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string }),
       )
       .concat([
         {
@@ -270,7 +270,7 @@ export function Assignee({
     if (value === REMOVE_ASSIGNEE) {
       card.assignees.delete(current);
       logger.log({
-        severity: 'INFO',
+        severity: 'EVENT',
         event: 'MetadataChanged',
         uiSource: source,
         user: current.key,
@@ -336,11 +336,7 @@ export function AssignButton({
       className={className}
       popupClassName={cn(styles.popup)}
     >
-      <MemberPicker
-        showSearch={true}
-        onRowSelect={onRowSelect}
-        usersMn={users}
-      />
+      <MemberPicker showSearch={true} onRowSelect={onRowSelect} users={users} />
     </Menu>
   );
 }
@@ -388,10 +384,10 @@ export default function AssigneesView({
     .manager as VertexManager<Workspace>;
   const workspaces = useMemo(() => [workspaceManager], [workspaceManager]);
   const users = Array.from(cardManager.getVertexProxy().workspace.users).map(
-    (u) => u.manager as VertexManager<User>
+    (u) => u.manager as VertexManager<User>,
   );
   const assignees = Array.from(partialCard.assignees).map(
-    (u) => u.manager as VertexManager<User>
+    (u) => u.manager as VertexManager<User>,
   );
   // .map(x => users.vertexManagers.find(u => u.key === x.key))
   // .filter(x => x && !x.getVertexProxy().isDeleted);
@@ -406,7 +402,7 @@ export default function AssigneesView({
         logger,
         source,
         cardManager.getVertexProxy(),
-        user.getVertexProxy()
+        user.getVertexProxy(),
       );
     }
   };
@@ -419,7 +415,7 @@ export default function AssigneesView({
         styles.list,
         className,
         styles[cardType],
-        !reverse ? styles.reverse : styles.standard
+        !reverse ? styles.reverse : styles.standard,
       )}
     >
       {!multiIsActive && (
