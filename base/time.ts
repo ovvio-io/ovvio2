@@ -88,7 +88,7 @@ export async function retry<T>(
   throw err instanceof RetryBaseErr ? err.origError : err;
 }
 
-export async function sleep(durationMs: number): Promise<void> {
+export function sleep(durationMs: number): Promise<void> {
   let resolve: () => void;
   const promise = new Promise<void>((res) => {
     resolve = res;

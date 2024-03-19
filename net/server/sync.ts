@@ -171,19 +171,20 @@ export class SyncService extends BaseService<ServerServices> {
       if (i === this.services.serverProcessIndex) {
         continue;
       }
-      clients.push(
-        new RepoClient(
-          repo!,
-          type,
-          id,
-          kSyncConfigServer,
-          syncSchedulerForURL(
-            `http://localhost:${9000 + i}/batch-sync`,
-            this.services.trustPool,
-            this.services.organizationId,
-          ),
-        ).startSyncing(),
+      const c = new RepoClient(
+        repo!,
+        type,
+        id,
+        kSyncConfigServer,
+        syncSchedulerForURL(
+          `http://localhost:${9000 + i}/batch-sync`,
+          this.services.trustPool,
+          this.services.organizationId,
+        ),
       );
+      c.ready = true;
+      c.startSyncing();
+      clients.push(c);
     }
     this._clientsForRepo.set(repoId, clients);
     return repo;

@@ -6,7 +6,10 @@ import {
   Session,
   signData,
 } from '../auth/session.ts';
+import { kSecondMs } from '../base/date.ts';
 import { JSONValue, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { sleep } from '../base/time.ts';
+import { timeout } from '../cfds/base/errors.ts';
 import { IDBRepositoryBackup } from '../repo/idbbackup.ts';
 import { getOvvioConfig } from '../server/config.ts';
 
@@ -76,11 +79,14 @@ export function sendJSONToEndpoint(
   return sendJSONToURL(urlForEndpoint(endpoint), session, json);
 }
 
+let gAccessDeniedCount = 0;
+
 export async function sendJSONToURL(
   url: string,
   session: OwnedSession | undefined,
   json: JSONValue,
   orgId?: string,
+  timeoutMs = 5 * kSecondMs,
 ): Promise<Response> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -91,13 +97,33 @@ export async function sendJSONToURL(
   if (orgId) {
     headers['x-org-id'] = orgId;
   }
-  const resp = await fetch(url, {
+  const abortController = new AbortController();
+  const fetchPromise = fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(json),
+    signal: abortController.signal,
   });
+  let aborted = false;
+  const timeoutPromise = (async () => {
+    await sleep(timeoutMs);
+    aborted = true;
+    abortController.abort();
+  })();
+  await Promise.any([fetchPromise, timeoutPromise]);
+  if (aborted) {
+    throw timeout();
+  }
+  const resp = await fetchPromise;
   if (resp.status === 403) {
-    await IDBRepositoryBackup.logout();
+    debugger;
+    if (self.Deno === undefined && ++gAccessDeniedCount === 10) {
+      await IDBRepositoryBackup.logout();
+    } else {
+      await sleep(kSecondMs);
+    }
+  } else {
+    gAccessDeniedCount = 0;
   }
   return resp;
 }

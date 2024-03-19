@@ -22,6 +22,7 @@ export interface SyncConfig {
   maxSyncFreqMs: number;
   syncDurationMs: number;
   pollingBackoffDurationMs: number;
+  timeoutMs: number;
 }
 
 export const kSyncConfigClient: SyncConfig = {
@@ -29,6 +30,7 @@ export const kSyncConfigClient: SyncConfig = {
   maxSyncFreqMs: 5 * kSecondMs,
   syncDurationMs: kSecondMs,
   pollingBackoffDurationMs: 20 * kSecondMs,
+  timeoutMs: 5 * kSecondMs,
 };
 
 // export const kSyncConfigServer: SyncConfig = {
@@ -157,6 +159,7 @@ export class SyncScheduler {
         this.trustPool.currentSession,
         reqArr,
         this.orgId,
+        this.syncConfig.timeoutMs,
       );
       respText = resp.status === 200 ? await resp.text() : undefined;
 
