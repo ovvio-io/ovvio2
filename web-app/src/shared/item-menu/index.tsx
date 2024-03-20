@@ -89,11 +89,11 @@ export default function CardMenuView({
           {partialNote.parentNote && (
             <ViewInNoteAction cardManager={cardManager} source={source} />
           )}
-          <DuplicateCardAction
+          {/* <DuplicateCardAction
             cardManager={cardManager}
             source={source}
             editorRootKey={editorRootKey}
-          />
+          /> */}
           {partialNote.childCards.length > 0 && (
             <ToggleSubTasksAction cardManager={cardManager} source={source} />
           )}
