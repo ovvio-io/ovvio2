@@ -207,7 +207,7 @@ export const Step2: React.FC<Step2Props> = ({
           {[...selectedWorkspaces].map((ws: Workspace) => (
             <WorkspaceIndicator
               key={ws.key}
-              workspace={ws}
+              workspace={ws.manager}
               ofSettings={false}
             />
           ))}
@@ -218,8 +218,8 @@ export const Step2: React.FC<Step2Props> = ({
           (ws) =>
             SetUtils.intersectionSize(
               SetUtils.map(ws.users, (u) => u.key),
-              selectedUsers
-            ) !== selectedUsers.size
+              selectedUsers,
+            ) !== selectedUsers.size,
         )}
         onRowSelect={handleRowSelect}
         showSelection={true}

@@ -74,7 +74,7 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
     if (gid instanceof VertexManager) {
       const vert = gid.getVertexProxy();
       if (vert instanceof Workspace) {
-        header = <WorkspaceIndicatorCard workspace={vert} />;
+        header = <WorkspaceIndicatorCard workspace={vert.manager} />;
       }
       if (vert instanceof User) {
         header = <div>{vert.name}</div>;
@@ -98,7 +98,7 @@ export function ListViewNew({
     'noteType',
     'expandedGroupIds',
     'notesExpandOverride',
-    'notesExpandBase'
+    'notesExpandBase',
   );
   const groupBy = view.groupBy;
   const expandedSection = view.expandedGroupIds;
@@ -112,7 +112,7 @@ export function ListViewNew({
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
     },
-    [docRouter]
+    [docRouter],
   );
 
   const groups = useMemo(() => {
@@ -124,7 +124,7 @@ export function ListViewNew({
       SetUtils.update(s, unpinnedQuery.groups());
     }
     return Array.from(s).sort(
-      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
     );
   }, [pinnedQuery, unpinnedQuery]);
 
@@ -145,7 +145,7 @@ export function ListViewNew({
           className={cn(
             styles.listRoot,
             isDisabled && styles.multiSelectActive,
-            className
+            className,
           )}
         >
           {groups.slice(0, limit).map(
@@ -188,8 +188,8 @@ export function ListViewNew({
                         ? 100
                         : Math.max(
                             3 - (pinnedQuery?.group(group).length || 0),
-                            0
-                          )
+                            0,
+                          ),
                     )
                     .map((noteMgr) => (
                       <ItemRow
@@ -206,7 +206,7 @@ export function ListViewNew({
                     ))}
                 </SectionTable>
               )
-            )
+            ),
           )}
           <InfiniteVerticalScroll
             limit={limit}

@@ -102,7 +102,7 @@ const useStyles = makeStyles((theme) => ({
 const useStrings = createUseStrings(localization);
 const PAGE_SIZE = 10;
 export interface WorkspaceIndicatorCardProps {
-  workspace: VertexId<Workspace>;
+  workspace: VertexManager<Workspace>;
 }
 export function WorkspaceIndicatorCard({
   workspace,
@@ -116,7 +116,7 @@ export function WorkspaceIndicatorCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color]
+    [color],
   );
   const dir = resolveWritingDirection(name);
   return (
@@ -155,7 +155,7 @@ function headerForGroupId(gid: CoreValue): React.ReactNode {
     if (gid instanceof VertexManager) {
       const vert = gid.getVertexProxy();
       if (vert instanceof Workspace) {
-        header = <WorkspaceIndicatorCard workspace={vert} />;
+        header = <WorkspaceIndicatorCard workspace={vert.manager} />;
       }
       if (vert instanceof User) {
         header = <div>{vert.name}</div>;
@@ -194,7 +194,7 @@ export function KanbanView({
       SetUtils.update(s, unpinnedQuery.groups());
     }
     return Array.from(s).sort(
-      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
     );
   }, [pinnedQuery, unpinnedQuery]);
 
@@ -228,7 +228,7 @@ export function KanbanView({
           className={cn(
             styles.boardRoot,
             isDisabled && styles.multiSelectActive,
-            className
+            className,
           )}
         >
           {groups.slice(0, xLimit).map((group, index) => (

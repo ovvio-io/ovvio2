@@ -52,7 +52,7 @@ const useStyles = makeStyles(() => ({
 export type WorkspaceIndicatorType = 'color' | 'full';
 
 export interface WorkspaceIndicatorProps {
-  workspace: VertexId<Workspace>;
+  workspace: VertexManager<Workspace>;
   type?: WorkspaceIndicatorType;
   editable?: boolean;
   className?: string;

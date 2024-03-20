@@ -40,7 +40,7 @@ export function CategorySettings(props: CategorySettingsProps) {
                 {ws && (
                   <WorkspaceIndicator
                     key={ws.key}
-                    workspace={ws}
+                    workspace={ws.manager}
                     ofSettings={true}
                   />
                 )}
