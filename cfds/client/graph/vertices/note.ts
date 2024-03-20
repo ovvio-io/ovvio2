@@ -104,7 +104,10 @@ export class Note extends ContentVertex {
   }
 
   get assignees(): Set<User> {
-    return this.vertSetForField('assignees');
+    const wsUsers = this.workspace.users;
+    return SetUtils.filter(this.vertSetForField<User>('assignees'), (u) =>
+      wsUsers.has(u),
+    );
   }
 
   set assignees(users: Set<User>) {
