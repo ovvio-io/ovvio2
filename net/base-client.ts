@@ -104,7 +104,7 @@ export abstract class BaseClient<
   }
 
   get syncCycles(): number {
-    return this.needsReplication() || this._syncActive
+    return this._syncActive
       ? 1
       : syncConfigGetCycles(this.syncConfig, this._syncFreqAvg.currentValue);
   }
