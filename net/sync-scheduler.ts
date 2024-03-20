@@ -27,19 +27,19 @@ export interface SyncConfig {
 
 export const kSyncConfigClient: SyncConfig = {
   minSyncFreqMs: 0.3 * kSecondMs,
-  maxSyncFreqMs: 5 * kSecondMs,
+  maxSyncFreqMs: 1.5 * kSecondMs,
   syncDurationMs: kSecondMs,
   pollingBackoffDurationMs: 20 * kSecondMs,
+  timeoutMs: 10 * kSecondMs,
+};
+
+export const kSyncConfigServer: SyncConfig = {
+  ...kSyncConfigClient,
+  pollingBackoffDurationMs: 3 * kSecondMs,
   timeoutMs: 5 * kSecondMs,
 };
 
-// export const kSyncConfigServer: SyncConfig = {
-//   minSyncFreqMs: 100,
-//   maxSyncFreqMs: 3000,
-//   syncDurationMs: 1500,
-// };
-
-export const kSyncConfigServer = kSyncConfigClient;
+// export const kSyncConfigServer = kSyncConfigClient;
 
 export function syncConfigGetCycles(
   config: SyncConfig,
