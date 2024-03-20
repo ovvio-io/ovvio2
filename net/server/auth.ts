@@ -13,7 +13,7 @@ import {
   verifyRequestSignature,
 } from '../../auth/session.ts';
 import { uniqueId } from '../../base/common.ts';
-import { deserializeDate, kDayMs } from '../../base/date.ts';
+import { deserializeDate, kDayMs, kSecondMs } from '../../base/date.ts';
 import { assert } from '../../base/error.ts';
 import { Record } from '../../cfds/base/record.ts';
 import { HTTPMethod } from '../../logging/metrics.ts';
@@ -29,6 +29,7 @@ import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../repo/repo.ts';
 import { SysDirIndexes } from './sync.ts';
 import { kAllUserPermissions } from '../../cfds/base/scheme-types.ts';
+import { sleep } from '../../base/time.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -256,6 +257,8 @@ export class AuthEndpoint implements Endpoint {
       }
       session.owner = userKey;
       repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
+      // Let the updated session time to replicate
+      await sleep(kSecondMs);
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return this.redirectHome(services);
