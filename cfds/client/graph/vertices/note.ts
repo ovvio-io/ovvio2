@@ -346,7 +346,8 @@ export class Note extends ContentVertex {
       const childCards: VertexManager<Note>[] = [];
       for (const key of this.getOrderedBodyRefs()) {
         const mgr = graph.getVertexManager<Note>(key);
-        if (mgr.getVertexProxy() instanceof Note) {
+        const vert = mgr.getVertexProxy();
+        if (vert instanceof Note && !vert.isDeleted) {
           childCards.push(mgr);
         }
       }
