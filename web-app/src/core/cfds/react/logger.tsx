@@ -47,10 +47,10 @@ export function LoggerProvider({ children }: LoggerProviderProps) {
       new RepoLogStream([
         graphManager.repository(Repository.id('events', graphManager.rootKey)),
         graphManager.repository(
-          Repository.id('events', graphManager.rootKey + '-A'),
+          Repository.id('events', graphManager.rootKey + '--A'),
         ),
         graphManager.repository(
-          Repository.id('events', graphManager.rootKey + '-B'),
+          Repository.id('events', graphManager.rootKey + '--B'),
         ),
       ]),
     ];

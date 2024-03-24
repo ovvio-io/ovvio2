@@ -144,8 +144,14 @@ export class SyncService extends BaseService<ServerServices> {
         break;
 
       case 'user':
-      case 'events':
         authorizer = createUserAuthorizer(this.getRepository('sys', 'dir'), id);
+        break;
+
+      case 'events':
+        authorizer = createUserAuthorizer(
+          this.getRepository('sys', 'dir'),
+          repoIdExcludingShardSuffix(id),
+        );
         break;
     }
     const repo = new Repository(
@@ -599,4 +605,9 @@ function leaderForRepository(
   return leader === `http://localhost:900${services.serverProcessIndex}`
     ? undefined
     : leader;
+}
+
+function repoIdExcludingShardSuffix(id: string): string {
+  const [repoId, shardId] = id.split('--');
+  return repoId;
 }
