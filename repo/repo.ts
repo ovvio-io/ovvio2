@@ -8,7 +8,7 @@ import {
 } from '../auth/session.ts';
 import * as ArrayUtils from '../base/array.ts';
 import { Dictionary } from '../base/collections/dict.ts';
-import { filterIterable } from '../base/common.ts';
+import { filterIterable, mapIterable } from '../base/common.ts';
 import { coreValueCompare, coreValueEquals } from '../base/core-types/index.ts';
 import { assert } from '../base/error.ts';
 import * as SetUtils from '../base/set.ts';
@@ -100,6 +100,7 @@ export class Repository<
     string | null,
     Promise<Commit | undefined>
   >;
+  private readonly _cachedCommitsPerUser: Map<string | undefined, string[]>;
 
   allowMerge = true;
 
@@ -142,6 +143,7 @@ export class Repository<
       this.indexes = indexes(this);
     }
     this._pendingMergePromises = new Map();
+    this._cachedCommitsPerUser = new Map();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -217,11 +219,21 @@ export class Repository<
     const { authorizer } = this;
     const checkAuth =
       session && session.id !== this.trustPool.currentSession.id && authorizer;
-    for (const id of this.storage.allCommitsIds()) {
-      const commit = this.getCommit(id);
-      if (!checkAuth || authorizer(this, this.getCommit(id), session, false)) {
-        yield commit;
-      }
+    if (!checkAuth) {
+      return this.storage.allCommitsIds();
+    }
+    const uid = session.owner;
+    let cachedCommits = this._cachedCommitsPerUser.get(uid);
+    if (!cachedCommits) {
+      cachedCommits = Array.from(
+        filterIterable(this.storage.allCommitsIds(), (id) =>
+          authorizer(this, this.getCommit(id), session, false),
+        ),
+      );
+      this._cachedCommitsPerUser.set(uid, cachedCommits);
+    }
+    for (const id of cachedCommits) {
+      yield this.getCommit(id);
     }
   }
 
@@ -1096,7 +1108,10 @@ export class Repository<
       }
       this._cachedValueForKey.set(key, result);
     }
-    return result.clone();
+    if (!readonly) {
+      result = result.clone();
+    }
+    return result;
   }
 
   valueForKeyReadonlyUnsafe(key: string | null): CFDSRecord {
@@ -1324,6 +1339,7 @@ export class Repository<
         }
       }
     }
+    this._cachedCommitsPerUser.clear();
 
     const leaves = result.filter((c) => this.commitIsHighProbabilityLeaf(c));
     for (const c of leaves) {
