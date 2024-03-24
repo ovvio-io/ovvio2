@@ -292,7 +292,14 @@ export class Note extends ContentVertex {
     this.body = docFromRT(initRichText());
   }
 
+  /**
+   * @deprecated User bodyRefs getter instead.
+   */
   getBodyRefs(): Set<string> {
+    return this.bodyRefs;
+  }
+
+  get bodyRefs(): Set<string> {
     const bodyRT = this.record.get('body');
     if (bodyRT === undefined) {
       return new Set();
@@ -319,13 +326,15 @@ export class Note extends ContentVertex {
     return this._cachedBodyPreview;
   }
 
-  bodyDidMutate(local: boolean, oldValue: Document): MutationPack {
+  bodyDidMutate(local: boolean, oldValue: Document | undefined): MutationPack {
     this._cachedBodyPreview = undefined;
     this._cachedBody = undefined;
     this._cachedChildCards = undefined;
+    const prevBodyRefs = oldValue && extractRefs(oldValue.root, true);
     return [
       ['bodyPreview', local, stripWhitelines(treeToMarkdown(oldValue?.root))],
       ['childCards', local, this._cachedChildCards],
+      ['bodyRefs', local, prevBodyRefs],
     ];
   }
 
@@ -650,6 +659,35 @@ export class Note extends ContentVertex {
     return this.parentNote?.type;
   }
 
+  get isDeleted(): number {
+    const sup = super.isDeleted;
+    if (sup !== 0) {
+      return sup;
+    }
+    const parentNote = this.parentNote;
+    if (!parentNote) {
+      return 0;
+    }
+    if (!parentNote.bodyRefs.has(this.key)) {
+      return 1;
+    }
+    return 0;
+  }
+
+  set isDeleted(v: number) {
+    super.isDeleted = v;
+  }
+
+  parentBodyRefsDidMutate(
+    local: boolean,
+    oldValue: Set<string> | undefined,
+  ): MutationPack {
+    const hadRef = (oldValue && oldValue.has(this.key)) === true;
+    if (!oldValue || hadRef !== this.parentNote?.bodyRefs.has(this.key)) {
+      return ['isDeleted', local, !hadRef];
+    }
+  }
+
   parentNoteTypeDidMutate(
     local: boolean,
     oldValue: NoteType | undefined,
@@ -916,6 +954,11 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   assignees: triggerChildren(
     'parentAssigneesDidMutate',
     'Note_assignees',
+    SchemeNamespace.NOTES,
+  ),
+  bodyRefs: triggerChildren(
+    'parentBodyRefsDidMutate',
+    'Note_bodyRefs',
     SchemeNamespace.NOTES,
   ),
 };
