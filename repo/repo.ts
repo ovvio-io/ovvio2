@@ -145,7 +145,7 @@ export class Repository<
   }
 
   static id(type: RepositoryType, id: string): string {
-    return `${type}/${id}`;
+    return this.normalizeId(`${type}/${id}`);
   }
 
   static parseId(id: string): [type: RepositoryType, id: string] {
@@ -165,6 +165,8 @@ export class Repository<
     }
     return id;
   }
+
+  static readonly sysDirId = this.id('sys', 'dir');
 
   numberOfCommits(session?: Session): number {
     const { authorizer } = this;
@@ -1124,6 +1126,7 @@ export class Repository<
     if (this.valueForKey(key).isEqual(value)) {
       return false;
     }
+    if (value.scheme.namespace === SchemeNamespace.USERS) debugger;
     const session = this.trustPool.currentSession;
     const head = await this.mergeIfNeeded(key);
     if (!head && this.keyExists(key)) {

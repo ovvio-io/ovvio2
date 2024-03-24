@@ -287,7 +287,14 @@ export class GraphManager
         plumbing.active = true;
         plumbing.loadingFinished = true;
         const numberOfCommits = repo.numberOfCommits();
-        if (numberOfCommits > (id === 'sys/dir' ? 1 : 0)) {
+
+        if (
+          (id === Repository.sysDirId &&
+            this.hasVertex(this.rootKey) &&
+            this.getRootVertexManager().scheme.namespace ===
+              SchemeNamespace.USERS) ||
+          (id !== Repository.sysDirId && numberOfCommits > 0)
+        ) {
           plumbing.loadedLocalContents = true;
           if (client) {
             client.ready = true;
