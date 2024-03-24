@@ -20,25 +20,25 @@ export function tuple4Set(
 
 export function tuple4Make(values: Tuple4Values): Tuple4 {
   return (
-    (values[0] & 255) |
-    ((values[1] & 255) << 8) |
-    ((values[2] & 255) << 16) |
-    ((values[3] & 255) << 24)
+    (values[3] & 255) |
+    ((values[2] & 255) << 8) |
+    ((values[1] & 255) << 16) |
+    ((values[0] & 255) << 24)
   );
 }
 
 export function tuple4Break(tuple: Tuple4): Tuple4Values {
   return [
-    tuple4Get(tuple, 0),
-    tuple4Get(tuple, 1),
-    tuple4Get(tuple, 2),
     tuple4Get(tuple, 3),
+    tuple4Get(tuple, 2),
+    tuple4Get(tuple, 1),
+    tuple4Get(tuple, 0),
   ];
 }
 
 export function tuple4ToString(tuple: Tuple4): string {
-  const lastValue = tuple4Get(tuple, 3);
-  return `${tuple4Get(tuple, 0)}.${tuple4Get(tuple, 1)}.${tuple4Get(tuple, 2)}${
+  const lastValue = tuple4Get(tuple, 0);
+  return `${tuple4Get(tuple, 3)}.${tuple4Get(tuple, 2)}.${tuple4Get(tuple, 1)}${
     lastValue ? `-${lastValue}` : ''
   }`;
 }
