@@ -1,6 +1,6 @@
 import { Endpoint, Middleware, ServerServices } from './server.ts';
 
-const ORIGIN_DEBUG = 'http://localhost:9000'; //'http://localhost:8080';
+const ORIGIN_DEBUG = 'http://localhost:8080';
 
 export class CORSMiddleware implements Middleware {
   didProcess(
