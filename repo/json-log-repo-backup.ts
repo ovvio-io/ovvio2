@@ -28,7 +28,10 @@ export class JSONLogRepoBackup {
       }
       const logFile = new JSONLogFile(path.join(repoPath, file.name), false);
       for (const commit of loadCommitsFromJSONLog(logFile)) {
-        yield commit;
+        if (!this._commitIds.has(commit.id)) {
+          this._commitIds.add(commit.id);
+          yield commit;
+        }
       }
       logFile.close();
     }
