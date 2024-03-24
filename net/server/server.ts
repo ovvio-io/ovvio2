@@ -330,7 +330,7 @@ export class Server {
     if (req.url === 'http://AWSALB/healthy') {
       return new Response(null, { status: 200 });
     }
-    const orgId = organizationIdFromURL(req.url) || req.headers.get('x-org-id');
+    const orgId = req.headers.get('x-org-id') || organizationIdFromURL(req.url);
 
     if (!orgId) {
       log({
