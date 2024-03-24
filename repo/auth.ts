@@ -86,12 +86,18 @@ export function createSysDirAuthorizer<ST extends RepoStorage<ST>>(
         if (isOperator) {
           return true;
         }
+        if (userRecord.scheme.namespace !== SchemeNamespace.USERS) {
+          return false;
+        }
         // Operator users are invisible to all other users
-        if (operatorEmails.includes(userRecord.get('email'))) {
+        if (
+          userRecord.has('email') &&
+          operatorEmails.includes(userRecord.get('email'))
+        ) {
           return false;
         }
         const userPermissions =
-          userRecord.get<Set<UserPermission>>('permissions');
+          userRecord.get<Set<UserPermission>>('permissions') || new Set();
 
         // manage:users grants full write access to all user records
         if (userPermissions?.has('manage:users') === true) {
