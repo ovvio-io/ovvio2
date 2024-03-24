@@ -8,6 +8,7 @@ import {
 } from '../auth/session.ts';
 import { kSecondMs } from '../base/date.ts';
 import { JSONValue, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { randomInt } from '../base/math.ts';
 import { sleep } from '../base/time.ts';
 import { timeout } from '../cfds/base/errors.ts';
 import { IDBRepositoryBackup } from '../repo/idbbackup.ts';
@@ -83,7 +84,7 @@ let gAccessDeniedCount = 0;
 
 export async function sendJSONToURL(
   url: string,
-  session: OwnedSession | undefined,
+  sessionOrSignature: OwnedSession | undefined | string,
   json: JSONValue,
   orgId?: string,
   timeoutMs = 5 * kSecondMs,
@@ -91,8 +92,11 @@ export async function sendJSONToURL(
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-  if (session !== undefined) {
-    headers['x-ovvio-sig'] = await generateRequestSignature(session);
+  if (sessionOrSignature !== undefined) {
+    if (typeof sessionOrSignature !== 'string') {
+      sessionOrSignature = await generateRequestSignature(sessionOrSignature);
+    }
+    headers['x-ovvio-sig'] = sessionOrSignature;
   }
   if (orgId) {
     headers['x-org-id'] = orgId;
@@ -116,7 +120,6 @@ export async function sendJSONToURL(
   }
   const resp = await fetchPromise;
   if (resp.status === 403) {
-    debugger;
     if (self.Deno === undefined && ++gAccessDeniedCount === 10) {
       await IDBRepositoryBackup.logout();
     } else {

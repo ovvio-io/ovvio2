@@ -258,7 +258,7 @@ export class AuthEndpoint implements Endpoint {
       session.owner = userKey;
       repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
       // Let the updated session time to replicate
-      await sleep(kSecondMs);
+      await sleep(3 * kSecondMs);
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return this.redirectHome(services);
@@ -281,7 +281,7 @@ export async function persistSession(
   services: ServerServices,
   session: Session | OwnedSession,
 ): Promise<void> {
-  const repo = services.sync.getRepository('sys', 'dir');
+  const repo = services.sync.getSysDir();
   const record = await sessionToRecord(session);
   await repo.setValueForKey(session.id, record);
 }

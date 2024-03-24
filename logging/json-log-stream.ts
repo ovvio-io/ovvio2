@@ -1,6 +1,7 @@
 import { LogEntry, LogStream } from './log.ts';
 import { JSONLogFile } from '../base/json-log.ts';
 import { NormalizedLogEntry } from './entry.ts';
+import { randomInt } from '../base/math.ts';
 
 export class JSONLogStream implements LogStream {
   private readonly _log: JSONLogFile;
@@ -16,6 +17,8 @@ export class JSONLogStream implements LogStream {
   }
 
   appendEntry(e: NormalizedLogEntry<LogEntry>): void {
-    this._log.append([e]);
+    if (randomInt(0, 10) === 0) {
+      this._log.append([e]);
+    }
   }
 }

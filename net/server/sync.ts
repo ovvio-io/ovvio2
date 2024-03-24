@@ -1,6 +1,7 @@
 import { join as joinPath } from 'std/path/mod.ts';
 import { Dictionary } from '../../base/collections/dict.ts';
 import { mapIterable, runGC } from '../../base/common.ts';
+import * as ArrayUtils from '../../base/array.ts';
 import {
   JSONCyclicalDecoder,
   JSONCyclicalEncoder,
@@ -57,6 +58,7 @@ import {
 import { RendezvousHash } from '../../base/rendezvous-hash.ts';
 import { randomInt } from '../../base/math.ts';
 import { kDayMs } from '../../base/date.ts';
+import { sendJSONToURL } from '../rest-api.ts';
 
 const gSyncSchedulers = new Map<string, SyncScheduler>();
 
@@ -166,27 +168,33 @@ export class SyncService extends BaseService<ServerServices> {
       }
     }
     assert(!this._clientsForRepo.has(repoId)); // Sanity check
-    const clients: RepoClient<MemRepoStorage>[] = [];
-    for (let i = 0; i < this.services.serverProcessCount; ++i) {
-      if (i === this.services.serverProcessIndex) {
-        continue;
+    if (
+      type === 'sys' &&
+      id === 'dir' &&
+      this.services.serverProcessCount > 1
+    ) {
+      const clients: RepoClient<MemRepoStorage>[] = [];
+      for (let i = 0; i < this.services.serverProcessCount; ++i) {
+        if (i === this.services.serverProcessIndex) {
+          continue;
+        }
+        const c = new RepoClient(
+          repo!,
+          type,
+          id,
+          kSyncConfigServer,
+          syncSchedulerForURL(
+            `http://localhost:9000/batch-sync`,
+            this.services.trustPool,
+            this.services.organizationId,
+          ),
+        );
+        c.ready = true;
+        c.startSyncing();
+        clients.push(c);
       }
-      const c = new RepoClient(
-        repo!,
-        type,
-        id,
-        kSyncConfigServer,
-        syncSchedulerForURL(
-          `http://localhost:${9000 + i}/batch-sync`,
-          this.services.trustPool,
-          this.services.organizationId,
-        ),
-      );
-      c.ready = true;
-      c.startSyncing();
-      clients.push(c);
+      this._clientsForRepo.set(repoId, clients);
     }
-    this._clientsForRepo.set(repoId, clients);
     return repo;
   }
 
@@ -358,17 +366,46 @@ export class SyncEndpoint implements Endpoint {
       'anonymous',
     );
     const results: JSONArray = [];
+    const fwdReqByLeader = new Map<string, JSONArray>();
+    for (const r of encodedRequests) {
+      const { storage, id } = r;
+      const leader = leaderForRepository(services, storage, id);
+      if (leader) {
+        let reqArr = fwdReqByLeader.get(leader);
+        if (!reqArr) {
+          reqArr = [];
+          fwdReqByLeader.set(leader, reqArr);
+        }
+        reqArr.push(r);
+      }
+    }
+    const pendingFwdRequests: Promise<JSONArray>[] = [];
+    for (const [leader, reqArr] of fwdReqByLeader) {
+      pendingFwdRequests.push(
+        (async () => {
+          const fwdResp = await sendJSONToURL(
+            `${leader}/batch-sync`,
+            sig,
+            reqArr,
+            services.organizationId,
+          );
+          return await fwdResp.json();
+        })(),
+      );
+    }
     for (const r of encodedRequests) {
       const { storage, id, msg } = r;
-      if (!kRepositoryTypes.includes(storage as RepositoryType)) {
-        continue;
+      const leader = leaderForRepository(services, storage, id);
+      if (!leader) {
+        results.push({
+          storage,
+          id,
+          res: await this.doSync(services, storage, id, userSession, msg, sig),
+        });
       }
-      results.push({
-        storage,
-        id,
-        res: await this.doSync(services, storage, id, userSession, msg),
-      });
-      runGC();
+    }
+    for (const fwdResp of pendingFwdRequests) {
+      ArrayUtils.append(results, await fwdResp);
     }
     const respJsonStr = JSON.stringify(results);
     return new Response(respJsonStr);
@@ -379,7 +416,6 @@ export class SyncEndpoint implements Endpoint {
     req: Request,
     info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
-    const syncService = services.sync;
     const path = getRequestPath(req).split('/');
     const storageType = path[1] as RepositoryType;
     const resourceId = path[2];
@@ -412,6 +448,7 @@ export class SyncEndpoint implements Endpoint {
                 resourceId,
                 userSession,
                 json,
+                sig,
               ),
             ),
             {
@@ -455,6 +492,7 @@ export class SyncEndpoint implements Endpoint {
     resourceId: string,
     userSession: Session,
     json: JSONObject,
+    clientSignature: string,
   ): Promise<JSONObject> {
     const syncService = services.sync;
     return await this._handleSyncRequestAfterAuth(
@@ -537,4 +575,25 @@ export async function setupTrustPool(
       trustPool.addSessionUnsafe(session);
     }),
   );
+}
+
+function leaderForRepository(
+  services: ServerServices,
+  storageType: RepositoryType,
+  resourceId: string,
+): string | undefined {
+  if (
+    services.serverProcessCount === 1 ||
+    (storageType === 'sys' && resourceId === 'dir')
+  ) {
+    return undefined;
+  }
+  const rend = new RendezvousHash<string>();
+  for (let i = 0; i < services.serverProcessCount; ++i) {
+    rend.addPeer(`http://localhost:900${i}`);
+  }
+  const leader = rend.peerForKey(Repository.id(storageType, resourceId));
+  return leader === `http://localhost:900${services.serverProcessIndex}`
+    ? undefined
+    : leader;
 }
