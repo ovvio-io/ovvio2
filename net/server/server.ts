@@ -218,7 +218,7 @@ export class Server {
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
     const logStreams: LogStream[] = [
-      // new JSONLogStream(path.join(dir, `log-${serverId}.jsonl`)),
+      // new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
       // prometeusLogStream,
     ];
     if (args?.silent !== true) {
