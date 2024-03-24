@@ -383,6 +383,7 @@ export class Server {
               method: req.method as HTTPMethod,
               error: e.message,
               trace: e.stack,
+              orgId,
             });
             return new Response(null, {
               status: e.code,
@@ -398,6 +399,7 @@ export class Server {
             method: req.method as HTTPMethod,
             error: String(e),
             trace: e.stack,
+            orgId,
           });
           return new Response(null, {
             status: 500,

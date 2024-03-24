@@ -9,7 +9,7 @@ export class MetricsMiddleware implements Middleware {
     services: ServerServices,
     req: Request,
     info: Deno.ServeHandlerInfo,
-    resp: Response
+    resp: Response,
   ): Promise<Response> {
     log(
       {
@@ -19,8 +19,9 @@ export class MetricsMiddleware implements Middleware {
         value: resp.status,
         url: req.url,
         method: req.method,
+        orgId: services.organizationId,
       },
-      this.outputStreams
+      this.outputStreams,
     );
     return Promise.resolve(resp);
   }
@@ -30,7 +31,7 @@ export class PrometheusMetricsEndpoint implements Endpoint {
   filter(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): boolean {
     if (req.method !== 'GET') {
       return false;
@@ -41,7 +42,7 @@ export class PrometheusMetricsEndpoint implements Endpoint {
   processRequest(
     services: ServerServices,
     req: Request,
-    info: Deno.ServeHandlerInfo
+    info: Deno.ServeHandlerInfo,
   ): Promise<Response> {
     const logStream = services.prometheusLogStream;
     const metrics = logStream.getMetrics();
@@ -50,7 +51,7 @@ export class PrometheusMetricsEndpoint implements Endpoint {
         headers: {
           'content-type': 'text/plain; version=0.0.4; charset=utf-8',
         },
-      })
+      }),
     );
   }
 }

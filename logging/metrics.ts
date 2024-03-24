@@ -50,10 +50,11 @@ export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
   value: number;
   unit: MetricUnit;
   help?: string; // Help message for users of this metric
+  orgId?: string;
 }
 
 export type MetricLogWithURL<
-  T extends BaseMetricLogEntry = BaseMetricLogEntry
+  T extends BaseMetricLogEntry = BaseMetricLogEntry,
 > = T & {
   url?: string;
   urls?: string[];
@@ -66,20 +67,20 @@ export type MetricLogWithHTTP<T extends MetricLogWithURL = MetricLogWithURL> =
 
 export type MetricLogWithType<
   T extends string = string,
-  BASE extends BaseMetricLogEntry = BaseMetricLogEntry
+  BASE extends BaseMetricLogEntry = BaseMetricLogEntry,
 > = BASE & {
   type?: T;
 };
 
 export type MetricLogWithError<
-  T extends BaseMetricLogEntry = BaseMetricLogEntry
+  T extends BaseMetricLogEntry = BaseMetricLogEntry,
 > = T & {
   error?: string;
   trace?: string;
 };
 
 export type MetricLogWithQuery<
-  T extends BaseMetricLogEntry = BaseMetricLogEntry
+  T extends BaseMetricLogEntry = BaseMetricLogEntry,
 > = T & {
   query: string;
   operator: string;
@@ -87,7 +88,7 @@ export type MetricLogWithQuery<
 };
 
 export type MetricLogWithPath<
-  T extends BaseMetricLogEntry = BaseMetricLogEntry
+  T extends BaseMetricLogEntry = BaseMetricLogEntry,
 > = T & {
   path: string;
 };
@@ -113,7 +114,7 @@ export type MetricLogEntryType<N extends MetricName> =
 export type MetricLogEntry = MetricLogEntryType<`${MetricName}`>;
 
 export function logEntryIsMetric(
-  entry: NormalizedLogEntry<BaseLogEntry>
+  entry: NormalizedLogEntry<BaseLogEntry>,
 ): entry is NormalizedLogEntry<MetricLogEntry> {
   if (
     (entry.severity !== 'METRIC' && entry.severity !== 'ERROR') ||
