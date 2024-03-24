@@ -126,7 +126,7 @@ async function build(
     '-A',
     '--lock-write',
     '--no-check',
-    '--v8-flags=--predictable',
+    // '--v8-flags=--predictable',
     '--allow-read',
     '--allow-env',
     '--allow-run',
