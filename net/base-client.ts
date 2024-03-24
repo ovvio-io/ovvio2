@@ -12,6 +12,7 @@ import {
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
+import { randomInt } from '../base/math.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
 
@@ -238,18 +239,20 @@ export abstract class BaseClient<
     if (syncResp.values.length) {
       const start = performance.now();
       persistedCount = await this.persistPeerValues(syncResp.values);
-      log({
-        severity: 'METRIC',
-        name: 'CommitsPersistTime',
-        value: performance.now() - start,
-        unit: 'Milliseconds',
-      });
-      log({
-        severity: 'METRIC',
-        name: 'CommitsPersistCount',
-        value: persistedCount,
-        unit: 'Count',
-      });
+      if (randomInt(0, 100) === 0) {
+        log({
+          severity: 'METRIC',
+          name: 'CommitsPersistTime',
+          value: performance.now() - start,
+          unit: 'Milliseconds',
+        });
+        log({
+          severity: 'METRIC',
+          name: 'CommitsPersistCount',
+          value: persistedCount,
+          unit: 'Count',
+        });
+      }
     }
     if (this.closed) {
       return false;

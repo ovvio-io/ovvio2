@@ -22,6 +22,7 @@ import { OwnedSession } from '../../../../../auth/session.ts';
 import { RepoLogStream } from '../../../../../logging/repo-log-stream.ts';
 import { useGraphManager } from './graph.tsx';
 import { Repository } from '../../../../../repo/repo.ts';
+import { kMinuteMs } from '../../../../../base/date.ts';
 
 interface LoggerContext {
   logger: Logger;
@@ -43,9 +44,15 @@ export function LoggerProvider({ children }: LoggerProviderProps) {
     // client stack rather than just UI stuff rendered with react.
     const streams: LogStream[] = [
       new ConsoleLogStream('DEBUG'),
-      new RepoLogStream(
+      new RepoLogStream([
         graphManager.repository(Repository.id('events', graphManager.rootKey)),
-      ),
+        graphManager.repository(
+          Repository.id('events', graphManager.rootKey + '-A'),
+        ),
+        graphManager.repository(
+          Repository.id('events', graphManager.rootKey + '-B'),
+        ),
+      ]),
     ];
     // if (client) {
     //   streams.unshift(client);
@@ -83,7 +90,7 @@ export function LoggerProvider({ children }: LoggerProviderProps) {
         event: 'SessionAlive',
         foreground: document.visibilityState === 'visible',
       });
-    }, 10 * 1000);
+    }, kMinuteMs);
 
     return () => {
       clearInterval(sessionIntervalId);
