@@ -43,6 +43,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
       this.previousServerSize,
       this.syncCycles,
       includeMissing,
+      this.storage === 'events',
     );
   }
 

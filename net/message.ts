@@ -222,6 +222,7 @@ export class SyncMessage<T extends SyncValueType>
     peerSize: number,
     expectedSyncCycles: number,
     includeMissing = true,
+    lowAccuracy = false,
   ): SyncMessage<T> {
     const numberOfEntries = Math.max(1, localSize, peerSize);
     // To calculate the desired False-Positive-Rate (fpr), we use the following
@@ -240,10 +241,12 @@ export class SyncMessage<T extends SyncValueType>
     //
     // Finally, a bloom filter with fpr >= 0.5 isn't very useful (more than 50%
     // false positives), so we cap the computed value at 0.5.
-    const fpr = Math.min(
-      0.5,
-      1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles)),
-    );
+    const fpr = lowAccuracy
+      ? 0.5
+      : Math.min(
+          0.5,
+          1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles)),
+        );
     const localFilter = new BloomFilter({
       size: numberOfEntries,
       fpr,

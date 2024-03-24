@@ -409,7 +409,7 @@ export class SyncEndpoint implements Endpoint {
         results.push({
           storage,
           id,
-          res: await this.doSync(services, storage, id, userSession, msg, sig),
+          res: await this.doSync(services, storage, id, userSession, msg),
         });
       }
     }
@@ -457,7 +457,6 @@ export class SyncEndpoint implements Endpoint {
                 resourceId,
                 userSession,
                 json,
-                sig,
               ),
             ),
             {
@@ -495,13 +494,12 @@ export class SyncEndpoint implements Endpoint {
     return resp!;
   }
 
-  private async doSync<T extends SyncValueType>(
+  private async doSync(
     services: ServerServices,
     storageType: RepositoryType,
     resourceId: string,
     userSession: Session,
     json: JSONObject,
-    clientSignature: string,
   ): Promise<JSONObject> {
     const syncService = services.sync;
     return await this._handleSyncRequestAfterAuth(
@@ -526,6 +524,7 @@ export class SyncEndpoint implements Endpoint {
           .numberOfCommits(userSession),
       syncService.clientsForRepo(resourceId),
       true,
+      storageType === 'events',
     );
   }
 
@@ -537,6 +536,7 @@ export class SyncEndpoint implements Endpoint {
     getLocalCount: () => number,
     replicas: Iterable<BaseClient<T>> | undefined,
     includeMissing: boolean,
+    lowAccuracy: boolean,
   ): Promise<ReadonlyJSONObject> {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(msgJSON),
@@ -565,6 +565,7 @@ export class SyncEndpoint implements Endpoint {
       syncCycles,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
+      lowAccuracy,
     );
 
     const encodedResp = JSONCyclicalEncoder.serialize(syncResp);
@@ -608,6 +609,6 @@ function leaderForRepository(
 }
 
 function repoIdExcludingShardSuffix(id: string): string {
-  const [repoId, shardId] = id.split('--');
+  const [repoId, _shardId] = id.split('--');
   return repoId;
 }
