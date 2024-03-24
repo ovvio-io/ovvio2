@@ -171,7 +171,10 @@ export class SyncService extends BaseService<ServerServices> {
     if (
       type === 'sys' &&
       id === 'dir' &&
-      this.services.serverProcessCount > 1
+      this.services.serverProcessCount > 1 &&
+      // localhost sync is allowed only on development machines
+      (this.services.organizationId !== 'localhost' ||
+        Deno.build.os === 'darwin')
     ) {
       const clients: RepoClient<MemRepoStorage>[] = [];
       for (let i = 0; i < this.services.serverProcessCount; ++i) {
