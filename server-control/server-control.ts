@@ -8,6 +8,7 @@ import { VCurrent } from '../base/version-number.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { BuildTarget } from '../server/build.ts';
 import { HealthChecker } from './health-check.ts';
+import { isDevelopmentBuild } from '../base/development.ts';
 
 const UNHEALTHY_CHECK_COUNT = 20;
 const HEALTH_CHECK_FREQ_MS = 3 * kSecondMs;
@@ -20,10 +21,9 @@ const BETA_TENANTS = ['ovvio'];
 const ec2MetadataToken = new EC2MetadataToken();
 
 async function getArchiveURL(target: BuildTarget): Promise<string> {
-  const tenantId =
-    Deno.build.os === 'darwin'
-      ? 'localhost'
-      : await getTenantId(ec2MetadataToken);
+  const tenantId = isDevelopmentBuild()
+    ? 'localhost'
+    : await getTenantId(ec2MetadataToken);
   let channel = '';
   if (tenantId) {
     if (ALPHA_TENANTS.includes(tenantId)) {
@@ -183,7 +183,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = Math.round(navigator.hardwareConcurrency * 1.5);
+  const processCount = 1 + Math.round(navigator.hardwareConcurrency * 1.5);
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     // for (let x = 0; x < processCount; ++x) {
