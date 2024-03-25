@@ -29,6 +29,7 @@ import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 import { MemberPicker } from '../../../../../../components/member-picker.tsx';
 import { WhiteActionButton } from '../../components/settings-buttons.tsx';
 import { BlueActionButton } from '../../components/settings-buttons.tsx';
+import { ConfirmationDialog } from '../../../../../../styles/components/confirmation-menu.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -147,20 +148,6 @@ const useStyles = makeStyles(() => ({
     maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
   },
-  confirmation: {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontFamily: 'PoppinsBold, HeeboBold',
-    fontSize: '14px',
-  },
-  confirmationButtons: {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    // width: '180px',
-  },
 }));
 
 interface UserItemProps {
@@ -186,7 +173,6 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
 
     if (removeUserStep === 'removeProcessing') {
       timeoutId = setTimeout(() => {
-        debugger;
         setRemoveUserStep('confirmRemove');
       }, 10);
     }
@@ -249,23 +235,12 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
           direction="out"
           openImmediately={true}
         >
-          <div className={cn(styles.confirmation)}>
-            Remove from workspace?
-            <div className={cn(styles.confirmationButtons)}>
-              <BlueActionButton
-                onClick={() => removeUser1(userMng)}
-                disable={false}
-                buttonText={'Remove'}
-                imgSrc={'/icons/settings/Delete-white.svg'}
-              />
-              <WhiteActionButton
-                onClick={() => setRemoveUserStep('startRemove')}
-                disable={false}
-                buttonText={'Cancel'}
-                imgSrc="/icons/settings/Close-big.svg"
-              />
-            </div>
-          </div>
+          <ConfirmationDialog
+            approveButtonText={'Remove'}
+            titleText={'Remove from workspace?'}
+            handleApproveClick={() => removeUser1(userMng)}
+            handleCancelClick={() => setRemoveUserStep('startRemove')}
+          />
         </Menu>
       ) : null}
     </div>

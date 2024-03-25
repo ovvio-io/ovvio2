@@ -45,6 +45,7 @@ import { makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
 import { cn } from '../../../../../styles/css-objects/index.ts';
+import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -82,21 +83,6 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 21,
     maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
-  },
-  confirmation: {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontWeight: '600',
-    fontSize: '14px',
-  },
-  confirmationButtons: {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    width: '118px',
-    gap: '8px',
   },
 }));
 
@@ -211,13 +197,11 @@ interface DeleteNoteProp extends CardActionProps {
 }
 
 export function DeleteCardAction({
-  onDeleted,
   cardManager,
   showConfirmation,
   setShowConfirmation,
   isTask,
 }: DeleteNoteProp) {
-  const styles = useStyles();
   const note = useVertex(cardManager);
 
   const handleDeleteClick = () => {
@@ -244,23 +228,12 @@ export function DeleteCardAction({
           }}
         />
       ) : (
-        <div className={cn(styles.confirmation)}>
-          {isTask ? 'Delete Task?' : 'Delete Note?'}
-          <div className={cn(styles.confirmationButtons)}>
-            <BlueActionButton
-              onClick={() => handleConfirmDelete()}
-              disable={false}
-              buttonText={'Remove'}
-              imgSrc={'/icons/settings/Delete-white.svg'}
-            />
-            <WhiteActionButton
-              onClick={handleCancelClick}
-              disable={false}
-              buttonText={'Cancel'}
-              imgSrc="/icons/settings/Close-big.svg"
-            />
-          </div>
-        </div>
+        <ConfirmationDialog
+          titleText={isTask ? 'Delete Task?' : 'Delete Note?'}
+          approveButtonText={'Remove'}
+          handleApproveClick={handleConfirmDelete}
+          handleCancelClick={handleCancelClick}
+        />
       )}
     </React.Fragment>
   );

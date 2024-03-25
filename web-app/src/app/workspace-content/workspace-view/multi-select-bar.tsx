@@ -1,11 +1,4 @@
-import React, {
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   TextSm,
   useTypographyStyles,
@@ -16,9 +9,7 @@ import {
   DueDateMultiSelect,
   WhiteActionButton,
 } from '../../settings/components/settings-buttons.tsx';
-import Menu, {
-  useMenuContext,
-} from '../../../../../styles/components/menu.tsx';
+import Menu from '../../../../../styles/components/menu.tsx';
 import {
   Note,
   Tag,
@@ -40,7 +31,6 @@ import {
   useGraphManager,
   usePartialView,
 } from '../../../core/cfds/react/graph.tsx';
-import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
 import { Query } from '../../../../../cfds/client/graph/query.ts';
 import {
   TagId,
@@ -55,7 +45,7 @@ import {
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
 import { usePendingAction } from './cards-display/index.tsx';
-import { useFilteredNotes } from '../../../core/cfds/react/filter.ts';
+import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx';
 
 const useStyles = makeStyles(
   () => ({
@@ -65,20 +55,6 @@ const useStyles = makeStyles(
       maxHeight: styleguide.gridbase * 21,
       minWidth: styleguide.gridbase * 17.5,
       flexShrink: 0,
-    },
-    confirmation: {
-      display: 'flex',
-      padding: '8px 10px 10px ',
-      flexDirection: 'column',
-      alignItems: 'center',
-      fontWeight: '600',
-      fontSize: '14px',
-    },
-    confirmationButtons: {
-      display: 'flex',
-      padding: '16px 0px 8px 0px',
-      flexDirection: 'column',
-      gap: '8px',
     },
     MultiSelectBarStyle: {
       top: '0px',
@@ -216,61 +192,6 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
   );
 };
 
-interface ConfirmationDialogProps {
-  isTask: boolean;
-  nCards: number;
-  itemText: string;
-  handleDeleteClick: () => void;
-  handleCancelClick: () => void;
-}
-
-export function ConfirmationDialog({
-  isTask,
-  nCards,
-  itemText,
-  handleDeleteClick,
-  handleCancelClick,
-}: ConfirmationDialogProps) {
-  const styles = useStyles();
-  const componentRef = useRef<HTMLDivElement>(null);
-  const menuCtx = useMenuContext();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        componentRef.current &&
-        !componentRef.current.contains(event.target as Node)
-      ) {
-        menuCtx.close();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [menuCtx]);
-
-  return (
-    <div ref={componentRef} className={cn(styles.confirmation)}>
-      {`Delete ${nCards} ${itemText}`}
-      <div className={cn(styles.confirmationButtons)}>
-        <BlueActionButton
-          onClick={handleDeleteClick}
-          disable={false}
-          buttonText={'Delete'}
-          imgSrc={'/icons/settings/Delete-white.svg'}
-        />
-        <WhiteActionButton
-          onClick={handleCancelClick}
-          disable={false}
-          buttonText={'Cancel'}
-          imgSrc="/icons/settings/Close-big.svg"
-        />
-      </div>
-    </div>
-  );
-}
-
 interface AddSelectionButtonProps<T> {
   className?: string;
   selectedCards: Set<VertexManager<Note>>;
@@ -350,10 +271,10 @@ export function RemoveMultiButton<T>({
       popupClassName={cn(styles.popup)}
     >
       <ConfirmationDialog
-        isTask={isTask}
         nCards={nCards}
+        approveButtonText={'Delete'}
         itemText={itemText}
-        handleDeleteClick={handleDeleteClick}
+        handleApproveClick={handleDeleteClick}
         handleCancelClick={handleCancelClick}
       />
     </Menu>

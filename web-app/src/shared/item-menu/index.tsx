@@ -20,10 +20,7 @@ import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
 import { makeStyles } from '../../../../styles/css-objects/index.ts';
-import { styleguide } from '../../../../styles/styleguide.ts';
-import { notFound } from '../../../../cfds/base/errors.ts';
 
 const useStyles = makeStyles(() => ({}));
 

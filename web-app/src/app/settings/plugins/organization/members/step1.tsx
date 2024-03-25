@@ -24,6 +24,7 @@ export const Step1: React.FC<Step1Props> = ({
   const FunctionsHeader: CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
+    maxWidth: '1085px',
   };
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',

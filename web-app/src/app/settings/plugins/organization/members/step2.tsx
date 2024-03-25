@@ -17,6 +17,7 @@ import { WorkspaceIndicator } from '../../../../../../../components/workspace-in
 import Menu from '../../../../../../../styles/components/menu.tsx';
 import { WhiteActionButton } from '../../../components/settings-buttons.tsx';
 import { BlueActionButton } from '../../../components/settings-buttons.tsx';
+import { ConfirmationDialog } from '../../../../../../../styles/components/confirmation-menu.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
@@ -75,22 +76,6 @@ export const Step2: React.FC<Step2Props> = ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
-  };
-  const confirmation: CSSProperties = {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontWeight: '600',
-    fontSize: '14px',
-    maxWidth: '200px',
-  };
-  const confirmationButtons: CSSProperties = {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    width: '180px',
-    gap: '8px',
   };
 
   //TODO: fix remove userPill bug.
@@ -168,25 +153,13 @@ export const Step2: React.FC<Step2Props> = ({
               direction="out"
               style={{ position: 'absolute', right: '635px', top: '142px' }}
             >
-              <div style={confirmation}>
-                <div style={{ textAlign: 'center' }}>
-                  Assign selected members to all workspaces?
-                </div>{' '}
-                <div style={confirmationButtons}>
-                  <BlueActionButton
-                    onClick={handleAssignAllWsClick}
-                    disable={false}
-                    buttonText={'Assign'}
-                    imgSrc={'/icons/settings/InviteWhite.svg'}
-                  />
-                  <WhiteActionButton
-                    onClick={toggleMenu}
-                    disable={false}
-                    buttonText={'Cancel'}
-                    imgSrc="/icons/settings/Close-big.svg"
-                  />
-                </div>
-              </div>
+              <ConfirmationDialog
+                approveButtonText={'Assign'}
+                imgSrc="/icons/settings/InviteWhite.svg"
+                titleText={' Assign selected members to all workspaces?'}
+                handleApproveClick={handleAssignAllWsClick}
+                handleCancelClick={toggleMenu}
+              />
             </Menu>
           )}
         </div>

@@ -5,7 +5,7 @@ assume this account is being used.
 
 ## Route53
 
-1. Create a new Hosted Zone named `<tenant id>`.ovvio.io
+1. Create a new Hosted Zone named `<organization id>`.ovvio.io
 2. Create NS record for new subdomain in main account Route53
 
 ## VPC
@@ -55,7 +55,7 @@ Finally, wait for VPC to finish setting up.
 
 ### Configure ALB Security Group
 
-1. Edit the previously created internal group
+1. Edit the previously created ALB group
 2. Add inbound rule to Allow All HTTPS from Anywhere-IPv4
 3. Add inbound rule to Allow All HTTPS from Anywhere-IPv6
 4. Add inbound rule to Allow All Traffic from Internal Group
@@ -79,12 +79,13 @@ Finally, wait for VPC to finish setting up.
 11. Select existing tenant internal security group
 12. Change the root volume to 64GB, encrypted with default KMS key
     1. Delete on Termination: NO
-13. Under Advanced Details, select "ProdServer" IAM Role
+13. Under Advanced Details, select "IAM instance profile" ServerRole . (and remove "OvvioBuilderServer").
 14. Termination Protection: Enable
 15. Stop Protection: Enable
 16. Detailed Cloudwatch Monitoring: Enable
 17. Credit Specification: Unlimited
-18. Allow tags in metadata: Enable 18: Paste launch-script.sh to User data field
+18. Allow tags in metadata: Enable.
+19. Paste launch-script.sh to User data field
 
 Wait for instance to launch
 
@@ -97,7 +98,7 @@ Wait for instance to launch
 5. Choose correct VPC
 6. IPv4
 7. Protocol Version: HTTP 2
-8. Health Checks: `/healthy`
+8. Health Checks: `/healthy` 
 9. Add tag named `OvvioTenantId` with the value of the tenant id
 10. Add previously created instance with port 9000 to the new target group
 

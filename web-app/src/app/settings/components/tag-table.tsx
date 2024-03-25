@@ -23,6 +23,9 @@ import { useVertex } from '../../../core/cfds/react/vertex.ts';
 import { uniqueId } from '../../../../../base/common.ts';
 import { between, present } from '../../../../../cfds/base/orderstamp.ts';
 import { past } from '../../../../../cfds/base/orderstamp.ts';
+import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx';
+import { WhiteActionButton } from './settings-buttons.tsx';
+import { DeleteWithConfirmation } from '../../../../../styles/components/confirmation-menu.tsx';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -177,6 +180,9 @@ const useStyles = makeStyles(() => ({
     ...styleguide.transition.short,
     transitionProperty: 'opacity',
   },
+  itemMenuOpen: {
+    opacity: 1,
+  },
 
   deleteIcon: {
     width: styleguide.gridbase * 2,
@@ -187,6 +193,15 @@ const useStyles = makeStyles(() => ({
   highlightedTag: {
     border: '3px solid red',
     transition: ' border 2s linear',
+  },
+  popup: {
+    backgroundColor: '#ffff',
+    maxWidth: styleguide.gridbase * 21,
+    maxHeight: styleguide.gridbase * 21,
+    flexShrink: 0,
+    zIndex: 20,
+    position: 'fixed',
+    border: '2px solid #F5ECDC',
   },
 }));
 
@@ -467,6 +482,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
   const [newTagId, setNewTagId] = useState<string | null>(null);
   const [canCreateNewTag, setCanCreateNewTag] = useState(true);
   const [highlightTag, setHighlightTag] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleReorderTag = (tag: Tag, direction: string) => {
     if (!childTags || !tag) return;
@@ -526,8 +542,11 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 
   const handleOnDeleteCategory = () => {
     category.isDeleted = 1;
+    setShowConfirmation(false);
   };
-
+  const handleCancelClick = () => {
+    setShowConfirmation(false);
+  };
   useEffect(() => {
     childTags.sort((a, b) => coreValueCompare(a.sortStamp, b.sortStamp));
     if (lastTagRef.current) {
@@ -558,7 +577,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
-      <div className={cn(styles.moreButtonColumn, styles.itemMenu)}>
+      <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
         <img key="MoreButtonTagSettings" src="/icons/settings/More.svg" />
       </div>
     ),
@@ -641,10 +660,26 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
                   alt="Delete"
                 />
               )}
-              onClick={handleOnDeleteCategory}
               text="Delete"
-            ></MenuAction>
+              iconWidth="16px"
+              iconHeight="16px"
+              onClick={() => {
+                setShowConfirmation(true);
+              }}
+            />
           </Menu>
+          {showConfirmation && (
+            <ConfirmationDialog
+              className={styles.popup}
+              approveButtonText="Delete"
+              titleText="Delete category?"
+              handleApproveClick={() => {
+                handleOnDeleteCategory();
+                setShowConfirmation(false);
+              }}
+              handleCancelClick={() => setShowConfirmation(false)}
+            />
+          )}
         </div>
       )}
     </div>
