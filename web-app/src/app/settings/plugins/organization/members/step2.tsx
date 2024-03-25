@@ -1,10 +1,4 @@
-import React, {
-  CSSProperties,
-  ReactElement,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import * as SetUtils from '../../../../../../../base/set.ts';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
@@ -16,16 +10,13 @@ import {
   Bold,
   TextSm,
 } from '../../../../../../../styles/components/typography.tsx';
-import {
-  AssignWsBlueButton,
-  AssignWsButton,
-  CancelButton,
-  UserPill,
-} from '../../../components/settings-buttons.tsx';
+import { UserPill } from '../../../components/settings-buttons.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import WorkspaceTable from '../../../components/workspace-table.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import Menu from '../../../../../../../styles/components/menu.tsx';
+import { WhiteActionButton } from '../../../components/settings-buttons.tsx';
+import { BlueActionButton } from '../../../components/settings-buttons.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
@@ -53,7 +44,6 @@ export const Step2: React.FC<Step2Props> = ({
   const FunctionsHeader: CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
   };
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',
@@ -63,7 +53,6 @@ export const Step2: React.FC<Step2Props> = ({
     gap: '4px',
     marginBottom: '11px',
   };
-
   const WorkspaceIndicatorContainer: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
@@ -156,9 +145,11 @@ export const Step2: React.FC<Step2Props> = ({
           <div>Choose workspaces to assign</div>
           <div style={AssignsContainer}>
             {selectedWorkspaces && (
-              <AssignWsButton
-                AssignWsClick={handleAssignWsClick}
+              <WhiteActionButton
+                onClick={handleAssignWsClick}
                 disable={selectedWorkspaces.length === 0}
+                buttonText={'Assign'}
+                imgSrc={'/icons/settings/Invite.svg'}
               />
             )}
             {selectedWorkspaces.length > 0 && (
@@ -182,11 +173,18 @@ export const Step2: React.FC<Step2Props> = ({
                   Assign selected members to all workspaces?
                 </div>{' '}
                 <div style={confirmationButtons}>
-                  <AssignWsBlueButton
-                    AssignWsClick={handleAssignAllWsClick}
+                  <BlueActionButton
+                    onClick={handleAssignAllWsClick}
                     disable={false}
+                    buttonText={'Assign'}
+                    imgSrc={'/icons/settings/InviteWhite.svg'}
                   />
-                  <CancelButton onCancel={toggleMenu} />{' '}
+                  <WhiteActionButton
+                    onClick={toggleMenu}
+                    disable={false}
+                    buttonText={'Cancel'}
+                    imgSrc="/icons/settings/Close-big.svg"
+                  />
                 </div>
               </div>
             </Menu>
@@ -218,8 +216,8 @@ export const Step2: React.FC<Step2Props> = ({
           (ws) =>
             SetUtils.intersectionSize(
               SetUtils.map(ws.users, (u) => u.key),
-              selectedUsers,
-            ) !== selectedUsers.size,
+              selectedUsers
+            ) !== selectedUsers.size
         )}
         onRowSelect={handleRowSelect}
         showSelection={true}

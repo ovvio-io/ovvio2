@@ -1,13 +1,8 @@
 import React, { CSSProperties, useEffect, useRef } from 'react';
-import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
-import { useVertices } from '../../../../../core/cfds/react/vertex.ts';
-import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
-import {
-  ChooseWsButton,
-  UserPill,
-} from '../../../components/settings-buttons.tsx';
+import { UserPill } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
+import { WhiteActionButton } from '../../../components/settings-buttons.tsx';
 
 type Step1Props = {
   setStep: (step: number) => void;
@@ -25,12 +20,10 @@ export const Step1: React.FC<Step1Props> = ({
   };
   const HeaderContainerStyle: CSSProperties = {
     padding: '50px 0px 29px',
-    maxWidth: '800px',
   };
   const FunctionsHeader: CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
   };
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',
@@ -61,9 +54,11 @@ export const Step1: React.FC<Step1Props> = ({
         <div style={FunctionsHeader}>
           <div>Choose members to assign</div>
           {selectedUsers && (
-            <ChooseWsButton
-              onChooseWsClick={handleChooseWsClick}
+            <WhiteActionButton
+              onClick={handleChooseWsClick}
               disable={selectedUsers.size === 0}
+              buttonText={'Choose Workspaces'}
+              imgSrc={'/icons/settings/Archive.svg'}
             />
           )}
         </div>

@@ -21,13 +21,14 @@ import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import {
   AddUserButton,
-  CancelButton,
   DeleteWsButton,
   RemoveButton,
 } from '../../components/settings-buttons.tsx';
 import TextField from '../../../../../../styles/components/inputs/TextField.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 import { MemberPicker } from '../../../../../../components/member-picker.tsx';
+import { WhiteActionButton } from '../../components/settings-buttons.tsx';
+import { BlueActionButton } from '../../components/settings-buttons.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -158,7 +159,7 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     padding: '16px 0px 16px 0px',
     flexDirection: 'column',
-    width: '180px',
+    // width: '180px',
   },
 }));
 
@@ -178,7 +179,7 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
   useEffect(() => {
     let timeoutId: number;
@@ -251,8 +252,18 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
           <div className={cn(styles.confirmation)}>
             Remove from workspace?
             <div className={cn(styles.confirmationButtons)}>
-              <RemoveButton onRemove={() => removeUser1(userMng)} />
-              <CancelButton onCancel={() => setRemoveUserStep('startRemove')} />
+              <BlueActionButton
+                onClick={() => removeUser1(userMng)}
+                disable={false}
+                buttonText={'Remove'}
+                imgSrc={'/icons/settings/Delete-white.svg'}
+              />
+              <WhiteActionButton
+                onClick={() => setRemoveUserStep('startRemove')}
+                disable={false}
+                buttonText={'Cancel'}
+                imgSrc="/icons/settings/Close-big.svg"
+              />
             </div>
           </div>
         </Menu>
@@ -284,13 +295,19 @@ export default function AddSelectionButton<T>({
   const usersSet = new Set(users);
 
   const newUsersSet = new Set(
-    [...usersSet].filter((user) => !existUsers.has(user)),
+    [...usersSet].filter((user) => !existUsers.has(user))
   );
 
   return (
     menuOpen && (
       <Menu
-        renderButton={() => <AddUserButton />}
+        renderButton={() => (
+          <BlueActionButton
+            disable={false}
+            buttonText={'Add'}
+            imgSrc={'/icons/settings/InviteWhite.svg'}
+          />
+        )}
         position="right"
         align="start"
         direction="out"

@@ -1,9 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { Bold } from '../../../../../../../styles/components/typography.tsx';
-import {
-  AddMemberButton,
-  AssignButton,
-} from '../../../components/settings-buttons.tsx';
+import { BlueActionButton } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
 import { usePartialRootUser } from '../../../../../core/cfds/react/graph.tsx';
 
@@ -41,9 +38,19 @@ export const Step0: React.FC<Step0Props> = ({ setStep }) => {
         <Bold>Org. Members</Bold>
         <div style={step0ContainerStyle}>
           {partialRootUser.permissions.has('manage:users') && (
-            <AddMemberButton onAddClick={handleAddMemberClick} />
+            <BlueActionButton
+              onClick={handleAddMemberClick}
+              disable={false}
+              buttonText={'Add members'}
+              imgSrc={'/icons/settings/InviteWhite.svg'}
+            />
           )}
-          <AssignButton onAssignClick={handleAssignClick} blue={true} />
+          <BlueActionButton
+            onClick={handleAssignClick}
+            disable={false}
+            buttonText={'Assign to Workspaces'}
+            imgSrc={'/icons/settings/Archive-white.svg'}
+          />
         </div>
       </div>
       <UserTable

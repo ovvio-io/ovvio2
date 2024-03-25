@@ -14,6 +14,7 @@ import { Button } from '../buttons.tsx';
 import TransitionGroup, { TRANSITION_STATES } from '../transition.tsx';
 import { brandLightTheme as theme } from '../../../styles/theme.tsx';
 import { UndoButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
+import { WhiteActionButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 
 const enterAnimation = keyframes(
   {
@@ -161,7 +162,12 @@ function Toast({
       {message.action && (
         <div className={cn(styles.actionButton)}>
           {isUndoAction ? (
-            <UndoButton onUndoClick={onClick} disable={processing} />
+            <WhiteActionButton
+              onClick={onClick}
+              disable={processing}
+              buttonText={'Undo'}
+              imgSrc={'/icons/design-system/Undo.svg'}
+            />
           ) : (
             <Button
               className={cn(styles.toastButton)}

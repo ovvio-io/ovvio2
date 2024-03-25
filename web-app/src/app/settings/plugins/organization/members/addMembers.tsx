@@ -3,7 +3,7 @@ import {
   Bold,
   H4,
 } from '../../../../../../../styles/components/typography.tsx';
-import { SaveAddButton } from '../../../components/settings-buttons.tsx';
+import { WhiteActionButton } from '../../../components/settings-buttons.tsx';
 import UserTable from '../../../components/user-table.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
@@ -88,7 +88,12 @@ export const AddMembers: React.FC<AddMembersProps> = ({ onClose }) => {
           <H4>Add members to Organization</H4>
         </div>
         <div style={RightRectangleEdit}>
-          <SaveAddButton onSaveAddClick={onClose} disable={false} />
+          <WhiteActionButton
+            onClick={onClose}
+            disable={false}
+            buttonText={'Done'}
+            imgSrc={'/icons/settings/Check.svg'}
+          />
         </div>
       </div>
       <div style={HeaderContainerStyle}>

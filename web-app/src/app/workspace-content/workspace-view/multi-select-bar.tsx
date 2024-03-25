@@ -7,19 +7,14 @@ import React, {
   useState,
 } from 'react';
 import {
-  H4,
   TextSm,
   useTypographyStyles,
 } from '../../../../../styles/components/typography.tsx';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import {
-  AddTagBlueButton,
-  AssignWsBlueButton,
-  CancelButton,
+  BlueActionButton,
   DueDateMultiSelect,
-  RemoveButton,
-  SaveAddButton,
-  UndoButton,
+  WhiteActionButton,
 } from '../../settings/components/settings-buttons.tsx';
 import Menu, {
   useMenuContext,
@@ -46,7 +41,6 @@ import {
   usePartialView,
 } from '../../../core/cfds/react/graph.tsx';
 import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
-import { canUnifyParentTags } from './cards-display/display-bar/filters/index.tsx';
 import { Query } from '../../../../../cfds/client/graph/query.ts';
 import {
   TagId,
@@ -149,7 +143,7 @@ const useStyles = makeStyles(
       fontSize: '16px',
     },
   }),
-  'multiSelect-wizard_291877',
+  'multiSelect-wizard_291877'
 );
 
 interface IconVectorProps {
@@ -260,8 +254,18 @@ export function ConfirmationDialog({
     <div ref={componentRef} className={cn(styles.confirmation)}>
       {`Delete ${nCards} ${itemText}`}
       <div className={cn(styles.confirmationButtons)}>
-        <RemoveButton onRemove={handleDeleteClick} text="Delete" />
-        <CancelButton onCancel={handleCancelClick} />
+        <BlueActionButton
+          onClick={handleDeleteClick}
+          disable={false}
+          buttonText={'Delete'}
+          imgSrc={'/icons/settings/Delete-white.svg'}
+        />
+        <WhiteActionButton
+          onClick={handleCancelClick}
+          disable={false}
+          buttonText={'Cancel'}
+          imgSrc="/icons/settings/Close-big.svg"
+        />
       </div>
     </div>
   );
@@ -276,7 +280,7 @@ interface AddSelectionButtonProps<T> {
 const displayUndoToast = (
   displayToast: DisplayToastFunction,
   messageText: string,
-  undoFunction: UndoFunction,
+  undoFunction: UndoFunction
 ): void => {
   displayToast({
     text: messageText,
@@ -322,7 +326,7 @@ export function RemoveMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Deleted ${selectedCards.size} ${itemText}.`,
-        () => setSelectedCards!(prevState),
+        () => setSelectedCards!(prevState)
       );
       setPendingAction(false);
       setSelectedCards && setSelectedCards(new Set());
@@ -333,7 +337,13 @@ export function RemoveMultiButton<T>({
 
   return (
     <Menu
-      renderButton={() => <RemoveButton text="Delete" />}
+      renderButton={() => (
+        <BlueActionButton
+          disable={false}
+          buttonText={'Delete'}
+          imgSrc={'/icons/settings/Delete-white.svg'}
+        />
+      )}
       direction="out"
       position="bottom"
       align="end"
@@ -364,7 +374,7 @@ export function AssignMultiButton<T>({
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
-    allWorkspaces.add(card.workspace),
+    allWorkspaces.add(card.workspace)
   );
   const { pendingAction, setPendingAction } = usePendingAction();
 
@@ -391,7 +401,7 @@ export function AssignMultiButton<T>({
   };
 
   const undoAssigneeAssignment = (
-    previousAssignees: Map<VertexManager<Note>, Set<User>>,
+    previousAssignees: Map<VertexManager<Note>, Set<User>>
   ) => {
     selectedCards.forEach((card) => {
       const assignees = previousAssignees.get(card);
@@ -412,7 +422,7 @@ export function AssignMultiButton<T>({
       displayUndoToast(
         displayToast,
         `User ${user.name} assigned to ${selectedCards.size} ${itemText}.`,
-        () => undoAssigneeAssignment(previousAssignees),
+        () => undoAssigneeAssignment(previousAssignees)
       );
       setPendingAction(false);
     }, 1000);
@@ -428,7 +438,7 @@ export function AssignMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Cleared all assignees from ${selectedCards.size} ${itemText}.`,
-        () => undoAssigneeAssignment(previousAssignees),
+        () => undoAssigneeAssignment(previousAssignees)
       );
       setPendingAction(false);
     }, 1000);
@@ -436,7 +446,13 @@ export function AssignMultiButton<T>({
 
   return (
     <Menu
-      renderButton={() => <AssignWsBlueButton disable={false} />}
+      renderButton={() => (
+        <BlueActionButton
+          disable={false}
+          buttonText={'Assign'}
+          imgSrc={'/icons/settings/InviteWhite.svg'}
+        />
+      )}
       position="bottom"
       align="end"
       direction="out"
@@ -468,7 +484,7 @@ export function AddTagMultiButton<T>({
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   usePartialVertices(selectedCards, ['workspace']).forEach((card) =>
-    allWorkspaces.add(card.workspace),
+    allWorkspaces.add(card.workspace)
   );
 
   const graph = useGraphManager();
@@ -488,8 +504,8 @@ export function AddTagMultiButton<T>({
           .sort()
           .join('-'),
         graph,
-      ],
-    ),
+      ]
+    )
   );
   const { pendingAction, setPendingAction } = usePendingAction();
 
@@ -503,7 +519,7 @@ export function AddTagMultiButton<T>({
       if (!tag.vertex.parentTag) console.log(tag.vertex.name);
       const encodedTag = encodeTagId(
         tag.vertex.parentTag?.name,
-        tag.vertex.name,
+        tag.vertex.name
       );
       wsTags.add(encodedTag);
       tagMap.set(encodedTag, tag.vertex);
@@ -513,14 +529,14 @@ export function AddTagMultiButton<T>({
       allEncodedTags = wsTags;
     } else if (allEncodedTags) {
       allEncodedTags = new Set(
-        [...allEncodedTags].filter((x) => wsTags.has(x)),
+        [...allEncodedTags].filter((x) => wsTags.has(x))
       );
     }
   }
   allEncodedTags = allEncodedTags || new Set();
 
   let intersectionTagsArray = Array.from(allEncodedTags).map(
-    (tagId) => tagMap.get(tagId)!,
+    (tagId) => tagMap.get(tagId)!
   );
 
   // let intersectionTagsArray: Tag[] = [];
@@ -539,7 +555,7 @@ export function AddTagMultiButton<T>({
   };
 
   const undoTagAssignment = (
-    previousTags: Map<VertexManager<Note>, Set<Tag>>,
+    previousTags: Map<VertexManager<Note>, Set<Tag>>
   ) => {
     selectedCards.forEach((card) => {
       const tags = previousTags.get(card);
@@ -564,7 +580,7 @@ export function AddTagMultiButton<T>({
       displayUndoToast(
         displayToast,
         `Tag "${tag.name}" added to ${selectedCards.size} ${itemText}.`,
-        () => undoTagAssignment(previousTags),
+        () => undoTagAssignment(previousTags)
       );
       setPendingAction(false);
     }, 1000);
@@ -581,7 +597,7 @@ export function AddTagMultiButton<T>({
       displayUndoToast(
         displayToast,
         `All tags cleared from ${selectedCards.size} ${itemText}.`,
-        () => undoTagAssignment(previousTags),
+        () => undoTagAssignment(previousTags)
       );
       setPendingAction(false);
     }, 1000);
@@ -589,7 +605,13 @@ export function AddTagMultiButton<T>({
 
   return (
     <Menu
-      renderButton={() => <AddTagBlueButton />}
+      renderButton={() => (
+        <BlueActionButton
+          disable={false}
+          buttonText={'Tag'}
+          imgSrc={'/icons/design-system/tag/addTagWhite.svg'}
+        />
+      )}
       position="bottom"
       align="end"
       direction="out"
@@ -654,8 +676,12 @@ export const MultiSelectBar: React.FC<MultiSelectBarProps> = ({
               setSelectedCards={setSelectedCards}
             />
           </div>
-          <SaveAddButton onSaveAddClick={handleOnClose} disable={false} />
-          {/* <UndoButton disable={false} /> */}
+          <WhiteActionButton
+            onClick={handleOnClose}
+            disable={false}
+            buttonText={'Done'}
+            imgSrc={'/icons/settings/Check.svg'}
+          />
         </div>
       </div>
     </ToastProvider>

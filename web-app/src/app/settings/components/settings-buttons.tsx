@@ -9,22 +9,19 @@ import { Button } from '../../../../../styles/components/buttons.tsx';
 import { useVertexByKey } from '../../../core/cfds/react/vertex.ts';
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { CloseIcon } from '../../workspace-content/workspace-view/cards-display/display-bar/filters/active-filters.tsx';
-import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
-import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
-import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { useDueDate } from '../../../shared/components/due-date-editor/index.tsx';
 import DatePicker from '../../../../../styles/components/inputs/date-picker.tsx';
 import {
   DialogContent,
   DialogHeader,
 } from '../../../../../styles/components/dialog/index.tsx';
-import { useNavigate } from 'react-router';
 
 const useStyles = makeStyles(() => ({
   compose: {
     height: styleguide.gridbase * 4,
     boxSizing: 'border-box',
-    padding: [0, styleguide.gridbase],
+    paddingLeft: styleguide.gridbase * 1.5,
+    paddingRight: styleguide.gridbase,
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
     alignItems: 'center',
@@ -101,160 +98,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const ComposeInternalButtonAssign = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <div className={cn(styles.compose, className)} ref={ref}>
-        <img
-          key="AssignInSettings"
-          src="/icons/settings/Archive.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.text)}>{'Assign to Workspaces'}</span>
-      </div>
-    );
-  }
-);
-const ComposeInternalButtonAssignBlue = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
-        <img
-          key="AssignWhiteInSettings"
-          src="/icons/settings/Archive-white.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.textWhite)}>{'Assign to Workspaces'}</span>
-      </div>
-    );
-  }
-);
-
-interface AssignButtonProps {
-  onAssignClick?: () => void;
-  blue: boolean;
-}
-
-export function AssignButton({ onAssignClick, blue }: AssignButtonProps) {
-  const [container, setContainer] = useState<HTMLDivElement | null>();
-
-  return (
-    <Button onClick={onAssignClick}>
-      {blue ? (
-        <ComposeInternalButtonAssignBlue ref={(div) => setContainer(div)} />
-      ) : (
-        <ComposeInternalButtonAssign ref={(div) => setContainer(div)} />
-      )}
-    </Button>
-  );
-}
-
-const ComposeInternalButtonEdit = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    return (
-      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
-        <img
-          key="EditUserSettings"
-          src="/icons/settings/Compose-white.svg"
-          onClick={() => {}}
-        />
-        <span className={cn(styles.textWhite)}>{'Edit'}</span>
-      </div>
-    );
-  }
-);
-interface ChooseWsButtonProps {
-  onChooseWsClick?: () => void;
-  disable: boolean;
-}
-
-export function ChooseWsButton({
-  onChooseWsClick,
-  disable,
-}: ChooseWsButtonProps) {
-  const isDisabled = disable;
-  const styles = useStyles();
-
-  return (
-    <Button
-      onClick={isDisabled ? undefined : onChooseWsClick}
-      className={cn(
-        styles.compose,
-        isDisabled ? styles.disabled : styles.available
-      )}
-    >
-      <img
-        key="AssignInSettings"
-        src="/icons/settings/Archive.svg"
-        onClick={() => {}}
-      />
-      <span className={cn(styles.text)}>{'Choose Workspaces'}</span>
-    </Button>
-  );
-}
-
-interface AssignWsButtonProps {
-  AssignWsClick?: () => void;
-  disable: boolean;
-}
-
-export function AssignWsButton({
-  AssignWsClick,
-  disable,
-}: AssignWsButtonProps) {
-  const styles = useStyles();
-  const isDisabled = disable;
-
-  return (
-    <Button
-      onClick={isDisabled ? undefined : AssignWsClick}
-      className={cn(
-        styles.compose,
-        isDisabled ? styles.disabled : styles.available
-      )}
-    >
-      <img
-        key="InviteUserSettings"
-        src="/icons/settings/Invite.svg"
-        onClick={() => {}}
-      />
-      <span className={cn(styles.text)}>{'Assign'}</span>
-    </Button>
-  );
-}
-export function AssignWsBlueButton({
-  AssignWsClick,
-  disable,
-}: AssignWsButtonProps) {
-  const styles = useStyles();
-  const isDisabled = disable;
-
-  return (
-    <Button
-      onClick={isDisabled ? undefined : AssignWsClick}
-      className={cn(styles.compose, isDisabled ? styles.disabled : styles.blue)}
-    >
-      <img
-        key="InviteUserSettings"
-        src="/icons/settings/InviteWhite.svg"
-        onClick={() => {}}
-      />
-      <span className={cn(styles.textWhite)}>{'Assign'}</span>
-    </Button>
-  );
-}
 export interface DueDatePickerProps {
   className?: string;
   dueDateClick?: () => void;
@@ -324,33 +167,20 @@ export function DueDateMultiSelect({
     </>
   );
 }
-export interface AddTagBlueButtonProps {
-  className?: string;
-  addTagClick?: () => void;
-}
 
-export function AddTagBlueButton({
-  className,
-  addTagClick,
-}: AddTagBlueButtonProps) {
-  const styles = useStyles();
-  const onClick = (e: MouseEvent) => {
-    e.stopPropagation();
-  };
-  return (
-    <Button onClick={addTagClick} className={cn(styles.compose, styles.blue)}>
-      {<img src="/icons/design-system/tag/addTagWhite.svg" />}
-      <span className={cn(styles.textWhite)}>{'Tag'}</span>
-    </Button>
-  );
-}
-
-interface SaveAddButtonProps {
-  onSaveAddClick?: () => void;
+interface ActionButtonProps {
+  onClick?: () => void;
   disable: boolean;
+  buttonText: string;
+  imgSrc: string;
 }
 
-export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
+export function WhiteActionButton({
+  onClick,
+  disable,
+  buttonText,
+  imgSrc,
+}: ActionButtonProps) {
   const styles = useStyles();
   const isDisabled = disable;
 
@@ -360,65 +190,34 @@ export function SaveAddButton({ onSaveAddClick, disable }: SaveAddButtonProps) {
         styles.compose,
         isDisabled ? styles.disabled : styles.available
       )}
-      onClick={onSaveAddClick}
+      onClick={isDisabled ? undefined : onClick}
     >
-      <img key="CheckEditSettings" src="/icons/settings/Check.svg" />
-      <span className={cn(styles.text)}>{'Done'}</span>
+      <img key="action-button-icon" src={imgSrc} alt="button-icon" />
+      <span className={cn(styles.text)}>{buttonText}</span>
     </Button>
   );
 }
 
-interface UndoButtonProps {
-  onUndoClick?: () => void;
-  disable: boolean;
-}
-
-export function UndoButton({ onUndoClick, disable }: UndoButtonProps) {
+export function BlueActionButton({
+  onClick,
+  disable,
+  buttonText,
+  imgSrc,
+}: ActionButtonProps) {
   const styles = useStyles();
   const isDisabled = disable;
 
   return (
     <Button
-      className={cn(
-        styles.compose,
-        isDisabled ? styles.disabled : styles.available
-      )}
-      onClick={onUndoClick}
+      className={cn(styles.compose, isDisabled ? styles.disabled : styles.blue)}
+      onClick={isDisabled ? undefined : onClick}
     >
-      <img key="CheckEditSettings" src="/icons/design-system/Undo.svg" />
-      <span className={cn(styles.text)}>{'Undo'}</span>
+      <img key="action-button-icon" src={imgSrc} alt="button-icon" />
+      <span className={cn(styles.textWhite)}>{buttonText}</span>
     </Button>
   );
 }
 
-interface EditButtonProps {
-  onEditClick?: () => void;
-}
-
-export function EditButton({ onEditClick }: EditButtonProps) {
-  const styles = useStyles();
-
-  return (
-    <Button onClick={onEditClick} className={cn(styles.compose, styles.blue)}>
-      <img key="EditUserSettings" src="/icons/settings/Compose-white.svg" />
-      <span className={cn(styles.textWhite)}>{'Edit'}</span>
-    </Button>
-  );
-}
-interface AddMemberButtonProps {
-  onAddClick?: () => void;
-}
-
-export function AddMemberButton({ onAddClick }: AddMemberButtonProps) {
-  const styles = useStyles();
-
-  return (
-    <Button onClick={onAddClick} className={cn(styles.compose, styles.blue)}>
-      <img key="AddMemberSettings" src="/icons/settings/InviteWhite.svg" />
-      <span className={cn(styles.textWhite)}>{'Add members'}</span>
-    </Button>
-  );
-}
 type UserPillProps = {
   user: string;
   selectedUsers: Set<string>;
@@ -449,39 +248,6 @@ export const UserPill: React.FC<UserPillProps> = ({
     </div>
   );
 };
-
-interface RemoveButtonProps {
-  onRemove?: () => void;
-  text?: string;
-}
-
-export function RemoveButton({ onRemove, text }: RemoveButtonProps) {
-  const styles = useStyles();
-
-  return (
-    <Button onClick={onRemove} className={cn(styles.compose, styles.blue)}>
-      <img key="RemoveUserSettings" src="/icons/settings/Delete-white.svg" />
-      <span className={cn(styles.textWhite)}>
-        {text ? `${text} ` : 'Remove'}
-      </span>
-    </Button>
-  );
-}
-
-interface CancelButtonProps {
-  onCancel?: () => void;
-}
-
-export function CancelButton({ onCancel }: CancelButtonProps) {
-  const styles = useStyles();
-
-  return (
-    <Button onClick={onCancel} className={cn(styles.compose)}>
-      <img key="CancelRemoveUserSettings" src="/icons/settings/Close-big.svg" />
-      <span className={cn(styles.text)}>{'Cancel'}</span>
-    </Button>
-  );
-}
 
 interface DeleteWsButtonProps {
   onDeleteClick: () => void;
@@ -515,42 +281,6 @@ export function DeleteWsButton({
       <span className={cn(styles.text)} style={{ fontSize: '13px' }}>
         {'Delete Workspace'}
       </span>
-    </Button>
-  );
-}
-
-interface AddUserButtonProps {
-  onAddClick?: () => void;
-}
-
-export function AddUserButton({ onAddClick }: AddUserButtonProps) {
-  const styles = useStyles();
-
-  return (
-    <Button
-      onClick={() => onAddClick}
-      className={cn(styles.compose, styles.blue)}
-    >
-      <img key="AddUserSettings" src="/icons/settings/InviteWhite.svg" />
-      <span className={cn(styles.textWhite)}>{'Add'}</span>
-    </Button>
-  );
-}
-
-interface BackButtonProps {
-  onBackClick?: () => void;
-}
-
-export function BackButton({ onBackClick }: BackButtonProps) {
-  const styles = useStyles();
-  const navigate = useNavigate();
-  const goBack = () => {
-    navigate('/');
-  };
-  return (
-    <Button className={cn(styles.compose, styles.blue)} onClick={goBack}>
-      <img key="BackSettings" src="/icons/design-system/Arrow-down-white.svg" />
-      <span className={cn(styles.textWhite)}>{'Back'}</span>
     </Button>
   );
 }

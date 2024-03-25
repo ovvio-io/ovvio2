@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -12,32 +6,18 @@ import {
   Note,
   NoteType,
 } from '../../../../../cfds/client/graph/vertices/note.ts';
-import {
-  Button,
-  RaisedButton,
-} from '../../../../../styles/components/buttons.tsx';
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-} from '../../../../../styles/components/dialog/index.tsx';
 import { IconDelete } from '../../../../../styles/components/new-icons/icon-delete.tsx';
 import { IconDuplicate } from '../../../../../styles/components/new-icons/icon-duplicate.tsx';
 import { IconTask } from '../../../../../styles/components/new-icons/icon-task.tsx';
 import { IconNote } from '../../../../../styles/components/new-icons/icon-note.tsx';
 import { IconViewNote } from '../../../../../styles/components/new-icons/icon-view-note.tsx';
 import { IconOpen } from '../../../../../styles/components/new-icons/icon-open.tsx';
-import { IconExportPdf } from '../../../../../styles/components/new-icons/icon-export-pdf.tsx';
-import { IconExportMail } from '../../../../../styles/components/new-icons/icon-export-mail.tsx';
 import {
   DueDateState,
   IconDueDate,
   IconDueDateProps,
 } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
-import { IconColor } from '../../../../../styles/components/new-icons/types.ts';
-import { IconLink } from '../../../../../styles/components/icons/index.ts';
 import Menu, { MenuAction } from '../../../../../styles/components/menu.tsx';
-
 import {
   toastContext,
   useToastController,
@@ -57,8 +37,10 @@ import {
   IconCheckAll,
   CheckAllState,
 } from '../../../../../styles/components/new-icons/icon-check-all.tsx';
-import { RemoveButton } from '../../../app/settings/components/settings-buttons.tsx';
-import { CancelButton } from '../../../app/settings/components/settings-buttons.tsx';
+import {
+  BlueActionButton,
+  WhiteActionButton,
+} from '../../../app/settings/components/settings-buttons.tsx';
 import { makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
@@ -113,7 +95,7 @@ const useStyles = makeStyles(() => ({
     display: 'flex',
     padding: '16px 0px 16px 0px',
     flexDirection: 'column',
-    width: '180px',
+    width: '118px',
     gap: '8px',
   },
 }));
@@ -265,17 +247,23 @@ export function DeleteCardAction({
         <div className={cn(styles.confirmation)}>
           {isTask ? 'Delete Task?' : 'Delete Note?'}
           <div className={cn(styles.confirmationButtons)}>
-            <RemoveButton onRemove={() => handleConfirmDelete()} />
-            <CancelButton onCancel={() => handleCancelClick()} />
+            <BlueActionButton
+              onClick={() => handleConfirmDelete()}
+              disable={false}
+              buttonText={'Remove'}
+              imgSrc={'/icons/settings/Delete-white.svg'}
+            />
+            <WhiteActionButton
+              onClick={handleCancelClick}
+              disable={false}
+              buttonText={'Cancel'}
+              imgSrc="/icons/settings/Close-big.svg"
+            />
           </div>
         </div>
       )}
     </React.Fragment>
   );
-}
-
-interface DeleteCardActionProps1 extends CardActionProps {
-  onDeleted?: () => void;
 }
 
 interface DuplicateCardActionProps extends CardActionProps {

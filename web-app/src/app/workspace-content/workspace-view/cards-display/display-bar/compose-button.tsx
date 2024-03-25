@@ -32,31 +32,10 @@ import { Workspace } from '../../../../../../../cfds/client/graph/vertices/works
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+import { BlueActionButton } from '../../../../settings/components/settings-buttons.tsx';
 // import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
 
 const useStyles = makeStyles(() => ({
-  compose: {
-    background: theme.colors.primaryButton,
-    height: styleguide.gridbase * 4,
-    boxSizing: 'border-box',
-    padding: [0, styleguide.gridbase],
-    borderRadius: styleguide.gridbase * 2,
-    ...styleguide.transition.short,
-    transitionProperty: 'box-shadow',
-    ':hover': {
-      boxShadow: theme.shadows.z2,
-    },
-    alignItems: 'center',
-    basedOn: [layout.row],
-  },
-  text: {
-    color: theme.colors.primaryButtonText,
-    padding: [0, styleguide.gridbase],
-    basedOn: [useTypographyStyles.button],
-    [MediaQueries.TabletAndMobile]: {
-      display: 'none',
-    },
-  },
   workspacesList: {
     maxHeight: styleguide.gridbase * 30,
     overflowY: 'auto',
@@ -77,29 +56,13 @@ const useStyles = makeStyles(() => ({
 
 const useStrings = createUseStrings(localization);
 
-const ComposeInternalButton = React.forwardRef(
-  (
-    { className }: { className?: string },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
-    const styles = useStyles();
-    const strings = useStrings();
-
-    return (
-      <div className={cn(styles.compose, styles.blue, className)} ref={ref}>
-        <IconCompose />
-        <span className={cn(styles.text)}>{strings.compose}</span>
-      </div>
-    );
-  }
-);
-
 export function ComposeButton() {
   const styles = useStyles();
   const logger = useLogger();
   const docRouter = useDocumentRouter();
   const graph = useGraphManager();
   const view = usePartialGlobalView('selectedWorkspaces');
+  const strings = useStrings();
   const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
   const personalWsKey = `${graph.rootKey}-ws`;
   if (!workspaceKeys.includes(personalWsKey)) {
@@ -135,7 +98,11 @@ export function ComposeButton() {
   return (
     <Menu
       renderButton={() => (
-        <ComposeInternalButton ref={(div) => setContainer(div)} />
+        <BlueActionButton
+          disable={false}
+          buttonText={strings.compose}
+          imgSrc={'/icons/settings/Compose-white.svg'}
+        />
       )}
       position="left"
       align="end"
