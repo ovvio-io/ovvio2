@@ -15,7 +15,7 @@ import {
   ToggleSubTasksAction,
   ClearDueDateAction,
 } from './actions/index.tsx';
-import { Note } from '../../../../cfds/client/graph/vertices/note.ts';
+import { Note, NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
@@ -63,6 +63,7 @@ export default function CardMenuView({
     'isChecked',
     'childCards',
     'parentNote',
+    'type',
   ]);
 
   if (!cardManager) {
@@ -89,11 +90,13 @@ export default function CardMenuView({
           {partialNote.parentNote && (
             <ViewInNoteAction cardManager={cardManager} source={source} />
           )}
-          {/* <DuplicateCardAction
-            cardManager={cardManager}
-            source={source}
-            editorRootKey={editorRootKey}
-          /> */}
+          {partialNote.type === NoteType.Note && (
+            <DuplicateCardAction
+              cardManager={cardManager}
+              source={source}
+              editorRootKey={editorRootKey}
+            />
+          )}
           {partialNote.childCards.length > 0 && (
             <ToggleSubTasksAction cardManager={cardManager} source={source} />
           )}
