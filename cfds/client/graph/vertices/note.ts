@@ -531,9 +531,11 @@ export class Note extends ContentVertex {
   get parentNote(): Note | undefined {
     const parentKey = this.record.get('parentNote');
     const graph = this.graph;
-    return parentKey !== undefined && graph.hasVertex(parentKey)
-      ? graph.getVertex<Note>(parentKey)
-      : undefined;
+    const res =
+      parentKey !== undefined && graph.hasVertex(parentKey)
+        ? graph.getVertex<Note>(parentKey)
+        : undefined;
+    return res && res instanceof Note ? res : undefined;
   }
 
   set parentNote(parent: Note | undefined) {
@@ -732,7 +734,7 @@ export class Note extends ContentVertex {
     if ((oldValue === 1) !== (child.isDeleted === 1)) {
       return mutationPackAppend(
         // TODO: Actually go and remove the RefMarkers from the rich text
-        this._invalidateBodyOnChildChange(local, child.key),
+        // this._invalidateBodyOnChildChange(local, child.key),
         this._invalidateChildCards(local),
       );
     }
