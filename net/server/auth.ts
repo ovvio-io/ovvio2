@@ -30,6 +30,7 @@ import { MemRepoStorage, Repository } from '../../repo/repo.ts';
 import { SysDirIndexes } from './sync.ts';
 import { kAllUserPermissions } from '../../cfds/base/scheme-types.ts';
 import { sleep } from '../../base/time.ts';
+import { isDevelopmentBuild } from '../../base/development.ts';
 
 export const kAuthEndpointPaths = [
   '/auth/session',
@@ -136,6 +137,10 @@ export class AuthEndpoint implements Endpoint {
     };
     await persistSession(services, session);
     const encodedSession = await encodeSession(session);
+    // Let updates time to propagate to our replicas
+    if (!isDevelopmentBuild()) {
+      await sleep(2 * kSecondMs);
+    }
     const resp = new Response(
       JSON.stringify({
         session: encodedSession,
@@ -258,7 +263,9 @@ export class AuthEndpoint implements Endpoint {
       session.owner = userKey;
       repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
       // Let the updated session time to replicate
-      await sleep(3 * kSecondMs);
+      if (!isDevelopmentBuild()) {
+        await sleep(3 * kSecondMs);
+      }
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return this.redirectHome(services);

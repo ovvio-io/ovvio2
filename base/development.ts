@@ -45,3 +45,7 @@ export async function copyToClipboard(value: string): Promise<boolean> {
   }
   return false;
 }
+
+export function isDevelopmentBuild(): boolean {
+  return Deno.build.os === 'darwin';
+}

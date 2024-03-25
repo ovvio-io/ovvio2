@@ -6,6 +6,7 @@ import {
 import { ServerServices } from './server.ts';
 import { BaseService } from './service.ts';
 import { EmailType } from '../../logging/metrics.ts';
+import { isDevelopmentBuild } from '../../base/development.ts';
 
 export interface EmailMessage {
   type: EmailType;
@@ -25,7 +26,7 @@ export class EmailService extends BaseService<ServerServices> {
 
   async send(message: EmailMessage): Promise<boolean> {
     // Disable email sending on development machines
-    if (Deno.build.os === 'darwin') {
+    if (isDevelopmentBuild()) {
       return false;
     }
     const req: SendEmailCommandInput = {
