@@ -1,7 +1,9 @@
 import { TrustPool } from '../auth/session.ts';
+import { JSONCyclicalEncoder } from '../base/core-types/encoding/json.ts';
 import {
   JSONCyclicalDecoder,
-  JSONCyclicalEncoder,
+  JSONEncoder,
+  JSONDecoder,
 } from '../base/core-types/encoding/json.ts';
 import { kSecondMs } from '../base/date.ts';
 import { assert } from '../base/error.ts';
