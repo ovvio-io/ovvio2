@@ -219,20 +219,23 @@ export class Repository<
     const { authorizer } = this;
     const checkAuth =
       session && session.id !== this.trustPool.currentSession.id && authorizer;
+    let resultIds: Iterable<string>;
     if (!checkAuth) {
-      return this.storage.allCommitsIds();
+      resultIds = this.storage.allCommitsIds();
+    } else {
+      const uid = session.owner;
+      let cachedCommits = this._cachedCommitsPerUser.get(uid);
+      if (!cachedCommits) {
+        cachedCommits = Array.from(
+          filterIterable(this.storage.allCommitsIds(), (id) =>
+            authorizer(this, this.getCommit(id), session, false),
+          ),
+        );
+        this._cachedCommitsPerUser.set(uid, cachedCommits);
+      }
+      resultIds = cachedCommits;
     }
-    const uid = session.owner;
-    let cachedCommits = this._cachedCommitsPerUser.get(uid);
-    if (!cachedCommits) {
-      cachedCommits = Array.from(
-        filterIterable(this.storage.allCommitsIds(), (id) =>
-          authorizer(this, this.getCommit(id), session, false),
-        ),
-      );
-      this._cachedCommitsPerUser.set(uid, cachedCommits);
-    }
-    for (const id of cachedCommits) {
+    for (const id of resultIds) {
       yield this.getCommit(id);
     }
   }
