@@ -1,10 +1,4 @@
-import React, {
-  CSSProperties,
-  ReactElement,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import * as SetUtils from '../../../../../../../base/set.ts';
 import { useSharedQuery } from '../../../../../core/cfds/react/query.ts';
 import {
@@ -16,16 +10,14 @@ import {
   Bold,
   TextSm,
 } from '../../../../../../../styles/components/typography.tsx';
-import {
-  AssignWsBlueButton,
-  AssignWsButton,
-  CancelButton,
-  UserPill,
-} from '../../../components/settings-buttons.tsx';
+import { UserPill } from '../../../components/settings-buttons.tsx';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import WorkspaceTable from '../../../components/workspace-table.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
 import Menu from '../../../../../../../styles/components/menu.tsx';
+import { WhiteActionButton } from '../../../components/settings-buttons.tsx';
+import { BlueActionButton } from '../../../components/settings-buttons.tsx';
+import { ConfirmationDialog } from '../../../../../../../styles/components/confirmation-menu.tsx';
 
 type Step2Props = {
   setStep: (step: number) => void;
@@ -53,7 +45,6 @@ export const Step2: React.FC<Step2Props> = ({
   const FunctionsHeader: CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
   };
   const ChosenMembersContainer: CSSProperties = {
     display: 'flex',
@@ -63,7 +54,6 @@ export const Step2: React.FC<Step2Props> = ({
     gap: '4px',
     marginBottom: '11px',
   };
-
   const WorkspaceIndicatorContainer: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
@@ -86,22 +76,6 @@ export const Step2: React.FC<Step2Props> = ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
-  };
-  const confirmation: CSSProperties = {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontWeight: '600',
-    fontSize: '14px',
-    maxWidth: '200px',
-  };
-  const confirmationButtons: CSSProperties = {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    width: '180px',
-    gap: '8px',
   };
 
   //TODO: fix remove userPill bug.
@@ -156,9 +130,11 @@ export const Step2: React.FC<Step2Props> = ({
           <div>Choose workspaces to assign</div>
           <div style={AssignsContainer}>
             {selectedWorkspaces && (
-              <AssignWsButton
-                AssignWsClick={handleAssignWsClick}
+              <WhiteActionButton
+                onClick={handleAssignWsClick}
                 disable={selectedWorkspaces.length === 0}
+                buttonText={'Assign'}
+                imgSrc={'/icons/settings/Invite.svg'}
               />
             )}
             {selectedWorkspaces.length > 0 && (
@@ -177,18 +153,13 @@ export const Step2: React.FC<Step2Props> = ({
               direction="out"
               style={{ position: 'absolute', right: '635px', top: '142px' }}
             >
-              <div style={confirmation}>
-                <div style={{ textAlign: 'center' }}>
-                  Assign selected members to all workspaces?
-                </div>{' '}
-                <div style={confirmationButtons}>
-                  <AssignWsBlueButton
-                    AssignWsClick={handleAssignAllWsClick}
-                    disable={false}
-                  />
-                  <CancelButton onCancel={toggleMenu} />{' '}
-                </div>
-              </div>
+              <ConfirmationDialog
+                approveButtonText={'Assign'}
+                imgSrc="/icons/settings/InviteWhite.svg"
+                titleText={' Assign selected members to all workspaces?'}
+                handleApproveClick={handleAssignAllWsClick}
+                handleCancelClick={toggleMenu}
+              />
             </Menu>
           )}
         </div>
@@ -218,8 +189,8 @@ export const Step2: React.FC<Step2Props> = ({
           (ws) =>
             SetUtils.intersectionSize(
               SetUtils.map(ws.users, (u) => u.key),
-              selectedUsers,
-            ) !== selectedUsers.size,
+              selectedUsers
+            ) !== selectedUsers.size
         )}
         onRowSelect={handleRowSelect}
         showSelection={true}

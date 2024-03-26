@@ -100,7 +100,7 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
     alignItems: 'center',
     margin: '8px',
     position: 'relative',
-    left: '150px',
+    left: '240px',
   };
   const ellipseContainerStyle: CSSProperties = {
     display: 'flex',
@@ -115,7 +115,7 @@ export const Wizard: React.FC<MultiSelectionProps> = ({
   };
 
   const closeIcon: CSSProperties = {
-    paddingRight: styleguide.gridbase * 4,
+    paddingRight: styleguide.gridbase * 6,
     paddingLeft: styleguide.gridbase * 2,
   };
   const labelStyle: CSSProperties = {

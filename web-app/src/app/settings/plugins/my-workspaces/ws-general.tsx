@@ -21,13 +21,15 @@ import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../../styles/layout.ts';
 import {
   AddUserButton,
-  CancelButton,
   DeleteWsButton,
   RemoveButton,
 } from '../../components/settings-buttons.tsx';
 import TextField from '../../../../../../styles/components/inputs/TextField.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 import { MemberPicker } from '../../../../../../components/member-picker.tsx';
+import { WhiteActionButton } from '../../components/settings-buttons.tsx';
+import { BlueActionButton } from '../../components/settings-buttons.tsx';
+import { ConfirmationDialog } from '../../../../../../styles/components/confirmation-menu.tsx';
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -146,20 +148,6 @@ const useStyles = makeStyles(() => ({
     maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
   },
-  confirmation: {
-    display: 'flex',
-    padding: '8px 10px 10px ',
-    flexDirection: 'column',
-    alignItems: 'center',
-    fontFamily: 'PoppinsBold, HeeboBold',
-    fontSize: '14px',
-  },
-  confirmationButtons: {
-    display: 'flex',
-    padding: '16px 0px 16px 0px',
-    flexDirection: 'column',
-    width: '180px',
-  },
 }));
 
 interface UserItemProps {
@@ -178,14 +166,13 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
         <img key="IconMoreSettings" src="/icons/settings/More.svg" />
       </div>
     ),
-    [],
+    []
   );
   useEffect(() => {
     let timeoutId: number;
 
     if (removeUserStep === 'removeProcessing') {
       timeoutId = setTimeout(() => {
-        debugger;
         setRemoveUserStep('confirmRemove');
       }, 10);
     }
@@ -248,13 +235,12 @@ function UserItem({ user, userMng, removeUser, ws }: UserItemProps) {
           direction="out"
           openImmediately={true}
         >
-          <div className={cn(styles.confirmation)}>
-            Remove from workspace?
-            <div className={cn(styles.confirmationButtons)}>
-              <RemoveButton onRemove={() => removeUser1(userMng)} />
-              <CancelButton onCancel={() => setRemoveUserStep('startRemove')} />
-            </div>
-          </div>
+          <ConfirmationDialog
+            approveButtonText={'Remove'}
+            titleText={'Remove from workspace?'}
+            handleApproveClick={() => removeUser1(userMng)}
+            handleCancelClick={() => setRemoveUserStep('startRemove')}
+          />
         </Menu>
       ) : null}
     </div>
@@ -284,13 +270,19 @@ export default function AddSelectionButton<T>({
   const usersSet = new Set(users);
 
   const newUsersSet = new Set(
-    [...usersSet].filter((user) => !existUsers.has(user)),
+    [...usersSet].filter((user) => !existUsers.has(user))
   );
 
   return (
     menuOpen && (
       <Menu
-        renderButton={() => <AddUserButton />}
+        renderButton={() => (
+          <BlueActionButton
+            disable={false}
+            buttonText={'Add'}
+            imgSrc={'/icons/settings/InviteWhite.svg'}
+          />
+        )}
         position="right"
         align="start"
         direction="out"

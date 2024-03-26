@@ -17,6 +17,7 @@ import { usePartialView } from '../../../core/cfds/react/graph.tsx';
 import HelpCenter from '../../workspaces-bar/actions.tsx';
 import { useTabPlugins } from '../plugins/plugins-list.tsx';
 import { BackButton } from './settings-buttons.tsx';
+import { BlueActionButton } from './settings-buttons.tsx';
 
 const EXPANDED_WIDTH = styleguide.gridbase * 25;
 
@@ -165,14 +166,21 @@ function SettingsBarCategories({ className }: SettingsBarCategoriesProps) {
 
 export function SettingsBar({ className }: { className?: string }) {
   const styles = useStyles();
-
+  const navigate = useNavigate();
+  const goBack = () => {
+    navigate('/');
+  };
   return (
     <Layer priority={2}>
       {(style) => (
         <div style={style} className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
-            {/* <BackButton /> */}
-            {<BackButton />}
+            <BlueActionButton
+              onClick={goBack}
+              disable={false}
+              buttonText={'Back'}
+              imgSrc={'/icons/design-system/Arrow-down-white.svg'}
+            />
             <LabelSm>Settings</LabelSm>
           </div>
           <SettingsBarCategories />
