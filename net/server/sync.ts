@@ -599,7 +599,7 @@ function leaderForRepository(
     return undefined;
   }
   const rend = new RendezvousHash<string>();
-  for (let i = 0; i < services.serverProcessCount; ++i) {
+  for (let i = 1; i < services.serverProcessCount; ++i) {
     rend.addPeer(`http://localhost:900${i}`);
   }
   const leader = rend.peerForKey(Repository.id(storageType, resourceId));
