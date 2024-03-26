@@ -592,20 +592,21 @@ function leaderForRepository(
   storageType: RepositoryType,
   resourceId: string,
 ): string | undefined {
-  if (
-    services.serverProcessCount === 1 ||
-    (storageType === 'sys' && resourceId === 'dir')
-  ) {
-    return undefined;
-  }
-  const rend = new RendezvousHash<string>();
-  for (let i = 1; i < services.serverProcessCount; ++i) {
-    rend.addPeer(`http://localhost:900${i}`);
-  }
-  const leader = rend.peerForKey(Repository.id(storageType, resourceId));
-  return leader === `http://localhost:900${services.serverProcessIndex}`
-    ? undefined
-    : leader;
+  return undefined;
+  // if (
+  //   services.serverProcessCount === 1 ||
+  //   (storageType === 'sys' && resourceId === 'dir')
+  // ) {
+  //   return undefined;
+  // }
+  // const rend = new RendezvousHash<string>();
+  // for (let i = 1; i < services.serverProcessCount; ++i) {
+  //   rend.addPeer(`http://localhost:900${i}`);
+  // }
+  // const leader = rend.peerForKey(Repository.id(storageType, resourceId));
+  // return leader === `http://localhost:900${services.serverProcessIndex}`
+  //   ? undefined
+  //   : leader;
 }
 
 function repoIdExcludingShardSuffix(id: string): string {
