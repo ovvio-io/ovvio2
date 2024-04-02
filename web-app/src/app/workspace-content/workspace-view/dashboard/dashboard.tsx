@@ -1206,7 +1206,7 @@ export function Dashboard() {
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          note.assignees.size > 0 &&
+          // note.assignees.size > 0 &&
           noteCompletedInDateFilter(note, view.dateFilter),
         name: 'Dashboard/DoneByAssignee',
         groupBy: GROUP_BY.assignee as GroupByFunction<
