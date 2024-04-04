@@ -47,7 +47,7 @@ import { coreValueEquals } from '../base/core-types/equals.ts';
 import { uniqueId } from '../base/common.ts';
 import { EditorHeader, HEADER_HEIGHT } from './header.tsx';
 import { useUndoContext } from './undo.ts';
-import { onKeyboardArrow } from './caret.ts';
+import { moveCaretToEnd, onKeyboardArrow } from './caret.ts';
 import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
 import { onMouseUp } from './mouse.ts';
 import { useCaret } from './caret.ts';
@@ -378,6 +378,11 @@ export const RichTextEditor = forwardRef<
       }}
       onMouseUp={(e) => onMouseUp(e, note, selectionId)}
       onBlur={onBlur}
+      onClick={() => {
+        if (!partialNote.body.ranges || !partialNote.body.ranges[selectionId]) {
+          partialNote.body = moveCaretToEnd(partialNote.body, selectionId);
+        }
+      }}
     >
       <RichTextRenderer
         ctx={ctx}
@@ -414,28 +419,10 @@ function NoteEditorInternal({ note }: Required<NoteEditorProps>) {
   }, []);
 
   const onFocusOnEditor = useCallback(() => {
-    const doc = docClone(note.getVertexProxy().body);
-    const node = findEndOfDocument(doc);
-    if (isTextNode(node)) {
-      const selectionId = note.graph.selectionId;
-      if (!doc.ranges) {
-        doc.ranges = {};
-      }
-      doc.ranges[selectionId] = {
-        anchor: {
-          node,
-          offset: node.text.length,
-        },
-        focus: {
-          node,
-          offset: node.text.length,
-        },
-        dir: PointerDirection.None,
-        expiration: expirationForSelection(),
-      };
-      note.getVertexProxy().body = doc;
-    }
-    editorRef.current?.contenteditable?.focus();
+    note.getVertexProxy().body = moveCaretToEnd(
+      note.getVertexProxy().body,
+      note.graph.selectionId,
+    );
   }, [editorRef.current?.contenteditable]);
 
   return (

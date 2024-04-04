@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   docClone,
   Document,
+  findEndOfDocument,
   writingDirectionAtNode,
 } from '../cfds/richtext/doc-state.ts';
 import {
@@ -10,6 +11,7 @@ import {
   isElementNode,
   isTextNode,
   pathToNode,
+  PointerDirection,
   RichText,
   TextNode,
   TreeNode,
@@ -23,6 +25,7 @@ import { styleguide } from '../styles/styleguide.ts';
 import { assert } from '../base/error.ts';
 import { MeasuredText } from './text.ts';
 import { getParagraphRenderer } from './paragraph-renderer.tsx';
+import { expirationForSelection } from './utils.ts';
 
 export type CaretStyle = 'p' | 'h1' | 'h2';
 
@@ -329,4 +332,31 @@ export function useCaret(ctx: RenderContext) {
       };
     }
   }, [contentEditable, ctx]);
+}
+
+export function moveCaretToEnd(
+  origDoc: Document,
+  selectionId: string,
+): Document {
+  const doc = docClone(origDoc);
+  const node = findEndOfDocument(doc);
+  if (isTextNode(node)) {
+    if (!doc.ranges) {
+      doc.ranges = {};
+    }
+    doc.ranges[selectionId] = {
+      anchor: {
+        node,
+        offset: node.text.length,
+      },
+      focus: {
+        node,
+        offset: node.text.length,
+      },
+      dir: PointerDirection.None,
+      expiration: expirationForSelection(),
+    };
+    return doc;
+  }
+  return origDoc; // Nothing changed
 }
