@@ -22,7 +22,7 @@ export class ParagraphRendererContext {
   private _nodes: SpanNode[] = [];
   private _font = '13px Poppins, Heebo';
   private _lineHeight = 13;
-  private _dirty = true;
+  private _needsMeasure = true;
 
   private _characterWidths: readonly number[] | undefined;
   private _wordEdges: readonly number[] | undefined;
@@ -43,9 +43,6 @@ export class ParagraphRendererContext {
   }
 
   get lineCount(): number {
-    if (!this._lines) {
-      this.measureText();
-    }
     return this._lines?.length || 0;
   }
 
@@ -54,9 +51,6 @@ export class ParagraphRendererContext {
   }
 
   get characterRects(): Rect2D[] {
-    if (!this._characterRects) {
-      this.measureText();
-    }
     return this._characterRects || [];
   }
 
@@ -75,7 +69,7 @@ export class ParagraphRendererContext {
   set nodes(n: SpanNode[]) {
     if (!coreValueEquals(n, this._nodes)) {
       this._nodes = n;
-      this._dirty = true;
+      this.redraw();
     }
   }
 
@@ -91,7 +85,7 @@ export class ParagraphRendererContext {
   set font(s: string) {
     if (this._font !== s) {
       this._font = s;
-      this._dirty = true;
+      this.redraw();
     }
   }
 
@@ -102,21 +96,26 @@ export class ParagraphRendererContext {
   set lineHeight(h: number) {
     if (h !== this._lineHeight) {
       this._lineHeight = h;
-      this._dirty = true;
+      this.redraw();
     }
   }
 
+  private redraw(): void {
+    this._needsMeasure = true;
+    this.render();
+  }
+
   render(): void {
-    this.measure();
+    this.measureIfNeeded();
     const ctx = this.canvas.getContext('2d')!;
     ctx.save();
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.applyStylesToCanvas();
     // ctx.scale(1, -1);
     // ctx.translate(0, -this.height);
     ctx.scale(this.pixelRatio, this.pixelRatio);
     // ctx.strokeRect(0, 0, this.width, this.height);
     // ctx.fillRect(0, 0, 5, 5);
-    const lineHeight = this.lineHeight;
     const rtl = this.writingDirection === 'rtl';
     for (const [lineText, bounds] of this._lines!) {
       ctx.fillText(
@@ -127,15 +126,7 @@ export class ParagraphRendererContext {
       );
       // ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
     }
-    this._dirty = false;
     ctx.restore();
-  }
-
-  renderIfNeeded(): void {
-    if (this._dirty) {
-      // this.measureText();
-      this.render();
-    }
   }
 
   private applyStylesToCanvas(): void {
@@ -148,17 +139,24 @@ export class ParagraphRendererContext {
     return Math.max(2, devicePixelRatio);
   }
 
+  measureIfNeeded(): void {
+    if (this._needsMeasure) {
+      this.measure();
+    }
+  }
+
   measure(): void {
     const canvas = this.canvas;
     const parent = canvas.parentElement;
     const w = parent?.clientWidth || 0;
-    const h = this.lineCount * (this.lineHeight + 2);
     const pixelRatio = this.pixelRatio;
     canvas.width = w * pixelRatio;
+    this.measureText();
+    const h = this.lineCount * (this.lineHeight + 2);
     canvas.height = h * pixelRatio;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
-    this.measureText();
+    this._needsMeasure = false;
   }
 
   /**
@@ -318,26 +316,21 @@ export function ParagraphRenderer({
 }: ParagraphRendererParams) {
   const ref = useRef(null);
   const [ctx, setCtx] = useState<ParagraphRendererContext | undefined>();
-  const render = useCallback(() => {
-    if (ctx) {
-      ctx.render();
-    }
-  }, [ctx]);
   useLayoutEffect(() => {
     if (ctx?.canvas !== ref.current && ref.current) {
       const ctx = new ParagraphRendererContext(ref.current);
       gCanvasToRendererMap.set(ref.current, ctx);
       setCtx(ctx);
     }
-    if (ctx) {
-      ctx.nodes = element.children as SpanNode[];
-      render();
-    }
   });
+  if (ctx) {
+    ctx.nodes = element.children as SpanNode[];
+  }
+  // useEffect(render);
   // Force initial measurement and rendering
   useEffect(() => {
     let t: number | undefined = setTimeout(() => {
-      render();
+      ctx?.render();
       t = undefined;
     }, 16);
     return () => {
@@ -346,7 +339,7 @@ export function ParagraphRenderer({
         t = undefined;
       }
     };
-  });
+  }, []);
   // useEffect(() => {
   //   addEventListener('resize', render);
   //   return () => {
@@ -358,16 +351,12 @@ export function ParagraphRenderer({
     if (!ctx) {
       return;
     }
-    const observer = new ResizeObserver(render);
+    const observer = new ResizeObserver(() => ctx.render());
     observer.observe(ctx.canvas);
     return () => {
       observer.disconnect();
     };
-  }, [ctx, render]);
-
-  if (ctx) {
-    ctx.nodes = element.children as SpanNode[];
-    ctx.measure();
-  }
+  }, [ctx]);
+  ctx?.render();
   return <canvas ref={ref} {...rest} />;
 }
