@@ -51,6 +51,7 @@ import { onKeyboardArrow } from './caret.ts';
 import { expirationForSelection, SELECTION_TTL_MS } from './utils.ts';
 import { onMouseUp } from './mouse.ts';
 import { useCaret } from './caret.ts';
+import { SimpleTimer } from '../base/timer.ts';
 
 export const CONTENTEDITABLE_PADDING = styleguide.gridbase * 11;
 
@@ -349,13 +350,13 @@ export const RichTextEditor = forwardRef<
     };
   }, [editorDivRef.current]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!editorDivRef.current) {
       return;
     }
     const doc = partialNote.body;
     if (doc.ranges && doc.ranges[selectionId] !== undefined) {
-      editorDivRef.current.focus();
+      document.getSelection()?.collapse(editorDivRef.current);
     } else {
       editorDivRef.current.blur();
     }
