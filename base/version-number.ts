@@ -24,6 +24,8 @@ export const V3_2_0: VersionNumber = tuple4Make([3, 2, 0, 0]);
 export const V3_3_0: VersionNumber = tuple4Make([3, 3, 0, 0]);
 // 19/3/2024
 export const V3_4_0: VersionNumber = tuple4Make([3, 4, 0, 0]);
+// 26/3/2024
 export const V3_4_1: VersionNumber = tuple4Make([3, 4, 1, 0]);
+export const V3_4_2: VersionNumber = tuple4Make([3, 4, 2, 0]);
 
-export const VCurrent = V3_4_1;
+export const VCurrent = V3_4_2;
