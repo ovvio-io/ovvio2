@@ -39,7 +39,7 @@ import { MemberPicker } from '../components/member-picker.tsx';
 import { TagChip } from '../components/tag-chip.tsx';
 import { stripDuplicatePointers } from '../cfds/richtext/flat-rep.ts';
 import { docToRT } from '../cfds/richtext/doc-state.ts';
-import { ParagraphRenderer } from './paragraph-renderer.tsx';
+import { ParagraphRenderer, TextStyle } from './paragraph-renderer.tsx';
 
 const useStyles = makeStyles(() => ({
   contentEditable: {
@@ -441,7 +441,7 @@ function EditorSpan({ node, ctx, focused, dir }: EditorSpanProps) {
   );
 }
 
-type ParagraphElementNode = {
+interface ParagraphElementNode extends Partial<TextStyle> {
   element: MarkupElement;
   id: string;
   htmlId: string;
@@ -450,7 +450,7 @@ type ParagraphElementNode = {
   showNewTaskHint?: boolean;
   ctx: RenderContext;
   onChange: (doc: Document) => void;
-};
+}
 
 function ParagraphElementNode({
   element,
@@ -461,6 +461,7 @@ function ParagraphElementNode({
   showNewTaskHint,
   ctx,
   onChange,
+  ...rest
 }: // children,
 ParagraphElementNode) {
   const styles = useStyles();
@@ -484,6 +485,7 @@ ParagraphElementNode) {
         data-ovv-node-key={ctx.doc.nodeKeys.keyFor(element)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
+        {...rest}
         // width="100%"
         // height="100%"
       >
@@ -553,6 +555,13 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
   const elementInFocusPath = focusPath?.includes(node) === true;
   const indexInRoot = ctx.doc.root.children.indexOf(node);
   const isChildOfRoot = indexInRoot >= 0;
+  const nodePath = pathToNode(ctx.doc.root, node);
+  const taskKey = nodePath?.find(isRefNode)?.ref;
+  const taskNoteMgr =
+    (taskKey &&
+      graph.hasVertex(taskKey) &&
+      graph.getVertexManager<Note>(taskKey)) ||
+    undefined;
 
   switch (node.tagName) {
     case 'h1':
@@ -707,7 +716,7 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
     }
 
     case 'p':
-    default:
+    default: {
       return (
         <ParagraphElementNode
           element={node}
@@ -727,10 +736,12 @@ export function EditorNode({ node, ctx, onChange }: EditorNodeProps) {
           showNewTaskHint={isChildOfRoot}
           onChange={onChange}
           ctx={ctx}
+          strikethrough={taskNoteMgr?.getVertexProxy()?.isChecked}
         >
           {/* {children} */}
         </ParagraphElementNode>
       );
+    }
   }
 }
 

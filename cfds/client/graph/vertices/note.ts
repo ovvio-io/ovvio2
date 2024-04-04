@@ -788,7 +788,10 @@ export class Note extends ContentVertex {
     child: Note,
   ): MutationPack {
     if (this.type === NoteType.Note) {
-      return ['isChecked', local, oldValue];
+      return mutationPackAppend(
+        ['isChecked', local, oldValue],
+        this._invalidateBodyOnChildChange(local, child.key),
+      );
     }
   }
 }

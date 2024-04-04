@@ -17,8 +17,17 @@ import {
   getEmbeddingLevels,
 } from '../external/bidi-js/embeddingLevels.js';
 import { getReorderedString } from '../external/bidi-js/index.js';
+import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../styles/styleguide.ts';
 
-export class ParagraphRendererContext {
+export interface TextStyle {
+  strikethrough: boolean;
+  color: string;
+  strikeColor: string;
+  lineSpacing: number;
+}
+
+export class ParagraphRendererContext implements TextStyle {
   private _nodes: SpanNode[] = [];
   private _font = '13px Poppins, Heebo';
   private _lineHeight = 13;
@@ -31,6 +40,10 @@ export class ParagraphRendererContext {
   private _characterMetrics: TextMetrics[] | undefined;
   private _bidiReversedText: string | undefined;
   private _bidiEmbeddingLevels: GetEmbeddingLevelsResult | undefined;
+  private _strikethrough = false;
+  private _color: string = theme.mono.m10;
+  private _strikeColor: string = theme.mono.m4;
+  private _lineSpacing: number = styleguide.gridbase / 2;
 
   constructor(readonly canvas: HTMLCanvasElement) {}
 
@@ -100,6 +113,50 @@ export class ParagraphRendererContext {
     }
   }
 
+  get lineSpacing(): number {
+    return this._lineSpacing;
+  }
+
+  set lineSpacing(s: number) {
+    if (s !== this._lineSpacing) {
+      this._lineSpacing = s;
+      this.redraw();
+    }
+  }
+
+  get strikethrough(): boolean {
+    return this._strikethrough;
+  }
+
+  set strikethrough(v: boolean) {
+    if (this._strikethrough !== v) {
+      this._strikethrough = v;
+      this.render();
+    }
+  }
+
+  get color(): string {
+    return this._color;
+  }
+
+  set color(c: string) {
+    if (this._color !== c) {
+      this._color = c;
+      this.render();
+    }
+  }
+
+  get strikeColor(): string {
+    return this._strikeColor;
+  }
+
+  set strikeColor(c: string) {
+    if (this._strikeColor !== c) {
+      this._strikeColor = c;
+      this.render();
+    }
+  }
+
   private redraw(): void {
     this._needsMeasure = true;
     this.render();
@@ -118,13 +175,15 @@ export class ParagraphRendererContext {
     // ctx.fillRect(0, 0, 5, 5);
     const rtl = this.writingDirection === 'rtl';
     for (const [lineText, bounds] of this._lines!) {
-      ctx.fillText(
-        lineText,
-        bounds.x + (rtl ? bounds.width : 0),
-        bounds.y + bounds.height,
-        bounds.width,
-      );
-      // ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+      const x = bounds.x + (rtl ? bounds.width : 0);
+      ctx.fillStyle = this.color;
+      ctx.fillText(lineText, x, bounds.y + bounds.height, bounds.width);
+      if (this.strikethrough) {
+        const y = bounds.y + bounds.height / 2;
+        const strikeWidth = 1;
+        ctx.fillStyle = this.strikeColor;
+        ctx.fillRect(0, y - strikeWidth / 2 - 1, bounds.width, strikeWidth);
+      }
     }
     ctx.restore();
   }
@@ -152,7 +211,9 @@ export class ParagraphRendererContext {
     const pixelRatio = this.pixelRatio;
     canvas.width = w * pixelRatio;
     this.measureText();
-    const h = this.lineCount * (this.lineHeight + 2);
+    const h =
+      this.lineCount * (this.lineHeight + 2) +
+      this.lineSpacing * Math.max(0, this.lineCount - 1);
     canvas.height = h * pixelRatio;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
@@ -245,7 +306,7 @@ export class ParagraphRendererContext {
             height: lineHeight,
           },
         ]);
-        y += lineHeight;
+        y += lineHeight + this.lineSpacing;
       } else {
         lineWidth += w;
       }
@@ -308,10 +369,12 @@ export function getParagraphRenderer(
 
 export type ParagraphRendererParams = {
   element: MarkupElement;
-} & React.CanvasHTMLAttributes<HTMLCanvasElement>;
+} & React.CanvasHTMLAttributes<HTMLCanvasElement> &
+  Partial<TextStyle>;
 
 export function ParagraphRenderer({
   element,
+  strikethrough,
   ...rest
 }: ParagraphRendererParams) {
   const ref = useRef(null);
@@ -357,6 +420,9 @@ export function ParagraphRenderer({
       observer.disconnect();
     };
   }, [ctx]);
+  if (ctx) {
+    ctx.strikethrough = strikethrough === true;
+  }
   ctx?.render();
   return <canvas ref={ref} {...rest} />;
 }
