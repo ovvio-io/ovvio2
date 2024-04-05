@@ -65,9 +65,9 @@ export function deleteCurrentSelection(
   }
   if (start === end) {
     start = start!;
-    const prevAtom = mergeCtx.at(start);
+    const prevAtom = mergeCtx.at(start - 1);
     if (isDepthMarker(prevAtom)) {
-      mergeCtx.deleteRange(start - 3, start);
+      mergeCtx.deleteRange(start - 4, start);
 
       const path = pathToNode(document.root, selection.anchor.node);
       assert(path !== undefined);
@@ -76,7 +76,7 @@ export function deleteCurrentSelection(
         const childIndex = parent.children.indexOf(path[path.length - 1]);
         const newDepth = prevAtom.depthMarker - 1;
         if (childIndex === 0) {
-          mergeCtx.delete(start - 4);
+          mergeCtx.deleteRange(start - 5, start - 3);
           mergeCtx.insert(start - 4, [
             { tagName: 'p', children: [] },
             { depthMarker: newDepth },
