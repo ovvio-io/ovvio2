@@ -470,6 +470,7 @@ ParagraphElementNode) {
   return (
     <div
       key={`${id}-container`}
+      data-ovv-key={id}
       className={cn(
         styles.paragraphElement,
         showNewTaskHint && styles.paragraphElementContainer,
