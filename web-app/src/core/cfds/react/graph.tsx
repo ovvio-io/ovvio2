@@ -118,6 +118,7 @@ export function CfdsClientProvider({
     SchemeNamespace.WORKSPACE,
     {
       name: 'My Workspace',
+      users: new Set([graphManager.rootKey]),
     },
     `${graphManager.rootKey}-ws`,
   );
