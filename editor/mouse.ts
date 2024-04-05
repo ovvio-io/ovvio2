@@ -44,24 +44,26 @@ function onMouseUpInText(
     offset += ctx.lines[idx][0].length;
   }
   const rtl = targetStyle.direction === 'rtl';
-  const line = ctx.lines[lineIdx];
-  const lineText = line[0];
-  let x = 0;
-  let found = false;
-  for (let i = 0; i < lineText.length; ++i) {
-    const charW = ctx.characterWidths[offset + i];
-    if (
-      x + charW / 2 >
-      (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
-    ) {
-      offset += i;
-      found = true;
-      break;
+  if (lineCount > 0) {
+    const line = ctx.lines[lineIdx];
+    const lineText = line[0];
+    let x = 0;
+    let found = false;
+    for (let i = 0; i < lineText.length; ++i) {
+      const charW = ctx.characterWidths[offset + i];
+      if (
+        x + charW / 2 >
+        (rtl ? targetBounds.right - mouseX : mouseX - targetBounds.x)
+      ) {
+        offset += i;
+        found = true;
+        break;
+      }
+      x += charW;
     }
-    x += charW;
-  }
-  if (!found) {
-    offset += lineText.length;
+    if (!found) {
+      offset += lineText.length;
+    }
   }
   if (!body.ranges) {
     body.ranges = {};
