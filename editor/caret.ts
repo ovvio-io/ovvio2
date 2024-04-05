@@ -289,10 +289,10 @@ function getCaretDiv(
 }
 
 export function useCaret(ctx: RenderContext) {
-  // renderCaret(ctx);
+  renderCaret(ctx);
   useLayoutEffect(() => {
     renderCaret(ctx);
-  }, [ctx]);
+  });
   useEffect(() => {
     const intervalId = setInterval(() => {
       const domId = `${ctx.editorId}:caret`;
