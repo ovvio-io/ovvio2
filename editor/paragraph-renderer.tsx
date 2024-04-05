@@ -212,7 +212,7 @@ export class ParagraphRendererContext implements TextStyle {
     canvas.width = w * pixelRatio;
     this.measureText();
     const h =
-      this.lineCount * (this.lineHeight + 2) +
+      Math.max(1, this.lineCount) * (this.lineHeight + 2) +
       this.lineSpacing * Math.max(0, this.lineCount - 1);
     canvas.height = h * pixelRatio;
     canvas.style.width = `${w}px`;
