@@ -1,3 +1,4 @@
+import { isDevelopmentBuild } from '../../base/development.ts';
 import { ServerServices } from './server.ts';
 
 export function getRequestPath<T extends string = string>(req: Request): T {
@@ -5,7 +6,7 @@ export function getRequestPath<T extends string = string>(req: Request): T {
 }
 
 export function getBaseURL(services: ServerServices): string {
-  if (services.organizationId === 'localhost') {
+  if (isDevelopmentBuild()) {
     return 'http://localhost:8080';
   }
   return `https://${services.organizationId}.ovvio.io`;

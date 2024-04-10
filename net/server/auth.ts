@@ -199,7 +199,7 @@ export class AuthEndpoint implements Endpoint {
       sl: uniqueId(),
     });
     const clickURL = `${getBaseURL(services)}/auth/temp-login?t=${signedToken}`;
-    if (services.organizationId === 'localhost') {
+    if (isDevelopmentBuild()) {
       // console.log(`****** ${clickURL} ******`);
       if (await copyToClipboard(clickURL)) {
         console.log(`Login URL copied to clipboard`);

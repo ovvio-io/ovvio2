@@ -61,7 +61,11 @@ export function getBaseURL(): string {
 }
 
 export function getOrganizationId(): string {
-  const serverURL = getOvvioConfig().serverURL;
+  const config = getOvvioConfig();
+  if (!self.Deno && config.orgId) {
+    return config.orgId;
+  }
+  const serverURL = config.serverURL;
   return organizationIdFromURL(serverURL || location.toString()) || 'localhost';
 }
 

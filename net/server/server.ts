@@ -152,6 +152,7 @@ export class Server {
     args?: Arguments,
     staticAssets?: StaticAssets,
     buildInfo?: BuildInfo,
+    readonly remapLocalhost?: string,
   ) {
     this._endpoints = [];
     this._middlewares = [];
@@ -330,7 +331,7 @@ export class Server {
     if (req.url === 'http://AWSALB/healthy') {
       return new Response(null, { status: 200 });
     }
-    const orgId = req.headers.get('x-org-id') || organizationIdFromURL(req.url);
+    let orgId = req.headers.get('x-org-id') || organizationIdFromURL(req.url);
 
     if (!orgId) {
       log({
@@ -347,6 +348,10 @@ export class Server {
       return new Response(null, {
         status: 404,
       });
+    }
+
+    if (orgId === 'localhost' && this.remapLocalhost) {
+      orgId = this.remapLocalhost;
     }
     const services = await this.servicesForOrganization(orgId);
     const middlewares = this._middlewares;

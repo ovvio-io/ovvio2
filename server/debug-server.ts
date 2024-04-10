@@ -11,6 +11,7 @@ import { buildAssets } from './generate-statc-assets.ts';
 
 interface Arguments {
   org?: string;
+  localhost?: string;
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {
@@ -57,6 +58,9 @@ async function main(): Promise<void> {
       description:
         'The organization id to connect to. Connects to local server if not provided (default).',
     })
+    .option('localhost', {
+      description: 'Remap localhost to the specified organization id.',
+    })
     .parse();
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
@@ -65,10 +69,16 @@ async function main(): Promise<void> {
   });
   const serverURL = args.org ? `https://${args.org}.ovvio.io` : undefined;
   const watcher = Deno.watchFs(await getRepositoryPath());
-  const server = new Server();
+  const server = new Server(undefined, undefined, undefined, args.localhost);
   await server.setup();
-  (await server.servicesForOrganization('localhost')).staticAssets =
-    await buildAssets(ctx, getOvvioConfig().version, serverURL);
+  (
+    await server.servicesForOrganization(args.localhost || 'localhost')
+  ).staticAssets = await buildAssets(
+    ctx,
+    getOvvioConfig().version,
+    serverURL,
+    args.localhost,
+  );
   await server.start();
   openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
