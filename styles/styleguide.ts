@@ -1,122 +1,124 @@
 export const gridbase = 8;
 
 const timing = {
-  standard: "cubic-bezier(0.4, 0.0, 0.2, 1)",
-  in: "cubic-bezier(0.0, 0.0, 0.2, 1)",
-  out: "cubic-bezier(0.4, 0.0, 1, 1)",
+  standard: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+  in: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
+  out: 'cubic-bezier(0.4, 0.0, 1, 1)',
+  new: 'cubic-bezier(0.64, 0, 0.78, 0)',
 };
 
 const duration = {
+  long: 500,
   standard: 300,
   short: 150,
 };
 
 const baseTextStyle = {
-  color: "#262626",
+  color: '#262626',
   fontFeatureSettings: "'clig' off, 'liga' off",
-  fontFamily: "Poppins",
-  fontStyle: "normal",
-  lineHeight: "normal",
+  fontFamily: 'Poppins',
+  fontStyle: 'normal',
+  lineHeight: 'normal',
 };
 
 export const textStyles = {
   text: {
     ...baseTextStyle,
-    fontSize: "13px",
-    fontWeight: "400",
-    letterSpacing: "0.075px",
+    fontSize: '13px',
+    fontWeight: '400',
+    letterSpacing: '0.075px',
   },
-  "text-small": {
+  'text-small': {
     ...baseTextStyle,
-    fontSize: "10px",
-    fontWeight: "400",
-    lineHeight: "14px",
-    letterSpacing: "-0.1px",
+    fontSize: '10px',
+    fontWeight: '400',
+    lineHeight: '14px',
+    letterSpacing: '-0.1px',
   },
-  quate: {
+  quote: {
     ...baseTextStyle,
-    fontSize: "14px",
-    fontStyle: "italic",
-    fontWeight: "300",
-    letterSpacing: "0.067px",
+    fontSize: '14px',
+    fontStyle: 'italic',
+    fontWeight: '300',
+    letterSpacing: '0.067px',
   },
   button: {
     ...baseTextStyle,
-    textAlign: "center",
-    fontSize: "14px",
-    fontWeight: "500",
-    lineHeight: "normal",
+    textAlign: 'center',
+    fontSize: '14px',
+    fontWeight: '500',
+    lineHeight: 'normal',
   },
-  "text-bold": {
+  'text-bold': {
     ...baseTextStyle,
-    fontSize: "13px",
-    fontWeight: "600",
+    fontSize: '13px',
+    fontWeight: '600',
   },
-  "label-small": {
+  'label-small': {
     ...baseTextStyle,
-    fontSize: "14px",
-    fontWeight: "600",
-    lineHeight: "21px",
-    letterSpacing: "0.087px",
+    fontSize: '14px',
+    fontWeight: '600',
+    lineHeight: '21px',
+    letterSpacing: '0.087px',
   },
-  "h6-headline": {
+  'h6-headline': {
     ...baseTextStyle,
-    fontSize: "14px",
-    fontWeight: "400",
-    lineHeight: "21px",
-    letterSpacing: "0.1px",
+    fontSize: '14px',
+    fontWeight: '400',
+    lineHeight: '21px',
+    letterSpacing: '0.1px',
   },
-  "h5-headline": {
+  'h5-headline': {
     ...baseTextStyle,
-    fontSize: "16px",
-    fontWeight: "400",
-    lineHeight: "22px",
-    letterSpacing: "0.1px",
+    fontSize: '16px',
+    fontWeight: '400',
+    lineHeight: '22px',
+    letterSpacing: '0.1px',
   },
-  "h4-headline": {
+  'h4-headline': {
     ...baseTextStyle,
-    fontSize: "18px",
-    fontWeight: "400",
-    lineHeight: "24px",
-    letterSpacing: "0.086px",
+    fontSize: '18px',
+    fontWeight: '400',
+    lineHeight: '24px',
+    letterSpacing: '0.086px',
   },
-  "h3-bold": {
+  'h3-bold': {
     ...baseTextStyle,
-    fontSize: "18px",
-    fontWeight: "700",
-    lineHeight: "24px",
-    letterSpacing: "0.086px",
+    fontSize: '18px',
+    fontWeight: '700',
+    lineHeight: '24px',
+    letterSpacing: '0.086px',
   },
-  "h3-headline": {
+  'h3-headline': {
     ...baseTextStyle,
-    fontSize: "18px",
-    fontWeight: "600",
-    lineHeight: "24px",
-    letterSpacing: "0.086px",
+    fontSize: '18px',
+    fontWeight: '600',
+    lineHeight: '24px',
+    letterSpacing: '0.086px',
   },
-  "h2-bold": {
-    color: "var(--monochrom-m-10, #262626)",
-    fontFamily: "Poppins",
-    fontSize: "30px",
-    fontStyle: "normal",
-    fontWeight: "700",
-    lineHeight: "32px",
+  'h2-bold': {
+    color: 'var(--monochrom-m-10, #262626)',
+    fontFamily: 'Poppins',
+    fontSize: '30px',
+    fontStyle: 'normal',
+    fontWeight: '700',
+    lineHeight: '32px',
   },
-  "h2-headline": {
-    color: "var(--monochrom-m-10, #262626)",
-    fontFamily: "Poppins",
-    fontSize: "30px",
-    fontStyle: "normal",
-    fontWeight: "600",
-    lineHeight: "32px",
+  'h2-headline': {
+    color: 'var(--monochrom-m-10, #262626)',
+    fontFamily: 'Poppins',
+    fontSize: '30px',
+    fontStyle: 'normal',
+    fontWeight: '600',
+    lineHeight: '32px',
   },
-  "h1-headline": {
-    color: "#262626",
-    fontFamily: "Poppins",
-    fontSize: "34px",
-    fontStyle: "normal",
-    fontWeight: "600",
-    lineHeight: "45px",
+  'h1-headline': {
+    color: '#262626',
+    fontFamily: 'Poppins',
+    fontSize: '34px',
+    fontStyle: 'normal',
+    fontWeight: '600',
+    lineHeight: '45px',
   },
 };
 
@@ -124,12 +126,16 @@ export const transition = {
   timing,
   duration,
   standard: {
-    transitionDuration: duration.standard + "ms",
+    transitionDuration: duration.standard + 'ms',
     transitionTimingFunction: timing.standard,
   },
   short: {
-    transitionDuration: duration.short + "ms",
+    transitionDuration: duration.short + 'ms',
     transitionTimingFunction: timing.standard,
+  },
+  newStandard: {
+    transitionDuration: duration.standard + 'ms',
+    transitionTimingFunction: timing.new,
   },
 };
 const styleguide = {

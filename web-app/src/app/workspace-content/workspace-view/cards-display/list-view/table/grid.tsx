@@ -104,6 +104,7 @@ const useStyles = makeStyles((theme) => ({
   },
   expander: {
     height: styleguide.gridbase * 4,
+    width: '100%',
     padding: [0, styleguide.gridbase * 2],
     boxSizing: 'border-box',
     alignItems: 'left',
@@ -113,6 +114,7 @@ const useStyles = makeStyles((theme) => ({
       color: 'grey',
     },
     display: 'flex',
+    justifyContent: 'flex-start',
   },
   expanderText: {
     color: 'inherit',

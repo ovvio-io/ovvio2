@@ -6,7 +6,7 @@ import { layout } from '../../../styles/layout.ts';
 import { lightTheme } from '../../../styles/theme.tsx';
 import { CreateWorkspaceView } from './new-workspace/index.tsx';
 import WorkspaceContentView from './workspace-content/workspace-view/index.tsx';
-import { WorkspacesBar } from './workspaces-bar/index.tsx';
+import { DEFAULT_WIDTH, WorkspacesBar } from './workspaces-bar/index.tsx';
 import { RepoExplorer } from '../backoffice/repo-explorer.tsx';
 import { CardsDisplay } from './workspace-content/workspace-view/cards-display/index.tsx';
 import { Settings } from './settings/index.tsx';
@@ -22,6 +22,7 @@ const useStyles = makeStyles((theme) => ({
   root: {
     height: '100%',
     basedOn: [layout.row],
+    position: 'relative',
   },
   content: {
     height: '100%',
@@ -34,6 +35,10 @@ const useStyles = makeStyles((theme) => ({
     height: '100%',
     zIndex: 1,
   },
+  wsPlaceholder: {
+    width: DEFAULT_WIDTH,
+    height: '100%',
+  },
   overlay: {
     zIndex: 9,
     position: 'absolute',
@@ -42,6 +47,18 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
     height: '100%',
     backgroundColor: 'rgba(255, 251, 245, 0.6)',
+  },
+  workspaceContainer: {
+    position: 'relative',
+    display: 'flex',
+    height: '100%',
+  },
+  realWsBar: {
+    position: 'absolute',
+    top: '0',
+    left: '0',
+    height: '100%',
+    zIndex: '2',
   },
 }));
 
@@ -81,6 +98,31 @@ export function DisableProvider({ children }: DisableProviderProps) {
   );
 }
 
+interface WsBarPlaceholderProps {
+  className?: string;
+}
+
+const WsBarPlaceholder: React.FC<WsBarPlaceholderProps> = ({ className }) => {
+  const styles = useStyles();
+  return <div className={cn(styles.wsPlaceholder, className)}></div>;
+};
+
+interface WorkspaceContainerProps {
+  children: React.ReactNode;
+}
+
+export const WorkspaceContainer: React.FC<WorkspaceContainerProps> = ({
+  children,
+}) => {
+  const styles = useStyles();
+  return (
+    <div className={styles.workspaceContainer}>
+      <WsBarPlaceholder className={''} />
+      <div className={styles.realWsBar}>{children}</div>
+    </div>
+  );
+};
+
 type RootProps = React.PropsWithChildren<{
   style?: any;
 }>;
@@ -93,21 +135,9 @@ function Root({ style, children }: RootProps) {
   return (
     <div className={cn(styles.root)} style={style}>
       {isDisabled && <div className={cn(styles.overlay)}></div>}
-
-      <WorkspacesBar key={'wsbar'} />
-      <div className={cn(styles.content)}>
-        <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
-      </div>
-    </div>
-  );
-}
-
-function SettingsWs({ style, children }: RootProps) {
-  const styles = useStyles();
-
-  return (
-    <div className={styles.ws}>
-      <WorkspacesBar />
+      <WorkspaceContainer>
+        <WorkspacesBar key={'wsbar'} className={cn(styles.ws)} />
+      </WorkspaceContainer>
       <div className={cn(styles.content)}>
         <WorkspaceContentView key="contents">{children}</WorkspaceContentView>
       </div>

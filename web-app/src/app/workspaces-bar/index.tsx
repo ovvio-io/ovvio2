@@ -13,7 +13,6 @@ import { WorkspaceGrouping } from '../../../../cfds/base/scheme-types.ts';
 import { Query, QueryOptions } from '../../../../cfds/client/graph/query.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { GroupId } from '../../../../cfds/client/graph/vertex-source.ts';
-import { Role } from '../../../../cfds/client/graph/vertices/role.ts';
 import { User } from '../../../../cfds/client/graph/vertices/user.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
@@ -22,7 +21,6 @@ import Layer from '../../../../styles/components/layer.tsx';
 import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
-import Tooltip from '../../../../styles/components/tooltip/index.tsx';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
 import {
   LabelSm,
@@ -31,11 +29,7 @@ import {
 } from '../../../../styles/components/typography.tsx';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
 import { layout } from '../../../../styles/layout.ts';
-import {
-  Devices,
-  MediaQueries,
-  useCurrentDevice,
-} from '../../../../styles/responsive.ts';
+import { Devices, useCurrentDevice } from '../../../../styles/responsive.ts';
 import { styleguide } from '../../../../styles/styleguide.ts';
 import { createUniversalPortal } from '../../../../styles/utils/ssr.ts';
 import {
@@ -55,8 +49,6 @@ import { WorkspaceBarActions } from './actions.tsx';
 import { IconMore } from '../../../../styles/components/new-icons/icon-more.tsx';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import localization from './workspace-bar.strings.json' assert { type: 'json' };
-import { LogoText } from '../../../../styles/components/logo.tsx';
-import { LogoIcon } from '../../../../styles/components/logo.tsx';
 import { IconGroup } from '../../../../styles/components/new-icons/icon-group.tsx';
 import { IconCheck } from '../../../../styles/components/new-icons/icon-check.tsx';
 import { IconUngroup } from '../../../../styles/components/new-icons/icon-ungroup.tsx';
@@ -69,14 +61,10 @@ import { IconTemplateSet } from '../../../../styles/components/new-icons/icon-te
 import { IconTemplateUnset } from '../../../../styles/components/new-icons/icon-template-unset.tsx';
 import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 import { View } from '../../../../cfds/client/graph/vertices/view.ts';
-import { getOrganizationId } from '../../../../net/rest-api.ts';
-import { assert } from '../../../../base/error.ts';
-import { verifyRequestSignature } from '../../../../auth/session.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
-const EXPANDED_WIDTH = styleguide.gridbase * 25;
-const COLLAPSED_WIDTH = styleguide.gridbase * 14;
+export const DEFAULT_WIDTH = styleguide.gridbase * 22;
 
 const PAGE_SIZE = 30;
 
@@ -84,20 +72,9 @@ const useStyles = makeStyles(
   () => ({
     root: {
       flexShrink: 0,
-      width: '90vw',
-      maxWidth: EXPANDED_WIDTH,
-      // overflowY: 'hidden',
-      // overflowX: 'visible',
       height: '100%',
-      ...styleguide.transition.standard,
+      ...styleguide.transition.newStandard,
       transitionProperty: 'width',
-      [MediaQueries.Mobile]: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        transitionProperty: 'transform',
-        transform: 'translateX(0)',
-      },
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
@@ -107,40 +84,13 @@ const useStyles = makeStyles(
       fontFeatureSettings: "'clig' off, 'liga' off",
       padding: '8px 16px 8px 8px',
       backgroundColor: theme.secondary.s0,
-      // fontFamily: 'Poppins',
       fontSize: '14px',
       fontStyle: 'normal',
       fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
       lineHeight: 'normal',
     },
-
-    collapsed: {
-      [MediaQueries.Tablet]: {
-        width: COLLAPSED_WIDTH,
-      },
-      [MediaQueries.Mobile]: {
-        transform: 'translateX(-100%)',
-        boxShadow: 'none',
-        openBarButton: {
-          boxShadow: theme.shadows.z4,
-        },
-      },
-    },
     backdrop: {
       basedOn: [useBackdropStyles.backdrop],
-    },
-    mobileTabButton: {
-      [MediaQueries.Tablet]: {
-        display: 'none !important',
-      },
-      position: 'absolute',
-      top: styleguide.gridbase,
-      left: 0,
-      width: styleguide.gridbase * 6,
-      height: styleguide.gridbase * 5,
-      backgroundColor: theme.colors.background,
-      ...styleguide.transition.standard,
-      transitionProperty: 'transform',
     },
     separator: {
       height: '1px',
@@ -168,35 +118,20 @@ const useStyles = makeStyles(
       flexShrink: 0,
     },
     logoText: {},
-    openBarButton: {
-      [MediaQueries.Mobile]: {
-        position: 'absolute',
-        left: '100%',
-        transform: 'translateX(-16px)',
-        backgroundColor: theme.colors.background,
-        width: styleguide.gridbase * 6,
-        height: styleguide.gridbase * 5,
-        borderRadius: `0 ${styleguide.gridbase * 2.5}px ${
-          styleguide.gridbase * 2.5
-        }px 0`,
-      },
-    },
+
     rotated: {
       transform: 'rotate(180deg)',
     },
     workspacesHeader: {
       display: 'flex',
       justifyContent: 'space-between',
-      // marginRight: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
     },
     toggleView: {
-      padding: [0, styleguide.gridbase * 1],
+      padding: '0px 8px',
       boxSizing: 'border-box',
       marginBottom: styleguide.gridbase * 0.5,
       width: '100%',
-      // alignItems: 'center',
-      // justifyContent: 'space-between',
       whiteSpace: 'nowrap',
       basedOn: [layout.column],
     },
@@ -243,20 +178,19 @@ const useStyles = makeStyles(
       basedOn: [layout.row],
     },
     itemTab: {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
       cursor: 'pointer',
       userSelect: 'none',
       height: '100%',
       width: '100%',
-      minWidth: COLLAPSED_WIDTH + styleguide.gridbase * 3,
       borderBottomRightRadius: styleguide.gridbase * 2,
       borderTopRightRadius: styleguide.gridbase * 2,
-      maxWidth: styleguide.gridbase * 20.5,
       paddingLeft: styleguide.gridbase * 2,
       paddingRight: styleguide.gridbase,
-
       boxSizing: 'border-box',
       alignItems: 'center',
-      whiteSpace: 'nowrap',
       basedOn: [layout.row],
       ':hover': {
         border: `2px solid ${theme.mono.m6}`,
@@ -281,6 +215,7 @@ const useStyles = makeStyles(
       flexShrink: 1,
       textOverflow: 'ellipsis',
       basedOn: [useTypographyStyles.text],
+      whiteSpace: 'nowrap',
     },
     itemToggle: {
       marginLeft: styleguide.gridbase * 0.5,
@@ -302,7 +237,7 @@ const useStyles = makeStyles(
     },
     expander: {
       height: styleguide.gridbase * 4,
-      padding: [0, styleguide.gridbase * 2],
+      padding: '0 16px',
       boxSizing: 'border-box',
       alignItems: 'left',
       width: '100%',
@@ -334,6 +269,14 @@ const useStyles = makeStyles(
     },
     pinButtonPinned: {
       opacity: 1,
+    },
+    personalIcon: {
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity',
+      marginLeft: styleguide.gridbase * 0.5,
+      marginRight: styleguide.gridbase * 0.5,
+      paddingRight: '2px',
+      cursor: 'default',
     },
     loadingIndicator: {
       marginLeft: styleguide.gridbase,
@@ -515,41 +458,6 @@ export function CheckIcon() {
   );
 }
 
-function CollapseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <g clipPath="url(#clip0_591_1399)">
-        <path
-          opacity="0.6"
-          d="M9 12L15 18"
-          stroke="#3184DD"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          opacity="0.6"
-          d="M15 6L9 12"
-          stroke="#1960CF"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </g>
-      <defs>
-        <clipPath id="clip0_591_1399">
-          <rect width="24" height="24" fill="white" />
-        </clipPath>
-      </defs>
-    </svg>
-  );
-}
-
 interface WorkspaceToggleViewProps {
   onSelectAll: () => void;
   onUnselectAll: () => void;
@@ -577,69 +485,67 @@ function WorkspaceToggleView({
 
   return (
     <div className={cn(styles.toggleView)}>
-      {!view.workspaceBarCollapsed && (
-        <div className={cn(styles.workspacesHeader)}>
-          <LabelSm>{strings.myWorkspaces}</LabelSm>
-          <Menu
-            renderButton={() => (
-              <div ref={moreButtonRef}>
-                <IconMore className={cn(styles.moreButton)} />
-              </div>
-            )}
-            popupClassName={cn(styles.workSpaceMenu)}
-            direction="out"
-            position="right"
-            align="end"
-          >
-            <div>
+      <div className={cn(styles.workspacesHeader)}>
+        <LabelSm>{strings.myWorkspaces}</LabelSm>
+        <Menu
+          renderButton={() => (
+            <div ref={moreButtonRef}>
+              <IconMore className={cn(styles.moreButton)} />
+            </div>
+          )}
+          popupClassName={cn(styles.workSpaceMenu)}
+          direction="out"
+          position="right"
+          align="end"
+        >
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: theme.secondary.s0,
+              }}
+            >
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: theme.secondary.s0,
+                  padding: '0 4px',
                 }}
-              >
-                <div
-                  style={{
-                    padding: '0 4px',
-                  }}
-                ></div>
-                <IconGroup style={{ marginRight: '8px' }} />
-                <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-              </div>
+              ></div>
+              <IconGroup style={{ marginRight: '8px' }} />
+              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
             </div>
+          </div>
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'Team';
-              }}
-            >
-              {'Team'}
-              {view.workspaceGrouping === 'Team' && <IconCheck />}
-            </MenuItem>
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'Team';
+            }}
+          >
+            {'Team'}
+            {view.workspaceGrouping === 'Team' && <IconCheck />}
+          </MenuItem>
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'Employee';
-              }}
-            >
-              {'Employee'}
-              {view.workspaceGrouping === 'Employee' && <IconCheck />}
-            </MenuItem>
-            <div style={{ marginTop: '8px' }} />
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'Employee';
+            }}
+          >
+            {'Employee'}
+            {view.workspaceGrouping === 'Employee' && <IconCheck />}
+          </MenuItem>
+          <div style={{ marginTop: '8px' }} />
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'none';
-              }}
-              icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
-            >
-              {'Ungroup'}
-              {view.workspaceGrouping === 'none' && <IconCheck />}
-            </MenuItem>
-          </Menu>
-        </div>
-      )}
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'none';
+            }}
+            icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
+          >
+            {'Ungroup'}
+            {view.workspaceGrouping === 'none' && <IconCheck />}
+          </MenuItem>
+        </Menu>
+      </div>
       {!ofSettings && (
         <div className={cn(styles.toggleActions)}>
           <TextSm
@@ -671,11 +577,13 @@ function WorkspaceListItem({
   groupId,
   ofSettings,
   visible,
+  updateMaxWidth,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
   ofSettings: boolean | undefined;
   visible?: boolean;
+  updateMaxWidth: (maxWidth: number) => void;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -711,6 +619,29 @@ function WorkspaceListItem({
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryReady(repoId));
   const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
+  const textRef = useRef<HTMLDivElement>(null);
+
+  function measureTextWidth(
+    text: string,
+    font: string = '14px HeeboSemiBold'
+  ): number {
+    const canvas = new OffscreenCanvas(0, 0);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('Failed to get 2D context from OffscreenCanvas.');
+      return 0;
+    }
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+
+  const extraPadding = styleguide.gridbase * 7;
+
+  useEffect(() => {
+    const measuredWidth = measureTextWidth(name, '14px PoppinsSemiBold');
+    console.log(`text width = ${measuredWidth}`);
+    updateMaxWidth(measuredWidth + extraPadding);
+  }, [name, updateMaxWidth]);
 
   useEffect(() => {
     if (isSelected) {
@@ -720,12 +651,6 @@ function WorkspaceListItem({
     }
   }, [graph, repoId, isSelected]);
 
-  const textRef = useRef<HTMLDivElement>(null);
-  const isOverflowing =
-    textRef.current &&
-    textRef.current.offsetWidth < textRef.current.scrollWidth;
-
-  // const renderButton = useCallback(() => <IconMore />, []);
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
       <div className={isOpen ? styles.itemMenuOpen : styles.itemMenu}>
@@ -759,7 +684,6 @@ function WorkspaceListItem({
     const vertS = workspace.getVertexProxy();
     selectedWorkspaces.clear();
     selectedWorkspaces.add(vertS);
-
     navigate('/settings/workspaces-info/General');
   }, [navigate, view, workspace]);
 
@@ -782,7 +706,6 @@ function WorkspaceListItem({
       }
     }
   }, [view, workspace]);
-
   return (
     <div
       className={cn(
@@ -792,154 +715,118 @@ function WorkspaceListItem({
       )}
       style={style}
     >
-      <Tooltip text={name} disabled={!isOverflowing} position="right">
+      <div className={cn(styles.itemTab)} onClick={toggleSelected}>
         <div
-          className={cn(styles.itemTab)}
-          onClick={toggleSelected}
-          // onContextMenu={toggleSelected}
+          ref={textRef}
+          className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
         >
-          <div
-            ref={textRef}
-            className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
-          >
-            {name}
-          </div>
-          <WorkspaceCheckbox toggled={isSelected} />
+          {name}
         </div>
-      </Tooltip>
-      <div /*className={cn(layout.flexSpacer)}*/ />
-      {!view.workspaceBarCollapsed &&
-        (!loaded && visible !== false ? (
-          <div
-            className={cn(
-              isSelected ? styles.loadingIndicatorContainer : styles.hidden
-            )}
-          >
-            <IndeterminateProgressIndicator
-              className={cn(styles.loadingIndicator)}
-            />
-          </div>
-        ) : (
-          <React.Fragment>
-            {groupId === 'myWorkspace' && (
-              <Button>
-                <img
-                  key="MyWorkspacePersonalIcon"
-                  src="/icons/settings/Personal.svg"
-                />
-              </Button>
-            )}
+        <WorkspaceCheckbox toggled={isSelected} />
+      </div>
+      {!loaded && visible !== true ? (
+        <div
+          className={cn(
+            isSelected ? styles.loadingIndicatorContainer : styles.hidden
+          )}
+        >
+          <IndeterminateProgressIndicator
+            className={cn(styles.loadingIndicator)}
+          />
+        </div>
+      ) : (
+        <React.Fragment>
+          {groupId === 'myWorkspace' && (
+            <Button className={cn(styles.personalIcon)}>
+              <img
+                key="MyWorkspacePersonalIcon"
+                src="/icons/settings/Personal.svg"
+              />
+            </Button>
+          )}
+          {groupId === 'myWorkspace' && (
+            <Button className={cn(styles.personalIcon)}></Button>
+          )}
 
-            {groupId !== 'myWorkspace' && (
-              <Button
-                className={cn(
-                  styles.pinButton,
-                  groupId === 'pinned' && styles.pinButtonPinned
-                )}
-                onClick={() =>
-                  setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-                }
-              >
-                {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-              </Button>
-            )}
-            {groupId !== 'myWorkspace' && (
-              <Menu
-                renderButton={renderButton}
-                direction="out"
-                position="right"
-                align="start"
-                // className={cn(styles.itemMenu)}
-              >
-                {!isTemplate && (
-                  <MenuItem
-                    onClick={() =>
-                      setWorkspaceState(
-                        groupId === 'hidden' ? 'none' : 'hidden'
-                      )
-                    }
-                  >
-                    {groupId === 'hidden' ? (
-                      <IconShow color={IconColor.Primary} />
-                    ) : (
-                      <IconHide />
-                    )}
-                    {groupId === 'hidden'
-                      ? strings.showWorkspace
-                      : strings.hideWorkspace}
-                  </MenuItem>
-                )}
-                {groupId !== 'hidden' && (
-                  <MenuItem
-                    onClick={() =>
-                      setWorkspaceState(
-                        groupId === 'templates' ? 'none' : 'template'
-                      )
-                    }
-                  >
-                    {groupId === 'templates' ? (
-                      <IconTemplateUnset />
-                    ) : (
-                      <IconTemplateSet />
-                    )}
-
-                    {groupId === 'templates'
-                      ? strings.unsetTemplate
-                      : strings.setTemplate}
-                  </MenuItem>
-                )}
-
-                <MenuItem onClick={openWsSettings}>
-                  <IconSettings />
-                  {strings.workspaceSettings}
+          {groupId !== 'myWorkspace' && (
+            <Button
+              className={cn(
+                styles.pinButton,
+                groupId === 'pinned' && styles.pinButtonPinned
+              )}
+              onClick={() =>
+                setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+              }
+            >
+              {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+            </Button>
+          )}
+          {groupId !== 'myWorkspace' && (
+            <Menu
+              renderButton={renderButton}
+              direction="out"
+              position="right"
+              align="start"
+            >
+              {!isTemplate && (
+                <MenuItem
+                  onClick={() =>
+                    setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
+                  }
+                >
+                  {groupId === 'hidden' ? (
+                    <IconShow color={IconColor.Primary} />
+                  ) : (
+                    <IconHide />
+                  )}
+                  {groupId === 'hidden'
+                    ? strings.showWorkspace
+                    : strings.hideWorkspace}
                 </MenuItem>
-              </Menu>
-            )}
-          </React.Fragment>
-        ))}
-      {/* <WorkspaceSettingsDialog // 
-        workspaceManager={workspace}
-        isOpen={isSettingsOpen}
-        hide={() => setIsSettingsOpen(false)}
-      /> */}
-    </div>
-  );
-}
+              )}
+              {groupId !== 'hidden' && (
+                <MenuItem
+                  onClick={() =>
+                    setWorkspaceState(
+                      groupId === 'templates' ? 'none' : 'template'
+                    )
+                  }
+                >
+                  {groupId === 'templates' ? (
+                    <IconTemplateUnset />
+                  ) : (
+                    <IconTemplateSet />
+                  )}
 
-export function ExpanderIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        opacity="0.8"
-        d="M10 8L6 4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        opacity="0.8"
-        d="M6 12L10 8"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+                  {groupId === 'templates'
+                    ? strings.unsetTemplate
+                    : strings.setTemplate}
+                </MenuItem>
+              )}
+
+              <MenuItem onClick={openWsSettings}>
+                <IconSettings />
+                {strings.workspaceSettings}
+              </MenuItem>
+            </Menu>
+          )}
+        </React.Fragment>
+      )}
+    </div>
   );
 }
 
 interface WorkspaceListProps {
   query: Query<Workspace, Workspace, WorkspaceGID>;
   ofSettings: boolean | undefined;
+  updateMaxWidth: (maxWidth: number) => void;
 }
 
-function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
+function WorkspacesList({
+  query,
+  ofSettings,
+  updateMaxWidth,
+}: WorkspaceListProps) {
   const graph = useGraphManager();
   const styles = useStyles();
   const strings = useStrings();
@@ -970,7 +857,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     },
     [view]
   );
-
   const contents: JSX.Element[] = [];
   const groups = query.groups();
   if (!groups.includes('hidden')) {
@@ -1009,7 +895,6 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
               : strings[`${gid}Short`]
             : gid.getVertexProxy().name;
       }
-
       contents.push(
         <Button
           key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
@@ -1030,6 +915,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         </Button>
       );
     }
+
     const personalWsKey = `${graph.rootKey}-ws`;
     if (gid === 'pinned' || gid === 'myWorkspace' || gid === null || expanded) {
       for (const ws of query.group(gid)) {
@@ -1045,11 +931,9 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             groupId={gid}
             ofSettings={ofSettings}
             visible={contents.length < limit}
+            updateMaxWidth={updateMaxWidth}
           />
         );
-        // if (contents.length >= limit) {
-        //   break;
-        // }
       }
     }
   }
@@ -1071,7 +955,33 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     </Scroller>
   );
 }
-
+export function ExpanderIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        opacity="0.8"
+        d="M10 8L6 4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        opacity="0.8"
+        d="M6 12L10 8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 function shouldAutoSelectWorkspace(
   ws: Workspace,
   groups: Iterable<WorkspaceGID>,
@@ -1165,6 +1075,11 @@ function WorkspaceBarInternal({
     'workspaceBarCollapsed',
     'noteType'
   );
+  const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
+  const [isHovered, setIsHovered] = useState(false);
+  const updateMaxWidth = useCallback((newWidth: number) => {
+    setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
+  }, []);
 
   const selectAll = useCallback(() => {
     view.selectedWorkspaces = new Set(
@@ -1190,18 +1105,7 @@ function WorkspaceBarInternal({
     });
   }, [view, logger, query]);
 
-  // Clear view settings when no workspace is selected
-  // useEffect(() => {
-  //   if (view.selectedWorkspaces.size === 0) {
-  //     const activeView = activeViewMgr.getVertexProxy();
-  //     activeView.clearFilters();
-  //     activeView.clearContentsDisplaySettings();
-  //   }
-  // }, [activeViewMgr, view.selectedWorkspaces]);
-
   const unselectAll = useCallback(() => {
-    // view.clear();
-    // view.clearContentsDisplaySettings();
     view.selectedWorkspaces.clear();
     logger.log({
       severity: 'EVENT',
@@ -1216,92 +1120,40 @@ function WorkspaceBarInternal({
     <Layer priority={2}>
       {(style) => (
         <div
-          style={style}
-          className={cn(
-            styles.root,
-            view.workspaceBarCollapsed && styles.collapsed,
-            className
-          )}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{ ...style, width: isHovered ? maxWidth : DEFAULT_WIDTH }}
+          className={cn(styles.root, className)}
         >
           <div className={cn(styles.header)}>
             {ofSettings ? (
-              <div className={cn(styles.collapsedSettings)}>
-                <Button
-                  className={cn(styles.openBarButton)}
-                  onClick={() => {
-                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
-                  }}
-                >
-                  <CollapseIcon
-                    className={
-                      view.workspaceBarCollapsed ? styles.rotated : undefined
-                    }
-                  />
-                </Button>
-              </div>
+              <div></div>
             ) : (
               <div className={cn(styles.logoContainer)}>
-                {/* <LogoIcon className={cn(styles.logoIcon)} />
-                {view.workspaceBarCollapsed && (
-                  <LogoText className={cn(styles.logoText)} />
-                )} */}
                 <img
                   key="LOGO"
                   className={cn(styles.logoIcon)}
                   src={LOGO_PATH}
                 />
-                {!view.workspaceBarCollapsed && (
-                  <img
-                    key="LOGO-EXTRA"
-                    className={cn(styles.logoText)}
-                    src={LOGO_EXTRA_PATH}
-                  />
-                )}
-                {/* <img
-                  className={cn(styles.logoIcon)}
-                  src={`/org/${getOrganizationId()}/logo-open.png`}
-                /> */}
-                {/* {view.workspaceBarCollapsed ? (
-                  // <LogoText className={cn(styles.logoText)} />
-                  <img
-                    className={cn(styles.logoText)}
-                    src={`/org/${getOrganizationId()}/logo-close.png`}
-                  />
-                ) : (
-                  <img
-                    className={cn(styles.logoIcon)}
-                    src={`/org/${getOrganizationId()}/logo-open.png`}
-                  />
-                )} */}
-                {/* {!view.workspaceBarCollapsed && (
-              <img src="/Logo_precise_open.png" alt="logo-ful" />
-            )} */}
-                <div className={cn(layout.flexSpacer)} />
-                <Button
-                  className={cn(styles.openBarButton)}
-                  onClick={() => {
-                    view.workspaceBarCollapsed = !view.workspaceBarCollapsed;
-                  }}
-                >
-                  <CollapseIcon
-                    className={
-                      view.workspaceBarCollapsed ? styles.rotated : undefined
-                    }
-                  />
-                </Button>
+                <img
+                  key="LOGO-EXTRA"
+                  className={cn(styles.logoText)}
+                  src={LOGO_EXTRA_PATH}
+                />
               </div>
             )}
             <WorkspaceToggleView
-              // selectedRatio={
-              //   query.count && view.selectedWorkspaces.size / query.count
-              // }
               query={query}
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
               ofSettings={ofSettings}
             />
           </div>
-          <WorkspacesList query={query} ofSettings={ofSettings} />
+          <WorkspacesList
+            query={query}
+            ofSettings={ofSettings}
+            updateMaxWidth={updateMaxWidth}
+          />
           <WorkspaceBarActions ofSettings={ofSettings} />
         </div>
       )}
