@@ -290,6 +290,7 @@ export async function signCommit(
     mergeBase: commit.mergeBase,
     mergeLeader: commit.mergeLeader,
     revert: commit.revert,
+    orgId: commit.orgId,
   });
 }
 

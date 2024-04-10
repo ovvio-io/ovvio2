@@ -42,6 +42,10 @@ export interface SyncMessageConfig<T extends SyncValueType> {
    */
   size: number;
   /**
+   * The organization id which limits the scope of this message.
+   */
+  orgId: string;
+  /**
    * An array of values that the other side is suspected to be missing.
    */
   values?: T[];
@@ -59,6 +63,10 @@ export interface SyncMessageConfig<T extends SyncValueType> {
 export enum SyncValueFlag {
   Object = 0,
   Commit = 1,
+}
+
+export interface SyncMessageDecoderConfig extends ConstructorDecoderConfig {
+  orgId: string;
 }
 
 /**
@@ -117,18 +125,21 @@ export enum SyncValueFlag {
 export class SyncMessage<T extends SyncValueType>
   implements Encodable, Decodable
 {
+  readonly orgId: string;
   private _buildVersion!: VersionNumber;
   private _filter!: BloomFilter;
   private _size!: number;
   private _values!: T[];
   private _accessDenied?: string[];
 
-  constructor(config: ConstructorDecoderConfig | SyncMessageConfig<T>) {
+  constructor(config: SyncMessageDecoderConfig | SyncMessageConfig<T>) {
     if (isDecoderConfig(config)) {
+      this.orgId = config.orgId;
       this.deserialize(config.decoder);
     } else {
       this._filter = config.filter;
       this._size = config.size;
+      this.orgId = config.orgId;
       this._values = config.values || [];
       if (config.accessDenied) {
         this._accessDenied = Array.from(config.accessDenied);
@@ -208,7 +219,7 @@ export class SyncMessage<T extends SyncValueType>
       this._values = decoder
         .get<ReadonlyDecodedArray>('c', [])!
         .map((obj: DecodedValue) =>
-          Commit.fromJS(obj as ReadonlyJSONObject),
+          Commit.fromJS(this.orgId, obj as ReadonlyJSONObject),
         ) as T[];
     } else {
       this._values = decoder.get('v')! as T[];
@@ -221,6 +232,7 @@ export class SyncMessage<T extends SyncValueType>
     localSize: number,
     peerSize: number,
     expectedSyncCycles: number,
+    orgId: string,
     includeMissing = true,
     lowAccuracy = false,
   ): SyncMessage<T> {
@@ -265,6 +277,7 @@ export class SyncMessage<T extends SyncValueType>
     return new this({
       filter: localFilter,
       size: localSize,
+      orgId,
       values: missingPeerValues,
     });
   }

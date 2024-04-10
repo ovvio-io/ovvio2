@@ -90,6 +90,7 @@ export class Repository<
   readonly indexes?: IT;
   readonly authorizer?: Authorizer<ST>;
   readonly allowedNamespaces: SchemeNamespace[];
+  readonly orgId: string;
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
@@ -125,6 +126,7 @@ export class Repository<
     storage: ST,
     trustPool: TrustPool,
     allowedNamespaces: SchemeNamespace[],
+    orgId: string,
     authorizer?: Authorizer<ST>,
     indexes?: (repo: Repository<ST, IT>) => IT,
   ) {
@@ -132,6 +134,7 @@ export class Repository<
     this.storage = storage;
     this.trustPool = trustPool;
     this.allowedNamespaces = allowedNamespaces;
+    this.orgId = orgId;
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
     this._cachedValueForKey = new Map();
@@ -944,6 +947,7 @@ export class Repository<
         mergeBase: base?.id,
         mergeLeader,
         revert,
+        orgId: this.orgId,
       });
       if (deltaCompress) {
         mergeCommit = this.deltaCompressIfNeeded(mergeCommit);
@@ -1162,6 +1166,7 @@ export class Repository<
       parents: head?.id,
       ancestorsFilter,
       ancestorsCount,
+      orgId: this.orgId,
     });
     commit = this.deltaCompressIfNeeded(commit);
     const signedCommit = await signCommit(session, commit);
@@ -1211,6 +1216,7 @@ export class Repository<
           mergeBase: fullCommit.mergeBase,
           mergeLeader: fullCommit.mergeLeader,
           revert: fullCommit.revert,
+          orgId: this.orgId,
         });
         // log({
         //   severity: 'METRIC',
@@ -1330,6 +1336,12 @@ export class Repository<
     const commitsAffectingTmpRecords: Commit[] = [];
 
     for (const batch of ArrayUtils.slices(commits, 50)) {
+      for (const c of batch) {
+        assert(
+          c.orgId === this.orgId,
+          `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
+        );
+      }
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
       for (const c of batch) {
         for (const p of c.parents) {

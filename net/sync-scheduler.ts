@@ -82,7 +82,7 @@ export class SyncScheduler {
     readonly url: string,
     readonly syncConfig: SyncConfig,
     readonly trustPool: TrustPool,
-    readonly orgId?: string,
+    readonly orgId: string,
   ) {
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(kSyncConfigClient) * 2,
@@ -201,6 +201,7 @@ export class SyncScheduler {
           if (resp.storage === req.req.storage && resp.id === req.req.id) {
             const syncResp = new SyncMessage<SyncValueType>({
               decoder: new JSONCyclicalDecoder(resp.res as ReadonlyJSONObject),
+              orgId: this.orgId,
             });
             req.resolve(syncResp);
             found = true;

@@ -55,6 +55,7 @@ import {
 import { slices } from '../../../base/array.ts';
 import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 import { downloadJSON } from '../../../base/browser.ts';
+import { getOrganizationId } from '../../../net/rest-api.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -152,6 +153,7 @@ export class GraphManager
         `${baseServerUrl}/batch-sync`,
         kSyncConfigClient,
         trustPool,
+        getOrganizationId(),
       );
     }
 
@@ -368,6 +370,7 @@ export class GraphManager
         new MemRepoStorage(),
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
+        getOrganizationId(),
       );
       repo.allowMerge = false;
       plumbing = {
@@ -437,6 +440,7 @@ export class GraphManager
           resId,
           kSyncConfigClient,
           this._syncScheduler,
+          getOrganizationId(),
         );
         plumbing.client = client;
         client.on(EVENT_STATUS_CHANGED, () => {
