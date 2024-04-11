@@ -15,7 +15,7 @@ const useStyles = makeStyles(
       position: 'relative',
       zIndex: 100,
       lineHeight: 1.6,
-      padding: [0, styleguide.gridbase],
+      padding: '0px 8px',
       whiteSpace: 'nowrap',
       backgroundColor: theme.background[700],
       margin: styleguide.gridbase,

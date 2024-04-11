@@ -109,7 +109,7 @@ export function MemberPicker({
         searchTerm,
         users,
         (t) => t.name,
-        Number.MAX_SAFE_INTEGER,
+        Number.MAX_SAFE_INTEGER
       );
       setFilteredUsers(filtered);
     }
@@ -136,7 +136,7 @@ export function MemberPicker({
 
   const handleRowClick = (
     user: User,
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>
   ) => {
     event.stopPropagation();
     onRowSelect(user);
@@ -191,7 +191,6 @@ export function MemberPicker({
         break;
       case 'Backspace':
         if (!searchTerm) {
-          console.log('UPPUPUPUP');
           // e.preventDefault();
           // e.stopPropagation();
           // menuCtx.close();
@@ -246,7 +245,7 @@ export function MemberPicker({
                   className={cn(
                     styles.row,
                     styles.hoverableRow,
-                    selectedIndex === index && styles.selectedItem,
+                    selectedIndex === index && styles.selectedItem
                   )}
                   onClick={(event) => handleRowClick(user, event)}
                 >

@@ -19,15 +19,10 @@ import { brandLightTheme as theme } from '../../../../../../styles/theme.tsx';
 import Menu, { MenuAction } from '../../../../../../styles/components/menu.tsx';
 import { styleguide } from '../../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../../styles/layout.ts';
-import {
-  AddUserButton,
-  DeleteWsButton,
-  RemoveButton,
-} from '../../components/settings-buttons.tsx';
+import { DeleteWsButton } from '../../components/settings-buttons.tsx';
 import TextField from '../../../../../../styles/components/inputs/TextField.tsx';
 import { useSharedQuery } from '../../../../core/cfds/react/query.ts';
 import { MemberPicker } from '../../../../../../components/member-picker.tsx';
-import { WhiteActionButton } from '../../components/settings-buttons.tsx';
 import { BlueActionButton } from '../../components/settings-buttons.tsx';
 import { ConfirmationDialog } from '../../../../../../styles/components/confirmation-menu.tsx';
 

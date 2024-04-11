@@ -143,17 +143,20 @@ type DivProps = React.ComponentPropsWithoutRef<'div'>;
 export type SecondaryMenuItemProps = React.PropsWithChildren<{
   className?: string;
   text: string;
+  IconComponent?: any;
 }>;
 
 export function SecondaryMenuItem({
   children,
   text,
   className,
+  IconComponent,
 }: SecondaryMenuItemProps) {
   const styles = useStyles();
   const renderButton = useCallback(() => {
     return (
       <div className={cn(className, styles.item)}>
+        {IconComponent && <IconComponent className={cn(styles.actionIcon)} />}
         <Text>{text}</Text>
         <div className={cn(layout.flexSpacer)} />
         <img
@@ -166,7 +169,6 @@ export function SecondaryMenuItem({
           }}
           className={cn(styles.secondaryIcon)}
         />
-        {/* <IconExpander className={cn(styles.secondaryIcon)} /> */}
       </div>
     );
   }, [text, className, styles]);
@@ -320,7 +322,6 @@ interface MenuProps {
   onClick?: () => void;
   sizeByButton?: boolean;
   style?: {};
-  isItemHovered?: boolean;
   openImmediately?: boolean;
   withoutArrow?: boolean;
 
@@ -345,7 +346,6 @@ export default function Menu({
   onClick = () => {},
   sizeByButton = false,
   style,
-  isItemHovered,
   openImmediately,
   withoutArrow,
   isOpen,

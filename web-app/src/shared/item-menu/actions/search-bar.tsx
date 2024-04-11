@@ -5,12 +5,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { User } from '../cfds/client/graph/vertices/user.ts';
-import { cn, makeStyles } from '../styles/css-objects/index.ts';
-import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
-import { Workspace } from '../cfds/client/graph/vertices/index.ts';
-import { styleguide } from '../styles/styleguide.ts';
-import { brandLightTheme as theme } from '../styles/theme.tsx';
+import { styleguide } from '../../../../../styles/styleguide.ts';
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 
 const useStyles = makeStyles(() => ({
   base: {
@@ -29,8 +27,8 @@ const useStyles = makeStyles(() => ({
     padding: '0px 0px 0px 8px',
     gap: '8px',
     height: 4 * styleguide.gridbase,
-    backgroundColor: theme.secondary.s0,
-    borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    // backgroundColor: theme.secondary.s0,
+    // borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
   },
   baseTextStyle: {
     border: 'none',
@@ -42,12 +40,11 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'white',
   },
   pickerTextStyle: {
-    backgroundColor: theme.secondary.s0,
+    // backgroundColor: theme.secondary.s0,
   },
 }));
 
 export type SearchBarProps = {
-  users?: User[];
   workspaces?: Workspace[];
   searchTerm: string;
   setSearchTerm: (user: string) => void;
@@ -58,7 +55,6 @@ export type SearchBarProps = {
 };
 
 export const SearchBar: React.FC<SearchBarProps> = ({
-  users,
   workspaces,
   searchTerm,
   setSearchTerm,
@@ -101,7 +97,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <input
         ref={inputRef}
         type="text"
-        placeholder={users ? 'Search member' : 'Search workspace'}
+        placeholder={'Search workspace'}
         value={searchTerm}
         onChange={handleSearchChange}
         className={cn(

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
@@ -17,16 +17,23 @@ import {
   IconDueDate,
   IconDueDateProps,
 } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
-import Menu, { MenuAction } from '../../../../../styles/components/menu.tsx';
+import Menu, {
+  MenuAction,
+  MenuItem,
+} from '../../../../../styles/components/menu.tsx';
 import {
   toastContext,
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
-import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialGlobalView,
+} from '../../../core/cfds/react/graph.tsx';
 import { useDocumentRouter } from '../../../core/react-utils/index.ts';
 import { useDueDate } from '../../components/due-date-editor/index.tsx';
 import {
   usePartialVertex,
+  usePartialVertices,
   useVertex,
 } from '../../../core/cfds/react/vertex.ts';
 import { useLogger } from '../../../core/cfds/react/logger.tsx';
@@ -46,6 +53,12 @@ import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
 import { cn } from '../../../../../styles/css-objects/index.ts';
 import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx';
+import { SecondaryMenuItem } from '../../../../../styles/components/menu.tsx';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
+import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
+import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
+import { SearchBar } from './search-bar.tsx';
+import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -55,6 +68,9 @@ const useStyles = makeStyles(() => ({
   },
   itemMenuOpen: {
     opacity: 1,
+  },
+  colorIndicator: {
+    marginRight: styleguide.gridbase,
   },
   deleteConfirmation: {
     marginBottom: styleguide.gridbase,
@@ -239,21 +255,81 @@ export function DeleteCardAction({
   );
 }
 
-interface DuplicateCardActionProps extends CardActionProps {
+// interface DuplicateCardActionProps extends CardActionProps {
+//   editorRootKey?: string;
+//   source: UISource;
+// }
+// export function DuplicateCardAction({
+//   editorRootKey,
+//   cardManager,
+//   source,
+//   ...props
+// }: DuplicateCardActionProps) {
+//   const graph = useGraphManager();
+//   const logger = useLogger();
+//   const navigate = useNavigate();
+
+//   const onDuplicate = () => {
+//     const newCard = duplicateCard(graph, cardManager.key)!;
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'Duplicate',
+//       vertex: cardManager.key,
+//       target: newCard?.key,
+//       source,
+//     });
+
+//     if (editorRootKey === cardManager.key) {
+//       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
+//       return;
+//     }
+
+//     // TODO: Wiring for new editor
+//   };
+
+//   return (
+//     <MenuAction
+//       {...props}
+//       onClick={onDuplicate}
+//       IconComponent={IconDuplicate}
+//       text="Duplicate"
+//     />
+//   );
+// }
+interface CopyIntoCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
 }
-export function DuplicateCardAction({
+export function CopyIntoCardAction({
   editorRootKey,
   cardManager,
   source,
   ...props
-}: DuplicateCardActionProps) {
+}: CopyIntoCardActionProps) {
+  const styles = useStyles();
+
   const graph = useGraphManager();
   const logger = useLogger();
   const navigate = useNavigate();
+  const view = usePartialGlobalView('selectedWorkspaces');
+  const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
+  const personalWsKey = `${graph.rootKey}-ws`;
+  if (!workspaceKeys.includes(personalWsKey)) {
+    workspaceKeys.push(personalWsKey);
+  }
+  const partialWorkspaces = usePartialVertices<Workspace>(workspaceKeys, [
+    'name',
+  ]).sort(coreValueCompare);
 
-  const onDuplicate = () => {
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const filtered = suggestResults(
+    searchTerm,
+    partialWorkspaces,
+    (t) => t.name,
+    Number.MAX_SAFE_INTEGER
+  );
+
+  const onCopyInto = () => {
     const newCard = duplicateCard(graph, cardManager.key)!;
     logger.log({
       severity: 'EVENT',
@@ -267,17 +343,27 @@ export function DuplicateCardAction({
       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
       return;
     }
-
-    // TODO: Wiring for new editor
   };
 
   return (
-    <MenuAction
-      {...props}
-      onClick={onDuplicate}
-      IconComponent={IconDuplicate}
-      text="Duplicate"
-    />
+    <SecondaryMenuItem text="Copy to..." IconComponent={IconDuplicate}>
+      <SearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        isSearching={true}
+      ></SearchBar>
+      {filtered.map((ws) => (
+        <MenuItem onClick={() => onCopyInto()}>
+          <WorkspaceIndicator
+            className={cn(styles.colorIndicator)}
+            workspace={ws.manager as VertexManager<Workspace>}
+            type="color"
+            ofSettings={false}
+          />
+          {ws.name}
+        </MenuItem>
+      ))}
+    </SecondaryMenuItem>
   );
 }
 

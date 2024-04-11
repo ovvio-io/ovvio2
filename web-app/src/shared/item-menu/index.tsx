@@ -9,7 +9,7 @@ import {
   DeleteCardAction,
   // ExportMailAction,
   // ExportPdfAction,
-  DuplicateCardAction,
+  // DuplicateCardAction,
   // CopyUrlAction,
   ConvertNoteAction,
   ToggleSubTasksAction,
@@ -21,6 +21,7 @@ import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { makeStyles } from '../../../../styles/css-objects/index.ts';
+import { CopyIntoCardAction } from './actions/index.tsx';
 
 const useStyles = makeStyles(() => ({}));
 
@@ -87,8 +88,15 @@ export default function CardMenuView({
           {partialNote.parentNote && (
             <ViewInNoteAction cardManager={cardManager} source={source} />
           )}
-          {partialNote.type === NoteType.Note && (
+          {/* {partialNote.type === NoteType.Note && (
             <DuplicateCardAction
+              cardManager={cardManager}
+              source={source}
+              editorRootKey={editorRootKey}
+            />
+          )} */}
+          {partialNote.type === NoteType.Note && (
+            <CopyIntoCardAction
               cardManager={cardManager}
               source={source}
               editorRootKey={editorRootKey}
