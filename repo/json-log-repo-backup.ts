@@ -83,6 +83,10 @@ function* loadCommitsFromJSONLog(
   log: JSONLogFile,
 ): Generator<Commit> {
   for (const json of log.open()) {
-    yield Commit.fromJS(orgId, json);
+    try {
+      yield Commit.fromJS(orgId, json);
+    } catch (err: any) {
+      // Skip any bad commits
+    }
   }
 }
