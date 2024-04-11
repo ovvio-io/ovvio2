@@ -70,15 +70,10 @@ async function main(): Promise<void> {
   const serverURL = args.org ? `https://${args.org}.ovvio.io` : undefined;
   const watcher = Deno.watchFs(await getRepositoryPath());
   const server = new Server(undefined, undefined, undefined, args.localhost);
+  const orgId = args.localhost || 'localhost';
   await server.setup();
-  (
-    await server.servicesForOrganization(args.localhost || 'localhost')
-  ).staticAssets = await buildAssets(
-    ctx,
-    getOvvioConfig().version,
-    serverURL,
-    args.localhost,
-  );
+  (await server.servicesForOrganization(orgId)).staticAssets =
+    await buildAssets(ctx, getOvvioConfig().version, serverURL, args.localhost);
   await server.start();
   openBrowser();
   const rebuildTimer = new SimpleTimer(300, false, async () => {
@@ -89,8 +84,8 @@ async function main(): Promise<void> {
         serverURL === undefined
           ? incrementBuildNumber(config.version)
           : config.version;
-      (await server.servicesForOrganization('localhost')).staticAssets =
-        await buildAssets(ctx, version, serverURL);
+      (await server.servicesForOrganization(orgId)).staticAssets =
+        await buildAssets(ctx, version, serverURL, args.localhost);
       config.version = version;
       console.log('Static assets updated.');
       if (serverURL !== undefined) {

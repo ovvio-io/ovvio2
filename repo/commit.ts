@@ -280,6 +280,10 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       result._frozen = true;
       FROZEN_COMMITS.set(id, result);
     }
+    assert(
+      !result.orgId || result.orgId === orgId,
+      `Incompatible organization id. Expected "${orgId}" got "${result.orgId}"`,
+    );
     return result;
   }
 

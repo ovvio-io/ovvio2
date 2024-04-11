@@ -1276,7 +1276,7 @@ export class Repository<
                 result.push(c);
               }
             } else {
-              debugger;
+              // debugger;
               // this.trustPool.verify(c);
             }
           })(),
@@ -1338,7 +1338,7 @@ export class Repository<
     for (const batch of ArrayUtils.slices(commits, 50)) {
       for (const c of batch) {
         assert(
-          c.orgId === this.orgId,
+          !c.orgId || c.orgId === this.orgId,
           `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
         );
       }

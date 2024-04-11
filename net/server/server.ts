@@ -219,7 +219,7 @@ export class Server {
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
     const logStreams: LogStream[] = [
-      // new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
+      new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
       // prometeusLogStream,
     ];
     if (args?.silent !== true) {
@@ -459,9 +459,10 @@ export class Server {
     if (this._baseContext.silent === true) {
       console.log('STARTED');
     }
-    sleep(kSecondMs).then(() =>
-      console.log(`Replicas = ${this._baseContext?.replicas}`),
-    );
+    sleep(kSecondMs).then(() => {
+      console.log(`Replicas = ${this._baseContext?.replicas}`);
+      console.log(`Remap localhost = ${this.remapLocalhost}`);
+    });
     Deno.addSignalListener('SIGTERM', () => {
       Deno.exit(0);
     });
