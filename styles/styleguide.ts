@@ -4,7 +4,6 @@ const timing = {
   standard: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
   in: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
   out: 'cubic-bezier(0.4, 0.0, 1, 1)',
-  new: 'cubic-bezier(0.64, 0, 0.78, 0)',
 };
 
 const duration = {
@@ -132,10 +131,6 @@ export const transition = {
   short: {
     transitionDuration: duration.short + 'ms',
     transitionTimingFunction: timing.standard,
-  },
-  newStandard: {
-    transitionDuration: duration.standard + 'ms',
-    transitionTimingFunction: timing.new,
   },
 };
 const styleguide = {
