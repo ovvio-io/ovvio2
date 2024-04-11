@@ -183,7 +183,7 @@ async function startServerProcesses(
   settings: ServerControlSettings,
 ): Promise<(Deno.ChildProcess | undefined)[]> {
   const serverProcesses: (Deno.ChildProcess | undefined)[] = [];
-  const processCount = 1 + Math.round(navigator.hardwareConcurrency * 1.5);
+  const processCount = 1; // + Math.round(navigator.hardwareConcurrency * 1.5);
   for (let i = 0; i < processCount; ++i) {
     const replicas: string[] = [];
     // for (let x = 0; x < processCount; ++x) {
