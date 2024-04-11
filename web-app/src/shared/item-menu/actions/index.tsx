@@ -25,16 +25,13 @@ import {
   toastContext,
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
-import {
-  useGraphManager,
-  usePartialGlobalView,
-} from '../../../core/cfds/react/graph.tsx';
+import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
 import { useDocumentRouter } from '../../../core/react-utils/index.ts';
 import { useDueDate } from '../../components/due-date-editor/index.tsx';
 import {
   usePartialVertex,
-  usePartialVertices,
   useVertex,
+  useVertices,
 } from '../../../core/cfds/react/vertex.ts';
 import { useLogger } from '../../../core/cfds/react/logger.tsx';
 import { UISource } from '../../../../../logging/client-events.ts';
@@ -44,10 +41,6 @@ import {
   IconCheckAll,
   CheckAllState,
 } from '../../../../../styles/components/new-icons/icon-check-all.tsx';
-import {
-  BlueActionButton,
-  WhiteActionButton,
-} from '../../../app/settings/components/settings-buttons.tsx';
 import { makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
@@ -59,6 +52,7 @@ import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
 import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
 import { SearchBar } from './search-bar.tsx';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
+import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -99,6 +93,9 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 21,
     maxHeight: styleguide.gridbase * 21,
     flexShrink: 0,
+  },
+  wsItem: {
+    maxWidth: '400px',
   },
 }));
 
@@ -307,24 +304,16 @@ export function CopyIntoCardAction({
   ...props
 }: CopyIntoCardActionProps) {
   const styles = useStyles();
-
   const graph = useGraphManager();
   const logger = useLogger();
   const navigate = useNavigate();
-  const view = usePartialGlobalView('selectedWorkspaces');
-  const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
-  const personalWsKey = `${graph.rootKey}-ws`;
-  if (!workspaceKeys.includes(personalWsKey)) {
-    workspaceKeys.push(personalWsKey);
-  }
-  const partialWorkspaces = usePartialVertices<Workspace>(workspaceKeys, [
-    'name',
-  ]).sort(coreValueCompare);
+  const workspacesQuery = useSharedQuery('workspaces');
+  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const filtered = suggestResults(
     searchTerm,
-    partialWorkspaces,
+    workspaces,
     (t) => t.name,
     Number.MAX_SAFE_INTEGER
   );
@@ -333,7 +322,7 @@ export function CopyIntoCardAction({
     const newCard = duplicateCard(graph, cardManager.key)!;
     logger.log({
       severity: 'EVENT',
-      event: 'Duplicate',
+      event: 'CopyInto',
       vertex: cardManager.key,
       target: newCard?.key,
       source,
@@ -346,14 +335,19 @@ export function CopyIntoCardAction({
   };
 
   return (
-    <SecondaryMenuItem text="Copy to..." IconComponent={IconDuplicate}>
+    <SecondaryMenuItem
+      text="Copy to..."
+      IconComponent={IconDuplicate}
+      isWsList={true}
+    >
       <SearchBar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         isSearching={true}
+        isPicker={true}
       ></SearchBar>
       {filtered.map((ws) => (
-        <MenuItem onClick={() => onCopyInto()}>
+        <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
           <WorkspaceIndicator
             className={cn(styles.colorIndicator)}
             workspace={ws.manager as VertexManager<Workspace>}

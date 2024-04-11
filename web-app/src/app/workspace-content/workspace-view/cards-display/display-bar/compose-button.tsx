@@ -33,6 +33,8 @@ import { WorkspaceIndicator } from '../../../../../../../components/workspace-in
 import { coreValueCompare } from '../../../../../../../base/core-types/comparable.ts';
 import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
 import { BlueActionButton } from '../../../../settings/components/settings-buttons.tsx';
+import { SearchBar } from '../../../../../../../components/search-bar.tsx';
+import { suggestResults } from '../../../../../../../cfds/client/suggestions.ts';
 // import { WorkspaceItem } from '../../../../new-workspace/workspaces-dropdown.tsx';
 
 const useStyles = makeStyles(() => ({
@@ -51,6 +53,9 @@ const useStyles = makeStyles(() => ({
       boxShadow: theme.shadows.z2,
       background: theme.primary.p10,
     },
+  },
+  wsItem: {
+    maxWidth: '400px',
   },
 }));
 
@@ -72,6 +77,13 @@ export function ComposeButton() {
     'name',
   ]).sort(coreValueCompare);
   const [container, setContainer] = useState<HTMLDivElement | null>();
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const filtered = suggestResults(
+    searchTerm,
+    partialWorkspaces,
+    (t) => t.name,
+    Number.MAX_SAFE_INTEGER
+  );
 
   const createCard = (ws: VertexManager<Workspace>) => {
     const note = createNewNote(graph, ws, {
@@ -109,8 +121,17 @@ export function ComposeButton() {
       direction="out"
       popupClassName={cn(styles.workspacesList)}
     >
-      {partialWorkspaces.map((ws) => (
-        <MenuItem onClick={() => createCard(ws.manager)}>
+      <SearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        isSearching={true}
+        isPicker={true}
+      ></SearchBar>
+      {filtered.map((ws) => (
+        <MenuItem
+          className={styles.wsItem}
+          onClick={() => createCard(ws.manager)}
+        >
           <WorkspaceIndicator
             className={cn(styles.colorIndicator)}
             workspace={ws.manager as VertexManager<Workspace>}

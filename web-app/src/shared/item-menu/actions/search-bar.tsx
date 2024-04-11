@@ -9,6 +9,7 @@ import { styleguide } from '../../../../../styles/styleguide.ts';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
+import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
 
 const useStyles = makeStyles(() => ({
   base: {
@@ -27,8 +28,8 @@ const useStyles = makeStyles(() => ({
     padding: '0px 0px 0px 8px',
     gap: '8px',
     height: 4 * styleguide.gridbase,
-    // backgroundColor: theme.secondary.s0,
-    // borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    backgroundColor: theme.secondary.s0,
+    borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
   },
   baseTextStyle: {
     border: 'none',
@@ -40,7 +41,7 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'white',
   },
   pickerTextStyle: {
-    // backgroundColor: theme.secondary.s0,
+    backgroundColor: theme.secondary.s0,
   },
 }));
 

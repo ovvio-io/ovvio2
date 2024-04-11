@@ -38,7 +38,6 @@ const useStyles = makeStyles((theme) => ({
   backdropHovered: {
     backgroundColor: theme1.secondary.s3,
   },
-
   item: {
     ...styleguide.textStyles.text,
     backgroundColor: 'white',
@@ -65,7 +64,7 @@ const useStyles = makeStyles((theme) => ({
     height: '16px',
   },
   actionIcon: {
-    // marginRight: styleguide.gridbase,
+    marginRight: styleguide.gridbase,
   },
   actionText: {
     flexGrow: 1,
@@ -127,6 +126,11 @@ const useStyles = makeStyles((theme) => ({
     transform: 'rotate(270deg)',
     transformOrigin: 'center center',
   },
+  workspacesList: {
+    maxHeight: styleguide.gridbase * 30,
+    overflowY: 'auto',
+    overflowX: 'clip',
+  },
 }));
 
 const MenuContext = React.createContext({
@@ -144,6 +148,7 @@ export type SecondaryMenuItemProps = React.PropsWithChildren<{
   className?: string;
   text: string;
   IconComponent?: any;
+  isWsList?: boolean;
 }>;
 
 export function SecondaryMenuItem({
@@ -151,6 +156,7 @@ export function SecondaryMenuItem({
   text,
   className,
   IconComponent,
+  isWsList,
 }: SecondaryMenuItemProps) {
   const styles = useStyles();
   const renderButton = useCallback(() => {
@@ -180,6 +186,7 @@ export function SecondaryMenuItem({
       direction="out"
       align="start"
       withoutArrow={true}
+      popupClassName={isWsList ? cn(styles.workspacesList) : 'none'}
     >
       {children}
     </Menu>
@@ -438,7 +445,7 @@ export default function Menu({
       direction={direction}
     >
       <div
-        className={cn(styles.dropDown, popupClassName)}
+        className={cn(popupClassName, styles.dropDown)}
         style={minWidthStyle}
       >
         <div className={styles.MenuContainer}>
