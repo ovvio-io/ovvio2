@@ -10,6 +10,7 @@ import { useGraphManager } from '../../core/cfds/react/graph.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { WorkspaceIndicator } from '../../../../components/workspace-indicator.tsx';
+import { WorkspaceContainer } from '../index.tsx';
 
 const useStrings = createUseStrings(localization);
 
@@ -30,10 +31,12 @@ export function CategorySettings(props: CategorySettingsProps) {
 
   return (
     <div className={styles.root}>
-      <div className={cn(styles.bar, className)}>
+      <div className={cn(styles.bar)}>
         {category === 'workspaces-info' ? (
           <div className={styles.wsBar}>
-            <WorkspacesBar key={'wsbar'} ofSettings={true} />
+            <WorkspaceContainer>
+              <WorkspacesBar key={'wsbar'} ofSettings={true} />
+            </WorkspaceContainer>
             <div style={{ overflow: 'hidden' }}>
               <div className={cn(styles.dialogHeader)}>
                 {strings[category + 'S']}

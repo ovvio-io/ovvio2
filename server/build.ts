@@ -72,7 +72,7 @@ async function putS3Object(uploadPath: string): Promise<boolean> {
     ACL: 'public-read',
   };
   console.log(
-    `Uploading atomically ${uploadPath} \u{02192} ${req.Bucket}/${req.Key}`,
+    `Uploading atomically ${uploadPath} \u{02192} ${req.Bucket}/${req.Key}`
   );
   const resp = await client.send(new PutObjectCommand(req));
   return resp.ETag !== undefined && resp.ETag.length > 0;
@@ -81,7 +81,7 @@ async function putS3Object(uploadPath: string): Promise<boolean> {
 export function outputFileName(
   target: BuildTarget,
   deployment: boolean,
-  channel?: BuildChannel,
+  channel?: BuildChannel
 ): string {
   return `ovvio-${target}-${deployment ? 'linux' : Deno.build.os}${
     channel && channel !== 'release' ? '-' + channel : ''
@@ -90,7 +90,7 @@ export function outputFileName(
 
 async function hashFile(
   inputFilePath: string,
-  outputFilePath?: string,
+  outputFilePath?: string
 ): Promise<void> {
   const file = await Deno.readFile(inputFilePath);
   console.log(`Generating SHA-512 checksum for ${inputFilePath}...`);
@@ -112,10 +112,10 @@ async function build(
   upload: boolean,
   linux: boolean,
   target: BuildTarget,
-  channel?: BuildChannel,
+  channel?: BuildChannel
 ): Promise<void> {
   console.log(
-    `Generating ${target} executable for ${linux ? 'linux' : Deno.build.os}...`,
+    `Generating ${target} executable for ${linux ? 'linux' : Deno.build.os}...`
   );
   const fileName = outputFileName(target, linux, channel);
   const outputDir = path.join(repoPath, 'build');
@@ -146,7 +146,7 @@ async function build(
     compileArgs.push(path.join(repoPath, 'server', 'run-server.ts'));
   } else {
     compileArgs.push(
-      path.join(repoPath, 'server-control', 'server-control.ts'),
+      path.join(repoPath, 'server-control', 'server-control.ts')
     );
   }
   const compileLocalCmd = new Deno.Command('deno', {
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
       `%cUpdating %c${channel}%c channel...`,
       'color: default',
       `color: ${colorForChannel(channel)}`,
-      'color: default',
+      'color: default'
     );
     if (channel === 'beta') {
       alert('Press enter to start');
@@ -245,7 +245,7 @@ async function main(): Promise<void> {
 
   await Deno.writeTextFile(
     path.join(buildDirPath, 'build-info.json'),
-    JSON.stringify(generateBuildInfo(channel)),
+    JSON.stringify(generateBuildInfo(channel))
   );
   if (args?.both === true) {
     await Promise.all([
@@ -254,14 +254,14 @@ async function main(): Promise<void> {
         args?.upload === true,
         args?.linux === true,
         'server',
-        channel,
+        channel
       ),
       build(
         repoPath,
         args?.upload === true,
         args?.linux === true,
         'control',
-        channel,
+        channel
       ),
     ]);
   } else {
@@ -270,7 +270,7 @@ async function main(): Promise<void> {
       args?.upload === true,
       args?.linux === true,
       controlBuild ? 'control' : 'server',
-      channel,
+      channel
     );
   }
 }
