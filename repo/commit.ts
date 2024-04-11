@@ -46,6 +46,7 @@ export type CommitContents = RecordContents | DeltaContents;
 export interface CommitConfig {
   id?: string;
   session: string;
+  orgId: string;
   key?: string | null;
   contents: Record | CommitContents;
   parents?: string | Iterable<string>;
@@ -69,7 +70,13 @@ const SERIALIZED_COMMITS = new Map<string, ReadonlyJSONObject>();
 
 export const CONNECTION_ID = uniqueId();
 
+export interface CommitDecoderConfig<T = object>
+  extends ConstructorDecoderConfig<T> {
+  orgId: string;
+}
+
 export class Commit implements Encodable, Decodable, Equatable, Comparable {
+  readonly orgId: string;
   private _buildVersion!: VersionNumber;
   private _id!: string;
   private _session!: string;
@@ -88,8 +95,9 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _frozen: boolean = false;
   private _connectionId = CONNECTION_ID;
 
-  constructor(config: CommitConfig | ConstructorDecoderConfig) {
+  constructor(config: CommitConfig | CommitDecoderConfig) {
     if (isDecoderConfig(config)) {
+      this.orgId = config.orgId;
       this.deserialize(config.decoder);
     } else {
       let { parents, contents } = config;
@@ -108,6 +116,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
 
       this._id = config.id || uniqueId();
       this._session = config.session;
+      this.orgId = config.orgId;
       this._key = config.key || undefined;
       this._parents = Array.from(parents);
       this._ancestorsFilter = config.ancestorsFilter;
@@ -221,6 +230,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     }
     encoder.set('s', this.session);
     encoder.set('ts', this.timestamp);
+    encoder.set('org', this.orgId);
     const parents = this.parents;
     if (parents.length > 0) {
       encoder.set('p', parents);
@@ -261,20 +271,29 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return result;
   }
 
-  static fromJS(obj: ReadonlyJSONObject): Commit {
+  static fromJS(orgId: string, obj: ReadonlyJSONObject): Commit {
     const id = obj.id as string;
     let result = FROZEN_COMMITS.get(id);
     if (!result) {
       const decoder = new JSONCyclicalDecoder(obj);
-      result = new Commit({ decoder });
+      result = new Commit({ decoder, orgId });
       result._frozen = true;
       FROZEN_COMMITS.set(id, result);
     }
+    assert(
+      !result.orgId || result.orgId === orgId,
+      `Incompatible organization id. Expected "${orgId}" got "${result.orgId}"`,
+    );
     return result;
   }
 
   deserialize(decoder: Decoder): void {
     assert(!this.frozen);
+    const encodedOrgId = decoder.get<string>('org');
+    assert(
+      !encodedOrgId || encodedOrgId === this.orgId,
+      `Organization id mismatch. Expected "${this.orgId}" but got "${encodedOrgId}"`,
+    );
     this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
     this._key = decoder.get<string | null>('k', null)!;

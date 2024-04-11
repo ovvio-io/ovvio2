@@ -20,12 +20,14 @@ import { getOvvioConfig } from './config.ts';
 
 function generateConfigSnippet(
   version: VersionNumber,
-  serverURL?: string
+  serverURL?: string,
+  orgId?: string,
 ): string {
   const config = {
     ...getOvvioConfig(),
     debug: true,
     version,
+    orgId,
   };
   delete config.clientData;
   delete config.serverData;
@@ -38,7 +40,8 @@ function generateConfigSnippet(
 export async function buildAssets(
   ctx: ReBuildContext | typeof esbuild,
   version: VersionNumber,
-  serverURL?: string
+  serverURL?: string,
+  orgId?: string,
 ): Promise<StaticAssets> {
   const buildResults = await (isReBuildContext(ctx)
     ? ctx.rebuild()
@@ -50,7 +53,7 @@ export async function buildAssets(
           write: false,
           sourcemap: 'linked',
           outdir: 'output',
-        })
+        }),
       ));
 
   const repoPath = await getRepositoryPath();
@@ -60,11 +63,11 @@ export async function buildAssets(
     const { source, map } = buildResults[ep];
     const assets = await compileAssetsDirectory(
       path.join(repoPath, 'assets'),
-      path.join(repoPath, ep, 'assets')
+      path.join(repoPath, ep, 'assets'),
     );
     assets['/app.js'] = {
       data: textEncoder.encode(
-        generateConfigSnippet(version, serverURL) + source
+        generateConfigSnippet(version, serverURL, orgId) + source,
       ),
       contentType: 'text/javascript',
     };
@@ -93,7 +96,7 @@ export async function defaultAssetsBuild(): Promise<void> {
   const assets = await buildAssets(esbuild, VCurrent);
   await Deno.writeTextFile(
     path.join(repoPath, 'build', 'staticAssets.json'),
-    JSON.stringify(staticAssetsToJS(assets))
+    JSON.stringify(staticAssetsToJS(assets)),
   );
   esbuild.stop();
 }

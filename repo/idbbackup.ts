@@ -19,6 +19,7 @@ import { notReached } from '../base/error.ts';
 import { filterIterable } from '../base/common.ts';
 import { MultiSerialScheduler } from '../base/serial-scheduler.ts';
 import { slices } from '../base/array.ts';
+import { getOrganizationId } from '../net/rest-api.ts';
 
 const K_DB_VERSION = 1;
 
@@ -205,6 +206,7 @@ export class IDBRepositoryBackup {
             // }
             const commit = new Commit({
               decoder: new JSONCyclicalDecoder(json),
+              orgId: getOrganizationId(),
             });
             this._persistedCommitIds.add(commit.id);
             result.push(commit);

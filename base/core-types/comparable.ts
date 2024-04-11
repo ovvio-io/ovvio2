@@ -188,7 +188,9 @@ function coreIterableCompare(
     }
 
     const cmp = coreValueCompare(val1.value, val2.value, options);
-    if (cmp !== 0) return cmp;
+    if (cmp !== 0) {
+      return cmp;
+    }
 
     val1 = iter1.next();
     val2 = iter2.next();

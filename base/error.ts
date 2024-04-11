@@ -17,13 +17,11 @@ export function notReached(msg?: string): never {
   throw error;
 }
 
-export function assert(
-  condition: boolean,
-  msg = 'Failed assertion'
-): asserts condition {
+export function assert(condition: boolean, msg?: string): asserts condition {
+  msg = msg ? `Failed Assertion: "${msg}"` : 'Failed Assertion';
   if (!condition) {
     debugger;
-    const error = new Error('Failed Assertion');
+    const error = new Error(msg);
     log({
       severity: 'ERROR',
       error: 'FailedAssertion',

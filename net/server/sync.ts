@@ -158,11 +158,13 @@ export class SyncService extends BaseService<ServerServices> {
       new MemRepoStorage(),
       this.services.trustPool,
       Repository.namespacesForType(type),
+      this.services.organizationId,
       authorizer,
       indexes,
     );
     this._repositories.set(repoId, repo);
     const backup = new JSONLogRepoBackup(
+      this.services.organizationId,
       joinPath(this.services.dir, type, id + '.repo'),
       this.services.serverProcessIndex,
     );
@@ -174,36 +176,37 @@ export class SyncService extends BaseService<ServerServices> {
       }
     }
     assert(!this._clientsForRepo.has(repoId)); // Sanity check
-    if (
-      type === 'sys' &&
-      id === 'dir' &&
-      this.services.serverProcessCount > 1 &&
-      // localhost sync is allowed only on development machines
-      (this.services.organizationId !== 'localhost' ||
-        Deno.build.os === 'darwin')
-    ) {
-      const clients: RepoClient<MemRepoStorage>[] = [];
-      for (let i = 0; i < this.services.serverProcessCount; ++i) {
-        if (i === this.services.serverProcessIndex) {
-          continue;
-        }
-        const c = new RepoClient(
-          repo!,
-          type,
-          id,
-          kSyncConfigServer,
-          syncSchedulerForURL(
-            `http://localhost:9000/batch-sync`,
-            this.services.trustPool,
-            this.services.organizationId,
-          ),
-        );
-        c.ready = true;
-        c.startSyncing();
-        clients.push(c);
-      }
-      this._clientsForRepo.set(repoId, clients);
-    }
+    // if (
+    //   type === 'sys' &&
+    //   id === 'dir' &&
+    //   this.services.serverProcessCount > 1 &&
+    //   // localhost sync is allowed only on development machines
+    //   (this.services.organizationId !== 'localhost' ||
+    //     Deno.build.os === 'darwin')
+    // ) {
+    //   const clients: RepoClient<MemRepoStorage>[] = [];
+    //   for (let i = 0; i < this.services.serverProcessCount; ++i) {
+    //     if (i === this.services.serverProcessIndex) {
+    //       continue;
+    //     }
+    //     const c = new RepoClient(
+    //       repo!,
+    //       type,
+    //       id,
+    //       kSyncConfigServer,
+    //       syncSchedulerForURL(
+    //         `http://localhost:9000/batch-sync`,
+    //         this.services.trustPool,
+    //         this.services.organizationId,
+    //       ),
+    //       this.services.organizationId,
+    //     );
+    //     c.ready = true;
+    //     c.startSyncing();
+    //     clients.push(c);
+    //   }
+    //   this._clientsForRepo.set(repoId, clients);
+    // }
     return repo;
   }
 
@@ -540,6 +543,7 @@ export class SyncEndpoint implements Endpoint {
   ): Promise<ReadonlyJSONObject> {
     const msg = new SyncMessage<T>({
       decoder: new JSONCyclicalDecoder(msgJSON),
+      orgId: services.organizationId,
     });
     let syncCycles = syncConfigGetCycles(kSyncConfigServer);
     if (msg.values.length > 0) {
@@ -563,6 +567,7 @@ export class SyncEndpoint implements Endpoint {
       getLocalCount(),
       msg.size,
       syncCycles,
+      services.organizationId,
       // Don't return new commits to old clients
       includeMissing && msg.buildVersion >= getOvvioConfig().version,
       lowAccuracy,

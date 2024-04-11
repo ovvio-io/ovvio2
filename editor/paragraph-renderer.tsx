@@ -182,7 +182,12 @@ export class ParagraphRendererContext implements TextStyle {
         const y = bounds.y + bounds.height / 2;
         const strikeWidth = 1;
         ctx.fillStyle = this.strikeColor;
-        ctx.fillRect(0, y - strikeWidth / 2 - 1, bounds.width, strikeWidth);
+        ctx.fillRect(
+          bounds.x,
+          y - strikeWidth / 2 - 1,
+          bounds.width,
+          strikeWidth,
+        );
       }
     }
     ctx.restore();

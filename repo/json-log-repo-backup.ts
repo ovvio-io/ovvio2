@@ -9,7 +9,11 @@ export class JSONLogRepoBackup {
   private _log: JSONLogFile | undefined;
   private _ready = false;
 
-  constructor(readonly repoPath: string, readonly processId: number) {
+  constructor(
+    readonly orgId: string,
+    readonly repoPath: string,
+    readonly processId: number,
+  ) {
     this._commitIds = new Set();
   }
 
@@ -27,7 +31,7 @@ export class JSONLogRepoBackup {
         continue;
       }
       const logFile = new JSONLogFile(path.join(repoPath, file.name), false);
-      for (const commit of loadCommitsFromJSONLog(logFile)) {
+      for (const commit of loadCommitsFromJSONLog(this.orgId, logFile)) {
         if (!this._commitIds.has(commit.id)) {
           this._commitIds.add(commit.id);
           yield commit;
@@ -39,7 +43,7 @@ export class JSONLogRepoBackup {
       path.join(repoPath, processIdToFileName(this.processId)),
       true,
     );
-    for (const commit of loadCommitsFromJSONLog(this._log)) {
+    for (const commit of loadCommitsFromJSONLog(this.orgId, this._log)) {
       if (!this._commitIds.has(commit.id)) {
         this._commitIds.add(commit.id);
         yield commit;
@@ -74,8 +78,15 @@ function processIdToFileName(processId: number): string {
   return `${FILE_PREFIX}${processId}${FILE_SUFFIX}`;
 }
 
-function* loadCommitsFromJSONLog(log: JSONLogFile): Generator<Commit> {
+function* loadCommitsFromJSONLog(
+  orgId: string,
+  log: JSONLogFile,
+): Generator<Commit> {
   for (const json of log.open()) {
-    yield Commit.fromJS(json);
+    try {
+      yield Commit.fromJS(orgId, json);
+    } catch (err: any) {
+      // Skip any bad commits
+    }
   }
 }

@@ -152,6 +152,7 @@ export class Server {
     args?: Arguments,
     staticAssets?: StaticAssets,
     buildInfo?: BuildInfo,
+    readonly remapLocalhost?: string,
   ) {
     this._endpoints = [];
     this._middlewares = [];
@@ -218,7 +219,7 @@ export class Server {
     const settingsService = new SettingsService();
     const prometeusLogStream = new PrometheusLogStream();
     const logStreams: LogStream[] = [
-      // new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
+      new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
       // prometeusLogStream,
     ];
     if (args?.silent !== true) {
@@ -330,7 +331,7 @@ export class Server {
     if (req.url === 'http://AWSALB/healthy') {
       return new Response(null, { status: 200 });
     }
-    const orgId = req.headers.get('x-org-id') || organizationIdFromURL(req.url);
+    let orgId = req.headers.get('x-org-id') || organizationIdFromURL(req.url);
 
     if (!orgId) {
       log({
@@ -347,6 +348,10 @@ export class Server {
       return new Response(null, {
         status: 404,
       });
+    }
+
+    if (orgId === 'localhost' && this.remapLocalhost) {
+      orgId = this.remapLocalhost;
     }
     const services = await this.servicesForOrganization(orgId);
     const middlewares = this._middlewares;
@@ -454,9 +459,10 @@ export class Server {
     if (this._baseContext.silent === true) {
       console.log('STARTED');
     }
-    sleep(kSecondMs).then(() =>
-      console.log(`Replicas = ${this._baseContext?.replicas}`),
-    );
+    sleep(kSecondMs).then(() => {
+      console.log(`Replicas = ${this._baseContext?.replicas}`);
+      console.log(`Remap localhost = ${this.remapLocalhost}`);
+    });
     Deno.addSignalListener('SIGTERM', () => {
       Deno.exit(0);
     });

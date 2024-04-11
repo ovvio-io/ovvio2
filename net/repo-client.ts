@@ -17,6 +17,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     id: string,
     syncConfig: SyncConfig,
     scheduler: SyncScheduler,
+    readonly orgId: string,
   ) {
     super(storage, id, syncConfig, scheduler);
     this._repo = repo;
@@ -42,6 +43,7 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
       repo.numberOfCommits(session),
       this.previousServerSize,
       this.syncCycles,
+      this.orgId,
       includeMissing,
       this.storage === 'events',
     );
