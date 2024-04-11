@@ -73,8 +73,8 @@ const useStyles = makeStyles(
     root: {
       flexShrink: 0,
       height: '100%',
-      transitionTimingFunction: 'cubic-bezier(0.87, 0, 0.13, 1)',
-      transitionDuration: '150ms',
+      transitionTimingFunction: 'cubic-bezier(0.85, 0, 0.15, 1)',
+      transitionDuration: '200ms',
       transitionProperty: 'width',
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
