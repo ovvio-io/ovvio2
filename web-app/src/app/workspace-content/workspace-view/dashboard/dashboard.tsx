@@ -155,6 +155,16 @@ function noteHasStatus(note: Note, childTagName: string): boolean {
   return false;
 }
 
+function isInProgress(note: Note): boolean {
+  for (const tag of note.tags.values()) {
+    const name = tag.name.trim().toLowerCase();
+    if (name === 'in progress' || name === 'בעבודה') {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isOpenTask(note: Note): boolean {
   if (
     note.type !== NoteType.Task ||
@@ -167,7 +177,7 @@ function isOpenTask(note: Note): boolean {
   return true;
 }
 
-function isOpenTaskWithDue(note: Note, dueMs: number): boolean {
+function isOpenTaskWithDueBefore(note: Note, dueMs: number): boolean {
   if (!isOpenTask(note)) {
     return false;
   }
@@ -177,6 +187,18 @@ function isOpenTaskWithDue(note: Note, dueMs: number): boolean {
   }
   const startOfTodayMs = startOfToday().getTime();
   return dueDate.getTime() - startOfTodayMs < dueMs;
+}
+
+function isOpenTaskNotOverdue(note: Note): boolean {
+  if (!isOpenTask(note)) {
+    return false;
+  }
+  const dueDate = note.dueDate;
+  if (!dueDate) {
+    return true;
+  }
+  const startOfTodayMs = startOfToday().getTime();
+  return dueDate.getTime() - startOfTodayMs > 0;
 }
 
 function isTaskInTeamLeaderApproval(note: Note): boolean {
@@ -189,6 +211,19 @@ function isTaskAssignedToTeamLeader(note: Note): boolean {
   }
   for (const u of note.assignees) {
     if (u.getRoles().includes('ראש צוות')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isTaskAssignedToMe(note: Note): boolean {
+  if (!isOpenTask(note)) {
+    return false;
+  }
+  const rootKey = note.graph.rootKey;
+  for (const u of note.assignees) {
+    if (u.key === rootKey) {
       return true;
     }
   }
@@ -214,6 +249,7 @@ function NumberCell({ title, value }: NumberCellProps) {
 
 interface NumbersBlockProps {
   title: string;
+  subtitle?: string;
   values: NumberCellProps[];
   className?: string;
 }
@@ -238,16 +274,18 @@ function NumbersBlock({ title, values, className }: NumbersBlockProps) {
 }
 
 interface OverviewRowProps {
-  teamLeaderLateQuery: Query<Note, Note>;
-  teamLeaderApprovalQuery: Query<Note, Note>;
+  myLateQuery: Query<Note, Note>;
+  myInProgressQuery: Query<Note, Note>;
+  myTeamLeaderApprovalQuery: Query<Note, Note>;
   teamLateQuery: Query<Note, Note>;
   teamTodoQuery: Query<Note, Note>;
   teamCompletedQuery: Query<Note, Note, VertexManager<User>>;
 }
 
 function OverviewRow(props: OverviewRowProps) {
-  const teamLeaderLateQuery = useQuery2(props.teamLeaderLateQuery);
-  const teamLeaderApprovalQuery = useQuery2(props.teamLeaderApprovalQuery);
+  const myLateQuery = useQuery2(props.myLateQuery);
+  const myInProgressQuery = useQuery2(props.myInProgressQuery);
+  const myTeamLeaderApprovalQuery = useQuery2(props.myTeamLeaderApprovalQuery);
   const teamLateQuery = useQuery2(props.teamLateQuery);
   const teamTodoQuery = useQuery2(props.teamTodoQuery);
   const teamCompletedQuery = useQuery2(props.teamCompletedQuery);
@@ -255,19 +293,20 @@ function OverviewRow(props: OverviewRowProps) {
   return (
     <div key="topNumbersRow" className={cn(styles.topNumbersRow)}>
       <NumbersBlock
-        key="teamLeaderNumbers"
+        key="myNumbers"
         className={cn(styles.teamLeaderBox)}
-        title="Team Leader"
+        title="My Tasks"
         values={[
-          { title: 'Late Tasks', value: teamLeaderLateQuery.count },
-          { title: 'For Approval', value: teamLeaderApprovalQuery.count },
+          { title: 'Late', value: myLateQuery.count },
+          { title: 'In Progress', value: myInProgressQuery.count },
+          { title: 'For Approval', value: myTeamLeaderApprovalQuery.count },
         ]}
       />
       <div className={cn(styles.numberCellSpacer)}></div>
       <NumbersBlock
-        key="teamNumbers"
+        key="otherNumbers"
         className={cn(styles.teamBox)}
-        title="Team"
+        title="Other Tasks"
         values={[
           { title: 'Late Tasks', value: teamLateQuery.count },
           { title: 'To Do', value: teamTodoQuery.count },
@@ -280,11 +319,11 @@ function OverviewRow(props: OverviewRowProps) {
 
 const kDatePredicates: Record<DateFilter, (n: Note) => boolean> = {
   week: (n: Note) =>
-    isOpenTaskWithDue(n, kWeekMs) &&
+    isOpenTaskWithDueBefore(n, kWeekMs) &&
     n.dueDate !== undefined &&
     n.dueDate.getTime() >= startOfToday().getTime(),
   month: (n: Note) =>
-    isOpenTaskWithDue(n, numberOfDaysLeftInCurrentMonth() * kDayMs) &&
+    isOpenTaskWithDueBefore(n, numberOfDaysLeftInCurrentMonth() * kDayMs) &&
     n.dueDate !== undefined &&
     n.dueDate.getTime() >= startOfToday().getTime(),
 };
@@ -1084,27 +1123,42 @@ export function Dashboard() {
   const styles = useStyles();
   const view = usePartialView('selectedWorkspaces', 'dateFilter');
   const graph = useGraphManager();
-  const teamLeaderLateQuery = useMemo(
+  const myLateQuery = useMemo(
     () =>
       new Query<Note, Note>({
         source: graph.sharedQueriesManager.noteQuery(),
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          isOpenTaskWithDue(note, 0) &&
-          isTaskAssignedToTeamLeader(note),
+          isOpenTaskWithDueBefore(note, 0) &&
+          isTaskAssignedToMe(note),
         name: 'Dashboard/TeamLeaderLate',
       }),
     [graph, view.selectedWorkspaces],
   );
-  const teamLeaderApprovalQuery = useMemo(
+  const myInProgressQuery = useMemo(
     () =>
       new Query<Note, Note>({
         source: graph.sharedQueriesManager.noteQuery(),
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          isTaskInTeamLeaderApproval(note),
+          isOpenTaskNotOverdue(note) &&
+          isTaskAssignedToMe(note) &&
+          isInProgress(note),
+        name: 'Dashboard/TeamLeaderLate',
+      }),
+    [graph, view.selectedWorkspaces],
+  );
+  const myTeamLeaderApprovalQuery = useMemo(
+    () =>
+      new Query<Note, Note>({
+        source: graph.sharedQueriesManager.noteQuery(),
+        predicate: (note) =>
+          note.type === NoteType.Task &&
+          view.selectedWorkspaces.has(note.workspace) &&
+          isTaskInTeamLeaderApproval(note) &&
+          isTaskAssignedToMe(note),
         name: 'Dashboard/TeamLeaderApproval',
       }),
     [graph, view.selectedWorkspaces],
@@ -1116,7 +1170,7 @@ export function Dashboard() {
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          isOpenTaskWithDue(note, 0),
+          isOpenTaskWithDueBefore(note, 0),
         name: 'Dashboard/TeamLate',
       }),
     [graph, view.selectedWorkspaces],
@@ -1128,7 +1182,10 @@ export function Dashboard() {
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&
+          isOpenTaskWithDueBefore(
+            note,
+            timeFrameFromDateFilter(view.dateFilter),
+          ) &&
           note.dueDate !== undefined &&
           note.dueDate.getTime() >= startOfToday().getTime(),
         name: 'Dashboard/TeamTodo',
@@ -1187,7 +1244,10 @@ export function Dashboard() {
         predicate: (note) =>
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
-          isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&
+          isOpenTaskWithDueBefore(
+            note,
+            timeFrameFromDateFilter(view.dateFilter),
+          ) &&
           note.dueDate !== undefined &&
           note.dueDate.getTime() >= startOfToday().getTime(),
         name: 'Dashboard/TodoByWorkspace',
@@ -1225,7 +1285,10 @@ export function Dashboard() {
           note.type === NoteType.Task &&
           view.selectedWorkspaces.has(note.workspace) &&
           note.assignees.size > 0 &&
-          isOpenTaskWithDue(note, timeFrameFromDateFilter(view.dateFilter)) &&
+          isOpenTaskWithDueBefore(
+            note,
+            timeFrameFromDateFilter(view.dateFilter),
+          ) &&
           note.dueDate !== undefined &&
           note.dueDate.getTime() >= startOfToday().getTime(),
         name: 'Dashboard/TodoByAssignee',
@@ -1241,8 +1304,9 @@ export function Dashboard() {
     <div key="dashboardRoot" className={cn(styles.dashboardRoot)}>
       <div className={cn(styles.graphsRowTitleFirst)}>Tasks Status</div>
       <OverviewRow
-        teamLeaderLateQuery={teamLeaderLateQuery}
-        teamLeaderApprovalQuery={teamLeaderApprovalQuery}
+        myLateQuery={myLateQuery}
+        myInProgressQuery={myInProgressQuery}
+        myTeamLeaderApprovalQuery={myTeamLeaderApprovalQuery}
         teamLateQuery={teamLateQuery}
         teamTodoQuery={teamTodoQuery}
         teamCompletedQuery={teamCompletedQuery}
