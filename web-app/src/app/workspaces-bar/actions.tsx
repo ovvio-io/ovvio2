@@ -60,7 +60,8 @@ const useStyles = makeStyles(
       cursor: 'not-allowed',
     },
     actionIcon: {
-      marginRight: styleguide.gridbase,
+      marginLeft: '-10px',
+      marginRight: styleguide.gridbase * 0.5,
       basedOn: [layout.column, layout.centerCenter],
     },
     actionText: {
@@ -69,7 +70,7 @@ const useStyles = makeStyles(
       basedOn: [useTypographyStyles.button, layout.column, layout.centerCenter],
     },
   }),
-  'actions_2eb8a6',
+  'actions_2eb8a6'
 );
 
 const useStrings = createUseStrings(localization);

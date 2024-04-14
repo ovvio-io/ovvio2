@@ -64,7 +64,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
-export const DEFAULT_WIDTH = styleguide.gridbase * 22;
+export const DEFAULT_WIDTH = styleguide.gridbase * 18;
 
 const PAGE_SIZE = 30;
 
@@ -117,7 +117,9 @@ const useStyles = makeStyles(
     logoIcon: {
       flexShrink: 0,
     },
-    logoText: {},
+    logoText: {
+      overflow: 'auto',
+    },
 
     rotated: {
       transform: 'rotate(180deg)',
@@ -136,13 +138,15 @@ const useStyles = makeStyles(
       basedOn: [layout.column],
     },
     moreButton: {
+      paddingLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 1,
       marginLeft: styleguide.gridbase * 0.5,
     },
     toggleActions: {
       marginTop: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
-      marginRight: styleguide.gridbase * 3.5,
+      marginRight: styleguide.gridbase,
+      gap: styleguide.gridbase,
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       basedOn: [layout.row],
