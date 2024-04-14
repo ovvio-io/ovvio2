@@ -724,7 +724,7 @@ function WorkspaceListItem({
         </div>
         <WorkspaceCheckbox toggled={isSelected} />
       </div>
-      {!loaded && visible !== true ? (
+      {!loaded && visible && isSelected ? (
         <div
           className={cn(
             isSelected ? styles.loadingIndicatorContainer : styles.hidden
