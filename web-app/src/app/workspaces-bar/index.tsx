@@ -467,6 +467,7 @@ interface WorkspaceToggleViewProps {
   onUnselectAll: () => void;
   ofSettings: boolean | undefined;
   query: Query<Workspace, Workspace, WorkspaceGID>;
+  isHovered: boolean;
 }
 
 function WorkspaceToggleView({
@@ -474,6 +475,7 @@ function WorkspaceToggleView({
   onSelectAll,
   onUnselectAll,
   ofSettings,
+  isHovered,
 }: WorkspaceToggleViewProps) {
   const strings = useStrings();
   const styles = useStyles();
@@ -491,64 +493,66 @@ function WorkspaceToggleView({
     <div className={cn(styles.toggleView)}>
       <div className={cn(styles.workspacesHeader)}>
         <LabelSm>{strings.myWorkspaces}</LabelSm>
-        <Menu
-          renderButton={() => (
-            <div ref={moreButtonRef}>
-              <IconMore className={cn(styles.moreButton)} />
-            </div>
-          )}
-          popupClassName={cn(styles.workSpaceMenu)}
-          direction="out"
-          position="right"
-          align="end"
-        >
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: theme.secondary.s0,
-              }}
-            >
+        {isHovered && (
+          <Menu
+            renderButton={() => (
+              <div ref={moreButtonRef}>
+                <IconMore className={cn(styles.moreButton)} />
+              </div>
+            )}
+            popupClassName={cn(styles.workSpaceMenu)}
+            direction="out"
+            position="right"
+            align="end"
+          >
+            <div>
               <div
                 style={{
-                  padding: '0 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  backgroundColor: theme.secondary.s0,
                 }}
-              ></div>
-              <IconGroup style={{ marginRight: '8px' }} />
-              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
+              >
+                <div
+                  style={{
+                    padding: '0 4px',
+                  }}
+                ></div>
+                <IconGroup style={{ marginRight: '8px' }} />
+                <LabelSm className={styles.groupBy}>Group By:</LabelSm>
+              </div>
             </div>
-          </div>
 
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'Team';
-            }}
-          >
-            {'Team'}
-            {view.workspaceGrouping === 'Team' && <IconCheck />}
-          </MenuItem>
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'Team';
+              }}
+            >
+              {'Team'}
+              {view.workspaceGrouping === 'Team' && <IconCheck />}
+            </MenuItem>
 
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'Employee';
-            }}
-          >
-            {'Employee'}
-            {view.workspaceGrouping === 'Employee' && <IconCheck />}
-          </MenuItem>
-          <div style={{ marginTop: '8px' }} />
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'Employee';
+              }}
+            >
+              {'Employee'}
+              {view.workspaceGrouping === 'Employee' && <IconCheck />}
+            </MenuItem>
+            <div style={{ marginTop: '8px' }} />
 
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'none';
-            }}
-            icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
-          >
-            {'Ungroup'}
-            {view.workspaceGrouping === 'none' && <IconCheck />}
-          </MenuItem>
-        </Menu>
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'none';
+              }}
+              icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
+            >
+              {'Ungroup'}
+              {view.workspaceGrouping === 'none' && <IconCheck />}
+            </MenuItem>
+          </Menu>
+        )}
       </div>
       {!ofSettings && (
         <div className={cn(styles.toggleActions)}>
@@ -582,12 +586,14 @@ function WorkspaceListItem({
   ofSettings,
   visible,
   updateMaxWidth,
+  isHovered,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
   ofSettings: boolean | undefined;
   visible?: boolean;
   updateMaxWidth: (maxWidth: number) => void;
+  isHovered: boolean;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -728,91 +734,98 @@ function WorkspaceListItem({
         </div>
         <WorkspaceCheckbox toggled={isSelected} />
       </div>
-      {!loaded && visible && isSelected ? (
-        <div
-          className={cn(
-            isSelected ? styles.loadingIndicatorContainer : styles.hidden
-          )}
-        >
-          <IndeterminateProgressIndicator
-            className={cn(styles.loadingIndicator)}
-          />
-        </div>
-      ) : (
+      {isHovered && (
         <React.Fragment>
-          {groupId === 'myWorkspace' && (
-            <Button className={cn(styles.personalIcon)}>
-              <img
-                key="MyWorkspacePersonalIcon"
-                src="/icons/settings/Personal.svg"
-              />
-            </Button>
-          )}
-          {groupId === 'myWorkspace' && (
-            <Button className={cn(styles.personalIcon)}></Button>
-          )}
-
-          {groupId !== 'myWorkspace' && (
-            <Button
+          {' '}
+          {!loaded && visible && isSelected ? (
+            <div
               className={cn(
-                styles.pinButton,
-                groupId === 'pinned' && styles.pinButtonPinned
+                isSelected ? styles.loadingIndicatorContainer : styles.hidden
               )}
-              onClick={() =>
-                setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-              }
             >
-              {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-            </Button>
-          )}
-          {groupId !== 'myWorkspace' && (
-            <Menu
-              renderButton={renderButton}
-              direction="out"
-              position="right"
-              align="start"
-            >
-              {!isTemplate && (
-                <MenuItem
-                  onClick={() =>
-                    setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
-                  }
-                >
-                  {groupId === 'hidden' ? (
-                    <IconShow color={IconColor.Primary} />
-                  ) : (
-                    <IconHide />
-                  )}
-                  {groupId === 'hidden'
-                    ? strings.showWorkspace
-                    : strings.hideWorkspace}
-                </MenuItem>
+              <IndeterminateProgressIndicator
+                className={cn(styles.loadingIndicator)}
+              />
+            </div>
+          ) : (
+            <React.Fragment>
+              {groupId === 'myWorkspace' && (
+                <Button className={cn(styles.personalIcon)}>
+                  <img
+                    key="MyWorkspacePersonalIcon"
+                    src="/icons/settings/Personal.svg"
+                  />
+                </Button>
               )}
-              {groupId !== 'hidden' && (
-                <MenuItem
-                  onClick={() =>
-                    setWorkspaceState(
-                      groupId === 'templates' ? 'none' : 'template'
-                    )
-                  }
-                >
-                  {groupId === 'templates' ? (
-                    <IconTemplateUnset />
-                  ) : (
-                    <IconTemplateSet />
-                  )}
-
-                  {groupId === 'templates'
-                    ? strings.unsetTemplate
-                    : strings.setTemplate}
-                </MenuItem>
+              {groupId === 'myWorkspace' && (
+                <Button className={cn(styles.personalIcon)}></Button>
               )}
 
-              <MenuItem onClick={openWsSettings}>
-                <IconSettings />
-                {strings.workspaceSettings}
-              </MenuItem>
-            </Menu>
+              {groupId !== 'myWorkspace' && (
+                <Button
+                  className={cn(
+                    styles.pinButton,
+                    groupId === 'pinned' && styles.pinButtonPinned
+                  )}
+                  onClick={() =>
+                    setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+                  }
+                >
+                  {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+                </Button>
+              )}
+              {groupId !== 'myWorkspace' && (
+                <Menu
+                  renderButton={renderButton}
+                  direction="out"
+                  position="right"
+                  align="start"
+                >
+                  {!isTemplate && (
+                    <MenuItem
+                      onClick={() =>
+                        setWorkspaceState(
+                          groupId === 'hidden' ? 'none' : 'hidden'
+                        )
+                      }
+                    >
+                      {groupId === 'hidden' ? (
+                        <IconShow color={IconColor.Primary} />
+                      ) : (
+                        <IconHide />
+                      )}
+                      {groupId === 'hidden'
+                        ? strings.showWorkspace
+                        : strings.hideWorkspace}
+                    </MenuItem>
+                  )}
+                  {groupId !== 'hidden' && (
+                    <MenuItem
+                      onClick={() =>
+                        setWorkspaceState(
+                          groupId === 'templates' ? 'none' : 'template'
+                        )
+                      }
+                    >
+                      {groupId === 'templates' ? (
+                        <IconTemplateUnset />
+                      ) : (
+                        <IconTemplateSet />
+                      )}
+
+                      {groupId === 'templates'
+                        ? strings.unsetTemplate
+                        : strings.setTemplate}
+                    </MenuItem>
+                  )}
+
+                  <MenuItem onClick={openWsSettings}>
+                    <IconSettings />
+                    {strings.workspaceSettings}
+                  </MenuItem>
+                </Menu>
+              )}
+            </React.Fragment>
           )}
         </React.Fragment>
       )}
@@ -824,12 +837,14 @@ interface WorkspaceListProps {
   query: Query<Workspace, Workspace, WorkspaceGID>;
   ofSettings: boolean | undefined;
   updateMaxWidth: (maxWidth: number) => void;
+  isHovered: boolean;
 }
 
 function WorkspacesList({
   query,
   ofSettings,
   updateMaxWidth,
+  isHovered,
 }: WorkspaceListProps) {
   const graph = useGraphManager();
   const styles = useStyles();
@@ -936,6 +951,7 @@ function WorkspacesList({
             ofSettings={ofSettings}
             visible={contents.length < limit}
             updateMaxWidth={updateMaxWidth}
+            isHovered={isHovered}
           />
         );
       }
@@ -1151,9 +1167,11 @@ function WorkspaceBarInternal({
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
               ofSettings={ofSettings}
+              isHovered={isHovered}
             />
           </div>
           <WorkspacesList
+            isHovered={isHovered}
             query={query}
             ofSettings={ofSettings}
             updateMaxWidth={updateMaxWidth}
