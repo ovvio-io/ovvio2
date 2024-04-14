@@ -105,7 +105,7 @@ const useStyles = makeStyles((theme) => ({
     '::before': {},
   },
   titleTextContainer: {
-    padding: [0, styleguide.gridbase * 0],
+    padding: '0px 8px',
     position: 'relative',
   },
   strikethroughDone: {
@@ -147,7 +147,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'flex-start',
   },
   cardMiddle: {
-    padding: [styleguide.gridbase, 0, 0, 0],
+    padding: '8px 0px 0px 0px',
     display: 'flex',
     alignItems: 'center',
   },
@@ -178,8 +178,8 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexGrow: 2,
     justifyContent: 'space-between',
-    flexDirection: 'Column',
     alignItems: 'flex-end',
+    flexDirection: 'column',
   },
   workspaceIndicator: {
     maxWidth: styleguide.gridbase * 12,
@@ -214,7 +214,6 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     whiteSpace: 'nowrap',
   },
-
   SelectIconContainerzIndex: {
     zIndex: 0,
   },
