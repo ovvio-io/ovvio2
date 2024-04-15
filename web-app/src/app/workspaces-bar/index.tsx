@@ -78,6 +78,33 @@ const useStyles = makeStyles(
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
+      ':hover': {
+        moreButton: {
+          opacity: '1',
+        },
+        pinButtonPinned: {
+          opacity: 1,
+        },
+        pinButton: {
+          width: '4%',
+        },
+        personalIcon: {
+          width: '2.5%',
+          opacity: 1,
+        },
+        itemMenu: {
+          width: '2%',
+        },
+      },
+      ':active, :focus': {
+        moreButton: {
+          opacity: '1',
+        },
+        personalIcon: {
+          width: '2.5%',
+          opacity: 1,
+        },
+      },
     },
     groupBy: {
       color: theme.mono.m10,
@@ -138,6 +165,10 @@ const useStyles = makeStyles(
       basedOn: [layout.column],
     },
     moreButton: {
+      opacity: '0',
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity',
+      transitionDelay: '0.3s',
       paddingLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 1,
       marginLeft: styleguide.gridbase * 0.5,
@@ -174,9 +205,11 @@ const useStyles = makeStyles(
       ':hover': {
         itemMenu: {
           opacity: 1,
+          transitionDelay: '0s',
         },
         pinButton: {
           opacity: 1,
+          transitionDelay: '0s',
         },
       },
       basedOn: [layout.row],
@@ -235,8 +268,10 @@ const useStyles = makeStyles(
     },
     itemMenu: {
       opacity: 0,
+      width: '0%',
+      transitionDelay: '0.1s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginRight: styleguide.gridbase,
     },
     expander: {
@@ -266,20 +301,28 @@ const useStyles = makeStyles(
     },
     pinButton: {
       opacity: 0,
+      border: 'green',
+      width: '0%',
+      transitionDelay: '0.1s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
     },
     pinButtonPinned: {
       opacity: 1,
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity, width',
     },
     personalIcon: {
+      opacity: 0,
+      width: '0%',
+      transitionDelay: '0.1s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
-      paddingRight: '2px',
+      paddingRight: '1px',
       cursor: 'default',
     },
     loadingIndicator: {
@@ -467,7 +510,6 @@ interface WorkspaceToggleViewProps {
   onUnselectAll: () => void;
   ofSettings: boolean | undefined;
   query: Query<Workspace, Workspace, WorkspaceGID>;
-  isHovered: boolean;
 }
 
 function WorkspaceToggleView({
@@ -475,7 +517,6 @@ function WorkspaceToggleView({
   onSelectAll,
   onUnselectAll,
   ofSettings,
-  isHovered,
 }: WorkspaceToggleViewProps) {
   const strings = useStrings();
   const styles = useStyles();
@@ -487,72 +528,68 @@ function WorkspaceToggleView({
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
-  const moreButtonRef = useRef(null); //ADDED
-
   return (
     <div className={cn(styles.toggleView)}>
       <div className={cn(styles.workspacesHeader)}>
         <LabelSm>{strings.myWorkspaces}</LabelSm>
-        {isHovered && (
-          <Menu
-            renderButton={() => (
-              <div ref={moreButtonRef}>
-                <IconMore className={cn(styles.moreButton)} />
-              </div>
-            )}
-            popupClassName={cn(styles.workSpaceMenu)}
-            direction="out"
-            position="right"
-            align="end"
-          >
+        <Menu
+          renderButton={() => (
             <div>
+              <IconMore className={cn(styles.moreButton)} />
+            </div>
+          )}
+          popupClassName={cn(styles.workSpaceMenu)}
+          direction="out"
+          position="right"
+          align="end"
+        >
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: theme.secondary.s0,
+              }}
+            >
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: theme.secondary.s0,
+                  padding: '0 4px',
                 }}
-              >
-                <div
-                  style={{
-                    padding: '0 4px',
-                  }}
-                ></div>
-                <IconGroup style={{ marginRight: '8px' }} />
-                <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-              </div>
+              ></div>
+              <IconGroup style={{ marginRight: '8px' }} />
+              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
             </div>
+          </div>
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'Team';
-              }}
-            >
-              {'Team'}
-              {view.workspaceGrouping === 'Team' && <IconCheck />}
-            </MenuItem>
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'Team';
+            }}
+          >
+            {'Team'}
+            {view.workspaceGrouping === 'Team' && <IconCheck />}
+          </MenuItem>
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'Employee';
-              }}
-            >
-              {'Employee'}
-              {view.workspaceGrouping === 'Employee' && <IconCheck />}
-            </MenuItem>
-            <div style={{ marginTop: '8px' }} />
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'Employee';
+            }}
+          >
+            {'Employee'}
+            {view.workspaceGrouping === 'Employee' && <IconCheck />}
+          </MenuItem>
+          <div style={{ marginTop: '8px' }} />
 
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'none';
-              }}
-              icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
-            >
-              {'Ungroup'}
-              {view.workspaceGrouping === 'none' && <IconCheck />}
-            </MenuItem>
-          </Menu>
-        )}
+          <MenuItem
+            onClick={() => {
+              view.workspaceGrouping = 'none';
+            }}
+            icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
+          >
+            {'Ungroup'}
+            {view.workspaceGrouping === 'none' && <IconCheck />}
+          </MenuItem>
+        </Menu>
       </div>
       {!ofSettings && (
         <div className={cn(styles.toggleActions)}>
@@ -586,14 +623,12 @@ function WorkspaceListItem({
   ofSettings,
   visible,
   updateMaxWidth,
-  isHovered,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
   ofSettings: boolean | undefined;
   visible?: boolean;
   updateMaxWidth: (maxWidth: number) => void;
-  isHovered: boolean;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -734,98 +769,91 @@ function WorkspaceListItem({
         </div>
         <WorkspaceCheckbox toggled={isSelected} />
       </div>
-      {isHovered && (
+      {!loaded && visible && isSelected ? (
+        <div
+          className={cn(
+            isSelected ? styles.loadingIndicatorContainer : styles.hidden
+          )}
+        >
+          <IndeterminateProgressIndicator
+            className={cn(styles.loadingIndicator)}
+          />
+        </div>
+      ) : (
         <React.Fragment>
-          {' '}
-          {!loaded && visible && isSelected ? (
-            <div
-              className={cn(
-                isSelected ? styles.loadingIndicatorContainer : styles.hidden
-              )}
-            >
-              <IndeterminateProgressIndicator
-                className={cn(styles.loadingIndicator)}
+          {groupId === 'myWorkspace' && (
+            <Button className={cn(styles.personalIcon)}>
+              <img
+                key="MyWorkspacePersonalIcon"
+                src="/icons/settings/Personal.svg"
               />
-            </div>
-          ) : (
-            <React.Fragment>
-              {groupId === 'myWorkspace' && (
-                <Button className={cn(styles.personalIcon)}>
-                  <img
-                    key="MyWorkspacePersonalIcon"
-                    src="/icons/settings/Personal.svg"
-                  />
-                </Button>
-              )}
-              {groupId === 'myWorkspace' && (
-                <Button className={cn(styles.personalIcon)}></Button>
-              )}
+            </Button>
+          )}
+          {groupId === 'myWorkspace' && (
+            <Button className={cn(styles.personalIcon)}></Button>
+          )}
 
-              {groupId !== 'myWorkspace' && (
-                <Button
-                  className={cn(
-                    styles.pinButton,
-                    groupId === 'pinned' && styles.pinButtonPinned
-                  )}
+          {groupId !== 'myWorkspace' && (
+            <Button
+              className={cn(
+                styles.pinButton,
+                groupId === 'pinned' && styles.pinButtonPinned
+              )}
+              onClick={() =>
+                setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+              }
+            >
+              {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
+            </Button>
+          )}
+          {groupId !== 'myWorkspace' && (
+            <Menu
+              renderButton={renderButton}
+              direction="out"
+              position="right"
+              align="start"
+            >
+              {!isTemplate && (
+                <MenuItem
                   onClick={() =>
-                    setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
+                    setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
                   }
                 >
-                  {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
-                </Button>
+                  {groupId === 'hidden' ? (
+                    <IconShow color={IconColor.Primary} />
+                  ) : (
+                    <IconHide />
+                  )}
+                  {groupId === 'hidden'
+                    ? strings.showWorkspace
+                    : strings.hideWorkspace}
+                </MenuItem>
               )}
-              {groupId !== 'myWorkspace' && (
-                <Menu
-                  renderButton={renderButton}
-                  direction="out"
-                  position="right"
-                  align="start"
+              {groupId !== 'hidden' && (
+                <MenuItem
+                  onClick={() =>
+                    setWorkspaceState(
+                      groupId === 'templates' ? 'none' : 'template'
+                    )
+                  }
                 >
-                  {!isTemplate && (
-                    <MenuItem
-                      onClick={() =>
-                        setWorkspaceState(
-                          groupId === 'hidden' ? 'none' : 'hidden'
-                        )
-                      }
-                    >
-                      {groupId === 'hidden' ? (
-                        <IconShow color={IconColor.Primary} />
-                      ) : (
-                        <IconHide />
-                      )}
-                      {groupId === 'hidden'
-                        ? strings.showWorkspace
-                        : strings.hideWorkspace}
-                    </MenuItem>
-                  )}
-                  {groupId !== 'hidden' && (
-                    <MenuItem
-                      onClick={() =>
-                        setWorkspaceState(
-                          groupId === 'templates' ? 'none' : 'template'
-                        )
-                      }
-                    >
-                      {groupId === 'templates' ? (
-                        <IconTemplateUnset />
-                      ) : (
-                        <IconTemplateSet />
-                      )}
-
-                      {groupId === 'templates'
-                        ? strings.unsetTemplate
-                        : strings.setTemplate}
-                    </MenuItem>
+                  {groupId === 'templates' ? (
+                    <IconTemplateUnset />
+                  ) : (
+                    <IconTemplateSet />
                   )}
 
-                  <MenuItem onClick={openWsSettings}>
-                    <IconSettings />
-                    {strings.workspaceSettings}
-                  </MenuItem>
-                </Menu>
+                  {groupId === 'templates'
+                    ? strings.unsetTemplate
+                    : strings.setTemplate}
+                </MenuItem>
               )}
-            </React.Fragment>
+
+              <MenuItem onClick={openWsSettings}>
+                <IconSettings />
+                {strings.workspaceSettings}
+              </MenuItem>
+            </Menu>
           )}
         </React.Fragment>
       )}
@@ -837,14 +865,12 @@ interface WorkspaceListProps {
   query: Query<Workspace, Workspace, WorkspaceGID>;
   ofSettings: boolean | undefined;
   updateMaxWidth: (maxWidth: number) => void;
-  isHovered: boolean;
 }
 
 function WorkspacesList({
   query,
   ofSettings,
   updateMaxWidth,
-  isHovered,
 }: WorkspaceListProps) {
   const graph = useGraphManager();
   const styles = useStyles();
@@ -951,7 +977,6 @@ function WorkspacesList({
             ofSettings={ofSettings}
             visible={contents.length < limit}
             updateMaxWidth={updateMaxWidth}
-            isHovered={isHovered}
           />
         );
       }
@@ -1167,11 +1192,9 @@ function WorkspaceBarInternal({
               onSelectAll={selectAll}
               onUnselectAll={unselectAll}
               ofSettings={ofSettings}
-              isHovered={isHovered}
             />
           </div>
           <WorkspacesList
-            isHovered={isHovered}
             query={query}
             ofSettings={ofSettings}
             updateMaxWidth={updateMaxWidth}
