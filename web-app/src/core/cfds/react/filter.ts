@@ -267,22 +267,42 @@ export function useFilteredNotes<GT extends CoreValue>(
     switch (showPinned) {
       case 'pinned':
         res = [
-          buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
+          buildQueryOptions(
+            view.manager,
+            unpinnedSource,
+            true,
+            name + '-Pinned',
+          ),
           undefined,
         ];
         break;
 
       case 'all':
         res = [
-          buildQueryOptions(view, unpinnedSource, undefined, name + '-All'),
+          buildQueryOptions(
+            view.manager,
+            unpinnedSource,
+            undefined,
+            name + '-All',
+          ),
           undefined,
         ];
         break;
       case 'pinned-unpinned':
       default:
         res = [
-          buildQueryOptions(view, unpinnedSource, true, name + '-Pinned'),
-          buildQueryOptions(view, unpinnedSource, false, name + '-Unpinned'),
+          buildQueryOptions(
+            view.manager,
+            unpinnedSource,
+            true,
+            name + '-Pinned',
+          ),
+          buildQueryOptions(
+            view.manager,
+            unpinnedSource,
+            false,
+            name + '-Unpinned',
+          ),
         ];
         break;
     }
@@ -292,22 +312,12 @@ export function useFilteredNotes<GT extends CoreValue>(
 }
 
 function buildQueryOptions<GT extends CoreValue>(
-  view: Pick<
-    View,
-    | 'groupBy'
-    | 'noteType'
-    | 'selectedAssignees'
-    | 'showChecked'
-    | 'selectedTagIds'
-    | 'pivot'
-    | 'sortBy'
-    | 'selectedWorkspaces'
-    | 'dateFilter'
-  >,
+  viewMgr: VertexManager<View>,
   src: VertexSource,
   pinned: boolean | undefined,
   name: string,
 ): QueryOptions<Note, Note, GT> {
+  const view = viewMgr.getVertexProxy();
   const groupBy =
     view.groupBy === 'tag'
       ? groupByForTag(view.pivot || '')
@@ -330,18 +340,22 @@ function buildQueryOptions<GT extends CoreValue>(
 
   return {
     source: src as UnionQuery<any, Note>,
-    predicate: (x: Note) =>
-      !x.isLocal &&
-      x.type === view.noteType &&
-      x.parentType !== NoteType.Task &&
-      selectedWorkspaces.has(x.workspace) &&
-      (typeof pinned === 'undefined' || x.isPinned === pinned) &&
-      (view.showChecked === 'checked-unchecked' ||
-        x.isChecked === (view.showChecked === 'checked')) &&
-      (selectedAssignees.size === 0 ||
-        SetUtils.intersects(selectedAssignees, x.assignees)) &&
-      (tagNames.size === 0 || noteMatchesTags(x, tagNames)) &&
-      (!view.dateFilter || kDatePredicates[view.dateFilter](x)),
+    predicate: (x: Note) => {
+      const view = viewMgr.getVertexProxy();
+      return (
+        !x.isLocal &&
+        x.type === view.noteType &&
+        x.parentType !== NoteType.Task &&
+        selectedWorkspaces.has(x.workspace) &&
+        (typeof pinned === 'undefined' || x.isPinned === pinned) &&
+        (view.showChecked === 'checked-unchecked' ||
+          x.isChecked === (view.showChecked === 'checked')) &&
+        (selectedAssignees.size === 0 ||
+          SetUtils.intersects(selectedAssignees, x.assignees)) &&
+        (tagNames.size === 0 || noteMatchesTags(x, tagNames)) &&
+        (!view.dateFilter || kDatePredicates[view.dateFilter](x))
+      );
+    },
     sortBy: NOTE_SORT_BY[view.sortBy || SortBy.Default],
     name,
     groupBy: groupBy as GroupByFunction<Note, GT>,
