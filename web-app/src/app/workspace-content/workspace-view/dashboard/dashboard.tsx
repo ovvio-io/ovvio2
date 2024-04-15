@@ -159,14 +159,24 @@ function noteHasStatus(note: Note, childTagName: string): boolean {
   return false;
 }
 
-function isInProgress(note: Note): boolean {
-  for (const tag of note.tags.values()) {
-    const name = tag.name && tag.name.trim().toLowerCase();
-    if (name === 'in progress' || name === 'בעבודה') {
-      return true;
+function noteHasTag(note: Note, tags: string | string[]): boolean {
+  if (!(tags instanceof Array)) {
+    tags = [tags];
+  }
+  tags = tags.map((t) => t.trim().toLowerCase());
+  for (const t of note.tags.values()) {
+    const name = t.name && t.name.trim().toLowerCase();
+    for (const lookupName of tags) {
+      if (lookupName === name) {
+        return true;
+      }
     }
   }
   return false;
+}
+
+function isInProgress(note: Note): boolean {
+  return noteHasTag(note, ['In Progress', 'בעבודה']);
 }
 
 function isOpenTask(note: Note): boolean {
@@ -206,7 +216,15 @@ function isOpenTaskNotOverdue(note: Note): boolean {
 }
 
 function isTaskInTeamLeaderApproval(note: Note): boolean {
-  return isOpenTask(note) && noteHasStatus(note, 'לבדיקת ראש צוות');
+  return (
+    isOpenTask(note) &&
+    noteHasTag(note, [
+      'לבדיקת ראש צוות',
+      'For team lead approval',
+      'לבדיקת מנהל משרד',
+      'לאישור ראש צוות',
+    ])
+  );
 }
 
 function isTaskAssignedToTeamLeader(note: Note): boolean {
