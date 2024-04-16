@@ -312,7 +312,7 @@ const useStyles = makeStyles(
     expanderText: {
       color: 'inherit',
       basedOn: [layout.flexSpacer, useTypographyStyles.bold],
-      fontSize: 12,
+      fontSize: 13,
       textAlign: 'left',
       transitionDelay: '0.11s',
       ...styleguide.transition.short,
