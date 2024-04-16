@@ -360,6 +360,7 @@ const useStyles = makeStyles(
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
       paddingRight: '2px',
+      paddingLeft: '4px',
       cursor: 'default',
     },
     loadingIndicator: {
