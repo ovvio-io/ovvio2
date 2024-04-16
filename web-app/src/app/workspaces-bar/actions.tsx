@@ -133,9 +133,7 @@ export function WorkspaceBarActions({
         <div className={cn(styles.actionIcon)}>
           <IconPlus />
         </div>
-        <div className={cn(styles.actionText)}>
-          {view.workspaceBarCollapsed ? strings.addShort : strings.add}
-        </div>
+        <div className={cn(styles.actionText)}>{strings.add}</div>
       </div>
       {/* {!ofSettings && <HelpCenter view={view} />} */}
     </div>

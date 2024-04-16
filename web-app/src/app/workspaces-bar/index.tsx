@@ -64,7 +64,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
-export const DEFAULT_WIDTH = styleguide.gridbase * 22;
+export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
 const PAGE_SIZE = 30;
 
