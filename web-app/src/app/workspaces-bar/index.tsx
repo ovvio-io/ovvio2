@@ -355,7 +355,7 @@ const useStyles = makeStyles(
       ...styleguide.transition.short,
       transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
-      marginRight: styleguide.gridbase * 0.5 - 1,
+      marginRight: styleguide.gridbase * 0.5,
       paddingRight: '1px',
       cursor: 'default',
     },
