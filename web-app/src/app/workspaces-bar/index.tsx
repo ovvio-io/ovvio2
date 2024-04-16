@@ -85,23 +85,21 @@ const useStyles = makeStyles(
         },
         pinButtonPinned: {
           opacity: 1,
+          // marginLeft: styleguide.gridbase * 0.5,
         },
         pinButton: {
           width: '16px',
         },
         personalIcon: {
-          width: '10px',
+          width: '11px',
           opacity: 1,
-          paddingLeft: '4px',
         },
         itemMenu: {
-          width: '2%',
+          width: '4px',
         },
         expanderIcon: {
           marginRight: styleguide.gridbase * 3.5,
-        },
-        expanderText: {
-          fontSize: 14,
+          opacity: 1,
         },
       },
       ':hover, :focus-within': {
@@ -115,17 +113,15 @@ const useStyles = makeStyles(
           width: '16px',
         },
         personalIcon: {
-          width: '10px',
+          width: '11px',
           opacity: 1,
         },
         itemMenu: {
-          width: '2%',
+          width: '4px',
         },
         expanderIcon: {
           marginRight: styleguide.gridbase * 3.5,
-        },
-        expanderText: {
-          fontSize: 14,
+          opacity: 1,
         },
       },
     },
@@ -170,7 +166,6 @@ const useStyles = makeStyles(
     logoText: {
       overflow: 'auto',
     },
-
     rotated: {
       transform: 'rotate(180deg)',
     },
@@ -327,12 +322,13 @@ const useStyles = makeStyles(
       whiteSpace: 'nowrap',
     },
     expanderIcon: {
+      opacity: 0,
       color: 'inherit',
       marginRight: styleguide.gridbase,
       transform: 'rotate(90deg)',
       transitionDelay: '0.12s',
       ...styleguide.transition.short,
-      transitionProperty: 'margin-right',
+      transitionProperty: 'opacity, margin-right',
     },
     expanderIconOpen: {
       transform: 'rotate(270deg)',
@@ -343,8 +339,8 @@ const useStyles = makeStyles(
       width: '0%',
       transitionDelay: '0.1s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width',
-      marginLeft: styleguide.gridbase * 0.5,
+      transitionProperty: 'opacity, width, margin-left',
+      marginLeft: '2px',
       marginRight: styleguide.gridbase * 0.5,
     },
     pinButtonPinned: {
@@ -357,11 +353,10 @@ const useStyles = makeStyles(
       width: '0%',
       transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width, padding-left',
+      transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
-      marginRight: styleguide.gridbase * 0.5,
-      paddingRight: '2px',
-      paddingLeft: '0',
+      marginRight: styleguide.gridbase * 0.5 - 1,
+      paddingRight: '1px',
       cursor: 'default',
     },
     loadingIndicator: {
