@@ -87,23 +87,44 @@ const useStyles = makeStyles(
           opacity: 1,
         },
         pinButton: {
-          width: '4%',
+          width: '16px',
         },
         personalIcon: {
-          width: '2.5%',
+          width: '10px',
           opacity: 1,
         },
         itemMenu: {
           width: '2%',
         },
+        expanderIcon: {
+          marginRight: styleguide.gridbase * 3.5,
+        },
+        expanderText: {
+          fontSize: 14,
+        },
       },
-      ':active, :focus': {
+      ':hover, :focus-within': {
         moreButton: {
           opacity: '1',
         },
-        personalIcon: {
-          width: '2.5%',
+        pinButtonPinned: {
           opacity: 1,
+        },
+        pinButton: {
+          width: '16px',
+        },
+        personalIcon: {
+          width: '10px',
+          opacity: 1,
+        },
+        itemMenu: {
+          width: '2%',
+        },
+        expanderIcon: {
+          marginRight: styleguide.gridbase * 3.5,
+        },
+        expanderText: {
+          fontSize: 14,
         },
       },
     },
@@ -213,6 +234,11 @@ const useStyles = makeStyles(
           transitionDelay: '0s',
         },
       },
+      ':focus-within': {
+        pinButton: {
+          opacity: 1,
+        },
+      },
       basedOn: [layout.row],
     },
     itemTab: {
@@ -290,12 +316,22 @@ const useStyles = makeStyles(
     expanderText: {
       color: 'inherit',
       basedOn: [layout.flexSpacer, useTypographyStyles.bold],
+      fontSize: 12,
       textAlign: 'left',
+      transitionDelay: '0.11s',
+      ...styleguide.transition.short,
+      transitionProperty: 'font-size',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
     },
     expanderIcon: {
       color: 'inherit',
       marginRight: styleguide.gridbase,
       transform: 'rotate(90deg)',
+      transitionDelay: '0.12s',
+      ...styleguide.transition.short,
+      transitionProperty: 'margin-right',
     },
     expanderIconOpen: {
       transform: 'rotate(270deg)',
@@ -304,7 +340,7 @@ const useStyles = makeStyles(
       opacity: 0,
       border: 'green',
       width: '0%',
-      transitionDelay: '0.12s',
+      transitionDelay: '0.1s',
       ...styleguide.transition.short,
       transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
@@ -323,7 +359,7 @@ const useStyles = makeStyles(
       transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
-      paddingRight: '1px',
+      paddingRight: '2px',
       cursor: 'default',
     },
     loadingIndicator: {
@@ -343,7 +379,8 @@ const useStyles = makeStyles(
     },
     itemMenuOpen: {
       opacity: 1,
-      padding: '0px 6px 0px 0px',
+      marginRight: styleguide.gridbase - 2,
+      marginLeft: 2,
     },
     collapsedSettings: {
       display: 'flex',
