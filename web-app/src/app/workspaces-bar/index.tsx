@@ -64,7 +64,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
-export const DEFAULT_WIDTH = styleguide.gridbase * 22;
+export const DEFAULT_WIDTH = styleguide.gridbase * 18;
 
 const PAGE_SIZE = 30;
 
@@ -79,6 +79,33 @@ const useStyles = makeStyles(
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
+      ':hover': {
+        moreButton: {
+          opacity: '1',
+        },
+        pinButtonPinned: {
+          opacity: 1,
+        },
+        pinButton: {
+          width: '4%',
+        },
+        personalIcon: {
+          width: '2.5%',
+          opacity: 1,
+        },
+        itemMenu: {
+          width: '2%',
+        },
+      },
+      ':active, :focus': {
+        moreButton: {
+          opacity: '1',
+        },
+        personalIcon: {
+          width: '2.5%',
+          opacity: 1,
+        },
+      },
     },
     groupBy: {
       color: theme.mono.m10,
@@ -118,7 +145,9 @@ const useStyles = makeStyles(
     logoIcon: {
       flexShrink: 0,
     },
-    logoText: {},
+    logoText: {
+      overflow: 'auto',
+    },
 
     rotated: {
       transform: 'rotate(180deg)',
@@ -137,13 +166,19 @@ const useStyles = makeStyles(
       basedOn: [layout.column],
     },
     moreButton: {
+      opacity: '0',
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity',
+      transitionDelay: '0.12s',
+      paddingLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 1,
       marginLeft: styleguide.gridbase * 0.5,
     },
     toggleActions: {
       marginTop: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
-      marginRight: styleguide.gridbase * 3.5,
+      marginRight: styleguide.gridbase,
+      gap: styleguide.gridbase,
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       basedOn: [layout.row],
@@ -171,9 +206,11 @@ const useStyles = makeStyles(
       ':hover': {
         itemMenu: {
           opacity: 1,
+          transitionDelay: '0s',
         },
         pinButton: {
           opacity: 1,
+          transitionDelay: '0s',
         },
       },
       basedOn: [layout.row],
@@ -232,8 +269,10 @@ const useStyles = makeStyles(
     },
     itemMenu: {
       opacity: 0,
+      width: '0%',
+      transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginRight: styleguide.gridbase,
     },
     expander: {
@@ -263,20 +302,28 @@ const useStyles = makeStyles(
     },
     pinButton: {
       opacity: 0,
+      border: 'green',
+      width: '0%',
+      transitionDelay: '0.12s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
     },
     pinButtonPinned: {
       opacity: 1,
+      ...styleguide.transition.short,
+      transitionProperty: 'opacity, width',
     },
     personalIcon: {
+      opacity: 0,
+      width: '0%',
+      transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity',
+      transitionProperty: 'opacity, width',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
-      paddingRight: '2px',
+      paddingRight: '1px',
       cursor: 'default',
     },
     loadingIndicator: {
@@ -482,15 +529,13 @@ function WorkspaceToggleView({
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
-  const moreButtonRef = useRef(null); //ADDED
-
   return (
     <div className={cn(styles.toggleView)}>
       <div className={cn(styles.workspacesHeader)}>
         <LabelSm>{strings.myWorkspaces}</LabelSm>
         <Menu
           renderButton={() => (
-            <div ref={moreButtonRef}>
+            <div>
               <IconMore className={cn(styles.moreButton)} />
             </div>
           )}
