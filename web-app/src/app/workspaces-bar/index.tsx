@@ -92,6 +92,7 @@ const useStyles = makeStyles(
         personalIcon: {
           width: '10px',
           opacity: 1,
+          paddingLeft: '4px',
         },
         itemMenu: {
           width: '2%',
@@ -356,11 +357,11 @@ const useStyles = makeStyles(
       width: '0%',
       transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width',
+      transitionProperty: 'opacity, width, padding-left',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
       paddingRight: '2px',
-      paddingLeft: '4px',
+      paddingLeft: '0',
       cursor: 'default',
     },
     loadingIndicator: {
