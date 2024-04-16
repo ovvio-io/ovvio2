@@ -64,7 +64,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 
-export const DEFAULT_WIDTH = styleguide.gridbase * 18;
+export const DEFAULT_WIDTH = styleguide.gridbase * 22;
 
 const PAGE_SIZE = 30;
 
@@ -79,51 +79,6 @@ const useStyles = makeStyles(
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
       basedOn: [layout.column],
-      ':hover': {
-        moreButton: {
-          opacity: '1',
-        },
-        pinButtonPinned: {
-          opacity: 1,
-          // marginLeft: styleguide.gridbase * 0.5,
-        },
-        pinButton: {
-          width: '16px',
-        },
-        personalIcon: {
-          width: '11px',
-          opacity: 1,
-        },
-        itemMenu: {
-          width: '4px',
-        },
-        expanderIcon: {
-          marginRight: styleguide.gridbase * 3.5,
-          opacity: 1,
-        },
-      },
-      ':hover, :focus-within': {
-        moreButton: {
-          opacity: '1',
-        },
-        pinButtonPinned: {
-          opacity: 1,
-        },
-        pinButton: {
-          width: '16px',
-        },
-        personalIcon: {
-          width: '11px',
-          opacity: 1,
-        },
-        itemMenu: {
-          width: '4px',
-        },
-        expanderIcon: {
-          marginRight: styleguide.gridbase * 3.5,
-          opacity: 1,
-        },
-      },
     },
     groupBy: {
       color: theme.mono.m10,
@@ -163,9 +118,8 @@ const useStyles = makeStyles(
     logoIcon: {
       flexShrink: 0,
     },
-    logoText: {
-      overflow: 'auto',
-    },
+    logoText: {},
+
     rotated: {
       transform: 'rotate(180deg)',
     },
@@ -183,19 +137,13 @@ const useStyles = makeStyles(
       basedOn: [layout.column],
     },
     moreButton: {
-      opacity: '0',
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity',
-      transitionDelay: '0.12s',
-      paddingLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 1,
       marginLeft: styleguide.gridbase * 0.5,
     },
     toggleActions: {
       marginTop: styleguide.gridbase,
       marginLeft: styleguide.gridbase,
-      marginRight: styleguide.gridbase,
-      gap: styleguide.gridbase,
+      marginRight: styleguide.gridbase * 3.5,
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       basedOn: [layout.row],
@@ -223,14 +171,7 @@ const useStyles = makeStyles(
       ':hover': {
         itemMenu: {
           opacity: 1,
-          transitionDelay: '0s',
         },
-        pinButton: {
-          opacity: 1,
-          transitionDelay: '0s',
-        },
-      },
-      ':focus-within': {
         pinButton: {
           opacity: 1,
         },
@@ -291,10 +232,8 @@ const useStyles = makeStyles(
     },
     itemMenu: {
       opacity: 0,
-      width: '0%',
-      transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width',
+      transitionProperty: 'opacity',
       marginRight: styleguide.gridbase,
     },
     expander: {
@@ -312,51 +251,32 @@ const useStyles = makeStyles(
     expanderText: {
       color: 'inherit',
       basedOn: [layout.flexSpacer, useTypographyStyles.bold],
-      fontSize: 13,
       textAlign: 'left',
-      transitionDelay: '0.11s',
-      ...styleguide.transition.short,
-      transitionProperty: 'font-size',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
     },
     expanderIcon: {
-      opacity: 0,
       color: 'inherit',
       marginRight: styleguide.gridbase,
       transform: 'rotate(90deg)',
-      transitionDelay: '0.12s',
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity, margin-right',
     },
     expanderIconOpen: {
       transform: 'rotate(270deg)',
     },
     pinButton: {
       opacity: 0,
-      border: 'green',
-      width: '0%',
-      transitionDelay: '0.1s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width, margin-left',
-      marginLeft: '2px',
+      transitionProperty: 'opacity',
+      marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
     },
     pinButtonPinned: {
       opacity: 1,
-      ...styleguide.transition.short,
-      transitionProperty: 'opacity, width',
     },
     personalIcon: {
-      opacity: 0,
-      width: '0%',
-      transitionDelay: '0.11s',
       ...styleguide.transition.short,
-      transitionProperty: 'opacity, width',
+      transitionProperty: 'opacity',
       marginLeft: styleguide.gridbase * 0.5,
       marginRight: styleguide.gridbase * 0.5,
-      paddingRight: '1px',
+      paddingRight: '2px',
       cursor: 'default',
     },
     loadingIndicator: {
@@ -376,8 +296,7 @@ const useStyles = makeStyles(
     },
     itemMenuOpen: {
       opacity: 1,
-      marginRight: styleguide.gridbase - 2,
-      marginLeft: 2,
+      padding: '0px 6px 0px 0px',
     },
     collapsedSettings: {
       display: 'flex',
@@ -563,13 +482,15 @@ function WorkspaceToggleView({
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
 
+  const moreButtonRef = useRef(null); //ADDED
+
   return (
     <div className={cn(styles.toggleView)}>
       <div className={cn(styles.workspacesHeader)}>
         <LabelSm>{strings.myWorkspaces}</LabelSm>
         <Menu
           renderButton={() => (
-            <div>
+            <div ref={moreButtonRef}>
               <IconMore className={cn(styles.moreButton)} />
             </div>
           )}
