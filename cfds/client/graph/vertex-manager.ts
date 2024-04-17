@@ -76,7 +76,7 @@ export interface VertexBuilder {
     manager: VertexManager,
     record: Record,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined
+    config: VertexConfig | undefined,
   ): Vertex;
 }
 
@@ -100,6 +100,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private readonly _key: string;
   private readonly _vertexConfig: VertexConfig;
   private readonly _commitDelayTimer: SimpleTimer;
+  private readonly _cachedFieldProxies: Map<unknown, unknown>;
   private _record: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
@@ -117,7 +118,7 @@ export class VertexManager<V extends Vertex = Vertex>
     graph: GraphManager,
     key: string,
     initialState?: Record,
-    local?: boolean
+    local?: boolean,
   ) {
     super();
     this._graph = graph;
@@ -126,12 +127,13 @@ export class VertexManager<V extends Vertex = Vertex>
       isLocal: local === true,
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
+    this._cachedFieldProxies = new Map();
     // Run local lookup for this key in all known repositories
     let repo: Repository<MemRepoStorage> | undefined =
       graph.repositoryForKey(key)[1];
     if (!repo && initialState) {
       repo = graph.repository(
-        repositoryForRecord(key, initialState, graph.rootKey)
+        repositoryForRecord(key, initialState, graph.rootKey),
       );
     }
     if (repo && repo.hasKey(key)) {
@@ -385,7 +387,7 @@ export class VertexManager<V extends Vertex = Vertex>
       this,
       this.record,
       this._vertex,
-      this._vertexConfig
+      this._vertexConfig,
     );
     this.rebuildVertexProxy();
   }
@@ -409,7 +411,7 @@ export class VertexManager<V extends Vertex = Vertex>
         } else if (this.scheme.hasField(prop)) {
           assert(
             this.scheme.isRequiredField(prop) === false,
-            `Attempting to delete required field '${prop} of '${this.namespace}'`
+            `Attempting to delete required field '${prop} of '${this.namespace}'`,
           );
           success = target.record.delete(prop);
           this._hasLocalEdits = true;
@@ -463,17 +465,22 @@ export class VertexManager<V extends Vertex = Vertex>
         // Enable direct mutations of Set and Dictionary instances which saves
         // tons of boilerplate on the client's side.
         // TODO: Cache proxies if needed
+        if (this._cachedFieldProxies.has(value)) {
+          return this._cachedFieldProxies.get(value);
+        }
         if (value instanceof Set) {
           const setProxy = new SetProxy(value, (oldValue) => {
             target[prop as keyof T] = setProxy._target as T[keyof T];
             this.vertexDidMutate([prop as string, true, oldValue]);
           });
+          this._cachedFieldProxies.set(value, setProxy);
           return setProxy;
         } else if (isDictionary(value)) {
           const dictProxy = new DictionaryProxy(value, (oldValue) => {
             target[prop as keyof T] = dictProxy._target as T[keyof T];
             this.vertexDidMutate([prop as string, true, oldValue as CoreValue]);
           });
+          this._cachedFieldProxies.set(value, dictProxy);
           return dictProxy;
         }
         return value;
@@ -497,12 +504,13 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   vertexDidMutate(
     mutations: MutationPack,
-    dynamicFields?: DynamicFieldsSnapshot
+    dynamicFields?: DynamicFieldsSnapshot,
   ): void {
     mutations = mutationPackOptimize(mutations);
     const vertex = this.getVertex();
     const addedEdges: Edge[] = [];
     const removedEdges: Edge[] = [];
+    this._cachedFieldProxies.clear();
     // Update our graph on ref changes
     for (const [prop, local, oldValue] of mutationPackIter(mutations)) {
       if (prop === VERT_PROXY_CHANGE_FIELD) {
@@ -565,7 +573,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
   private mutationsForDynamicFields(
     outMutations: MutationPack,
-    snapshot: DynamicFieldsSnapshot
+    snapshot: DynamicFieldsSnapshot,
   ): MutationPack {
     if (snapshot.hasPendingChanges !== this.hasPendingChanges) {
       outMutations = mutationPackAppend(outMutations, [
@@ -633,7 +641,7 @@ export class VertexManager<V extends Vertex = Vertex>
           vertex.record.scheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
         ) {
           newRecValue = projectPointers(oldRecValue, newRecValue, (ptr) =>
-            this.graph.ptrFilterFunc(ptr.key)
+            this.graph.ptrFilterFunc(ptr.key),
           );
         }
         vertex.record.set(fieldName, newRecValue);
@@ -673,7 +681,7 @@ export class VertexManager<V extends Vertex = Vertex>
     for (const key of vertex.getLocalFields()) {
       if (onlyFields && !onlyFields.includes(key)) continue;
       local[key] = coreValueClone(
-        vertex[key as keyof Vertex] as unknown as CoreValue
+        vertex[key as keyof Vertex] as unknown as CoreValue,
       );
     }
 
@@ -708,7 +716,7 @@ function getDeleteMethodName(prop: string): string {
 function projectRichTextPointers(
   srcRec: Record,
   dstRec: Record,
-  filter: (ptr: PointerValue) => boolean
+  filter: (ptr: PointerValue) => boolean,
 ): void {
   const srcScheme = srcRec.scheme;
   for (const [fieldName, type] of Object.entries(dstRec.scheme.getFields())) {
@@ -818,7 +826,7 @@ class DictionaryProxy<K, V>
 
   constructor(
     target: Dictionary<K, V>,
-    callback: DidMutateCallback<Dictionary<K, V>>
+    callback: DidMutateCallback<Dictionary<K, V>>,
   ) {
     this._target = target;
     this._didMutateCallback = callback;
@@ -857,7 +865,7 @@ class DictionaryProxy<K, V>
     if (
       !coreValueEquals(
         target.get(key) as unknown as CoreValue,
-        value as unknown as CoreValue
+        value as unknown as CoreValue,
       )
     ) {
       const oldValue = new Map(target);
