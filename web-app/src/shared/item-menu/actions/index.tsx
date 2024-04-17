@@ -255,47 +255,47 @@ export function DeleteCardAction({
   );
 }
 
-// interface DuplicateCardActionProps extends CardActionProps {
-//   editorRootKey?: string;
-//   source: UISource;
-// }
-// export function DuplicateCardAction({
-//   editorRootKey,
-//   cardManager,
-//   source,
-//   ...props
-// }: DuplicateCardActionProps) {
-//   const graph = useGraphManager();
-//   const logger = useLogger();
-//   const navigate = useNavigate();
+interface DuplicateCardActionProps extends CardActionProps {
+  editorRootKey?: string;
+  source: UISource;
+}
+export function DuplicateCardAction({
+  editorRootKey,
+  cardManager,
+  source,
+  ...props
+}: DuplicateCardActionProps) {
+  const graph = useGraphManager();
+  const logger = useLogger();
+  const navigate = useNavigate();
 
-//   const onDuplicate = () => {
-//     const newCard = duplicateCard(graph, cardManager.key)!;
-//     logger.log({
-//       severity: 'EVENT',
-//       event: 'Duplicate',
-//       vertex: cardManager.key,
-//       target: newCard?.key,
-//       source,
-//     });
+  const onDuplicate = () => {
+    const newCard = duplicateCard(graph, cardManager.key)!;
+    logger.log({
+      severity: 'EVENT',
+      event: 'Duplicate',
+      vertex: cardManager.key,
+      target: newCard?.key,
+      source,
+    });
 
-//     if (editorRootKey === cardManager.key) {
-//       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
-//       return;
-//     }
+    if (editorRootKey === cardManager.key) {
+      navigate(`${newCard?.workspace.key}/${newCard?.key}`);
+      return;
+    }
 
-//     // TODO: Wiring for new editor
-//   };
+    // TODO: Wiring for new editor
+  };
 
-//   return (
-//     <MenuAction
-//       {...props}
-//       onClick={onDuplicate}
-//       IconComponent={IconDuplicate}
-//       text="Duplicate"
-//     />
-//   );
-// }
+  return (
+    <MenuAction
+      {...props}
+      onClick={onDuplicate}
+      IconComponent={IconDuplicate}
+      text="Duplicate"
+    />
+  );
+}
 interface CopyIntoCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
@@ -326,7 +326,7 @@ export function CopyIntoCardAction({
     searchTerm,
     partialWorkspaces,
     (t) => t.name,
-    Number.MAX_SAFE_INTEGER
+    Number.MAX_SAFE_INTEGER,
   );
 
   const onCopyInto = () => {

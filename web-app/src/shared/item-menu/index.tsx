@@ -14,6 +14,7 @@ import {
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,
+  DuplicateCardAction,
 } from './actions/index.tsx';
 import { Note, NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
@@ -88,13 +89,13 @@ export default function CardMenuView({
           {partialNote.parentNote && (
             <ViewInNoteAction cardManager={cardManager} source={source} />
           )}
-          {/* {partialNote.type === NoteType.Note && (
+          {partialNote.type === NoteType.Note && (
             <DuplicateCardAction
               cardManager={cardManager}
               source={source}
               editorRootKey={editorRootKey}
             />
-          )} */}
+          )}
           {/* {partialNote.type === NoteType.Note && (
             <CopyIntoCardAction
               cardManager={cardManager}
