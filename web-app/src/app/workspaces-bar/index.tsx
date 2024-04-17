@@ -640,7 +640,6 @@ function WorkspaceListItem({
 
   useEffect(() => {
     const measuredWidth = measureTextWidth(name, '14px PoppinsSemiBold');
-    console.log(`text width = ${measuredWidth}`);
     updateMaxWidth(measuredWidth + extraPadding);
   }, [name, updateMaxWidth]);
 
