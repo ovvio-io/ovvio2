@@ -8,7 +8,14 @@ for (let i = 0; i < 10; ++i) {
 }
 
 export function allocateBuffer(minBytes: number): Uint8Array {
-  const cachedBuff = gPendingBuffers.pop();
+  let cachedBuff: Uint8Array | undefined;
+  for (let i = 0; i < gPendingBuffers.length; ++i) {
+    const buf = gPendingBuffers[i];
+    if (buf.byteLength >= minBytes) {
+      cachedBuff = gPendingBuffers.splice(i, 1)[0];
+      break;
+    }
+  }
   if (cachedBuff) {
     cachedBuff.fill(0);
     const res = cachedBuff.subarray(0, minBytes);
