@@ -45,17 +45,10 @@ export function cacheBufferForReuse(buff: Uint8Array): void {
   }
 }
 
-/**
- * NOTE: The returned buffer is assumed to be returned by a future call to
- * cacheBufferForReuse().
- *
- * @param b64 The string to decode.
- * @returns The resulting bytes, as a cache-able buffer.
- */
 export function decodeBase64(b64: string): Uint8Array {
   const binString = atob(b64);
   const size = binString.length;
-  const bytes = allocateBuffer(size);
+  const bytes = new Uint8Array(size);
   for (let i = 0; i < size; i++) {
     bytes[i] = binString.charCodeAt(i);
   }
