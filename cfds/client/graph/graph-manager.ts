@@ -696,10 +696,8 @@ export class GraphManager
 
   private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
-    mgr.attach(
-      EVENT_DID_CHANGE,
-      (pack: MutationPack, refsChange: RefsChange, RefsChange: RefsChange) =>
-        this._vertexDidChange(key, pack, refsChange),
+    mgr.attach(EVENT_DID_CHANGE, (pack: MutationPack) =>
+      this._vertexDidChange(key, pack),
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
@@ -708,17 +706,11 @@ export class GraphManager
     );
   }
 
-  private _vertexDidChange(
-    key: string,
-    pack: MutationPack,
-    refsChange: RefsChange,
-  ): void {
+  private _vertexDidChange(key: string, pack: MutationPack): void {
     const pendingMutations = this._pendingMutations;
     pack = mutationPackAppend(pendingMutations.get(key), pack);
     pendingMutations.set(key, pack);
     this._processPendingMutationsTimer.schedule();
-    // this.emit(EVENT_VERTEX_DID_CHANGE, key, pack, refsChange);
-    // this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
   }
 
   private _processPendingMutations(): void {

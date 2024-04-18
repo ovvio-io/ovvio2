@@ -108,7 +108,8 @@ export class VertexManager<V extends Vertex = Vertex>
   private _commitPromise: Promise<void> | undefined;
   private _hasLocalEdits = false;
   private _reportedInitialFields = false;
-  card: any;
+  private readonly _emitDelayTimer: SimpleTimer;
+  private _pendingMutationsToEmit: MutationPack;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -128,6 +129,9 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     this._cachedFieldProxies = new Map();
+    this._emitDelayTimer = new SimpleTimer(100, false, () =>
+      this.flushPendingMutations(),
+    );
     // Run local lookup for this key in all known repositories
     let repo: Repository<MemRepoStorage> | undefined =
       graph.repositoryForKey(key)[1];
@@ -545,15 +549,19 @@ export class VertexManager<V extends Vertex = Vertex>
     if (mutationPackIsEmpty(mutations)) {
       return;
     }
-    const refsChange: RefsChange = {
-      added: addedEdges,
-      removed: removedEdges,
-    };
+    // const refsChange: RefsChange = {
+    //   added: addedEdges,
+    //   removed: removedEdges,
+    // };
     if (mutationPackHasLocal(mutations)) {
       ++this._localMutationsCount;
     }
     // Broadcast the mutations of our vertex
-    this.emit(EVENT_DID_CHANGE, mutations, refsChange);
+    // this.emit(EVENT_DID_CHANGE, mutations, refsChange);
+    this._pendingMutationsToEmit = mutationPackOptimize(
+      mutationPackAppend(this._pendingMutationsToEmit, mutations),
+    );
+    this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
     const sideEffects = vertex.didMutate(mutations);
     if (!mutationPackIsEmpty(sideEffects)) {
@@ -562,6 +570,13 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.graph.repositoryReady(this.repositoryId)) {
       this.scheduleCommitIfNeeded();
     }
+  }
+
+  flushPendingMutations(): void {
+    const mutations = this._pendingMutationsToEmit;
+    this._pendingMutationsToEmit = undefined;
+    this._emitDelayTimer.unschedule();
+    this.emit(EVENT_DID_CHANGE, mutations);
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {
