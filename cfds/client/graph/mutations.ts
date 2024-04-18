@@ -9,7 +9,7 @@ export type MutationOrigin = boolean | 'user' | 'remote' | 'rule';
 export type Mutation = [
   fieldname: string,
   source: MutationOrigin,
-  value: CoreValue
+  value: CoreValue,
 ];
 
 export type MutationPack = Mutation | Mutation[] | undefined | void;
@@ -26,7 +26,7 @@ function isMutation(pack: MutationPack): pack is Mutation {
 
 export function mutationPackAppend(
   pack: MutationPack,
-  mutation: MutationPack
+  mutation: MutationPack,
 ): MutationPack {
   // NOP
   if (mutation === undefined) {
@@ -83,7 +83,7 @@ export function mutationPackLength(pack: MutationPack): number {
 
 export function mutationPackGet(
   pack: MutationPack,
-  idx: number
+  idx: number,
 ): Mutation | undefined {
   if (pack === undefined) {
     return undefined;
@@ -126,7 +126,8 @@ export function mutationPackOptimize(pack: MutationPack): MutationPack {
   if (pack === undefined || isMutation(pack) || pack.length <= 1) {
     return pack;
   }
-
+  // Keep the first occurrence of of each field, which also preserves the
+  // original value. Later, internal, mutations can be safely discarded.
   const seenFields: string[] = [];
   for (let i = 0; i < pack.length; ++i) {
     const [fieldName] = pack[i];
@@ -196,7 +197,7 @@ export function mutationPackHasField(
 
 export function mutationPackDeleteField(
   pack: MutationPack,
-  fieldName: string
+  fieldName: string,
 ): MutationPack {
   if (pack === undefined) {
     return undefined;
@@ -218,7 +219,7 @@ export function mutationPackDeleteField(
 
 export function mutationPackSubtractFields(
   pack: MutationPack,
-  toRemoveField: MutationPack
+  toRemoveField: MutationPack,
 ): MutationPack {
   for (const m of mutationPackIter(toRemoveField)) {
     pack = mutationPackDeleteField(pack, m[0]);
