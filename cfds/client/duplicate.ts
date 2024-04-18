@@ -46,7 +46,6 @@ export function duplicateCard(
 
   const outRecords: { [s: string]: CoreObject } = {};
   const newRootKey = deepDuplicateImpl(graph, rootKey, outRecords, undefined);
-  debugger;
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 

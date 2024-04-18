@@ -19,14 +19,17 @@ import { Button } from './buttons.tsx';
 import Popper from './popper.tsx';
 import { Text } from './typography.tsx';
 import Layer from './layer.tsx';
-import { IconExpander } from './icons/index.ts';
 import Arrow from './arrow.tsx';
 import { brandLightTheme as theme1 } from '../theme.tsx';
 
-export const LineSeparator = () => (
+interface LineSeparatorProps {
+  height?: number;
+}
+
+export const LineSeparator: React.FC<LineSeparatorProps> = ({ height = 2 }) => (
   <div
     style={{
-      height: '1px',
+      height: `${height}px`,
       backgroundColor: theme1.secondary.s2,
       width: '100%',
       display: 'flex',
@@ -38,6 +41,26 @@ const useStyles = makeStyles((theme) => ({
   backdropHovered: {
     backgroundColor: theme1.secondary.s3,
   },
+  // item: {
+  //   ...styleguide.textStyles.text,
+  //   backgroundColor: 'white',
+  //   boxSizing: 'border-box',
+  //   height: styleguide.gridbase * 4,
+  //   minWidth: styleguide.gridbase * 15,
+  //   maxWidth: styleguide.gridbase * 27,
+  //   padding: '8px 16px 8px 8px',
+  //   color: theme.background.text,
+  //   cursor: 'pointer',
+  //   ':hover': {
+  //     backgroundColor: theme1.secondary.s3,
+  //   },
+  //   flexShrink: 0,
+  //   transition: 'background-color 0.15s linear',
+  //   alignItems: 'center',
+  //   basedOn: [layout.row],
+  //   display: 'flex',
+  //   width: 'auto',
+  // },
   item: {
     ...styleguide.textStyles.text,
     backgroundColor: 'white',
@@ -57,11 +80,18 @@ const useStyles = makeStyles((theme) => ({
     basedOn: [layout.row],
     display: 'flex',
     width: 'auto',
+    borderBottom: `2px solid ${theme1.secondary.s2}`,
+    // ':last-child': {
+    //   borderBottom: 'none',
+    // },
   },
   icon: {
-    marginRight: styleguide.gridbase,
-    width: '16px',
-    height: '16px',
+    padding: 0,
+    height: styleguide.gridbase * 2,
+    width: styleguide.gridbase * 2,
+    minWidth: styleguide.gridbase * 2,
+    margin: '0 styleguide.gridbase * 0.5',
+    basedOn: [layout.row, layout.centerCenter],
   },
   actionIcon: {
     marginRight: styleguide.gridbase,
@@ -95,17 +125,10 @@ const useStyles = makeStyles((theme) => ({
   iconMenu: {
     ...layout.row.rules,
     boxSizing: 'border-box',
-    padding: [styleguide.gridbase * 2, styleguide.gridbase * 1.5],
+    padding: `${styleguide.gridbase * 2}px ${styleguide.gridbase * 1.5}px`,
     alignItems: 'center',
   },
-  iconItem: {
-    padding: 0,
-    height: styleguide.gridbase * 3,
-    width: styleguide.gridbase * 3,
-    minWidth: styleguide.gridbase * 3,
-    margin: [0, styleguide.gridbase * 0.5],
-    basedOn: [layout.row, layout.centerCenter],
-  },
+
   backdrop: {
     position: 'absolute',
     top: 0,
@@ -448,14 +471,7 @@ export default function Menu({
         className={cn(popupClassName, styles.dropDown)}
         style={minWidthStyle}
       >
-        <div className={styles.MenuContainer}>
-          {Children.toArray(children).map((child, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <LineSeparator />}
-              {child}
-            </React.Fragment>
-          ))}
-        </div>
+        <div className={styles.MenuContainer}>{Children.toArray(children)}</div>
         {!withoutArrow && (
           <Arrow
             containerPosition={`${position!}ArrowContainer`}
@@ -466,6 +482,37 @@ export default function Menu({
         )}
       </div>
     </Popper>
+
+    // <Popper
+    //   className={undefined}
+    //   anchor={anchor.current!}
+    //   open={open}
+    //   position={position!}
+    //   align={align}
+    //   direction={direction}
+    // >
+    //   <div
+    //     className={cn(popupClassName, styles.dropDown)}
+    //     style={minWidthStyle}
+    //   >
+    //     <div className={styles.MenuContainer}>
+    //       {Children.toArray(children).map((child, index) => (
+    //         <React.Fragment key={index}>
+    //           {index > 0 && <LineSeparator />}
+    //           {child}
+    //         </React.Fragment>
+    //       ))}
+    //     </div>
+    //     {!withoutArrow && (
+    //       <Arrow
+    //         containerPosition={`${position!}ArrowContainer`}
+    //         position={position!}
+    //         shadowPosition={`${position!}Shadow`}
+    //         oneCellMenu={oneCellMenu}
+    //       />
+    //     )}
+    //   </div>
+    // </Popper>
   );
 
   return (

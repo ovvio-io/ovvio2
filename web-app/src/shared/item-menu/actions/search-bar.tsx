@@ -10,6 +10,7 @@ import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import { IconSearch } from '../../../../../styles/components/new-icons/icon-search.tsx';
 import { brandLightTheme as theme } from '../../../../../styles/theme.tsx';
+import { LineSeparator } from '../../../../../styles/components/menu.tsx';
 
 const useStyles = makeStyles(() => ({
   base: {

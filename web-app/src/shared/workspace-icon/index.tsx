@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { Workspace } from '../../../../cfds/client/graph/vertices/index.ts';
 import { layout, styleguide } from '../../../../styles/index.ts';
@@ -121,42 +121,48 @@ export function useWorkspaceColor(
   const colorMap = partialSettings.workspaceColors;
   const workspacesQuery = useSharedQuery('workspaces');
 
-  if (!workspaceId) {
-    return COLOR_MAP[0];
-  }
-
-  if (VertexIdGetKey(workspaceId) === `${graph.rootKey}-ws`) {
-    return PERSONAL_WS_COLOR;
-  }
-
-  const workspaceKey = VertexIdGetKey(workspaceId);
-
-  // Return the saved color only if it's valid within the current theme
-  const existingColor = colorMap.get(workspaceKey);
-  if (existingColor && existingColor >= 0 && existingColor < COLOR_MAP.length) {
-    return COLOR_MAP[existingColor];
-  }
-  // Prevent color tagging for demo workspaces
-  for (const key of workspacesQuery.keys()) {
-    if (graph.getVertex<Workspace>(key).isDemoData) {
-      colorMap.delete(key);
+  return useMemo(() => {
+    if (!workspaceId) {
+      return COLOR_MAP[0];
     }
-  }
 
-  // Find the least used color and use that for our workspace
-  const colorCounts: number[] = [];
-  for (let i = 0; i < COLOR_MAP.length; ++i) {
-    colorCounts.push(0);
-  }
-  for (const color of colorMap.values()) {
-    if (color >= 0 && color < COLOR_MAP.length) {
-      ++colorCounts[color];
+    if (VertexIdGetKey(workspaceId) === `${graph.rootKey}-ws`) {
+      return PERSONAL_WS_COLOR;
     }
-  }
-  const nextColor = colorCounts.indexOf(Math.min(...colorCounts));
-  assert(nextColor >= 0 && nextColor < COLOR_MAP.length);
-  colorMap.set(workspaceKey, nextColor);
-  return COLOR_MAP[nextColor];
+
+    const workspaceKey = VertexIdGetKey(workspaceId);
+
+    // Return the saved color only if it's valid within the current theme
+    const existingColor = colorMap.get(workspaceKey);
+    if (
+      existingColor &&
+      existingColor >= 0 &&
+      existingColor < COLOR_MAP.length
+    ) {
+      return COLOR_MAP[existingColor];
+    }
+    // Prevent color tagging for demo workspaces
+    for (const key of workspacesQuery.keys()) {
+      if (graph.getVertex<Workspace>(key).isDemoData) {
+        colorMap.delete(key);
+      }
+    }
+
+    // Find the least used color and use that for our workspace
+    const colorCounts: number[] = [];
+    for (let i = 0; i < COLOR_MAP.length; ++i) {
+      colorCounts.push(0);
+    }
+    for (const color of colorMap.values()) {
+      if (color >= 0 && color < COLOR_MAP.length) {
+        ++colorCounts[color];
+      }
+    }
+    const nextColor = colorCounts.indexOf(Math.min(...colorCounts));
+    assert(nextColor >= 0 && nextColor < COLOR_MAP.length);
+    colorMap.set(workspaceKey, nextColor);
+    return COLOR_MAP[nextColor];
+  }, [workspaceId, workspacesQuery, partialSettings, graph]);
 }
 
 export default function WorkspaceIcon({

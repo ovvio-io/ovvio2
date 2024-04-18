@@ -17,7 +17,12 @@ import {
   VertexManager,
 } from './vertex-manager.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
-import { MicroTaskTimer, Timer } from '../../../base/timer.ts';
+import {
+  MicroTaskTimer,
+  NextEventLoopCycleTimer,
+  SimpleTimer,
+  Timer,
+} from '../../../base/timer.ts';
 import { CoroutineTimer } from '../../../base/coroutine-timer.ts';
 import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
@@ -696,29 +701,23 @@ export class GraphManager
 
   private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
-    mgr.attach(
-      EVENT_DID_CHANGE,
-      (pack: MutationPack, refsChange: RefsChange, RefsChange: RefsChange) =>
-        this._vertexDidChange(key, pack, refsChange),
+    mgr.attach(EVENT_DID_CHANGE, (pack: MutationPack) =>
+      this._vertexDidChange(key, pack),
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
-    mgr.reportInitialFields(
-      mgr.repository?.headForKey(mgr.key)?.session === session.id,
-    );
+    new MicroTaskTimer(() =>
+      mgr.reportInitialFields(
+        mgr.repository?.headForKey(mgr.key)?.session === session.id,
+      ),
+    ).schedule();
   }
 
-  private _vertexDidChange(
-    key: string,
-    pack: MutationPack,
-    refsChange: RefsChange,
-  ): void {
+  private _vertexDidChange(key: string, pack: MutationPack): void {
     const pendingMutations = this._pendingMutations;
     pack = mutationPackAppend(pendingMutations.get(key), pack);
     pendingMutations.set(key, pack);
     this._processPendingMutationsTimer.schedule();
-    // this.emit(EVENT_VERTEX_DID_CHANGE, key, pack, refsChange);
-    // this.emit(EVENT_VERTEX_CHANGED, key, pack, refsChange);
   }
 
   private _processPendingMutations(): void {

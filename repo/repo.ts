@@ -932,6 +932,7 @@ export class Repository<
     const key = commitsToMerge[0].key;
     const session = this.trustPool.currentSession.id;
     const [ancestorsFilter, ancestorsCount] = this.ancestorsFilterForKey(key);
+    assert(ancestorsCount > 0, 'Merge commit got empty ancestors filter'); // Sanity check
     try {
       const [merge, base] = this.createMergeRecord(commitsToMerge);
       if (merge.isNull) {

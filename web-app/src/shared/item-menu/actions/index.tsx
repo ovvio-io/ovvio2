@@ -18,6 +18,7 @@ import {
   IconDueDateProps,
 } from '../../../../../styles/components/new-icons/icon-due-date.tsx';
 import Menu, {
+  LineSeparator,
   MenuAction,
   MenuItem,
 } from '../../../../../styles/components/menu.tsx';
@@ -25,11 +26,15 @@ import {
   toastContext,
   useToastController,
 } from '../../../../../styles/components/toast/index.tsx';
-import { useGraphManager } from '../../../core/cfds/react/graph.tsx';
+import {
+  useGraphManager,
+  usePartialGlobalView,
+} from '../../../core/cfds/react/graph.tsx';
 import { useDocumentRouter } from '../../../core/react-utils/index.ts';
 import { useDueDate } from '../../components/due-date-editor/index.tsx';
 import {
   usePartialVertex,
+  usePartialVertices,
   useVertex,
   useVertices,
 } from '../../../core/cfds/react/vertex.ts';
@@ -96,6 +101,15 @@ const useStyles = makeStyles(() => ({
   },
   wsItem: {
     maxWidth: '400px',
+    borderBottom: `2px solid #f5ecdc`,
+    ':last-child': {
+      borderBottom: 'none',
+    },
+  },
+  firstWsItem: {
+    maxWidth: '400px',
+    borderBottom: `1px solid #f5ecdc`,
+    marginBottom: '8px',
   },
 }));
 
@@ -252,47 +266,47 @@ export function DeleteCardAction({
   );
 }
 
-// interface DuplicateCardActionProps extends CardActionProps {
-//   editorRootKey?: string;
-//   source: UISource;
-// }
-// export function DuplicateCardAction({
-//   editorRootKey,
-//   cardManager,
-//   source,
-//   ...props
-// }: DuplicateCardActionProps) {
-//   const graph = useGraphManager();
-//   const logger = useLogger();
-//   const navigate = useNavigate();
+interface DuplicateCardActionProps extends CardActionProps {
+  editorRootKey?: string;
+  source: UISource;
+}
+export function DuplicateCardAction({
+  editorRootKey,
+  cardManager,
+  source,
+  ...props
+}: DuplicateCardActionProps) {
+  const graph = useGraphManager();
+  const logger = useLogger();
+  const navigate = useNavigate();
 
-//   const onDuplicate = () => {
-//     const newCard = duplicateCard(graph, cardManager.key)!;
-//     logger.log({
-//       severity: 'EVENT',
-//       event: 'Duplicate',
-//       vertex: cardManager.key,
-//       target: newCard?.key,
-//       source,
-//     });
+  const onDuplicate = () => {
+    const newCard = duplicateCard(graph, cardManager.key)!;
+    logger.log({
+      severity: 'EVENT',
+      event: 'Duplicate',
+      vertex: cardManager.key,
+      target: newCard?.key,
+      source,
+    });
 
-//     if (editorRootKey === cardManager.key) {
-//       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
-//       return;
-//     }
+    if (editorRootKey === cardManager.key) {
+      navigate(`${newCard?.workspace.key}/${newCard?.key}`);
+      return;
+    }
 
-//     // TODO: Wiring for new editor
-//   };
+    // TODO: Wiring for new editor
+  };
 
-//   return (
-//     <MenuAction
-//       {...props}
-//       onClick={onDuplicate}
-//       IconComponent={IconDuplicate}
-//       text="Duplicate"
-//     />
-//   );
-// }
+  return (
+    <MenuAction
+      {...props}
+      onClick={onDuplicate}
+      IconComponent={IconDuplicate}
+      text="Duplicate"
+    />
+  );
+}
 interface CopyIntoCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
@@ -307,17 +321,34 @@ export function CopyIntoCardAction({
   const graph = useGraphManager();
   const logger = useLogger();
   const navigate = useNavigate();
-  const workspacesQuery = useSharedQuery('workspaces');
-  const workspaces = useVertices(workspacesQuery.results) as Workspace[];
+  const currentWs = useVertex(cardManager).workspace;
 
+  const view = usePartialGlobalView('selectedWorkspaces');
+  const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
+  const personalWsKey = `${graph.rootKey}-ws`;
+  if (!workspaceKeys.includes(personalWsKey)) {
+    workspaceKeys.push(personalWsKey);
+  }
+
+  const partialWorkspaces = usePartialVertices<Workspace>(workspaceKeys, [
+    'name',
+  ]);
+
+  partialWorkspaces.sort((a, b) => {
+    if (a.key === currentWs.key) return -1;
+    if (b.key === currentWs.key) return 1;
+    if (a.key === personalWsKey) return -1;
+    if (b.key === personalWsKey) return 1;
+    return coreValueCompare(a, b);
+  });
   const [searchTerm, setSearchTerm] = useState<string>('');
+
   const filtered = suggestResults(
     searchTerm,
-    workspaces,
+    partialWorkspaces,
     (t) => t.name,
     Number.MAX_SAFE_INTEGER
   );
-
   const onCopyInto = () => {
     const newCard = duplicateCard(graph, cardManager.key)!;
     logger.log({
@@ -335,6 +366,30 @@ export function CopyIntoCardAction({
   };
 
   return (
+    //   <SecondaryMenuItem
+    //     text="Copy to..."
+    //     IconComponent={IconDuplicate}
+    //     isWsList={true}
+    //   >
+    //     <SearchBar
+    //       searchTerm={searchTerm}
+    //       setSearchTerm={setSearchTerm}
+    //       isSearching={true}
+    //       isPicker={true}
+    //     ></SearchBar>
+    //     {filtered.map((ws) => (
+    //       <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
+    //         <WorkspaceIndicator
+    //           className={cn(styles.colorIndicator)}
+    //           workspace={ws.manager as VertexManager<Workspace>}
+    //           type="color"
+    //           ofSettings={false}
+    //         />
+    //         {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
+    //       </MenuItem>
+    //     ))}
+    //   </SecondaryMenuItem>
+    // );
     <SecondaryMenuItem
       text="Copy to..."
       IconComponent={IconDuplicate}
@@ -346,17 +401,28 @@ export function CopyIntoCardAction({
         isSearching={true}
         isPicker={true}
       ></SearchBar>
-      {filtered.map((ws) => (
-        <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
+      {filtered.flatMap((ws, index) => [
+        <MenuItem
+          key={ws.key}
+          className={
+            ws.key === currentWs.key && index == 0
+              ? styles.firstWsItem
+              : styles.wsItem
+          }
+          onClick={() => onCopyInto()}
+        >
           <WorkspaceIndicator
             className={cn(styles.colorIndicator)}
             workspace={ws.manager as VertexManager<Workspace>}
             type="color"
             ofSettings={false}
           />
-          {ws.name}
-        </MenuItem>
-      ))}
+          {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
+        </MenuItem>,
+        ws.key === currentWs.key && index == 0 ? (
+          <LineSeparator height={1} />
+        ) : null,
+      ])}
     </SecondaryMenuItem>
   );
 }

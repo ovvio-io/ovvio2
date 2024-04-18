@@ -63,8 +63,9 @@ import { IconColor } from '../../../../styles/components/new-icons/types.ts';
 import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
+import { LineSeparator } from '../../../../styles/components/menu.tsx';
 
-export const DEFAULT_WIDTH = styleguide.gridbase * 22;
+export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
 const PAGE_SIZE = 30;
 
@@ -73,8 +74,8 @@ const useStyles = makeStyles(
     root: {
       flexShrink: 0,
       height: '100%',
-      transitionTimingFunction: 'cubic-bezier(0.87, 0, 0.13, 1)',
-      transitionDuration: '150ms',
+      transitionTimingFunction: 'cubic-bezier(0.85, 0, 0.15, 1)',
+      transitionDuration: '200ms',
       transitionProperty: 'width',
       boxShadow: theme.shadows.z4,
       backgroundColor: theme.colors.background,
@@ -307,6 +308,9 @@ const useStyles = makeStyles(
       direction: 'rtl',
       textAlign: 'left',
     },
+    lastItem: {
+      borderBottom: `1px solid #f5ecdc`,
+    },
   }),
   'workspaces-bar_881015'
 );
@@ -527,6 +531,7 @@ function WorkspaceToggleView({
           </MenuItem>
 
           <MenuItem
+            className={styles.lastItem}
             onClick={() => {
               view.workspaceGrouping = 'Employee';
             }}
@@ -535,7 +540,7 @@ function WorkspaceToggleView({
             {view.workspaceGrouping === 'Employee' && <IconCheck />}
           </MenuItem>
           <div style={{ marginTop: '8px' }} />
-
+          <LineSeparator height={1} />
           <MenuItem
             onClick={() => {
               view.workspaceGrouping = 'none';
@@ -640,7 +645,6 @@ function WorkspaceListItem({
 
   useEffect(() => {
     const measuredWidth = measureTextWidth(name, '14px PoppinsSemiBold');
-    console.log(`text width = ${measuredWidth}`);
     updateMaxWidth(measuredWidth + extraPadding);
   }, [name, updateMaxWidth]);
 

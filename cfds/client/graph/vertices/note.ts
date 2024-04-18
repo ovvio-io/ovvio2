@@ -23,6 +23,7 @@ import {
 import {
   FieldTriggers,
   keyDictToVertDict,
+  kNoRefsValue,
   vertDictToKeyDict,
   Vertex,
   VertexConfig,
@@ -787,12 +788,39 @@ export class Note extends ContentVertex {
     oldValue: NoteStatus,
     child: Note,
   ): MutationPack {
+    const childCards = this.childCards;
+    if (!childCards.length) {
+      return;
+    }
     if (this.type === NoteType.Note) {
+      const firstChecked = childCards[0].isChecked;
+      let childrenMatch = true;
+      for (let i = 1; i < childCards.length; ++i) {
+        const c = childCards[i];
+        if (c === child) {
+          continue;
+        }
+        if (c.isChecked !== firstChecked) {
+          childrenMatch = false;
+          break;
+        }
+      }
+      let result: MutationPack;
+      if (childrenMatch) {
+        result = mutationPackAppend(result, ['isChecked', local, oldValue]);
+      }
       return mutationPackAppend(
-        ['isChecked', local, oldValue],
+        result,
         this._invalidateBodyOnChildChange(local, child.key),
       );
     }
+  }
+
+  valueForRefCalc(fieldName: keyof this): any {
+    if (fieldName === 'status') {
+      return kNoRefsValue;
+    }
+    return super.valueForRefCalc(fieldName);
   }
 }
 

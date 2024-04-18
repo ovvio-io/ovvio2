@@ -1,4 +1,4 @@
-const K_BUFF_UNIT_SIZE = 16 * 1024;
+const K_BUFF_UNIT_SIZE = 32 * 1024;
 
 const gPendingBuffers: Uint8Array[] = [];
 const gLiveBuffers = new Map<Uint8Array, Uint8Array>();
@@ -8,7 +8,19 @@ for (let i = 0; i < 10; ++i) {
 }
 
 export function allocateBuffer(minBytes: number): Uint8Array {
-  const cachedBuff = gPendingBuffers.pop();
+  let cachedBuff: Uint8Array | undefined;
+  for (let i = 0; i < gPendingBuffers.length; ++i) {
+    const buf = gPendingBuffers[i];
+    if (buf.byteLength >= minBytes) {
+      cachedBuff = gPendingBuffers.splice(i, 1)[0];
+      break;
+    }
+  }
+  if (!cachedBuff) {
+    cachedBuff = new Uint8Array(
+      Math.max(1, Math.ceil(minBytes / K_BUFF_UNIT_SIZE)) * K_BUFF_UNIT_SIZE,
+    );
+  }
   if (cachedBuff) {
     cachedBuff.fill(0);
     const res = cachedBuff.subarray(0, minBytes);
@@ -21,6 +33,7 @@ export function allocateBuffer(minBytes: number): Uint8Array {
 export function cacheBufferForReuse(buff: Uint8Array): void {
   const origBuff = gLiveBuffers.get(buff);
   if (origBuff) {
+    origBuff.fill(0);
     gPendingBuffers.push(origBuff);
     gLiveBuffers.delete(buff);
   }

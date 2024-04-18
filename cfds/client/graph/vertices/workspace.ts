@@ -23,6 +23,7 @@ import { normalizeEmail } from '../../../../base/string.ts';
 import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Record } from '../../../base/record.ts';
 import { Repository } from '../../../../repo/repo.ts';
+import { UserSettings } from './user-settings.ts';
 
 export interface UserAlias extends JSONObject {
   name?: string;
@@ -64,44 +65,48 @@ export class Workspace extends BaseVertex {
 
   compare(other: Vertex): number {
     if (other instanceof Workspace) {
-      const rootUser = this.graph.getRootVertex<User>();
-      const personalWsKey = `${this.graph.rootKey}-ws`;
-      if (this.key === personalWsKey) {
-        return -1;
-      }
-
-      if (other.key === personalWsKey) {
-        return 1;
-      }
-
-      const pinnedWorkspaces = rootUser.pinnedWorkspaces;
-      if (pinnedWorkspaces) {
-        if (
-          pinnedWorkspaces.has(this.key) &&
-          !pinnedWorkspaces.has(other.key)
-        ) {
+      const userSettings = this.graph.getRootVertex<User>().settings;
+      if (userSettings instanceof UserSettings) {
+        const personalWsKey = `${this.graph.rootKey}-ws`;
+        if (this.key === personalWsKey) {
           return -1;
         }
-        if (
-          !pinnedWorkspaces.has(this.key) &&
-          pinnedWorkspaces.has(other.key)
-        ) {
+
+        if (other.key === personalWsKey) {
           return 1;
         }
-      }
-      const hiddenWorkspaces = rootUser.hiddenWorkspaces;
-      if (hiddenWorkspaces) {
-        if (
-          hiddenWorkspaces.has(this.key) &&
-          !hiddenWorkspaces.has(other.key)
-        ) {
-          return 1;
+
+        const pinnedWorkspaces =
+          userSettings.record.get<Set<string>>('pinnedWorkspaces');
+        if (pinnedWorkspaces) {
+          if (
+            pinnedWorkspaces.has(this.key) &&
+            !pinnedWorkspaces.has(other.key)
+          ) {
+            return -1;
+          }
+          if (
+            !pinnedWorkspaces.has(this.key) &&
+            pinnedWorkspaces.has(other.key)
+          ) {
+            return 1;
+          }
         }
-        if (
-          !hiddenWorkspaces.has(this.key) &&
-          hiddenWorkspaces.has(other.key)
-        ) {
-          return -1;
+        const hiddenWorkspaces =
+          userSettings.record.get<Set<string>>('hiddenWorkspaces');
+        if (hiddenWorkspaces) {
+          if (
+            hiddenWorkspaces.has(this.key) &&
+            !hiddenWorkspaces.has(other.key)
+          ) {
+            return 1;
+          }
+          if (
+            !hiddenWorkspaces.has(this.key) &&
+            hiddenWorkspaces.has(other.key)
+          ) {
+            return -1;
+          }
         }
       }
       const nameDiff = coreValueCompare(this.name, other.name);
@@ -317,20 +322,20 @@ export class Workspace extends BaseVertex {
     }
     const wsMembers = new Set(aliasToUserMap.values());
     wsMembers.add(graph.rootKey);
-    const workspace = graph.createVertex<Workspace>(SchemeNamespace.WORKSPACE, {
-      name: encodedWs.name,
-      users: wsMembers,
-      createdBy: graph.rootKey,
-      isTemplate: encodedWs.isTemplate ? 1 : 0,
-    }, encodedWs.key);
+    const workspace = graph.createVertex<Workspace>(
+      SchemeNamespace.WORKSPACE,
+      {
+        name: encodedWs.name,
+        users: wsMembers,
+        createdBy: graph.rootKey,
+        isTemplate: encodedWs.isTemplate ? 1 : 0,
+      },
+      encodedWs.key,
+    );
     graph.markRepositoryReady(Repository.id('data', workspace.key));
     for (const [tagKey, encodedTag] of Object.entries(encodedWs.tags)) {
       const record = Record.fromJS(encodedTag);
-      graph.createVertex<Tag>(
-        SchemeNamespace.TAGS,
-        record.cloneData(),
-        tagKey,
-      );
+      graph.createVertex<Tag>(SchemeNamespace.TAGS, record.cloneData(), tagKey);
     }
     for (const [noteKey, encodedNote] of Object.entries(encodedWs.notes)) {
       const assignees: string[] = [];
@@ -397,12 +402,10 @@ export class Workspace extends BaseVertex {
 
   downloadJSON(): void {
     downloadJSON(
-      `${this.name}-${
-        new Date().toLocaleString(undefined, {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        })
-      }.json`,
+      `${this.name}-${new Date().toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })}.json`,
       this.exportToJSON(),
     );
   }
