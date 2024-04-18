@@ -16,6 +16,11 @@ export function allocateBuffer(minBytes: number): Uint8Array {
       break;
     }
   }
+  if (!cachedBuff) {
+    cachedBuff = new Uint8Array(
+      Math.max(1, Math.ceil(minBytes / K_BUFF_UNIT_SIZE)) * K_BUFF_UNIT_SIZE,
+    );
+  }
   if (cachedBuff) {
     cachedBuff.fill(0);
     const res = cachedBuff.subarray(0, minBytes);
