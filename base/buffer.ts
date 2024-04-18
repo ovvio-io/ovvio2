@@ -1,3 +1,5 @@
+import { assert } from './error.ts';
+
 const K_BUFF_UNIT_SIZE = 32 * 1024;
 
 const gPendingBuffers: Uint8Array[] = [];
@@ -22,6 +24,7 @@ export function allocateBuffer(minBytes: number): Uint8Array {
     );
   }
   if (cachedBuff) {
+    assert(cachedBuff.byteLength >= minBytes); // Sanity check
     cachedBuff.fill(0);
     const res = cachedBuff.subarray(0, minBytes);
     gLiveBuffers.set(res, cachedBuff);
