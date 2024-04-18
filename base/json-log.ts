@@ -4,10 +4,22 @@ import { JSONObject, ReadonlyJSONObject } from './interfaces.ts';
 import { SerialScheduler } from './serial-scheduler.ts';
 import { allocateBuffer } from './buffer.ts';
 import { cacheBufferForReuse } from './buffer.ts';
+import { uniqueId } from './common.ts';
+import { encodeBase64 } from 'std/encoding/base64.ts';
+import { decodeBase64 } from './buffer.ts';
 
 const FILE_READ_BUF_SIZE_BYTES = 1024 * 8; // 8KB
 const PAGE_SIZE = 4 * 1024; // 4KB
 const LINE_DELIMITER_BYTE = 10; // "\n"
+
+interface EncryptedEntry extends JSONObject {
+  // Salt
+  s: string;
+  // Context
+  iv: string;
+  // Encrypted data
+  d: string;
+}
 
 export type ProgressUpdateCallback = (value: number) => void;
 
@@ -15,9 +27,21 @@ export class JSONLogFile {
   private readonly _scheduler: SerialScheduler;
   private _file: Deno.FsFile | undefined;
   private _didScan = false;
+  private _password?: CryptoKey;
 
   constructor(readonly path: string, readonly write = false) {
     this._scheduler = new SerialScheduler();
+  }
+
+  async enableEncryption(password: string): Promise<void> {
+    const textEncoder = new TextEncoder();
+    this._password = await crypto.subtle.importKey(
+      'raw',
+      textEncoder.encode(password),
+      'PBKDF2',
+      false,
+      ['deriveKey'],
+    );
   }
 
   *open(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
@@ -56,6 +80,58 @@ export class JSONLogFile {
       }
       return Promise.resolve();
     });
+  }
+
+  private async encrypt(entry: JSONObject): Promise<EncryptedEntry> {
+    const salt = crypto.getRandomValues(new Uint8Array(24));
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      this._password!,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt'],
+    );
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const data = new TextEncoder().encode(JSON.stringify(entry));
+    const encryptedEntry = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      data,
+    );
+    return {
+      s: encodeBase64(salt),
+      iv: encodeBase64(iv),
+      d: encodeBase64(encryptedEntry),
+    };
+  }
+
+  private async decrypt(encryptedEntry: EncryptedEntry): Promise<JSONObject> {
+    const salt = decodeBase64(encryptedEntry.s);
+    const iv = decodeBase64(encryptedEntry.iv);
+    const data = decodeBase64(encryptedEntry.d);
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      this._password!,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt'],
+    );
+    const decryptedText = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      data,
+    );
+    return JSON.parse(new TextDecoder().decode(decryptedText));
   }
 
   append(entries: readonly JSONObject[]): Promise<void> {
