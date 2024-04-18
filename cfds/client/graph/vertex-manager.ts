@@ -557,11 +557,11 @@ export class VertexManager<V extends Vertex = Vertex>
       ++this._localMutationsCount;
     }
     // Broadcast the mutations of our vertex
-    // this.emit(EVENT_DID_CHANGE, mutations, refsChange);
-    this._pendingMutationsToEmit = mutationPackOptimize(
-      mutationPackAppend(this._pendingMutationsToEmit, mutations),
-    );
-    this._emitDelayTimer.schedule();
+    this.emit(EVENT_DID_CHANGE, mutations);
+    // this._pendingMutationsToEmit = mutationPackOptimize(
+    //   mutationPackAppend(this._pendingMutationsToEmit, mutations),
+    // );
+    // this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
     const sideEffects = vertex.didMutate(mutations);
     if (!mutationPackIsEmpty(sideEffects)) {

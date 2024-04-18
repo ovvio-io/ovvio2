@@ -161,15 +161,17 @@ export class JSONLogFile {
             lastGoodFileOffset += objectBufOffset + 2;
             objectBufOffset = 0;
           } catch (_: unknown) {
-            file.seekSync(0, Deno.SeekMode.End);
-            file.truncateSync(lastGoodFileOffset);
+            if (this.write) {
+              file.seekSync(0, Deno.SeekMode.End);
+              file.truncateSync(lastGoodFileOffset);
+            }
             this._didScan = true;
             return;
           }
         }
       }
     }
-    if (objectBufOffset > 0) {
+    if (objectBufOffset > 0 && this.write) {
       file.seekSync(0, Deno.SeekMode.End);
       file.truncateSync(lastGoodFileOffset);
     }
