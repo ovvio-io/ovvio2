@@ -33,6 +33,7 @@ export function allocateBuffer(minBytes: number): Uint8Array {
 export function cacheBufferForReuse(buff: Uint8Array): void {
   const origBuff = gLiveBuffers.get(buff);
   if (origBuff) {
+    origBuff.fill(0);
     gPendingBuffers.push(origBuff);
     gLiveBuffers.delete(buff);
   }
