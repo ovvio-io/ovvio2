@@ -17,7 +17,12 @@ import {
   VertexManager,
 } from './vertex-manager.ts';
 import { SchemeNamespace } from '../../base/scheme-types.ts';
-import { MicroTaskTimer, Timer } from '../../../base/timer.ts';
+import {
+  MicroTaskTimer,
+  NextEventLoopCycleTimer,
+  SimpleTimer,
+  Timer,
+} from '../../../base/timer.ts';
 import { CoroutineTimer } from '../../../base/coroutine-timer.ts';
 import { CoroutineScheduler } from '../../../base/coroutine.ts';
 import { JSONObject, ReadonlyJSONObject } from '../../../base/interfaces.ts';
@@ -701,9 +706,11 @@ export class GraphManager
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
-    mgr.reportInitialFields(
-      mgr.repository?.headForKey(mgr.key)?.session === session.id,
-    );
+    new MicroTaskTimer(() =>
+      mgr.reportInitialFields(
+        mgr.repository?.headForKey(mgr.key)?.session === session.id,
+      ),
+    ).schedule();
   }
 
   private _vertexDidChange(key: string, pack: MutationPack): void {
