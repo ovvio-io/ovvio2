@@ -1,4 +1,4 @@
-const K_BUFF_UNIT_SIZE = 16 * 1024;
+const K_BUFF_UNIT_SIZE = 32 * 1024;
 
 const gPendingBuffers: Uint8Array[] = [];
 const gLiveBuffers = new Map<Uint8Array, Uint8Array>();
