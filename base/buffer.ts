@@ -15,6 +15,8 @@ export function allocateBuffer(minBytes: number): Uint8Array {
     const buf = gPendingBuffers[i];
     if (buf.byteLength >= minBytes) {
       cachedBuff = gPendingBuffers.splice(i, 1)[0];
+      assert(!gPendingBuffers.includes(buf));
+      assert(!gLiveBuffers.has(buf));
       break;
     }
   }
@@ -28,6 +30,7 @@ export function allocateBuffer(minBytes: number): Uint8Array {
     cachedBuff.fill(0);
     const res = cachedBuff.subarray(0, minBytes);
     gLiveBuffers.set(res, cachedBuff);
+    assert(cachedBuff.byteLength >= minBytes); // Sanity check
     return res;
   }
   return new Uint8Array(minBytes);
@@ -49,6 +52,5 @@ export function decodeBase64(b64: string): Uint8Array {
   for (let i = 0; i < size; i++) {
     bytes[i] = binString.charCodeAt(i);
   }
-  cacheBufferForReuse(bytes);
   return bytes;
 }
