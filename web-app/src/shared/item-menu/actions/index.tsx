@@ -100,14 +100,15 @@ const useStyles = makeStyles(() => ({
     flexShrink: 0,
   },
   wsItem: {
-    maxWidth: '400px',
+    width: '320px',
+    maxWidth: '320px',
     borderBottom: `2px solid #f5ecdc`,
     ':last-child': {
       borderBottom: 'none',
     },
   },
   firstWsItem: {
-    maxWidth: '400px',
+    maxWidth: '320px',
     borderBottom: `1px solid #f5ecdc`,
     marginBottom: '8px',
   },
@@ -322,7 +323,6 @@ export function CopyIntoCardAction({
   const logger = useLogger();
   const navigate = useNavigate();
   const currentWs = useVertex(cardManager).workspace;
-
   const view = usePartialGlobalView('selectedWorkspaces');
   const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
   const personalWsKey = `${graph.rootKey}-ws`;
@@ -366,30 +366,6 @@ export function CopyIntoCardAction({
   };
 
   return (
-    //   <SecondaryMenuItem
-    //     text="Copy to..."
-    //     IconComponent={IconDuplicate}
-    //     isWsList={true}
-    //   >
-    //     <SearchBar
-    //       searchTerm={searchTerm}
-    //       setSearchTerm={setSearchTerm}
-    //       isSearching={true}
-    //       isPicker={true}
-    //     ></SearchBar>
-    //     {filtered.map((ws) => (
-    //       <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
-    //         <WorkspaceIndicator
-    //           className={cn(styles.colorIndicator)}
-    //           workspace={ws.manager as VertexManager<Workspace>}
-    //           type="color"
-    //           ofSettings={false}
-    //         />
-    //         {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
-    //       </MenuItem>
-    //     ))}
-    //   </SecondaryMenuItem>
-    // );
     <SecondaryMenuItem
       text="Copy to..."
       IconComponent={IconDuplicate}
@@ -426,6 +402,31 @@ export function CopyIntoCardAction({
     </SecondaryMenuItem>
   );
 }
+
+//   <SecondaryMenuItem
+//     text="Copy to..."
+//     IconComponent={IconDuplicate}
+//     isWsList={true}
+//   >
+//     <SearchBar
+//       searchTerm={searchTerm}
+//       setSearchTerm={setSearchTerm}
+//       isSearching={true}
+//       isPicker={true}
+//     ></SearchBar>
+//     {filtered.map((ws) => (
+//       <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
+//         <WorkspaceIndicator
+//           className={cn(styles.colorIndicator)}
+//           workspace={ws.manager as VertexManager<Workspace>}
+//           type="color"
+//           ofSettings={false}
+//         />
+//         {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
+//       </MenuItem>
+//     ))}
+//   </SecondaryMenuItem>
+// );
 
 export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
   const logger = useLogger();

@@ -56,6 +56,7 @@ const useStyles = makeStyles(() => ({
   },
   wsItem: {
     maxWidth: '400px',
+    width: '400px',
   },
 }));
 
