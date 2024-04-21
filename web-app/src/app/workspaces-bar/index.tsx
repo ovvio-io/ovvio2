@@ -509,14 +509,10 @@ function WorkspaceToggleView({
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: theme.secondary.s0,
+                padding: '0 4px 0 8px',
               }}
             >
-              <div
-                style={{
-                  padding: '0 4px',
-                }}
-              ></div>
-              <IconGroup style={{ marginRight: '8px' }} />
+              <IconGroup />
               <LabelSm className={styles.groupBy}>Group By:</LabelSm>
             </div>
           </div>

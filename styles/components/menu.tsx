@@ -82,6 +82,7 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     width: 'auto',
     borderBottom: `2px solid ${theme1.secondary.s2}`,
+    gap: styleguide.gridbase,
     // ':last-child': {
     //   borderBottom: 'none',
     // },
