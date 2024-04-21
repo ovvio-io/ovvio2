@@ -55,9 +55,9 @@ import { SecondaryMenuItem } from '../../../../../styles/components/menu.tsx';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
 import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
-import { SearchBar } from './search-bar.tsx';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
+import { SearchBar } from '../../../../../components/search-bar.tsx';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {

@@ -1,10 +1,4 @@
-import React, {
-  CSSProperties,
-  ChangeEvent,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { CSSProperties, ChangeEvent, useEffect, useRef } from 'react';
 import { User } from '../cfds/client/graph/vertices/user.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
@@ -33,10 +27,14 @@ const useStyles = makeStyles(() => ({
     borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
   },
   baseTextStyle: {
+    fontFamily: 'Poppins',
+    fontSize: '13px',
+    fontWeight: 400,
+    lineHeight: '19.5px',
+    letterSpacing: '0.075px',
+    textAlign: 'left',
     border: 'none',
     outline: 'none',
-    fontSize: '13px',
-    letterSpacing: '0.075px',
   },
   regularTextStyle: {
     backgroundColor: 'white',
