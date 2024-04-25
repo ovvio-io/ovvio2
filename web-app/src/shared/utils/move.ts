@@ -1,5 +1,5 @@
 import { assert } from '../../../../base/error.ts';
-import { duplicateCard } from '../../../../cfds/client/duplicate.ts';
+import { copyIntoCard } from '../../../../cfds/client/duplicate.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import {
@@ -80,36 +80,36 @@ function stripAssigneesNotInWorkspace(card: Note): void {
   }
 }
 
-export function moveCard(
-  cardManager: VertexManager<Note>,
-  destinationMng: VertexManager<Workspace>,
-  graph: GraphManager,
-  logger: Logger,
-  source: UISource
-): Note | undefined {
-  const result = duplicateCard(graph, cardManager.key, {
-    suffix: '',
-  });
+// export function moveCard(
+//   cardManager: VertexManager<Note>,
+//   destinationMng: VertexManager<Workspace>,
+//   graph: GraphManager,
+//   logger: Logger,
+//   source: UISource
+// ): Note | undefined {
+//   const result = copyIntoCard(graph, cardManager.key, {
+//     suffix: '',
+//   });
 
-  if (result !== undefined) {
-    result.workspace = destinationMng.getVertexProxy();
-    // fixupCardTagsToWorkspace(result);
-    stripAssigneesNotInWorkspace(result);
-    cardManager.getVertexProxy().isDeleted = 1;
-    logger.log({
-      severity: 'INFO',
-      event: 'VertexMoved',
-      vertex: result.key,
-      origin: cardManager.key,
-      uiSource: source,
-    });
-  } else {
-    logger.log({
-      severity: 'INFO',
-      error: 'DuplicateFailed',
-      vertex: cardManager.key,
-      uiSource: source,
-    });
-  }
-  return result;
-}
+//   if (result !== undefined) {
+//     result.workspace = destinationMng.getVertexProxy();
+//     // fixupCardTagsToWorkspace(result);
+//     stripAssigneesNotInWorkspace(result);
+//     cardManager.getVertexProxy().isDeleted = 1;
+//     logger.log({
+//       severity: 'INFO',
+//       event: 'VertexMoved',
+//       vertex: result.key,
+//       origin: cardManager.key,
+//       uiSource: source,
+//     });
+//   } else {
+//     logger.log({
+//       severity: 'INFO',
+//       error: 'DuplicateFailed',
+//       vertex: cardManager.key,
+//       uiSource: source,
+//     });
+//   }
+//   return result;
+// }

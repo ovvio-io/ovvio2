@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  DuplicateCardOptions,
-  duplicateCard,
+  CopyIntoCardOptions,
+  copyIntoCard,
 } from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {
@@ -356,10 +356,10 @@ export function CopyIntoCardAction({
     Number.MAX_SAFE_INTEGER
   );
   const onCopyInto = (wsManager: VertexManager<Workspace>) => {
-    const options: DuplicateCardOptions = {
+    const options: CopyIntoCardOptions = {
       wsCopyTo: wsManager, // Passing wsManager as part of the options object
     };
-    const newCard = duplicateCard(graph, cardManager.key, options);
+    const newCard = copyIntoCard(graph, cardManager.key, options);
     logger.log({
       severity: 'EVENT',
       event: 'CopyInto',
@@ -367,6 +367,7 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
+    //TODO: editorRootKey- what is it? it is never passed as a prop so it's undefined.
     if (editorRootKey === cardManager.key) {
       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
       return;

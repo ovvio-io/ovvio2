@@ -1,6 +1,7 @@
 import { uniqueId } from '../../base/common.ts';
 import { CoreObject } from '../../base/core-types/base.ts';
 import { coreValueCompare } from '../../base/core-types/comparable.ts';
+import { createNewNote } from '../../web-app/src/shared/card/create.ts';
 import { fromTimestamp } from '../base/orderstamp.ts';
 import { NS_NOTES } from '../base/scheme-types.ts';
 import { isRefMarker, RefType } from '../richtext/model.ts';
@@ -10,15 +11,15 @@ import { VertexManager } from './graph/vertex-manager.ts';
 import { Workspace } from './graph/vertices/index.ts';
 import { Note } from './graph/vertices/note.ts';
 
-const DUP_TITLE_SUFFIX = ' (duplicate)';
+const COPY_TITLE_SUFFIX = ' (copy)';
 
-export interface DuplicateCardOptions {
+export interface CopyIntoCardOptions {
   suffix?: string;
-  wsCopyTo?: VertexManager<Workspace>; // Workspace to copy the note to.
+  wsCopyTo: VertexManager<Workspace>;
 }
 
-const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
-  suffix: DUP_TITLE_SUFFIX,
+const DEFAULT_COPYINTO_OPTS: CopyIntoCardOptions = {
+  suffix: COPY_TITLE_SUFFIX,
 };
 
 /**
@@ -29,26 +30,27 @@ const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
  * @param client
  * @param rootKey The card key you want to duplicate
  */
-export function duplicateCard(
+export function copyIntoCard(
   graph: GraphManager,
   rootKey: string,
-  opts: DuplicateCardOptions = {}
+  opts: CopyIntoCardOptions
 ): Note | undefined {
+  if (!opts.wsCopyTo) {
+    throw new Error('Workspace must be provided');
+  }
   opts = {
-    ...DEFAULT_DUPLICATE_OPTS,
+    ...DEFAULT_COPYINTO_OPTS,
     ...opts,
   };
   if (!checkRecords(graph, rootKey)) return;
-  console.log('opts.wsCopyTo', opts.wsCopyTo);
   const outRecords: { [s: string]: CoreObject } = {};
-  const newRootKey = deepCopyIntoImpl(
+  const newRootKey = deepCopyImpl(
     graph,
     rootKey,
     outRecords,
-    undefined,
-    opts.wsCopyTo
+    opts.wsCopyTo,
+    undefined
   );
-  debugger;
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
@@ -58,6 +60,7 @@ export function duplicateCard(
     const key = x[0];
     const initialData = {
       ...x[1],
+      workspace: workspaceId,
     };
 
     return {
@@ -102,17 +105,16 @@ function checkRecords(graph: GraphManager, rootKey: string) {
  * @param wsCopyTo Workspace to copy to
 
  */
-function deepCopyIntoImpl(
+function deepCopyImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
-  parentNoteNewKey?: string,
-  wsCopyTo?: VertexManager<Workspace>
+  wsCopyTo: VertexManager<Workspace>,
+  parentNoteNewKey?: string
 ) {
   const root = graph.getVertex<Note>(rootKey);
 
   const newKey = uniqueId();
-  debugger;
   const newData: CoreObject = {
     ...root.cloneData(),
     creationDate: new Date(),
@@ -123,17 +125,23 @@ function deepCopyIntoImpl(
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
         const oldTaskKey = node.ref;
-        const newTaskKey = deepCopyIntoImpl(
+        const newTaskKey = deepCopyImpl(
           graph,
           oldTaskKey,
           outRecords,
-          newKey,
-          wsCopyTo
+          wsCopyTo,
+          newKey
         );
         node.ref = newTaskKey;
       }
     }
   }
+  //TODO: why does it also duplicate to the same ws?
+  const newNote = createNewNote(
+    graph,
+    wsCopyTo.getVertexProxy(),
+    newData as any
+  );
 
   if (parentNoteNewKey) {
     newData.parentNote = parentNoteNewKey;

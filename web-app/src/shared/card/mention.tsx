@@ -228,7 +228,6 @@ export function MentionPopup<T>({
         />
       </div>
       <LineSeparator />
-      <LineSeparator />
       <Scroller>
         {(ref) => (
           <div className={cn(styles.list)} ref={ref}>
