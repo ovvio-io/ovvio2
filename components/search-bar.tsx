@@ -20,11 +20,23 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'white',
   },
   pickerStyle: {
+    // padding: '0px 0px 0px 8px',
+    // gap: '8px',
+    // height: 4 * styleguide.gridbase,
+    // backgroundColor: theme.secondary.s0,
+    // borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    display: 'flex',
     padding: '0px 0px 0px 8px',
-    gap: '8px',
-    height: 4 * styleguide.gridbase,
-    backgroundColor: theme.secondary.s0,
-    borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    marginBottom: 'none',
+    alignItems: 'center',
+    boxShadow: 'none',
+    width: 'none',
+    height: '32px',
+    borderRadius: 'none',
+    backgroundColor: '#FFFBF5',
+    justifyContent: 'flex-start',
+    cursor: 'default',
+    borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
   },
   baseTextStyle: {
     fontFamily: 'Poppins',
@@ -93,9 +105,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       )}
       style={containerStyle}
     >
-      <div style={{ marginRight: '4px' }}>
-        <IconSearch />
-      </div>
+      <IconSearch />
       <input
         ref={inputRef}
         type="text"

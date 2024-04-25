@@ -4,21 +4,17 @@ import { coreValueCompare } from '../../base/core-types/comparable.ts';
 import { fromTimestamp } from '../base/orderstamp.ts';
 import { NS_NOTES } from '../base/scheme-types.ts';
 import { isRefMarker, RefType } from '../richtext/model.ts';
-import {
-  dfs,
-  findLastTextNode,
-  isRichText,
-  isTextNode,
-  RichText,
-  TextNode,
-} from '../richtext/tree.ts';
+import { dfs, findLastTextNode, isRichText } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
+import { VertexManager } from './graph/vertex-manager.ts';
+import { Workspace } from './graph/vertices/index.ts';
 import { Note } from './graph/vertices/note.ts';
 
-const DUP_TITLE_SUFFIX = ' (copy)';
+const DUP_TITLE_SUFFIX = ' (duplicate)';
 
-interface DuplicateCardOptions {
+export interface DuplicateCardOptions {
   suffix?: string;
+  wsCopyTo?: VertexManager<Workspace>; // Workspace to copy the note to.
 }
 
 const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
@@ -36,24 +32,38 @@ const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
 export function duplicateCard(
   graph: GraphManager,
   rootKey: string,
-  opts: DuplicateCardOptions = {},
+  opts: DuplicateCardOptions = {}
 ): Note | undefined {
   opts = {
     ...DEFAULT_DUPLICATE_OPTS,
     ...opts,
   };
   if (!checkRecords(graph, rootKey)) return;
-
+  console.log('opts.wsCopyTo', opts.wsCopyTo);
   const outRecords: { [s: string]: CoreObject } = {};
-  const newRootKey = deepDuplicateImpl(graph, rootKey, outRecords, undefined);
+  const newRootKey = deepCopyIntoImpl(
+    graph,
+    rootKey,
+    outRecords,
+    undefined,
+    opts.wsCopyTo
+  );
+  debugger;
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
+  const workspaceId = opts.wsCopyTo?.getVertexProxy().key;
+
   const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
+    const key = x[0];
+    const initialData = {
+      ...x[1],
+    };
+
     return {
       namespace: NS_NOTES,
-      initialData: x[1],
-      key: x[0],
+      initialData: initialData,
+      key: key,
     };
   });
 
@@ -84,39 +94,41 @@ function checkRecords(graph: GraphManager, rootKey: string) {
 }
 
 /**
- * The main deep duplicate function. Receives a rootKey and duplicate his children.
+ * The main deep copyInto function. Receives a rootKey it and copy his children to a given workspace (wsCopyTo).
  * @param client
  * @param rootKey The old root key
  * @param outRecords
  * @param parentNoteNewKey The New Parent Key
+ * @param wsCopyTo Workspace to copy to
+
  */
-function deepDuplicateImpl(
+function deepCopyIntoImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
   parentNoteNewKey?: string,
+  wsCopyTo?: VertexManager<Workspace>
 ) {
   const root = graph.getVertex<Note>(rootKey);
 
   const newKey = uniqueId();
-
+  debugger;
   const newData: CoreObject = {
     ...root.cloneData(),
     creationDate: new Date(),
     sortStamp: root.sortStamp,
   };
-
   const newBody = newData.body;
-
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
         const oldTaskKey = node.ref;
-        const newTaskKey = deepDuplicateImpl(
+        const newTaskKey = deepCopyIntoImpl(
           graph,
           oldTaskKey,
           outRecords,
           newKey,
+          wsCopyTo
         );
         node.ref = newTaskKey;
       }

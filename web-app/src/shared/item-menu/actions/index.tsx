@@ -1,6 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
+import {
+  DuplicateCardOptions,
+  duplicateCard,
+} from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -100,17 +103,20 @@ const useStyles = makeStyles(() => ({
     flexShrink: 0,
   },
   wsItem: {
-    width: '320px',
-    maxWidth: '320px',
+    width: '340px',
+    maxWidth: '340px',
     borderBottom: `2px solid #f5ecdc`,
     ':last-child': {
       borderBottom: 'none',
     },
   },
   firstWsItem: {
-    maxWidth: '320px',
+    maxWidth: '340px',
     borderBottom: `1px solid #f5ecdc`,
     marginBottom: '8px',
+  },
+  copyInto: {
+    gap: '8px',
   },
 }));
 
@@ -267,47 +273,47 @@ export function DeleteCardAction({
   );
 }
 
-interface DuplicateCardActionProps extends CardActionProps {
-  editorRootKey?: string;
-  source: UISource;
-}
-export function DuplicateCardAction({
-  editorRootKey,
-  cardManager,
-  source,
-  ...props
-}: DuplicateCardActionProps) {
-  const graph = useGraphManager();
-  const logger = useLogger();
-  const navigate = useNavigate();
+// interface DuplicateCardActionProps extends CardActionProps {
+//   editorRootKey?: string;
+//   source: UISource;
+// }
+// export function DuplicateCardAction({
+//   editorRootKey,
+//   cardManager,
+//   source,
+//   ...props
+// }: DuplicateCardActionProps) {
+//   const graph = useGraphManager();
+//   const logger = useLogger();
+//   const navigate = useNavigate();
 
-  const onDuplicate = () => {
-    const newCard = duplicateCard(graph, cardManager.key)!;
-    logger.log({
-      severity: 'EVENT',
-      event: 'Duplicate',
-      vertex: cardManager.key,
-      target: newCard?.key,
-      source,
-    });
+//   const onDuplicate = () => {
+//     const newCard = duplicateCard(graph, cardManager.key)!;
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'Duplicate',
+//       vertex: cardManager.key,
+//       target: newCard?.key,
+//       source,
+//     });
 
-    if (editorRootKey === cardManager.key) {
-      navigate(`${newCard?.workspace.key}/${newCard?.key}`);
-      return;
-    }
+//     if (editorRootKey === cardManager.key) {
+//       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
+//       return;
+//     }
 
-    // TODO: Wiring for new editor
-  };
+//     // TODO: Wiring for new editor
+//   };
 
-  return (
-    <MenuAction
-      {...props}
-      onClick={onDuplicate}
-      IconComponent={IconDuplicate}
-      text="Duplicate"
-    />
-  );
-}
+//   return (
+//     <MenuAction
+//       {...props}
+//       onClick={onDuplicate}
+//       IconComponent={IconDuplicate}
+//       text="Duplicate"
+//     />
+//   );
+// }
 interface CopyIntoCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
@@ -349,8 +355,11 @@ export function CopyIntoCardAction({
     (t) => t.name,
     Number.MAX_SAFE_INTEGER
   );
-  const onCopyInto = () => {
-    const newCard = duplicateCard(graph, cardManager.key)!;
+  const onCopyInto = (wsManager: VertexManager<Workspace>) => {
+    const options: DuplicateCardOptions = {
+      wsCopyTo: wsManager, // Passing wsManager as part of the options object
+    };
+    const newCard = duplicateCard(graph, cardManager.key, options);
     logger.log({
       severity: 'EVENT',
       event: 'CopyInto',
@@ -358,7 +367,6 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
-
     if (editorRootKey === cardManager.key) {
       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
       return;
@@ -370,6 +378,7 @@ export function CopyIntoCardAction({
       text="Copy to..."
       IconComponent={IconDuplicate}
       isWsList={true}
+      className={styles.copyInto}
     >
       <SearchBar
         searchTerm={searchTerm}
@@ -385,7 +394,7 @@ export function CopyIntoCardAction({
               ? styles.firstWsItem
               : styles.wsItem
           }
-          onClick={() => onCopyInto()}
+          onClick={() => onCopyInto(ws.manager as VertexManager<Workspace>)}
         >
           <WorkspaceIndicator
             className={cn(styles.colorIndicator)}
@@ -402,6 +411,9 @@ export function CopyIntoCardAction({
     </SecondaryMenuItem>
   );
 }
+
+// im working on a new feature in my product and it is "copy into" which should do a deep copy of a note (and it children notes/tasks) from a workspace to another workspace.
+// i have old function for that but i need to modify it so it will get a workspace as an argument and then fix some bugs in the deep copy implementation.
 
 //   <SecondaryMenuItem
 //     text="Copy to..."
