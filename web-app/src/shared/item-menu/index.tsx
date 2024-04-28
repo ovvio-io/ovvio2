@@ -1,16 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Menu from '../../../../styles/components/menu.tsx';
-import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
   EditCardAction,
-  // UploadAttachmentAction,
   EditDueDateAction,
   ViewInNoteAction,
   DeleteCardAction,
-  // ExportMailAction,
-  // ExportPdfAction,
-  // DuplicateCardAction,
-  // CopyUrlAction,
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,
@@ -108,27 +102,27 @@ export default function CardMenuView({
     />,
   ].filter(Boolean);
 
-  // const menuItemsS = menuItems.map((action, index) => {
-  //   const isLastItem = index === actions.length - 1;
-  //   const actionClasses = cn(isLastItem ? styles.item : styles.item);
-
-  //   return React.cloneElement(action, {
-  //     key: index,
-  //     className: actionClasses,
-  //   });
-  // });
-
   return (
     <React.Fragment>
       <Menu
-        isOpen={isOpen}
+        isOpen={showConfirmation ? true : isOpen}
         toggleMenu={toggleMenu}
         renderButton={renderButton}
         direction="out"
         position={source === 'list' ? 'left' : 'right'}
         align="start"
       >
-        {menuItems}
+        {showConfirmation ? (
+          <DeleteCardAction
+            cardManager={cardManager}
+            source={source}
+            onDeleted={onDeleted}
+            showConfirmation={showConfirmation}
+            setShowConfirmation={setShowConfirmation}
+          />
+        ) : (
+          menuItems
+        )}
       </Menu>
     </React.Fragment>
   );
