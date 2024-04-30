@@ -1,4 +1,6 @@
 import { JSONObject, ReadonlyJSONObject } from '../base/interfaces.ts';
+import { tuple4ToString } from '../base/tuple.ts';
+import { VCurrent } from '../base/version-number.ts';
 
 export type Severity =
   | 'EMERGENCY'
@@ -78,6 +80,7 @@ export interface TechnicalLogData extends JSONObject {
   severityCode: number;
   timestamp: number; // ISO 8601 string
   logId: string;
+  ovvVersion: string;
 
   t_denoVersion: string;
   t_v8Version: string;
@@ -99,9 +102,8 @@ export interface GenericLogEntry extends BaseLogEntry {
   message: string;
 }
 
-export type NormalizedLogEntry<T extends BaseLogEntry = BaseLogEntry> =
-  & T
-  & TechnicalLogData;
+export type NormalizedLogEntry<T extends BaseLogEntry = BaseLogEntry> = T &
+  TechnicalLogData;
 
 export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
   e: T,
@@ -110,6 +112,7 @@ export function normalizeLogEntry<T extends BaseLogEntry = BaseLogEntry>(
   res.severityCode = SeverityCodes[e.severity];
   res.timestamp = Date.now();
   res.logId = uniqueId();
+  res.ovvVersion = tuple4ToString(VCurrent);
   if (typeof Deno !== 'undefined') {
     try {
       res.t_denoVersion = Deno.version.deno;
