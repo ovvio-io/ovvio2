@@ -83,15 +83,15 @@ export default function CardMenuView({
     //     editorRootKey={editorRootKey}
     //   />
     // ),
-    partialNote.childCards.length > 0 && (
-      <ToggleSubTasksAction cardManager={cardManager} source={source} />
-    ),
     partialNote.type === NoteType.Note && (
       <CopyIntoCardAction
         cardManager={cardManager}
         source={source}
-        editorRootKey={editorRootKey}
+        editorRootKey={editorRootKey} //TODO: what is it?
       />
+    ),
+    partialNote.childCards.length > 0 && (
+      <ToggleSubTasksAction cardManager={cardManager} source={source} />
     ),
     <DeleteCardAction
       cardManager={cardManager}

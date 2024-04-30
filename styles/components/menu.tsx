@@ -7,10 +7,6 @@ import React, {
   useContext,
   MouseEvent,
   Children,
-  createContext,
-  useImperativeHandle,
-  forwardRef,
-  useEffect,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, cn } from '../css-objects/index.ts';
@@ -67,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: 'white',
     boxSizing: 'border-box',
     height: styleguide.gridbase * 4,
-    minWidth: styleguide.gridbase * 15,
+    minWidth: styleguide.gridbase * 16,
     maxWidth: styleguide.gridbase * 27,
     padding: '8px 16px 8px 8px',
     color: theme.background.text,
@@ -156,6 +152,7 @@ const useStyles = makeStyles((theme) => ({
     overflowY: 'auto',
     overflowX: 'clip',
   },
+  secondaryBox: {},
 }));
 
 const MenuContext = React.createContext({
@@ -186,9 +183,9 @@ export function SecondaryMenuItem({
   const styles = useStyles();
   const renderButton = useCallback(() => {
     return (
-      <div className={cn(className, styles.item)}>
+      <div className={cn(className, styles.item, styles.secondaryBox)}>
         {IconComponent && <IconComponent className={cn(styles.actionIcon)} />}
-        <Text>{text}</Text>
+        <Text className={cn(isWsList && styles.actionText)}>{text}</Text>
         <div className={cn(layout.flexSpacer)} />
         <img
           key="iconExpender"

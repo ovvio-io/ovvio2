@@ -54,13 +54,11 @@ export function copyIntoCard(
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  const workspaceId = opts.wsCopyTo?.getVertexProxy().key;
-
   const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
     const key = x[0];
     const initialData = {
       ...x[1],
-      workspace: workspaceId,
+      workspace: opts.wsCopyTo.getVertexProxy().key,
     };
 
     return {
@@ -136,12 +134,12 @@ function deepCopyImpl(
       }
     }
   }
-  //TODO: why does it also duplicate to the same ws?
-  const newNote = createNewNote(
-    graph,
-    wsCopyTo.getVertexProxy(),
-    newData as any
-  );
+
+  // const newNote = createNewNote(
+  //   graph,
+  //   wsCopyTo.getVertexProxy(),
+  //   newData as any
+  // );
 
   if (parentNoteNewKey) {
     newData.parentNote = parentNoteNewKey;

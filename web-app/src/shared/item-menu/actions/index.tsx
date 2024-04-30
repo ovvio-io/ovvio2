@@ -357,7 +357,7 @@ export function CopyIntoCardAction({
   );
   const onCopyInto = (wsManager: VertexManager<Workspace>) => {
     const options: CopyIntoCardOptions = {
-      wsCopyTo: wsManager, // Passing wsManager as part of the options object
+      wsCopyTo: wsManager,
     };
     const newCard = copyIntoCard(graph, cardManager.key, options);
     logger.log({
@@ -367,19 +367,14 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
-    //TODO: editorRootKey- what is it? it is never passed as a prop so it's undefined.
-    if (editorRootKey === cardManager.key) {
-      navigate(`${newCard?.workspace.key}/${newCard?.key}`);
-      return;
-    }
   };
 
   return (
     <SecondaryMenuItem
-      text="Copy to..."
+      text="Copy to... "
       IconComponent={IconDuplicate}
       isWsList={true}
-      className={styles.copyInto}
+      // className={styles.copyInto}
     >
       <SearchBar
         searchTerm={searchTerm}

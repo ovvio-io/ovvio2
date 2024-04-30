@@ -78,6 +78,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     cursor: 'pointer',
     basedOn: [layout.row],
+    borderBottom: `2px solid ${brandLightTheme.secondary.s2}`,
 
     ':hover': {
       backgroundColor: brandLightTheme.secondary.s3,
@@ -237,7 +238,6 @@ export function MentionPopup<T>({
                   isSelected: i === selectedIndex,
                   onClick: () => select(item),
                 })}
-
                 {i !== items.length - 1 && (
                   <>
                     <LineSeparator />
