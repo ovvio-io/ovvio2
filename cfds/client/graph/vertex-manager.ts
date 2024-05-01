@@ -102,11 +102,10 @@ export class VertexManager<V extends Vertex = Vertex>
   private readonly _commitDelayTimer: SimpleTimer;
   private readonly _cachedFieldProxies: Map<unknown, unknown>;
   private _record: Record;
+  private _shadowRecord: Record;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
-  private _localMutationsCount = 0;
   private _commitPromise: Promise<void> | undefined;
-  private _hasLocalEdits = false;
   private _reportedInitialFields = false;
   private readonly _emitDelayTimer: SimpleTimer;
   private _pendingMutationsToEmit: MutationPack;
@@ -145,6 +144,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
+    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     if (hasInitialState) {
       this.scheduleCommitIfNeeded();
@@ -191,6 +191,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const dynamicFields = this.captureDynamicFields();
     this._record = newRecord;
+    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
     if (!mutationPackIsEmpty(pack)) {
@@ -223,11 +224,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return false;
     }
-    // const res = !this.record.isEqual(
-    //   repo.valueForKey(this.key, undefined, false),
-    // );
-    // return res;
-    return this._hasLocalEdits;
+    return !this._record.isEqual(this._shadowRecord);
   }
 
   get isRoot(): boolean {
@@ -343,22 +340,17 @@ export class VertexManager<V extends Vertex = Vertex>
       if (!this.record.isEqual(baseRecord)) {
         if (updated) {
           const repoRecord = repo.valueForKey(this.key);
-          if (repoRecord.isEqual(baseRecord)) {
-            this.scheduleCommitIfNeeded();
-          } else {
+          if (!repoRecord.isEqual(baseRecord)) {
             const localChanges = baseRecord.diff(this.record, true);
             const remoteChanges = baseRecord.diff(repoRecord, false);
             baseRecord.patch(concatChanges(remoteChanges, localChanges));
             this.record = baseRecord;
-            this._hasLocalEdits = true;
             this.vertexDidMutate(['hasPendingChanges', true, true]);
           }
           this.graph.client(repoId)?.touch();
         } else {
           this.scheduleCommitIfNeeded();
         }
-      } else {
-        this._hasLocalEdits = false;
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
@@ -418,7 +410,6 @@ export class VertexManager<V extends Vertex = Vertex>
             `Attempting to delete required field '${prop} of '${this.namespace}'`,
           );
           success = target.record.delete(prop);
-          this._hasLocalEdits = true;
         } else {
           success = delete target[prop as keyof T];
         }
@@ -449,10 +440,8 @@ export class VertexManager<V extends Vertex = Vertex>
         const dynamicFields = this.captureDynamicFields();
 
         target[prop as keyof T] = value;
-
         let mut: MutationPack = [prop, true, oldValue];
         if (this.scheme.hasField(prop)) {
-          this._hasLocalEdits = true;
           mut = target.onUserUpdatedField(mut);
         }
         this.vertexDidMutate(mut, dynamicFields);
@@ -553,9 +542,6 @@ export class VertexManager<V extends Vertex = Vertex>
     //   added: addedEdges,
     //   removed: removedEdges,
     // };
-    if (mutationPackHasLocal(mutations)) {
-      ++this._localMutationsCount;
-    }
     // Broadcast the mutations of our vertex
     this.emit(EVENT_DID_CHANGE, mutations);
     // this._pendingMutationsToEmit = mutationPackOptimize(
