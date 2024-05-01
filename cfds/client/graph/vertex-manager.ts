@@ -335,17 +335,18 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
-      const baseRecord = this.record;
+      // this.touch();
+      const baseRecord = this.mergeRepoRecord() || this.record;
       const updated = await repo.setValueForKey(this.key, baseRecord);
-      if (!this.record.isEqual(baseRecord)) {
-        if (updated) {
+      if (updated) {
+        if (!this.record.isEqual(baseRecord)) {
           const repoRecord = repo.valueForKey(this.key);
           if (!repoRecord.isEqual(baseRecord)) {
-            const localChanges = baseRecord.diff(this.record, true);
-            const remoteChanges = baseRecord.diff(repoRecord, false);
-            baseRecord.patch(concatChanges(remoteChanges, localChanges));
-            this.record = baseRecord;
-            this.vertexDidMutate(['hasPendingChanges', true, true]);
+            // const localChanges = baseRecord.diff(this.record, true);
+            // const remoteChanges = baseRecord.diff(repoRecord, false);
+            // baseRecord.patch(concatChanges(remoteChanges, localChanges));
+            // this.record = baseRecord;
+            // this.vertexDidMutate(['hasPendingChanges', true, true]);
           }
           this.graph.client(repoId)?.touch();
         } else {
@@ -361,6 +362,30 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
+  private mergeRepoRecord(): Record | undefined {
+    if (this.isLocal) {
+      return;
+    }
+    const repo = this.repository;
+    if (!repo) {
+      return;
+    }
+    const baseRecord = this._shadowRecord.clone();
+    const repoRecord = repo.valueForKey(this.key);
+    if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
+      baseRecord.upgradeScheme(repoRecord.scheme);
+    }
+    if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
+      baseRecord.upgradeScheme(this.record.scheme);
+    }
+    const changes = concatChanges(
+      baseRecord.diff(repoRecord, false),
+      baseRecord.diff(this.record, true),
+    );
+    baseRecord.patch(changes);
+    return baseRecord;
+  }
+
   touch(): void {
     if (this.isLocal) {
       this.reportInitialFields(true);
@@ -370,7 +395,15 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    this.record = repo.valueForKey(this.key);
+    const updatedRecord = this.mergeRepoRecord();
+    if (updatedRecord) {
+      this.record = updatedRecord;
+    }
+    // const changedFields = origRecord.diffKeys(baseRecord, true);
+    // let mutations: MutationPack;
+    // for (const field of changedFields) {
+    //   mutations = mutationPackAppend(mutations, [field, true, origRecord.get(field)]);
+    // }
     this.reportInitialFields(true);
   }
 
