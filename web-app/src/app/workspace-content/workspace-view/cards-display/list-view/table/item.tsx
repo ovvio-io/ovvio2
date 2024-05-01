@@ -416,6 +416,7 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
         source={'list'}
         cardManager={note}
         users={userManagers}
+        // className={cn(styles.assignee)}
         className={cn(styles.visibleOnHover, styles.assignee)}
       />
       <div className={cn(styles.assigneeColumn)}>

@@ -8,7 +8,6 @@ import {
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,
-  // DuplicateCardAction,
 } from './actions/index.tsx';
 import { Note, NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
@@ -70,23 +69,43 @@ export default function CardMenuView({
   }
   const menuItems = [
     partialNote.dueDate && (
-      <ClearDueDateAction cardManager={cardManager} source={source} />
+      <ClearDueDateAction
+        key="clearDueDate"
+        cardManager={cardManager}
+        source={source}
+      />
     ),
     partialNote.childCards.length > 0 && (
-      <ToggleSubTasksAction cardManager={cardManager} source={source} />
+      <ToggleSubTasksAction
+        key="toggleSubTasks"
+        cardManager={cardManager}
+        source={source}
+      />
     ),
-    allowsEdit && <EditCardAction cardManager={cardManager} source={source} />,
+    allowsEdit && (
+      <EditCardAction
+        key="editCard"
+        cardManager={cardManager}
+        source={source}
+      />
+    ),
     partialNote.parentNote && (
-      <ViewInNoteAction cardManager={cardManager} source={source} />
+      <ViewInNoteAction
+        key="viewInNote"
+        cardManager={cardManager}
+        source={source}
+      />
     ),
     partialNote.type === NoteType.Note && (
       <CopyIntoCardAction
+        key="copyIntoCard"
         cardManager={cardManager}
         source={source}
         editorRootKey={editorRootKey}
       />
     ),
     <DeleteCardAction
+      key="deleteCard"
       cardManager={cardManager}
       source={source}
       onDeleted={onDeleted}
@@ -107,6 +126,7 @@ export default function CardMenuView({
       >
         {showConfirmation ? (
           <DeleteCardAction
+            key="deleteConfirmation"
             cardManager={cardManager}
             source={source}
             onDeleted={onDeleted}

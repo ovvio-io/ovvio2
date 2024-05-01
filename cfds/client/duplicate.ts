@@ -15,7 +15,7 @@ const COPY_TITLE_SUFFIX = ' (copy)';
 
 export interface CopyIntoCardOptions {
   suffix?: string;
-  wsCopyTo: VertexManager<Workspace>;
+  wsCopyTo?: VertexManager<Workspace>;
 }
 
 const DEFAULT_COPYINTO_OPTS: CopyIntoCardOptions = {
@@ -58,7 +58,7 @@ export function copyIntoCard(
     const key = x[0];
     const initialData = {
       ...x[1],
-      workspace: opts.wsCopyTo.getVertexProxy().key,
+      workspace: opts.wsCopyTo?.getVertexProxy().key,
     };
 
     return {
@@ -70,7 +70,7 @@ export function copyIntoCard(
 
   const vertices = graph.createVertices<Note>(vInfos);
 
-  const vertex = vertices.find((v) => v.key === newRootKey)!;
+  const vertex = graph.getVertex<Note>(newRootKey);
 
   return vertex;
 }
@@ -118,12 +118,13 @@ function deepCopyImpl(
     creationDate: new Date(),
     sortStamp: root.sortStamp,
   };
+  delete newData.pinnedBy;
+  delete newData.dueDate;
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
-        //what is it RefMarker?
-        const oldTaskKey = node.ref; // why using ref?
+        const oldTaskKey = node.ref;
         const newTaskKey = deepCopyImpl(
           graph,
           oldTaskKey,
@@ -136,12 +137,6 @@ function deepCopyImpl(
     }
   }
 
-  // const newNote = createNewNote(
-  //   graph,
-  //   wsCopyTo.getVertexProxy(),
-  //   newData as any
-  // );
-
   if (parentNoteNewKey) {
     newData.parentNote = parentNoteNewKey;
   } else if (root.parentNote) {
@@ -152,7 +147,6 @@ function deepCopyImpl(
 
   return newKey;
 }
-
 /**
  * Goes over all duplicated cards and fixes the sortStamp.
  * sort stamp will be relative to the sorting today

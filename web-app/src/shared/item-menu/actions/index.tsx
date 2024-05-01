@@ -402,7 +402,7 @@ export function CopyIntoCardAction({
           {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
         </MenuItem>,
         ws.key === currentWs.key && index == 0 ? (
-          <LineSeparator height={1} />
+          <LineSeparator key={`separator-${ws.key}`} height={1} />
         ) : null,
       ])}
     </SecondaryMenuItem>

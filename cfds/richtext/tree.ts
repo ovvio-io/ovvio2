@@ -71,7 +71,7 @@ export interface Pointer extends Point {
 
 export function treeAtomKeyFilterIgnoreText(
   key: string,
-  obj: CoreValue,
+  obj: CoreValue
 ): boolean {
   if (key === 'children' && isElementNode(obj)) {
     return false;
@@ -200,7 +200,7 @@ export function* dfs(
   root: ElementNode,
   mutate = false,
   _depth = 0,
-  _path: ElementNode[] = [],
+  _path: ElementNode[] = []
 ): Generator<readonly [TreeNode, number, readonly ElementNode[]]> {
   const children = mutate ? Array.from(root.children) : root.children;
   for (const child of children) {
@@ -217,7 +217,7 @@ export function* dfs(
 
 export function pointToAbsOffset(
   offsetsMap: OrderedMap<TreeNode, number>,
-  ptr: Point,
+  ptr: Point
 ): number {
   const nodeOffset = offsetsMap.get(ptr.node);
   assert(nodeOffset !== undefined);
@@ -226,7 +226,7 @@ export function pointToAbsOffset(
 
 function* lookupNeighbors(
   offsetsMap: OrderedMap<TreeNode, number>,
-  src: TreeNode,
+  src: TreeNode
 ): Generator<[TreeNode, number]> {
   let next = offsetsMap.next(src);
   let prev = offsetsMap.prev(src);
@@ -251,7 +251,7 @@ function* lookupNeighbors(
  */
 export function pointFromAbsOffset(
   offsetsMap: OrderedMap<TreeNode, number>,
-  offset: number,
+  offset: number
 ): Point {
   // First, find the node which holds our absolute offset
   let targetNodeOffset = 0;
@@ -309,7 +309,7 @@ export function isExpiredPointer(v: CoreValue, buffer = 0): boolean {
  */
 export function purgeExpiredPointers(
   rt: RichText,
-  buffer = 0,
+  buffer = 0
 ): RichText | undefined {
   if (rt.pointers === undefined || rt.pointers.size === 0) {
     return undefined;
@@ -347,7 +347,7 @@ export function* pointersForNode(
   ptrSet: Iterable<Pointer> | undefined,
   node: TreeNode,
   local: boolean,
-  offset?: number,
+  offset?: number
 ): Generator<Pointer> {
   if (ptrSet === undefined) {
     return;
@@ -365,7 +365,7 @@ export function* pointersForNode(
 export function cleanCloneTreeAtom(
   obj: ReadonlyCoreObject | CoreDictionary,
   key: string,
-  _opts?: CoreValueCloneOpts,
+  _opts?: CoreValueCloneOpts
 ): CoreValue {
   if (key === 'children' && isElementNode(obj as CoreValue)) {
     return [];
@@ -421,7 +421,7 @@ export function treeToPlaintext(root: ElementNode | undefined): string {
 
 export function pathToNode<T extends ElementNode>(
   root: ElementNode,
-  searchNode: TreeNode,
+  searchNode: TreeNode
 ): readonly T[] | undefined {
   for (const [node, _depth, path] of dfs(root)) {
     if (node === searchNode) {
@@ -433,7 +433,7 @@ export function pathToNode<T extends ElementNode>(
 
 export function findLastTextNode(
   root: ElementNode,
-  notEmpty = false,
+  notEmpty = false
 ): TextNode | undefined {
   let textNode: TextNode | undefined;
   for (const [node] of dfs(root)) {
@@ -446,7 +446,7 @@ export function findLastTextNode(
 
 export function findFirstTextNode(
   root: ElementNode,
-  notEmpty = false,
+  notEmpty = false
 ): TextNode | undefined {
   for (const [node] of dfs(root)) {
     if (isTextNode(node) && (notEmpty === false || node.text.length > 0)) {
@@ -458,7 +458,7 @@ export function findFirstTextNode(
 
 export function findNode<T extends TreeNode>(
   root: ElementNode,
-  predicate: (node: T) => boolean,
+  predicate: (node: T) => boolean
 ): [T, number, T[]] | undefined {
   for (const [node, depth, path] of dfs(root)) {
     if (predicate(node as T)) {
