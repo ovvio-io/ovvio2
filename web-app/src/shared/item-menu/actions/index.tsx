@@ -61,6 +61,7 @@ import { WorkspaceIndicator } from '../../../../../components/workspace-indicato
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
 import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { SearchBar } from '../../../../../components/search-bar.tsx';
+import { useMaxWidth } from '../../../app/index.tsx';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -103,20 +104,18 @@ const useStyles = makeStyles(() => ({
     flexShrink: 0,
   },
   wsItem: {
-    width: '340px',
-    maxWidth: '340px',
+    // maxWidth: '340px',
     borderBottom: `2px solid #f5ecdc`,
     ':last-child': {
       borderBottom: 'none',
     },
   },
   firstWsItem: {
-    maxWidth: '340px',
+    // maxWidth: '340px',
     borderBottom: `1px solid #f5ecdc`,
     marginBottom: '8px',
   },
   copyInto: {
-    // gap: '8px',
     width: '100%',
   },
 }));
@@ -349,6 +348,7 @@ export function CopyIntoCardAction({
     return coreValueCompare(a, b);
   });
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const { maxWidthSelected } = useMaxWidth();
 
   const filtered = suggestResults(
     searchTerm,
@@ -391,6 +391,7 @@ export function CopyIntoCardAction({
               ? styles.firstWsItem
               : styles.wsItem
           }
+          style={{ width: `${maxWidthSelected}px` }}
           onClick={() => onCopyInto(ws.manager as VertexManager<Workspace>)}
         >
           <WorkspaceIndicator

@@ -1,5 +1,7 @@
 import React, {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -64,6 +66,7 @@ import { View } from '../../../../cfds/client/graph/vertices/view.ts';
 import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 import { LineSeparator } from '../../../../styles/components/menu.tsx';
+import { useMaxWidth } from '../index.tsx';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -579,13 +582,11 @@ function WorkspaceListItem({
   groupId,
   ofSettings,
   visible,
-  updateMaxWidth,
 }: {
   workspace: VertexManager<Workspace>;
   groupId: WorkspaceGID;
   ofSettings: boolean | undefined;
   visible?: boolean;
-  updateMaxWidth: (maxWidth: number) => void;
 }) {
   const color = useWorkspaceColor(workspace);
   const { name, isTemplate } = usePartialVertex(workspace, [
@@ -622,6 +623,7 @@ function WorkspaceListItem({
   const [loaded, setLoaded] = useState(graph.repositoryReady(repoId));
   const isSelected = view.selectedWorkspaces.has(workspace.getVertexProxy());
   const textRef = useRef<HTMLDivElement>(null);
+  const { updateMaxWidth, updateMaxWidthSelected } = useMaxWidth();
 
   function measureTextWidth(
     text: string,
@@ -643,6 +645,16 @@ function WorkspaceListItem({
     const measuredWidth = measureTextWidth(name, '14px PoppinsSemiBold');
     updateMaxWidth(measuredWidth + extraPadding);
   }, [name, updateMaxWidth]);
+
+  useEffect(() => {
+    if (isSelected) {
+      const measuredWidthSelected = measureTextWidth(
+        name,
+        '14px PoppinsSemiBold'
+      );
+      updateMaxWidthSelected(measuredWidthSelected + extraPadding);
+    }
+  }, [name, view.selectedWorkspaces]);
 
   useEffect(() => {
     if (isSelected) {
@@ -820,14 +832,9 @@ function WorkspaceListItem({
 interface WorkspaceListProps {
   query: Query<Workspace, Workspace, WorkspaceGID>;
   ofSettings: boolean | undefined;
-  updateMaxWidth: (maxWidth: number) => void;
 }
 
-function WorkspacesList({
-  query,
-  ofSettings,
-  updateMaxWidth,
-}: WorkspaceListProps) {
+function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
   const graph = useGraphManager();
   const styles = useStyles();
   const strings = useStrings();
@@ -932,7 +939,6 @@ function WorkspacesList({
             groupId={gid}
             ofSettings={ofSettings}
             visible={contents.length < limit}
-            updateMaxWidth={updateMaxWidth}
           />
         );
       }
@@ -1076,11 +1082,12 @@ function WorkspaceBarInternal({
     'workspaceBarCollapsed',
     'noteType'
   );
-  const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
   const [isHovered, setIsHovered] = useState(false);
-  const updateMaxWidth = useCallback((newWidth: number) => {
-    setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
-  }, []);
+  // const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
+  // const updateMaxWidth = useCallback((newWidth: number) => {
+  //   setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
+  // }, []);
+  const { maxWidth } = useMaxWidth();
 
   const selectAll = useCallback(() => {
     view.selectedWorkspaces = new Set(
@@ -1150,11 +1157,7 @@ function WorkspaceBarInternal({
               ofSettings={ofSettings}
             />
           </div>
-          <WorkspacesList
-            query={query}
-            ofSettings={ofSettings}
-            updateMaxWidth={updateMaxWidth}
-          />
+          <WorkspacesList query={query} ofSettings={ofSettings} />
           <WorkspaceBarActions ofSettings={ofSettings} />
         </div>
       )}

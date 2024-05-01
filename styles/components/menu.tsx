@@ -64,7 +64,7 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'border-box',
     height: styleguide.gridbase * 4,
     minWidth: styleguide.gridbase * 16,
-    maxWidth: styleguide.gridbase * 27,
+    // maxWidth: styleguide.gridbase * 27,
     padding: '8px 16px 8px 8px',
     color: theme.background.text,
     cursor: 'pointer',
