@@ -1,28 +1,25 @@
 import { uniqueId } from '../../base/common.ts';
 import { CoreObject } from '../../base/core-types/base.ts';
 import { coreValueCompare } from '../../base/core-types/comparable.ts';
+import { createNewNote } from '../../web-app/src/shared/card/create.ts';
 import { fromTimestamp } from '../base/orderstamp.ts';
 import { NS_NOTES } from '../base/scheme-types.ts';
 import { isRefMarker, RefType } from '../richtext/model.ts';
-import {
-  dfs,
-  findLastTextNode,
-  isRichText,
-  isTextNode,
-  RichText,
-  TextNode,
-} from '../richtext/tree.ts';
+import { dfs, findLastTextNode, isRichText } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
+import { VertexManager } from './graph/vertex-manager.ts';
+import { Workspace } from './graph/vertices/index.ts';
 import { Note } from './graph/vertices/note.ts';
 
-const DUP_TITLE_SUFFIX = ' (copy)';
+const COPY_TITLE_SUFFIX = ' (copy)';
 
-interface DuplicateCardOptions {
+export interface CopyIntoCardOptions {
   suffix?: string;
+  wsCopyTo?: VertexManager<Workspace>;
 }
 
-const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
-  suffix: DUP_TITLE_SUFFIX,
+const DEFAULT_COPYINTO_OPTS: CopyIntoCardOptions = {
+  suffix: COPY_TITLE_SUFFIX,
 };
 
 /**
@@ -33,33 +30,47 @@ const DEFAULT_DUPLICATE_OPTS: DuplicateCardOptions = {
  * @param client
  * @param rootKey The card key you want to duplicate
  */
-export function duplicateCard(
+export function copyIntoCard(
   graph: GraphManager,
   rootKey: string,
-  opts: DuplicateCardOptions = {},
+  opts: CopyIntoCardOptions
 ): Note | undefined {
+  if (!opts.wsCopyTo) {
+    throw new Error('Workspace must be provided');
+  }
   opts = {
-    ...DEFAULT_DUPLICATE_OPTS,
+    ...DEFAULT_COPYINTO_OPTS,
     ...opts,
   };
   if (!checkRecords(graph, rootKey)) return;
-
   const outRecords: { [s: string]: CoreObject } = {};
-  const newRootKey = deepDuplicateImpl(graph, rootKey, outRecords, undefined);
+  const newRootKey = deepCopyImpl(
+    graph,
+    rootKey,
+    outRecords,
+    // opts.wsCopyTo,
+    undefined
+  );
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
   const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
+    const key = x[0];
+    const initialData = {
+      ...x[1],
+      workspace: opts.wsCopyTo?.getVertexProxy().key,
+    };
+
     return {
       namespace: NS_NOTES,
-      initialData: x[1],
-      key: x[0],
+      initialData: initialData,
+      key: key,
     };
   });
 
   const vertices = graph.createVertices<Note>(vInfos);
 
-  const vertex = vertices.find((v) => v.key === newRootKey)!;
+  const vertex = graph.getVertex<Note>(newRootKey);
 
   return vertex;
 }
@@ -84,39 +95,42 @@ function checkRecords(graph: GraphManager, rootKey: string) {
 }
 
 /**
- * The main deep duplicate function. Receives a rootKey and duplicate his children.
+ * The main deep copyInto function. Receives a rootKey it and copy his children to a given workspace (wsCopyTo).
  * @param client
  * @param rootKey The old root key
  * @param outRecords
  * @param parentNoteNewKey The New Parent Key
+ * @param wsCopyTo Workspace to copy to
+
  */
-function deepDuplicateImpl(
+function deepCopyImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
-  parentNoteNewKey?: string,
+  // wsCopyTo: VertexManager<Workspace>,
+  parentNoteNewKey?: string
 ) {
   const root = graph.getVertex<Note>(rootKey);
 
   const newKey = uniqueId();
-
   const newData: CoreObject = {
     ...root.cloneData(),
     creationDate: new Date(),
     sortStamp: root.sortStamp,
   };
-
+  delete newData.pinnedBy;
+  delete newData.dueDate;
   const newBody = newData.body;
-
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
         const oldTaskKey = node.ref;
-        const newTaskKey = deepDuplicateImpl(
+        const newTaskKey = deepCopyImpl(
           graph,
           oldTaskKey,
           outRecords,
-          newKey,
+          // wsCopyTo,
+          newKey
         );
         node.ref = newTaskKey;
       }
@@ -133,7 +147,6 @@ function deepDuplicateImpl(
 
   return newKey;
 }
-
 /**
  * Goes over all duplicated cards and fixes the sortStamp.
  * sort stamp will be relative to the sorting today

@@ -129,7 +129,7 @@ export function GroupByDropDown() {
       <SecondaryMenuItem text={strings.groupByTag}>
         {parentNames.map((name) =>
           name === 'Status' ? null : (
-            <MenuItem onClick={() => setTag(name!)}>
+            <MenuItem key={name} onClick={() => setTag(name!)}>
               {name}
               {view.pivot === name && <IconCheck />}
             </MenuItem>

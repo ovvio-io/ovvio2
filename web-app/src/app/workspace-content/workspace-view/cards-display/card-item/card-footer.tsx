@@ -25,7 +25,6 @@ import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { DueDateState } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
 import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
 import CardMenuView from '../../../../../shared/item-menu/index.tsx';
-import { CardTags } from './card-tag-view.tsx';
 import { CardTagsNew } from './card-tag-view-new.tsx';
 
 export const FOOTER_HEIGHT = styleguide.gridbase * 2;
@@ -43,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
     height: FOOTER_HEIGHT,
     paddingLeft: styleguide.gridbase * 0.5,
     gap: styleguide.gridbase * 0.5,
-    width: '86px',
+    width: '88px',
     justifyContent: 'flex-start',
   },
   footerItemBoard: {

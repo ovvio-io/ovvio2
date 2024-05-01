@@ -182,7 +182,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
   },
   workspaceIndicator: {
-    maxWidth: styleguide.gridbase * 12,
+    // maxWidth: styleguide.gridbase * 12,
   },
   RightHoverMoreButton: {
     position: 'absolute',

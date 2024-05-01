@@ -22,6 +22,7 @@ export type ClientEvent =
   | 'Create'
   | 'Delete'
   | 'Duplicate'
+  | 'CopyInto'
   | 'Show'
   | 'Hide';
 
