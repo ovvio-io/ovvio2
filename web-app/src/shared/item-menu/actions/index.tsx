@@ -116,7 +116,8 @@ const useStyles = makeStyles(() => ({
     marginBottom: '8px',
   },
   copyInto: {
-    gap: '8px',
+    // gap: '8px',
+    width: '100%',
   },
 }));
 
@@ -374,7 +375,7 @@ export function CopyIntoCardAction({
       text="Copy to... "
       IconComponent={IconDuplicate}
       isWsList={true}
-      // className={styles.copyInto}
+      className={styles.copyInto}
     >
       <SearchBar
         searchTerm={searchTerm}

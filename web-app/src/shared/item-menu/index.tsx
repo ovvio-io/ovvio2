@@ -69,29 +69,22 @@ export default function CardMenuView({
     return null;
   }
   const menuItems = [
-    allowsEdit && <EditCardAction cardManager={cardManager} source={source} />,
     partialNote.dueDate && (
       <ClearDueDateAction cardManager={cardManager} source={source} />
     ),
+    partialNote.childCards.length > 0 && (
+      <ToggleSubTasksAction cardManager={cardManager} source={source} />
+    ),
+    allowsEdit && <EditCardAction cardManager={cardManager} source={source} />,
     partialNote.parentNote && (
       <ViewInNoteAction cardManager={cardManager} source={source} />
     ),
-    // partialNote.type === NoteType.Note && (
-    //   <DuplicateCardAction
-    //     cardManager={cardManager}
-    //     source={source}
-    //     editorRootKey={editorRootKey}
-    //   />
-    // ),
     partialNote.type === NoteType.Note && (
       <CopyIntoCardAction
         cardManager={cardManager}
         source={source}
-        editorRootKey={editorRootKey} //TODO: what is it?
+        editorRootKey={editorRootKey}
       />
-    ),
-    partialNote.childCards.length > 0 && (
-      <ToggleSubTasksAction cardManager={cardManager} source={source} />
     ),
     <DeleteCardAction
       cardManager={cardManager}

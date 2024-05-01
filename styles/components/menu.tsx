@@ -76,8 +76,10 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     basedOn: [layout.row],
     display: 'flex',
-    width: 'auto',
+    // width: 'auto',
     borderBottom: `2px solid ${theme1.secondary.s2}`,
+
+    width: '100%',
     // gap: styleguide.gridbase,
     // ':last-child': {
     //   borderBottom: 'none',
@@ -95,7 +97,7 @@ const useStyles = makeStyles((theme) => ({
     marginRight: styleguide.gridbase,
   },
   actionText: {
-    flexGrow: 1,
+    // flexGrow: 1,
     marginLeft: styleguide.gridbase,
   },
   menuButton: {
@@ -209,6 +211,7 @@ export function SecondaryMenuItem({
       align="start"
       withoutArrow={true}
       popupClassName={isWsList ? cn(styles.workspacesList) : 'none'}
+      className={className}
     >
       {children}
     </Menu>

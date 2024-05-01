@@ -48,7 +48,7 @@ export function copyIntoCard(
     graph,
     rootKey,
     outRecords,
-    opts.wsCopyTo,
+    // opts.wsCopyTo,
     undefined
   );
   fixSorting(outRecords);
@@ -107,7 +107,7 @@ function deepCopyImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
-  wsCopyTo: VertexManager<Workspace>,
+  // wsCopyTo: VertexManager<Workspace>,
   parentNoteNewKey?: string
 ) {
   const root = graph.getVertex<Note>(rootKey);
@@ -122,12 +122,13 @@ function deepCopyImpl(
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
-        const oldTaskKey = node.ref;
+        //what is it RefMarker?
+        const oldTaskKey = node.ref; // why using ref?
         const newTaskKey = deepCopyImpl(
           graph,
           oldTaskKey,
           outRecords,
-          wsCopyTo,
+          // wsCopyTo,
           newKey
         );
         node.ref = newTaskKey;
