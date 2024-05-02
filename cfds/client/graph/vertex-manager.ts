@@ -341,17 +341,28 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
+      const startRecord = this.record.clone();
       const newHead = await repo.setValueForKey(
         this.key,
         this.record,
         this._headId,
       );
       if (newHead) {
-        this._headId = newHead.id;
-        this.graph.client(repoId)?.touch();
-        if (this.hasPendingChanges) {
+        // If no local changes have been made while committing, we can simply
+        // read the updated record from the repository (to incorporate any
+        // merged remote changes).
+        if (this.record.isEqual(startRecord)) {
+          this._headId = newHead.id;
+          this.record = repo.recordForCommit(newHead);
+        } else {
+          // If local changes have been made while committing, we must rebase
+          // them over our current state.
+          this.rebase();
           this.scheduleCommitIfNeeded();
         }
+        this.graph.client(repoId)?.touch();
+      } else {
+        this._headId = repo.headForKey(this.key)?.id;
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
@@ -362,7 +373,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
-  private mergeRepoRecord(): void {
+  private rebase(): void {
     if (this.isLocal) {
       return;
     }
@@ -406,7 +417,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    this.mergeRepoRecord();
+    this.rebase();
     // const changedFields = origRecord.diffKeys(baseRecord, true);
     // let mutations: MutationPack;
     // for (const field of changedFields) {
