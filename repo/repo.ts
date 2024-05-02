@@ -335,10 +335,10 @@ export class Repository<
     // 2log[fpr](N) = K. Since FPR = 0.25, we're using 2log[4](N).
     const agreementSize = 2 * (Math.log2(graphSize) / Math.log2(4));
     if (commitsForKey.length < agreementSize) {
-      // We must consider the newest commits leaves, otherwise we'd deadlock
+      // We must consider the newest commits as leaves, otherwise we'd deadlock
       // and not converge on all branches. These cases work out OK because the
-      // merge will take the latest commit per session thus skipping temporary
-      // gaps in the graph.
+      // merge will take the latest commit per connection thus skipping
+      // temporary gaps in the graph.
       return true;
     }
     const dateCutoff = candidate.timestamp.getTime();
