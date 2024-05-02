@@ -102,7 +102,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private readonly _commitDelayTimer: SimpleTimer;
   private readonly _cachedFieldProxies: Map<unknown, unknown>;
   private _record: Record;
-  private _shadowRecord: Record;
+  private _headId: string | undefined;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _commitPromise: Promise<void> | undefined;
@@ -140,11 +140,14 @@ export class VertexManager<V extends Vertex = Vertex>
       );
     }
     if (repo && repo.hasKey(key)) {
-      initialState = repo.valueForKey(key);
+      const head = repo.headForKey(key);
+      if (head) {
+        this._headId = head.id;
+        initialState = repo.recordForCommit(head);
+      }
     }
     const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
-    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     if (hasInitialState) {
       this.scheduleCommitIfNeeded();
@@ -220,11 +223,14 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.isLocal) {
       return false;
     }
+    if (!this._headId) {
+      return !this.record.isNull;
+    }
     const repo = this.repository;
     if (!repo) {
       return false;
     }
-    return !this._record.isEqual(this._shadowRecord);
+    return !this._record.isEqual(repo.recordForCommit(this._headId));
   }
 
   get isRoot(): boolean {
@@ -335,21 +341,15 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
-      // this.touch();
-      const baseRecord = this.mergeRepoRecord() || this.record;
-      const updated = await repo.setValueForKey(this.key, baseRecord);
-      if (updated) {
-        if (!this.record.isEqual(baseRecord)) {
-          const repoRecord = repo.valueForKey(this.key);
-          if (!repoRecord.isEqual(baseRecord)) {
-            // const localChanges = baseRecord.diff(this.record, true);
-            // const remoteChanges = baseRecord.diff(repoRecord, false);
-            // baseRecord.patch(concatChanges(remoteChanges, localChanges));
-            // this.record = baseRecord;
-            // this.vertexDidMutate(['hasPendingChanges', true, true]);
-          }
-          this.graph.client(repoId)?.touch();
-        } else {
+      const newHead = await repo.setValueForKey(
+        this.key,
+        this.record,
+        this._headId,
+      );
+      if (newHead) {
+        this._headId = newHead.id;
+        this.graph.client(repoId)?.touch();
+        if (this.hasPendingChanges) {
           this.scheduleCommitIfNeeded();
         }
       }
@@ -362,7 +362,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
-  private mergeRepoRecord(): Record | undefined {
+  private mergeRepoRecord(): void {
     if (this.isLocal) {
       return;
     }
@@ -370,8 +370,18 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const baseRecord = this._shadowRecord.clone();
-    const repoRecord = repo.valueForKey(this.key);
+    const currentHead = repo.headForKey(this.key);
+    if (!currentHead || currentHead.id === this._headId) {
+      return;
+    }
+    const baseRecord = this._headId
+      ? repo.recordForCommit(this._headId)
+      : Record.nullRecord();
+    const repoRecord = repo.recordForCommit(currentHead);
+    if (repoRecord.isEqual(this.record)) {
+      this._headId = currentHead.id;
+      return;
+    }
     if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
       baseRecord.upgradeScheme(repoRecord.scheme);
     }
@@ -383,7 +393,8 @@ export class VertexManager<V extends Vertex = Vertex>
       baseRecord.diff(this.record, true),
     );
     baseRecord.patch(changes);
-    return baseRecord;
+    this._headId = currentHead.id;
+    this.record = baseRecord;
   }
 
   touch(): void {
@@ -395,10 +406,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const updatedRecord = this.mergeRepoRecord();
-    if (updatedRecord) {
-      this.record = updatedRecord;
-    }
+    this.mergeRepoRecord();
     // const changedFields = origRecord.diffKeys(baseRecord, true);
     // let mutations: MutationPack;
     // for (const field of changedFields) {

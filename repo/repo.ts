@@ -735,14 +735,35 @@ export class Repository<
     return head;
   }
 
+  private pickBestCommitForCurrentClient(
+    commits: Iterable<Commit>,
+  ): Commit | undefined {
+    commits = Array.from(commits).sort(compareCommitsDesc);
+    for (const c of commits) {
+      if (c.connectionId === CONNECTION_ID && this.hasRecordForCommit(c)) {
+        return c;
+      }
+    }
+    const sessionId = this.trustPool.currentSession.id;
+    for (const c of commits) {
+      if (c.session === sessionId && this.hasRecordForCommit(c)) {
+        return c;
+      }
+    }
+    for (const c of commits) {
+      if (this.hasRecordForCommit(c)) {
+        return c;
+      }
+    }
+    // No good commits found
+    return undefined;
+  }
+
   /**
-   * This method finds and returns the head for the given key. If a merge is
-   * needed, it'll be attempted automatically.
+   * This method finds and returns the head for the given key. This is a
+   * readonly operation and does not attempt to merge any leaves.
    *
    * @param key The key to search for.
-   *
-   * @param connectionId The caller's connection id. Used to ensure internal
-   *                     consistency for this connection.
    *
    * @returns The head commit, or undefined if no commit can be found for this
    *          key. Note that while this method may return undefined, some
@@ -750,31 +771,29 @@ export class Repository<
    *          commits are delta commits, and their base isn't present thus
    *          rendering them unreadable.
    */
-  headForKey(
-    key: string | null,
-    connectionId: string = CONNECTION_ID,
-  ): Commit | undefined {
+  headForKey(key: string | null): Commit | undefined {
     const cacheEntry = this._cachedHeadsByKey.get(key);
     if (
       cacheEntry &&
-      cacheEntry.commit.session === connectionId &&
+      cacheEntry.commit.session === CONNECTION_ID &&
       performance.now() - cacheEntry.timestamp <= HEAD_CACHE_EXPIRATION_MS
     ) {
       return cacheEntry.commit;
     }
     const leaves = this.leavesForKey(key);
-    if (leaves.length < 1) {
-      // No commit history found. Return the null record as a starting point
-      return undefined;
+    if (leaves.length === 1 && this.hasRecordForCommit(leaves[0])) {
+      return this.cacheHeadForKey(key, leaves[0]);
     }
-    // Filter out any commits with equal records
-    const uniqueCommits =
-      commitsWithUniqueRecords(leaves).sort(coreValueCompare);
-    if (uniqueCommits.length === 1) {
-      // If our leaves converged on a single value, we can simply return it.
-      return this.cacheHeadForKey(key, uniqueCommits[0]);
+    if (leaves.length > 1) {
+      const head = this.pickBestCommitForCurrentClient(leaves);
+      if (head) {
+        return this.cacheHeadForKey(key, head);
+      }
     }
-    return undefined;
+    return this.cacheHeadForKey(
+      key,
+      this.pickBestCommitForCurrentClient(this.commitsForKey(key)),
+    );
   }
 
   private createMergeCommit(
@@ -967,86 +986,6 @@ export class Repository<
     }
   }
 
-  findHeadForKeyWithoutMerge(key: string | null): Commit | undefined {
-    const leaves = this.leavesForKey(key);
-    const sessionId = this.trustPool.currentSession.id;
-    // Single or no leaves found. Just pick the last good known value in this
-    // case.
-    if (leaves.length <= 1) {
-      const allCommits = Array.from(this.commitsForKey(key)).sort(
-        compareCommitsDesc,
-      );
-      // First, look for the last good value this connection wrote
-      for (const c of allCommits) {
-        if (c.connectionId === CONNECTION_ID && this.hasRecordForCommit(c)) {
-          return c;
-        }
-      }
-      // Nothing written by this connection. Find the last value written by
-      // this session.
-      for (const c of allCommits) {
-        if (c.session === sessionId && this.hasRecordForCommit(c)) {
-          return c;
-        }
-      }
-      // No writes by this session. Find the last good value anyone wrote.
-      for (const c of allCommits) {
-        if (this.hasRecordForCommit(c)) {
-          return c;
-        }
-      }
-      return undefined;
-    }
-    // In order to keep merges simple and reduce conflicts and races,
-    // concurrent editors choose a soft leader amongst all currently active
-    // writers. Non-leaders will back off and not perform any merge commits,
-    // instead waiting for the leader(s) to merge.
-    const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || sessionId;
-    // Filter out any commits with equal records
-    const uniqueCommits = commitsWithUniqueRecords(leaves);
-    // If our leaves converged on a single value, we can simply return it.
-    if (uniqueCommits.length === 1) {
-      return this.cacheHeadForKey(key, uniqueCommits[0]);
-    }
-
-    // Since we're dealing with a partial graph, some of our leaves may not
-    // actually be leaves. For example, let's consider c4 -> c3 -> c2 -> c1.
-    // If we somehow temporarily lost c2 and c4, we would consider both c3
-    // and c1 as leaves. Therefore, we first sort all our leaves from
-    // newest to oldest.
-    leaves.sort(compareCommitsDesc);
-    // Preserve local consistency for the caller and return whichever value
-    // it wrote last.
-    for (const c of leaves) {
-      if (c.connectionId === CONNECTION_ID) {
-        const head = this.cacheHeadForKey(key, c);
-        if (head) {
-          return head;
-        }
-      }
-    }
-    // We're not part of the writers, and not the merge leader. Follow the
-    // leader so our view remains relatively stable.
-    for (const c of leaves) {
-      if (c.session === mergeLeaderSession) {
-        const head = this.cacheHeadForKey(key, c);
-        if (head) {
-          return head;
-        }
-      }
-    }
-    // No match found. Find the newest commit we're able to read its record.
-    for (const c of Array.from(this.commitsForKey(key)).sort(
-      compareCommitsDesc,
-    )) {
-      const head = this.cacheHeadForKey(key, c);
-      if (head) {
-        return head;
-      }
-    }
-    return undefined;
-  }
-
   async mergeIfNeeded(key: string | null): Promise<Commit | undefined> {
     const cacheEntry = this._cachedHeadsByKey.get(key);
     if (
@@ -1088,28 +1027,15 @@ export class Repository<
         return mergeCommit;
       }
     }
-    return this.findHeadForKeyWithoutMerge(key);
+    return this.headForKey(key);
   }
 
   valueForKey(key: string | null, readonly?: boolean): CFDSRecord {
     let result = this._cachedValueForKey.get(key);
     if (!result) {
-      let head = this.headForKey(key);
+      const head = this.headForKey(key);
       if (head) {
         result = this.recordForCommit(head, readonly);
-      } else {
-        const leaves = this.leavesForKey(key);
-        if (leaves) {
-          [result] = this.createMergeRecord(
-            leaves, //.filter((c) => this.commitIsHighProbabilityLeaf(c)),
-          );
-        }
-        if (!result || result.isNull) {
-          head = this.findHeadForKeyWithoutMerge(key);
-          if (head) {
-            result = this.recordForCommit(head, readonly);
-          }
-        }
       }
       if (!result) {
         result = CFDSRecord.nullRecord();
@@ -1139,32 +1065,41 @@ export class Repository<
   async setValueForKey(
     key: string | null,
     value: CFDSRecord,
-  ): Promise<boolean> {
+    parentCommit: string | Commit | undefined,
+  ): Promise<Commit | undefined> {
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
     if (value.isNull) {
-      return false;
+      return undefined;
     }
     assert(this.allowedNamespaces.includes(value.scheme.namespace));
     if (this.valueForKey(key).isEqual(value)) {
-      return false;
+      return undefined;
     }
-    if (value.scheme.namespace === SchemeNamespace.USERS) debugger;
     const session = this.trustPool.currentSession;
-    const head = await this.mergeIfNeeded(key);
-    if (!head && this.keyExists(key)) {
-      throw serviceUnavailable();
+    if (typeof parentCommit === 'string') {
+      if (!this.hasCommit(parentCommit)) {
+        throw serviceUnavailable();
+      }
+      parentCommit = this.getCommit(parentCommit);
     }
-    const headRecord = head ? this.recordForCommit(head) : undefined;
-    if (headRecord?.isEqual(value)) {
-      return false;
+    if (!parentCommit) {
+      parentCommit = this.pickBestCommitForCurrentClient(
+        this.commitsForKey(key),
+      );
+    }
+    if (parentCommit) {
+      const headRecord = this.recordForCommit(parentCommit);
+      if (headRecord.isEqual(value)) {
+        return undefined;
+      }
     }
     const [ancestorsFilter, ancestorsCount] = this.ancestorsFilterForKey(key);
     let commit = new Commit({
       session: session.id,
       key,
       contents: value.clone(),
-      parents: head?.id,
+      parents: parentCommit?.id,
       ancestorsFilter,
       ancestorsCount,
       orgId: this.orgId,
@@ -1173,7 +1108,8 @@ export class Repository<
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
     this.persistVerifiedCommits([signedCommit]);
-    return true;
+    await this.mergeIfNeeded(key);
+    return (await this.mergeIfNeeded(key)) || signedCommit;
   }
 
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
@@ -1522,7 +1458,7 @@ export class Repository<
           }
           if (this.hasRecordForCommit(c)) {
             console.log(`Reverting ${key} to ${c.timestamp.toLocaleString()}`);
-            this.setValueForKey(key, this.recordForCommit(c));
+            this.setValueForKey(key, this.recordForCommit(c), undefined);
             break;
           }
         }
