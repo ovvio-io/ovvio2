@@ -39,7 +39,6 @@ import {
 } from '../../../../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import { moveCard } from '../../../../../shared/utils/move.ts';
 import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
@@ -175,7 +174,7 @@ export function CardWorkspaceIndicator({
   }
 
   const onMove = (ws: VertexManager<Workspace>) => {
-    const newCard = moveCard(card, ws, graph, logger, source);
+    const newCard = undefined; // = moveCard(card, ws, graph, logger, source);
     if (!newCard) {
       toastController.displayToast({
         text: `Move failed. Try again later`,
@@ -234,11 +233,11 @@ export function WorkspaceIndicator({
         readOnly={readOnly}
       />
     ),
-    [workspace, className, isExpanded, readOnly, ButtonComponent]
+    [workspace, className, isExpanded, readOnly, ButtonComponent],
   );
 
   const [changeTo, setChangeTo] = useState<VertexManager<Workspace> | null>(
-    null
+    null,
   );
   const onWsChanged = (ws: VertexManager<Workspace>) => {
     if (validateMove) {
@@ -280,7 +279,7 @@ export function sortWorkspaces(
   ws1: Workspace,
   ws2: Workspace,
   pinnedWorkspaces: Set<string>,
-  hiddenWorkspaces: Set<string>
+  hiddenWorkspaces: Set<string>,
 ) {
   if (pinnedWorkspaces.has(ws1.key) && !pinnedWorkspaces.has(ws2.key)) {
     return -1;
@@ -312,14 +311,14 @@ export function SelectWorkspaceMenu({
   const user = useCurrentUser();
   const { hiddenWorkspaces, pinnedWorkspaces } = usePartialVertex(
     user.settings,
-    ['hiddenWorkspaces', 'pinnedWorkspaces']
+    ['hiddenWorkspaces', 'pinnedWorkspaces'],
   );
   const workspacesQuery = useSharedQuery('workspaces');
   const workspaces = useVertices(workspacesQuery.results);
   const sortedWorkspaces = Array.from(workspaces)
     .filter((x) => x.name?.length > 0 && !x.key.endsWith('-ws'))
     .sort((ws1, ws2) =>
-      sortWorkspaces(ws1, ws2, pinnedWorkspaces, hiddenWorkspaces)
+      sortWorkspaces(ws1, ws2, pinnedWorkspaces, hiddenWorkspaces),
     );
   const onSelect = (wsMng: VertexManager<Workspace>) => {
     if (value && wsMng.key === value.key) {
@@ -337,7 +336,7 @@ export function SelectWorkspaceMenu({
               className={cn(
                 styles.workspaceItem,
                 styles.moveWsItem,
-                value?.key === ws.key && styles.selectedWs
+                value?.key === ws.key && styles.selectedWs,
               )}
               onClick={() => onSelect(ws.manager as VertexManager<Workspace>)}
             >
