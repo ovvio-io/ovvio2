@@ -85,8 +85,7 @@ const useStyles = makeStyles((theme) => ({
   wsArrow: {
     position: 'relative',
     top: 1,
-    animation:
-      `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
+    animation: `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
     cursor: 'pointer',
   },
   hide: {
@@ -134,14 +133,12 @@ function WorkspaceIndicatorButton({
       ref={ref}
       style={style}
     >
-      {workspace
-        ? (
-          <WorkspaceIcon
-            workspaceManager={workspace}
-            size={styleguide.gridbase * 2.75}
-          />
-        )
-        : null}
+      {workspace ? (
+        <WorkspaceIcon
+          workspaceManager={workspace}
+          size={styleguide.gridbase * 2.75}
+        />
+      ) : null}
       <Text className={cn(styles.wsName)}>{name}</Text>
       {readOnly !== true && (
         <div className={cn(styles.wsArrow, !isExpanded && styles.hide)}>
@@ -237,11 +234,11 @@ export function WorkspaceIndicator({
         readOnly={readOnly}
       />
     ),
-    [workspace, className, isExpanded, readOnly, ButtonComponent],
+    [workspace, className, isExpanded, readOnly, ButtonComponent]
   );
 
   const [changeTo, setChangeTo] = useState<VertexManager<Workspace> | null>(
-    null,
+    null
   );
   const onWsChanged = (ws: VertexManager<Workspace>) => {
     if (validateMove) {
@@ -265,8 +262,8 @@ export function WorkspaceIndicator({
       <Menu
         className={menuClassName}
         renderButton={renderButton}
-        align='start'
-        position='bottom'
+        align="start"
+        position="bottom"
       >
         <SelectWorkspaceMenu value={workspace} onChange={onWsChanged} />
       </Menu>
@@ -283,7 +280,7 @@ export function sortWorkspaces(
   ws1: Workspace,
   ws2: Workspace,
   pinnedWorkspaces: Set<string>,
-  hiddenWorkspaces: Set<string>,
+  hiddenWorkspaces: Set<string>
 ) {
   if (pinnedWorkspaces.has(ws1.key) && !pinnedWorkspaces.has(ws2.key)) {
     return -1;
@@ -315,7 +312,7 @@ export function SelectWorkspaceMenu({
   const user = useCurrentUser();
   const { hiddenWorkspaces, pinnedWorkspaces } = usePartialVertex(
     user.settings,
-    ['hiddenWorkspaces', 'pinnedWorkspaces'],
+    ['hiddenWorkspaces', 'pinnedWorkspaces']
   );
   const workspacesQuery = useSharedQuery('workspaces');
   const workspaces = useVertices(workspacesQuery.results);
@@ -340,7 +337,7 @@ export function SelectWorkspaceMenu({
               className={cn(
                 styles.workspaceItem,
                 styles.moveWsItem,
-                value?.key === ws.key && styles.selectedWs,
+                value?.key === ws.key && styles.selectedWs
               )}
               onClick={() => onSelect(ws.manager as VertexManager<Workspace>)}
             >

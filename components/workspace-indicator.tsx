@@ -71,6 +71,8 @@ export function WorkspaceIndicator({
   const styles = useStyles();
   const { name } = usePartialVertex(workspace, ['name']);
   const color = useWorkspaceColor(workspace)?.background || 'transparent';
+  const color2 = useWorkspaceColor(workspace)?.inactive || 'transparent';
+
   if (!type) {
     type = 'full';
   }
@@ -102,7 +104,7 @@ export function WorkspaceIndicator({
       ) : (
         <div
           className={cn(styles.colorIndicator)}
-          style={{ backgroundColor: color }}
+          style={{ backgroundColor: color2 }}
         ></div>
       )}
       {editable && <img src="/icons/editor/breadcrumbs/icon/arrow-small.svg" />}
