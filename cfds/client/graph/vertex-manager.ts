@@ -408,7 +408,7 @@ export class VertexManager<V extends Vertex = Vertex>
     this.record = baseRecord;
   }
 
-  touch(): void {
+  async touch(): Promise<void> {
     if (this.isLocal) {
       this.reportInitialFields(true);
       return;
@@ -417,6 +417,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
+    await repo.mergeIfNeeded(this.key);
     this.rebase();
     // const changedFields = origRecord.diffKeys(baseRecord, true);
     // let mutations: MutationPack;

@@ -42,7 +42,7 @@ import { CONNECTION_ID } from './commit.ts';
 import { compareStrings } from '../base/string.ts';
 import { numbersEqual } from '../base/comparisons.ts';
 
-const HEAD_CACHE_EXPIRATION_MS = 1000;
+const HEAD_CACHE_EXPIRATION_MS = 300;
 
 type RepositoryEvent = 'NewCommit';
 
@@ -996,19 +996,12 @@ export class Repository<
   }
 
   async mergeIfNeeded(key: string | null): Promise<Commit | undefined> {
-    const cacheEntry = this._cachedHeadsByKey.get(key);
-    if (
-      cacheEntry &&
-      performance.now() - cacheEntry.timestamp <= HEAD_CACHE_EXPIRATION_MS
-    ) {
-      return cacheEntry.commit;
-    }
     const leaves = this.leavesForKey(key);
     if (!leaves.length) {
       return undefined;
     }
     if (leaves.length === 1) {
-      return leaves[0];
+      return undefined;
     }
     const sessionId = this.trustPool.currentSession.id;
     // In order to keep merges simple and reduce conflicts and races,
@@ -1026,7 +1019,7 @@ export class Repository<
         leaves.filter((c) => this.commitIsHighProbabilityLeaf(c)),
       ).sort(coreValueCompare);
       if (commitsToMerge.length === 1) {
-        return this.cacheHeadForKey(key, commitsToMerge[0]);
+        return undefined;
       }
       const mergeCommit = await this.createMergeCommit(
         commitsToMerge,
@@ -1036,7 +1029,7 @@ export class Repository<
         return mergeCommit;
       }
     }
-    return this.headForKey(key);
+    return undefined;
   }
 
   valueForKey(key: string | null, readonly?: boolean): CFDSRecord {
@@ -1076,6 +1069,10 @@ export class Repository<
     value: CFDSRecord,
     parentCommit: string | Commit | undefined,
   ): Promise<Commit | undefined> {
+    // Refuse committing while a merge is in progress
+    if (this._pendingMergePromises.has(key)) {
+      throw serviceUnavailable();
+    }
     // All keys start with null records implicitly, so need need to persist
     // them. Also, we forbid downgrading a record back to null once initialized.
     if (value.isNull) {
@@ -1117,7 +1114,6 @@ export class Repository<
     const signedCommit = await signCommit(session, commit);
     this._cachedHeadsByKey.delete(key);
     this.persistVerifiedCommits([signedCommit]);
-    await this.mergeIfNeeded(key);
     return (await this.mergeIfNeeded(key)) || signedCommit;
   }
 
@@ -1407,8 +1403,9 @@ export class Repository<
       nodes.push({
         data: {
           id: commit.id,
-          name: `${commit.session}-${commit.timestamp.toLocaleString()}`,
+          name: `${commit.connectionId}-${commit.timestamp.toLocaleString()}`,
           session: commit.session,
+          connectionId: commit.connectionId,
           ts: commit.timestamp.getTime(),
           mergeBase: commit.mergeBase || null,
           mergeLeader: commit.mergeLeader || null,
