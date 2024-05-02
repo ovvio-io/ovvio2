@@ -102,6 +102,7 @@ export class Repository<
     Promise<Commit | undefined>
   >;
   private readonly _cachedCommitsPerUser: Map<string | undefined, string[]>;
+  private readonly _verifiedNotCorruptedCommits: Set<string>;
 
   allowMerge = true;
 
@@ -147,6 +148,7 @@ export class Repository<
     }
     this._pendingMergePromises = new Map();
     this._cachedCommitsPerUser = new Map();
+    this._verifiedNotCorruptedCommits = new Set();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -604,15 +606,22 @@ export class Repository<
     if (commitContentsIsRecord(c.contents)) {
       return false;
     }
+    if (this._verifiedNotCorruptedCommits.has(c.id)) {
+      return false;
+    }
     const contents: DeltaContents = c.contents as DeltaContents;
     // Assume everything is good if we don't have the base commit to check with
     if (!this.hasCommit(contents.base)) {
+      this._verifiedNotCorruptedCommits.add(c.id);
       return false;
     }
     const result = this.recordForCommit(contents.base).clone();
     if (result.checksum === contents.edit.srcChecksum) {
       result.patch(contents.edit.changes);
-      return result.checksum !== contents.edit.dstChecksum;
+      if (result.checksum === contents.edit.dstChecksum) {
+        this._verifiedNotCorruptedCommits.add(c.id);
+        return false;
+      }
     }
     return true;
   }
