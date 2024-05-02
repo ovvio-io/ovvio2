@@ -57,7 +57,7 @@ export interface WorkspaceIndicatorProps {
   editable?: boolean;
   className?: string;
   style?: CSSProperties;
-  ofSettings: boolean;
+  ofSettings?: boolean;
 }
 
 export function WorkspaceIndicator({
