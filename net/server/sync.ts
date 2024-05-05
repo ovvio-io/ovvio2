@@ -161,6 +161,7 @@ export class SyncService extends BaseService<ServerServices> {
       this.services.organizationId,
       authorizer,
       indexes,
+      true,
     );
     this._repositories.set(repoId, repo);
     const backup = new JSONLogRepoBackup(

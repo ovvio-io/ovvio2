@@ -130,6 +130,7 @@ export class Repository<
     orgId: string,
     authorizer?: Authorizer<ST>,
     indexes?: (repo: Repository<ST, IT>) => IT,
+    readonly priorityRepo = false,
   ) {
     super();
     this.storage = storage;
@@ -1308,15 +1309,20 @@ export class Repository<
     )) {
       this._runUpdatesOnNewLeafCommit(c);
     }
-    CoroutineScheduler.sharedScheduler().map(
-      result,
-      (c) => this.emit('NewCommit', c),
-      SchedulerPriority.Background,
-    );
-    // for (const c of result) {
-    //   // Notify everyone else
-    //   this.emit('NewCommit', c);
-    // }
+    // Notify everyone else
+    if (this.priorityRepo || typeof Deno !== 'undefined') {
+      // Do it synchronously in the server
+      for (const c of result) {
+        this.emit('NewCommit', c);
+      }
+    } else {
+      // And asynchronously in the client
+      CoroutineScheduler.sharedScheduler().map(
+        result,
+        (c) => this.emit('NewCommit', c),
+        SchedulerPriority.Background,
+      );
+    }
     return result;
   }
 
