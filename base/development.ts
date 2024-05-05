@@ -40,6 +40,10 @@ export async function copyToClipboard(value: string): Promise<boolean> {
       await process.output();
       return true;
     }
+    if (Deno.build.os === 'windows') {
+      console.log(`Copy:\n\n${value}\n`);
+      return true;
+    }
   } catch (_err: unknown) {
     debugger;
   }
@@ -47,5 +51,5 @@ export async function copyToClipboard(value: string): Promise<boolean> {
 }
 
 export function isDevelopmentBuild(): boolean {
-  return Deno.build.os === 'darwin';
+  return Deno.build.os === 'darwin' || Deno.build.os === 'windows';
 }
