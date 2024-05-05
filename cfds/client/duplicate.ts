@@ -120,6 +120,7 @@ function deepCopyImpl(
   };
   delete newData.pinnedBy;
   delete newData.dueDate;
+  delete newData.done;
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {

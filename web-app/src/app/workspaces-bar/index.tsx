@@ -1083,10 +1083,6 @@ function WorkspaceBarInternal({
     'noteType'
   );
   const [isHovered, setIsHovered] = useState(false);
-  // const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
-  // const updateMaxWidth = useCallback((newWidth: number) => {
-  //   setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
-  // }, []);
   const { maxWidth } = useMaxWidth();
 
   const selectAll = useCallback(() => {

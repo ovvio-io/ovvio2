@@ -118,7 +118,6 @@ type MaxWidthProviderProps = {
   children: ReactNode;
 };
 export const MaxWidthProvider = ({ children }: MaxWidthProviderProps) => {
-  //TODO: need to add maxWidth just for the selected ws. maybe update it in every change in the selected ws.
   const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
   const updateMaxWidth = useCallback((newWidth: number) => {
     setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
@@ -231,7 +230,12 @@ const router = createBrowserRouter([
   {
     path: `/:workspaceId/notes/:noteId`,
     // element: <NoteView />,
-    element: <NoteEditor />,
+
+    element: (
+      <MaxWidthProvider>
+        <NoteEditor />
+      </MaxWidthProvider>
+    ),
   },
   {
     path: `/:repoType/:repoId/_explorer`,
@@ -244,9 +248,11 @@ const router = createBrowserRouter([
   {
     path: '/settings/:category/:tab',
     element: (
-      <Settings style={lightTheme}>
-        <CategorySettings />
-      </Settings>
+      <MaxWidthProvider>
+        <Settings style={lightTheme}>
+          <CategorySettings />
+        </Settings>
+      </MaxWidthProvider>
     ),
   },
   // {

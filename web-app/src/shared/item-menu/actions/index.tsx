@@ -104,14 +104,12 @@ const useStyles = makeStyles(() => ({
     flexShrink: 0,
   },
   wsItem: {
-    // maxWidth: '340px',
     borderBottom: `2px solid #f5ecdc`,
     ':last-child': {
       borderBottom: 'none',
     },
   },
   firstWsItem: {
-    // maxWidth: '340px',
     borderBottom: `1px solid #f5ecdc`,
     marginBottom: '8px',
   },
@@ -264,7 +262,7 @@ export function DeleteCardAction({
       ) : (
         <ConfirmationDialog
           titleText={isTask ? 'Delete Task?' : 'Delete Note?'}
-          approveButtonText={'Remove'}
+          approveButtonText={' Delete'}
           handleApproveClick={handleConfirmDelete}
           handleCancelClick={handleCancelClick}
         />
@@ -368,6 +366,11 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
+
+    if (newCard) {
+      navigate(`${wsManager.key}/notes/${newCard.key}`);
+      return;
+    }
   };
 
   return (
