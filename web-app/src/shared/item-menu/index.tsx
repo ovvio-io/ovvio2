@@ -8,6 +8,7 @@ import {
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,
+  DuplicateCardAction,
 } from './actions/index.tsx';
 import { Note, NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
@@ -15,7 +16,7 @@ import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
 import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
-import { CopyIntoCardAction } from './actions/index.tsx';
+// import { CopyIntoCardAction } from './actions/index.tsx';
 
 const useStyles = makeStyles(() => ({
   item: {
@@ -96,14 +97,19 @@ export default function CardMenuView({
         source={source}
       />
     ),
-    partialNote.type === NoteType.Note && (
-      <CopyIntoCardAction
-        key="copyIntoCard"
-        cardManager={cardManager}
-        source={source}
-        editorRootKey={editorRootKey}
-      />
-    ),
+    // partialNote.type === NoteType.Note && (
+    //   <CopyIntoCardAction
+    //     key="copyIntoCard"
+    //     cardManager={cardManager}
+    //     source={source}
+    //     editorRootKey={editorRootKey}
+    //   />
+    // ),
+    <DuplicateCardAction
+      cardManager={cardManager}
+      source={source}
+      editorRootKey={editorRootKey}
+    />,
     <DeleteCardAction
       key="deleteCard"
       cardManager={cardManager}

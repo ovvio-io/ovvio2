@@ -1,9 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  CopyIntoCardOptions,
-  copyIntoCard,
-} from '../../../../../cfds/client/duplicate.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import {
   Note,
@@ -52,16 +48,8 @@ import {
 import { makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
 import { layout } from '../../../../../styles/layout.ts';
-import { cn } from '../../../../../styles/css-objects/index.ts';
 import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx';
-import { SecondaryMenuItem } from '../../../../../styles/components/menu.tsx';
-import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
-import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
-import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
-import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
-import { SearchBar } from '../../../../../components/search-bar.tsx';
-import { useMaxWidth } from '../../../app/index.tsx';
+import { duplicateCard } from '../../../../../cfds/client/duplicate.ts';
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -273,142 +261,143 @@ export function DeleteCardAction({
   );
 }
 
-// interface DuplicateCardActionProps extends CardActionProps {
-//   editorRootKey?: string;
-//   source: UISource;
-// }
-// export function DuplicateCardAction({
-//   editorRootKey,
-//   cardManager,
-//   source,
-//   ...props
-// }: DuplicateCardActionProps) {
-//   const graph = useGraphManager();
-//   const logger = useLogger();
-//   const navigate = useNavigate();
-
-//   const onDuplicate = () => {
-//     const newCard = duplicateCard(graph, cardManager.key)!;
-//     logger.log({
-//       severity: 'EVENT',
-//       event: 'Duplicate',
-//       vertex: cardManager.key,
-//       target: newCard?.key,
-//       source,
-//     });
-
-//     if (editorRootKey === cardManager.key) {
-//       navigate(`${newCard?.workspace.key}/${newCard?.key}`);
-//       return;
-//     }
-
-//     // TODO: Wiring for new editor
-//   };
-
-//   return (
-//     <MenuAction
-//       {...props}
-//       onClick={onDuplicate}
-//       IconComponent={IconDuplicate}
-//       text="Duplicate"
-//     />
-//   );
-// }
-interface CopyIntoCardActionProps extends CardActionProps {
+interface DuplicateCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
 }
-export function CopyIntoCardAction({
+export function DuplicateCardAction({
   editorRootKey,
   cardManager,
   source,
   ...props
-}: CopyIntoCardActionProps) {
-  const styles = useStyles();
+}: DuplicateCardActionProps) {
   const graph = useGraphManager();
   const logger = useLogger();
   const navigate = useNavigate();
-  const currentWs = useVertex(cardManager).workspace;
-  const view = usePartialGlobalView('selectedWorkspaces');
-  const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
-  const personalWsKey = `${graph.rootKey}-ws`;
-  if (!workspaceKeys.includes(personalWsKey)) {
-    workspaceKeys.push(personalWsKey);
-  }
 
-  const partialWorkspaces = usePartialVertices<Workspace>(workspaceKeys, [
-    'name',
-  ]);
-
-  partialWorkspaces.sort((a, b) => {
-    if (a.key === currentWs.key) return -1;
-    if (b.key === currentWs.key) return 1;
-    if (a.key === personalWsKey) return -1;
-    if (b.key === personalWsKey) return 1;
-    return coreValueCompare(a, b);
-  });
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const { maxWidthSelected } = useMaxWidth();
-
-  const filtered = suggestResults(
-    searchTerm,
-    partialWorkspaces,
-    (t) => t.name,
-    Number.MAX_SAFE_INTEGER
-  );
-  const onCopyInto = (wsManager: VertexManager<Workspace>) => {
-    const options: CopyIntoCardOptions = {
-      wsCopyTo: wsManager,
-    };
-    const newCard = copyIntoCard(graph, cardManager.key, options);
+  const onDuplicate = () => {
+    const newCard = duplicateCard(graph, cardManager.key)!;
     logger.log({
       severity: 'EVENT',
-      event: 'CopyInto',
+      event: 'Duplicate',
       vertex: cardManager.key,
       target: newCard?.key,
       source,
     });
+
+    if (editorRootKey === cardManager.key) {
+      navigate(`${newCard?.workspace.key}/${newCard?.key}`);
+      return;
+    }
+
+    // TODO: Wiring for new editor
   };
 
   return (
-    <SecondaryMenuItem
-      text="Copy to... "
+    <MenuAction
+      {...props}
+      onClick={onDuplicate}
       IconComponent={IconDuplicate}
-      isWsList={true}
-      className={styles.copyInto}
-    >
-      <SearchBar
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearching={true}
-        isPicker={true}
-      ></SearchBar>
-      {filtered.flatMap((ws, index) => [
-        <MenuItem
-          key={ws.key}
-          className={
-            ws.key === currentWs.key && index == 0
-              ? styles.firstWsItem
-              : styles.wsItem
-          }
-          style={{ width: `${maxWidthSelected}px` }}
-          onClick={() => onCopyInto(ws.manager as VertexManager<Workspace>)}
-        >
-          <WorkspaceIndicator
-            className={cn(styles.colorIndicator)}
-            workspace={ws.manager as VertexManager<Workspace>}
-            type="color"
-            ofSettings={false}
-          />
-          {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
-        </MenuItem>,
-        ws.key === currentWs.key && index == 0 ? (
-          <LineSeparator key={`separator-${ws.key}`} height={1} />
-        ) : null,
-      ])}
-    </SecondaryMenuItem>
+      text="Duplicate"
+    />
   );
 }
+
+// interface CopyIntoCardActionProps extends CardActionProps {
+//   editorRootKey?: string;
+//   source: UISource;
+// }
+// export function CopyIntoCardAction({
+//   editorRootKey,
+//   cardManager,
+//   source,
+//   ...props
+// }: CopyIntoCardActionProps) {
+//   const styles = useStyles();
+//   const graph = useGraphManager();
+//   const logger = useLogger();
+//   const navigate = useNavigate();
+//   const currentWs = useVertex(cardManager).workspace;
+//   const view = usePartialGlobalView('selectedWorkspaces');
+//   const workspaceKeys = Array.from(view.selectedWorkspaces).map((ws) => ws.key);
+//   const personalWsKey = `${graph.rootKey}-ws`;
+//   if (!workspaceKeys.includes(personalWsKey)) {
+//     workspaceKeys.push(personalWsKey);
+//   }
+
+//   const partialWorkspaces = usePartialVertices<Workspace>(workspaceKeys, [
+//     'name',
+//   ]);
+
+//   partialWorkspaces.sort((a, b) => {
+//     if (a.key === currentWs.key) return -1;
+//     if (b.key === currentWs.key) return 1;
+//     if (a.key === personalWsKey) return -1;
+//     if (b.key === personalWsKey) return 1;
+//     return coreValueCompare(a, b);
+//   });
+//   const [searchTerm, setSearchTerm] = useState<string>('');
+//   const { maxWidthSelected } = useMaxWidth();
+
+//   const filtered = suggestResults(
+//     searchTerm,
+//     partialWorkspaces,
+//     (t) => t.name,
+//     Number.MAX_SAFE_INTEGER
+//   );
+//   const onCopyInto = (wsManager: VertexManager<Workspace>) => {
+//     const options: CopyIntoCardOptions = {
+//       wsCopyTo: wsManager,
+//     };
+//     const newCard = copyIntoCard(graph, cardManager.key, options);
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'CopyInto',
+//       vertex: cardManager.key,
+//       target: newCard?.key,
+//       source,
+//     });
+//   };
+
+//   return (
+//     <SecondaryMenuItem
+//       text="Copy to... "
+//       IconComponent={IconDuplicate}
+//       isWsList={true}
+//       className={styles.copyInto}
+//     >
+//       <SearchBar
+//         searchTerm={searchTerm}
+//         setSearchTerm={setSearchTerm}
+//         isSearching={true}
+//         isPicker={true}
+//       ></SearchBar>
+//       {filtered.flatMap((ws, index) => [
+//         <MenuItem
+//           key={ws.key}
+//           className={
+//             ws.key === currentWs.key && index == 0
+//               ? styles.firstWsItem
+//               : styles.wsItem
+//           }
+//           style={{ width: `${maxWidthSelected}px` }}
+//           onClick={() => onCopyInto(ws.manager as VertexManager<Workspace>)}
+//         >
+//           <WorkspaceIndicator
+//             className={cn(styles.colorIndicator)}
+//             workspace={ws.manager as VertexManager<Workspace>}
+//             type="color"
+//             ofSettings={false}
+//           />
+//           {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
+//         </MenuItem>,
+//         ws.key === currentWs.key && index == 0 ? (
+//           <LineSeparator key={`separator-${ws.key}`} height={1} />
+//         ) : null,
+//       ])}
+//     </SecondaryMenuItem>
+//   );
+// }
 
 // im working on a new feature in my product and it is "copy into" which should do a deep copy of a note (and it children notes/tasks) from a workspace to another workspace.
 // i have old function for that but i need to modify it so it will get a workspace as an argument and then fix some bugs in the deep copy implementation.
