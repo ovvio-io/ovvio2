@@ -216,11 +216,13 @@ export class SyncMessage<T extends SyncValueType>
     this._size = decoder.get<number>('s')!;
     this._accessDenied = decoder.get('ad', []);
     if (decoder.has('c')) {
-      this._values = decoder
-        .get<ReadonlyDecodedArray>('c', [])!
-        .map((obj: DecodedValue) =>
-          Commit.fromJS(this.orgId, obj as ReadonlyJSONObject),
-        ) as T[];
+      const values: Commit[] = [];
+      for (const obj of decoder.get<ReadonlyDecodedArray>('c', [])!) {
+        try {
+          values.push(Commit.fromJS(this.orgId, obj as ReadonlyJSONObject));
+        } catch (e: unknown) {}
+      }
+      this._values = values as T[];
     } else {
       this._values = decoder.get('v')! as T[];
     }

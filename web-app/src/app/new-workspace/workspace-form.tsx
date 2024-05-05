@@ -77,7 +77,7 @@ function duplicateWorkspace(
     []) {
     record.delete('assignees');
     record.rewriteRefs(rewriteKeys);
-    dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
+    dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record, undefined);
   }
   // Copy everything else
   for (const ns of recordByNamespace.keys()) {
@@ -86,7 +86,7 @@ function duplicateWorkspace(
     }
     for (const [oldKey, record] of recordByNamespace.get(ns)!) {
       record.rewriteRefs(rewriteKeys);
-      dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record);
+      dstRepo.setValueForKey(rewriteKeys.get(oldKey)!, record, undefined);
     }
   }
   // Finally initialize the new repo and sync it

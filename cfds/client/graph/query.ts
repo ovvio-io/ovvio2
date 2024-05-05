@@ -697,9 +697,9 @@ export class Query<
       return;
     }
     // this._cachedSortedResults = undefined;
-    console.log(
-      `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`,
-    );
+    // console.log(
+    //   `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`,
+    // );
     this._proxy = new Proxy(this, {});
     this.emit('results-changed');
   }

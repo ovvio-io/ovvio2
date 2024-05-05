@@ -10,7 +10,7 @@ export function IconGroup({
   size = IconSize.Small,
   color,
   className,
-}: IconProps) {
+}: IconCheckProps) {
   const checkColor = color === 'blue' ? theme.primary.p9 : theme.mono.m5;
 
   return (

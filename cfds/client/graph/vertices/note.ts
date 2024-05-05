@@ -457,6 +457,14 @@ export class Note extends ContentVertex {
     this.titleRT = initRichText();
   }
 
+  titleDidMutate(local: boolean, oldValue: Document | undefined): MutationPack {
+    this._cachedTitle = undefined;
+    const prevPlaintextTitle = this._cachedPlaintextTitle;
+    this._cachedPlaintextTitle = undefined;
+    this._cachedTitleRT = undefined;
+    return [['titlePlaintext', local, prevPlaintextTitle]];
+  }
+
   private get titleRT(): RichText {
     if (!this._cachedTitleRT) {
       this._cachedTitleRT = reconstructRichText(
@@ -491,13 +499,16 @@ export class Note extends ContentVertex {
     this.record.set('title', rt);
   }
 
-  titleRTDidMutate(local: boolean, oldValue: RichText): MutationPack {
+  titleRTDidMutate(
+    local: boolean,
+    oldValue: RichText | undefined,
+  ): MutationPack {
     this._cachedTitle = undefined;
     const prevPlaintextTitle = this._cachedPlaintextTitle;
     this._cachedPlaintextTitle = undefined;
     this._cachedTitleRT = undefined;
     return [
-      ['title', local, docFromRT(oldValue)],
+      ['title', local, oldValue && docFromRT(oldValue)],
       ['titlePlaintext', local, prevPlaintextTitle],
     ];
   }

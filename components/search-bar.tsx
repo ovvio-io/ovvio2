@@ -1,10 +1,4 @@
-import React, {
-  CSSProperties,
-  ChangeEvent,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { CSSProperties, ChangeEvent, useEffect, useRef } from 'react';
 import { User } from '../cfds/client/graph/vertices/user.ts';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { IconSearch } from '../styles/components/new-icons/icon-search.tsx';
@@ -26,17 +20,33 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'white',
   },
   pickerStyle: {
+    // padding: '0px 0px 0px 8px',
+    // gap: '8px',
+    // height: 4 * styleguide.gridbase,
+    // backgroundColor: theme.secondary.s0,
+    // borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    display: 'flex',
     padding: '0px 0px 0px 8px',
-    gap: '8px',
-    height: 4 * styleguide.gridbase,
-    backgroundColor: theme.secondary.s0,
-    borderBottom: `2px solid var(--Secondary-S2, #${theme.secondary.s2})`,
+    marginBottom: 'none',
+    alignItems: 'center',
+    boxShadow: 'none',
+    width: 'none',
+    height: '32px',
+    borderRadius: 'none',
+    backgroundColor: '#FFFBF5',
+    justifyContent: 'flex-start',
+    cursor: 'default',
+    borderBottom: '2px solid var(--Secondary-S2, #F5ECDC)',
   },
   baseTextStyle: {
+    fontFamily: 'Poppins',
+    fontSize: '13px',
+    fontWeight: 400,
+    lineHeight: '19.5px',
+    letterSpacing: '0.075px',
+    textAlign: 'left',
     border: 'none',
     outline: 'none',
-    fontSize: '13px',
-    letterSpacing: '0.075px',
   },
   regularTextStyle: {
     backgroundColor: 'white',
@@ -95,9 +105,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       )}
       style={containerStyle}
     >
-      <div style={{ marginRight: '4px' }}>
-        <IconSearch />
-      </div>
+      <IconSearch />
       <input
         ref={inputRef}
         type="text"

@@ -261,7 +261,11 @@ export class AuthEndpoint implements Endpoint {
         return this.redirectHome(services);
       }
       session.owner = userKey;
-      repo.setValueForKey(signature.data!.s, await sessionToRecord(session));
+      repo.setValueForKey(
+        session.id,
+        await sessionToRecord(session),
+        repo.headForKey(session.id),
+      );
       // Let the updated session time to replicate
       if (!isDevelopmentBuild()) {
         await sleep(3 * kSecondMs);
@@ -290,7 +294,7 @@ export async function persistSession(
 ): Promise<void> {
   const repo = services.sync.getSysDir();
   const record = await sessionToRecord(session);
-  await repo.setValueForKey(session.id, record);
+  await repo.setValueForKey(session.id, record, undefined);
 }
 
 export function fetchEncodedRootSessions(
@@ -326,7 +330,7 @@ function fetchUserByEmail(
         },
       });
       const key = uniqueId();
-      repo.setValueForKey(key, record);
+      repo.setValueForKey(key, record, undefined);
       row = [key, record];
     } else {
       const permissions =
@@ -340,7 +344,8 @@ function fetchUserByEmail(
       }
       if (updated) {
         row[1].set('permissions', permissions);
-        repo.setValueForKey(row[0], row[1]);
+        const key = row[0];
+        repo.setValueForKey(key, row[1], repo.headForKey(key));
       }
     }
   }

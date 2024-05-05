@@ -1,4 +1,10 @@
-import React, { ReactNode, createContext, useContext, useState } from 'react';
+import React, {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+} from 'react';
 import { Route, RouterProvider } from 'react-router';
 import { createBrowserRouter } from 'react-router-dom';
 import { makeStyles, cn } from '../../../styles/css-objects/index.ts';
@@ -98,6 +104,45 @@ export function DisableProvider({ children }: DisableProviderProps) {
   );
 }
 
+const MaxWidthContext = createContext({
+  maxWidth: DEFAULT_WIDTH,
+  updateMaxWidth: (newWidth: number) => {},
+  maxWidthSelected: DEFAULT_WIDTH,
+  updateMaxWidthSelected: (newWidth: number) => {},
+});
+
+export function useMaxWidth() {
+  return useContext(MaxWidthContext);
+}
+type MaxWidthProviderProps = {
+  children: ReactNode;
+};
+export const MaxWidthProvider = ({ children }: MaxWidthProviderProps) => {
+  //TODO: need to add maxWidth just for the selected ws. maybe update it in every change in the selected ws.
+  const [maxWidth, setMaxWidth] = useState(DEFAULT_WIDTH);
+  const updateMaxWidth = useCallback((newWidth: number) => {
+    setMaxWidth((prevWidth) => Math.max(prevWidth, newWidth));
+  }, []);
+
+  const [maxWidthSelected, setMaxWidthSelected] = useState(DEFAULT_WIDTH);
+  const updateMaxWidthSelected = useCallback((newWidth: number) => {
+    setMaxWidthSelected((prevWidth) => Math.max(prevWidth, newWidth));
+  }, []);
+
+  return (
+    <MaxWidthContext.Provider
+      value={{
+        maxWidth,
+        updateMaxWidth,
+        maxWidthSelected,
+        updateMaxWidthSelected,
+      }}
+    >
+      {children}
+    </MaxWidthContext.Provider>
+  );
+};
+
 interface WsBarPlaceholderProps {
   className?: string;
 }
@@ -159,9 +204,11 @@ const router = createBrowserRouter([
     path: '/',
     element: (
       <DisableProvider>
-        <Root style={lightTheme}>
-          <CardsDisplay />
-        </Root>
+        <MaxWidthProvider>
+          <Root style={lightTheme}>
+            <CardsDisplay />
+          </Root>
+        </MaxWidthProvider>
       </DisableProvider>
     ),
   },

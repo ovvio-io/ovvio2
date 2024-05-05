@@ -380,7 +380,7 @@ export class GraphManager
       repo.allowMerge = false;
       plumbing = {
         repo,
-        backup: new IDBRepositoryBackup(id, repo),
+        backup: new IDBRepositoryBackup(`${getOrganizationId()}:${id}`, repo),
         // Data repo starts inactive. Everything else starts active.
         active: !id.startsWith('/data/'),
       };
@@ -684,7 +684,12 @@ export class GraphManager
       ) {
         return this.getRootVertexManager();
       }
-      mgr = new VertexManager(this, key, record, local);
+      mgr = new VertexManager(
+        this,
+        key,
+        initialData ? record : undefined,
+        local,
+      );
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
     } else if (mgr.scheme.isNull && initialData && ns) {

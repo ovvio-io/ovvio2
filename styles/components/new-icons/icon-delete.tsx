@@ -36,7 +36,7 @@ export function IconDelete({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_2726_2943)">
+      <g clipPath="url(#clip0_2726_2943)">
         <path
           opacity="0.7"
           d="M2.5 3V13C2.5 14.1046 3.39543 15 4.5 15H11.5C12.6046 15 13.5 14.1046 13.5 13V3"

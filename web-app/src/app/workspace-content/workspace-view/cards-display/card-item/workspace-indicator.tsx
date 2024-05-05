@@ -39,7 +39,6 @@ import {
 } from '../../../../../core/cfds/react/vertex.ts';
 import { useAnimateWidth } from '../../../../../core/react-utils/animate.ts';
 import { Scroller } from '../../../../../core/react-utils/scrolling.tsx';
-import { moveCard } from '../../../../../shared/utils/move.ts';
 import WorkspaceIcon from '../../../../../shared/workspace-icon/index.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
@@ -85,8 +84,7 @@ const useStyles = makeStyles((theme) => ({
   wsArrow: {
     position: 'relative',
     top: 1,
-    animation:
-      `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
+    animation: `${showAnim} ${styleguide.transition.duration.short}ms backwards linear`,
     cursor: 'pointer',
   },
   hide: {
@@ -134,14 +132,12 @@ function WorkspaceIndicatorButton({
       ref={ref}
       style={style}
     >
-      {workspace
-        ? (
-          <WorkspaceIcon
-            workspaceManager={workspace}
-            size={styleguide.gridbase * 2.75}
-          />
-        )
-        : null}
+      {workspace ? (
+        <WorkspaceIcon
+          workspaceManager={workspace}
+          size={styleguide.gridbase * 2.75}
+        />
+      ) : null}
       <Text className={cn(styles.wsName)}>{name}</Text>
       {readOnly !== true && (
         <div className={cn(styles.wsArrow, !isExpanded && styles.hide)}>
@@ -178,7 +174,7 @@ export function CardWorkspaceIndicator({
   }
 
   const onMove = (ws: VertexManager<Workspace>) => {
-    const newCard = moveCard(card, ws, graph, logger, source);
+    const newCard = undefined; // = moveCard(card, ws, graph, logger, source);
     if (!newCard) {
       toastController.displayToast({
         text: `Move failed. Try again later`,
@@ -265,8 +261,8 @@ export function WorkspaceIndicator({
       <Menu
         className={menuClassName}
         renderButton={renderButton}
-        align='start'
-        position='bottom'
+        align="start"
+        position="bottom"
       >
         <SelectWorkspaceMenu value={workspace} onChange={onWsChanged} />
       </Menu>
@@ -322,7 +318,7 @@ export function SelectWorkspaceMenu({
   const sortedWorkspaces = Array.from(workspaces)
     .filter((x) => x.name?.length > 0 && !x.key.endsWith('-ws'))
     .sort((ws1, ws2) =>
-      sortWorkspaces(ws1, ws2, pinnedWorkspaces, hiddenWorkspaces)
+      sortWorkspaces(ws1, ws2, pinnedWorkspaces, hiddenWorkspaces),
     );
   const onSelect = (wsMng: VertexManager<Workspace>) => {
     if (value && wsMng.key === value.key) {
