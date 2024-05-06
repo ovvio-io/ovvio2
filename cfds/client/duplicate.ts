@@ -44,31 +44,23 @@ export function copyIntoCard(
   };
   if (!checkRecords(graph, rootKey)) return;
   const outRecords: { [s: string]: CoreObject } = {};
-  const newRootKey = deepCopyImpl(
-    graph,
-    rootKey,
-    outRecords,
-    // opts.wsCopyTo,
-    undefined
-  );
+  const newRootKey = deepCopyImpl(graph, rootKey, outRecords, undefined);
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
-    const key = x[0];
-    const initialData = {
-      ...x[1],
-      workspace: opts.wsCopyTo?.getVertexProxy().key,
-    };
+  // const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
+  //   const key = x[0];
+  //   const initialData = {
+  //     ...x[1],
+  //     workspace: opts.wsCopyTo?.getVertexProxy().key,
+  //   };
 
-    return {
-      namespace: NS_NOTES,
-      initialData: initialData,
-      key: key,
-    };
-  });
-
-  const vertices = graph.createVertices<Note>(vInfos);
+  //   return {
+  //     namespace: NS_NOTES,
+  //     initialData: initialData,
+  //     key: key,
+  //   };
+  // });
 
   const vertex = graph.getVertex<Note>(newRootKey);
 
@@ -95,7 +87,7 @@ function checkRecords(graph: GraphManager, rootKey: string) {
 }
 
 /**
- * The main deep copyInto function. Receives a rootKey it and copy his children to a given workspace (wsCopyTo).
+ * The main deep copyInto function. Receives a rootKey and copy its children to a given workspace (wsCopyTo).
  * @param client
  * @param rootKey The old root key
  * @param outRecords
@@ -120,7 +112,7 @@ function deepCopyImpl(
   };
   delete newData.pinnedBy;
   delete newData.dueDate;
-  delete newData.done;
+  delete newData.done; //TODO: remove strike line .
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {

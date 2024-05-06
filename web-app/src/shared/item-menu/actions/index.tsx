@@ -59,7 +59,6 @@ import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.t
 import { coreValueCompare } from '../../../../../base/core-types/comparable.ts';
 import { WorkspaceIndicator } from '../../../../../components/workspace-indicator.tsx';
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts';
-import { useSharedQuery } from '../../../core/cfds/react/query.ts';
 import { SearchBar } from '../../../../../components/search-bar.tsx';
 import { useMaxWidth } from '../../../app/index.tsx';
 
@@ -312,6 +311,7 @@ export function DeleteCardAction({
 //     />
 //   );
 // }
+
 interface CopyIntoCardActionProps extends CardActionProps {
   editorRootKey?: string;
   source: UISource;
@@ -368,8 +368,9 @@ export function CopyIntoCardAction({
     });
 
     if (newCard) {
-      navigate(`${wsManager.key}/notes/${newCard.key}`);
-      return;
+      setTimeout(() => {
+        navigate(`${wsManager.key}/notes/${newCard.key}`);
+      }, 4000);
     }
   };
 
@@ -412,34 +413,6 @@ export function CopyIntoCardAction({
     </SecondaryMenuItem>
   );
 }
-
-// im working on a new feature in my product and it is "copy into" which should do a deep copy of a note (and it children notes/tasks) from a workspace to another workspace.
-// i have old function for that but i need to modify it so it will get a workspace as an argument and then fix some bugs in the deep copy implementation.
-
-//   <SecondaryMenuItem
-//     text="Copy to..."
-//     IconComponent={IconDuplicate}
-//     isWsList={true}
-//   >
-//     <SearchBar
-//       searchTerm={searchTerm}
-//       setSearchTerm={setSearchTerm}
-//       isSearching={true}
-//       isPicker={true}
-//     ></SearchBar>
-//     {filtered.map((ws) => (
-//       <MenuItem className={styles.wsItem} onClick={() => onCopyInto()}>
-//         <WorkspaceIndicator
-//           className={cn(styles.colorIndicator)}
-//           workspace={ws.manager as VertexManager<Workspace>}
-//           type="color"
-//           ofSettings={false}
-//         />
-//         {ws.key === currentWs.key ? `${ws.name} [Current]` : ws.name}
-//       </MenuItem>
-//     ))}
-//   </SecondaryMenuItem>
-// );
 
 export function ConvertNoteAction({ cardManager, source }: CardActionProps) {
   const logger = useLogger();

@@ -1,5 +1,5 @@
 import { assert } from '../../../../base/error.ts';
-import { copyIntoCard } from '../../../../cfds/client/duplicate.ts';
+import { copyIntoCard } from '../../../../cfds/client/copyIntoCard.ts';
 import { GraphManager } from '../../../../cfds/client/graph/graph-manager.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import {
