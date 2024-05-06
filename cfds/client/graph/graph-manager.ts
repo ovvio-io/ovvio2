@@ -61,6 +61,7 @@ import { slices } from '../../../base/array.ts';
 import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 import { downloadJSON } from '../../../base/browser.ts';
 import { getOrganizationId } from '../../../net/rest-api.ts';
+import * as SetUtils from '../../../base/set.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -1012,4 +1013,25 @@ export class GraphManager
       repo.revertAllKeysToBefore(ts);
     }
   }
+
+  listMissingWorkspaces(names: Iterable<string>): string[] {
+    this.sharedQuery('workspaces').map((ws) => ws.name);
+    return Array.from(
+      SetUtils.subtract(
+        Array.from(names).map((n) => normalizeWsName(n)),
+        this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name)),
+      ),
+    );
+  }
+}
+
+function normalizeWsName(name: string): string {
+  name = name.trim();
+  while (name[0] === '"') {
+    name = name.substring(1);
+  }
+  while (name[name.length - 1] === '"') {
+    name = name.substring(0, name.length - 1);
+  }
+  return name;
 }
