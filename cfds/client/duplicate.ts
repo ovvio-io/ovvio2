@@ -120,11 +120,10 @@ function deepCopyImpl(
     tags: tagsToCopy,
     assignees: assigneesToCopy,
   };
-  debugger;
   delete newData.pinnedBy;
   delete newData.status;
-  root.isChecked;
   const newBody = newData.body;
+
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
       if (isRefMarker(node) && node.type === RefType.InternalDoc) {
