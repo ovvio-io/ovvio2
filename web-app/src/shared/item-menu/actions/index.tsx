@@ -366,7 +366,7 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
-    // if (newCard) {
+    // if (newCard) { //TODO: Fix bug - "getVertexProxy(..).getBodyRefs is not a function"
     //   setTimeout(() => {
     //     navigate(`${wsManager.key}/notes/${newCard.key}`);
     //   }, 1000);

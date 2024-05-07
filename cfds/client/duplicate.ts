@@ -123,7 +123,7 @@ function deepCopyImpl(
   debugger;
   delete newData.pinnedBy;
   delete newData.status;
-
+  root.isChecked;
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
