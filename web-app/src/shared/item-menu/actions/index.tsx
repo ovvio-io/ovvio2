@@ -366,11 +366,11 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
-    if (newCard) {
-      setTimeout(() => {
-        navigate(`${wsManager.key}/notes/${newCard.key}`);
-      }, 1000);
-    }
+    // if (newCard) {
+    //   setTimeout(() => {
+    //     navigate(`${wsManager.key}/notes/${newCard.key}`);
+    //   }, 1000);
+    // }
   };
 
   return (

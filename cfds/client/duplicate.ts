@@ -120,10 +120,9 @@ function deepCopyImpl(
     tags: tagsToCopy,
     assignees: assigneesToCopy,
   };
-
+  debugger;
   delete newData.pinnedBy;
-
-  // delete newData.checked; //TODO: remove strike line .
+  delete newData.status;
 
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
@@ -207,6 +206,5 @@ function findMutualAssignees(
       mutualAssignees.add(assignee.key);
     }
   });
-
   return mutualAssignees;
 }
