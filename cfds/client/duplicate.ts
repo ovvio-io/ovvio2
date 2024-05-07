@@ -8,7 +8,7 @@ import { isRefMarker, RefType } from '../richtext/model.ts';
 import { dfs, findLastTextNode, isRichText } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
 import { VertexManager } from './graph/vertex-manager.ts';
-import { Workspace } from './graph/vertices/index.ts';
+import { Tag, Workspace } from './graph/vertices/index.ts';
 import { Note } from './graph/vertices/note.ts';
 
 const COPY_TITLE_SUFFIX = ' (copy)';
@@ -44,23 +44,29 @@ export function copyIntoCard(
   };
   if (!checkRecords(graph, rootKey)) return;
   const outRecords: { [s: string]: CoreObject } = {};
-  const newRootKey = deepCopyImpl(graph, rootKey, outRecords, undefined);
+  const newRootKey = deepCopyImpl(
+    graph,
+    rootKey,
+    outRecords,
+    opts.wsCopyTo!,
+    undefined
+  );
   fixSorting(outRecords);
   tryAppendText(outRecords[newRootKey], opts.suffix);
 
-  // const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
-  //   const key = x[0];
-  //   const initialData = {
-  //     ...x[1],
-  //     workspace: opts.wsCopyTo?.getVertexProxy().key,
-  //   };
+  const vInfos: CreateVertexInfo[] = Object.entries(outRecords).map((x) => {
+    const key = x[0];
+    const initialData = {
+      ...x[1],
+    };
+    return {
+      namespace: NS_NOTES,
+      initialData: initialData,
+      key: key,
+    };
+  });
 
-  //   return {
-  //     namespace: NS_NOTES,
-  //     initialData: initialData,
-  //     key: key,
-  //   };
-  // });
+  graph.createVertices<Note>(vInfos);
 
   const vertex = graph.getVertex<Note>(newRootKey);
 
@@ -99,20 +105,23 @@ function deepCopyImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },
-  // wsCopyTo: VertexManager<Workspace>,
+  wsCopyTo: VertexManager<Workspace>,
   parentNoteNewKey?: string
 ) {
   const root = graph.getVertex<Note>(rootKey);
-
+  const tagsToCopy = findMutualTags(Array.from(root.tags.values()), wsCopyTo);
   const newKey = uniqueId();
   const newData: CoreObject = {
     ...root.cloneData(),
     creationDate: new Date(),
     sortStamp: root.sortStamp,
+    workspace: wsCopyTo?.getVertexProxy().key,
+    tags: tagsToCopy,
   };
   delete newData.pinnedBy;
-  delete newData.dueDate;
-  delete newData.done; //TODO: remove strike line .
+
+  // delete newData.checked; //TODO: remove strike line .
+
   const newBody = newData.body;
   if (newBody && isRichText(newBody)) {
     for (const [node] of dfs(newBody.root)) {
@@ -122,7 +131,7 @@ function deepCopyImpl(
           graph,
           oldTaskKey,
           outRecords,
-          // wsCopyTo,
+          wsCopyTo,
           newKey
         );
         node.ref = newTaskKey;
@@ -167,4 +176,19 @@ function tryAppendText(noteData: CoreObject, text: string | undefined) {
   }
   lastNode.text += text;
   noteData.title = title;
+}
+
+function findMutualTags(
+  tagsFrom: Tag[],
+  wsCopyTo: VertexManager<Workspace>
+): Map<string, string> {
+  const mutualTags: Map<string, string> = new Map();
+  for (const tag of tagsFrom) {
+    const mutualTag: Tag | undefined = tag.isTagInWorkspace(wsCopyTo);
+    if (mutualTag !== undefined) {
+      debugger;
+      mutualTags.set(mutualTag.parentTag?.key!, mutualTag.key);
+    }
+  }
+  return mutualTags;
 }

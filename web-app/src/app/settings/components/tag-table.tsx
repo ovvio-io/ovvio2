@@ -697,9 +697,9 @@ export const TagsTable: React.FC<TagsTableProps> = ({
   graphManager,
 }) => {
   const styles = useStyles();
-  const categoriesQuery = useSharedQuery('parentTagsByWorkspace').group(
-    workspaceManager
-  );
+  const categoriesQuery: VertexManager<Tag>[] = useSharedQuery(
+    'parentTagsByWorkspace'
+  ).group(workspaceManager);
   const [newCategoryVertex, setNewCategoryVertex] = useState<
     VertexManager<Tag> | undefined
   >(undefined);

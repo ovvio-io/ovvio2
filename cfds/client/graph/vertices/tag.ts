@@ -13,6 +13,9 @@ import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Query } from '../query.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { SimpleTimer } from '../../../../base/timer.ts';
+import { useSharedQuery } from '../../../../web-app/src/core/cfds/react/query.ts';
+import { encodeTagId } from '../../../base/scheme-types.ts';
+import { useVertex } from '../../../../web-app/src/core/cfds/react/vertex.ts';
 
 export class Tag extends ContentVertex {
   private _cachedTagFamily: Tag[] | undefined;
@@ -21,7 +24,7 @@ export class Tag extends ContentVertex {
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined,
+    config: VertexConfig | undefined
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex && prevVertex instanceof Tag) {
@@ -32,6 +35,27 @@ export class Tag extends ContentVertex {
 
   get parent(): Vertex | undefined {
     return this.parentTag || super.parent;
+  }
+
+  /**
+   * @param wsManager A VertexManager of type Workspace.
+   * @returns boolean indicating if the tag exists in the workspace.
+   */
+  isTagInWorkspace(wsManager: VertexManager<Workspace>): Tag | undefined {
+    const tagFullName = encodeTagId(this.parentTag?.name, this.name);
+    const wsCategories: Tag[] = this.graph
+      .sharedQuery('parentTagsByWorkspace')
+      .group(wsManager)
+      .map((mgr) => mgr.getVertexProxy());
+    for (const category of wsCategories) {
+      const childTags: Tag[] = category.childTags;
+
+      for (const tag of childTags) {
+        const tagFullNameWs = encodeTagId(category.name, tag.name);
+        if (tagFullNameWs === tagFullName) return tag;
+      }
+    }
+    return undefined;
   }
 
   // get childTags(): Tag[] {
@@ -64,7 +88,7 @@ export class Tag extends ContentVertex {
 
   private _invalidateChildTags(local: boolean): MutationPack {
     new SimpleTimer(50, false, () =>
-      this.manager.vertexDidMutate(this._invalidateChildTagsImpl(local)),
+      this.manager.vertexDidMutate(this._invalidateChildTagsImpl(local))
     ).schedule();
     return this._invalidateChildTagsImpl(local);
   }
@@ -78,7 +102,7 @@ export class Tag extends ContentVertex {
   childParentTagDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -86,7 +110,7 @@ export class Tag extends ContentVertex {
   childTagIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return this._invalidateChildTags(local);
   }
@@ -150,7 +174,7 @@ export class Tag extends ContentVertex {
   childTagParentDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return mutationPackAppend(this._invalidateChildTags(local));
   }
@@ -158,7 +182,7 @@ export class Tag extends ContentVertex {
   childSortStampDidMutate(
     local: boolean,
     oldValue: Tag | undefined,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return mutationPackAppend(this._invalidateChildTags(local));
   }
@@ -167,7 +191,7 @@ export class Tag extends ContentVertex {
   childIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Tag,
+    child: Tag
   ): MutationPack {
     return mutationPackAppend(this._invalidateChildTags(local));
   }
@@ -175,7 +199,7 @@ export class Tag extends ContentVertex {
   workspaceSelectedDidMutate(
     local: boolean,
     oldValue: boolean,
-    ws: Workspace,
+    ws: Workspace
   ): MutationPack {
     if (oldValue === true && this.selected) {
       //Workspace has been un-selected > Tag should be un-selected
@@ -187,7 +211,7 @@ export class Tag extends ContentVertex {
   parentTagIsDeletedDidMutate(
     local: boolean,
     oldValue: boolean | undefined,
-    parent: Tag,
+    parent: Tag
   ): MutationPack {
     return ['parentTag', local, undefined];
   }
@@ -197,25 +221,25 @@ const kFieldTriggersTag: FieldTriggers<Tag> = {
   parent: triggerParent(
     'childTagParentDidMutate',
     'Tag_parent',
-    SchemeNamespace.TAGS,
+    SchemeNamespace.TAGS
   ),
   isDeleted: triggerCompose(
     triggerParent(
       'childIsDeletedDidMutate',
       'Tag_isDeleted_fromChild',
-      SchemeNamespace.TAGS,
+      SchemeNamespace.TAGS
     ),
     triggerChildren(
       'parentTagIsDeletedDidMutate',
       'Tag_isDeleted_fromParent',
-      SchemeNamespace.TAGS,
+      SchemeNamespace.TAGS
     ),
-    'Tag_isDeleted',
+    'Tag_isDeleted'
   ),
   sortStamp: triggerParent(
     'childSortStampDidMutate',
     'Tag_sortStamp',
-    SchemeNamespace.TAGS,
+    SchemeNamespace.TAGS
   ),
 };
 
