@@ -8,7 +8,7 @@ import { isRefMarker, RefType } from '../richtext/model.ts';
 import { dfs, findLastTextNode, isRichText } from '../richtext/tree.ts';
 import { CreateVertexInfo, GraphManager } from './graph/graph-manager.ts';
 import { VertexManager } from './graph/vertex-manager.ts';
-import { Tag, Workspace } from './graph/vertices/index.ts';
+import { Tag, User, Workspace } from './graph/vertices/index.ts';
 import { Note } from './graph/vertices/note.ts';
 
 const COPY_TITLE_SUFFIX = ' (copy)';
@@ -110,6 +110,7 @@ function deepCopyImpl(
 ) {
   const root = graph.getVertex<Note>(rootKey);
   const tagsToCopy = findMutualTags(Array.from(root.tags.values()), wsCopyTo);
+  const assigneesToCopy = findMutualAssignees(root.assignees, wsCopyTo);
   const newKey = uniqueId();
   const newData: CoreObject = {
     ...root.cloneData(),
@@ -117,7 +118,9 @@ function deepCopyImpl(
     sortStamp: root.sortStamp,
     workspace: wsCopyTo?.getVertexProxy().key,
     tags: tagsToCopy,
+    assignees: assigneesToCopy,
   };
+
   delete newData.pinnedBy;
 
   // delete newData.checked; //TODO: remove strike line .
@@ -186,9 +189,24 @@ function findMutualTags(
   for (const tag of tagsFrom) {
     const mutualTag: Tag | undefined = tag.isTagInWorkspace(wsCopyTo);
     if (mutualTag !== undefined) {
-      debugger;
       mutualTags.set(mutualTag.parentTag?.key!, mutualTag.key);
     }
   }
   return mutualTags;
+}
+function findMutualAssignees(
+  assigneesFrom: Set<User>,
+  wsCopyTo: VertexManager<Workspace>
+): Set<string> {
+  const usersInWs: Set<User> = wsCopyTo.getVertexProxy().users;
+  const usersKeysInWs = new Set<string>();
+  usersInWs.forEach((user: User) => usersKeysInWs.add(user.key));
+  const mutualAssignees: Set<string> = new Set();
+  assigneesFrom.forEach((assignee) => {
+    if (usersKeysInWs.has(assignee.key)) {
+      mutualAssignees.add(assignee.key);
+    }
+  });
+
+  return mutualAssignees;
 }

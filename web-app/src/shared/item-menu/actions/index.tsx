@@ -366,12 +366,10 @@ export function CopyIntoCardAction({
       target: newCard?.key,
       source,
     });
-
-    debugger;
     if (newCard) {
       setTimeout(() => {
         navigate(`${wsManager.key}/notes/${newCard.key}`);
-      }, 4000);
+      }, 1000);
     }
   };
 
