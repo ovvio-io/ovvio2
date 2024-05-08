@@ -7,61 +7,65 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
+} from 'react'
+import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts'
 import {
   Note,
   NoteType,
-} from '../../../../../../../../cfds/client/graph/vertices/note.ts';
-import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts';
-import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts';
-import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { Button } from '../../../../../../../../styles/components/buttons.tsx';
-import { TaskCheckbox } from '../../../../../../../../components/checkbox.tsx';
-import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx';
-import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx';
+} from '../../../../../../../../cfds/client/graph/vertices/note.ts'
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/tag.ts'
+import { User } from '../../../../../../../../cfds/client/graph/vertices/user.ts'
+import { Workspace } from '../../../../../../../../cfds/client/graph/vertices/workspace.ts'
+import { Button } from '../../../../../../../../styles/components/buttons.tsx'
+import { TaskCheckbox } from '../../../../../../../../components/checkbox.tsx'
+import { IconNewTask } from '../../../../../../../../styles/components/new-icons/icon-new-task.tsx'
+import { IconPin } from '../../../../../../../../styles/components/new-icons/icon-pin.tsx'
 import {
   cn,
   keyframes,
   makeStyles,
-} from '../../../../../../../../styles/css-objects/index.ts';
-import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
-import { layout } from '../../../../../../../../styles/layout.ts';
-import { Text } from '../../../../../../../../styles/components/texts.tsx';
-import { styleguide } from '../../../../../../../../styles/styleguide.ts';
-import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+} from '../../../../../../../../styles/css-objects/index.ts'
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx'
+import { layout } from '../../../../../../../../styles/layout.ts'
+import { Text } from '../../../../../../../../styles/components/texts.tsx'
+import { styleguide } from '../../../../../../../../styles/styleguide.ts'
+import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx'
 import {
   usePartialVertex,
   usePartialVertices,
   useVertex,
   useVertexByKey,
-} from '../../../../../../core/cfds/react/vertex.ts';
+} from '../../../../../../core/cfds/react/vertex.ts'
 import {
   AssignButton,
   Assignee,
-} from '../../../../../../shared/card/assignees-view.tsx';
-import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx';
-import CardMenuView from '../../../../../../shared/item-menu/index.tsx';
+} from '../../../../../../shared/card/assignees-view.tsx'
+import { RenderDraggableProps } from '../../../../../../shared/dragndrop/draggable.tsx'
+import CardMenuView from '../../../../../../shared/item-menu/index.tsx'
 import TagButton, {
   TagShowMoreButton,
-} from '../../../../../../shared/tags/tag-button.tsx';
+} from '../../../../../../shared/tags/tag-button.tsx'
 import TagView, {
   TagPillView,
-} from '../../../../../../shared/tags/tag-view.tsx';
-import { WorkspaceIndicator } from '../../../../../../../../components/workspace-indicator.tsx';
-import { IconCollapseExpand } from '../../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
-import { DueDateIndicator } from '../../card-item/card-footer.tsx';
-import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx';
-import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js';
-import { debounce } from '../../../../../../../../base/debounce.ts';
-import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
-import { filter } from '../../../../../../../../base/set.ts';
-import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx';
-import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
-import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx';
-import { AssignMultiButton } from '../../../multi-select-bar.tsx';
+} from '../../../../../../shared/tags/tag-view.tsx'
+import { WorkspaceIndicator } from '../../../../../../../../components/workspace-indicator.tsx'
+import { IconCollapseExpand } from '../../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx'
+import { DueDateIndicator } from '../../card-item/card-footer.tsx'
+import Tooltip from '../../../../../../../../styles/components/tooltip/index.tsx'
+import { camelCase } from 'https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/string-utils.js'
+import { debounce } from '../../../../../../../../base/debounce.ts'
+import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts'
+import { filter } from '../../../../../../../../base/set.ts'
+import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index.tsx'
+import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts'
+import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx'
+import { AssignMultiButton } from '../../../multi-select-bar.tsx'
+import {
+  IconTimeTracking,
+  TimeTracking,
+} from '../../../../../../shared/components/time-tracking/TimeTracking.tsx'
 
-export const ROW_HEIGHT = styleguide.gridbase * 5.5;
+export const ROW_HEIGHT = styleguide.gridbase * 5.5
 const showAnim = keyframes({
   '0%': {
     opacity: 0,
@@ -72,14 +76,14 @@ const showAnim = keyframes({
   '100%': {
     opacity: 1,
   },
-});
+})
 const useStyles = makeStyles(() => ({
   tag2: {
     direction: 'ltr',
     backgroundColor: theme.mono.m1,
     height: styleguide.gridbase * 2,
     minWidth: styleguide.gridbase * 3,
-    padding: [0, styleguide.gridbase],
+    padding: '0 8px',
     flexShrink: 0,
     fontSize: 12,
     borderRadius: styleguide.gridbase,
@@ -174,7 +178,7 @@ const useStyles = makeStyles(() => ({
     // flexShrink: '2',
     flexShrink: '1', //7.3.24
     flexBasis: 'auto',
-    width: 'calc(45% - 156px)',
+    width: 'calc(35% - 156px)',
     minWidth: '20%',
     minHeight: '20px',
     cursor: 'pointer',
@@ -191,7 +195,7 @@ const useStyles = makeStyles(() => ({
     flexShrink: '1',
     flexBasis: 'auto',
     alignItems: 'center',
-    padding: [0, styleguide.gridbase * 0.5],
+    padding: '0 4px',
   },
   wsColumnForChild: {
     width: 'calc(21% - 170px)',
@@ -223,7 +227,7 @@ const useStyles = makeStyles(() => ({
     overflow: 'clip',
     display: 'flex',
     position: 'relative',
-    padding: [0, styleguide.gridbase],
+    padding: '0 8px',
     minHeight: styleguide.gridbase * 2,
   },
   tag: {
@@ -268,7 +272,7 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 12,
   },
   cardMiddle: {
-    padding: [styleguide.gridbase, 0, 0, 0],
+    padding: '8px 0 0 0 ',
     display: 'flex',
     alignItems: 'center',
   },
@@ -300,16 +304,25 @@ const useStyles = makeStyles(() => ({
   InAction: {
     backgroundColor: '#FBEAC8',
   },
-}));
+  timeTracking: {
+    width: 'calc(10% - 156px)',
+    basedOn: [layout.row],
+    flexGrow: '1',
+    flexShrink: '1',
+    flexBasis: 'auto',
+    alignItems: 'center',
+    padding: '0 4px',
+  },
+}))
 
 interface SelectIconContainerProps {
-  className?: string;
-  workspace: VertexManager<Workspace>;
-  isSelected: boolean;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
-  handleSelectClick: (card: Note) => void;
+  className?: string
+  workspace: VertexManager<Workspace>
+  isSelected: boolean
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+  handleSelectClick: (card: Note) => void
 
-  cardKey: string;
+  cardKey: string
 }
 export function SelectIconContainer({
   className,
@@ -318,8 +331,8 @@ export function SelectIconContainer({
   handleSelectClick,
   cardKey,
 }: SelectIconContainerProps) {
-  const styles = useStyles();
-  const color = useWorkspaceColor(workspace);
+  const styles = useStyles()
+  const color = useWorkspaceColor(workspace)
   const style = useMemo<any>(
     () => ({
       '--ws-background': color.background,
@@ -327,8 +340,8 @@ export function SelectIconContainer({
       '--ws-active': color.active,
     }),
     [color]
-  );
-  const card: Note = useVertexByKey(cardKey);
+  )
+  const card: Note = useVertexByKey(cardKey)
   return (
     <div
       className={cn(
@@ -351,12 +364,12 @@ export function SelectIconContainer({
         />
       )}
     </div>
-  );
+  )
 }
 
 const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
-  const { isChecked } = usePartialVertex(note, ['isChecked']);
+  const styles = useStyles()
+  const { isChecked } = usePartialVertex(note, ['isChecked'])
   return (
     <div
       className={cn(
@@ -364,38 +377,38 @@ const DoneIndicator = ({ note }: { note: VertexManager<Note> }) => {
         isChecked && styles.doneIndicatorActive
       )}
     />
-  );
-};
+  )
+}
 
 const ExpanderCell = ({
   note,
   isExpanded,
   toggleExpanded,
 }: {
-  note: VertexManager<Note>;
-  isExpanded: boolean;
-  toggleExpanded: () => void;
+  note: VertexManager<Note>
+  isExpanded: boolean
+  toggleExpanded: () => void
 }) => {
-  const styles = useStyles();
-  const { childCards } = usePartialVertex(note, ['childCards']);
+  const styles = useStyles()
+  const { childCards } = usePartialVertex(note, ['childCards'])
 
   return (
     <div className={cn(styles.iconCell)} onClick={() => toggleExpanded()}>
       {!!childCards?.length && <IconCollapseExpand on={isExpanded} />}
     </div>
-  );
-};
+  )
+}
 
 const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
+  const styles = useStyles()
   const { assignees, workspace } = usePartialVertex(note, [
     'assignees',
     'workspace',
-  ]);
+  ])
   const { users: wsAssignees } = usePartialVertex(
     workspace?.manager as VertexManager<Workspace>,
     ['users']
-  );
+  )
 
   const userManagers = useMemo(
     () =>
@@ -403,12 +416,12 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
         (x) => x.manager as VertexManager<User>
       ),
     [wsAssignees]
-  );
+  )
   const managers = useMemo(
     () =>
       Array.from(assignees || []).map((x) => x.manager as VertexManager<User>),
     [assignees]
-  );
+  )
 
   return (
     <div className={cn(styles.assigneeColumn)}>
@@ -434,31 +447,31 @@ const AssigneesCell = ({ note }: { note: VertexManager<Note> }) => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
 const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
-  const styles = useStyles();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const tagsRef = useRef(new Map());
-  const { tags } = usePartialVertex(note, ['tags']);
-  const tooltipRef = useRef<HTMLElement>(null);
-  const tagButtonRef = useRef<HTMLElement>(null);
-  const vNote = useVertex(note);
+  const styles = useStyles()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const tagsRef = useRef(new Map())
+  const { tags } = usePartialVertex(note, ['tags'])
+  const tooltipRef = useRef<HTMLElement>(null)
+  const tagButtonRef = useRef<HTMLElement>(null)
+  const vNote = useVertex(note)
 
-  const parentNoteTitle = vNote.parentNote?.titlePlaintext;
+  const parentNoteTitle = vNote.parentNote?.titlePlaintext
 
   const managers = Array.from(tags.values())
     .filter((tag) => {
-      return tag.name !== parentNoteTitle;
+      return tag.name !== parentNoteTitle
     })
-    .map((tag) => tag.manager);
+    .map((tag) => tag.manager)
 
   const recalculateTagVisibility = useCallback(() => {
     if (!containerRef.current) {
-      return;
+      return
     }
-    const parentRect = containerRef.current.getBoundingClientRect();
+    const parentRect = containerRef.current.getBoundingClientRect()
     const parentRight =
       parentRect.right -
       (tagButtonRef.current
@@ -466,85 +479,85 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
         : 0) -
       (tooltipRef.current
         ? tooltipRef.current.getBoundingClientRect().width
-        : 0);
-    let lastChildRight = 0;
+        : 0)
+    let lastChildRight = 0
     if (containerRef.current) {
       for (const tag of containerRef.current?.children) {
-        const tagKey = tag.getAttribute('data-tag-key');
-        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        const tagKey = tag.getAttribute('data-tag-key')
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null
         if (tagElement) {
-          const tagRect = tagElement.getBoundingClientRect();
+          const tagRect = tagElement.getBoundingClientRect()
           if (tagRect.right + 6 >= parentRight || tagRect.x >= parentRight) {
             if (!lastChildRight) {
-              lastChildRight = tagRect.x - parentRect.x;
+              lastChildRight = tagRect.x - parentRect.x
             }
-            tagElement.style.visibility = 'hidden';
+            tagElement.style.visibility = 'hidden'
           } else {
-            tagElement.style.visibility = 'visible';
+            tagElement.style.visibility = 'visible'
           }
         }
       }
 
-      if (tagButtonRef.current) tagButtonRef.current.style.right = '8px';
+      if (tagButtonRef.current) tagButtonRef.current.style.right = '8px'
       if (tooltipRef.current) {
         if (!lastChildRight) {
-          tooltipRef.current.style.visibility = 'hidden';
+          tooltipRef.current.style.visibility = 'hidden'
         } else {
-          tooltipRef.current.style.translate = `${lastChildRight - 8}px 0px`;
-          tooltipRef.current.style.visibility = 'visible';
+          tooltipRef.current.style.translate = `${lastChildRight - 8}px 0px`
+          tooltipRef.current.style.visibility = 'visible'
         }
       }
     }
-  }, []);
+  }, [])
 
   const getHiddenTags = () => {
-    const hiddenTags = [];
+    const hiddenTags = []
     if (containerRef.current) {
       for (const tag of containerRef.current.children) {
-        const tagKey = tag.getAttribute('data-tag-key');
-        const tagName = tag.getAttribute('data-tag-name');
-        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null;
+        const tagKey = tag.getAttribute('data-tag-key')
+        const tagName = tag.getAttribute('data-tag-name')
+        const tagElement = tagKey ? tagsRef.current.get(tagKey) : null
         if (tagElement) {
-          const displayStyle = window.getComputedStyle(tagElement).visibility;
+          const displayStyle = window.getComputedStyle(tagElement).visibility
           if (displayStyle === 'hidden') {
-            hiddenTags.push(tagName);
+            hiddenTags.push(tagName)
           }
         }
       }
     }
-    return hiddenTags.join(',  ');
-  };
+    return hiddenTags.join(',  ')
+  }
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
-      recalculateTagVisibility();
-    });
+      recalculateTagVisibility()
+    })
     if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
+      resizeObserver.observe(containerRef.current)
     }
-    return () => resizeObserver.disconnect();
-  }, [containerRef.current]);
+    return () => resizeObserver.disconnect()
+  }, [containerRef.current])
 
   useLayoutEffect(() => {
-    recalculateTagVisibility();
-  });
+    recalculateTagVisibility()
+  })
 
   const onTag = useCallback(
     (tag: Tag) => {
-      const vert = note.getVertexProxy();
-      const tags = vert.tags;
-      const parent = tag.parentTag || tag;
-      tags.set(parent, tag);
+      const vert = note.getVertexProxy()
+      const tags = vert.tags
+      const parent = tag.parentTag || tag
+      tags.set(parent, tag)
     },
     [note]
-  );
+  )
 
   const onDelete = useCallback(
     (tag: Tag) => {
-      note.getVertexProxy().tags.delete(tag.parentTag || tag);
+      note.getVertexProxy().tags.delete(tag.parentTag || tag)
     },
     [note]
-  );
+  )
 
   return (
     <div ref={containerRef} className={cn(styles.tagsColumn)}>
@@ -580,19 +593,19 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
         </Tooltip>
       </div>
     </div>
-  );
-};
+  )
+}
 
 const TypeCell = ({
   note,
   isDraft,
 }: {
-  note: VertexManager<Note>;
-  isDraft?: boolean;
+  note: VertexManager<Note>
+  isDraft?: boolean
 }) => {
-  const styles = useStyles();
-  const noteType = usePartialVertex(note, ['type']).type;
-  const isActionable = noteType === NoteType.Task;
+  const styles = useStyles()
+  const noteType = usePartialVertex(note, ['type']).type
+  const isActionable = noteType === NoteType.Task
 
   return (
     <div className={cn(styles.iconCell)}>
@@ -604,38 +617,38 @@ const TypeCell = ({
         <img src="/icons/list/note.svg" />
       )}
     </div>
-  );
-};
+  )
+}
 
 function TitleCell({
   note,
   onClick,
 }: {
-  note: VertexManager<Note>;
-  onClick?: MouseEventHandler;
+  note: VertexManager<Note>
+  onClick?: MouseEventHandler
 }) {
-  const styles = useStyles();
-  const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext']);
+  const styles = useStyles()
+  const { titlePlaintext } = usePartialVertex(note, ['titlePlaintext'])
   return (
     <div className={cn(styles.title)} onClick={onClick}>
       <Tooltip text={titlePlaintext} position="top" align="center">
         <Text>{titlePlaintext}</Text>
       </Tooltip>
     </div>
-  );
+  )
 }
 
 function WorkspaceIndicatorCell({
   note,
   groupBy,
 }: {
-  note: VertexManager<Note>;
-  groupBy?: string;
+  note: VertexManager<Note>
+  groupBy?: string
 }) {
-  const styles = useStyles();
-  const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext']);
-  const vNote = useVertex(note);
-  const isTask = pNote.type === NoteType.Task;
+  const styles = useStyles()
+  const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext'])
+  const vNote = useVertex(note)
+  const isTask = pNote.type === NoteType.Task
 
   return (
     <div className={styles.wsColumn}>
@@ -668,7 +681,7 @@ function WorkspaceIndicatorCell({
       )}
       <div className={cn(layout.flexSpacer)} />
     </div>
-  );
+  )
 }
 
 export const PinCell = ({
@@ -676,20 +689,20 @@ export const PinCell = ({
   isMouseOver,
   isChild,
 }: {
-  note: VertexManager<Note>;
-  isMouseOver: boolean;
-  isChild?: boolean;
+  note: VertexManager<Note>
+  isMouseOver: boolean
+  isChild?: boolean
 }) => {
-  const styles = useStyles();
-  const { isPinned } = usePartialVertex(note, ['isPinned']);
+  const styles = useStyles()
+  const { isPinned } = usePartialVertex(note, ['isPinned'])
 
   const togglePin = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    event.preventDefault()
+    event.stopPropagation()
 
-    const proxy = note.getVertexProxy();
-    proxy.isPinned = !proxy.isPinned;
-  };
+    const proxy = note.getVertexProxy()
+    proxy.isPinned = !proxy.isPinned
+  }
 
   return (
     <div className={cn(styles.iconCell)}>
@@ -699,24 +712,24 @@ export const PinCell = ({
         </Button>
       )}
     </div>
-  );
-};
+  )
+}
 
 const MenuCell = ({
   note,
   isMouseOver,
 }: {
-  note: VertexManager<Note>;
-  isMouseOver?: boolean;
+  note: VertexManager<Note>
+  isMouseOver?: boolean
 }) => {
-  const styles = useStyles();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pNote = usePartialVertex(note, ['type']);
-  const isTask = pNote.type === NoteType.Task;
+  const styles = useStyles()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const pNote = usePartialVertex(note, ['type'])
+  const isTask = pNote.type === NoteType.Task
 
   const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
+    setMenuOpen(!menuOpen)
+  }
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
@@ -725,7 +738,7 @@ const MenuCell = ({
       </div>
     ),
     []
-  );
+  )
   return (
     <div className={cn(styles.iconCell)} onClick={toggleMenu}>
       <CardMenuView
@@ -738,15 +751,15 @@ const MenuCell = ({
         isTask={isTask}
       />
     </div>
-  );
-};
+  )
+}
 
 export type RowProps = React.PropsWithChildren<{
-  className?: string;
-  style?: CSSProperties;
-  onMouseEnter?: React.MouseEventHandler<HTMLTableRowElement>;
-  onMouseLeave?: React.MouseEventHandler<HTMLTableRowElement>;
-}>;
+  className?: string
+  style?: CSSProperties
+  onMouseEnter?: React.MouseEventHandler<HTMLTableRowElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLTableRowElement>
+}>
 
 export function Row({
   children,
@@ -755,7 +768,7 @@ export function Row({
   onMouseEnter,
   onMouseLeave,
 }: RowProps) {
-  const styles = useStyles();
+  const styles = useStyles()
 
   return (
     <div
@@ -766,20 +779,40 @@ export function Row({
     >
       <div>{children}</div>
     </div>
-  );
+  )
+}
+
+function TimeTrackingSlot({
+  note,
+  isMouseOver,
+}: {
+  note: VertexManager<Note>
+  isMouseOver: boolean
+}) {
+  const styles = useStyles()
+  const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext'])
+  const vNote = useVertex(note)
+  const isTask = pNote.type === NoteType.Task
+
+  return (
+    <div className={styles.timeTracking}>
+      <TimeTracking plus={true} hover={isMouseOver} time={''} />
+      <div className={cn(layout.flexSpacer)} />
+    </div>
+  )
 }
 
 export interface ItemRowProps extends Partial<RenderDraggableProps> {
-  note: VertexManager<Note>;
-  index?: number;
-  onClick: (note: VertexManager<Note>) => void;
-  isChild?: boolean;
-  groupBy?: string;
-  nestingLevel: number;
-  handleSelectClick: (card: Note) => void;
-  isSelected: boolean;
-  multiIsActive: boolean;
-  isInAction: boolean;
+  note: VertexManager<Note>
+  index?: number
+  onClick: (note: VertexManager<Note>) => void
+  isChild?: boolean
+  groupBy?: string
+  nestingLevel: number
+  handleSelectClick: (card: Note) => void
+  isSelected: boolean
+  multiIsActive: boolean
+  isInAction: boolean
 }
 
 export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
@@ -797,29 +830,29 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     },
     ref
   ) {
-    const styles = useStyles();
-    const [isMouseOver, setIsMouseOver] = useState(false);
-    const { childCards } = usePartialVertex(note, ['childCards']);
-    const onMouseOver = useCallback(() => setIsMouseOver(true), []);
-    const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
+    const styles = useStyles()
+    const [isMouseOver, setIsMouseOver] = useState(false)
+    const { childCards } = usePartialVertex(note, ['childCards'])
+    const onMouseOver = useCallback(() => setIsMouseOver(true), [])
+    const onMouseLeave = useCallback(() => setIsMouseOver(false), [])
     const onClickImpl: MouseEventHandler = (e) => {
-      e.stopPropagation();
-      onClick(note);
-    };
-    const { workspace } = usePartialVertex(note, ['workspace']);
+      e.stopPropagation()
+      onClick(note)
+    }
+    const { workspace } = usePartialVertex(note, ['workspace'])
 
-    const view = usePartialView('notesExpandOverride', 'notesExpandBase');
+    const view = usePartialView('notesExpandOverride', 'notesExpandBase')
 
-    const childWidth = `${100 - 3 * nestingLevel}%`;
-    const leftIndentation = `${3 * nestingLevel}%`;
+    const childWidth = `${100 - 3 * nestingLevel}%`
+    const leftIndentation = `${3 * nestingLevel}%`
 
     if (note.scheme.isNull) {
-      return null;
+      return null
     }
-    const hasOverride = view.notesExpandOverride.has(note.key);
+    const hasOverride = view.notesExpandOverride.has(note.key)
     const isExpanded =
       (view.notesExpandBase && !hasOverride) ||
-      (!view.notesExpandBase && hasOverride);
+      (!view.notesExpandBase && hasOverride)
 
     // const handleSelectInMulti()=>{
     //   if(multiIsActive){
@@ -836,11 +869,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
     // }
 
     const handleSelectInMulti: MouseEventHandler<HTMLDivElement> = (e) => {
-      e.stopPropagation();
+      e.stopPropagation()
       if (multiIsActive) {
-        handleSelectClick(note.vertex);
+        handleSelectClick(note.vertex)
       }
-    };
+    }
 
     return (
       <div
@@ -892,6 +925,10 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             />
             <AssigneesCell note={note} />
             <TagsCell note={note} />
+            <TimeTrackingSlot
+              note={note}
+              isMouseOver={multiIsActive ? false : isMouseOver}
+            />
             <DueDateIndicator
               card={note}
               source={'list'}
@@ -922,6 +959,6 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             />
           ))}
       </div>
-    );
+    )
   }
-);
+)
