@@ -30,16 +30,16 @@ const DEFAULT_COPYINTO_OPTS: CopyIntoCardOptions = {
  * @param client
  * @param rootKey The card key you want to duplicate
  */
-export function duplicateCard(
+export function copyIntoCard(
   graph: GraphManager,
   rootKey: string,
-  opts: DuplicateCardOptions = {}
+  opts: CopyIntoCardOptions = {}
 ): Note | undefined {
   if (!opts.wsCopyTo) {
     throw new Error('Workspace must be provided')
   }
   opts = {
-    ...DEFAULT_DUPLICATE_OPTS,
+    ...DEFAULT_COPYINTO_OPTS,
     ...opts,
   }
   if (!checkRecords(graph, rootKey)) return
@@ -99,7 +99,7 @@ function checkRecords(graph: GraphManager, rootKey: string) {
  * @param outRecords
  * @param parentNoteNewKey The New Parent Key
  */
-function deepDuplicateImpl(
+function deepCopyImpl(
   graph: GraphManager,
   rootKey: string,
   outRecords: { [s: string]: CoreObject },

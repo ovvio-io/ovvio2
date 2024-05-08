@@ -45,7 +45,7 @@ import {
   IconCheckAll,
   CheckAllState,
 } from '../../../../../styles/components/new-icons/icon-check-all.tsx'
-import { makeStyles } from '../../../../../styles/css-objects/index.ts'
+import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts'
 import { styleguide } from '../../../../../styles/styleguide.ts'
 import { layout } from '../../../../../styles/layout.ts'
 import { ConfirmationDialog } from '../../../../../styles/components/confirmation-menu.tsx'
@@ -56,6 +56,10 @@ import { WorkspaceIndicator } from '../../../../../components/workspace-indicato
 import { suggestResults } from '../../../../../cfds/client/suggestions.ts'
 import { SearchBar } from '../../../../../components/search-bar.tsx'
 import { useMaxWidth } from '../../../app/index.tsx'
+import {
+  CopyIntoCardOptions,
+  copyIntoCard,
+} from '../../../../../cfds/client/duplicate.ts'
 
 const useStyles = makeStyles(() => ({
   itemMenu: {
@@ -265,47 +269,47 @@ export function DeleteCardAction({
   )
 }
 
-interface DuplicateCardActionProps extends CardActionProps {
-  editorRootKey?: string
-  source: UISource
-}
-export function DuplicateCardAction({
-  editorRootKey,
-  cardManager,
-  source,
-  ...props
-}: DuplicateCardActionProps) {
-  const graph = useGraphManager()
-  const logger = useLogger()
-  const navigate = useNavigate()
+// interface DuplicateCardActionProps extends CardActionProps {
+//   editorRootKey?: string
+//   source: UISource
+// }
+// export function DuplicateCardAction({
+//   editorRootKey,
+//   cardManager,
+//   source,
+//   ...props
+// }: DuplicateCardActionProps) {
+//   const graph = useGraphManager()
+//   const logger = useLogger()
+//   const navigate = useNavigate()
 
-  const onDuplicate = () => {
-    const newCard = duplicateCard(graph, cardManager.key)!
-    logger.log({
-      severity: 'EVENT',
-      event: 'Duplicate',
-      vertex: cardManager.key,
-      target: newCard?.key,
-      source,
-    })
+//   const onDuplicate = () => {
+//     const newCard = duplicateCard(graph, cardManager.key)!
+//     logger.log({
+//       severity: 'EVENT',
+//       event: 'Duplicate',
+//       vertex: cardManager.key,
+//       target: newCard?.key,
+//       source,
+//     })
 
-    if (editorRootKey === cardManager.key) {
-      navigate(`${newCard?.workspace.key}/${newCard?.key}`)
-      return
-    }
+//     if (editorRootKey === cardManager.key) {
+//       navigate(`${newCard?.workspace.key}/${newCard?.key}`)
+//       return
+//     }
 
-    // TODO: Wiring for new editor
-  }
+//     // TODO: Wiring for new editor
+//   }
 
-  return (
-    <MenuAction
-      {...props}
-      onClick={onDuplicate}
-      IconComponent={IconDuplicate}
-      text="Duplicate"
-    />
-  )
-}
+//   return (
+//     <MenuAction
+//       {...props}
+//       onClick={onDuplicate}
+//       IconComponent={IconDuplicate}
+//       text="Duplicate"
+//     />
+//   )
+// }
 
 // interface CopyIntoCardActionProps extends CardActionProps {
 //   editorRootKey?: string;
