@@ -61,6 +61,7 @@ import { slices } from '../../../base/array.ts';
 import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 import { downloadJSON } from '../../../base/browser.ts';
 import { getOrganizationId } from '../../../net/rest-api.ts';
+import * as SetUtils from '../../../base/set.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -129,6 +130,7 @@ export class GraphManager
   private readonly _repoById: Dictionary<string, RepositoryPlumbing>;
   private readonly _openQueries: HashMap<string, [QueryOptions, Query]>;
   private readonly _syncScheduler: SyncScheduler | undefined;
+  private readonly _reportedInitialMutations: Set<string>;
   private _prevClientStatus: ClientStatus = 'offline';
 
   constructor(trustPool: TrustPool, baseServerUrl?: string) {
@@ -161,6 +163,7 @@ export class GraphManager
         getOrganizationId(),
       );
     }
+    this._reportedInitialMutations = new Set();
 
     // Automatically init the directory as everything depends on its presence.
     this.repository('/sys/dir');
@@ -280,7 +283,7 @@ export class GraphManager
           console.log(`Backup disabled for repo: ${id}`);
         }
         // Load all keys from this repo
-        CoroutineScheduler.sharedScheduler().map(
+        await CoroutineScheduler.sharedScheduler().map(
           slices(repo.keys(), 10),
           (keys) => {
             for (const k of keys) {
@@ -324,7 +327,7 @@ export class GraphManager
       if (client && client.isOnline) {
         await client.sync();
         // Load all keys from this repo
-        CoroutineScheduler.sharedScheduler().map(
+        await CoroutineScheduler.sharedScheduler().map(
           slices(plumbing.repo.keys(), 10),
           (keys) => {
             for (const k of keys) {
@@ -376,11 +379,14 @@ export class GraphManager
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
         getOrganizationId(),
+        undefined,
+        undefined,
+        id === Repository.sysDirId,
       );
       repo.allowMerge = false;
       plumbing = {
         repo,
-        backup: new IDBRepositoryBackup(id, repo),
+        backup: new IDBRepositoryBackup(`${getOrganizationId()}:${id}`, repo),
         // Data repo starts inactive. Everything else starts active.
         active: !id.startsWith('/data/'),
       };
@@ -684,7 +690,12 @@ export class GraphManager
       ) {
         return this.getRootVertexManager();
       }
-      mgr = new VertexManager(this, key, record, local);
+      mgr = new VertexManager(
+        this,
+        key,
+        initialData ? record : undefined,
+        local,
+      );
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
     } else if (mgr.scheme.isNull && initialData && ns) {
@@ -726,22 +737,49 @@ export class GraphManager
     }
     if (this._pendingMutations.size > 0) {
       const batchSize = 100;
-      const mutations: [VertexManager, MutationPack][] = [];
-      for (let i = 0; i < batchSize; ++i) {
-        const key = this._pendingMutations.startKey;
-        if (!key) {
+      const creationMutations: [VertexManager, MutationPack][] = [];
+      const editMutations: [VertexManager, MutationPack][] = [];
+      // const mutations: [VertexManager, MutationPack][] = [];
+      for (const [key, pack] of this._pendingMutations) {
+        if (creationMutations.length >= batchSize) {
           break;
         }
-        const mut = this._pendingMutations.get(key);
-        mutations[i] = [this.getVertexManager(key), mutationPackOptimize(mut)];
-        this._pendingMutations.delete(key);
+        if (!this._reportedInitialMutations.has(key)) {
+          creationMutations.push([this.getVertexManager(key), pack]);
+          this._reportedInitialMutations.add(key);
+        }
       }
+      creationMutations.forEach(([mgr]) =>
+        this._pendingMutations.delete(mgr.key),
+      );
+      for (const [key, pack] of this._pendingMutations) {
+        if (editMutations.length >= batchSize) {
+          break;
+        }
+        editMutations.push([this.getVertexManager(key), pack]);
+      }
+      editMutations.forEach(([mgr]) => this._pendingMutations.delete(mgr.key));
+      // for (let i = 0; i < batchSize; ++i) {
+      //   const key = this._pendingMutations.startKey;
+      //   if (!key) {
+      //     break;
+      //   }
+      //   const mut = this._pendingMutations.get(key);
+      //   mutations[i] = [this.getVertexManager(key), mutationPackOptimize(mut)];
+      //   this._pendingMutations.delete(key);
+      // }
 
       //Send mutations to index/query/undo ...
-      this._undoManager.update(mutations);
+      this._undoManager.update(creationMutations);
+      if (editMutations.length > 0) {
+        this._undoManager.update(editMutations);
+      }
 
       this._executedFieldTriggers.clear();
-      for (const [mgr, pack] of mutations) {
+      for (const [mgr, pack] of creationMutations) {
+        this.emit('vertex-changed', mgr.key, pack);
+      }
+      for (const [mgr, pack] of editMutations) {
         this.emit('vertex-changed', mgr.key, pack);
       }
     }
@@ -975,4 +1013,25 @@ export class GraphManager
       repo.revertAllKeysToBefore(ts);
     }
   }
+
+  listMissingWorkspaces(names: Iterable<string>): string[] {
+    this.sharedQuery('workspaces').map((ws) => ws.name);
+    return Array.from(
+      SetUtils.subtract(
+        Array.from(names).map((n) => normalizeWsName(n)),
+        this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name)),
+      ),
+    );
+  }
+}
+
+function normalizeWsName(name: string): string {
+  name = name.trim();
+  while (name[0] === '"') {
+    name = name.substring(1);
+  }
+  while (name[name.length - 1] === '"') {
+    name = name.substring(0, name.length - 1);
+  }
+  return name;
 }

@@ -1,30 +1,29 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Menu from '../../../../styles/components/menu.tsx';
+import { IconOverflow } from '../../../../styles/components/icons/index.ts';
 import {
   EditCardAction,
+  // UploadAttachmentAction,
   EditDueDateAction,
   ViewInNoteAction,
   DeleteCardAction,
+  // ExportMailAction,
+  // ExportPdfAction,
+  // DuplicateCardAction,
+  // CopyUrlAction,
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,
+  DuplicateCardAction,
 } from './actions/index.tsx';
 import { Note, NoteType } from '../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../cfds/client/graph/vertex-manager.ts';
 import { UISource } from '../../../../logging/client-events.ts';
 import { useLogger } from '../../core/cfds/react/logger.tsx';
 import { usePartialVertex } from '../../core/cfds/react/vertex.ts';
-import { cn, makeStyles } from '../../../../styles/css-objects/index.ts';
-import { CopyIntoCardAction } from './actions/index.tsx';
+import { makeStyles } from '../../../../styles/css-objects/index.ts';
 
-const useStyles = makeStyles(() => ({
-  item: {
-    borderBottom: `2px solid #f5ecdc`,
-  },
-  lastItem: {
-    borderBottom: 'none',
-  },
-}));
+const useStyles = makeStyles(() => ({}));
 
 export interface CardMenuViewProps {
   cardManager: VertexManager<Note>;
@@ -41,6 +40,7 @@ export interface CardMenuViewProps {
   isTask?: boolean;
   renderButton?: any;
 }
+
 export default function CardMenuView({
   cardManager,
   allowsEdit,
@@ -67,76 +67,70 @@ export default function CardMenuView({
   if (!cardManager) {
     return null;
   }
-  const menuItems = [
-    partialNote.dueDate && (
-      <ClearDueDateAction
-        key="clearDueDate"
-        cardManager={cardManager}
-        source={source}
-      />
-    ),
-    partialNote.childCards.length > 0 && (
-      <ToggleSubTasksAction
-        key="toggleSubTasks"
-        cardManager={cardManager}
-        source={source}
-      />
-    ),
-    allowsEdit && (
-      <EditCardAction
-        key="editCard"
-        cardManager={cardManager}
-        source={source}
-      />
-    ),
-    partialNote.parentNote && (
-      <ViewInNoteAction
-        key="viewInNote"
-        cardManager={cardManager}
-        source={source}
-      />
-    ),
-    partialNote.type === NoteType.Note && (
-      <CopyIntoCardAction
-        key="copyIntoCard"
-        cardManager={cardManager}
-        source={source}
-        editorRootKey={editorRootKey}
-      />
-    ),
-    <DeleteCardAction
-      key="deleteCard"
-      cardManager={cardManager}
-      source={source}
-      onDeleted={onDeleted}
-      showConfirmation={showConfirmation}
-      setShowConfirmation={setShowConfirmation}
-    />,
-  ].filter(Boolean);
 
   return (
     <React.Fragment>
-      <Menu
-        isOpen={showConfirmation ? true : isOpen}
-        toggleMenu={toggleMenu}
-        renderButton={renderButton}
-        direction="out"
-        position={source === 'list' ? 'left' : 'right'}
-        align="start"
-      >
-        {showConfirmation ? (
+      {!showConfirmation ? (
+        <Menu
+          isOpen={isOpen}
+          toggleMenu={toggleMenu}
+          renderButton={renderButton}
+          direction="out"
+          position={source === 'list' ? 'left' : 'right'}
+          align="start"
+        >
+          {allowsEdit && (
+            <EditCardAction cardManager={cardManager} source={source} />
+          )}
+          {partialNote.dueDate && (
+            <ClearDueDateAction cardManager={cardManager} source={source} />
+          )}
+          {partialNote.parentNote && (
+            <ViewInNoteAction cardManager={cardManager} source={source} />
+          )}
+          {partialNote.type === NoteType.Note && (
+            <DuplicateCardAction
+              cardManager={cardManager}
+              source={source}
+              editorRootKey={editorRootKey}
+            />
+          )}
+          {/* {partialNote.type === NoteType.Note && (
+            <CopyIntoCardAction
+              cardManager={cardManager}
+              source={source}
+              editorRootKey={editorRootKey}
+            />
+          )} */}
+          {partialNote.childCards.length > 0 && (
+            <ToggleSubTasksAction cardManager={cardManager} source={source} />
+          )}
           <DeleteCardAction
-            key="deleteConfirmation"
             cardManager={cardManager}
             source={source}
             onDeleted={onDeleted}
             showConfirmation={showConfirmation}
             setShowConfirmation={setShowConfirmation}
           />
-        ) : (
-          menuItems
-        )}
-      </Menu>
+        </Menu>
+      ) : (
+        <Menu
+          isOpen={true}
+          renderButton={renderButton}
+          direction="out"
+          position={source === 'list' ? 'left' : 'right'}
+          align="start"
+        >
+          <DeleteCardAction
+            cardManager={cardManager}
+            source={source}
+            onDeleted={onDeleted}
+            showConfirmation={showConfirmation}
+            setShowConfirmation={setShowConfirmation}
+            isTask={isTask}
+          />
+        </Menu>
+      )}
     </React.Fragment>
   );
 }

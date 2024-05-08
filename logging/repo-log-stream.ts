@@ -29,6 +29,7 @@ export class RepoLogStream implements LogStream {
           json: JSON.stringify(e),
         },
       }),
+      undefined,
     );
   }
 }

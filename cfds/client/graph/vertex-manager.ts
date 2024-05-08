@@ -102,7 +102,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private readonly _commitDelayTimer: SimpleTimer;
   private readonly _cachedFieldProxies: Map<unknown, unknown>;
   private _record: Record;
-  private _shadowRecord: Record;
+  private _headId: string | undefined;
   private _vertex!: Vertex;
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _commitPromise: Promise<void> | undefined;
@@ -140,11 +140,14 @@ export class VertexManager<V extends Vertex = Vertex>
       );
     }
     if (repo && repo.hasKey(key)) {
-      initialState = repo.valueForKey(key);
+      const head = repo.headForKey(key);
+      if (head) {
+        this._headId = head.id;
+        initialState = repo.recordForCommit(head);
+      }
     }
     const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
-    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     if (hasInitialState) {
       this.scheduleCommitIfNeeded();
@@ -220,11 +223,14 @@ export class VertexManager<V extends Vertex = Vertex>
     if (this.isLocal) {
       return false;
     }
+    if (!this._headId) {
+      return !this.record.isNull;
+    }
     const repo = this.repository;
     if (!repo) {
       return false;
     }
-    return !this._record.isEqual(this._shadowRecord);
+    return !this._record.isEqual(repo.recordForCommit(this._headId));
   }
 
   get isRoot(): boolean {
@@ -335,22 +341,28 @@ export class VertexManager<V extends Vertex = Vertex>
       return;
     }
     try {
-      const baseRecord = this.record;
-      const updated = await repo.setValueForKey(this.key, baseRecord);
-      if (!this.record.isEqual(baseRecord)) {
-        if (updated) {
-          const repoRecord = repo.valueForKey(this.key);
-          if (!repoRecord.isEqual(baseRecord)) {
-            const localChanges = baseRecord.diff(this.record, true);
-            const remoteChanges = baseRecord.diff(repoRecord, false);
-            baseRecord.patch(concatChanges(remoteChanges, localChanges));
-            this.record = baseRecord;
-            this.vertexDidMutate(['hasPendingChanges', true, true]);
-          }
-          this.graph.client(repoId)?.touch();
+      const startRecord = this.record.clone();
+      const newHead = await repo.setValueForKey(
+        this.key,
+        this.record,
+        this._headId,
+      );
+      if (newHead) {
+        // If no local changes have been made while committing, we can simply
+        // read the updated record from the repository (to incorporate any
+        // merged remote changes).
+        if (this.record.isEqual(startRecord)) {
+          this._headId = newHead.id;
+          this.record = repo.recordForCommit(newHead);
         } else {
+          // If local changes have been made while committing, we must rebase
+          // them over our current state.
+          this.rebase();
           this.scheduleCommitIfNeeded();
         }
+        this.graph.client(repoId)?.touch();
+      } else {
+        this._headId = repo.headForKey(this.key)?.id;
       }
     } catch (e: unknown) {
       if (e instanceof ServerError && e.code === Code.ServiceUnavailable) {
@@ -361,7 +373,42 @@ export class VertexManager<V extends Vertex = Vertex>
     }
   }
 
-  touch(): void {
+  private rebase(): void {
+    if (this.isLocal) {
+      return;
+    }
+    const repo = this.repository;
+    if (!repo) {
+      return;
+    }
+    const currentHead = repo.headForKey(this.key);
+    if (!currentHead || currentHead.id === this._headId) {
+      return;
+    }
+    const baseRecord = this._headId
+      ? repo.recordForCommit(this._headId)
+      : Record.nullRecord();
+    const repoRecord = repo.recordForCommit(currentHead);
+    if (repoRecord.isEqual(this.record)) {
+      this._headId = currentHead.id;
+      return;
+    }
+    if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
+      baseRecord.upgradeScheme(repoRecord.scheme);
+    }
+    if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
+      baseRecord.upgradeScheme(this.record.scheme);
+    }
+    const changes = concatChanges(
+      baseRecord.diff(repoRecord, false),
+      baseRecord.diff(this.record, true),
+    );
+    baseRecord.patch(changes);
+    this._headId = currentHead.id;
+    this.record = baseRecord;
+  }
+
+  async touch(): Promise<void> {
     if (this.isLocal) {
       this.reportInitialFields(true);
       return;
@@ -370,7 +417,13 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    this.record = repo.valueForKey(this.key);
+    await repo.mergeIfNeeded(this.key);
+    this.rebase();
+    // const changedFields = origRecord.diffKeys(baseRecord, true);
+    // let mutations: MutationPack;
+    // for (const field of changedFields) {
+    //   mutations = mutationPackAppend(mutations, [field, true, origRecord.get(field)]);
+    // }
     this.reportInitialFields(true);
   }
 
