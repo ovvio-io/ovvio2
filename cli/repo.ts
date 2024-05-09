@@ -20,12 +20,15 @@ import { assert } from '../base/error.ts';
 import { OrgRepositories } from '../analytics/base.ts';
 import { prettyJSON } from '../base/common.ts';
 import {
+  UsageStats,
   emptyUsageStats,
   generateUsageStats,
   usageStatsJoin,
   usageStatsToPlainText,
-} from '../analytics/usgae.ts';
+} from '../analytics/usgae.tsx';
 import { setGlobalLoggerStreams } from '../logging/log.ts';
+import { EmailService, sendEmail } from '../net/server/email.ts';
+import { reportToHTML } from '../analytics/report.tsx';
 
 const REPO_DIR_EXT = '.repo';
 
@@ -177,11 +180,8 @@ function dedupDir(dirPath: string): void {
   }
 }
 
-async function printUsageStatsForOrganizations(
-  tenantPath: string,
-): Promise<void> {
+async function sendUsageReport(tenantPath: string): Promise<void> {
   const domains = [
-    // precise-arch
     'baluka',
     'oberson-arch',
     'precise-todo-demo',
@@ -189,29 +189,36 @@ async function printUsageStatsForOrganizations(
     'ranandmorris',
     'ysla',
     'ztlv',
-    // ovvio
-    'stage',
   ];
-  let result = `Ovvio Usage Report Generated on ${new Date().toLocaleString(
-    undefined,
-    { dateStyle: 'short', timeStyle: 'short' },
-  )}:\n`;
-  let aggregate = emptyUsageStats();
+  const report = new Map<string, UsageStats>();
   for (const orgId of domains) {
     const orgPath = path.join(tenantPath, orgId);
     if (await fs.exists(orgPath, { isDirectory: true })) {
       console.log(`Scanning ${orgId}...`);
       const orgRepos = await loadOrgFromPath(orgPath);
       const stats = generateUsageStats(orgRepos);
-      result += `Usage Data for "${orgId}":\n`;
-      result += usageStatsToPlainText(stats) + '\n';
-      aggregate = usageStatsJoin(aggregate, stats);
+      report.set(orgId, stats);
     }
   }
-
-  result += `\nTotal:\n`;
-  result += usageStatsToPlainText(aggregate) + '\n';
-  console.log(result);
+  if (
+    await sendEmail({
+      type: 'AnalyticsReport',
+      to: [
+        'ofri@ovvio.io',
+        'nadav@ovvio.io',
+        'yarden@ovvio.io',
+        'maayan@ovvio.io',
+        'amit.s@ovvio.io',
+      ],
+      subject: 'Ovvio Usage Report - precise-arch',
+      plaintext: '',
+      html: reportToHTML(report),
+    })
+  ) {
+    console.log('Report Sent');
+  } else {
+    console.error('Email sending failed');
+  }
 }
 
 export function main(): void {
@@ -229,7 +236,7 @@ export function main(): void {
       desc: 'Computes analytics data for the given org directory',
       handler: async (args: Arguments) => {
         setGlobalLoggerStreams([]);
-        await printUsageStatsForOrganizations(toAbsolutePath(args.path));
+        await sendUsageReport(toAbsolutePath(args.path));
         Deno.exit();
       },
     })

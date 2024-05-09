@@ -29,6 +29,24 @@ export function emptyUsageStats(): UsageStats {
   };
 }
 
+export function usageStatsJoin(s1: UsageStats, s2: UsageStats): UsageStats {
+  return {
+    dau: s1.dau + s2.dau,
+    wau: s1.wau + s2.wau,
+    mau: s1.mau + s2.mau,
+    dauEmails: Array.from(
+      new Set(unionIter(s1.dauEmails, s2.dauEmails)),
+    ).sort(),
+    wauEmails: Array.from(
+      new Set(unionIter(s1.wauEmails, s2.wauEmails)),
+    ).sort(),
+    mauEmails: Array.from(
+      new Set(unionIter(s1.mauEmails, s2.mauEmails)),
+    ).sort(),
+    scanSize: s1.scanSize + s2.scanSize,
+  };
+}
+
 interface StatsReducer {
   dauIds: Set<string>;
   wauIds: Set<string>;
@@ -133,22 +151,4 @@ export function usageStatsToPlainText(data: UsageStats): string {
     ', ',
   )})\n`;
   return result;
-}
-
-export function usageStatsJoin(s1: UsageStats, s2: UsageStats): UsageStats {
-  return {
-    dau: s1.dau + s2.dau,
-    wau: s1.wau + s2.wau,
-    mau: s1.mau + s2.mau,
-    dauEmails: Array.from(
-      new Set(unionIter(s1.dauEmails, s2.dauEmails)),
-    ).sort(),
-    wauEmails: Array.from(
-      new Set(unionIter(s1.wauEmails, s2.wauEmails)),
-    ).sort(),
-    mauEmails: Array.from(
-      new Set(unionIter(s1.mauEmails, s2.mauEmails)),
-    ).sort(),
-    scanSize: s1.scanSize + s2.scanSize,
-  };
 }
