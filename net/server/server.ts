@@ -287,6 +287,7 @@ export class Server {
     await this._baseContext.email.setup(services);
     await this._baseContext.settings.start();
     (this._baseContext as any).trustPool = new TrustPool(
+      'localhost',
       this._baseContext.settings.session,
       [],
     );
@@ -303,6 +304,7 @@ export class Server {
         organizationId: orgId,
         sync: new SyncService(),
         trustPool: new TrustPool(
+          orgId,
           baseTrustPool.currentSession,
           baseTrustPool.roots,
         ),

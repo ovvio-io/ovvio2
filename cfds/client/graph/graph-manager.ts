@@ -378,10 +378,8 @@ export class GraphManager
         new MemRepoStorage(),
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
-        getOrganizationId(),
         undefined,
         undefined,
-        id === Repository.sysDirId,
       );
       repo.allowMerge = false;
       plumbing = {

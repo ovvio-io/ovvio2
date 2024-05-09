@@ -90,7 +90,6 @@ export class Repository<
   readonly indexes?: IT;
   readonly authorizer?: Authorizer<ST>;
   readonly allowedNamespaces: SchemeNamespace[];
-  readonly orgId: string;
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
@@ -127,7 +126,6 @@ export class Repository<
     storage: ST,
     trustPool: TrustPool,
     allowedNamespaces: SchemeNamespace[],
-    orgId: string,
     authorizer?: Authorizer<ST>,
     indexes?: (repo: Repository<ST, IT>) => IT,
     readonly priorityRepo = false,
@@ -136,7 +134,6 @@ export class Repository<
     this.storage = storage;
     this.trustPool = trustPool;
     this.allowedNamespaces = allowedNamespaces;
-    this.orgId = orgId;
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
     this._cachedValueForKey = new Map();
@@ -175,6 +172,10 @@ export class Repository<
   }
 
   static readonly sysDirId = this.id('sys', 'dir');
+
+  get orgId(): string {
+    return this.trustPool.orgId;
+  }
 
   numberOfCommits(session?: Session): number {
     const { authorizer } = this;

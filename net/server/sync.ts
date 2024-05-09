@@ -158,7 +158,6 @@ export class SyncService extends BaseService<ServerServices> {
       new MemRepoStorage(),
       this.services.trustPool,
       Repository.namespacesForType(type),
-      this.services.organizationId,
       authorizer,
       indexes,
       true,
