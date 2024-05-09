@@ -590,27 +590,6 @@ export class GraphManager
     ).getVertexProxy();
   }
 
-  createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
-    const vManagers: VertexManager<T>[] = [];
-    for (const vInfo of vInfos) {
-      let mgr = this._vertManagers.get(vInfo.key!);
-      if (mgr === undefined) {
-        const record = new Record({
-          scheme: SchemeManager.instance.getScheme(vInfo.namespace)!,
-          data: vInfo.initialData!,
-        });
-        mgr = new VertexManager(this, vInfo.key!, record);
-      }
-
-      vManagers.push(mgr as VertexManager<T>);
-    }
-    for (const mgr of vManagers) {
-      this._setupVertexManager(mgr);
-    }
-    const vertices = vManagers.map((v) => v.getVertexProxy());
-    return vertices;
-  }
-
   getVertexManager<V extends Vertex = Vertex>(key: string): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
