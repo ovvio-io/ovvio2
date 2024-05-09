@@ -119,6 +119,7 @@ function deepCopyImpl(
   };
   delete newData.pinnedBy;
   delete newData.status;
+  delete newData.dueDate;
   const newBody = newData.body;
 
   if (newBody && isRichText(newBody)) {
