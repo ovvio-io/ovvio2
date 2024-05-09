@@ -107,7 +107,7 @@ function deepCopyImpl(
 ) {
   const root = graph.getVertex<Note>(rootKey);
   const tagsToCopy = findMutualTags(Array.from(root.tags.values()), wsCopyTo);
-  const assigneesToCopy = findMutualAssignees(root.assignees, wsCopyTo);
+  // const assigneesToCopy = findMutualAssignees(root.assignees, wsCopyTo);
   const newKey = uniqueId();
   const newData: CoreObject = {
     ...root.cloneData(),
@@ -115,11 +115,12 @@ function deepCopyImpl(
     sortStamp: root.sortStamp,
     workspace: wsCopyTo?.getVertexProxy().key,
     tags: tagsToCopy,
-    assignees: assigneesToCopy,
+    // assignees: assigneesToCopy,
   };
   delete newData.pinnedBy;
   delete newData.status;
   delete newData.dueDate;
+  delete newData.assignees;
   const newBody = newData.body;
 
   if (newBody && isRichText(newBody)) {
