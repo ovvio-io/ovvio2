@@ -227,23 +227,15 @@ function SectionTitle({
         </div>
         <div className={cn(layout.flexSpacer)} />
         <div style={{ padding: '16px' }}>
-          {isHovered ? (
-            <div className={cn(styles.timeTrack, styles.timeTrackHover)}>
-              00:00
-              <img
-                key="IconTimeTrackHover"
-                src="/icons/design-system/timeTracking/hover.svg"
-              />
-            </div>
-          ) : (
-            <div className={cn(styles.timeTrack)}>
-              00:00
-              <img
-                key="IconTimeTrackNoHover"
-                src="/icons/design-system/timeTracking/no-hover.svg"
-              />
-            </div>
-          )}
+          <div
+            className={cn(styles.timeTrack, isHovered && styles.timeTrackHover)}
+          >
+            00:00
+            <img
+              key="IconTimeTrackHover"
+              src="/icons/design-system/timeTracking/hover.svg"
+            />
+          </div>
         </div>
       </div>
     </div>

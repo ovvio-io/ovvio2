@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import Layer from '../../../../../../../styles/components/layer.tsx';
-import { H4 } from '../../../../../../../styles/components/texts.tsx';
+import React, { useState, useEffect } from 'react'
+import Layer from '../../../../../../../styles/components/layer.tsx'
+import { H4 } from '../../../../../../../styles/components/texts.tsx'
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { layout } from '../../../../../../../styles/layout.ts';
-import { styleguide } from '../../../../../../../styles/styleguide.ts';
-import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
-import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
+} from '../../../../../../../styles/css-objects/index.ts'
+import { layout } from '../../../../../../../styles/layout.ts'
+import { styleguide } from '../../../../../../../styles/styleguide.ts'
+import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx'
+import { lightColorWheel } from '../../../../../../../styles/theme.tsx'
+import { Button } from '../../../../../../../styles/components/buttons.tsx'
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -25,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     borderStyle: 'solid',
     borderWidth: '1px',
     borderColor: lightColorWheel.secondary.s2,
-    padding: [0, 0, styleguide.gridbase, 0],
+    padding: '0 0 8px 0',
     hoverableRow: {
       ':hover': {
         backgroundColor: '#F5ECDC',
@@ -40,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
     background: 'inherit',
     position: 'sticky',
     top: 0,
-    padding: [styleguide.gridbase, 0, styleguide.gridbase, 0],
+    padding: '8px 0 8px 0',
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
   },
@@ -66,50 +67,69 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: '-0.1px',
     gap: '4px',
   },
-}));
+  timeTrack: {
+    color: '#4D4D4D',
+    fontSize: '10px',
+    fontWeight: '400',
+    lineHeight: '14px',
+    letterSpacing: '-0.1px',
+    gap: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    opacity: '50%',
+  },
+  timeTrackHover: {
+    opacity: '100%',
+  },
+}))
 
 export interface KanbanColumnProps {
-  groupBy: string;
-  header: React.ReactNode;
-  isColumnHovered?: boolean;
-  onCreateCard?: () => void;
+  groupBy: string
+  header: React.ReactNode
+  isColumnHovered?: boolean
+  onCreateCard?: () => void
 }
 
-function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
-  const styles = useStyles();
-  const [sentinel, setSentinel] = useState<HTMLDivElement>();
-  const scrollParent = useScrollParent();
-  const [isSticky, setIsSticky] = useState(false);
+function ColumnTitle({
+  header,
+  onCreateCard,
+  groupBy,
+  isColumnHovered,
+}: KanbanColumnProps) {
+  const styles = useStyles()
+  const [sentinel, setSentinel] = useState<HTMLDivElement>()
+  const scrollParent = useScrollParent()
+  const [isSticky, setIsSticky] = useState(false)
 
   useEffect(() => {
     if (!sentinel) {
-      return;
+      return
     }
 
     const observer = new IntersectionObserver(
       (records) => {
         for (const record of records) {
-          const targetInfo = record.boundingClientRect;
-          const rootBoundsInfo = record.rootBounds;
+          const targetInfo = record.boundingClientRect
+          const rootBoundsInfo = record.rootBounds
           if (targetInfo.bottom < rootBoundsInfo!.top) {
-            setIsSticky(true);
+            setIsSticky(true)
           }
 
           if (
             targetInfo.bottom > rootBoundsInfo!.top &&
             targetInfo.bottom < rootBoundsInfo!.bottom
           ) {
-            setIsSticky(false);
+            setIsSticky(false)
           }
         }
       },
       { threshold: [0], root: scrollParent }
-    );
-    observer.observe(sentinel);
+    )
+    observer.observe(sentinel)
     return () => {
-      observer.disconnect();
-    };
-  }, [sentinel, scrollParent]);
+      observer.disconnect()
+    }
+  }, [sentinel, scrollParent])
 
   return (
     <Layer>
@@ -119,24 +139,24 @@ function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
           style={style}
         >
           <div className={cn(styles.columnHeader)}>
-            <H4
-              className={cn(
-                styles.titleText,
-                groupBy !== 'workspace' && styles.TextTitle
-              )}
-            >
+            <H4 className={cn(groupBy !== 'workspace' && styles.TextTitle)}>
               {header}
             </H4>
             <div className={cn(layout.flexSpacer)} />
-            {/* <Button onClick={onCreateCard}>
-              {isColumnHovered && (
-                <div className={cn(styles.newTaskText)}>New Task</div>
-              )}
-              <img
-                key="IconNewTaskBoard"
-                src="/icons/board/New-Task-plus.svg"
-              />
-            </Button> */}
+            <div style={{ padding: '0 8px 0 0' }}>
+              <div
+                className={cn(
+                  styles.timeTrack,
+                  isColumnHovered && styles.timeTrackHover
+                )}
+              >
+                00:00
+                <img
+                  key="IconTimeTrackHover"
+                  src="/icons/design-system/timeTracking/hover.svg"
+                />
+              </div>
+            </div>
           </div>
           <div
             className={cn(styles.stickyNotifier)}
@@ -145,7 +165,7 @@ function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
         </div>
       )}
     </Layer>
-  );
+  )
 }
 
 export function KanbanColumn({
@@ -153,14 +173,14 @@ export function KanbanColumn({
   children,
   header,
 }: React.PropsWithChildren<KanbanColumnProps>) {
-  const styles = useStyles();
-  const [isColumnHovered, setIsColumnHovered] = useState(false);
+  const styles = useStyles()
+  const [isColumnHovered, setIsColumnHovered] = useState(false)
   const handleMouseEnter = () => {
-    setIsColumnHovered(true);
-  };
+    setIsColumnHovered(true)
+  }
   const handleMouseLeave = () => {
-    setIsColumnHovered(false);
-  };
+    setIsColumnHovered(false)
+  }
   return (
     <div
       className={cn(styles.column)}
@@ -175,5 +195,5 @@ export function KanbanColumn({
       />
       <div>{children}</div>
     </div>
-  );
+  )
 }

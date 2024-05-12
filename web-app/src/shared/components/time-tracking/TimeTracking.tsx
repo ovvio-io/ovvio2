@@ -32,9 +32,7 @@ export interface TimeDisplayProps {
 
 export function TimeDisplay({ hover, time }: TimeDisplayProps) {
   const styles = useStyles()
-  return (
-    <div className={cn(styles.timeTrackText)}>{time ? `${time}` : '00:00'}</div>
-  )
+  return <div className={cn(styles.timeTrackText)}>{time ? `${time}` : ''}</div>
 }
 
 export interface IconTimeTracking extends IconProps {

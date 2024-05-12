@@ -6,41 +6,45 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts';
+} from 'react'
+import { VertexManager } from '../../../../../../../cfds/client/graph/vertex-manager.ts'
 import {
   Note,
   NoteType,
-} from '../../../../../../../cfds/client/graph/vertices/note.ts';
+} from '../../../../../../../cfds/client/graph/vertices/note.ts'
 import {
   usePartialVertex,
   useVertex,
-} from '../../../../../core/cfds/react/vertex.ts';
-import { useDocumentRouter } from '../../../../../core/react-utils/index.ts';
-import { layout, styleguide } from '../../../../../../../styles/index.ts';
-import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts';
-import { Text } from '../../../../../../../styles/components/texts.tsx';
+} from '../../../../../core/cfds/react/vertex.ts'
+import { useDocumentRouter } from '../../../../../core/react-utils/index.ts'
+import { layout, styleguide } from '../../../../../../../styles/index.ts'
+import { CheckBox } from '../../../../../../../styles/components/inputs/index.ts'
+import { Text } from '../../../../../../../styles/components/texts.tsx'
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
-import { UISource } from '../../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
-import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
-import { TaskCheckbox } from '../../../../../../../components/checkbox.tsx';
-import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
-import { CardFooter, DueDateIndicator } from '../card-item/card-footer.tsx';
-import { PinCell, SelectIconContainer } from '../list-view/table/item.tsx';
-import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
-import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
-import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts';
-import CardMenuView from '../../../../../shared/item-menu/index.tsx';
-import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
-import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
-import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
-import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
+} from '../../../../../../../styles/css-objects/index.ts'
+import { useTheme } from '../../../../../../../styles/theme.tsx'
+import { UISource } from '../../../../../../../logging/client-events.ts'
+import { useLogger } from '../../../../../core/cfds/react/logger.tsx'
+import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts'
+import { TaskCheckbox } from '../../../../../../../components/checkbox.tsx'
+import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx'
+import { CardFooter, DueDateIndicator } from '../card-item/card-footer.tsx'
+import {
+  PinCell,
+  SelectIconContainer,
+  TimeTrackingSlot,
+} from '../list-view/table/item.tsx'
+import { usePartialView } from '../../../../../core/cfds/react/graph.tsx'
+import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx'
+import { Button } from '../../../../../../../styles/components/buttons.tsx'
+import { View } from '../../../../../../../cfds/client/graph/vertices/view.ts'
+import CardMenuView from '../../../../../shared/item-menu/index.tsx'
+import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts'
+import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts'
+import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx'
+import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx'
 
 export enum CardSize {
   Regular = 'regular',
@@ -228,19 +232,19 @@ const useStyles = makeStyles((theme) => ({
   multiIsActive: {
     pointerEvents: 'none',
   },
-}));
+}))
 
 function CardHeader({
   card,
   showWorkspaceOnCard,
 }: {
-  card: VertexManager<Note>;
-  showWorkspaceOnCard?: boolean;
+  card: VertexManager<Note>
+  showWorkspaceOnCard?: boolean
 }) {
-  const styles = useStyles();
-  const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext']);
-  const note = useVertex(card);
-  const isTask = pCard.type === NoteType.Task;
+  const styles = useStyles()
+  const pCard = usePartialVertex(card, ['type', 'workspace', 'titlePlaintext'])
+  const note = useVertex(card)
+  const isTask = pCard.type === NoteType.Task
 
   return (
     <div className={styles.cardMiddle}>
@@ -265,31 +269,31 @@ function CardHeader({
       )}
       <div className={cn(layout.flexSpacer)} />
     </div>
-  );
+  )
 }
 
 export function StatusCheckbox({
   card,
   source,
 }: {
-  card: VertexManager<Note>;
-  source: UISource;
+  card: VertexManager<Note>
+  source: UISource
 }) {
-  const styles = useStyles();
-  const theme = useTheme();
-  const logger = useLogger();
+  const styles = useStyles()
+  const theme = useTheme()
+  const logger = useLogger()
   const pCard = usePartialVertex(card, [
     'tags',
     'workspace',
     'type',
     'isChecked',
-  ]);
+  ])
   if (pCard.type !== NoteType.Task || !pCard.isChecked) {
-    return <div className={cn(styles.status)} />;
+    return <div className={cn(styles.status)} />
   }
 
   const onChange = useCallback(() => {
-    pCard.isChecked = !pCard.isChecked;
+    pCard.isChecked = !pCard.isChecked
     logger.log({
       severity: 'EVENT',
       event: 'MetadataChanged',
@@ -297,8 +301,8 @@ export function StatusCheckbox({
       vertex: pCard.key,
       status: pCard.isChecked ? NoteStatus.Checked : NoteStatus.Unchecked,
       source,
-    });
-  }, [pCard, logger, source, pCard.isChecked]);
+    })
+  }, [pCard, logger, source, pCard.isChecked])
 
   return (
     <div className={cn(styles.status)}>
@@ -309,46 +313,46 @@ export function StatusCheckbox({
         name="status"
       />
     </div>
-  );
+  )
 }
 const CollapseExpanderToggle = ({
   isExpanded,
   toggleExpanded,
 }: {
-  isExpanded: boolean;
-  toggleExpanded: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  isExpanded: boolean
+  toggleExpanded: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) => {
   return (
     <Button onClick={toggleExpanded}>
       <IconCollapseExpand on={isExpanded} />
     </Button>
-  );
-};
+  )
+}
 
 const calculateIsExpanded = (
   card: VertexManager<Note>,
   view: Pick<View, 'notesExpandOverride' | 'notesExpandBase'>
 ) => {
-  const hasOverride = view.notesExpandOverride.has(card.key);
+  const hasOverride = view.notesExpandOverride.has(card.key)
 
   return (
     (view.notesExpandBase && !hasOverride) ||
     (!view.notesExpandBase && hasOverride)
-  );
-};
+  )
+}
 
 export interface MoreButtonCardProps {
-  workspace: VertexId<Workspace>;
-  children: ReactNode;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  workspace: VertexId<Workspace>
+  children: ReactNode
+  onClick?: React.MouseEventHandler<HTMLDivElement>
 }
 export function MoreButtonCard({
   workspace,
   children,
   onClick,
 }: MoreButtonCardProps) {
-  const styles = useStyles();
-  const color = useWorkspaceColor(workspace);
+  const styles = useStyles()
+  const color = useWorkspaceColor(workspace)
   const style = useMemo<any>(
     () => ({
       '--ws-background': color.background,
@@ -356,12 +360,12 @@ export function MoreButtonCard({
       '--ws-active': color.active,
     }),
     [color]
-  );
+  )
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onClick;
-  };
+    e.stopPropagation()
+    e.preventDefault()
+    onClick
+  }
   return (
     <div
       className={cn(
@@ -374,25 +378,25 @@ export function MoreButtonCard({
     >
       <div className={cn(styles.cardMoreTab)}>{children}</div>
     </div>
-  );
+  )
 }
 
 const CardMenu = ({
   card,
   isMouseOver,
 }: {
-  card: VertexManager<Note>;
-  isMouseOver?: boolean;
+  card: VertexManager<Note>
+  isMouseOver?: boolean
 }) => {
-  const pCard = usePartialVertex(card, ['workspace']);
-  const cardWs = pCard.workspace.manager;
-  const colorWs = useWorkspaceColor(cardWs);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const styles = useStyles();
+  const pCard = usePartialVertex(card, ['workspace'])
+  const cardWs = pCard.workspace.manager
+  const colorWs = useWorkspaceColor(cardWs)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const styles = useStyles()
 
   const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
+    setMenuOpen(!menuOpen)
+  }
 
   const renderButton = useCallback(
     ({ isOpen }: { isOpen: boolean }) => (
@@ -401,7 +405,7 @@ const CardMenu = ({
       </div>
     ),
     []
-  );
+  )
   return (
     <MoreButtonCard workspace={cardWs}>
       <CardMenuView
@@ -413,17 +417,17 @@ const CardMenu = ({
         renderButton={renderButton}
       />
     </MoreButtonCard>
-  );
-};
+  )
+}
 
 interface ChildCardProps {
-  card: VertexManager<Note>;
-  index: number;
-  size: CardSize;
-  isVisible: boolean;
-  isSelected: boolean;
-  isInAction: boolean;
-  multiIsActive: boolean;
+  card: VertexManager<Note>
+  index: number
+  size: CardSize
+  isVisible: boolean
+  isSelected: boolean
+  isInAction: boolean
+  multiIsActive: boolean
 }
 
 function ChildCard({
@@ -433,7 +437,7 @@ function ChildCard({
   isInAction,
   multiIsActive,
 }: ChildCardProps) {
-  const styles = useStyles();
+  const styles = useStyles()
 
   return (
     <KanbanCard
@@ -446,20 +450,20 @@ function ChildCard({
       isInAction={isInAction}
       isChild={true}
     />
-  );
+  )
 }
 
 export interface KanbanCardProps {
-  card: VertexManager<Note>;
-  size: CardSize;
-  showChildCards?: boolean;
-  className?: string;
-  showWorkspaceOnCard?: boolean;
-  handleSelectClick: (card: Note) => void;
-  isSelected: boolean;
-  multiIsActive: boolean;
-  isInAction: boolean;
-  isChild?: boolean;
+  card: VertexManager<Note>
+  size: CardSize
+  showChildCards?: boolean
+  className?: string
+  showWorkspaceOnCard?: boolean
+  handleSelectClick: (card: Note) => void
+  isSelected: boolean
+  multiIsActive: boolean
+  isInAction: boolean
+  isChild?: boolean
 }
 
 export const KanbanCard = React.forwardRef(function CardItemView(
@@ -476,46 +480,46 @@ export const KanbanCard = React.forwardRef(function CardItemView(
   }: KanbanCardProps,
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
-  const styles = useStyles();
-  const childListRef = useRef(null);
-  const documentRouter = useDocumentRouter();
+  const styles = useStyles()
+  const childListRef = useRef(null)
+  const documentRouter = useDocumentRouter()
   const pCard = usePartialVertex(card, [
     'childCards',
     'tags',
     'type',
     'isChecked',
     'titlePlaintext',
-  ]);
+  ])
 
-  const { childCards } = pCard;
-  const view = usePartialView('notesExpandOverride', 'notesExpandBase');
-  const source: UISource = 'board';
-  const isTask = pCard.type === NoteType.Task;
-  const isDone = pCard.isChecked;
-  const logger = useLogger();
-  const [isMouseOver, setIsMouseOver] = useState(false);
-  const onMouseOver = useCallback(() => setIsMouseOver(true), []);
-  const onMouseLeave = useCallback(() => setIsMouseOver(false), []);
-  const hasOverride = view.notesExpandOverride.has(card.key);
-  const { dueDate } = usePartialVertex(card, ['dueDate']);
-  const { workspace } = usePartialVertex(card, ['workspace']);
+  const { childCards } = pCard
+  const view = usePartialView('notesExpandOverride', 'notesExpandBase')
+  const source: UISource = 'board'
+  const isTask = pCard.type === NoteType.Task
+  const isDone = pCard.isChecked
+  const logger = useLogger()
+  const [isMouseOver, setIsMouseOver] = useState(false)
+  const onMouseOver = useCallback(() => setIsMouseOver(true), [])
+  const onMouseLeave = useCallback(() => setIsMouseOver(false), [])
+  const hasOverride = view.notesExpandOverride.has(card.key)
+  const { dueDate } = usePartialVertex(card, ['dueDate'])
+  const { workspace } = usePartialVertex(card, ['workspace'])
 
   const [expanded, setExpanded] = useState(() =>
     calculateIsExpanded(card, view)
-  );
+  )
 
   useEffect(() => {
-    setExpanded(calculateIsExpanded(card, view));
-  }, [card, view]);
+    setExpanded(calculateIsExpanded(card, view))
+  }, [card, view])
 
   const toggleExpanded: MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.stopPropagation();
-    view.setNoteExpandOverride(card.key, !hasOverride);
-    setExpanded((x) => !x);
-  };
+    e.stopPropagation()
+    view.setNoteExpandOverride(card.key, !hasOverride)
+    setExpanded((x) => !x)
+  }
 
   const onClick = useCallback(() => {
-    documentRouter.goTo(card);
+    documentRouter.goTo(card)
     logger.log({
       severity: 'EVENT',
       event: 'Navigation',
@@ -523,15 +527,15 @@ export const KanbanCard = React.forwardRef(function CardItemView(
       source,
       destination: 'editor',
       vertex: card.key,
-    });
-  }, [card, documentRouter, logger, source]);
+    })
+  }, [card, documentRouter, logger, source])
 
   const handleSelectInMulti: MouseEventHandler<HTMLDivElement> = (e) => {
     if (multiIsActive) {
-      e.stopPropagation();
-      handleSelectClick(card.vertex);
+      e.stopPropagation()
+      handleSelectClick(card.vertex)
     }
-  };
+  }
   return (
     <div
       className={cn(
@@ -603,6 +607,10 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               source={source}
               multiIsActive={multiIsActive}
             />
+            <TimeTrackingSlot
+              note={card}
+              isMouseOver={multiIsActive ? false : isMouseOver}
+            />
             <div className={cn(styles.expanderAndDate)}>
               {childCards.length > 0 ? (
                 <CollapseExpanderToggle
@@ -612,6 +620,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
               ) : (
                 <div></div>
               )}
+
               <DueDateIndicator
                 card={card}
                 source={source}
@@ -639,5 +648,5 @@ export const KanbanCard = React.forwardRef(function CardItemView(
         </div>
       )}
     </div>
-  );
-});
+  )
+})

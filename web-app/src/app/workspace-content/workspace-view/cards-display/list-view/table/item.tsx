@@ -782,7 +782,7 @@ export function Row({
   )
 }
 
-function TimeTrackingSlot({
+export function TimeTrackingSlot({
   note,
   isMouseOver,
 }: {
