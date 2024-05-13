@@ -117,8 +117,7 @@ function AddAssigneeIcon({
       width="32"
       height="32"
       viewBox="0 0 32 32"
-      className={cn(styles.addIcon, className)}
-    >
+      className={cn(styles.addIcon, className)}>
       <defs>
         <circle id="cY734WTs886Gxkc8xMVJ" cx="16" cy="16" r="16" />
         <mask
@@ -129,8 +128,7 @@ function AddAssigneeIcon({
           y="0"
           fill="#fff"
           maskContentUnits="userSpaceOnUse"
-          maskUnits="objectBoundingBox"
-        >
+          maskUnits="objectBoundingBox">
           <use xlinkHref="#cY734WTs886Gxkc8xMVJ" />
         </mask>
       </defs>
@@ -246,14 +244,14 @@ export function Assignee({
       .filter(
         (u) =>
           u.key !== user.key &&
-          assignees.find((a) => a.key === u.key) === undefined,
+          assignees.find((a) => a.key === u.key) === undefined
       )
       .map(
         (u) =>
           ({
             value: u,
             sortValue: u.getVertexProxy().name,
-          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string }),
+          } as { value: VertexManager<User> | ACTION_ITEM; sortValue: string })
       )
       .concat([
         {
@@ -293,8 +291,7 @@ export function Assignee({
       className={cn(styles.selectionButton, className)}
       renderItem={renderItem}
       onSelected={onSelected}
-      style={style}
-    >
+      style={style}>
       {({ isOpen }: { isOpen: boolean }) =>
         renderSelected({ isOpen, user, size })
       }
@@ -334,8 +331,7 @@ export function AssignButton({
       align="end"
       direction="out"
       className={className}
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <MemberPicker showSearch={true} onRowSelect={onRowSelect} users={users} />
     </Menu>
   );
@@ -384,10 +380,10 @@ export default function AssigneesView({
     .manager as VertexManager<Workspace>;
   const workspaces = useMemo(() => [workspaceManager], [workspaceManager]);
   const users = Array.from(cardManager.getVertexProxy().workspace.users).map(
-    (u) => u.manager as VertexManager<User>,
+    (u) => u.manager as VertexManager<User>
   );
   const assignees = Array.from(partialCard.assignees).map(
-    (u) => u.manager as VertexManager<User>,
+    (u) => u.manager as VertexManager<User>
   );
   // .map(x => users.vertexManagers.find(u => u.key === x.key))
   // .filter(x => x && !x.getVertexProxy().isDeleted);
@@ -402,7 +398,7 @@ export default function AssigneesView({
         logger,
         source,
         cardManager.getVertexProxy(),
-        user.getVertexProxy(),
+        user.getVertexProxy()
       );
     }
   };
@@ -415,17 +411,8 @@ export default function AssigneesView({
         styles.list,
         className,
         styles[cardType],
-        !reverse ? styles.reverse : styles.standard,
-      )}
-    >
-      {!multiIsActive && (
-        <AssignButton
-          source={source}
-          cardManager={cardManager}
-          users={users}
-          className={cn(!isExpanded && styles.hide, assignClassName)}
-        />
-      )}
+        !reverse ? styles.reverse : styles.standard
+      )}>
       {...assignees.map((user, index) => (
         <Assignee
           source={source}
@@ -438,6 +425,14 @@ export default function AssigneesView({
           renderSelected={renderAssignee}
         />
       ))}
+      {!multiIsActive && (
+        <AssignButton
+          source={source}
+          cardManager={cardManager}
+          users={users}
+          className={cn(!isExpanded && styles.hide, assignClassName)}
+        />
+      )}
     </div>
   );
 }

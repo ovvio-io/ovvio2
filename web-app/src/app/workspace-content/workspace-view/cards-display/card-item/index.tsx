@@ -22,7 +22,6 @@ import {
   brandLightTheme,
   useTheme,
 } from '../../../../../../../styles/theme.tsx';
-import { CardFooter } from './card-footer.tsx';
 import { UISource } from '../../../../../../../logging/client-events.ts';
 import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
@@ -40,8 +39,8 @@ export enum CardSize {
 function getStrikethroughSVG(fill: string) {
   return encodeURIComponent(
     `
-  <svg xmlns='http://www.w3.org/2000/svg' 
-    width='${TITLE_LINE_HEIGHT}' 
+  <svg xmlns='http://www.w3.org/2000/svg'
+    width='${TITLE_LINE_HEIGHT}'
     height='${TITLE_LINE_HEIGHT}'
     viewBox='0 0 ${TITLE_LINE_HEIGHT} ${TITLE_LINE_HEIGHT}'>
     <line x1='0' y1='${TITLE_LINE_HEIGHT / 2}' x2='${TITLE_LINE_HEIGHT}' y2='${
@@ -210,8 +209,7 @@ function Title({
     <div>
       {titlePlaintext.split(' ').map((word, index) => (
         <Text
-          className={cn(styles.titleText, isDone && styles.strikethroughDone)}
-        >
+          className={cn(styles.titleText, isDone && styles.strikethroughDone)}>
           {word}{' '}
         </Text>
       ))}
@@ -308,150 +306,4 @@ export interface CardItemProps {
   showChildCards?: boolean;
   className?: string;
   style?: {};
-}
-
-export const CardItem = React.forwardRef(function CardItemView(
-  { card, className, showChildCards, size, ...rest }: CardItemProps,
-  ref: React.ForwardedRef<HTMLDivElement>
-) {
-  const styles = useStyles();
-  const childListRef = useRef(null);
-  const documentRouter = useDocumentRouter();
-  const pCard = usePartialVertex(card, [
-    'childCards',
-    'tags',
-    'type',
-    'isChecked',
-    'titlePlaintext',
-  ]);
-  const { childCards } = pCard;
-  const [expanded, setExpanded] = useState(false);
-  const style = useAnimateHeight(childListRef, expanded);
-  const [isInHover, setIsInHover] = useState(false);
-  const isTask = pCard.type === NoteType.Task;
-  const isDone = pCard.isChecked;
-  const logger = useLogger();
-
-  const onMouseEnter = useCallback(() => {
-    setIsInHover(true);
-  }, []);
-
-  const onMouseLeave = useCallback(() => {
-    setIsInHover(false);
-  }, []);
-
-  const source: UISource = 'list';
-
-  const onClick = useCallback(() => {
-    documentRouter.goTo(card);
-    logger.log({
-      severity: 'EVENT',
-      event: 'Navigation',
-      type: 'open',
-      source,
-      destination: 'editor',
-      vertex: card.key,
-    });
-  }, [card, documentRouter, logger, source]);
-
-  return (
-    <div
-      className={cn(styles.cardContainer, className)}
-      ref={ref}
-      // style={style}
-
-      {...rest}
-    >
-      <div
-        className={cn(styles.card, isTask && styles.taskCard, styles[size])}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onClick={onClick}
-      >
-        <div className={cn(styles.headerContainer)}>
-          {/* <PinCell isChild={isChild} note={note} onMouseEnter={onMouseEnter} /> */}
-          <div className={cn(styles.taskCheckBoxContainer)}>
-            <TaskCheckbox task={card} className={cn(styles.taskCheckbox)} />
-            <div className={cn(styles.titleTextContainer)}>
-              {pCard.titlePlaintext.split(' ').map((word, index) => (
-                <Text
-                  key={index}
-                  className={cn(
-                    styles.titleText,
-                    isDone && styles.strikethroughDone
-                  )}
-                >
-                  {word}{' '}
-                </Text>
-              ))}
-            </div>
-          </div>
-          <IconPin on={true} />
-        </div>
-        <CardHeader
-          size={size}
-          card={card}
-          isExpanded={isInHover}
-          source={source}
-        />
-        <div className={cn(styles.preview)} />
-        <CardFooter
-          isExpanded={isInHover}
-          size={size}
-          card={card}
-          source={source}
-        />
-      </div>
-      {showChildCards && !!childCards.length && (
-        <div
-          className={cn(styles.expander)}
-          onClick={() => setExpanded((x) => !x)}
-        >
-          <IconExpander
-            className={cn(
-              styles.expanderIcon,
-              expanded && styles.expanderIconExpanded
-            )}
-          />
-        </div>
-      )}
-      {showChildCards && (
-        <div
-          className={cn(styles.childList, !expanded && styles.hide)}
-          ref={childListRef}
-          style={style}
-        >
-          {expanded &&
-            childCards.map((child, index) => (
-              <ChildCard
-                size={size}
-                key={child.key}
-                card={child.manager as VertexManager<Note>}
-                index={index}
-                isVisible={expanded}
-              />
-            ))}
-        </div>
-      )}
-    </div>
-  );
-});
-
-interface ChildCardProps {
-  card: VertexManager<Note>;
-  index: number;
-  size?: CardSize;
-  isVisible: boolean;
-}
-
-function ChildCard({ card, size, index, isVisible }: ChildCardProps) {
-  const styles = useStyles();
-  // const style = useMemo(() => {
-  //   return {
-  //     transform: isVisible
-  //       ? 'translateY(0)'
-  //       : `translateY(${-(index + 1) * (16 + 64)}px)`,
-  //   };
-  // }, [index, isVisible]);
-  return <CardItem size={size} card={card} className={cn(styles.child)} />;
 }
