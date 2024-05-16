@@ -1,19 +1,19 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   makeStyles,
   cn,
-} from '../../../../../../../../styles/css-objects/index.ts'
-import { styleguide } from '../../../../../../../../styles/styleguide.ts'
-import { useScrollParent } from '../../../../../../core/react-utils/scrolling.tsx'
-import { layout } from '../../../../../../../../styles/layout.ts'
-import { lightColorWheel } from '../../../../../../../../styles/theme.tsx'
-import { Row } from './item.tsx'
-import { Button } from '../../../../../../../../styles/components/buttons.tsx'
-import { ExpanderIcon } from '../../../../../workspaces-bar/index.tsx'
-import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts'
-import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts'
-import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx'
-import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx'
+} from '../../../../../../../../styles/css-objects/index.ts';
+import { styleguide } from '../../../../../../../../styles/styleguide.ts';
+import { useScrollParent } from '../../../../../../core/react-utils/scrolling.tsx';
+import { layout } from '../../../../../../../../styles/layout.ts';
+import { lightColorWheel } from '../../../../../../../../styles/theme.tsx';
+import { Row } from './item.tsx';
+import { Button } from '../../../../../../../../styles/components/buttons.tsx';
+import { ExpanderIcon } from '../../../../../workspaces-bar/index.tsx';
+import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts';
+import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
+import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
+import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -136,7 +136,7 @@ const useStyles = makeStyles((theme) => ({
   expanderIconOpen: {
     transform: 'rotate(270deg)',
   },
-}))
+}));
 
 export enum GridColumns {
   Type = 'icon',
@@ -153,21 +153,21 @@ export enum GridColumns {
 }
 
 export type ItemsTableProps = React.PropsWithChildren<{
-  className?: string
-}>
+  className?: string;
+}>;
 
 export function _ItemsTable({ children, className }: ItemsTableProps) {
-  const styles = useStyles()
-  return <div className={cn(styles.container)}>{children}</div>
+  const styles = useStyles();
+  return <div className={cn(styles.container)}>{children}</div>;
 }
 
 export function ItemsTable({ children, className }: ItemsTableProps) {
-  const styles = useStyles()
+  const styles = useStyles();
   return (
     <div className={cn(styles.table)}>
       <div>{children}</div>
     </div>
-  )
+  );
 }
 
 function SectionTitle({
@@ -176,60 +176,60 @@ function SectionTitle({
   isHovered,
   groupBy,
 }: SectionTableProps) {
-  const styles = useStyles()
-  const [sentinel, setSentinel] = useState<HTMLDivElement>()
-  const scrollParent = useScrollParent()
-  const [isSticky, setIsSticky] = useState(false)
+  const styles = useStyles();
+  const [sentinel, setSentinel] = useState<HTMLDivElement>();
+  const scrollParent = useScrollParent();
+  const [isSticky, setIsSticky] = useState(false);
 
   useEffect(() => {
     if (!sentinel) {
-      return
+      return;
     }
 
     const observer = new IntersectionObserver(
       (records) => {
         for (const record of records) {
-          const targetInfo = record.boundingClientRect
-          const rootBoundsInfo = record.rootBounds
+          const targetInfo = record.boundingClientRect;
+          const rootBoundsInfo = record.rootBounds;
           if (targetInfo.bottom < rootBoundsInfo!.top) {
-            setIsSticky(true)
+            setIsSticky(true);
           }
 
           if (
             targetInfo.bottom > rootBoundsInfo!.top &&
             targetInfo.bottom < rootBoundsInfo!.bottom
           ) {
-            setIsSticky(false)
+            setIsSticky(false);
           }
         }
       },
       { threshold: [0], root: scrollParent }
-    )
-    observer.observe(sentinel)
+    );
+    observer.observe(sentinel);
     return () => {
-      observer.disconnect()
-    }
-  }, [sentinel, scrollParent])
+      observer.disconnect();
+    };
+  }, [sentinel, scrollParent]);
 
   return (
     <div
       className={cn(styles.columnTitle, isSticky && styles.stickyShadow)}
-      style={{ position: 'sticky' }}
-    >
+      style={{ position: 'sticky' }}>
       <div className={cn(styles.columnHeader)}>
         <div
           className={cn(
             styles.titleText,
             groupBy === 'workspace' && styles.wsTitle
-          )}
-        >
+          )}>
           {header}
         </div>
         <div className={cn(layout.flexSpacer)} />
         <div style={{ padding: '16px' }}>
           <div
-            className={cn(styles.timeTrack, isHovered && styles.timeTrackHover)}
-          >
+            className={cn(
+              styles.timeTrack,
+              isHovered && styles.timeTrackHover
+            )}>
             00:00
             <img
               key="IconTimeTrackHover"
@@ -239,12 +239,12 @@ function SectionTitle({
         </div>
       </div>
     </div>
-  )
+  );
 }
 interface ShowMoreButtonProps {
-  allUnpinned: QueryResults<Note> | undefined
-  expandKey: string
-  show?: boolean
+  allUnpinned: QueryResults<Note> | undefined;
+  expandKey: string;
+  show?: boolean;
 }
 
 const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
@@ -252,29 +252,28 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
   expandKey,
   show,
 }) => {
-  const styles = useStyles()
-  const view = usePartialView('expandedGroupIds')
+  const styles = useStyles();
+  const view = usePartialView('expandedGroupIds');
 
   const toggleExpandedShowMore = useCallback(
     (section: string) => {
-      const expandedGroupIds = view.expandedGroupIds
+      const expandedGroupIds = view.expandedGroupIds;
       if (expandedGroupIds.has(section)) {
-        expandedGroupIds.delete(section)
+        expandedGroupIds.delete(section);
       } else if (section) {
-        expandedGroupIds.add(section)
+        expandedGroupIds.add(section);
       }
     },
     [view]
-  )
+  );
 
-  const expanded = view.expandedGroupIds.has(expandKey)
+  const expanded = view.expandedGroupIds.has(expandKey);
 
   return (
     <Button
       className={cn(styles.expander)}
       disabled={allUnpinned && allUnpinned.length - 3 > 0 ? false : true}
-      onClick={() => toggleExpandedShowMore(expandKey)}
-    >
+      onClick={() => toggleExpandedShowMore(expandKey)}>
       {show ? (
         <>
           <div className={cn(styles.expanderText)}>
@@ -294,19 +293,19 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
         </>
       ) : undefined}
     </Button>
-  )
-}
+  );
+};
 
 export type SectionTableProps = React.PropsWithChildren<{
-  groupBy: string
-  header: React.ReactNode
-  isHovered?: boolean
-  onCreateCard?: () => void
-  className?: string
-  allUnpinned?: QueryResults<Note> | undefined
-  groupString?: string
-  expandKey: string
-}>
+  groupBy: string;
+  header: React.ReactNode;
+  isHovered?: boolean;
+  onCreateCard?: () => void;
+  className?: string;
+  allUnpinned?: QueryResults<Note> | undefined;
+  groupString?: string;
+  expandKey: string;
+}>;
 
 export function SectionTable({
   groupBy,
@@ -315,22 +314,21 @@ export function SectionTable({
   allUnpinned,
   expandKey,
 }: SectionTableProps) {
-  const styles = useStyles()
-  const [isSectionHovered, setIsSectionHovered] = useState(false)
+  const styles = useStyles();
+  const [isSectionHovered, setIsSectionHovered] = useState(false);
 
   const handleMouseEnter = () => {
-    setIsSectionHovered(true)
-  }
+    setIsSectionHovered(true);
+  };
   const handleMouseLeave = () => {
-    setIsSectionHovered(false)
-  }
+    setIsSectionHovered(false);
+  };
 
   return (
     <div
       className={cn(styles.table)}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+      onMouseLeave={handleMouseLeave}>
       <SectionTitle
         header={header}
         groupBy={groupBy}
@@ -345,5 +343,5 @@ export function SectionTable({
         show={allUnpinned && allUnpinned.length - 3 > 0}
       />
     </div>
-  )
+  );
 }

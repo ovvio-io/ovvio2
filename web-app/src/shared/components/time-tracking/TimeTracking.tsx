@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { cn, makeStyles } from '../../../../../styles/css-objects/index.ts';
 import { IconProps } from '../../../../../styles/components/new-icons/types.ts';
 import { styleguide } from '../../../../../styles/styleguide.ts';
@@ -6,6 +6,9 @@ import { Button } from '../../../../../styles/components/buttons.tsx';
 import Menu from '../../../../../styles/components/menu.tsx';
 import TimeTrackPicker from '../../../../../components/trackingTime-picker.tsx';
 import { Tag } from '../../../../../cfds/client/graph/vertices/tag.ts';
+import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
+import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
+import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
 
 const useStyles = makeStyles(() => ({
   timeTrackText: {
@@ -28,15 +31,29 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-export interface TimeDisplayProps {
-  hover: boolean;
-  time: string;
+function minutesToHHMM(minutes: number): string {
+  let hours = Math.floor(minutes / 60);
+  let mins = Math.abs(minutes % 60);
+  return `${hours.toString().padStart(2, '0')}:${mins
+    .toString()
+    .padStart(2, '0')}`;
 }
 
-export function TimeDisplay({ hover, time }: TimeDisplayProps) {
+export interface TimeDisplayProps {
+  hover: boolean;
+  card?: VertexManager<Note>;
+}
+
+export function TimeDisplay({ card, hover }: TimeDisplayProps) {
   const styles = useStyles();
+  const pCard = usePartialVertex(card);
+  const timeInMinutes = pCard?.totalTimeSpent;
+  const formattedTime = timeInMinutes ? minutesToHHMM(timeInMinutes) : '';
+
   return (
-    <div className={cn(styles.timeTrackText)}>{time ? `${time}` : ''}</div>
+    <div className={cn(styles.timeTrackText)}>
+      {formattedTime ? `${formattedTime}` : ''}
+    </div>
   );
 }
 
@@ -73,33 +90,32 @@ export function IconTimeTracking({ plus, hover }: IconTimeTracking) {
 
 export interface TimeTrackingProps {
   hover: boolean;
-  time: string;
   plus: boolean;
 }
 
-export function TimeTracking({ hover, time, plus }: TimeTrackingProps) {
+export function TimeTracking({ card, hover, plus }: TimeTrackingProps) {
   const styles = useStyles();
 
   return (
     <Button
       className={cn(styles.baseStyle, hover && styles.hoverStyle)}
       onClick={() => {}}>
-      <TimeDisplay time={time} hover={hover} />
+      <TimeDisplay card={card} hover={hover} />
       <IconTimeTracking plus={plus} hover={hover} />
     </Button>
   );
 }
 
 export interface TimeTrackingProps {
+  card?: VertexManager<Note>;
   hover: boolean;
-  time: string;
   plus: boolean;
   className?: string;
 }
 
 export function TimeTrackingContainer({
+  card,
   hover,
-  time,
   plus,
   className,
 }: TimeTrackingProps) {
@@ -108,19 +124,13 @@ export function TimeTrackingContainer({
   return (
     <Menu
       renderButton={() => (
-        <TimeTracking hover={hover} time={time} plus={plus} />
+        <TimeTracking card={card} hover={hover} plus={plus} />
       )}
       position="bottom"
       align="end"
       direction="out"
-      className={className}
-      // popupClassName={cn(styles.popup)}>
-    >
-      <TimeTrackPicker
-        onRowSelect={function (tag: Tag): void {
-          throw new Error('Function not implemented.');
-        }}
-      />{' '}
+      className={className}>
+      <TimeTrackPicker card={card!} />
     </Menu>
   );
 }

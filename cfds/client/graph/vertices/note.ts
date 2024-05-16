@@ -1,25 +1,25 @@
-import * as SetUtils from '../../../../base/set.ts'
-import { User } from './user.ts'
-import { ContentVertex } from './base.ts'
+import * as SetUtils from '../../../../base/set.ts';
+import { User } from './user.ts';
+import { ContentVertex } from './base.ts';
 import {
   AttachmentData,
   NoteStatus,
   NS_NOTES,
   SchemeNamespace,
   SortBy,
-} from '../../../base/scheme-types.ts'
+} from '../../../base/scheme-types.ts';
 import {
   initRichText,
   RichText,
   treeToPlaintext,
-} from '../../../richtext/tree.ts'
+} from '../../../richtext/tree.ts';
 import {
   composeRichText,
   decomposeRichText,
   extractOrderedRefs,
   extractRefs,
   RefPlaceholder,
-} from '../../../richtext/composer.ts'
+} from '../../../richtext/composer.ts';
 import {
   FieldTriggers,
   keyDictToVertDict,
@@ -27,34 +27,35 @@ import {
   vertDictToKeyDict,
   Vertex,
   VertexConfig,
-} from '../vertex.ts'
-import { Tag } from './tag.ts'
+} from '../vertex.ts';
+import { Tag } from './tag.ts';
 import {
   MutationOrigin,
   MutationPack,
   mutationPackAppend,
   mutationSourceIsUser,
-} from '../mutations.ts'
+} from '../mutations.ts';
 import {
   docFromRT,
   docToRT,
   Document,
   projectRanges,
   UnkeyedDocument,
-} from '../../../richtext/doc-state.ts'
+} from '../../../richtext/doc-state.ts';
 import {
   flattenRichText,
   projectPointers,
   reconstructRichText,
   stripFormattingFilter,
-} from '../../../richtext/flat-rep.ts'
-import { treeToMarkdown } from '../../../richtext/markdown.ts'
-import { triggerChildren, triggerParent } from '../propagation-triggers.ts'
-import { VertexManager } from '../vertex-manager.ts'
-import { SortDescriptor } from '../query.ts'
-import { coreObjectClone } from '../../../../base/core-types/clone.ts'
-import { Dictionary } from '../../../../base/collections/dict.ts'
-import { coreValueCompare } from '../../../../base/core-types/comparable.ts'
+} from '../../../richtext/flat-rep.ts';
+import { treeToMarkdown } from '../../../richtext/markdown.ts';
+import { triggerChildren, triggerParent } from '../propagation-triggers.ts';
+import { VertexManager } from '../vertex-manager.ts';
+import { SortDescriptor } from '../query.ts';
+import { coreObjectClone } from '../../../../base/core-types/clone.ts';
+import { Dictionary } from '../../../../base/collections/dict.ts';
+import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { TimeTrackData } from '../../../base/scheme-types.ts';
 
 export enum NoteType {
   Task = 'task',
@@ -62,36 +63,36 @@ export enum NoteType {
 }
 
 export class Note extends ContentVertex {
-  private _cachedBody?: Document
-  private _cachedBodyPreview?: string
-  private _cachedTitle?: Document
-  private _cachedTitleRT?: RichText
-  private _cachedChildCards?: VertexManager<Note>[]
-  private _cachedPlaintextTitle?: string
-  private _lastManualAssigneeChange: number
-  private _lastManualTagChange: number
+  private _cachedBody?: Document;
+  private _cachedBodyPreview?: string;
+  private _cachedTitle?: Document;
+  private _cachedTitleRT?: RichText;
+  private _cachedChildCards?: VertexManager<Note>[];
+  private _cachedPlaintextTitle?: string;
+  private _lastManualAssigneeChange: number;
+  private _lastManualTagChange: number;
 
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
     config: VertexConfig | undefined
   ) {
-    super(mgr, prevVertex, config)
+    super(mgr, prevVertex, config);
     if (prevVertex instanceof Note) {
-      this._cachedBodyPreview = prevVertex._cachedBodyPreview
-      this._cachedPlaintextTitle = prevVertex._cachedPlaintextTitle
-      this._lastManualAssigneeChange = prevVertex._lastManualAssigneeChange
-      this._lastManualTagChange = prevVertex._lastManualTagChange
-      this._cachedPlaintextTitle = prevVertex._cachedPlaintextTitle
+      this._cachedBodyPreview = prevVertex._cachedBodyPreview;
+      this._cachedPlaintextTitle = prevVertex._cachedPlaintextTitle;
+      this._lastManualAssigneeChange = prevVertex._lastManualAssigneeChange;
+      this._lastManualTagChange = prevVertex._lastManualTagChange;
+      this._cachedPlaintextTitle = prevVertex._cachedPlaintextTitle;
     } else {
-      const creationTime = this.creationDate.getTime()
-      this._lastManualAssigneeChange = creationTime
-      this._lastManualTagChange = creationTime
+      const creationTime = this.creationDate.getTime();
+      this._lastManualAssigneeChange = creationTime;
+      this._lastManualTagChange = creationTime;
     }
   }
 
   get parent(): Vertex | undefined {
-    return this.parentNote || super.parent
+    return this.parentNote || super.parent;
   }
 
   parentNoteDidMutate(
@@ -101,25 +102,25 @@ export class Note extends ContentVertex {
     return [
       ['parent', local, oldValue],
       ['parentType', local, oldValue?.type],
-    ]
+    ];
   }
 
   get assignees(): Set<User> {
-    const wsUsers = this.workspace.users
+    const wsUsers = this.workspace.users;
     return SetUtils.filter(this.vertSetForField<User>('assignees'), (u) =>
       wsUsers.has(u)
-    )
+    );
   }
 
   set assignees(users: Set<User>) {
     this.record.set(
       'assignees',
       SetUtils.map(users, (u) => u.key)
-    )
+    );
   }
 
   clearAssignees(): void {
-    this.record.set('assignees', new Set())
+    this.record.set('assignees', new Set());
   }
 
   parentAssigneesDidMutate(
@@ -127,14 +128,14 @@ export class Note extends ContentVertex {
     oldValue: Set<User> | undefined
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
-      return
+      return;
     }
-    const currentAssignees = this.assignees
+    const currentAssignees = this.assignees;
     if (currentAssignees.size > 0) {
-      return
+      return;
     }
-    this.assignees = this.parentNote!.assignees
-    return ['assignees', origin, currentAssignees]
+    this.assignees = this.parentNote!.assignees;
+    return ['assignees', origin, currentAssignees];
   }
 
   // assigneesDidMutate(
@@ -194,65 +195,99 @@ export class Note extends ContentVertex {
   //   }
   // }
 
+  get totalTimeSpent(): number {
+    return Array.from(this.timeTrack).reduce(
+      (acc, entry) => acc + entry.time,
+      0
+    );
+  }
+  get timeTrack(): Set<TimeTrackData> {
+    const timeTrack = this.record.get('timeTrack') as Set<TimeTrackData>;
+    if (timeTrack === undefined || timeTrack.size === 0) {
+      return new Set<TimeTrackData>();
+    }
+    return SetUtils.map(timeTrack, (v) => coreObjectClone(v));
+  }
+
+  set timeTrack(set: Set<TimeTrackData>) {
+    const copy = SetUtils.map(set, (v) => coreObjectClone(v));
+    this.record.set('timeTrack', copy);
+  }
+
+  addTime(minutes: number): void {
+    SetUtils.addByValue(this.proxy.timeTrack, {
+      time: minutes,
+      user: this.graph.rootKey,
+      creationDate: new Date(),
+    });
+  }
+  subtractTime(minutes: number): void {
+    SetUtils.addByValue(this.proxy.timeTrack, {
+      time: -1 * minutes,
+      user: this.graph.rootKey,
+      creationDate: new Date(),
+    });
+  }
+
   get attachments(): Set<AttachmentData> {
-    const attachments = this.record.get('attachments') as Set<AttachmentData>
+    const attachments = this.record.get('attachments') as Set<AttachmentData>;
     if (attachments === undefined || attachments.size === 0) {
-      return new Set<AttachmentData>()
+      return new Set<AttachmentData>();
     }
 
-    const copy = SetUtils.map(attachments, (v) => coreObjectClone(v))
-    return copy
+    const copy = SetUtils.map(attachments, (v) => coreObjectClone(v));
+    return copy;
   }
 
   set attachments(set: Set<AttachmentData>) {
-    const copy = SetUtils.map(set, (v) => coreObjectClone(v))
-    this.record.set('attachments', copy)
+    const copy = SetUtils.map(set, (v) => coreObjectClone(v));
+    this.record.set('attachments', copy);
   }
 
   clearAttachments(): void {
-    this.record.set('attachments', new Set())
+    this.record.set('attachments', new Set());
   }
 
   get body(): Document {
     if (this._cachedBody === undefined) {
-      const graph = this.graph
+      const graph = this.graph;
       this._cachedBody = docFromRT(
         composeRichText(
           (key) => {
-            const note = graph.getVertex<Note>(key)
+            const note = graph.getVertex<Note>(key);
             if (note.isNull) {
-              return RefPlaceholder.Loading
+              return RefPlaceholder.Loading;
             }
             if (note.isDeleted) {
-              return RefPlaceholder.Deleted
+              return RefPlaceholder.Deleted;
             }
-            return note.record.get('title') as RichText
+            return note.record.get('title') as RichText;
           },
           this.record.get('body') || initRichText(),
           true
         )
-      )
+      );
     }
-    return this._cachedBody
+    return this._cachedBody;
   }
 
   set body(rt: UnkeyedDocument) {
     // Take a snapshot of the out refs before changing the value
-    const oldRefs = this.getBodyRefs()
+    const oldRefs = this.getBodyRefs();
     rt = projectRanges(this.body, rt, (ptr) =>
       this.graph.ptrFilterFunc(ptr.key)
-    )
-    this._cachedBody = undefined
-    const graph = this.graph
+    );
+    this._cachedBody = undefined;
+    const graph = this.graph;
     //  Update our body while applying edits to inner tasks' titles
     const updatedBody = decomposeRichText(
       (key, rt) => {
-        let childV: Note
+        let childV: Note;
         if (!oldRefs.has(key)) {
           if (graph.hasVertex(key)) {
             // This was a deleted task.
-            childV = graph.getVertex<Note>(key)
-            childV.isDeleted = 0
+            childV = graph.getVertex<Note>(key);
+            childV.isDeleted = 0;
           } else {
             // New Task
             childV = graph.createVertex(
@@ -266,77 +301,77 @@ export class Note extends ContentVertex {
                 assignees: new Set([this.graph.rootKey]),
               },
               key
-            )
+            );
           }
         } else {
           // Existing task
-          childV = graph.getVertex<Note>(key)
+          childV = graph.getVertex<Note>(key);
         }
-        childV.titleRT = rt
+        childV.titleRT = rt;
       },
       docToRT(rt),
       true
-    )
-    this.record.set('body', updatedBody)
-    this._cachedBody = undefined
+    );
+    this.record.set('body', updatedBody);
+    this._cachedBody = undefined;
     // Get out refs after the update
-    const newRefs = this.getBodyRefs()
+    const newRefs = this.getBodyRefs();
     // Compare them with old refs to find deleted tasks
-    const deletedKeys = SetUtils.subtract(oldRefs, newRefs)
+    const deletedKeys = SetUtils.subtract(oldRefs, newRefs);
     // Mark deleted tasks as such
     for (const key of deletedKeys) {
-      graph.getVertex<Note>(key).isDeleted = 1
+      graph.getVertex<Note>(key).isDeleted = 1;
     }
   }
 
   clearBody(): void {
-    this.body = docFromRT(initRichText())
+    this.body = docFromRT(initRichText());
   }
 
   /**
    * @deprecated User bodyRefs getter instead.
    */
   getBodyRefs(): Set<string> {
-    return this.bodyRefs
+    return this.bodyRefs;
   }
 
   get bodyRefs(): Set<string> {
-    const bodyRT = this.record.get('body')
+    const bodyRT = this.record.get('body');
     if (bodyRT === undefined) {
-      return new Set()
+      return new Set();
     }
-    return extractRefs(bodyRT.root, true)
+    return extractRefs(bodyRT.root, true);
   }
 
   getOrderedBodyRefs(): string[] {
-    const bodyRT = this.record.get('body')
+    const bodyRT = this.record.get('body');
     if (bodyRT === undefined) {
-      return []
+      return [];
     }
-    return extractOrderedRefs(bodyRT.root, true)
+    return extractOrderedRefs(bodyRT.root, true);
   }
 
   getRawBody(): RichText | undefined {
-    return this.record.get('body')
+    return this.record.get('body');
   }
 
   get bodyPreview(): string {
     if (this._cachedBodyPreview === undefined) {
-      this._cachedBodyPreview = stripWhitelines(treeToMarkdown(this.body.root))
+      this._cachedBodyPreview = stripWhitelines(treeToMarkdown(this.body.root));
     }
-    return this._cachedBodyPreview
+    return this._cachedBodyPreview;
   }
 
   bodyDidMutate(local: boolean, oldValue: Document | undefined): MutationPack {
-    this._cachedBodyPreview = undefined
-    this._cachedBody = undefined
-    this._cachedChildCards = undefined
-    const prevBodyRefs = oldValue && extractRefs(oldValue.root, true)
+    this._cachedBodyPreview = undefined;
+    this._cachedBody = undefined;
+    this._cachedChildCards = undefined;
+    const prevBodyRefs = oldValue && extractRefs(oldValue.root, true);
     return [
       ['bodyPreview', local, stripWhitelines(treeToMarkdown(oldValue?.root))],
       ['childCards', local, this._cachedChildCards],
       ['bodyRefs', local, prevBodyRefs],
-    ]
+    ];
   }
 
   private _invalidateBodyOnChildChange(
@@ -347,21 +382,21 @@ export class Note extends ContentVertex {
     // to the parent note's body. If we emit a mutation before the body actually
     // has the ref in it, bad things will happen.
     if (this.getBodyRefs().has(childKey)) {
-      const oldValue = this._cachedBody
-      this._cachedBody = undefined
-      return ['body', local, oldValue]
+      const oldValue = this._cachedBody;
+      this._cachedBody = undefined;
+      return ['body', local, oldValue];
     }
   }
 
   get childCards(): Note[] {
     if (this._cachedChildCards === undefined) {
-      const graph = this.graph
-      const childCards: VertexManager<Note>[] = []
+      const graph = this.graph;
+      const childCards: VertexManager<Note>[] = [];
       for (const key of this.getOrderedBodyRefs()) {
-        const mgr = graph.getVertexManager<Note>(key)
-        const vert = mgr.getVertexProxy()
+        const mgr = graph.getVertexManager<Note>(key);
+        const vert = mgr.getVertexProxy();
         if (vert instanceof Note && !vert.isDeleted) {
-          childCards.push(mgr)
+          childCards.push(mgr);
         }
       }
       // for (const child of this.getChildManagers<Note>(SchemeNamespace.NOTES)) {
@@ -371,15 +406,15 @@ export class Note extends ContentVertex {
       // }
 
       // return childCards.map(mgr => mgr.getVertexProxy());
-      this._cachedChildCards = childCards
+      this._cachedChildCards = childCards;
     }
-    return this._cachedChildCards.map((mgr) => mgr.getVertexProxy())
+    return this._cachedChildCards.map((mgr) => mgr.getVertexProxy());
   }
 
   private _invalidateChildCards(local: boolean): MutationPack {
-    const res: MutationPack = ['childCards', local, this._cachedChildCards]
-    this._cachedChildCards = undefined
-    return res
+    const res: MutationPack = ['childCards', local, this._cachedChildCards];
+    this._cachedChildCards = undefined;
+    return res;
   }
 
   childParentNoteDidMutate(
@@ -387,7 +422,7 @@ export class Note extends ContentVertex {
     oldValue: Note | undefined,
     child: Note
   ): MutationPack {
-    return this._invalidateChildCards(local)
+    return this._invalidateChildCards(local);
   }
 
   // Invalidate our composite body if the title of an inner task are changes
@@ -396,7 +431,7 @@ export class Note extends ContentVertex {
     oldValue: RichText,
     child: Note
   ): MutationPack {
-    return this._invalidateBodyOnChildChange(local, child.key)
+    return this._invalidateBodyOnChildChange(local, child.key);
   }
 
   // Invalidate our composite body if the title of an inner task are changes
@@ -405,22 +440,22 @@ export class Note extends ContentVertex {
     oldValue: RichText,
     child: Note
   ): MutationPack {
-    return this._invalidateBodyOnChildChange(local, child.key)
+    return this._invalidateBodyOnChildChange(local, child.key);
   }
 
   get dueDate(): Date | undefined {
-    return this.record.get<Date>('dueDate')
+    return this.record.get<Date>('dueDate');
   }
 
   set dueDate(d: Date | undefined) {
     if (d === undefined) {
-      this.record.delete('dueDate')
+      this.record.delete('dueDate');
     } else {
-      const parentDueDate = this.parentNote?.dueDate
+      const parentDueDate = this.parentNote?.dueDate;
       if (parentDueDate && parentDueDate.getTime() < d.getTime()) {
-        d = parentDueDate
+        d = parentDueDate;
       }
-      this.record.set('dueDate', d)
+      this.record.set('dueDate', d);
     }
   }
 
@@ -429,40 +464,40 @@ export class Note extends ContentVertex {
     oldValue: Date | undefined
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
-      return
+      return;
     }
-    const parentDueDate = this.parentNote?.dueDate
+    const parentDueDate = this.parentNote?.dueDate;
     if (!parentDueDate) {
-      return
+      return;
     }
-    const dueDate = this.record.get<Date>('dueDate')
+    const dueDate = this.record.get<Date>('dueDate');
     if (!dueDate || dueDate.getTime() > parentDueDate.getTime()) {
-      this.dueDate = parentDueDate
-      return ['dueDate', origin, dueDate]
+      this.dueDate = parentDueDate;
+      return ['dueDate', origin, dueDate];
     }
   }
 
   get title(): Document {
     if (typeof this._cachedTitle === 'undefined') {
-      this._cachedTitle = docFromRT(this.titleRT)
+      this._cachedTitle = docFromRT(this.titleRT);
     }
-    return this._cachedTitle
+    return this._cachedTitle;
   }
 
   set title(rt: UnkeyedDocument) {
-    this.titleRT = docToRT(rt)
+    this.titleRT = docToRT(rt);
   }
 
   clearTitle(): void {
-    this.titleRT = initRichText()
+    this.titleRT = initRichText();
   }
 
   titleDidMutate(local: boolean, oldValue: Document | undefined): MutationPack {
-    this._cachedTitle = undefined
-    const prevPlaintextTitle = this._cachedPlaintextTitle
-    this._cachedPlaintextTitle = undefined
-    this._cachedTitleRT = undefined
-    return [['titlePlaintext', local, prevPlaintextTitle]]
+    this._cachedTitle = undefined;
+    const prevPlaintextTitle = this._cachedPlaintextTitle;
+    this._cachedPlaintextTitle = undefined;
+    this._cachedTitleRT = undefined;
+    return [['titlePlaintext', local, prevPlaintextTitle]];
   }
 
   private get titleRT(): RichText {
@@ -475,14 +510,14 @@ export class Note extends ContentVertex {
             false
           )
         )
-      )
+      );
     }
-    return this._cachedTitleRT!
+    return this._cachedTitleRT!;
   }
 
   private set titleRT(rt: RichText) {
     if (rt === undefined) {
-      rt = initRichText()
+      rt = initRichText();
     }
     rt = projectPointers(
       this.titleRT,
@@ -490,34 +525,34 @@ export class Note extends ContentVertex {
       (ptr) => this.graph.ptrFilterFunc(ptr.key),
       true,
       true
-    )
+    );
     rt = reconstructRichText(
       stripFormattingFilter(flattenRichText(rt, true, false))
-    )
-    this._cachedTitle = undefined
-    this._cachedTitleRT = undefined
-    this.record.set('title', rt)
+    );
+    this._cachedTitle = undefined;
+    this._cachedTitleRT = undefined;
+    this.record.set('title', rt);
   }
 
   titleRTDidMutate(
     local: boolean,
     oldValue: RichText | undefined
   ): MutationPack {
-    this._cachedTitle = undefined
-    const prevPlaintextTitle = this._cachedPlaintextTitle
-    this._cachedPlaintextTitle = undefined
-    this._cachedTitleRT = undefined
+    this._cachedTitle = undefined;
+    const prevPlaintextTitle = this._cachedPlaintextTitle;
+    this._cachedPlaintextTitle = undefined;
+    this._cachedTitleRT = undefined;
     return [
       ['title', local, oldValue && docFromRT(oldValue)],
       ['titlePlaintext', local, prevPlaintextTitle],
-    ]
+    ];
   }
 
   get titlePlaintext(): string {
     if (!this._cachedPlaintextTitle) {
-      this._cachedPlaintextTitle = treeToPlaintext(this.titleRT.root)
+      this._cachedPlaintextTitle = treeToPlaintext(this.titleRT.root);
     }
-    return this._cachedPlaintextTitle
+    return this._cachedPlaintextTitle;
   }
 
   set titlePlaintext(str: string) {
@@ -534,43 +569,43 @@ export class Note extends ContentVertex {
           },
         ],
       },
-    }
-    const finalRT = projectPointers(this.titleRT, updatedRT, () => true)
-    this.titleRT = finalRT
-    this._cachedPlaintextTitle = undefined
+    };
+    const finalRT = projectPointers(this.titleRT, updatedRT, () => true);
+    this.titleRT = finalRT;
+    this._cachedPlaintextTitle = undefined;
   }
 
   get parentNote(): Note | undefined {
-    const parentKey = this.record.get('parentNote')
-    const graph = this.graph
+    const parentKey = this.record.get('parentNote');
+    const graph = this.graph;
     const res =
       parentKey !== undefined && graph.hasVertex(parentKey)
         ? graph.getVertex<Note>(parentKey)
-        : undefined
-    return res && res instanceof Note ? res : undefined
+        : undefined;
+    return res && res instanceof Note ? res : undefined;
   }
 
   set parentNote(parent: Note | undefined) {
-    this.record.set('parentNote', parent?.key)
+    this.record.set('parentNote', parent?.key);
   }
 
   get status(): NoteStatus {
     if (this.isChecked) {
-      return NoteStatus.Checked
+      return NoteStatus.Checked;
     }
-    return this.record.get('status', NoteStatus.Unchecked)
+    return this.record.get('status', NoteStatus.Unchecked);
   }
 
   set status(status: NoteStatus) {
-    this.record.set('status', status)
-    const tags = this.tags
+    this.record.set('status', status);
+    const tags = this.tags;
     for (const parentTag of tags.keys()) {
       if (parentTag.name === 'Status') {
-        tags.delete(parentTag)
-        break
+        tags.delete(parentTag);
+        break;
       }
     }
-    this.tags = tags
+    this.tags = tags;
   }
 
   get isChecked(): boolean {
@@ -579,22 +614,22 @@ export class Note extends ContentVertex {
       this.record.get('status'),
       this.tags,
       this.childCards
-    )
+    );
   }
 
   set isChecked(flag: boolean) {
-    this.proxy.status = flag ? NoteStatus.Checked : NoteStatus.Unchecked
+    this.proxy.status = flag ? NoteStatus.Checked : NoteStatus.Unchecked;
   }
 
   get completionDate(): Date | undefined {
-    return this.record.get('completionDate')
+    return this.record.get('completionDate');
   }
 
   set completionDate(d: Date | undefined) {
     if (d) {
-      this.record.set('completionDate', d)
+      this.record.set('completionDate', d);
     } else {
-      this.record.delete('completionDate')
+      this.record.delete('completionDate');
     }
   }
 
@@ -602,13 +637,13 @@ export class Note extends ContentVertex {
     local: boolean,
     oldValue: NoteStatus | undefined
   ): MutationPack {
-    const completionDate = this.completionDate
+    const completionDate = this.completionDate;
     if (this.isChecked) {
       if (!this.completionDate) {
-        this.completionDate = new Date()
+        this.completionDate = new Date();
       }
     } else {
-      delete this.completionDate
+      delete this.completionDate;
     }
     const result: MutationPack = [
       [
@@ -616,15 +651,15 @@ export class Note extends ContentVertex {
         local,
         computeCheckedForNote(this.type, oldValue, this.tags, this.childCards),
       ],
-    ]
+    ];
     if (this.completionDate !== completionDate) {
-      result.push(['completionDate', local, completionDate])
+      result.push(['completionDate', local, completionDate]);
     }
-    return result
+    return result;
   }
 
   get dynamicTags(): Dictionary<Tag, Tag> {
-    const result = new Map<Tag, Tag>()
+    const result = new Map<Tag, Tag>();
     // const priorityTag = this.workspace.priorityTag;
     // if (priorityTag) {
     //   const priorityValues = priorityTag.childTags;
@@ -632,73 +667,73 @@ export class Note extends ContentVertex {
     //     result.set(priorityTag, priorityValues[0]);
     //   }
     // }
-    return result
+    return result;
   }
 
   get tags(): Dictionary<Tag, Tag> {
-    const map: Dictionary | undefined = this.record.get('tags')
+    const map: Dictionary | undefined = this.record.get('tags');
     const result: Dictionary<Tag, Tag> =
-      map === undefined ? new Map() : keyDictToVertDict(this.graph, map)
+      map === undefined ? new Map() : keyDictToVertDict(this.graph, map);
     for (const [parent, child] of this.dynamicTags) {
       if (!result.has(parent)) {
-        result.set(parent, child)
+        result.set(parent, child);
       }
     }
-    return result
+    return result;
   }
 
   set tags(map: Dictionary<Tag, Tag>) {
-    const persistentMap: Dictionary<Tag, Tag> = new Map(map)
+    const persistentMap: Dictionary<Tag, Tag> = new Map(map);
     for (const [parent, child] of this.dynamicTags) {
       if (persistentMap.get(parent) === child) {
-        persistentMap.delete(parent)
+        persistentMap.delete(parent);
       }
     }
-    this.record.set('tags', vertDictToKeyDict(persistentMap))
+    this.record.set('tags', vertDictToKeyDict(persistentMap));
   }
 
   clearTags(): void {
-    this.tags = new Map()
+    this.tags = new Map();
   }
 
   get type(): NoteType {
-    return this.record.get('type') as NoteType
+    return this.record.get('type') as NoteType;
   }
 
   set type(type: NoteType) {
-    this.record.set('type', type)
+    this.record.set('type', type);
   }
 
   get parentType(): NoteType | undefined {
-    return this.parentNote?.type
+    return this.parentNote?.type;
   }
 
   get isDeleted(): number {
-    const sup = super.isDeleted
+    const sup = super.isDeleted;
     if (sup !== 0) {
-      return sup
+      return sup;
     }
-    const parentNote = this.parentNote
+    const parentNote = this.parentNote;
     if (!parentNote) {
-      return 0
+      return 0;
     }
     if (!parentNote.bodyRefs.has(this.key)) {
-      return 1
+      return 1;
     }
-    return 0
+    return 0;
   }
 
   set isDeleted(v: number) {
-    super.isDeleted = v
+    super.isDeleted = v;
   }
 
   parentBodyRefsDidMutate(
     local: boolean,
     oldValue: Set<string> | undefined
   ): MutationPack {
-    const hadRef = (oldValue && oldValue.has(this.key)) === true
+    const hadRef = (oldValue && oldValue.has(this.key)) === true;
     if (!oldValue || hadRef !== this.parentNote?.bodyRefs.has(this.key)) {
-      return ['isDeleted', local, !hadRef]
+      return ['isDeleted', local, !hadRef];
     }
   }
 
@@ -707,35 +742,35 @@ export class Note extends ContentVertex {
     oldValue: NoteType | undefined
   ): MutationPack {
     if ((oldValue || NoteType.Note) !== this.parentType) {
-      return ['parentType', local, oldValue]
+      return ['parentType', local, oldValue];
     }
   }
 
   get isPinned(): boolean {
-    return this.record.get('pinnedBy').has(this.graph.rootKey)
+    return this.record.get('pinnedBy').has(this.graph.rootKey);
   }
 
   set isPinned(val: boolean) {
-    const current = SetUtils.map(this.pinnedBy, (x) => x)
+    const current = SetUtils.map(this.pinnedBy, (x) => x);
     if (val) {
-      current.add(this.graph.rootKey)
+      current.add(this.graph.rootKey);
     } else if (current.has(this.graph.rootKey)) {
-      current.delete(this.graph.rootKey)
+      current.delete(this.graph.rootKey);
     }
 
-    this.pinnedBy = current
+    this.pinnedBy = current;
   }
 
   get pinnedBy(): Set<string> {
-    return this.record.get('pinnedBy')
+    return this.record.get('pinnedBy');
   }
 
   set pinnedBy(pins: Set<string>) {
-    this.record.set('pinnedBy', pins)
+    this.record.set('pinnedBy', pins);
   }
 
   pinnedByDidMutate(local: boolean, oldValue: Set<string>): MutationPack {
-    return ['isPinned', local, oldValue?.has(this.graph.rootKey)]
+    return ['isPinned', local, oldValue?.has(this.graph.rootKey)];
   }
 
   childNoteIsDeletedDidMutate(
@@ -748,17 +783,17 @@ export class Note extends ContentVertex {
         // TODO: Actually go and remove the RefMarkers from the rich text
         // this._invalidateBodyOnChildChange(local, child.key),
         this._invalidateChildCards(local)
-      )
+      );
     }
   }
 
   rewritePinsToRootUser(): void {
-    const pinnedBy = this.pinnedBy
+    const pinnedBy = this.pinnedBy;
     if (pinnedBy && pinnedBy.has('/')) {
-      const updatedPins = new Set(pinnedBy)
-      updatedPins.delete('/')
-      updatedPins.add(this.graph.rootKey)
-      this.pinnedBy = updatedPins
+      const updatedPins = new Set(pinnedBy);
+      updatedPins.delete('/');
+      updatedPins.add(this.graph.rootKey);
+      this.pinnedBy = updatedPins;
     }
   }
 
@@ -788,9 +823,9 @@ export class Note extends ContentVertex {
       this.status,
       this.tags,
       oldValue
-    )
+    );
     if (oldChecked !== this.isChecked) {
-      return ['isChecked', local, oldChecked]
+      return ['isChecked', local, oldChecked];
     }
   }
 
@@ -799,45 +834,45 @@ export class Note extends ContentVertex {
     oldValue: NoteStatus,
     child: Note
   ): MutationPack {
-    const childCards = this.childCards
+    const childCards = this.childCards;
     if (!childCards.length) {
-      return
+      return;
     }
     if (this.type === NoteType.Note) {
-      const firstChecked = childCards[0].isChecked
-      let childrenMatch = true
+      const firstChecked = childCards[0].isChecked;
+      let childrenMatch = true;
       for (let i = 1; i < childCards.length; ++i) {
-        const c = childCards[i]
+        const c = childCards[i];
         if (c === child) {
-          continue
+          continue;
         }
         if (c.isChecked !== firstChecked) {
-          childrenMatch = false
-          break
+          childrenMatch = false;
+          break;
         }
       }
-      let result: MutationPack
+      let result: MutationPack;
       if (childrenMatch) {
-        result = mutationPackAppend(result, ['isChecked', local, oldValue])
+        result = mutationPackAppend(result, ['isChecked', local, oldValue]);
       }
       return mutationPackAppend(
         result,
         this._invalidateBodyOnChildChange(local, child.key)
-      )
+      );
     }
   }
 
   valueForRefCalc(fieldName: keyof this): any {
     if (fieldName === 'status') {
-      return kNoRefsValue
+      return kNoRefsValue;
     }
-    return super.valueForRefCalc(fieldName)
+    return super.valueForRefCalc(fieldName);
   }
 }
 
-const kStripWhitelinesReges = /[\r\n]\s*/g
+const kStripWhitelinesReges = /[\r\n]\s*/g;
 function stripWhitelines(str: string): string {
-  return str.replace(kStripWhitelinesReges, ' ')
+  return str.replace(kStripWhitelinesReges, ' ');
 }
 
 function computeCheckedForNote(
@@ -848,27 +883,27 @@ function computeCheckedForNote(
 ): boolean {
   if (type === NoteType.Task) {
     if (status === NoteStatus.Checked) {
-      return true
+      return true;
     }
     if (!tags) {
-      return false
+      return false;
     }
     for (const [parent, child] of tags) {
       if (parent.isDeleted || child.isDeleted) {
-        continue
+        continue;
       }
       if (parent.name === 'Status' && child.name === 'Done') {
-        return true
+        return true;
       }
     }
-    return false
+    return false;
   } else if (type === NoteType.Note) {
     if (!childCards || !childCards.length) {
-      return false
+      return false;
     }
     for (const child of childCards) {
       if (child.isDeleted) {
-        continue
+        continue;
       }
       if (
         !computeCheckedForNote(
@@ -878,12 +913,12 @@ function computeCheckedForNote(
           child.childCards
         )
       ) {
-        return false
+        return false;
       }
     }
-    return true
+    return true;
   }
-  return false
+  return false;
 }
 
 export const NOTE_SORT_BY: Record<SortBy, SortDescriptor<Note>> = {
@@ -895,37 +930,37 @@ export const NOTE_SORT_BY: Record<SortBy, SortDescriptor<Note>> = {
     coreValueCompare(a, b),
   [SortBy.DueDateAscending]: (a, b) => {
     if (!a.dueDate && !b.dueDate) {
-      return coreValueCompare(a, b)
+      return coreValueCompare(a, b);
     }
     if (!a.dueDate && b.dueDate) {
-      return 1
+      return 1;
     }
     if (a.dueDate && !b.dueDate) {
-      return -1
+      return -1;
     }
 
-    const dt = a.dueDate!.getTime() - b.dueDate!.getTime()
+    const dt = a.dueDate!.getTime() - b.dueDate!.getTime();
     if (dt !== 0) {
-      return dt
+      return dt;
     }
-    return coreValueCompare(a, b)
+    return coreValueCompare(a, b);
   },
   [SortBy.DueDateDescending]: (a, b) => {
     if (!a.dueDate && !b.dueDate) {
-      return coreValueCompare(a, b)
+      return coreValueCompare(a, b);
     }
     if (!a.dueDate && b.dueDate) {
-      return -1
+      return -1;
     }
     if (a.dueDate && !b.dueDate) {
-      return 1
+      return 1;
     }
 
-    const dt = b.dueDate!.getTime() - a.dueDate!.getTime()
+    const dt = b.dueDate!.getTime() - a.dueDate!.getTime();
     if (dt !== 0) {
-      return dt
+      return dt;
     }
-    return coreValueCompare(b, a)
+    return coreValueCompare(b, a);
   },
   [SortBy.LastModifiedDescending]: (a, b) =>
     b.lastModified.getTime() - a.lastModified.getTime() ||
@@ -934,28 +969,28 @@ export const NOTE_SORT_BY: Record<SortBy, SortDescriptor<Note>> = {
     a.lastModified.getTime() - b.lastModified.getTime() ||
     coreValueCompare(a, b),
   [SortBy.TitleAscending]: (a, b) => {
-    const n1 = parseFloat(a.titlePlaintext)
-    const n2 = parseFloat(b.titlePlaintext)
+    const n1 = parseFloat(a.titlePlaintext);
+    const n2 = parseFloat(b.titlePlaintext);
     if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
-      return n1 - n2
+      return n1 - n2;
     }
     return (
       coreValueCompare(a.titlePlaintext, b.titlePlaintext) ||
       coreValueCompare(a, b)
-    )
+    );
   },
   [SortBy.TitleDescending]: (a, b) => {
-    const n1 = parseFloat(a.titlePlaintext)
-    const n2 = parseFloat(b.titlePlaintext)
+    const n1 = parseFloat(a.titlePlaintext);
+    const n2 = parseFloat(b.titlePlaintext);
     if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
-      return n2 - n1
+      return n2 - n1;
     }
     return (
       coreValueCompare(b.titlePlaintext, a.titlePlaintext) ||
       coreValueCompare(b, a)
-    )
+    );
   },
-}
+};
 
 const kFieldTriggersNote: FieldTriggers<Note> = {
   title: triggerParent(
@@ -1005,6 +1040,6 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
     'Note_bodyRefs',
     SchemeNamespace.NOTES
   ),
-}
+};
 
-Vertex.registerFieldTriggers(Note, kFieldTriggersNote)
+Vertex.registerFieldTriggers(Note, kFieldTriggersNote);

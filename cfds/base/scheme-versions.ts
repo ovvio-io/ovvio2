@@ -1,5 +1,6 @@
 import { isString } from '../../base/comparisons.ts';
 import { initRichText } from '../richtext/tree.ts';
+import { TimeTrackData } from './scheme-types.ts';
 import {
   AttachmentData,
   DataType,
@@ -176,6 +177,10 @@ const SCHEME_NOTE_1 = SCHEME_CONTENT_BASE_1.derive(NS_NOTES, {
   assignees: {
     type: TYPE_STR_SET,
     init: () => new Set<string>(),
+  },
+  timeTrack: {
+    type: TYPE_SET,
+    init: () => new Set<TimeTrackData>(),
   },
   attachments: {
     type: TYPE_SET,
