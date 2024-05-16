@@ -29,11 +29,13 @@ import {
 import { setGlobalLoggerStreams } from '../logging/log.ts';
 import { EmailService, sendEmail } from '../net/server/email.ts';
 import { reportToHTML } from '../analytics/report.tsx';
+import { sleep } from '../base/time.ts';
 
 const REPO_DIR_EXT = '.repo';
 
 interface Arguments {
   path: string;
+  tenant: string;
 }
 
 function populateRepoFromLog(
@@ -71,6 +73,7 @@ async function loadRepoFromPath(
       populateRepoFromLog(path.join(repoDir, info.name), result);
     }
   }
+  await sleep(0);
   return result;
 }
 
@@ -180,16 +183,12 @@ function dedupDir(dirPath: string): void {
   }
 }
 
-async function sendUsageReport(tenantPath: string): Promise<void> {
-  const domains = [
-    'baluka',
-    'oberson-arch',
-    'precise-todo-demo',
-    'precisetodo',
-    'ranandmorris',
-    'ysla',
-    'ztlv',
-  ];
+async function sendUsageReport(
+  tenantPath: string,
+  domains: string[],
+  emails: string[],
+  tenantName: string,
+): Promise<void> {
   const report = new Map<string, UsageStats>();
   for (const orgId of domains) {
     const orgPath = path.join(tenantPath, orgId);
@@ -203,14 +202,8 @@ async function sendUsageReport(tenantPath: string): Promise<void> {
   if (
     await sendEmail({
       type: 'AnalyticsReport',
-      to: [
-        'ofri@ovvio.io',
-        'nadav@ovvio.io',
-        'yarden@ovvio.io',
-        'maayan@ovvio.io',
-        'amit.s@ovvio.io',
-      ],
-      subject: 'Ovvio Usage Report - precise-arch',
+      to: emails,
+      subject: `Ovvio Usage Report - ${tenantName}`,
       plaintext: '',
       html: reportToHTML(report),
     })
@@ -220,6 +213,37 @@ async function sendUsageReport(tenantPath: string): Promise<void> {
     console.error('Email sending failed');
   }
 }
+
+const tenantReports: Record<string, Record<'domains' | 'emails', string[]>> = {
+  'precise-arch': {
+    domains: [
+      'baluka',
+      'oberson-arch',
+      'precise-todo-demo',
+      'precisetodo',
+      'ranandmorris',
+      'ysla',
+      'ztlv',
+    ],
+    emails: [
+      'ofri@ovvio.io',
+      // 'nadav@ovvio.io',
+      // 'yarden@ovvio.io',
+      // 'maayan@ovvio.io',
+      // 'amit.s@ovvio.io',
+    ],
+  },
+  stage: {
+    domains: ['stage', 'stage-demo'],
+    emails: [
+      'ofri@ovvio.io',
+      // 'nadav@ovvio.io',
+      // 'yarden@ovvio.io',
+      // 'maayan@ovvio.io',
+      // 'amit.s@ovvio.io',
+    ],
+  },
+};
 
 export function main(): void {
   yargs(Deno.args)
@@ -232,11 +256,21 @@ export function main(): void {
       },
     })
     .command({
-      command: 'stats <path>',
+      command: 'stats <tenant> <path>',
       desc: 'Computes analytics data for the given org directory',
       handler: async (args: Arguments) => {
         setGlobalLoggerStreams([]);
-        await sendUsageReport(toAbsolutePath(args.path));
+        const tenant = args.tenant;
+        if (!tenantReports[tenant]) {
+          console.error(`Unknown tenant`);
+          Deno.exit(1);
+        }
+        await sendUsageReport(
+          toAbsolutePath(args.path),
+          tenantReports[tenant].domains,
+          tenantReports[tenant].emails,
+          tenant,
+        );
         Deno.exit();
       },
     })

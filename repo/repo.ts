@@ -1377,6 +1377,7 @@ export class Repository<
     assert(result?.length > 0);
     return result;
   }
+
   graphForKey(key: string | null): CommitGraph[] {
     const commits = Array.from(this.commitsForKey(key));
     const roots = commits.filter((c) => !c.parents || !c.parents.length);

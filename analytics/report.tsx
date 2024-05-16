@@ -10,7 +10,7 @@ interface UsageStatsTableProps {
 function UsageStatsTable({ stats, orgId }: UsageStatsTableProps) {
   return (
     <div>
-      <h3>{orgId}</h3>
+      <h2>{orgId}</h2>
       <table width="600" style={{ border: '1px solid black' }}>
         <tr>
           <th id={`${orgId}_title`} align="center">
@@ -57,6 +57,106 @@ function UsageStatsTable({ stats, orgId }: UsageStatsTableProps) {
           </td>
         </tr>
       </table>
+      <h4>Contents</h4>
+      <div>
+        Total Users:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalUsers.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Workspaces:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalWorkspaces.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Tags:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalTags.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Notes:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalNotes.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Tasks:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalTasks.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Events:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalEvents.toLocaleString()}
+        </span>
+      </div>
+      <h4>Technical data</h4>
+      <div>
+        Total Repositories:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalRepos.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Keys:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalKeys.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Total Commits:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalCommits.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Max Commits / Repo:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.maxCommitsPerRepo.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Avg Commits / Repo:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.avgCommitsPerRepo.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Commits older than 30 days:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.commitsOlderThan30Days.toLocaleString()}
+        </span>
+      </div>
+      <div>
+        Full commits:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.fullCommitsCount.toLocaleString()} (
+          {stats.fullCommitsSize.toLocaleString()} bytes)
+        </span>
+      </div>
+      <div>
+        Delta commits:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.deltaCommitsCount.toLocaleString()} (
+          {stats.deltaCommitsSize.toLocaleString()} bytes)
+        </span>
+      </div>
+      <div>
+        Delta Savings:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.deltaCommitSavings.toLocaleString()} bytes
+        </span>
+      </div>
+      <div>
+        Total Heads:{' '}
+        <span style={{ fontSize: 'bold' }}>
+          {stats.totalHeadsSize.toLocaleString()} bytes
+        </span>
+      </div>
     </div>
   );
 }
