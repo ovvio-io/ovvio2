@@ -202,11 +202,11 @@ export function mutationPackDeleteField(
   if (pack === undefined) {
     return undefined;
   }
-  if (isMutation(pack) && pack[0] === fieldName) {
-    return undefined;
+  if (isMutation(pack)) {
+    return pack[0] === fieldName ? undefined : pack;
   }
-  if (pack.length === 1 && pack[0][0] === fieldName) {
-    return undefined;
+  if (pack.length === 1) {
+    return pack[0][0] === fieldName ? undefined : pack;
   }
   for (let i = 0; i < pack.length; ++i) {
     if ((pack[i] as Mutation)[0] === fieldName) {
