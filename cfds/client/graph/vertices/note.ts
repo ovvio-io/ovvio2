@@ -133,7 +133,7 @@ export class Note extends ContentVertex {
     if (currentAssignees.size > 0) {
       return;
     }
-    this.assignees = this.parentNote!.assignees;
+    this.proxy.assignees = this.parentNote!.assignees;
     return ['assignees', origin, currentAssignees];
   }
 
@@ -995,11 +995,10 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
     //   return ret;
     // },
   }),
-  assignees: triggerChildren(
-    'parentAssigneesDidMutate',
-    'Note_assignees',
-    SchemeNamespace.NOTES,
-  ),
+  assignees: triggerChildren('parentAssigneesDidMutate', 'Note_assignees', {
+    namespace: SchemeNamespace.NOTES,
+    fieldName: 'parentNote',
+  }),
   bodyRefs: triggerChildren(
     'parentBodyRefsDidMutate',
     'Note_bodyRefs',
