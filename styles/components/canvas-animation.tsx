@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { randomInt } from '../../base/math.ts';
+import { SimpleTimer } from '../../base/timer.ts';
+import { kSecondMs } from '../../base/date.ts';
 
 export type CanvasAnimationRenderer = (
   ctx: CanvasRenderingContext2D,
@@ -36,7 +38,7 @@ export function CanvasAnimation({
   randomOffset,
 }: CanvasAnimationProps) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  let animationId = 0;
+  // let animationId = 0;
   let startTime = 0;
   let cycleCount = 0;
   const totalFrames = Math.floor(60 * durationMs);
@@ -81,9 +83,9 @@ export function CanvasAnimation({
           startTime = 0;
           ++cycleCount;
         }
-        animationId = requestAnimationFrame(renderWrapper);
+        // animationId = requestAnimationFrame(renderWrapper);
       } else {
-        animationId = 0;
+        // animationId = 0;
         startTime = 0;
       }
       ctx.restore();
@@ -95,13 +97,18 @@ export function CanvasAnimation({
     if (!ref) {
       return;
     }
-    animationId = requestAnimationFrame(renderWrapper);
+    const timer = new SimpleTimer(kSecondMs / 60, true, () =>
+      renderWrapper(performance.now()),
+    );
+    timer.schedule();
+    // animationId = requestAnimationFrame(renderWrapper);
     return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = 0;
-        startTime = 0;
-      }
+      // if (animationId) {
+      // cancelAnimationFrame(animationId);
+      timer.schedule();
+      // animationId = 0;
+      startTime = 0;
+      // }
     };
   }, [renderWrapper, ref]);
 
