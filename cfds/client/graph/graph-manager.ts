@@ -401,15 +401,16 @@ export class GraphManager
         active: !id.startsWith('/data/'),
       };
       repo.attach('NewCommit', (c: Commit) => {
-        if (plumbing?.loadingFinished !== true) {
-          return;
-        }
+        // if (plumbing?.loadingFinished !== true) {
+        //   return;
+        // }
+
         plumbing!.backup?.persistCommits([c]);
-        const repoReady = this.repositoryReady(id);
-        if (repoReady) {
+        // const repoReady = this.repositoryReady(id);
+        if (plumbing?.syncFinished) {
           plumbing!.client?.touch();
         }
-        if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
+        if (!c.key /*|| !repo.commitIsLeaf(c)*/ /*|| !repoReady*/) {
           return;
         }
         if (c.createdLocally) {
@@ -433,7 +434,7 @@ export class GraphManager
           //   c.session !== this.trustPool.currentSession.id ||
           //   c.parents.length > 1
           // ) {
-          if (plumbing.syncFinished && mgr.hasPendingChanges) {
+          if (plumbing?.syncFinished && mgr.hasPendingChanges) {
             mgr.commit();
           } else {
             mgr.touch();
@@ -499,7 +500,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
     return (
-      plumbing?.syncFinished === true //|| plumbing?.loadedLocalContents === true
+      plumbing?.syncFinished === true || plumbing?.loadedLocalContents === true
     );
   }
 

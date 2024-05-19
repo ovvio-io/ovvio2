@@ -116,6 +116,13 @@ export class IDBRepositoryBackup {
     if (IDBRepositoryBackup._didLogout) {
       return Promise.resolve(0);
     }
+
+    const newCommits = Array.from(
+      filterIterable(commits, (c) => !this._persistedCommitIds.has(c.id)),
+    );
+    if (!newCommits.length) {
+      return Promise.resolve(0);
+    }
     return MultiSerialScheduler.get('idb-write', 3).run(() =>
       SerialScheduler.get(`idb:${this.dbName}`).run(async () => {
         const db = await this.open();
@@ -126,7 +133,10 @@ export class IDBRepositoryBackup {
         const promises: Promise<void>[] = [];
         let result = 0;
         for (const chunk of slices(
-          filterIterable(commits, (c) => !this._persistedCommitIds.has(c.id)),
+          filterIterable(
+            newCommits,
+            (c) => !this._persistedCommitIds.has(c.id),
+          ),
           50,
         )) {
           for (const c of chunk) {
