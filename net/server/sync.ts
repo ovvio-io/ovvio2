@@ -249,6 +249,11 @@ export class SyncService extends BaseService<ServerServices> {
     });
   }
 
+  waitForBackup(repoId: string): Promise<void> {
+    const backup = this._backupForRepo.get(Repository.normalizeId(repoId));
+    return backup!.logFile!.barrier();
+  }
+
   getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
     type: RepositoryType,
     id: string,

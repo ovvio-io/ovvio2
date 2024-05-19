@@ -227,10 +227,10 @@ const tenantReports: Record<string, Record<'domains' | 'emails', string[]>> = {
     ],
     emails: [
       'ofri@ovvio.io',
-      // 'nadav@ovvio.io',
-      // 'yarden@ovvio.io',
-      // 'maayan@ovvio.io',
-      // 'amit.s@ovvio.io',
+      'nadav@ovvio.io',
+      'yarden@ovvio.io',
+      'maayan@ovvio.io',
+      'amit.s@ovvio.io',
     ],
   },
   stage: {

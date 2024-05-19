@@ -21,6 +21,10 @@ export class JSONLogRepoBackup {
     return this._ready;
   }
 
+  get logFile(): JSONLogFile | undefined {
+    return this._log;
+  }
+
   *open(): Generator<Commit> {
     const repoPath = this.repoPath;
     // First, make sure the repository dir exists

@@ -8,10 +8,12 @@ import { getOvvioConfig } from './config.ts';
 import { Server } from '../net/server/server.ts';
 import { getRepositoryPath } from '../base/development.ts';
 import { buildAssets } from './generate-statc-assets.ts';
+import { prettyJSON } from '../base/common.ts';
 
 interface Arguments {
   org?: string;
   localhost?: string;
+  benchmark?: boolean;
 }
 
 function incrementBuildNumber(version: VersionNumber): VersionNumber {
@@ -61,7 +63,20 @@ async function main(): Promise<void> {
     .option('localhost', {
       description: 'Remap localhost to the specified organization id.',
     })
+    .option('benchmark', {
+      description: 'Run benchmarks rather than debug server',
+      type: 'boolean',
+      default: false,
+    })
     .parse();
+  const server = new Server(undefined, undefined, undefined, args.localhost);
+  await server.setup();
+  if (args.benchmark === true) {
+    console.log(`Benchmark started...`);
+    const results = await server.runBenchmark();
+    console.log(prettyJSON(results));
+    Deno.exit();
+  }
   console.log('Starting web-app bundling...');
   const ctx = await createBuildContext();
   Deno.addSignalListener('SIGTERM', () => {
@@ -69,9 +84,7 @@ async function main(): Promise<void> {
   });
   const serverURL = args.org ? `https://${args.org}.ovvio.io` : undefined;
   const watcher = Deno.watchFs(await getRepositoryPath());
-  const server = new Server(undefined, undefined, undefined, args.localhost);
   const orgId = args.localhost || 'localhost';
-  await server.setup();
   (await server.servicesForOrganization(orgId)).staticAssets =
     await buildAssets(ctx, getOvvioConfig().version, serverURL, args.localhost);
   await server.start();
