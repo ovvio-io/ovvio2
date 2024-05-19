@@ -24,6 +24,8 @@ import { SchemeNamespace } from '../../../base/scheme-types.ts';
 import { Record } from '../../../base/record.ts';
 import { Repository } from '../../../../repo/repo.ts';
 import { UserSettings } from './user-settings.ts';
+import { SimpleTimer } from '../../../../base/timer.ts';
+import { kSecondMs } from '../../../../base/date.ts';
 
 export interface UserAlias extends JSONObject {
   name?: string;
@@ -53,6 +55,11 @@ export class Workspace extends BaseVertex {
     // if (prevVertex && prevVertex instanceof Workspace) {
     // }
     this.initHelperQueries();
+    if (!prevVertex) {
+      SimpleTimer.once(2 * kSecondMs, () =>
+        this.graph.prepareRepositoryForUI(Repository.id('data', this.key)),
+      );
+    }
   }
 
   private initHelperQueries(): void {
