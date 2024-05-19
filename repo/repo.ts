@@ -40,7 +40,6 @@ import { CoroutineScheduler } from '../base/coroutine.ts';
 import { SchedulerPriority } from '../base/coroutine.ts';
 import { CONNECTION_ID } from './commit.ts';
 import { compareStrings } from '../base/string.ts';
-import { numbersEqual } from '../base/comparisons.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 300;
 
@@ -814,7 +813,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0 || !this.allowMerge) {
+    if (commitsToMerge.length <= 0 /*|| !this.allowMerge*/) {
       return Promise.resolve(undefined);
     }
     const key = commitsToMerge[0].key;
@@ -956,7 +955,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0 || !this.allowMerge) {
+    if (commitsToMerge.length <= 0 /*|| !this.allowMerge*/) {
       return undefined;
     }
     const key = commitsToMerge[0].key;
@@ -1013,7 +1012,7 @@ export class Repository<
     const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || sessionId;
     if (
       leaves.length > 1 &&
-      this.allowMerge &&
+      //this.allowMerge &&
       mergeLeaderSession === sessionId
     ) {
       // Filter out any commits with equal records
