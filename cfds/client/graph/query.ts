@@ -13,7 +13,7 @@ import {
   Scheduler,
   SchedulerPriority,
 } from '../../../base/coroutine.ts';
-import { SimpleTimer, Timer } from '../../../base/timer.ts';
+import { MicroTaskTimer, SimpleTimer, Timer } from '../../../base/timer.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { unionIter } from '../../../base/common.ts';
@@ -108,6 +108,7 @@ export class Query<
   private _isLocked = false;
   private _attached = false;
   private _proxy: typeof this;
+  private _cachedGroups: GroupId<GT>[] | undefined;
 
   /**
    * A single use async query for the times you only need a one-off and don't
@@ -209,7 +210,7 @@ export class Query<
   }
 
   constructor(opts: QueryOptions<IT, OT, GT>) {
-    super(undefined, opts.alwaysActive);
+    super((callback) => new MicroTaskTimer(callback), opts.alwaysActive);
     this.startTime = Date.now();
     this._id = ++gQueryId;
     this._vertexChangedListener = (key, mutations) =>
@@ -376,9 +377,12 @@ export class Query<
   }
 
   groups(): GroupId<GT>[] {
-    return Array.from(this._results.keys()).sort(
-      this._groupComparator || coreValueCompare,
-    );
+    if (!this._cachedGroups) {
+      this._cachedGroups = Array.from(this._results.keys()).sort(
+        this._groupComparator || coreValueCompare,
+      );
+    }
+    return this._cachedGroups;
   }
 
   group(id: GroupId<GT>): QueryResults<OT> {
@@ -514,6 +518,10 @@ export class Query<
       Array.from(newIdsSet),
       Array.from(SetUtils.subtract(existingGroups, newIdsSet)),
     ];
+  }
+
+  private invalidateCaches(): void {
+    this._cachedGroups = undefined;
   }
 
   private vertexChanged(key: string, pack: MutationPack): void {
@@ -701,6 +709,7 @@ export class Query<
     //   `Query ${this.name} changed. Count = ${this.count}, group count = ${this.groupCount}`,
     // );
     this._proxy = new Proxy(this, {});
+    this.invalidateCaches();
     this.emit('results-changed');
   }
 }
