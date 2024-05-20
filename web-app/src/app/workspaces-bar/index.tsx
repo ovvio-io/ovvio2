@@ -314,6 +314,12 @@ const useStyles = makeStyles(
     lastItem: {
       borderBottom: `1px solid #f5ecdc`,
     },
+    exportAndDownload: {
+      background: '#FFFBF5',
+    },
+    iconsInGroupByMenu: {
+      marginRight: styleguide.gridbase,
+    },
   }),
   'workspaces-bar_881015'
 );
@@ -446,8 +452,7 @@ export function CheckIcon() {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      xmlns="http://www.w3.org/2000/svg">
       <path
         opacity="0.6"
         d="M6.82617 10.739L11 5"
@@ -504,8 +509,7 @@ function WorkspaceToggleView({
           popupClassName={cn(styles.workSpaceMenu)}
           direction="out"
           position="right"
-          align="end"
-        >
+          align="end">
           <div>
             <div
               style={{
@@ -513,8 +517,7 @@ function WorkspaceToggleView({
                 alignItems: 'center',
                 backgroundColor: theme.secondary.s0,
                 padding: '0 4px 0 8px',
-              }}
-            >
+              }}>
               <IconGroup />
               <LabelSm className={styles.groupBy}>Group By:</LabelSm>
             </div>
@@ -523,8 +526,7 @@ function WorkspaceToggleView({
           <MenuItem
             onClick={() => {
               view.workspaceGrouping = 'Team';
-            }}
-          >
+            }}>
             {'Team'}
             {view.workspaceGrouping === 'Team' && <IconCheck />}
           </MenuItem>
@@ -533,22 +535,47 @@ function WorkspaceToggleView({
             className={styles.lastItem}
             onClick={() => {
               view.workspaceGrouping = 'Employee';
-            }}
-          >
+            }}>
             {'Employee'}
             {view.workspaceGrouping === 'Employee' && <IconCheck />}
           </MenuItem>
           <div style={{ marginTop: '8px' }} />
           <LineSeparator height={1} />
           <MenuItem
+            className={styles.lastItem}
             onClick={() => {
               view.workspaceGrouping = 'none';
             }}
-            icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
-          >
+            icon={(iconProps) => (
+              <IconUngroup
+                color="blue"
+                {...iconProps}
+                className={cn(styles.iconsInGroupByMenu)}
+              />
+            )}>
             {'Ungroup'}
             {view.workspaceGrouping === 'none' && <IconCheck />}
           </MenuItem>
+          <div style={{ marginTop: '8px' }} />
+          <LineSeparator height={1} />
+          <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
+            <img
+              key="ExportIcon"
+              src="/icons/design-system/Publish.svg"
+              className={cn(styles.iconsInGroupByMenu)}
+            />{' '}
+            {'Export timesheet'}
+          </MenuItem>
+          {view.selectedWorkspaces.size > 0 && (
+            <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
+              <img
+                key="DownloadIcon"
+                src="/icons/design-system/Download.svg"
+                className={cn(styles.iconsInGroupByMenu)}
+              />{' '}
+              {'Download selected'}
+            </MenuItem>
+          )}
         </Menu>
       </div>
       {!ofSettings && (
@@ -558,8 +585,7 @@ function WorkspaceToggleView({
             className={cn(
               styles.toggleViewButton,
               selectedRatio === 1 && styles.toggleViewButtonDisabled
-            )}
-          >
+            )}>
             Select All
           </TextSm>
           <TextSm
@@ -567,8 +593,7 @@ function WorkspaceToggleView({
             className={cn(
               styles.toggleViewButton,
               selectedRatio === 0 && styles.toggleViewButtonDisabled
-            )}
-          >
+            )}>
             Unselect All
           </TextSm>
         </div>
@@ -726,13 +751,11 @@ function WorkspaceListItem({
         !view.workspaceBarCollapsed && styles.listItemExpanded,
         isSelected && styles.listItemSelected
       )}
-      style={style}
-    >
+      style={style}>
       <div className={cn(styles.itemTab)} onClick={toggleSelected}>
         <div
           ref={textRef}
-          className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
-        >
+          className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}>
           {name}
         </div>
         <WorkspaceCheckbox toggled={isSelected} />
@@ -741,8 +764,7 @@ function WorkspaceListItem({
         <div
           className={cn(
             isSelected ? styles.loadingIndicatorContainer : styles.hidden
-          )}
-        >
+          )}>
           <IndeterminateProgressIndicator
             className={cn(styles.loadingIndicator)}
           />
@@ -769,8 +791,7 @@ function WorkspaceListItem({
               )}
               onClick={() =>
                 setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-              }
-            >
+              }>
               {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
             </Button>
           )}
@@ -779,14 +800,12 @@ function WorkspaceListItem({
               renderButton={renderButton}
               direction="out"
               position="right"
-              align="start"
-            >
+              align="start">
               {!isTemplate && (
                 <MenuItem
                   onClick={() =>
                     setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
-                  }
-                >
+                  }>
                   {groupId === 'hidden' ? (
                     <IconShow color={IconColor.Primary} />
                   ) : (
@@ -803,8 +822,7 @@ function WorkspaceListItem({
                     setWorkspaceState(
                       groupId === 'templates' ? 'none' : 'template'
                     )
-                  }
-                >
+                  }>
                   {groupId === 'templates' ? (
                     <IconTemplateUnset />
                   ) : (
@@ -908,8 +926,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
           className={cn(styles.expander)}
           disabled={!rows.length}
-          onClick={() => toggleExpanded(gid)}
-        >
+          onClick={() => toggleExpanded(gid)}>
           <div className={cn(styles.expanderText)}>
             {groupTitle}
             {selectedCount > 0 ? ` [${selectedCount}]` : ''}
@@ -970,8 +987,7 @@ export function ExpanderIcon({ className }: { className?: string }) {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      xmlns="http://www.w3.org/2000/svg">
       <path
         opacity="0.8"
         d="M10 8L6 4"
@@ -1127,8 +1143,7 @@ function WorkspaceBarInternal({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           style={{ ...style, width: isHovered ? maxWidth : DEFAULT_WIDTH }}
-          className={cn(styles.root, className)}
-        >
+          className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
             {ofSettings ? (
               <div></div>
