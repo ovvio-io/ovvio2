@@ -179,7 +179,7 @@ const useStyles = makeStyles(() => ({
     // flexShrink: '2',
     flexShrink: '1', //7.3.24
     flexBasis: 'auto',
-    width: 'calc(35% - 156px)',
+    width: 'calc(40% - 156px)',
     minWidth: '20%',
     minHeight: '20px',
     cursor: 'pointer',
@@ -307,7 +307,7 @@ const useStyles = makeStyles(() => ({
   },
   timeTracking: {
     // width: 'calc(10% - 156px)',
-    minWidth: '48px',
+    minWidth: '46px',
     basedOn: [layout.row],
     alignItems: 'center',
     padding: '0 16px',

@@ -26,7 +26,6 @@ const useStyles = makeStyles(() => ({
   row: {
     paddingLeft: '8px',
     alignItems: 'center',
-    width: '100%',
     height: '32px',
     minHeight: '32px',
     display: 'flex',
@@ -88,6 +87,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   const [timeSubtract, setTimeSubtract] = useState('00:00');
   const [enableSubtract, setEnableSubtract] = useState(false);
   const [addedTimeToday, setAddedTimeToday] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputAddRef = useRef<HTMLInputElement>(null);
   const inputSubtractRef = useRef<HTMLInputElement>(null);
   const pCard = usePartialVertex(card);
@@ -95,9 +95,11 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   const timeOptionRefs = useRef(
     timeOptions.map(() => React.createRef<HTMLDivElement>())
   );
+
   useEffect(() => {
     if (inputAddRef.current) {
       inputAddRef.current.focus();
+      setSelectedIndex(0);
     }
   }, []);
 
@@ -150,6 +152,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     setTimeAdd('00:00');
     setEnableSubtract(true);
     setAddedTimeToday((prev) => prev + minutesToAdd);
+    menuCtx.close();
   };
 
   const handleSubtractTimeClick = () => {
@@ -158,17 +161,18 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
       pCard.subtractTime(minutesToSubtract);
       setTimeSubtract('00:00');
       setAddedTimeToday((prev) => prev - minutesToSubtract);
+      menuCtx.close();
     } else {
       alert('You cannot subtract more time than you added today.');
     }
   };
   const formatTimeInput = (rawInput: string) => {
-    const numbers = rawInput.replace(/\D/g, ''); // Strip all non-digits
+    const numbers = rawInput.replace(/\D/g, '');
     let formatted = '';
     if (numbers.length > 0) {
-      formatted = numbers.substring(0, 2); // Take first two digits for hours
+      formatted = numbers.substring(0, 2);
       if (numbers.length > 2) {
-        formatted += ':' + numbers.substring(2, 4); // Add colon and next two digits for minutes
+        formatted += ':' + numbers.substring(2, 4);
       }
     }
 
@@ -182,7 +186,6 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     setTimeAdd(formattedInput);
     // Ensure the cursor position is correct after state update
     window.requestAnimationFrame(() => {
-      console.log(selectionStart, { selectionStart });
       if (selectionStart && selectionStart > 2) {
         ++selectionStart;
       }
@@ -204,99 +207,48 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     });
   };
 
-  // const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-  //   if (['Enter'].includes(event.key)) {
-  //     event.preventDefault(); // Prevent default form submission behavior
-  //     if (event.currentTarget === inputAddRef.current) {
-  //       handleAddTimeClick();
-  //     } else if (event.currentTarget === inputSubtractRef.current) {
-  //       handleSubtractTimeClick();
-  //     }
-  //   } else if (
-  //     ![
-  //       'Backspace',
-  //       'ArrowLeft',
-  //       'ArrowRight',
-  //       'Tab',
-  //       'Delete',
-  //       'Escape',
-  //     ].includes(event.key) &&
-  //     !(event.key >= '0' && event.key <= '9')
-  //   ) {
-  //     event.preventDefault(); // Prevent typing non-numeric characters
-  //   }
-  // };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
     const { key } = event;
-    if (['Enter'].includes(key)) {
-      event.preventDefault(); // Prevent default form submission behavior
-      if (event.currentTarget === inputAddRef.current) {
+    const elements = [
+      inputAddRef.current,
+      ...timeOptionRefs.current.map((ref) => ref.current),
+      enableSubtract ? inputSubtractRef.current : null,
+    ].filter(Boolean);
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (selectedIndex === 0) {
         handleAddTimeClick();
-      } else if (event.currentTarget === inputSubtractRef.current) {
+      } else if (enableSubtract && selectedIndex === elements.length - 1) {
         handleSubtractTimeClick();
+      } else {
+        pCard.addTime(timeToMinutes(timeOptions[selectedIndex - 1]));
       }
     } else if (key === 'ArrowDown' || key === 'ArrowUp') {
       event.preventDefault();
-      let currentIndex = -1;
-      const elements = [
-        inputAddRef.current,
-        ...timeOptionRefs.current.map((ref) => ref.current),
-        inputSubtractRef.current,
-      ];
-      elements.forEach((element, index) => {
-        if (document.activeElement === element) {
-          currentIndex = index;
-        }
-      });
-      if (key === 'ArrowDown' && currentIndex < elements.length - 1) {
-        elements[currentIndex + 1]?.focus();
-      } else if (key === 'ArrowUp' && currentIndex > 0) {
-        elements[currentIndex - 1]?.focus();
+      let newIndex = selectedIndex;
+      if (key === 'ArrowDown' && selectedIndex < elements.length - 1) {
+        newIndex = selectedIndex + 1;
+      } else if (key === 'ArrowUp' && selectedIndex > 0) {
+        newIndex = selectedIndex - 1;
       }
+
+      setSelectedIndex(newIndex);
+    } else if (key === 'Escape') {
+      menuCtx.close();
     } else if (
-      ![
-        'Backspace',
-        'ArrowLeft',
-        'ArrowRight',
-        'Tab',
-        'Delete',
-        'Escape',
-      ].includes(event.key) &&
+      !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'].includes(
+        event.key
+      ) &&
       !(event.key >= '0' && event.key <= '9')
     ) {
-      event.preventDefault(); // Prevent typing non-numeric characters
-    }
-  };
-  const handleTimeOptionKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-    time: string
-  ) => {
-    if (event.key === 'Enter') {
       event.preventDefault();
-      pCard.addTime(timeToMinutes(time)); // Trigger add time with the specific time option
     }
   };
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'ArrowDown':
-      case 'Escape':
-      case 'Enter':
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      default:
-        return;
-    }
-  };
-  // TODO:  was in the middle of fixing the focus on the input field and the functionallity of the arrow down and arrowUp.
-  // i need to use something like setSelectedIndex((x) => (x + 1) % items.length) .
-  // also consider delete the handleKeyDown(get the prev version - its simpler) and remove handleTimeOptionKeyDown ().
 
   return (
     <div ref={componentRef} className={cn(styles.tableContainer)}>
-      <div className={cn(styles.tableContent)} onKeyDown={onKeyDown}>
+      <div className={cn(styles.tableContent)}>
         <div className={cn(styles.inputRow, styles.hoverableRow)}>
           <div className={cn(styles.iconContainer)}>
             <img
@@ -321,10 +273,15 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
           <div
             key={index}
             ref={timeOptionRefs.current[index]}
-            className={cn(styles.row, styles.hoverableRow)}
-            tabIndex={0} // Make div focusable
+            className={cn(
+              styles.row,
+              styles.hoverableRow,
+              selectedIndex === index + 1 && styles.selectedItem
+            )}
+            tabIndex={0}
             onClick={() => pCard.addTime(timeToMinutes(time))}
-            onKeyDown={(e) => handleTimeOptionKeyDown(e, time)}>
+            onKeyDown={handleKeyDown}
+            onMouseEnter={() => setSelectedIndex(index + 1)}>
             {time}
           </div>
         ))}
@@ -349,6 +306,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
                 onChange={handleSubtractTimeChange}
                 onKeyDown={handleKeyDown}
                 placeholder="00:00"
+                onFocus={handleFocus}
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
