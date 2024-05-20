@@ -43,7 +43,7 @@ export interface TimeDisplayProps {
   card?: VertexManager<Note>;
 }
 
-export function TimeDisplay({ card, hover }: TimeDisplayProps) {
+export function TimeDisplay({ card }: TimeDisplayProps) {
   const styles = useStyles();
   const pCard = usePartialVertex(card);
   const timeInMinutes = pCard?.totalTimeSpent;

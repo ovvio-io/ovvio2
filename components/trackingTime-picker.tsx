@@ -1,3 +1,4 @@
+import * as SetUtils from '../base/set.ts';
 import React, { useEffect, useRef, useState } from 'react';
 import { cn, makeStyles } from '../styles/css-objects/index.ts';
 import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
@@ -85,6 +86,8 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   const componentRef = useRef<HTMLDivElement>(null);
   const [timeAdd, setTimeAdd] = useState('00:00');
   const [timeSubtract, setTimeSubtract] = useState('00:00');
+  const [enableSubtract, setEnableSubtract] = useState(false);
+  const [addedTimeToday, setAddedTimeToday] = useState(0);
   const inputAddRef = useRef<HTMLInputElement>(null);
   const inputSubtractRef = useRef<HTMLInputElement>(null);
   const pCard = usePartialVertex(card);
@@ -113,24 +116,55 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     };
   }, [menuCtx]);
 
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const currentUser = pCard.graph.rootKey;
+    const filteredEntries = SetUtils.filter(pCard.timeTrack, (entry) => {
+      return (
+        entry.creationDate.toDateString() === today &&
+        entry.user === currentUser
+      );
+    });
+
+    const totalTimeToday = Array.from(filteredEntries).reduce(
+      (sum, entry) => sum + entry.time,
+      0
+    );
+
+    if (totalTimeToday > 0) {
+      setEnableSubtract(true);
+      setAddedTimeToday(totalTimeToday);
+    } else {
+      setEnableSubtract(false);
+      setAddedTimeToday(0);
+    }
+  }, [pCard.timeTrack]);
+
   const handleFocus = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.setSelectionRange(0, 0);
   };
 
   const handleAddTimeClick = () => {
-    pCard.addTime(timeToMinutes(timeAdd));
+    const minutesToAdd = timeToMinutes(timeAdd);
+    pCard.addTime(minutesToAdd);
     setTimeAdd('00:00');
+    setEnableSubtract(true);
+    setAddedTimeToday((prev) => prev + minutesToAdd);
   };
 
   const handleSubtractTimeClick = () => {
-    pCard.subtractTime(timeToMinutes(timeSubtract));
-    setTimeSubtract('00:00');
+    const minutesToSubtract = timeToMinutes(timeSubtract);
+    if (minutesToSubtract <= addedTimeToday) {
+      pCard.subtractTime(minutesToSubtract);
+      setTimeSubtract('00:00');
+      setAddedTimeToday((prev) => prev - minutesToSubtract);
+    } else {
+      alert('You cannot subtract more time than you added today.');
+    }
   };
-
   const formatTimeInput = (rawInput: string) => {
     const numbers = rawInput.replace(/\D/g, ''); // Strip all non-digits
     let formatted = '';
-
     if (numbers.length > 0) {
       formatted = numbers.substring(0, 2); // Take first two digits for hours
       if (numbers.length > 2) {
@@ -294,28 +328,32 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
             {time}
           </div>
         ))}
-        <div style={{ height: '8px', display: 'list-item' }}></div>
-        <LineSeparator />
-        <div className={cn(styles.inputRow, styles.hoverableRow)}>
-          {' '}
-          <div className={cn(styles.iconContainer)}>
-            <img
-              className={cn(styles.minusIcon)}
-              src="/icons/design-system/timeTracking/Minus-big.svg"
-              onClick={handleSubtractTimeClick}
-            />
-          </div>
-          <input
-            ref={inputSubtractRef}
-            type="text"
-            className={styles.InputTextStyle}
-            value={timeSubtract}
-            onChange={handleSubtractTimeChange}
-            onKeyDown={handleKeyDown}
-            placeholder="00:00"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+        {enableSubtract && (
+          <>
+            <div style={{ height: '8px', display: 'list-item' }}></div>
+            <LineSeparator />
+            <div className={cn(styles.inputRow, styles.hoverableRow)}>
+              {' '}
+              <div className={cn(styles.iconContainer)}>
+                <img
+                  className={cn(styles.minusIcon)}
+                  src="/icons/design-system/timeTracking/Minus-big.svg"
+                  onClick={handleSubtractTimeClick}
+                />
+              </div>
+              <input
+                ref={inputSubtractRef}
+                type="text"
+                className={styles.InputTextStyle}
+                value={timeSubtract}
+                onChange={handleSubtractTimeChange}
+                onKeyDown={handleKeyDown}
+                placeholder="00:00"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
