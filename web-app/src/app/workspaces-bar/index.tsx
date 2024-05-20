@@ -67,6 +67,7 @@ import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 import { LineSeparator } from '../../../../styles/components/menu.tsx';
 import { useMaxWidth } from '../index.tsx';
+import { prettyJSON } from '../../../../base/common.ts';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -314,6 +315,13 @@ const useStyles = makeStyles(
     lastItem: {
       borderBottom: `1px solid #f5ecdc`,
     },
+    groupbyHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      backgroundColor: theme.secondary.s0,
+      padding: '0 4px 0 10px',
+      borderBottom: `2px solid $ ${theme.mono.m6}`,
+    },
     exportAndDownload: {
       background: '#FFFBF5',
     },
@@ -510,17 +518,9 @@ function WorkspaceToggleView({
           direction="out"
           position="right"
           align="end">
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: theme.secondary.s0,
-                padding: '0 4px 0 8px',
-              }}>
-              <IconGroup />
-              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-            </div>
+          <div className={cn(styles.groupbyHeader)}>
+            <IconGroup />
+            <LabelSm className={styles.groupBy}>Group By:</LabelSm>
           </div>
 
           <MenuItem
@@ -556,25 +556,20 @@ function WorkspaceToggleView({
             {'Ungroup'}
             {view.workspaceGrouping === 'none' && <IconCheck />}
           </MenuItem>
-          <div style={{ marginTop: '8px' }} />
-          <LineSeparator height={1} />
-          <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
-            <img
-              key="ExportIcon"
-              src="/icons/design-system/Publish.svg"
-              className={cn(styles.iconsInGroupByMenu)}
-            />{' '}
-            {'Export timesheet'}
-          </MenuItem>
           {view.selectedWorkspaces.size > 0 && (
-            <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
-              <img
-                key="DownloadIcon"
-                src="/icons/design-system/Download.svg"
-                className={cn(styles.iconsInGroupByMenu)}
-              />{' '}
-              {'Download selected'}
-            </MenuItem>
+            <>
+              <div style={{ marginTop: '8px' }} />
+              <LineSeparator height={1} />
+              <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
+                <img
+                  key="ExportIcon"
+                  src="/icons/design-system/Publish.svg"
+                  className={cn(styles.iconsInGroupByMenu)}
+                />{' '}
+                {'Export timesheet'}
+              </MenuItem>
+              <ExportButton />
+            </>
           )}
         </Menu>
       </div>
@@ -1211,4 +1206,52 @@ export function WorkspacesBar(props: WorkspacesBarProps) {
     return <MobileBar {...props} />;
   }
   return <DesktopBar {...props} />;
+}
+
+function useExportSelectedWorkspaces() {
+  const graph = useGraphManager();
+  const view = usePartialGlobalView('selectedWorkspaces');
+
+  const exportSelectedWorkspaces = () => {
+    for (const ws of view.selectedWorkspaces as Set<Workspace>) {
+      exportWorkspace(graph, ws.key);
+    }
+  };
+
+  return { exportSelectedWorkspaces };
+}
+
+const ExportButton: React.FC = () => {
+  const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
+  const styles = useStyles();
+  return (
+    <MenuItem
+      className={styles.exportAndDownload}
+      onClick={exportSelectedWorkspaces}>
+      <img
+        key="DownloadIcon"
+        src="/icons/design-system/Download.svg"
+        className={cn(styles.iconsInGroupByMenu)}
+      />{' '}
+      {'Download selected'}
+    </MenuItem>
+  );
+};
+
+export default ExportButton;
+
+function exportWorkspace(graph: GraphManager, wsId: string): void {
+  const jsonString = prettyJSON(graph.exportSubGraph(wsId, 1));
+  const url = window.URL.createObjectURL(
+    new Blob([jsonString], { type: 'text/json' })
+  );
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  // the filename you want
+  a.download = wsId + '.json';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
 }
