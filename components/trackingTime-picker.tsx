@@ -219,10 +219,14 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
       event.preventDefault();
       if (selectedIndex === 0) {
         handleAddTimeClick();
-      } else if (enableSubtract && selectedIndex === elements.length - 1) {
+      } else if (
+        enableSubtract &&
+        event.currentTarget === inputSubtractRef.current
+      ) {
         handleSubtractTimeClick();
       } else {
         pCard.addTime(timeToMinutes(timeOptions[selectedIndex - 1]));
+        menuCtx.close();
       }
     } else if (key === 'ArrowDown' || key === 'ArrowUp') {
       event.preventDefault();
