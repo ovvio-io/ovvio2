@@ -306,13 +306,13 @@ const useStyles = makeStyles(() => ({
     backgroundColor: '#FBEAC8',
   },
   timeTracking: {
-    width: 'calc(10% - 156px)',
+    // width: 'calc(10% - 156px)',
+    minWidth: '48px',
     basedOn: [layout.row],
-    flexGrow: '1',
-    flexShrink: '1',
-    flexBasis: 'auto',
     alignItems: 'center',
-    padding: '0 4px',
+    padding: '0 16px',
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
 }));
 
@@ -791,7 +791,6 @@ export function TimeTrackingSlot({
   return (
     <div className={styles.timeTracking}>
       <TimeTrackingContainer card={note} plus={true} hover={isMouseOver} />
-      <div className={cn(layout.flexSpacer)} />
     </div>
   );
 }

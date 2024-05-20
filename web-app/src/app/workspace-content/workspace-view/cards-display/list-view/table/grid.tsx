@@ -14,6 +14,7 @@ import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts
 import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+import { minutesToHHMM } from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -175,11 +176,13 @@ function SectionTitle({
   onCreateCard,
   isHovered,
   groupBy,
+  totalTimeSpent,
 }: SectionTableProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
   const [isSticky, setIsSticky] = useState(false);
+  const formattedTime = minutesToHHMM(totalTimeSpent);
 
   useEffect(() => {
     if (!sentinel) {
@@ -230,7 +233,7 @@ function SectionTitle({
               styles.timeTrack,
               isHovered && styles.timeTrackHover
             )}>
-            00:00
+            {formattedTime}
             <img
               key="IconTimeTrackHover"
               src="/icons/design-system/timeTracking/hover.svg"
@@ -305,6 +308,7 @@ export type SectionTableProps = React.PropsWithChildren<{
   allUnpinned?: QueryResults<Note> | undefined;
   groupString?: string;
   expandKey: string;
+  totalTimeSpent: number;
 }>;
 
 export function SectionTable({
@@ -313,6 +317,7 @@ export function SectionTable({
   header,
   allUnpinned,
   expandKey,
+  totalTimeSpent,
 }: SectionTableProps) {
   const styles = useStyles();
   const [isSectionHovered, setIsSectionHovered] = useState(false);
@@ -335,6 +340,7 @@ export function SectionTable({
         isHovered={isSectionHovered}
         onCreateCard={() => {}}
         expandKey={''}
+        totalTimeSpent={totalTimeSpent}
       />
       <div>{children}</div>
       <ShowMoreButton

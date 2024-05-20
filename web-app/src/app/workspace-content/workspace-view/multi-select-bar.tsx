@@ -133,8 +133,7 @@ export const IconVector: React.FC<IconVectorProps> = ({ color }) => {
       width="58"
       height="2"
       viewBox="0 0 58 2"
-      fill="none"
-    >
+      fill="none">
       <path
         d="M1 1H57"
         stroke={color === 'done' ? '#FFF' : '#ABD4EE'}
@@ -167,8 +166,7 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
       width="24"
       height="24"
       viewBox="0 0 24 24"
-      fill="none"
-    >
+      fill="none">
       <circle
         cx="12"
         cy="12"
@@ -184,8 +182,7 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
         fill={color === 'done' ? '#FFF' : '#ABD4EE'}
         strokeWidth="0.5px"
         dy="0.38em"
-        style={textStyles}
-      >
+        style={textStyles}>
         {stepNumber}
       </text>
     </svg>
@@ -231,26 +228,39 @@ export function RemoveMultiButton<T>({
     //TODO: ask ofri if its ok for undo or do we need to change isDeleted = -1 back for each card.
     return new Set(selectedCards);
   };
+
+  const undoDeleteCards = (
+    previousAssignees: Map<VertexManager<Note>, Set<User>>
+  ) => {
+    selectedCards.forEach((card) => {
+      const assignees = previousAssignees.get(card);
+      if (assignees) {
+        card.vertex.assignees = assignees;
+      }
+    });
+  };
+
   const itemText = isTask
     ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
   const handleDeleteClick = () => {
     setPendingAction(true);
+    const prevState = captureSelectedCardsState();
+
+    displayUndoToast(
+      displayToast,
+      `Deleted ${selectedCards.size} ${itemText}.`,
+      () => setSelectedCards!(selectedCards)
+    );
 
     setTimeout(() => {
-      const prevState = captureSelectedCardsState();
       selectedCards.forEach((cardM) => {
         cardM.vertex.isDeleted = 1;
       });
 
-      displayUndoToast(
-        displayToast,
-        `Deleted ${selectedCards.size} ${itemText}.`,
-        () => setSelectedCards!(prevState)
-      );
+      // setSelectedCards && setSelectedCards(new Set());
       setPendingAction(false);
-      setSelectedCards && setSelectedCards(new Set());
     }, 2000);
   };
 
@@ -268,8 +278,7 @@ export function RemoveMultiButton<T>({
       direction="out"
       position="bottom"
       align="end"
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <ConfirmationDialog
         nCards={nCards}
         approveButtonText={'Delete'}
@@ -378,8 +387,7 @@ export function AssignMultiButton<T>({
       align="end"
       direction="out"
       className={className}
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <MemberPicker
         users={intersectionUsersArray
           .filter((user) => user.manager)
@@ -537,8 +545,7 @@ export function AddTagMultiButton<T>({
       align="end"
       direction="out"
       className={className}
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <TagPicker
         tags={intersectionTagsArray}
         onRowSelect={onRowSelect}

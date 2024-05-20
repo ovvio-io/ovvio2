@@ -192,6 +192,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   //     event.preventDefault(); // Prevent typing non-numeric characters
   //   }
   // };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const { key } = event;
     if (['Enter'].includes(key)) {
@@ -262,28 +263,26 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   return (
     <div ref={componentRef} className={cn(styles.tableContainer)}>
       <div className={cn(styles.tableContent)} onKeyDown={onKeyDown}>
-        <>
-          <div className={cn(styles.inputRow, styles.hoverableRow)}>
-            <div className={cn(styles.iconContainer)}>
-              <img
-                className={cn(styles.minusIcon)}
-                src="/icons/design-system/timeTracking/Plus-big.svg"
-                onClick={handleAddTimeClick}
-              />
-            </div>
-            <input
-              ref={inputAddRef}
-              type="text"
-              className={styles.InputTextStyle}
-              value={timeAdd}
-              onChange={handleAddTimeChange}
-              onKeyDown={handleKeyDown}
-              placeholder="00:00"
-              onFocus={handleFocus}
-              onClick={(e) => e.stopPropagation()}
+        <div className={cn(styles.inputRow, styles.hoverableRow)}>
+          <div className={cn(styles.iconContainer)}>
+            <img
+              className={cn(styles.minusIcon)}
+              src="/icons/design-system/timeTracking/Plus-big.svg"
+              onClick={handleAddTimeClick}
             />
           </div>
-        </>
+          <input
+            ref={inputAddRef}
+            type="text"
+            className={styles.InputTextStyle}
+            value={timeAdd}
+            onChange={handleAddTimeChange}
+            onKeyDown={handleKeyDown}
+            placeholder="00:00"
+            onFocus={handleFocus}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
         {timeOptions.map((time, index) => (
           <div
             key={index}
@@ -295,30 +294,28 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
             {time}
           </div>
         ))}
-        <>
-          <div style={{ height: '8px', display: 'list-item' }}></div>
-          <LineSeparator />
-          <div className={cn(styles.inputRow, styles.hoverableRow)}>
-            {' '}
-            <div className={cn(styles.iconContainer)}>
-              <img
-                className={cn(styles.minusIcon)}
-                src="/icons/design-system/timeTracking/Minus-big.svg"
-                onClick={handleSubtractTimeClick}
-              />
-            </div>
-            <input
-              ref={inputSubtractRef}
-              type="text"
-              className={styles.InputTextStyle}
-              value={timeSubtract}
-              onChange={handleSubtractTimeChange}
-              onKeyDown={handleKeyDown}
-              placeholder="00:00"
-              onClick={(e) => e.stopPropagation()}
+        <div style={{ height: '8px', display: 'list-item' }}></div>
+        <LineSeparator />
+        <div className={cn(styles.inputRow, styles.hoverableRow)}>
+          {' '}
+          <div className={cn(styles.iconContainer)}>
+            <img
+              className={cn(styles.minusIcon)}
+              src="/icons/design-system/timeTracking/Minus-big.svg"
+              onClick={handleSubtractTimeClick}
             />
           </div>
-        </>
+          <input
+            ref={inputSubtractRef}
+            type="text"
+            className={styles.InputTextStyle}
+            value={timeSubtract}
+            onChange={handleSubtractTimeChange}
+            onKeyDown={handleKeyDown}
+            placeholder="00:00"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       </div>
     </div>
   );

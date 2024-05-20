@@ -5,7 +5,6 @@ import { styleguide } from '../../../../../styles/styleguide.ts';
 import { Button } from '../../../../../styles/components/buttons.tsx';
 import Menu from '../../../../../styles/components/menu.tsx';
 import TimeTrackPicker from '../../../../../components/trackingTime-picker.tsx';
-import { Tag } from '../../../../../cfds/client/graph/vertices/tag.ts';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
@@ -31,7 +30,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-function minutesToHHMM(minutes: number): string {
+export function minutesToHHMM(minutes: number): string {
   let hours = Math.floor(minutes / 60);
   let mins = Math.abs(minutes % 60);
   return `${hours.toString().padStart(2, '0')}:${mins

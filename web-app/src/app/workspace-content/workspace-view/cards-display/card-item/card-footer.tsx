@@ -29,6 +29,7 @@ const useStyles = makeStyles((theme) => ({
   },
   footerItem: {
     display: 'flex',
+    width: '89px',
     height: FOOTER_HEIGHT,
     paddingLeft: styleguide.gridbase * 0.5,
     gap: styleguide.gridbase * 0.5,

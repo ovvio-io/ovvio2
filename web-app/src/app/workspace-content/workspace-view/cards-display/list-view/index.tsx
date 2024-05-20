@@ -29,6 +29,8 @@ import { WorkspaceIndicatorCard } from '../kanban-view/index.tsx';
 import { User } from '../../../../../../../cfds/client/graph/vertices/user.ts';
 import { useDisable } from '../../../../index.tsx';
 import { usePendingAction } from '../index.tsx';
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
+import { Vertex } from '../../../../../../../cfds/client/graph/vertex.ts';
 
 const useStyles = makeStyles((theme) => ({
   item: {
@@ -98,7 +100,7 @@ export function ListViewNew({
     'noteType',
     'expandedGroupIds',
     'notesExpandOverride',
-    'notesExpandBase',
+    'notesExpandBase'
   );
   const groupBy = view.groupBy;
   const expandedSection = view.expandedGroupIds;
@@ -112,7 +114,7 @@ export function ListViewNew({
     (note: VertexManager<Note>) => {
       docRouter.goTo(note);
     },
-    [docRouter],
+    [docRouter]
   );
 
   const groups = useMemo(() => {
@@ -124,11 +126,26 @@ export function ListViewNew({
       SetUtils.update(s, unpinnedQuery.groups());
     }
     return Array.from(s).sort(
-      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
     );
   }, [pinnedQuery, unpinnedQuery]);
 
-  let groupKey = '';
+  const calculateGroupTotalTimeSpent = (group: CoreValue) => {
+    let totalTime = 0;
+
+    const addTimesFromQuery = (query: Query<Note, Note, CoreValue>) => {
+      query.group(group).forEach((noteMgr: VertexManager<Note>) => {
+        const note = noteMgr.getVertexProxy();
+        totalTime += note.totalTimeSpent || 0;
+      });
+    };
+
+    addTimesFromQuery(pinnedQuery!);
+    addTimesFromQuery(unpinnedQuery!);
+
+    return totalTime;
+  };
+
   const getGroupStringKey = (group: CoreValue, index: number): string => {
     return typeof group === 'string'
       ? group + { index }
@@ -136,7 +153,6 @@ export function ListViewNew({
       ? group.getVertexProxy().name
       : 'Untitled';
   };
-
   return (
     <Scroller>
       {(ref) => (
@@ -145,25 +161,53 @@ export function ListViewNew({
           className={cn(
             styles.listRoot,
             isDisabled && styles.multiSelectActive,
-            className,
-          )}
-        >
-          {groups.slice(0, limit).map(
-            (group, index) => (
-              (groupKey = getGroupStringKey(group, index)),
-              (
-                <SectionTable
-                  header={headerForGroupId(group)}
-                  groupBy={groupBy}
-                  key={groupKey}
-                  allUnpinned={unpinnedQuery?.group(group)}
-                  expandKey={groupKey}
-                >
-                  {pinnedQuery?.group(group).map((noteMgr) => (
+            className
+          )}>
+          {groups.slice(0, limit).map((group, index) => {
+            const groupKey = getGroupStringKey(group, index);
+            const groupTotalTimeSpent = calculateGroupTotalTimeSpent(group);
+            return (
+              <SectionTable
+                header={headerForGroupId(group)}
+                groupBy={groupBy}
+                key={groupKey}
+                allUnpinned={unpinnedQuery?.group(group)}
+                expandKey={groupKey}
+                totalTimeSpent={groupTotalTimeSpent}>
+                {pinnedQuery?.group(group).map((noteMgr) => (
+                  <ItemRow
+                    index={index}
+                    note={noteMgr}
+                    key={`list/pinned/row/${noteMgr.key}`}
+                    onClick={onNoteSelected}
+                    groupBy={groupBy}
+                    nestingLevel={0}
+                    handleSelectClick={handleSelectClick}
+                    isSelected={selectedCards.has(noteMgr)}
+                    multiIsActive={selectedCards.size > 0}
+                    isInAction={pendingAction}
+                  />
+                ))}
+
+                {pinnedQuery &&
+                pinnedQuery.group(group).length > 0 &&
+                unpinnedQuery &&
+                unpinnedQuery.group(group).length > 0 ? (
+                  <div style={{ height: '8px' }}></div>
+                ) : undefined}
+
+                {unpinnedQuery
+                  ?.group(group)
+                  .slice(
+                    0,
+                    expandedSection.has(groupKey)
+                      ? 100
+                      : Math.max(3 - (pinnedQuery?.group(group).length || 0), 0)
+                  )
+                  .map((noteMgr) => (
                     <ItemRow
-                      index={index}
                       note={noteMgr}
-                      key={`list/pinned/row/${noteMgr.key}`}
+                      key={`list/unpinned/row/${noteMgr.key}`}
                       onClick={onNoteSelected}
                       groupBy={groupBy}
                       nestingLevel={0}
@@ -173,41 +217,9 @@ export function ListViewNew({
                       isInAction={pendingAction}
                     />
                   ))}
-
-                  {pinnedQuery &&
-                  pinnedQuery.group(group).length > 0 &&
-                  unpinnedQuery &&
-                  unpinnedQuery.group(group).length > 0 ? (
-                    <div style={{ height: '8px' }}></div>
-                  ) : undefined}
-                  {unpinnedQuery
-                    ?.group(group)
-                    .slice(
-                      0,
-                      expandedSection.has(groupKey)
-                        ? 100
-                        : Math.max(
-                            3 - (pinnedQuery?.group(group).length || 0),
-                            0,
-                          ),
-                    )
-                    .map((noteMgr) => (
-                      <ItemRow
-                        note={noteMgr}
-                        key={`list/unpinned/row/${noteMgr.key}`}
-                        onClick={onNoteSelected}
-                        groupBy={groupBy}
-                        nestingLevel={0}
-                        handleSelectClick={handleSelectClick}
-                        isSelected={selectedCards.has(noteMgr)}
-                        multiIsActive={selectedCards.size > 0}
-                        isInAction={pendingAction}
-                      />
-                    ))}
-                </SectionTable>
-              )
-            ),
-          )}
+              </SectionTable>
+            );
+          })}
           <InfiniteVerticalScroll
             limit={limit}
             setLimit={setLimit}
