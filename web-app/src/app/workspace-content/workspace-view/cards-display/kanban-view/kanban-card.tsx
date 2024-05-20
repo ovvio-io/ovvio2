@@ -442,13 +442,10 @@ function TimeTrackingCard({
   isMouseOver: boolean;
 }) {
   const styles = useStyles();
-  const pNote = usePartialVertex(note, ['type', 'workspace', 'titlePlaintext']);
-  const vNote = useVertex(note);
-  const isTask = pNote.type === NoteType.Task;
 
   return (
     <div className={styles.timeTracking}>
-      <TimeTrackingContainer plus={true} hover={isMouseOver} time={''} />
+      <TimeTrackingContainer card={note} plus={true} hover={isMouseOver} />
     </div>
   );
 }

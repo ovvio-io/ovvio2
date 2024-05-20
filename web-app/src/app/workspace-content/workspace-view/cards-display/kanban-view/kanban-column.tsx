@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react'
-import Layer from '../../../../../../../styles/components/layer.tsx'
-import { H4 } from '../../../../../../../styles/components/texts.tsx'
+import React, { useState, useEffect } from 'react';
+import Layer from '../../../../../../../styles/components/layer.tsx';
+import { H4 } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
   cn,
-} from '../../../../../../../styles/css-objects/index.ts'
-import { layout } from '../../../../../../../styles/layout.ts'
-import { styleguide } from '../../../../../../../styles/styleguide.ts'
-import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx'
-import { lightColorWheel } from '../../../../../../../styles/theme.tsx'
-import { Button } from '../../../../../../../styles/components/buttons.tsx'
+} from '../../../../../../../styles/css-objects/index.ts';
+import { layout } from '../../../../../../../styles/layout.ts';
+import { styleguide } from '../../../../../../../styles/styleguide.ts';
+import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
+import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import { minutesToHHMM } from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -81,13 +82,14 @@ const useStyles = makeStyles((theme) => ({
   timeTrackHover: {
     opacity: '100%',
   },
-}))
+}));
 
 export interface KanbanColumnProps {
-  groupBy: string
-  header: React.ReactNode
-  isColumnHovered?: boolean
-  onCreateCard?: () => void
+  groupBy: string;
+  header: React.ReactNode;
+  isColumnHovered?: boolean;
+  onCreateCard?: () => void;
+  totalTimeSpent: number;
 }
 
 function ColumnTitle({
@@ -95,49 +97,50 @@ function ColumnTitle({
   onCreateCard,
   groupBy,
   isColumnHovered,
+  totalTimeSpent,
 }: KanbanColumnProps) {
-  const styles = useStyles()
-  const [sentinel, setSentinel] = useState<HTMLDivElement>()
-  const scrollParent = useScrollParent()
-  const [isSticky, setIsSticky] = useState(false)
+  const styles = useStyles();
+  const [sentinel, setSentinel] = useState<HTMLDivElement>();
+  const scrollParent = useScrollParent();
+  const [isSticky, setIsSticky] = useState(false);
+  const formattedTime = minutesToHHMM(totalTimeSpent);
 
   useEffect(() => {
     if (!sentinel) {
-      return
+      return;
     }
 
     const observer = new IntersectionObserver(
       (records) => {
         for (const record of records) {
-          const targetInfo = record.boundingClientRect
-          const rootBoundsInfo = record.rootBounds
+          const targetInfo = record.boundingClientRect;
+          const rootBoundsInfo = record.rootBounds;
           if (targetInfo.bottom < rootBoundsInfo!.top) {
-            setIsSticky(true)
+            setIsSticky(true);
           }
 
           if (
             targetInfo.bottom > rootBoundsInfo!.top &&
             targetInfo.bottom < rootBoundsInfo!.bottom
           ) {
-            setIsSticky(false)
+            setIsSticky(false);
           }
         }
       },
       { threshold: [0], root: scrollParent }
-    )
-    observer.observe(sentinel)
+    );
+    observer.observe(sentinel);
     return () => {
-      observer.disconnect()
-    }
-  }, [sentinel, scrollParent])
+      observer.disconnect();
+    };
+  }, [sentinel, scrollParent]);
 
   return (
     <Layer>
       {(style) => (
         <div
           className={cn(styles.columnTitle, isSticky && styles.stickyShadow)}
-          style={style}
-        >
+          style={style}>
           <div className={cn(styles.columnHeader)}>
             <H4 className={cn(groupBy !== 'workspace' && styles.TextTitle)}>
               {header}
@@ -148,9 +151,8 @@ function ColumnTitle({
                 className={cn(
                   styles.timeTrack,
                   isColumnHovered && styles.timeTrackHover
-                )}
-              >
-                00:00
+                )}>
+                {formattedTime}
                 <img
                   key="IconTimeTrackHover"
                   src="/icons/design-system/timeTracking/hover.svg"
@@ -165,35 +167,36 @@ function ColumnTitle({
         </div>
       )}
     </Layer>
-  )
+  );
 }
 
 export function KanbanColumn({
   groupBy,
   children,
   header,
+  totalTimeSpent,
 }: React.PropsWithChildren<KanbanColumnProps>) {
-  const styles = useStyles()
-  const [isColumnHovered, setIsColumnHovered] = useState(false)
+  const styles = useStyles();
+  const [isColumnHovered, setIsColumnHovered] = useState(false);
   const handleMouseEnter = () => {
-    setIsColumnHovered(true)
-  }
+    setIsColumnHovered(true);
+  };
   const handleMouseLeave = () => {
-    setIsColumnHovered(false)
-  }
+    setIsColumnHovered(false);
+  };
   return (
     <div
       className={cn(styles.column)}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+      onMouseLeave={handleMouseLeave}>
       <ColumnTitle
         header={header}
         groupBy={groupBy}
         isColumnHovered={isColumnHovered}
         onCreateCard={() => {}}
+        totalTimeSpent={totalTimeSpent}
       />
       <div>{children}</div>
     </div>
-  )
+  );
 }
