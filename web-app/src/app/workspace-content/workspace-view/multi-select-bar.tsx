@@ -225,43 +225,36 @@ export function RemoveMultiButton<T>({
   const { pendingAction, setPendingAction } = usePendingAction();
 
   const captureSelectedCardsState = () => {
-    //TODO: ask ofri if its ok for undo or do we need to change isDeleted = -1 back for each card.
     return new Set(selectedCards);
   };
-
-  const undoDeleteCards = (
-    previousAssignees: Map<VertexManager<Note>, Set<User>>
-  ) => {
-    selectedCards.forEach((card) => {
-      const assignees = previousAssignees.get(card);
-      if (assignees) {
-        card.vertex.assignees = assignees;
-      }
+  const undoDeleteCards = (prevSelected: Set<VertexManager<Note>>) => {
+    selectedCards.forEach((cardM) => {
+      cardM.vertex.isDeleted = 0;
     });
+    setSelectedCards!(prevSelected);
   };
 
   const itemText = isTask
     ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
+  //TODO: i have problem in the undo toast - when i set a state (setSelectedCards!(new Set());) in the handleDeleteClick the toaster doest show off. need to be fixed.
+
   const handleDeleteClick = () => {
     setPendingAction(true);
-    const prevState = captureSelectedCardsState();
-
-    displayUndoToast(
-      displayToast,
-      `Deleted ${selectedCards.size} ${itemText}.`,
-      () => setSelectedCards!(selectedCards)
-    );
+    const prevSelected: Set<VertexManager<Note>> = captureSelectedCardsState();
 
     setTimeout(() => {
       selectedCards.forEach((cardM) => {
         cardM.vertex.isDeleted = 1;
       });
-
-      // setSelectedCards && setSelectedCards(new Set());
+      displayUndoToast(
+        displayToast,
+        `Deleted ${selectedCards.size} ${itemText}.`,
+        () => undoDeleteCards(prevSelected)
+      );
       setPendingAction(false);
-    }, 2000);
+    }, 1000);
   };
 
   const handleCancelClick = () => {};
@@ -467,13 +460,6 @@ export function AddTagMultiButton<T>({
   let intersectionTagsArray = Array.from(allEncodedTags).map(
     (tagId) => tagMap.get(tagId)!
   );
-
-  // let intersectionTagsArray: Tag[] = [];
-  // allEncodedTags.forEach((tagId) => {
-  //   // const [parent, child] = decodeTagId(tagId);
-  //   const tagChild = tagMap.get(tagId)!; //TODO: ask ofri about the tagMap (is dont like this impl)
-  //   intersectionTagsArray = [...intersectionTagsArray, tagChild];
-  // });
 
   const captureTagState = (): Map<VertexManager<Note>, Set<Tag>> => {
     const previousTags = new Map<VertexManager<Note>, Set<Tag>>();
