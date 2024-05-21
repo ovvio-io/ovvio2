@@ -245,12 +245,14 @@ export function useFilteredNotes<GT extends CoreValue>(
     'viewType',
     'dateFilter',
   );
-  const globalView = usePartialGlobalView('selectedWorkspaces');
+  usePartialGlobalView('selectedWorkspaces');
   const unpinnedSource = useMemo(
     () =>
       createUnionWorkspacesSource(
         graph,
-        Array.from(globalView.record.get('selectedWorkspaces')),
+        Array.from(
+          graph.getVertexManager('ViewGlobal').record.get('selectedWorkspaces'),
+        ),
         view.sortBy,
         name,
       ),

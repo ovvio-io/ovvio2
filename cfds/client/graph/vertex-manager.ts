@@ -601,10 +601,11 @@ export class VertexManager<V extends Vertex = Vertex>
     // );
     // this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
-    const sideEffects = mutationPackSubtractFields(
-      vertex.didMutate(mutations),
-      mutations,
-    );
+    // const sideEffects = mutationPackSubtractFields(
+    //   vertex.didMutate(mutations),
+    //   mutations,
+    // );
+    const sideEffects = vertex.didMutate(mutations);
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
@@ -668,6 +669,7 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!this._reportedInitialFields && !this.scheme.isNull) {
       this._reportedInitialFields = true;
       this.vertexDidMutate(this.getCurrentStateMutations(local));
+      this.getVertexProxy().vertexDidLoad();
     }
   }
 

@@ -1,5 +1,6 @@
 import * as SetUtils from '../../../../base/set.ts';
 import {
+  FieldTriggers,
   keyDictToVertDict,
   vertDictToKeyDict,
   Vertex,
@@ -26,6 +27,7 @@ import { Repository } from '../../../../repo/repo.ts';
 import { UserSettings } from './user-settings.ts';
 import { SimpleTimer } from '../../../../base/timer.ts';
 import { kSecondMs } from '../../../../base/date.ts';
+import { triggerChildren } from '../propagation-triggers.ts';
 
 export interface UserAlias extends JSONObject {
   name?: string;
@@ -55,11 +57,11 @@ export class Workspace extends BaseVertex {
     // if (prevVertex && prevVertex instanceof Workspace) {
     // }
     this.initHelperQueries();
-    if (!prevVertex) {
-      SimpleTimer.once(2 * kSecondMs, () =>
-        this.graph.prepareRepositoryForUI(Repository.id('data', this.key)),
-      );
-    }
+    // if (!prevVertex) {
+    //   SimpleTimer.once(2 * kSecondMs, () =>
+    //     this.graph.prepareRepositoryForUI(Repository.id('data', this.key)),
+    //   );
+    // }
   }
 
   private initHelperQueries(): void {
@@ -424,3 +426,11 @@ function aliasForUser(u: User): UserAlias {
     email: u.email,
   };
 }
+
+const kFieldTriggersWorkspace: FieldTriggers<BaseVertex> = {
+  isDeleted: triggerChildren('parentIsDeletedChanged', 'Workspace_isDeleted', {
+    fieldName: 'workspace',
+  }),
+};
+
+Vertex.registerFieldTriggers(Workspace, kFieldTriggersWorkspace);
