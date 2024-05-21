@@ -1278,13 +1278,17 @@ export class Repository<
     const result: Commit[] = [];
     const commitsAffectingTmpRecords: Commit[] = [];
 
+    commits = filterIterable(
+      commits,
+      (c) => c.orgId === undefined || c.orgId === this.orgId,
+    );
     for (const batch of ArrayUtils.slices(commits, 50)) {
-      for (const c of batch) {
-        assert(
-          !c.orgId || c.orgId === this.orgId,
-          `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
-        );
-      }
+      // for (const c of batch) {
+      //   assert(
+      //     !c.orgId || c.orgId === this.orgId,
+      //     `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
+      //   );
+      // }
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
       for (const c of batch) {
         for (const p of c.parents) {

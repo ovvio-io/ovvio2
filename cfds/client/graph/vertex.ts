@@ -528,6 +528,9 @@ export class Vertex implements Comparable {
     }
     return SetUtils.map(result, (mgr) => mgr.getVertexProxy<T>());
   }
+  protected invalidateCachedVertSetForField(fieldName: string): void {
+    this._cachedVertSetsByField.delete(fieldName);
+  }
 }
 
 const kFieldTriggersBase: FieldTriggers<Vertex> = {

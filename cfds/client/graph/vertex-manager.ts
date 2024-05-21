@@ -8,6 +8,7 @@ import {
   mutationPackIsEmpty,
   mutationPackIter,
   mutationPackOptimize,
+  mutationPackSubtractFields,
 } from './mutations.ts';
 import { RichText } from '../../richtext/tree.ts';
 import {
@@ -22,7 +23,11 @@ import {
   ReadonlyCoreObject,
 } from '../../../base/core-types/index.ts';
 import vertexBuilder from './vertices/vertex-builder.ts';
-import { SimpleTimer } from '../../../base/timer.ts';
+import {
+  MicroTaskTimer,
+  NextEventLoopCycleTimer,
+  SimpleTimer,
+} from '../../../base/timer.ts';
 import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
 import { ValueType } from '../../base/types/index.ts';
 import { assert } from '../../../base/error.ts';
@@ -107,8 +112,6 @@ export class VertexManager<V extends Vertex = Vertex>
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _commitPromise: Promise<void> | undefined;
   private _reportedInitialFields = false;
-  private readonly _emitDelayTimer: SimpleTimer;
-  private _pendingMutationsToEmit: MutationPack;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -120,7 +123,7 @@ export class VertexManager<V extends Vertex = Vertex>
     initialState?: Record,
     local?: boolean,
   ) {
-    super();
+    super((callback) => new NextEventLoopCycleTimer(callback));
     this._graph = graph;
     this._key = key;
     this._vertexConfig = {
@@ -128,9 +131,6 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     this._cachedFieldProxies = new Map();
-    this._emitDelayTimer = new SimpleTimer(100, false, () =>
-      this.flushPendingMutations(),
-    );
     // Run local lookup for this key in all known repositories
     let repo: Repository<MemRepoStorage> | undefined =
       graph.repositoryForKey(key)[1];
@@ -194,7 +194,6 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const dynamicFields = this.captureDynamicFields();
     this._record = newRecord;
-    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
     if (!mutationPackIsEmpty(pack)) {
@@ -602,20 +601,16 @@ export class VertexManager<V extends Vertex = Vertex>
     // );
     // this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
-    const sideEffects = vertex.didMutate(mutations);
+    const sideEffects = mutationPackSubtractFields(
+      vertex.didMutate(mutations),
+      mutations,
+    );
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
     }
     if (this.graph.repositoryReady(this.repositoryId)) {
       this.scheduleCommitIfNeeded();
     }
-  }
-
-  flushPendingMutations(): void {
-    const mutations = this._pendingMutationsToEmit;
-    this._pendingMutationsToEmit = undefined;
-    this._emitDelayTimer.unschedule();
-    this.emit(EVENT_DID_CHANGE, mutations);
   }
 
   private captureDynamicFields(): DynamicFieldsSnapshot {
@@ -670,7 +665,7 @@ export class VertexManager<V extends Vertex = Vertex>
    * Never call this directly. Reserved for GraphManager.
    */
   reportInitialFields(local: boolean): void {
-    if (!this._reportedInitialFields) {
+    if (!this._reportedInitialFields && !this.scheme.isNull) {
       this._reportedInitialFields = true;
       this.vertexDidMutate(this.getCurrentStateMutations(local));
     }

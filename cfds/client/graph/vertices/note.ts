@@ -706,7 +706,7 @@ export class Note extends ContentVertex {
     local: boolean,
     oldValue: NoteType | undefined,
   ): MutationPack {
-    if ((oldValue || NoteType.Note) !== this.parentType) {
+    if (oldValue !== this.parentType) {
       return ['parentType', local, oldValue];
     }
   }
