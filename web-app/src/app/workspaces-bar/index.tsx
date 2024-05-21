@@ -68,6 +68,7 @@ import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/card
 import { LineSeparator } from '../../../../styles/components/menu.tsx';
 import { useMaxWidth } from '../index.tsx';
 import { prettyJSON } from '../../../../base/common.ts';
+import ExportButton from '../../shared/components/time-tracking/timeTracking-export.tsx';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -568,7 +569,8 @@ function WorkspaceToggleView({
                 />{' '}
                 {'Export timesheet'}
               </MenuItem>
-              <ExportButton />
+              {/* <ExportButton /> */}
+              <ExportButton workspaces={view.selectedWorkspaces} />
             </>
           )}
         </Menu>
@@ -1221,7 +1223,7 @@ function useExportSelectedWorkspaces() {
   return { exportSelectedWorkspaces };
 }
 
-const ExportButton: React.FC = () => {
+const ExportButton2: React.FC = () => {
   const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
   const styles = useStyles();
   return (

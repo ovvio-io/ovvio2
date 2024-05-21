@@ -129,7 +129,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     });
 
     const totalTimeToday = Array.from(filteredEntries).reduce(
-      (sum, entry) => sum + entry.time,
+      (sum, entry) => sum + entry.minutes,
       0
     );
 
