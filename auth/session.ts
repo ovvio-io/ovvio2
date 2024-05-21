@@ -477,6 +477,7 @@ export class TrustPool {
   private _currentSession: OwnedSession;
 
   constructor(
+    readonly orgId: string,
     currentSession: OwnedSession,
     roots?: Session[],
     trustedSessions?: Session[],
@@ -514,6 +515,9 @@ export class TrustPool {
    * @param commit The commit to verify.
    */
   private async verifySession(commit: Commit): Promise<boolean> {
+    if (!commit.orgId || commit.orgId !== this.orgId) {
+      return false;
+    }
     if (!commit.signature) {
       return false;
     }
@@ -606,6 +610,9 @@ export class TrustPool {
   }
 
   async verify(commit: Commit): Promise<boolean> {
+    if (!commit.orgId || commit.orgId !== this.orgId) {
+      return false;
+    }
     const signerId = signerIdFromCommit(commit);
     if (!signerId) {
       return false;

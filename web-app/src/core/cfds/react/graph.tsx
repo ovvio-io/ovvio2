@@ -24,6 +24,9 @@ import { UserSettings } from '../../../../../cfds/client/graph/vertices/user-set
 import { getClientData, setClientData } from '../../../../../server/config.ts';
 import { useTrustPool } from '../../../../../auth/react.tsx';
 import { kSecondMs } from '../../../../../base/date.ts';
+import { SimpleTimer } from '../../../../../base/timer.ts';
+import { Repository } from '../../../../../repo/repo.ts';
+import { Workspace } from '../../../../../cfds/client/graph/vertices/index.ts';
 
 type ContextProps = {
   graphManager?: GraphManager;
@@ -114,14 +117,27 @@ export function CfdsClientProvider({
       lastUsedKey,
     );
   }
+  const personalWsKey = `${graphManager.rootKey}-ws`;
   graphManager.createVertex(
     SchemeNamespace.WORKSPACE,
     {
       name: 'My Workspace',
       users: new Set([graphManager.rootKey]),
     },
-    `${graphManager.rootKey}-ws`,
+    personalWsKey,
   );
+  graphManager.loadRepository(personalWsKey);
+  // SimpleTimer.once(2 * kSecondMs, () => {
+  //   // for (const k of graphManager.keys()) {
+  //   //   const vert = graphManager.getVertex(k);
+  //   //   if (vert instanceof Workspace) {
+  //   //     graphManager.prepareRepositoryForUI(Repository.id('data', vert.key));
+  //   //   }
+  //   // }
+  //   graphManager.sharedQueriesManager.workspaces.forEach((ws) =>
+  //     graphManager.prepareRepositoryForUI(Repository.id('data', ws.key)),
+  //   );
+  // });
 
   const globalView = graphManager.createVertex<View>(
     SchemeNamespace.VIEWS,

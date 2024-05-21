@@ -10,7 +10,7 @@ import { isDevelopmentBuild } from '../../base/development.ts';
 
 export interface EmailMessage {
   type: EmailType;
-  to: string;
+  to: string | string[];
   subject: string;
   plaintext: string;
   html: string;
@@ -29,33 +29,8 @@ export class EmailService extends BaseService<ServerServices> {
     if (isDevelopmentBuild()) {
       return false;
     }
-    const req: SendEmailCommandInput = {
-      FromEmailAddress: '"Ovvio" <system@ovvio.io>',
-      Destination: {
-        ToAddresses: [message.to],
-      },
-      Content: {
-        Simple: {
-          Subject: {
-            Data: message.subject,
-            Charset: 'UTF-8',
-          },
-          Body: {
-            Text: {
-              Data: message.plaintext,
-              Charset: 'UTF-8',
-            },
-            Html: {
-              Data: message.html,
-              Charset: 'UTF-8',
-            },
-          },
-        },
-      },
-    };
     try {
-      const resp = await this._client.send(new SendEmailCommand(req));
-      const success = resp.MessageId !== undefined;
+      const success = await sendEmail(message, this._client);
       if (success) {
         this.services.logger.log({
           severity: 'METRIC',
@@ -74,4 +49,43 @@ export class EmailService extends BaseService<ServerServices> {
       return false;
     }
   }
+}
+
+export async function sendEmail(
+  message: EmailMessage,
+  client?: SESv2Client,
+): Promise<boolean> {
+  if (!client) {
+    client = new SESv2Client({ region: 'us-east-1' });
+  }
+  if (!(message.to instanceof Array)) {
+    message.to = [message.to];
+  }
+  const req: SendEmailCommandInput = {
+    FromEmailAddress: '"Ovvio" <system@ovvio.io>',
+    Destination: {
+      ToAddresses: message.to,
+    },
+    Content: {
+      Simple: {
+        Subject: {
+          Data: message.subject,
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Text: {
+            Data: message.plaintext,
+            Charset: 'UTF-8',
+          },
+          Html: {
+            Data: message.html,
+            Charset: 'UTF-8',
+          },
+        },
+      },
+    },
+  };
+  const resp = await client.send(new SendEmailCommand(req));
+  debugger;
+  return resp.MessageId !== undefined;
 }

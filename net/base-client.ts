@@ -9,6 +9,7 @@ import { VersionNumber } from '../base/version-number.ts';
 import {
   SyncConfig,
   syncConfigGetCycles,
+  SyncPriority,
   SyncScheduler,
 } from './sync-scheduler.ts';
 import { RepositoryType } from '../repo/repo.ts';
@@ -44,6 +45,8 @@ export abstract class BaseClient<
   private _closed = false;
   private _pendingSyncPromise: Promise<boolean> | undefined;
   private _syncActive = false;
+  private _lastComputedNeedsReplication = 0;
+  private _cachedNeedsReplication = false;
 
   constructor(
     readonly storage: RepositoryType,
@@ -137,7 +140,6 @@ export abstract class BaseClient<
       }
     }
   }
-
   get closed(): boolean {
     return this._closed;
   }
@@ -192,11 +194,12 @@ export abstract class BaseClient<
       return false;
     }
     const startingStatus = this.status;
-    const priority =
-      this.storage !== 'events' &&
-      (this.storage === 'sys' ||
-        this.storage === 'user' ||
-        this.needsReplication());
+    let priority = SyncPriority.normal;
+    if (this.needsReplication()) {
+      priority = SyncPriority.localChanges;
+    } else if (!this.ready) {
+      priority = SyncPriority.firstLoad;
+    }
     const reqMsg = await this.buildSyncMessage(!this._syncActive);
 
     let syncResp: SyncMessage<ValueType>;
@@ -299,16 +302,32 @@ export abstract class BaseClient<
   }
 
   needsReplication(): boolean {
-    const serverFilter = this._previousServerFilter;
-    if (!serverFilter) {
-      return false;
-    }
-    for (const id of this.localIds()) {
-      if (!serverFilter.has(id)) {
-        return true;
+    if (performance.now() - this._lastComputedNeedsReplication >= 100) {
+      const serverFilter = this._previousServerFilter;
+      if (!serverFilter) {
+        this._cachedNeedsReplication = false;
+      } else {
+        this._cachedNeedsReplication = false;
+        for (const id of this.localIds()) {
+          if (!serverFilter.has(id)) {
+            this._cachedNeedsReplication = true;
+            break;
+          }
+        }
       }
+      this._lastComputedNeedsReplication = performance.now();
     }
-    return false;
+    return this._cachedNeedsReplication;
+    // const serverFilter = this._previousServerFilter;
+    // if (!serverFilter) {
+    //   return false;
+    // }
+    // for (const id of this.localIds()) {
+    //   if (!serverFilter.has(id)) {
+    //     return true;
+    //   }
+    // }
+    // return false;
   }
 
   touch(): void {

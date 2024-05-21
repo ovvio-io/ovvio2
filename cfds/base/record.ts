@@ -323,6 +323,9 @@ export class Record implements ReadonlyRecord, Encodable {
     });
     encoder.set('d', dataEncoder.getOutput());
     encoder.set('n', this._normalized);
+    // if (this._checksum) {
+    encoder.set('cs', this.checksum);
+    // }
   }
 
   deserialize(decoder: Decoder): void {
@@ -334,6 +337,7 @@ export class Record implements ReadonlyRecord, Encodable {
     this._normalized = decoder.get<boolean>('n') || false;
     this.normalize();
     this.assertValidData();
+    this._checksum = decoder.get('cs');
   }
 
   toJS(local = false): ReadonlyJSONObject {

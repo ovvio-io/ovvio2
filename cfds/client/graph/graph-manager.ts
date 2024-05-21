@@ -102,6 +102,7 @@ interface RepositoryPlumbing {
   loadingFinished?: true;
   syncFinished?: true;
   active: boolean;
+  syncPromise?: Promise<void>;
 }
 
 export interface OrganizationStats extends JSONObject {
@@ -282,35 +283,38 @@ export class GraphManager
         } else {
           console.log(`Backup disabled for repo: ${id}`);
         }
-        // Load all keys from this repo
-        await CoroutineScheduler.sharedScheduler().map(
-          slices(repo.keys(), 10),
-          (keys) => {
-            for (const k of keys) {
-              this.getVertexManager(k).touch();
-            }
-          },
-        );
-        // for (const key of repo.keys()) {
-        //   this.getVertexManager(key).touch();
-        // }
+        if (id === Repository.sysDirId) {
+          for (const key of repo.keys()) {
+            this.getVertexManager(key).touch();
+          }
+        } else {
+          // Load all keys from this repo
+          await CoroutineScheduler.sharedScheduler().map(
+            slices(repo.keys(), 10),
+            (keys) => {
+              for (const k of keys) {
+                this.getVertexManager(k).touch();
+              }
+            },
+          );
+        }
         plumbing.active = true;
         plumbing.loadingFinished = true;
-        const numberOfCommits = repo.numberOfCommits();
+        // const numberOfCommits = repo.numberOfCommits();
 
-        if (
-          (id === Repository.sysDirId &&
-            this.hasVertex(this.rootKey) &&
-            this.getRootVertexManager().scheme.namespace ===
-              SchemeNamespace.USERS) ||
-          (id !== Repository.sysDirId && numberOfCommits > 0)
-        ) {
-          plumbing.loadedLocalContents = true;
-          if (client) {
-            client.ready = true;
-            client.startSyncing();
-          }
-        }
+        // if (
+        //   (id === Repository.sysDirId &&
+        //     this.hasVertex(this.rootKey) &&
+        //     this.getRootVertexManager().scheme.namespace ===
+        //       SchemeNamespace.USERS) ||
+        //   (id !== Repository.sysDirId && numberOfCommits > 0)
+        // ) {
+        //   plumbing.loadedLocalContents = true;
+        //   if (client) {
+        //     client.ready = true;
+        //     client.startSyncing();
+        //   }
+        // }
         if (Repository.parseId(id)[0] === 'events') {
           this.syncRepository(id);
         }
@@ -320,30 +324,38 @@ export class GraphManager
   }
 
   async syncRepository(id: string): Promise<void> {
-    return MultiSerialScheduler.get('RepoSync').run(async () => {
-      const plumbing = this.plumbingForRepository(id);
-      const client = plumbing.client;
-      await this.loadRepository(id);
-      if (client && client.isOnline) {
-        await client.sync();
-        // Load all keys from this repo
-        await CoroutineScheduler.sharedScheduler().map(
-          slices(plumbing.repo.keys(), 10),
-          (keys) => {
-            for (const k of keys) {
-              this.getVertexManager(k).touch();
+    const plumbing = this.plumbingForRepository(id);
+    if (!plumbing.syncPromise) {
+      plumbing.syncPromise = MultiSerialScheduler.get('RepoSync')
+        .run(async () => {
+          const client = plumbing.client;
+          await this.loadRepository(id);
+          if (client && client.isOnline) {
+            await client.sync();
+            if (id === Repository.sysDirId) {
+              for (const key of plumbing.repo.keys()) {
+                this.getVertexManager(key).touch();
+              }
+            } else {
+              // Load all keys from this repo
+              await CoroutineScheduler.sharedScheduler().map(
+                slices(plumbing.repo.keys(), 10),
+                (keys) => {
+                  for (const k of keys) {
+                    this.getVertexManager(k).touch();
+                  }
+                },
+              );
             }
-          },
-        );
-        // for (const key of plumbing.repo.keys()) {
-        //   this.getVertexManager(key).touch();
-        // }
-        plumbing.repo.allowMerge = true;
-        plumbing.syncFinished = true;
-        client.ready = true;
-        client.startSyncing();
-      }
-    });
+            plumbing.repo.allowMerge = true;
+            plumbing.syncFinished = true;
+            client.ready = true;
+            client.startSyncing();
+          }
+        })
+        .finally(() => (plumbing.syncPromise = undefined));
+    }
+    return plumbing.syncPromise;
   }
 
   startSyncing(repoId: string): void {
@@ -355,8 +367,8 @@ export class GraphManager
   }
 
   async prepareRepositoryForUI(repoId: string): Promise<void> {
-    await this.loadRepository(repoId);
     const plumbing = this.plumbingForRepository(repoId);
+    await this.loadRepository(repoId);
 
     if (!plumbing.syncFinished) {
       if (plumbing.loadedLocalContents) {
@@ -378,10 +390,8 @@ export class GraphManager
         new MemRepoStorage(),
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
-        getOrganizationId(),
         undefined,
         undefined,
-        id === Repository.sysDirId,
       );
       repo.allowMerge = false;
       plumbing = {
@@ -489,7 +499,7 @@ export class GraphManager
     id = Repository.normalizeId(id);
     const plumbing = this.plumbingForRepository(id);
     return (
-      plumbing?.syncFinished === true || plumbing?.loadedLocalContents === true
+      plumbing?.syncFinished === true //|| plumbing?.loadedLocalContents === true
     );
   }
 
@@ -590,27 +600,6 @@ export class GraphManager
       initialData,
       local,
     ).getVertexProxy();
-  }
-
-  createVertices<T extends Vertex>(vInfos: CreateVertexInfo[]): T[] {
-    const vManagers: VertexManager<T>[] = [];
-    for (const vInfo of vInfos) {
-      let mgr = this._vertManagers.get(vInfo.key!);
-      if (mgr === undefined) {
-        const record = new Record({
-          scheme: SchemeManager.instance.getScheme(vInfo.namespace)!,
-          data: vInfo.initialData!,
-        });
-        mgr = new VertexManager(this, vInfo.key!, record);
-      }
-
-      vManagers.push(mgr as VertexManager<T>);
-    }
-    for (const mgr of vManagers) {
-      this._setupVertexManager(mgr);
-    }
-    const vertices = vManagers.map((v) => v.getVertexProxy());
-    return vertices;
   }
 
   getVertexManager<V extends Vertex = Vertex>(key: string): VertexManager<V>;

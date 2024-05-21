@@ -1,7 +1,11 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { retry } from '../base/time.ts';
 import { Logger } from '../logging/log.ts';
-import { createNewSession, getBaseURL } from '../net/rest-api.ts';
+import {
+  createNewSession,
+  getBaseURL,
+  getOrganizationId,
+} from '../net/rest-api.ts';
 import { loadAllSessions, storeSessionData } from './idb.ts';
 import { generateKeyPair, OwnedSession, TrustPool } from './session.ts';
 import { useLogger } from '../web-app/src/core/cfds/react/logger.tsx';
@@ -77,6 +81,7 @@ async function setupSession(
             await storeSessionData(currentSession, roots, trustedSessions);
           }
           const pool = new TrustPool(
+            getOrganizationId(),
             currentSession,
             roots,
             trustedSessions,

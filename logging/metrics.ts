@@ -41,7 +41,7 @@ export type HTTPMethod =
 
 export type MetricSeverity = Extract<Severity, 'METRIC' | 'ERROR'>;
 
-export type EmailType = 'Login';
+export type EmailType = 'Login' | 'AnalyticsReport';
 
 export interface BaseMetricLogEntry<T extends MetricSeverity = MetricSeverity>
   extends BaseLogEntry {

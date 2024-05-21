@@ -34,6 +34,11 @@ import { tuple4ToString } from '../../base/tuple.ts';
 import { BuildInfo, generateBuildInfo } from '../../server/build-info.ts';
 import { prettyJSON } from '../../base/common.ts';
 import { StatsEndpoint } from './stats.ts';
+import {
+  BenchmarkResults,
+  runBenchmarks,
+  runInsertBenchmark,
+} from './benchmark.ts';
 
 export const ENV_REPLICAS = 'REPLICAS';
 
@@ -287,6 +292,7 @@ export class Server {
     await this._baseContext.email.setup(services);
     await this._baseContext.settings.start();
     (this._baseContext as any).trustPool = new TrustPool(
+      'localhost',
       this._baseContext.settings.session,
       [],
     );
@@ -303,6 +309,7 @@ export class Server {
         organizationId: orgId,
         sync: new SyncService(),
         trustPool: new TrustPool(
+          orgId,
           baseTrustPool.currentSession,
           baseTrustPool.roots,
         ),
@@ -421,6 +428,26 @@ export class Server {
       }
     }
     return resp;
+  }
+
+  async runBenchmark(): Promise<BenchmarkResults> {
+    for (const services of this._servicesByOrg.values()) {
+      for (const v of Object.values(services)) {
+        if (v instanceof BaseService) {
+          v.start();
+        }
+      }
+    }
+    const services = await this.servicesForOrganization('benchmark');
+    const result = await runBenchmarks(services);
+    for (const services of this._servicesByOrg.values()) {
+      for (const v of Object.values(services)) {
+        if (v instanceof BaseService) {
+          v.stop();
+        }
+      }
+    }
+    return result;
   }
 
   async start(): Promise<void> {

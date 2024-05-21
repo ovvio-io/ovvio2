@@ -17,7 +17,7 @@ import { RepositoryType } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { sendJSONToURL } from './rest-api.ts';
 
-const K_MAX_REQ_BATCH = 5;
+const K_MAX_REQ_BATCH = 20;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -71,10 +71,17 @@ interface PendingSyncRequest {
   reject: (err: unknown) => void;
 }
 
+export enum SyncPriority {
+  MIN = 0,
+  normal = MIN,
+  firstLoad = 1,
+  localChanges = 2,
+  MAX = localChanges,
+}
+
 export class SyncScheduler {
   private readonly _syncFreqAvg: MovingAverage;
-  private _pendingRequests: PendingSyncRequest[];
-  private _pendingPriorityRequests: PendingSyncRequest[];
+  private _pendingRequests: Map<SyncPriority, PendingSyncRequest[]>;
   private _intervalId: number;
   private _fetchInProgress = false;
 
@@ -87,8 +94,7 @@ export class SyncScheduler {
     this._syncFreqAvg = new MovingAverage(
       syncConfigGetCycles(kSyncConfigClient) * 2,
     );
-    this._pendingRequests = [];
-    this._pendingPriorityRequests = [];
+    this._pendingRequests = new Map();
     this._intervalId = setInterval(() => this.sendPendingRequests(), 200);
   }
 
@@ -107,7 +113,7 @@ export class SyncScheduler {
     storage: RepositoryType,
     id: string,
     msg: SyncMessage<SyncValueType>,
-    priority?: boolean,
+    priority: SyncPriority = SyncPriority.normal,
   ): Promise<SyncMessage<SyncValueType>> {
     let resolve!: (resp: SyncMessage<SyncValueType>) => void;
     let reject!: (err: unknown) => void;
@@ -115,10 +121,12 @@ export class SyncScheduler {
       resolve = res;
       reject = rej;
     });
-    (priority === true
-      ? this._pendingPriorityRequests
-      : this._pendingRequests
-    ).push({ req: { storage, id, msg }, resolve, reject });
+    let queue = this._pendingRequests.get(priority);
+    if (!queue) {
+      queue = [];
+      this._pendingRequests.set(priority, queue);
+    }
+    queue.push({ req: { storage, id, msg }, resolve, reject });
     return result;
   }
 
@@ -126,26 +134,25 @@ export class SyncScheduler {
     if (this._fetchInProgress) {
       return;
     }
-    if (
-      this._pendingPriorityRequests.length <= 0 &&
-      this._pendingRequests.length <= 0
-    ) {
-      return;
-    }
     const pendingRequests: PendingSyncRequest[] = [];
     for (
-      let i = 0;
-      i < K_MAX_REQ_BATCH && this._pendingPriorityRequests.length > 0;
-      ++i
+      let priority: number = SyncPriority.MAX;
+      priority >= SyncPriority.MIN;
+      --priority
     ) {
-      pendingRequests.push(this._pendingPriorityRequests.shift()!);
+      const queue = this._pendingRequests.get(priority);
+      if (!queue) {
+        continue;
+      }
+      for (let i = 0; i < K_MAX_REQ_BATCH && queue.length > 0; ++i) {
+        pendingRequests.push(queue.shift()!);
+      }
+      if (pendingRequests.length >= K_MAX_REQ_BATCH) {
+        break;
+      }
     }
-    for (
-      let i = 0;
-      i < K_MAX_REQ_BATCH && this._pendingRequests.length > 0;
-      ++i
-    ) {
-      pendingRequests.push(this._pendingRequests.shift()!);
+    if (!pendingRequests.length) {
+      return;
     }
     const reqArr = pendingRequests.map((p) => ({
       ...p.req,

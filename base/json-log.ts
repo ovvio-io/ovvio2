@@ -81,6 +81,10 @@ export class JSONLogFile {
     });
   }
 
+  barrier(): Promise<void> {
+    return this._scheduler.run(() => Promise.resolve());
+  }
+
   appendSync(entries: readonly JSONObject[]): void {
     assert(this.write, 'Attempting to write to a readonly log');
     const file = this._file;

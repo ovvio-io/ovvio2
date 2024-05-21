@@ -365,13 +365,15 @@ export class Vertex implements Comparable {
 
   // WARNING: Never change a vertex manager's scheme inside this callback.
   didMutate(pack: MutationPack): MutationPack {
-    const result = this._dispatchMutationCallback(pack);
-    // if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
-    this._runFieldTriggers(pack);
-
     for (const [fieldName] of mutationPackIter(pack)) {
       this._cachedVertSetsByField.delete(fieldName);
     }
+    const result = this._dispatchMutationCallback(pack);
+    // if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
+    this._runFieldTriggers(pack);
+    // }
+    // for (const [fieldName] of mutationPackIter(pack)) {
+    //   this._cachedVertSetsByField.delete(fieldName);
     // }
     return result;
   }

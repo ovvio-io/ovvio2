@@ -40,7 +40,6 @@ import { CoroutineScheduler } from '../base/coroutine.ts';
 import { SchedulerPriority } from '../base/coroutine.ts';
 import { CONNECTION_ID } from './commit.ts';
 import { compareStrings } from '../base/string.ts';
-import { numbersEqual } from '../base/comparisons.ts';
 
 const HEAD_CACHE_EXPIRATION_MS = 300;
 
@@ -90,7 +89,6 @@ export class Repository<
   readonly indexes?: IT;
   readonly authorizer?: Authorizer<ST>;
   readonly allowedNamespaces: SchemeNamespace[];
-  readonly orgId: string;
   private readonly _cachedHeadsByKey: Map<string | null, CachedHead>;
   private readonly _commitsCache: Map<string, Commit>;
   private readonly _nsForKey: Map<string | null, SchemeNamespace>;
@@ -127,7 +125,6 @@ export class Repository<
     storage: ST,
     trustPool: TrustPool,
     allowedNamespaces: SchemeNamespace[],
-    orgId: string,
     authorizer?: Authorizer<ST>,
     indexes?: (repo: Repository<ST, IT>) => IT,
     readonly priorityRepo = false,
@@ -136,7 +133,6 @@ export class Repository<
     this.storage = storage;
     this.trustPool = trustPool;
     this.allowedNamespaces = allowedNamespaces;
-    this.orgId = orgId;
     this.authorizer = authorizer;
     this._cachedHeadsByKey = new Map();
     this._cachedValueForKey = new Map();
@@ -175,6 +171,10 @@ export class Repository<
   }
 
   static readonly sysDirId = this.id('sys', 'dir');
+
+  get orgId(): string {
+    return this.trustPool.orgId;
+  }
 
   numberOfCommits(session?: Session): number {
     const { authorizer } = this;
@@ -813,7 +813,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0 || !this.allowMerge) {
+    if (commitsToMerge.length <= 0 /*|| !this.allowMerge*/) {
       return Promise.resolve(undefined);
     }
     const key = commitsToMerge[0].key;
@@ -955,7 +955,7 @@ export class Repository<
     revert?: string,
     deltaCompress = true,
   ): Promise<Commit | undefined> {
-    if (commitsToMerge.length <= 0 || !this.allowMerge) {
+    if (commitsToMerge.length <= 0 /*|| !this.allowMerge*/) {
       return undefined;
     }
     const key = commitsToMerge[0].key;
@@ -1012,7 +1012,7 @@ export class Repository<
     const mergeLeaderSession = mergeLeaderFromLeaves(leaves) || sessionId;
     if (
       leaves.length > 1 &&
-      this.allowMerge &&
+      //this.allowMerge &&
       mergeLeaderSession === sessionId
     ) {
       // Filter out any commits with equal records
@@ -1376,6 +1376,7 @@ export class Repository<
     assert(result?.length > 0);
     return result;
   }
+
   graphForKey(key: string | null): CommitGraph[] {
     const commits = Array.from(this.commitsForKey(key));
     const roots = commits.filter((c) => !c.parents || !c.parents.length);
