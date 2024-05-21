@@ -4,6 +4,7 @@ import { Note } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import React, { useState } from 'react';
 import { Button } from '../../../../../styles/components/buttons.tsx';
+import { MenuItem } from '../../../../../styles/components/menu.tsx';
 
 interface TimeTrackingEntry {
   workspaceName: string;
@@ -169,12 +170,8 @@ const ExportButton: React.FC<ExportButtonProps> = ({ workspaces }) => {
 
   return (
     <div>
-      <Button onClick={() => handleExport('current')} disabled={loading}>
-        Export Current Month
-      </Button>
-      <Button onClick={() => handleExport('last')} disabled={loading}>
-        Export Last Month
-      </Button>
+      <MenuItem onClick={() => handleExport('current')}>This month </MenuItem>
+      <MenuItem onClick={() => handleExport('last')}>Last Month</MenuItem>
     </div>
   );
 };

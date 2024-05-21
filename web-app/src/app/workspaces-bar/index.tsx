@@ -325,6 +325,7 @@ const useStyles = makeStyles(
     },
     exportAndDownload: {
       background: '#FFFBF5',
+      // fontWeight: '500',
     },
     iconsInGroupByMenu: {
       marginRight: styleguide.gridbase,
@@ -520,7 +521,11 @@ function WorkspaceToggleView({
           position="right"
           align="end">
           <div className={cn(styles.groupbyHeader)}>
-            <IconGroup />
+            <img
+              key="GroupIcon"
+              src="/icons/design-system/Group.svg"
+              className={cn(styles.iconsInGroupByMenu)}
+            />{' '}
             <LabelSm className={styles.groupBy}>Group By:</LabelSm>
           </div>
 
@@ -548,9 +553,14 @@ function WorkspaceToggleView({
               view.workspaceGrouping = 'none';
             }}
             icon={(iconProps) => (
-              <IconUngroup
-                color="blue"
-                {...iconProps}
+              // <IconUngroup
+              //   color="blue"
+              //   {...iconProps}
+              //   className={cn(styles.iconsInGroupByMenu)}
+              // />
+              <img
+                key="UngroupBlackIcon"
+                src="/icons/design-system/Ungroup-black.svg"
                 className={cn(styles.iconsInGroupByMenu)}
               />
             )}>
@@ -561,16 +571,28 @@ function WorkspaceToggleView({
             <>
               <div style={{ marginTop: '8px' }} />
               <LineSeparator height={1} />
-              <MenuItem className={styles.exportAndDownload} onClick={() => {}}>
+              {/* <MenuItem
+                className={styles.exportAndDownload}
+                style={{ cursor: 'pointer' }}>
                 <img
                   key="ExportIcon"
                   src="/icons/design-system/Publish.svg"
                   className={cn(styles.iconsInGroupByMenu)}
                 />{' '}
                 {'Export timesheet'}
-              </MenuItem>
-              {/* <ExportButton /> */}
+              </MenuItem> */}
+              <div className={cn(styles.groupbyHeader)}>
+                <img
+                  key="ExportIcon"
+                  src="/icons/design-system/Publish.svg"
+                  className={cn(styles.iconsInGroupByMenu)}
+                />{' '}
+                <LabelSm className={styles.groupBy}>Export timesheet</LabelSm>
+              </div>
               <ExportButton workspaces={view.selectedWorkspaces} />
+              <div style={{ marginTop: '8px' }} />
+              <LineSeparator height={1} />
+              <DownloadButton />
             </>
           )}
         </Menu>
@@ -1223,7 +1245,7 @@ function useExportSelectedWorkspaces() {
   return { exportSelectedWorkspaces };
 }
 
-const ExportButton2: React.FC = () => {
+const DownloadButton: React.FC = () => {
   const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
   const styles = useStyles();
   return (
@@ -1235,7 +1257,11 @@ const ExportButton2: React.FC = () => {
         src="/icons/design-system/Download.svg"
         className={cn(styles.iconsInGroupByMenu)}
       />{' '}
-      {'Download selected'}
+      <LabelSm
+        className={styles.groupBy}
+        style={{ padding: '0', backgroundColor: 'unset' }}>
+        DownLoad selected
+      </LabelSm>
     </MenuItem>
   );
 };
