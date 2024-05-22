@@ -34,16 +34,6 @@ function collectTimeTrackingData(
       });
     }
   });
-
-  // note.childCards.forEach((childNote) => {
-  //   collectTimeTrackingData(
-  //     childNote,
-  //     workspaceName,
-  //     entries,
-  //     startDate,
-  //     endDate
-  //   );
-  // });
 }
 
 function fetchTimeTrackingDataForWorkspace(

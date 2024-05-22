@@ -1260,7 +1260,7 @@ const DownloadButton: React.FC = () => {
       <LabelSm
         className={styles.groupBy}
         style={{ padding: '0', backgroundColor: 'unset' }}>
-        DownLoad selected
+        Download selected
       </LabelSm>
     </MenuItem>
   );
