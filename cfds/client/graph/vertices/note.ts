@@ -49,7 +49,11 @@ import {
   stripFormattingFilter,
 } from '../../../richtext/flat-rep.ts';
 import { treeToMarkdown } from '../../../richtext/markdown.ts';
-import { triggerChildren, triggerParent } from '../propagation-triggers.ts';
+import {
+  triggerChildren,
+  triggerCompose,
+  triggerParent,
+} from '../propagation-triggers.ts';
 import { VertexManager } from '../vertex-manager.ts';
 import { SortDescriptor } from '../query.ts';
 import { coreObjectClone } from '../../../../base/core-types/clone.ts';
@@ -95,7 +99,10 @@ export class Note extends ContentVertex {
   }
 
   get parent(): Vertex | undefined {
-    return this.parentNote || super.parent;
+    const parentNote = this.parentNote;
+    return parentNote && parentNote.bodyRefs.has(this.key)
+      ? parentNote
+      : super.parent;
   }
 
   parentNoteDidMutate(
@@ -751,6 +758,16 @@ export class Note extends ContentVertex {
     super.isDeleted = v;
   }
 
+  *getChildManagers<T extends Vertex>(
+    ns?: SchemeNamespace
+  ): Generator<VertexManager<T>> {
+    if (ns === SchemeNamespace.NOTES) {
+      for (const k of this.bodyRefs) {
+        yield this.graph.getVertexManager(k);
+      }
+    }
+  }
+
   parentBodyRefsDidMutate(
     local: boolean,
     oldValue: Set<string> | undefined
@@ -765,7 +782,7 @@ export class Note extends ContentVertex {
     local: boolean,
     oldValue: NoteType | undefined
   ): MutationPack {
-    if ((oldValue || NoteType.Note) !== this.parentType) {
+    if (oldValue !== this.parentType) {
       return ['parentType', local, oldValue];
     }
   }
@@ -891,6 +908,13 @@ export class Note extends ContentVertex {
       return kNoRefsValue;
     }
     return super.valueForRefCalc(fieldName);
+  }
+
+  vertexDidLoad(): void {
+    super.vertexDidLoad();
+    for (const key of this.bodyRefs) {
+      this.graph.getVertex<Note>(key).parentDidMutate(true, undefined, this);
+    }
   }
 }
 
@@ -1024,10 +1048,16 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   ),
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
-  isDeleted: triggerParent(
-    'childNoteIsDeletedDidMutate',
-    'Note_isDeleted',
-    SchemeNamespace.NOTES
+  isDeleted: triggerCompose(
+    triggerParent(
+      'childNoteIsDeletedDidMutate',
+      'Note_isDeleted_parent',
+      SchemeNamespace.NOTES
+    ),
+    triggerChildren('parentIsDeletedChanged', 'Note_isDeleted_children', {
+      fieldName: 'parentNote',
+    }),
+    'Note_isDeletedComposite'
   ),
   parentNote: triggerParent(
     'childParentNoteDidMutate',

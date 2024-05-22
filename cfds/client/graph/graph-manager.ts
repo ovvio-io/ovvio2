@@ -48,7 +48,7 @@ import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
-import { TrustPool } from '../../../auth/session.ts';
+import { Session, TrustPool } from '../../../auth/session.ts';
 import {
   kSyncConfigClient,
   SyncScheduler,
@@ -62,6 +62,7 @@ import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 import { downloadJSON } from '../../../base/browser.ts';
 import { getOrganizationId } from '../../../net/rest-api.ts';
 import * as SetUtils from '../../../base/set.ts';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -100,7 +101,7 @@ interface RepositoryPlumbing {
   loadingPromise?: Promise<void>;
   loadedLocalContents?: boolean;
   loadingFinished?: true;
-  syncFinished?: true;
+  syncFinished?: boolean;
   active: boolean;
   syncPromise?: Promise<void>;
 }
@@ -283,23 +284,25 @@ export class GraphManager
         } else {
           console.log(`Backup disabled for repo: ${id}`);
         }
-        if (id === Repository.sysDirId) {
-          for (const key of repo.keys()) {
-            this.getVertexManager(key).touch();
-          }
-        } else {
-          // Load all keys from this repo
-          await CoroutineScheduler.sharedScheduler().map(
-            slices(repo.keys(), 10),
-            (keys) => {
-              for (const k of keys) {
-                this.getVertexManager(k).touch();
-              }
-            },
-          );
-        }
+        // if (id === Repository.sysDirId) {
+        //   for (const key of repo.keys()) {
+        //     this.getVertexManager(key).touch();
+        //   }
+        // } else {
+        //   // Load all keys from this repo
+        //   await CoroutineScheduler.sharedScheduler().map(
+        //     slices(repo.keys(), 10),
+        //     (keys) => {
+        //       for (const k of keys) {
+        //         this.getVertexManager(k).touch();
+        //       }
+        //     },
+        //   );
+        // }
         plumbing.active = true;
         plumbing.loadingFinished = true;
+        plumbing.syncFinished =
+          localStorage[`syncFinished:${Repository.normalizeId(id)}`] === true;
         // const numberOfCommits = repo.numberOfCommits();
 
         // if (
@@ -332,25 +335,26 @@ export class GraphManager
           await this.loadRepository(id);
           if (client && client.isOnline) {
             await client.sync();
-            if (id === Repository.sysDirId) {
-              for (const key of plumbing.repo.keys()) {
-                this.getVertexManager(key).touch();
-              }
-            } else {
-              // Load all keys from this repo
-              await CoroutineScheduler.sharedScheduler().map(
-                slices(plumbing.repo.keys(), 10),
-                (keys) => {
-                  for (const k of keys) {
-                    this.getVertexManager(k).touch();
-                  }
-                },
-              );
-            }
+            // if (id === Repository.sysDirId) {
+            //   for (const key of plumbing.repo.keys()) {
+            //     this.getVertexManager(key).touch();
+            //   }
+            // } else {
+            //   // Load all keys from this repo
+            //   await CoroutineScheduler.sharedScheduler().map(
+            //     slices(plumbing.repo.keys(), 10),
+            //     (keys) => {
+            //       for (const k of keys) {
+            //         this.getVertexManager(k).touch();
+            //       }
+            //     },
+            //   );
+            // }
             plumbing.repo.allowMerge = true;
             plumbing.syncFinished = true;
             client.ready = true;
             client.startSyncing();
+            localStorage[`syncFinished:${Repository.normalizeId(id)}`] = true;
           }
         })
         .finally(() => (plumbing.syncPromise = undefined));
@@ -401,15 +405,16 @@ export class GraphManager
         active: !id.startsWith('/data/'),
       };
       repo.attach('NewCommit', (c: Commit) => {
-        if (plumbing?.loadingFinished !== true) {
-          return;
-        }
+        // if (plumbing?.loadingFinished !== true) {
+        //   return;
+        // }
+
         plumbing!.backup?.persistCommits([c]);
-        const repoReady = this.repositoryReady(id);
-        if (repoReady) {
+        // const repoReady = this.repositoryReady(id);
+        if (plumbing?.syncFinished) {
           plumbing!.client?.touch();
         }
-        if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
+        if (!c.key || !repo.commitIsHighProbabilityLeaf(c) /*|| !repoReady*/) {
           return;
         }
         if (c.createdLocally) {
@@ -425,20 +430,21 @@ export class GraphManager
         //    discovered commits.
         const namespace = repo.valueForKey(c.key).scheme.namespace;
         if (
-          namespace !== SchemeNamespace.SESSIONS &&
-          namespace !== SchemeNamespace.EVENTS
+          (namespace !== SchemeNamespace.SESSIONS &&
+            namespace !== SchemeNamespace.EVENTS) ||
+          this.hasVertex(c.key)
         ) {
           const mgr = this.getVertexManager(c.key);
-          // if (
-          //   c.session !== this.trustPool.currentSession.id ||
-          //   c.parents.length > 1
-          // ) {
-          if (plumbing.syncFinished && mgr.hasPendingChanges) {
-            mgr.commit();
-          } else {
-            mgr.touch();
+          if (
+            c.session !== this.trustPool.currentSession.id ||
+            c.parents.length > 1
+          ) {
+            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+              mgr.commit();
+            } else {
+              mgr.touch();
+            }
           }
-          // }
           // else {
           //   mgr.touch();
           // }
@@ -720,15 +726,31 @@ export class GraphManager
     this._processPendingMutationsTimer.schedule();
   }
 
-  private _processPendingMutations(): void {
+  private _processPendingMutations(): boolean {
     if (!this.rootKey) {
-      return;
+      return this._pendingMutations.size > 0;
     }
     if (this._pendingMutations.size > 0) {
       const batchSize = 100;
       const creationMutations: [VertexManager, MutationPack][] = [];
       const editMutations: [VertexManager, MutationPack][] = [];
       // const mutations: [VertexManager, MutationPack][] = [];
+      for (const [key, pack] of this._pendingMutations) {
+        if (creationMutations.length >= batchSize) {
+          break;
+        }
+        if (!this._reportedInitialMutations.has(key)) {
+          const mgr = this.getVertexManager(key);
+          if (mgr.scheme.namespace === SchemeNamespace.NOTES) {
+            continue;
+          }
+          creationMutations.push([mgr, pack]);
+          this._reportedInitialMutations.add(key);
+        }
+      }
+      creationMutations.forEach(([mgr]) =>
+        this._pendingMutations.delete(mgr.key),
+      );
       for (const [key, pack] of this._pendingMutations) {
         if (creationMutations.length >= batchSize) {
           break;
@@ -772,6 +794,7 @@ export class GraphManager
         this.emit('vertex-changed', mgr.key, pack);
       }
     }
+    return this._pendingMutations.size > 0;
   }
 
   fieldTriggerHasExecuted(key: string, fieldName: string): boolean {
@@ -1011,6 +1034,20 @@ export class GraphManager
         this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name)),
       ),
     );
+  }
+
+  totalNumberOfCommits(): number {
+    let count = 0;
+    for (const [id, repo] of this.repositories()) {
+      count += repo.numberOfCommits();
+    }
+    return count;
+  }
+
+  sessionsForUser(userId: string): Session[] {
+    return this.trustPool.trustedSessions
+      .filter((s) => s.owner === userId)
+      .sort((s1, s2) => coreValueCompare(s2.expiration, s1.expiration));
   }
 }
 

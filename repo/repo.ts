@@ -1070,8 +1070,8 @@ export class Repository<
     value: CFDSRecord,
     parentCommit: string | Commit | undefined,
   ): Promise<Commit | undefined> {
-    // Refuse committing while a merge is in progress
     if (this._pendingMergePromises.has(key)) {
+      // Refuse committing while a merge is in progress
       throw serviceUnavailable();
     }
     // All keys start with null records implicitly, so need need to persist
@@ -1278,13 +1278,17 @@ export class Repository<
     const result: Commit[] = [];
     const commitsAffectingTmpRecords: Commit[] = [];
 
+    commits = filterIterable(
+      commits,
+      (c) => c.orgId === undefined || c.orgId === this.orgId,
+    );
     for (const batch of ArrayUtils.slices(commits, 50)) {
-      for (const c of batch) {
-        assert(
-          !c.orgId || c.orgId === this.orgId,
-          `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
-        );
-      }
+      // for (const c of batch) {
+      //   assert(
+      //     !c.orgId || c.orgId === this.orgId,
+      //     `Incompatible organization id. Trying to persist commit from "${c.orgId}" to "${this.orgId}"`,
+      //   );
+      // }
       ArrayUtils.append(result, this._persistCommitsBatchToStorage(batch));
       for (const c of batch) {
         for (const p of c.parents) {
@@ -1474,6 +1478,74 @@ export class Repository<
             this.setValueForKey(key, this.recordForCommit(c), undefined);
             break;
           }
+        }
+      }
+    }
+  }
+
+  findLatestAncestorFromCommit(
+    commit: Commit | string,
+    filter: (c: Commit) => boolean,
+  ): Commit | undefined {
+    if (typeof commit === 'string') {
+      if (!this.hasCommit(commit)) {
+        return undefined;
+      }
+      commit = this.getCommit(commit);
+    }
+    for (const c of Array.from(this.commitsForKey(commit.key)).sort(
+      compareCommitsDesc,
+    )) {
+      if (
+        this.hasRecordForCommit(c) &&
+        c.timestamp.getTime() < commit.timestamp.getTime() &&
+        filter(c)
+      ) {
+        return c;
+      }
+    }
+    // let parentsToCheck: Set<string> = new Set(commit.parents);
+    // while (parentsToCheck.size > 0) {
+    //   let latestParent: undefined | Commit;
+    //   const parents = parentsToCheck;
+    //   parentsToCheck = new Set();
+    //   for (const id of parents) {
+    //     if (this.hasCommit(id)) {
+    //       const c = this.getCommit(id);
+    //       if (
+    //         (!latestParent ||
+    //           c.timestamp.getTime() > latestParent.timestamp.getTime()) &&
+    //         filter(c)
+    //       ) {
+    //         latestParent = c;
+    //       } else {
+    //         SetUtils.update(parentsToCheck, c.parents);
+    //       }
+    //     }
+    //   }
+    //   if (latestParent !== undefined) {
+    //     return latestParent;
+    //   }
+    // }
+    return undefined;
+  }
+
+  revertHeadsByConnectionId(connectionIds: string | string[]): void {
+    if (!(connectionIds instanceof Array)) {
+      connectionIds = [connectionIds];
+    }
+    for (const key of this.keys()) {
+      const head = this.headForKey(key);
+      if (head && connectionIds.includes(head.connectionId)) {
+        const parent = this.findLatestAncestorFromCommit(
+          head,
+          (c) => !connectionIds.includes(c.connectionId),
+        );
+        if (parent && this.hasRecordForCommit(parent)) {
+          console.log(
+            `Reverting ${key} to ${parent.timestamp.toLocaleString()}`,
+          );
+          this.setValueForKey(key, this.recordForCommit(parent), undefined);
         }
       }
     }

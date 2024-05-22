@@ -36,7 +36,12 @@ import {
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
-import { useGraphManager, usePartialView } from './graph.tsx';
+import {
+  useGraphManager,
+  usePartialGlobalView,
+  usePartialView,
+} from './graph.tsx';
+import { useSharedQuery } from './query.ts';
 
 export const kDueDateColumns = [
   'Overdue',
@@ -229,7 +234,6 @@ export function useFilteredNotes<GT extends CoreValue>(
 ): FilteredNotes<GT> {
   const graph = useGraphManager();
   const view = usePartialView(
-    'selectedWorkspaces',
     'noteType',
     'showPinned',
     'showChecked',
@@ -241,11 +245,14 @@ export function useFilteredNotes<GT extends CoreValue>(
     'viewType',
     'dateFilter',
   );
+  usePartialGlobalView('selectedWorkspaces');
   const unpinnedSource = useMemo(
     () =>
       createUnionWorkspacesSource(
         graph,
-        Array.from(view.selectedWorkspaces),
+        Array.from(
+          graph.getVertexManager('ViewGlobal').record.get('selectedWorkspaces'),
+        ),
         view.sortBy,
         name,
       ),

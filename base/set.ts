@@ -1,5 +1,7 @@
 import { filterIterable } from './common.ts';
 import { deepEqual, isImmutable } from './comparisons.ts';
+import { coreValueEquals } from './core-types/equals.ts';
+import { CoreValue } from './core-types/index.ts';
 
 export function isSet<T>(v: unknown): v is Set<T> {
   return (
@@ -282,7 +284,7 @@ export function hasByValue<T>(s1: Set<T>, v: T): boolean {
   }
   // Mutable values must be searched for using linear search
   for (const x of s1) {
-    if (deepEqual(x, v)) {
+    if (coreValueEquals(x as CoreValue, v as CoreValue)) {
       return true;
     }
   }

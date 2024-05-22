@@ -280,20 +280,20 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       result._frozen = true;
       FROZEN_COMMITS.set(id, result);
     }
-    assert(
-      !result.orgId || result.orgId === orgId,
-      `Incompatible organization id. Expected "${orgId}" got "${result.orgId}"`,
-    );
+    // assert(
+    //   !result.orgId || result.orgId === orgId,
+    //   `Incompatible organization id. Expected "${orgId}" got "${result.orgId}"`,
+    // );
     return result;
   }
 
   deserialize(decoder: Decoder): void {
     assert(!this.frozen);
-    const encodedOrgId = decoder.get<string>('org');
-    assert(
-      !encodedOrgId || encodedOrgId === this.orgId,
-      `Organization id mismatch. Expected "${this.orgId}" but got "${encodedOrgId}"`,
-    );
+    // const encodedOrgId = decoder.get<string>('org');
+    // assert(
+    //   !encodedOrgId || encodedOrgId === this.orgId,
+    //   `Organization id mismatch. Expected "${this.orgId}" but got "${encodedOrgId}"`,
+    // );
     this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
     this._key = decoder.get<string | null>('k', null)!;

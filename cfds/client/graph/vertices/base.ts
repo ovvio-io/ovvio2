@@ -55,6 +55,19 @@ export class BaseVertex extends Vertex {
     if (parentDeleted) {
       return parentDeleted;
     }
+    // const parent = this.parent;
+    // if (parent) {
+    //   let found = false;
+    //   for (const c of parent?.getChildren()) {
+    //     if (c.key === this.key) {
+    //       found = true;
+    //       break;
+    //     }
+    //   }
+    //   if (!found) {
+    //     return 1;
+    //   }
+    // }
     const v = this.record.get('isDeleted');
     assert(typeof v === 'number');
     return v;
@@ -102,9 +115,9 @@ export class BaseVertex extends Vertex {
     parent: Vertex,
   ): MutationPack {
     const prevIsDeleted = this.calcIsDeleted(oldValue?.isDeleted);
-    if (prevIsDeleted !== this.isDeleted) {
-      return ['isDeleted', local, prevIsDeleted];
-    }
+    // if (prevIsDeleted !== this.isDeleted) {
+    return ['isDeleted', local, prevIsDeleted];
+    // }
   }
 
   // If our parent's isDeleted has changed, our isDeleted may need to be updated
@@ -114,12 +127,12 @@ export class BaseVertex extends Vertex {
     parent: Vertex,
   ): MutationPack {
     // Our parent's isDeleted affects us only when we're not explicitly deleted
-    if (
-      !this.record.get('isDeleted') &&
-      (oldValue === 1) !== (parent.isDeleted === 1)
-    ) {
-      return ['isDeleted', local, this.calcIsDeleted(oldValue)];
-    }
+    // if (
+    //   !this.record.get('isDeleted') &&
+    //   (oldValue === 1) !== (this.parent?.isDeleted === 1)
+    // ) {
+    return ['isDeleted', local, this.calcIsDeleted(oldValue)];
+    // }
   }
 
   onUserUpdatedField(mut: MutationPack): MutationPack {
