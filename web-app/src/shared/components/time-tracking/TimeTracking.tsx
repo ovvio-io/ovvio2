@@ -8,6 +8,7 @@ import TimeTrackPicker from '../../../../../components/trackingTime-picker.tsx';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
+import { DisplayToastFunction } from '../../../../../styles/components/toast/index.tsx';
 
 const useStyles = makeStyles(() => ({
   timeTrackText: {
@@ -133,3 +134,12 @@ export function TimeTrackingContainer({
     </Menu>
   );
 }
+export const displayMessageToast = (
+  displayToast: DisplayToastFunction,
+  messageText: string
+): void => {
+  displayToast({
+    text: messageText,
+    duration: 5000,
+  });
+};

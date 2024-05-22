@@ -1,6 +1,5 @@
 import { Query } from '../../../../../cfds/client/graph/query.ts';
-import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
-import { Note } from '../../../../../cfds/client/graph/vertices/index.ts';
+import { Note, User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import React, { useState } from 'react';
 import { MenuItem } from '../../../../../styles/components/menu.tsx';
@@ -25,7 +24,7 @@ function collectTimeTrackingData(
     if (track.creationDate >= startDate && track.creationDate <= endDate) {
       entries.push({
         workspaceName,
-        employeeName: track.user,
+        employeeName: note.graph.getVertex<User>(track.user).name,
         noteName: note.parentNote
           ? note.parentNote.titlePlaintext
           : note.titlePlaintext,
@@ -36,15 +35,15 @@ function collectTimeTrackingData(
     }
   });
 
-  note.childCards.forEach((childNote) => {
-    collectTimeTrackingData(
-      childNote,
-      workspaceName,
-      entries,
-      startDate,
-      endDate
-    );
-  });
+  // note.childCards.forEach((childNote) => {
+  //   collectTimeTrackingData(
+  //     childNote,
+  //     workspaceName,
+  //     entries,
+  //     startDate,
+  //     endDate
+  //   );
+  // });
 }
 
 function fetchTimeTrackingDataForWorkspace(
@@ -65,7 +64,6 @@ function fetchTimeTrackingDataForWorkspace(
       );
     }
   );
-
   notesQueryResults.forEach((noteResult) => {
     const note = noteResult.getVertexProxy() as Note;
     collectTimeTrackingData(note, workspace.name, entries, startDate, endDate);

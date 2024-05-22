@@ -56,6 +56,9 @@ import { coreObjectClone } from '../../../../base/core-types/clone.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
 import { TimeTrackData } from '../../../base/scheme-types.ts';
+import { displayMessageToast } from '../../../../web-app/src/shared/components/time-tracking/TimeTracking.tsx';
+import { usePendingAction } from '../../../../web-app/src/app/workspace-content/workspace-view/cards-display/index.tsx';
+import { useToastController } from '../../../../styles/components/toast/index.tsx';
 
 export enum NoteType {
   Task = 'task',
@@ -221,7 +224,19 @@ export class Note extends ContentVertex {
     const copy = SetUtils.map(set, (v) => coreObjectClone(v));
     this.record.set('timeTrack', copy);
   }
-
+  // addTime(minutes: number): void {
+  //   setPendingAction(true);
+  //   setTimeout(() => {
+  //     SetUtils.addByValue(this.proxy.timeTrack, {
+  //       minutes: minutes,
+  //       user: this.graph.rootKey,
+  //       creationDate: new Date(),
+  //     });
+  //     debugger;
+  //     displayMessageToast(displayToast, `blah blah blah`);
+  //     setPendingAction(false);
+  //   }, 1000);
+  // }
   addTime(minutes: number): void {
     SetUtils.addByValue(this.proxy.timeTrack, {
       minutes: minutes,
