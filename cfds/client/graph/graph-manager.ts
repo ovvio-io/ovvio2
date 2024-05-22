@@ -48,7 +48,7 @@ import { HashMap } from '../../../base/collections/hash-map.ts';
 import { coreValueHash } from '../../../base/core-types/encoding/hash.ts';
 import { coreValueEquals } from '../../../base/core-types/equals.ts';
 import { Emitter } from '../../../base/emitter.ts';
-import { TrustPool } from '../../../auth/session.ts';
+import { Session, TrustPool } from '../../../auth/session.ts';
 import {
   kSyncConfigClient,
   SyncScheduler,
@@ -62,6 +62,7 @@ import { OrderedMap } from '../../../base/collections/orderedmap.ts';
 import { downloadJSON } from '../../../base/browser.ts';
 import { getOrganizationId } from '../../../net/rest-api.ts';
 import * as SetUtils from '../../../base/set.ts';
+import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 
 export interface PointerFilterFunc {
   (key: string): boolean;
@@ -438,11 +439,11 @@ export class GraphManager
             c.session !== this.trustPool.currentSession.id ||
             c.parents.length > 1
           ) {
-            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
-              mgr.commit();
-            } else {
-              mgr.touch();
-            }
+            // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+            //   mgr.commit();
+            // } else {
+            mgr.touch();
+            // }
           }
           // else {
           //   mgr.touch();
@@ -1041,6 +1042,12 @@ export class GraphManager
       count += repo.numberOfCommits();
     }
     return count;
+  }
+
+  sessionsForUser(userId: string): Session[] {
+    return this.trustPool.trustedSessions
+      .filter((s) => s.owner === userId)
+      .sort((s1, s2) => coreValueCompare(s2.expiration, s1.expiration));
   }
 }
 
