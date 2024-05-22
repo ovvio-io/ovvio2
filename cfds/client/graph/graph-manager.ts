@@ -414,7 +414,7 @@ export class GraphManager
         if (plumbing?.syncFinished) {
           plumbing!.client?.touch();
         }
-        if (!c.key /*|| !repo.commitIsLeaf(c)*/ /*|| !repoReady*/) {
+        if (!c.key || !repo.commitIsHighProbabilityLeaf(c) /*|| !repoReady*/) {
           return;
         }
         if (c.createdLocally) {
@@ -439,11 +439,11 @@ export class GraphManager
             c.session !== this.trustPool.currentSession.id ||
             c.parents.length > 1
           ) {
-            // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
-            //   mgr.commit();
-            // } else {
-            mgr.touch();
-            // }
+            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+              mgr.commit();
+            } else {
+              mgr.touch();
+            }
           }
           // else {
           //   mgr.touch();
