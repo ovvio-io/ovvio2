@@ -8,7 +8,11 @@ import TimeTrackPicker from '../../../../../components/trackingTime-picker.tsx';
 import { Note } from '../../../../../cfds/client/graph/vertices/note.ts';
 import { VertexManager } from '../../../../../cfds/client/graph/vertex-manager.ts';
 import { usePartialVertex } from '../../../core/cfds/react/vertex.ts';
-import { DisplayToastFunction } from '../../../../../styles/components/toast/index.tsx';
+import {
+  DismissFn,
+  DisplayToastFunction,
+  ToastProvider,
+} from '../../../../../styles/components/toast/index.tsx';
 
 const useStyles = makeStyles(() => ({
   timeTrackText: {
@@ -122,16 +126,18 @@ export function TimeTrackingContainer({
   const styles = useStyles();
 
   return (
-    <Menu
-      renderButton={() => (
-        <TimeTracking card={card} hover={hover} plus={plus} />
-      )}
-      position="bottom"
-      align="end"
-      direction="out"
-      className={className}>
-      <TimeTrackPicker card={card!} />
-    </Menu>
+    <ToastProvider>
+      <Menu
+        renderButton={() => (
+          <TimeTracking card={card} hover={hover} plus={plus} />
+        )}
+        position="bottom"
+        align="end"
+        direction="out"
+        className={className}>
+        <TimeTrackPicker card={card!} />
+      </Menu>
+    </ToastProvider>
   );
 }
 export const displayMessageToast = (
@@ -140,6 +146,6 @@ export const displayMessageToast = (
 ): void => {
   displayToast({
     text: messageText,
-    duration: 5000,
+    duration: 4000,
   });
 };

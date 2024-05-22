@@ -244,6 +244,7 @@ export class Note extends ContentVertex {
   //     setPendingAction(false);
   //   }, 1000);
   // }
+
   addTime(minutes: number): void {
     SetUtils.addByValue(this.proxy.timeTrack, {
       minutes: minutes,

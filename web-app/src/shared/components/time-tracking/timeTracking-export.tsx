@@ -3,6 +3,11 @@ import { Note, User } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import React, { useState } from 'react';
 import { MenuItem } from '../../../../../styles/components/menu.tsx';
+import {
+  ToastProvider,
+  useToastController,
+} from '../../../../../styles/components/toast/index.tsx';
+import { displayMessageToast } from './TimeTracking.tsx';
 
 interface TimeTrackingEntry {
   workspaceName: string;
@@ -143,18 +148,28 @@ function downloadCSV(fileName: string, csvContent: string): void {
 
 const ExportButton: React.FC<ExportButtonProps> = ({ workspaces }) => {
   const [loading, setLoading] = useState(false); //if we will want a loader icon in the future.
+  const { displayToast } = useToastController();
 
   const handleExport = (period: 'current' | 'last') => {
     setLoading(true);
-    try {
-      const csvData = exportTimeTrackingDataToCSVBlocking(workspaces, period);
-      const fileName = `time-tracking-${period}-month.csv`;
-      downloadCSV(fileName, csvData);
-    } catch (error) {
-      console.error('Error exporting data:', error);
-    } finally {
-      setLoading(false);
-    }
+    setTimeout(() => {
+      try {
+        const csvData = exportTimeTrackingDataToCSVBlocking(workspaces, period);
+        const fileName = `time-tracking-${period}-month.csv`;
+        downloadCSV(fileName, csvData);
+        displayMessageToast(
+          displayToast,
+          `Your timesheet for ${period} has been successfully exported to CSV for ${workspaces.size} workspaces and downloaded to your computer.`
+        );
+      } catch (error) {
+        displayMessageToast(
+          displayToast,
+          `Error exporting data: ${error.message}`
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, 1000);
   };
 
   return (

@@ -13,7 +13,6 @@ import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
 import TransitionGroup, { TRANSITION_STATES } from '../transition.tsx';
 import { brandLightTheme as theme } from '../../../styles/theme.tsx';
-import { UndoButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 import { WhiteActionButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 
 const enterAnimation = keyframes(
@@ -172,8 +171,7 @@ function Toast({
             <Button
               className={cn(styles.toastButton)}
               onClick={onClick}
-              disabled={processing}
-            >
+              disabled={processing}>
               {message.action.text}
             </Button>
           )}
@@ -233,8 +231,7 @@ export function ToastProvider({ children }) {
     <toastContext.Provider
       value={{
         displayToast: presentToast,
-      }}
-    >
+      }}>
       {children}
       <ToastsView messages={messages} dismiss={dismiss} />
     </toastContext.Provider>

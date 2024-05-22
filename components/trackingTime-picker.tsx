@@ -5,6 +5,11 @@ import { LineSeparator, useMenuContext } from '../styles/components/menu.tsx';
 import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
+import { displayMessageToast } from '../web-app/src/shared/components/time-tracking/TimeTracking.tsx';
+import {
+  ToastProvider,
+  useToastController,
+} from '../styles/components/toast/index.tsx';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -155,6 +160,8 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     menuCtx.close();
   };
 
+  const { displayToast } = useToastController();
+
   const handleSubtractTimeClick = () => {
     const minutesToSubtract = timeToMinutes(timeSubtract);
     if (minutesToSubtract <= addedTimeToday) {
@@ -163,7 +170,10 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
       setAddedTimeToday((prev) => prev - minutesToSubtract);
       menuCtx.close();
     } else {
-      alert('You cannot subtract more time than you added today.');
+      displayMessageToast(
+        displayToast,
+        "Oops! You can only reduce hours you've logged within the last 24 hours."
+      );
     }
   };
   const formatTimeInput = (rawInput: string) => {

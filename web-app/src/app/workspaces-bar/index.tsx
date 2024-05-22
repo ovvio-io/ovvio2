@@ -69,6 +69,7 @@ import { LineSeparator } from '../../../../styles/components/menu.tsx';
 import { useMaxWidth } from '../index.tsx';
 import { prettyJSON } from '../../../../base/common.ts';
 import ExportButton from '../../shared/components/time-tracking/timeTracking-export.tsx';
+import { ToastProvider } from '../../../../styles/components/toast/index.tsx';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -507,71 +508,72 @@ function WorkspaceToggleView({
   const moreButtonRef = useRef(null); //ADDED
 
   return (
-    <div className={cn(styles.toggleView)}>
-      <div className={cn(styles.workspacesHeader)}>
-        <LabelSm>{strings.myWorkspaces}</LabelSm>
-        <Menu
-          renderButton={() => (
-            <div ref={moreButtonRef}>
-              <IconMore className={cn(styles.moreButton)} />
-            </div>
-          )}
-          popupClassName={cn(styles.workSpaceMenu)}
-          direction="out"
-          position="right"
-          align="end">
-          <div className={cn(styles.groupbyHeader)}>
-            <img
-              key="GroupIcon"
-              src="/icons/design-system/Group.svg"
-              className={cn(styles.iconsInGroupByMenu)}
-            />{' '}
-            <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-          </div>
-
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'Team';
-            }}>
-            {'Team'}
-            {view.workspaceGrouping === 'Team' && <IconCheck />}
-          </MenuItem>
-
-          <MenuItem
-            className={styles.lastItem}
-            onClick={() => {
-              view.workspaceGrouping = 'Employee';
-            }}>
-            {'Employee'}
-            {view.workspaceGrouping === 'Employee' && <IconCheck />}
-          </MenuItem>
-          <div style={{ marginTop: '8px' }} />
-          <LineSeparator height={1} />
-          <MenuItem
-            className={styles.lastItem}
-            onClick={() => {
-              view.workspaceGrouping = 'none';
-            }}
-            icon={(iconProps) => (
-              // <IconUngroup
-              //   color="blue"
-              //   {...iconProps}
-              //   className={cn(styles.iconsInGroupByMenu)}
-              // />
+    <ToastProvider>
+      <div className={cn(styles.toggleView)}>
+        <div className={cn(styles.workspacesHeader)}>
+          <LabelSm>{strings.myWorkspaces}</LabelSm>
+          <Menu
+            renderButton={() => (
+              <div ref={moreButtonRef}>
+                <IconMore className={cn(styles.moreButton)} />
+              </div>
+            )}
+            popupClassName={cn(styles.workSpaceMenu)}
+            direction="out"
+            position="right"
+            align="end">
+            <div className={cn(styles.groupbyHeader)}>
               <img
-                key="UngroupBlackIcon"
-                src="/icons/design-system/Ungroup-black.svg"
+                key="GroupIcon"
+                src="/icons/design-system/Group.svg"
                 className={cn(styles.iconsInGroupByMenu)}
-              />
-            )}>
-            {'Ungroup'}
-            {view.workspaceGrouping === 'none' && <IconCheck />}
-          </MenuItem>
-          {view.selectedWorkspaces.size > 0 && (
-            <>
-              <div style={{ marginTop: '8px' }} />
-              <LineSeparator height={1} />
-              {/* <MenuItem
+              />{' '}
+              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
+            </div>
+
+            <MenuItem
+              onClick={() => {
+                view.workspaceGrouping = 'Team';
+              }}>
+              {'Team'}
+              {view.workspaceGrouping === 'Team' && <IconCheck />}
+            </MenuItem>
+
+            <MenuItem
+              className={styles.lastItem}
+              onClick={() => {
+                view.workspaceGrouping = 'Employee';
+              }}>
+              {'Employee'}
+              {view.workspaceGrouping === 'Employee' && <IconCheck />}
+            </MenuItem>
+            <div style={{ marginTop: '8px' }} />
+            <LineSeparator height={1} />
+            <MenuItem
+              className={styles.lastItem}
+              onClick={() => {
+                view.workspaceGrouping = 'none';
+              }}
+              icon={(iconProps) => (
+                // <IconUngroup
+                //   color="blue"
+                //   {...iconProps}
+                //   className={cn(styles.iconsInGroupByMenu)}
+                // />
+                <img
+                  key="UngroupBlackIcon"
+                  src="/icons/design-system/Ungroup-black.svg"
+                  className={cn(styles.iconsInGroupByMenu)}
+                />
+              )}>
+              {'Ungroup'}
+              {view.workspaceGrouping === 'none' && <IconCheck />}
+            </MenuItem>
+            {view.selectedWorkspaces.size > 0 && (
+              <>
+                <div style={{ marginTop: '8px' }} />
+                <LineSeparator height={1} />
+                {/* <MenuItem
                 className={styles.exportAndDownload}
                 style={{ cursor: 'pointer' }}>
                 <img
@@ -581,43 +583,45 @@ function WorkspaceToggleView({
                 />{' '}
                 {'Export timesheet'}
               </MenuItem> */}
-              <div className={cn(styles.groupbyHeader)}>
-                <img
-                  key="ExportIcon"
-                  src="/icons/design-system/Publish.svg"
-                  className={cn(styles.iconsInGroupByMenu)}
-                />{' '}
-                <LabelSm className={styles.groupBy}>Export timesheet</LabelSm>
-              </div>
-              <ExportButton workspaces={view.selectedWorkspaces} />
-              <div style={{ marginTop: '8px' }} />
-              <LineSeparator height={1} />
-              <DownloadButton />
-            </>
-          )}
-        </Menu>
-      </div>
-      {!ofSettings && (
-        <div className={cn(styles.toggleActions)}>
-          <TextSm
-            onClick={onSelectAll}
-            className={cn(
-              styles.toggleViewButton,
-              selectedRatio === 1 && styles.toggleViewButtonDisabled
-            )}>
-            Select All
-          </TextSm>
-          <TextSm
-            onClick={onUnselectAll}
-            className={cn(
-              styles.toggleViewButton,
-              selectedRatio === 0 && styles.toggleViewButtonDisabled
-            )}>
-            Unselect All
-          </TextSm>
+                <div className={cn(styles.groupbyHeader)}>
+                  <img
+                    key="ExportIcon"
+                    src="/icons/design-system/Publish.svg"
+                    className={cn(styles.iconsInGroupByMenu)}
+                  />{' '}
+                  <LabelSm className={styles.groupBy}>Export timesheet</LabelSm>
+                </div>
+                <ExportButton workspaces={view.selectedWorkspaces} />
+
+                <div style={{ marginTop: '8px' }} />
+                <LineSeparator height={1} />
+                <DownloadButton />
+              </>
+            )}
+          </Menu>
         </div>
-      )}
-    </div>
+        {!ofSettings && (
+          <div className={cn(styles.toggleActions)}>
+            <TextSm
+              onClick={onSelectAll}
+              className={cn(
+                styles.toggleViewButton,
+                selectedRatio === 1 && styles.toggleViewButtonDisabled
+              )}>
+              Select All
+            </TextSm>
+            <TextSm
+              onClick={onUnselectAll}
+              className={cn(
+                styles.toggleViewButton,
+                selectedRatio === 0 && styles.toggleViewButtonDisabled
+              )}>
+              Unselect All
+            </TextSm>
+          </div>
+        )}
+      </div>
+    </ToastProvider>
   );
 }
 
