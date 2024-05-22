@@ -176,7 +176,7 @@ export interface AttachmentData extends CoreObject {
 export interface TimeTrackData extends CoreObject {
   user: string;
   // userName: string;
-  time: number; //TODO: min
+  minutes: number;
   creationDate: Date;
 }
 

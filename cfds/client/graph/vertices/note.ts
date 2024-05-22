@@ -196,11 +196,19 @@ export class Note extends ContentVertex {
   // }
 
   get totalTimeSpent(): number {
-    return Array.from(this.timeTrack).reduce(
-      (acc, entry) => acc + entry.time,
-      0
-    );
+    const calculateTotalTime = (note: Note): number => {
+      const ownTime = Array.from(note.timeTrack).reduce(
+        (acc, entry) => acc + entry.minutes,
+        0
+      );
+      const childTime = note.childCards.reduce((acc, childNote) => {
+        return acc + calculateTotalTime(childNote);
+      }, 0);
+      return ownTime + childTime;
+    };
+    return calculateTotalTime(this);
   }
+
   get timeTrack(): Set<TimeTrackData> {
     const timeTrack = this.record.get('timeTrack') as Set<TimeTrackData>;
     if (timeTrack === undefined || timeTrack.size === 0) {
@@ -216,14 +224,15 @@ export class Note extends ContentVertex {
 
   addTime(minutes: number): void {
     SetUtils.addByValue(this.proxy.timeTrack, {
-      time: minutes,
+      minutes: minutes,
       user: this.graph.rootKey,
       creationDate: new Date(),
     });
   }
+
   subtractTime(minutes: number): void {
     SetUtils.addByValue(this.proxy.timeTrack, {
-      time: -1 * minutes,
+      minutes: -1 * minutes,
       user: this.graph.rootKey,
       creationDate: new Date(),
     });

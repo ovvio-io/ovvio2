@@ -3,14 +3,13 @@ import { Vertex } from '../../../../../cfds/client/graph/vertex.ts';
 import { Note } from '../../../../../cfds/client/graph/vertices/index.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
 import React, { useState } from 'react';
-import { Button } from '../../../../../styles/components/buttons.tsx';
 import { MenuItem } from '../../../../../styles/components/menu.tsx';
 
 interface TimeTrackingEntry {
   workspaceName: string;
   employeeName: string;
   noteName: string;
-  taskName: string;
+  taskName: string | undefined;
   hoursReported: number;
   dateReported: Date;
 }
@@ -27,9 +26,11 @@ function collectTimeTrackingData(
       entries.push({
         workspaceName,
         employeeName: track.user,
-        noteName: note.titlePlaintext,
-        taskName: note.titlePlaintext,
-        hoursReported: track.time,
+        noteName: note.parentNote
+          ? note.parentNote.titlePlaintext
+          : note.titlePlaintext,
+        taskName: note.parentNote ? note.titlePlaintext : '',
+        hoursReported: track.minutes / 60,
         dateReported: track.creationDate,
       });
     }
@@ -94,17 +95,17 @@ function fetchTimeTrackingData(
 
 function convertToCSV(data: TimeTrackingEntry[]): string {
   const headers = [
-    'workspaceName',
-    'employeeName',
-    'noteName',
-    'taskName',
-    'hoursReported',
-    'dateReported',
+    'Workspace name',
+    'Employee name',
+    'Note name',
+    'Task name',
+    'Hours reported',
+    'Date reported',
   ];
   const rows = data.map((entry) => [
     entry.workspaceName,
     entry.employeeName,
-    entry.noteName,
+    entry.noteName != undefined ? entry.noteName : '',
     entry.taskName,
     entry.hoursReported !== undefined ? entry.hoursReported.toString() : '0',
     entry.dateReported.toISOString(),
@@ -153,7 +154,7 @@ function downloadCSV(fileName: string, csvContent: string): void {
 }
 
 const ExportButton: React.FC<ExportButtonProps> = ({ workspaces }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); //if we will want a loader icon in the future.
 
   const handleExport = (period: 'current' | 'last') => {
     setLoading(true);
