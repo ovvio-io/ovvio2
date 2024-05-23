@@ -173,7 +173,8 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     } else {
       displayMessageToast(
         displayToast,
-        "Oops! You can only reduce hours you've logged within the last 24 hours."
+        "Oops! You can only reduce hours you've logged within the last 24 hours.",
+        'failure'
       );
     }
   };

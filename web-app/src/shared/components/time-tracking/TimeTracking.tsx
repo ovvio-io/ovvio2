@@ -142,10 +142,12 @@ export function TimeTrackingContainer({
 }
 export const displayMessageToast = (
   displayToast: DisplayToastFunction,
-  messageText: string
+  messageText: string,
+  type: 'action' | 'success' | 'failure' = 'action'
 ): void => {
   displayToast({
     text: messageText,
-    duration: 4000,
+    type: type,
+    duration: 300000,
   });
 };

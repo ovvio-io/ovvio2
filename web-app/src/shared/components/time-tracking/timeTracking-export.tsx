@@ -160,7 +160,11 @@ interface ExportButtonProps {
   workspaces: Set<Workspace>;
 }
 
-function downloadCSV(fileName: string, csvContent: string): void {
+function downloadCSV(
+  fileName: string,
+  csvContent: string,
+  callback: () => void
+): void {
   const url = window.URL.createObjectURL(
     new Blob([csvContent], { type: 'text/csv' })
   );
@@ -172,6 +176,7 @@ function downloadCSV(fileName: string, csvContent: string): void {
   a.click();
   window.URL.revokeObjectURL(url);
   a.remove();
+  setTimeout(callback, 3000);
 }
 
 const ExportButton: React.FC<ExportButtonProps> = ({ workspaces }) => {
@@ -184,20 +189,24 @@ const ExportButton: React.FC<ExportButtonProps> = ({ workspaces }) => {
       try {
         const csvData = exportTimeTrackingDataToCSVBlocking(workspaces, period);
         const fileName = `time-tracking-${period}-month.csv`;
-        downloadCSV(fileName, csvData);
-        displayMessageToast(
-          displayToast,
-          `Your timesheet for ${period} has been successfully exported to CSV for ${workspaces.size} workspaces and downloaded to your computer.`
-        );
+        downloadCSV(fileName, csvData, () => {
+          const periodText = period === 'current' ? 'this' : 'last';
+          displayMessageToast(
+            displayToast,
+            `Your timesheet for ${periodText} month has been successfully exported to CSV for ${workspaces.size} workspaces and downloaded to your computer.`,
+            'success'
+          );
+          setLoading(false);
+        });
       } catch (error) {
         displayMessageToast(
           displayToast,
-          `Error exporting data: ${error.message}`
+          `Error exporting data: ${error.message}`,
+          'failure'
         );
-      } finally {
         setLoading(false);
       }
-    }, 1000);
+    }, 500);
   };
 
   return (
