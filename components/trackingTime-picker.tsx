@@ -62,6 +62,7 @@ const useStyles = makeStyles(() => ({
     fontSize: '13px',
     letterSpacing: '0.075px',
     backgroundColor: 'inherit',
+    color: '#8C8C8C',
   },
   iconContainer: {
     display: 'flex',

@@ -86,6 +86,27 @@ function fetchTimeTrackingData(
   return allEntries;
 }
 
+// function convertToCSV(data: TimeTrackingEntry[]): string {
+//   const headers = [
+//     'Workspace name',
+//     'Employee name',
+//     'Note name',
+//     'Task name',
+//     'Hours reported',
+//     'Date reported',
+//   ];
+//   const rows = data.map((entry) => [
+//     entry.workspaceName,
+//     entry.employeeName,
+//     entry.noteName != undefined ? entry.noteName : '',
+//     entry.taskName,
+//     entry.hoursReported !== undefined ? entry.hoursReported.toString() : '0',
+//     entry.dateReported.toISOString(),
+//   ]);
+
+//   const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
+//   return csvContent;
+// }
 function convertToCSV(data: TimeTrackingEntry[]): string {
   const headers = [
     'Workspace name',
@@ -95,19 +116,26 @@ function convertToCSV(data: TimeTrackingEntry[]): string {
     'Hours reported',
     'Date reported',
   ];
+
+  const escapeCSV = (text: string): string => {
+    if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  };
+
   const rows = data.map((entry) => [
-    entry.workspaceName,
-    entry.employeeName,
-    entry.noteName != undefined ? entry.noteName : '',
-    entry.taskName,
-    entry.hoursReported !== undefined ? entry.hoursReported.toString() : '0',
+    escapeCSV(entry.workspaceName),
+    escapeCSV(entry.employeeName),
+    escapeCSV(entry.noteName != undefined ? entry.noteName : ''),
+    escapeCSV(entry.taskName != undefined ? entry.taskName : ''),
+    entry.hoursReported !== undefined ? entry.hoursReported.toFixed(2) : '0.00',
     entry.dateReported.toISOString(),
   ]);
 
   const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
   return csvContent;
 }
-
 function exportTimeTrackingDataToCSVBlocking(
   workspaces: Set<Workspace>,
   period: 'current' | 'last'
