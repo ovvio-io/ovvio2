@@ -10,7 +10,10 @@ import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import { minutesToHHMM } from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
+import {
+  Clock,
+  minutesToHHMM,
+} from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -153,9 +156,8 @@ function ColumnTitle({
                   isColumnHovered && styles.timeTrackHover
                 )}>
                 {formattedTime}
-                <img
-                  key="IconTimeTrackHover"
-                  src="/icons/design-system/timeTracking/hover.svg"
+                <Clock
+                  totalMinutes={totalTimeSpent} //TODO: needs improvements
                 />
               </div>
             </div>

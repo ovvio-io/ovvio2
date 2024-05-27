@@ -30,11 +30,13 @@ const useStyles = makeStyles(() => ({
   },
   clockContainer: {
     width: '50px',
-    height: '18px',
+    height: '16px',
     display: 'flex',
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    gap: '8px',
   },
+  clock: { width: '16px', height: '16px' },
   clockSvg: {
     height: '100%',
   },
@@ -69,7 +71,7 @@ export const Clock: React.FC<ClockProps> = ({ totalMinutes }) => {
   }, [totalMinutes]);
 
   return (
-    <div className={styles.clockContainer}>
+    <div className={styles.clock}>
       <svg
         className={styles.clockSvg}
         viewBox="0 0 16 16"
@@ -85,7 +87,7 @@ export const Clock: React.FC<ClockProps> = ({ totalMinutes }) => {
         <path
           opacity="0.6"
           d="M8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1"
-          stroke="#262626"
+          stroke="#3F3F3F"
           strokeWidth="2"
           strokeLinecap="round"
         />
@@ -108,7 +110,7 @@ export const Clock: React.FC<ClockProps> = ({ totalMinutes }) => {
           className={styles.clockHand}
           style={{ transform: `rotate(${minuteAngle}deg)` }}
           d="M8 4.5459V8.00044"
-          stroke="#3F3F3F"
+          stroke="#262626"
           strokeWidth="2"
           strokeLinecap="round"
         />
@@ -128,18 +130,16 @@ export const ClockWithPlus: React.FC<ClockWithPlusProps> = ({
   const styles = useStyles();
   const [hourAngle, setHourAngle] = useState(0);
   const [minuteAngle, setMinuteAngle] = useState(0);
-
   useEffect(() => {
     const deltaHours = deltaMinutes / 60;
     const newHourAngle = hourAngle + deltaHours * 30; // 30deg per hour
-    console.log('newHourAngle', newHourAngle);
     const newMinuteAngle = minuteAngle + deltaMinutes * 6; // 6deg per minute
     setHourAngle(newHourAngle);
     setMinuteAngle(newMinuteAngle);
   }, [deltaMinutes, totalMinutes]);
 
   return (
-    <div className={styles.clockContainer}>
+    <div className={styles.clock}>
       <svg
         className={styles.clockSvg}
         viewBox="0 0 16 16"

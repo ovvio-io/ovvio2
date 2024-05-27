@@ -6,10 +6,7 @@ import { VertexManager } from '../cfds/client/graph/vertex-manager.ts';
 import { Note } from '../cfds/client/graph/vertices/note.ts';
 import { usePartialVertex } from '../web-app/src/core/cfds/react/vertex.ts';
 import { displayMessageToast } from '../web-app/src/shared/components/time-tracking/TimeTracking.tsx';
-import {
-  ToastProvider,
-  useToastController,
-} from '../styles/components/toast/index.tsx';
+import { useToastController } from '../styles/components/toast/index.tsx';
 
 const useStyles = makeStyles(() => ({
   tableContainer: {
@@ -23,9 +20,9 @@ const useStyles = makeStyles(() => ({
     flexDirection: 'column',
   },
   hoverableRow: {
-    cursor: 'pointer',
+    position: 'relative',
     ':hover': {
-      backgroundColor: '#FBF6EF',
+      backgroundColor: '#FBEAC8',
     },
   },
   row: {
@@ -34,6 +31,7 @@ const useStyles = makeStyles(() => ({
     height: '32px',
     minHeight: '32px',
     display: 'flex',
+    justifyContent: 'space-between',
     fontSize: 13,
     lineHeight: '19.5px',
     fontFamily: 'poppins',
@@ -43,7 +41,7 @@ const useStyles = makeStyles(() => ({
   inputRow: {
     width: '100%',
     display: 'flex',
-    padding: '0px 0px 0px 8px',
+    justifyContent: 'space-around',
     gap: '8px',
     marginBottom: 'none',
     alignItems: 'center',
@@ -67,15 +65,30 @@ const useStyles = makeStyles(() => ({
   iconContainer: {
     display: 'flex',
   },
-  minusIcon: {
+  plusIcon: {
+    position: 'relative',
+    right: '8px',
     marginTop: 2,
-    cursor: 'pointer',
+    // cursor: 'pointer',
+    opacity: 0,
+    transition: 'opacity 0.2s ease-in-out',
+  },
+  plusIconVisible: {
+    opacity: 1,
   },
   selectedItem: {
     backgroundColor: '#FBF6EF',
   },
+  svgButton: {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    ':hover circle': {
+      fill: '#E0EEF4',
+    },
+  },
 }));
-
 function timeToMinutes(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
@@ -105,6 +118,7 @@ export default function TimeTrackPicker({
   const timeOptionRefs = useRef(
     timeOptions.map(() => React.createRef<HTMLDivElement>())
   );
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (inputAddRef.current) {
@@ -225,48 +239,6 @@ export default function TimeTrackPicker({
     });
   };
 
-  // const handleKeyDown = (event: React.KeyboardEvent) => {
-  //   const { key } = event;
-  //   const elements = [
-  //     inputAddRef.current,
-  //     ...timeOptionRefs.current.map((ref) => ref.current),
-  //     enableSubtract ? inputSubtractRef.current : null,
-  //   ].filter(Boolean);
-
-  //   if (key === 'Enter') {
-  //     event.preventDefault();
-  //     if (selectedIndex === 0) {
-  //       handleAddTimeClick();
-  //     } else if (
-  //       enableSubtract &&
-  //       event.currentTarget === inputSubtractRef.current
-  //     ) {
-  //       handleSubtractTimeClick();
-  //     } else {
-  //       pCard.addTime(timeToMinutes(timeOptions[selectedIndex - 1]));
-  //       menuCtx.close();
-  //     }
-  //   } else if (key === 'ArrowDown' || key === 'ArrowUp') {
-  //     event.preventDefault();
-  //     let newIndex = selectedIndex;
-  //     if (key === 'ArrowDown' && selectedIndex < elements.length - 1) {
-  //       newIndex = selectedIndex + 1;
-  //     } else if (key === 'ArrowUp' && selectedIndex > 0) {
-  //       newIndex = selectedIndex - 1;
-  //     }
-
-  //     setSelectedIndex(newIndex);
-  //   } else if (key === 'Escape') {
-  //     menuCtx.close();
-  //   } else if (
-  //     !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'].includes(
-  //       event.key
-  //     ) &&
-  //     !(event.key >= '0' && event.key <= '9')
-  //   ) {
-  //     event.preventDefault();
-  //   }
-  // };
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const { key } = event;
     const elements = [
@@ -316,13 +288,6 @@ export default function TimeTrackPicker({
     <div ref={componentRef} className={cn(styles.tableContainer)}>
       <div className={cn(styles.tableContent)}>
         <div className={cn(styles.inputRow, styles.hoverableRow)}>
-          <div className={cn(styles.iconContainer)}>
-            <img
-              className={cn(styles.minusIcon)}
-              src="/icons/design-system/timeTracking/Plus-big.svg"
-              onClick={handleAddTimeClick}
-            />
-          </div>
           <input
             ref={inputAddRef}
             type="text"
@@ -334,6 +299,55 @@ export default function TimeTrackPicker({
             onFocus={handleFocus}
             onClick={(e) => e.stopPropagation()}
           />
+          <div className={cn(styles.iconContainer)}>
+            <button
+              className={styles.svgButton}
+              onClick={handleAddTimeClick}
+              onMouseEnter={(e) => {
+                const svg = e.currentTarget.querySelector('svg circle');
+                if (svg) svg.setAttribute('fill', '#E0EEF4');
+              }}
+              onMouseLeave={(e) => {
+                const svg = e.currentTarget.querySelector('svg circle');
+                if (svg) svg.setAttribute('fill', 'white');
+              }}>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <g clipPath="url(#clip0_445_86993)">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="11.5"
+                    fill="#FFFBF5"
+                    stroke="#8BC5EE"
+                  />
+                  <path
+                    opacity="0.6"
+                    d="M12 17L12 7"
+                    stroke="#6AB6EF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    opacity="0.6"
+                    d="M7 12L17 12"
+                    stroke="#1960CF"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </g>
+                <defs>
+                  <clipPath id="clip0_445_86993">
+                    <rect width="24" height="24" fill="white" />
+                  </clipPath>
+                </defs>
+              </svg>
+            </button>
+          </div>
         </div>
         {timeOptions.map((time, index) => (
           <div
@@ -344,6 +358,7 @@ export default function TimeTrackPicker({
               styles.hoverableRow,
               selectedIndex === index + 1 && styles.selectedItem
             )}
+            style={{ cursor: 'pointer' }}
             tabIndex={0}
             onClick={() => {
               const minutesToAdd = timeToMinutes(time);
@@ -352,8 +367,16 @@ export default function TimeTrackPicker({
               menuCtx.close();
             }}
             onKeyDown={handleKeyDown}
-            onMouseEnter={() => setSelectedIndex(index + 1)}>
+            onMouseEnter={() => setHoverIndex(index)}
+            onMouseLeave={() => setHoverIndex(null)}>
             {time}
+            <img
+              className={cn(
+                styles.plusIcon,
+                hoverIndex === index && styles.plusIconVisible
+              )}
+              src="/icons/design-system/timeTracking/plus-big.svg"
+            />
           </div>
         ))}
         {enableSubtract && (
@@ -362,13 +385,6 @@ export default function TimeTrackPicker({
             <LineSeparator />
             <div className={cn(styles.inputRow, styles.hoverableRow)}>
               {' '}
-              <div className={cn(styles.iconContainer)}>
-                <img
-                  className={cn(styles.minusIcon)}
-                  src="/icons/design-system/timeTracking/Minus-big.svg"
-                  onClick={handleSubtractTimeClick}
-                />
-              </div>
               <input
                 ref={inputSubtractRef}
                 type="text"
@@ -380,6 +396,48 @@ export default function TimeTrackPicker({
                 onFocus={handleFocus}
                 onClick={(e) => e.stopPropagation()}
               />
+              <div className={cn(styles.iconContainer)}>
+                <button
+                  className={styles.svgButton}
+                  onClick={handleSubtractTimeClick}
+                  onMouseEnter={(e) => {
+                    const svg = e.currentTarget.querySelector('svg circle');
+                    if (svg) svg.setAttribute('fill', '#E0EEF4');
+                  }}
+                  onMouseLeave={(e) => {
+                    const svg = e.currentTarget.querySelector('svg circle');
+                    if (svg) svg.setAttribute('fill', 'white');
+                  }}>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <g clipPath="url(#clip0_445_86993)">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="11.5"
+                        fill="#FFFBF5"
+                        stroke="#8BC5EE"
+                      />
+                      <path
+                        opacity="0.6"
+                        d="M7 12L17 12"
+                        stroke="#1960CF"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_445_86993">
+                        <rect width="24" height="24" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                </button>
+              </div>
             </div>
           </>
         )}
