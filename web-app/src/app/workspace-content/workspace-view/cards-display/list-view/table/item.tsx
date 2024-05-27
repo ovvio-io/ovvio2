@@ -779,22 +779,6 @@ export function Row({
   );
 }
 
-export function TimeTrackingSlot({
-  note,
-  isMouseOver,
-}: {
-  note: VertexManager<Note>;
-  isMouseOver: boolean;
-}) {
-  const styles = useStyles();
-
-  return (
-    <div className={styles.timeTracking}>
-      <TimeTrackingContainer card={note} plus={true} hover={isMouseOver} />
-    </div>
-  );
-}
-
 export interface ItemRowProps extends Partial<RenderDraggableProps> {
   note: VertexManager<Note>;
   index?: number;
@@ -915,9 +899,10 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             />
             <AssigneesCell note={note} />
             <TagsCell note={note} />
-            <TimeTrackingSlot
-              note={note}
-              isMouseOver={multiIsActive ? false : isMouseOver}
+            <TimeTrackingContainer
+              className={styles.timeTracking}
+              card={note}
+              hover={multiIsActive ? false : isMouseOver}
             />
             <DueDateIndicator
               card={note}

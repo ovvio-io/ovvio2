@@ -43,10 +43,7 @@ import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.ts
 import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
 import { CardTagsNew } from '../card-item/card-tag-view-new.tsx';
 import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
-import {
-  TimeTracking,
-  TimeTrackingContainer,
-} from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
+import { TimeTrackingContainer } from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 export enum CardSize {
   Regular = 'regular',
@@ -445,7 +442,7 @@ function TimeTrackingCard({
 
   return (
     <div className={styles.timeTracking}>
-      <TimeTrackingContainer card={note} plus={true} hover={isMouseOver} />
+      <TimeTrackingContainer card={note} hover={isMouseOver} />
     </div>
   );
 }

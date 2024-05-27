@@ -15,6 +15,7 @@ import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
 import { minutesToHHMM } from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
+import { Clock } from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -234,9 +235,8 @@ function SectionTitle({
               isHovered && styles.timeTrackHover
             )}>
             {formattedTime}
-            <img
-              key="IconTimeTrackHover"
-              src="/icons/design-system/timeTracking/hover.svg"
+            <Clock
+              totalMinutes={totalTimeSpent} //TODO: needs improvements
             />
           </div>
         </div>

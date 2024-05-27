@@ -83,9 +83,13 @@ function timeToMinutes(timeStr: string): number {
 
 type TimeTrackPickerProps = {
   card: VertexManager<Note>;
+  onDeltaChange: (deltaMinutes: number) => void;
 };
 
-export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
+export default function TimeTrackPicker({
+  card,
+  onDeltaChange,
+}: TimeTrackPickerProps) {
   const styles = useStyles();
   const menuCtx = useMenuContext();
   const componentRef = useRef<HTMLDivElement>(null);
@@ -155,6 +159,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
   const handleAddTimeClick = () => {
     const minutesToAdd = timeToMinutes(timeAdd);
     pCard.addTime(minutesToAdd);
+    onDeltaChange(minutesToAdd);
     setTimeAdd('00:00');
     setEnableSubtract(true);
     setAddedTimeToday((prev) => prev + minutesToAdd);
@@ -167,6 +172,7 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     const minutesToSubtract = timeToMinutes(timeSubtract);
     if (minutesToSubtract <= addedTimeToday) {
       pCard.subtractTime(minutesToSubtract);
+      onDeltaChange(-minutesToSubtract);
       setTimeSubtract('00:00');
       setAddedTimeToday((prev) => prev - minutesToSubtract);
       menuCtx.close();
@@ -219,6 +225,48 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
     });
   };
 
+  // const handleKeyDown = (event: React.KeyboardEvent) => {
+  //   const { key } = event;
+  //   const elements = [
+  //     inputAddRef.current,
+  //     ...timeOptionRefs.current.map((ref) => ref.current),
+  //     enableSubtract ? inputSubtractRef.current : null,
+  //   ].filter(Boolean);
+
+  //   if (key === 'Enter') {
+  //     event.preventDefault();
+  //     if (selectedIndex === 0) {
+  //       handleAddTimeClick();
+  //     } else if (
+  //       enableSubtract &&
+  //       event.currentTarget === inputSubtractRef.current
+  //     ) {
+  //       handleSubtractTimeClick();
+  //     } else {
+  //       pCard.addTime(timeToMinutes(timeOptions[selectedIndex - 1]));
+  //       menuCtx.close();
+  //     }
+  //   } else if (key === 'ArrowDown' || key === 'ArrowUp') {
+  //     event.preventDefault();
+  //     let newIndex = selectedIndex;
+  //     if (key === 'ArrowDown' && selectedIndex < elements.length - 1) {
+  //       newIndex = selectedIndex + 1;
+  //     } else if (key === 'ArrowUp' && selectedIndex > 0) {
+  //       newIndex = selectedIndex - 1;
+  //     }
+
+  //     setSelectedIndex(newIndex);
+  //   } else if (key === 'Escape') {
+  //     menuCtx.close();
+  //   } else if (
+  //     !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'].includes(
+  //       event.key
+  //     ) &&
+  //     !(event.key >= '0' && event.key <= '9')
+  //   ) {
+  //     event.preventDefault();
+  //   }
+  // };
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const { key } = event;
     const elements = [
@@ -237,7 +285,9 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
       ) {
         handleSubtractTimeClick();
       } else {
-        pCard.addTime(timeToMinutes(timeOptions[selectedIndex - 1]));
+        const minutesToAdd = timeToMinutes(timeOptions[selectedIndex - 1]);
+        pCard.addTime(minutesToAdd);
+        onDeltaChange(minutesToAdd);
         menuCtx.close();
       }
     } else if (key === 'ArrowDown' || key === 'ArrowUp') {
@@ -295,7 +345,12 @@ export default function TimeTrackPicker({ card }: TimeTrackPickerProps) {
               selectedIndex === index + 1 && styles.selectedItem
             )}
             tabIndex={0}
-            onClick={() => pCard.addTime(timeToMinutes(time))}
+            onClick={() => {
+              const minutesToAdd = timeToMinutes(time);
+              pCard.addTime(minutesToAdd);
+              onDeltaChange(minutesToAdd);
+              menuCtx.close();
+            }}
             onKeyDown={handleKeyDown}
             onMouseEnter={() => setSelectedIndex(index + 1)}>
             {time}
