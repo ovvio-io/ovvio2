@@ -20,7 +20,10 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
 import Layer from '../../../../styles/components/layer.tsx';
-import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
+import Menu, {
+  MenuItem,
+  SecondaryMenuItem,
+} from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
@@ -70,6 +73,10 @@ import { useMaxWidth } from '../index.tsx';
 import { prettyJSON } from '../../../../base/common.ts';
 import ExportButton from '../../shared/components/time-tracking/timeTracking-export.tsx';
 import { ToastProvider } from '../../../../styles/components/toast/index.tsx';
+import {
+  ImageIcon,
+  ImageIconProps,
+} from '../settings/components/tag-table.tsx';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -89,10 +96,10 @@ const useStyles = makeStyles(
     },
     groupBy: {
       color: theme.mono.m10,
-      fontFeatureSettings: "'clig' off, 'liga' off",
+      // fontFeatureSettings: "'clig' off, 'liga' off",
       padding: '8px 16px 8px 8px',
       backgroundColor: theme.secondary.s0,
-      fontSize: '14px',
+      // fontSize: '14px',
       fontStyle: 'normal',
       fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
       lineHeight: 'normal',
@@ -195,7 +202,7 @@ const useStyles = makeStyles(
       width: '100%',
       borderBottomRightRadius: styleguide.gridbase * 2,
       borderTopRightRadius: styleguide.gridbase * 2,
-      paddingLeft: styleguide.gridbase * 2,
+      paddingLeft: styleguide.gridbase,
       paddingRight: styleguide.gridbase,
       boxSizing: 'border-box',
       alignItems: 'center',
@@ -324,12 +331,12 @@ const useStyles = makeStyles(
       padding: '0 4px 0 10px',
       borderBottom: `2px solid $ ${theme.mono.m6}`,
     },
-    exportAndDownload: {
-      background: '#FFFBF5',
-      // fontWeight: '500',
-    },
     iconsInGroupByMenu: {
       marginRight: styleguide.gridbase,
+    },
+    secondaryMenu: {
+      width: '100%',
+      gap: '8px',
     },
   }),
   'workspaces-bar_881015'
@@ -488,7 +495,6 @@ interface WorkspaceToggleViewProps {
   ofSettings: boolean | undefined;
   query: Query<Workspace, Workspace, WorkspaceGID>;
 }
-
 function WorkspaceToggleView({
   query,
   onSelectAll,
@@ -521,80 +527,56 @@ function WorkspaceToggleView({
             popupClassName={cn(styles.workSpaceMenu)}
             direction="out"
             position="right"
-            align="end">
-            <div className={cn(styles.groupbyHeader)}>
-              <img
-                key="GroupIcon"
-                src="/icons/design-system/Group.svg"
-                className={cn(styles.iconsInGroupByMenu)}
-              />{' '}
-              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-            </div>
-
-            <MenuItem
-              onClick={() => {
-                view.workspaceGrouping = 'Team';
-              }}>
-              {'Team'}
-              {view.workspaceGrouping === 'Team' && <IconCheck />}
-            </MenuItem>
-
-            <MenuItem
-              className={styles.lastItem}
-              onClick={() => {
-                view.workspaceGrouping = 'Employee';
-              }}>
-              {'Employee'}
-              {view.workspaceGrouping === 'Employee' && <IconCheck />}
-            </MenuItem>
-            <div style={{ marginTop: '8px' }} />
-            <LineSeparator height={1} />
-            <MenuItem
-              className={styles.lastItem}
-              onClick={() => {
-                view.workspaceGrouping = 'none';
-              }}
-              icon={(iconProps) => (
-                // <IconUngroup
-                //   color="blue"
-                //   {...iconProps}
-                //   className={cn(styles.iconsInGroupByMenu)}
-                // />
-                <img
-                  key="UngroupBlackIcon"
-                  src="/icons/design-system/Ungroup-black.svg"
-                  className={cn(styles.iconsInGroupByMenu)}
+            align="start">
+            <SecondaryMenuItem
+              className={styles.secondaryMenu}
+              IconComponent={(props: ImageIconProps) => (
+                <ImageIcon
+                  {...props}
+                  src="/icons/design-system/Group.svg"
+                  alt="GroupIcon"
                 />
-              )}>
-              {'Ungroup'}
-              {view.workspaceGrouping === 'none' && <IconCheck />}
-            </MenuItem>
+              )}
+              text="Group By">
+              <MenuItem
+                onClick={() => {
+                  view.workspaceGrouping = 'Team';
+                }}>
+                {'Team'}
+                {view.workspaceGrouping === 'Team' && <IconCheck />}
+              </MenuItem>
+              <MenuItem
+                className={styles.lastItem}
+                onClick={() => {
+                  view.workspaceGrouping = 'Employee';
+                }}>
+                {'Employee'}
+                {view.workspaceGrouping === 'Employee' && <IconCheck />}
+              </MenuItem>
+              <MenuItem
+                className={styles.lastItem}
+                onClick={() => {
+                  view.workspaceGrouping = 'none';
+                }}>
+                {'None'}
+                {view.workspaceGrouping === 'none' && <IconCheck />}
+              </MenuItem>
+            </SecondaryMenuItem>
+
             {view.selectedWorkspaces.size > 0 && (
               <>
-                <div style={{ marginTop: '8px' }} />
-                <LineSeparator height={1} />
-                {/* <MenuItem
-                className={styles.exportAndDownload}
-                style={{ cursor: 'pointer' }}>
-                <img
-                  key="ExportIcon"
-                  src="/icons/design-system/Publish.svg"
-                  className={cn(styles.iconsInGroupByMenu)}
-                />{' '}
-                {'Export timesheet'}
-              </MenuItem> */}
-                <div className={cn(styles.groupbyHeader)}>
-                  <img
-                    key="ExportIcon"
-                    src="/icons/design-system/Publish.svg"
-                    className={cn(styles.iconsInGroupByMenu)}
-                  />{' '}
-                  <LabelSm className={styles.groupBy}>Export timesheet</LabelSm>
-                </div>
-                <ExportButton workspaces={view.selectedWorkspaces} />
-
-                <div style={{ marginTop: '8px' }} />
-                <LineSeparator height={1} />
+                <SecondaryMenuItem
+                  className={styles.secondaryMenu}
+                  text={'Export timesheet'}
+                  IconComponent={(props: ImageIconProps) => (
+                    <ImageIcon
+                      {...props}
+                      src="/icons/design-system/Publish.svg"
+                      alt="ExportIcon"
+                    />
+                  )}>
+                  <ExportButton workspaces={view.selectedWorkspaces} />
+                </SecondaryMenuItem>
                 <DownloadButton />
               </>
             )}
@@ -1253,19 +1235,13 @@ const DownloadButton: React.FC = () => {
   const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
   const styles = useStyles();
   return (
-    <MenuItem
-      className={styles.exportAndDownload}
-      onClick={exportSelectedWorkspaces}>
+    <MenuItem onClick={exportSelectedWorkspaces}>
       <img
         key="DownloadIcon"
         src="/icons/design-system/Download.svg"
         className={cn(styles.iconsInGroupByMenu)}
       />{' '}
-      <LabelSm
-        className={styles.groupBy}
-        style={{ padding: '0', backgroundColor: 'unset' }}>
-        Download selected
-      </LabelSm>
+      <div>Download selected</div>
     </MenuItem>
   );
 };
