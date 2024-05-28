@@ -379,7 +379,7 @@ function buildQueryOptions<GT extends CoreValue>(
       'childCards',
       'title',
       'dueDate',
-      // 'timeTrack',
+      'timeTrack',
     ],
   };
 } //TODO: add "timeTrack ^ "

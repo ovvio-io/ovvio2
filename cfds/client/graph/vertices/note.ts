@@ -460,7 +460,7 @@ export class Note extends ContentVertex {
     child: Note
   ): MutationPack {
     console.log('child- ', child.totalTimeSpent);
-    this._cachedTotalTimeSpent = undefined;
+    this._cachedTotalTimeSpent = undefined; //1. i dont understand why. 2. isn't cache for performance issues?
     return ['totalTimeSpent', local, this._cachedTotalTimeSpent];
   }
 

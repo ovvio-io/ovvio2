@@ -140,8 +140,12 @@ export function ListViewNew({
       });
     };
 
-    addTimesFromQuery(pinnedQuery!);
-    addTimesFromQuery(unpinnedQuery!);
+    {
+      pinnedQuery && addTimesFromQuery(pinnedQuery);
+    }
+    {
+      unpinnedQuery && addTimesFromQuery(unpinnedQuery);
+    }
 
     return totalTime;
   };
