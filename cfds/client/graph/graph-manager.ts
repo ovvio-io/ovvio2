@@ -441,11 +441,11 @@ export class GraphManager
             c.session !== this.trustPool.currentSession.id ||
             c.parents.length > 1
           ) {
-            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
-              mgr.commit();
-            } else {
-              mgr.touch();
-            }
+            // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+            //   mgr.commit();
+            // } else {
+            mgr.touch();
+            // }
           }
           // else {
           //   mgr.touch();

@@ -13,7 +13,12 @@ import {
   Scheduler,
   SchedulerPriority,
 } from '../../../base/coroutine.ts';
-import { MicroTaskTimer, SimpleTimer, Timer } from '../../../base/timer.ts';
+import {
+  MicroTaskTimer,
+  NextEventLoopCycleTimer,
+  SimpleTimer,
+  Timer,
+} from '../../../base/timer.ts';
 import { assert, notReached } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { unionIter } from '../../../base/common.ts';
@@ -210,7 +215,10 @@ export class Query<
   }
 
   constructor(opts: QueryOptions<IT, OT, GT>) {
-    super((callback) => new MicroTaskTimer(callback), opts.alwaysActive);
+    super(
+      (callback) => new NextEventLoopCycleTimer(callback),
+      opts.alwaysActive,
+    );
     // super(undefined, opts.alwaysActive);
     this.startTime = Date.now();
     this._id = ++gQueryId;
