@@ -59,13 +59,13 @@ interface ClockProps {
 
 export const Clock: React.FC<ClockProps> = ({ totalMinutes }) => {
   const styles = useStyles();
+
   const [hourAngle, setHourAngle] = useState(0);
   const [minuteAngle, setMinuteAngle] = useState(0);
-
   useEffect(() => {
     const deltaHours = totalMinutes / 60;
-    const newHourAngle = hourAngle + deltaHours;
-    const newMinuteAngle = minuteAngle + totalMinutes;
+    const newHourAngle = hourAngle + deltaHours * 30;
+    const newMinuteAngle = minuteAngle + totalMinutes * 6;
     setHourAngle(newHourAngle);
     setMinuteAngle(newMinuteAngle);
   }, [totalMinutes]);

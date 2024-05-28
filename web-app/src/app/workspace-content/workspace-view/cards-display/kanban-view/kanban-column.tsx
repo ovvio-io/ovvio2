@@ -107,6 +107,15 @@ function ColumnTitle({
   const scrollParent = useScrollParent();
   const [isSticky, setIsSticky] = useState(false);
   const formattedTime = minutesToHHMM(totalTimeSpent);
+  const [prevTotalTime, setPrevTotalTime] = useState<number | null>(null);
+
+  const deltaTime = prevTotalTime !== null ? totalTimeSpent - prevTotalTime : 0;
+
+  useEffect(() => {
+    if (prevTotalTime !== totalTimeSpent) {
+      setPrevTotalTime(totalTimeSpent);
+    }
+  }, [totalTimeSpent]);
 
   useEffect(() => {
     if (!sentinel) {
@@ -156,9 +165,7 @@ function ColumnTitle({
                   isColumnHovered && styles.timeTrackHover
                 )}>
                 {formattedTime}
-                <Clock
-                  totalMinutes={totalTimeSpent} //TODO: needs improvements
-                />
+                <Clock totalMinutes={deltaTime} />
               </div>
             </div>
           </div>

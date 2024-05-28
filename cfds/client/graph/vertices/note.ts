@@ -78,6 +78,7 @@ export class Note extends ContentVertex {
   private _cachedPlaintextTitle?: string;
   private _lastManualAssigneeChange: number;
   private _lastManualTagChange: number;
+  private _cachedTotalTimeSpent?: number;
 
   constructor(
     mgr: VertexManager,
@@ -231,19 +232,6 @@ export class Note extends ContentVertex {
     const copy = SetUtils.map(set, (v) => coreObjectClone(v));
     this.record.set('timeTrack', copy);
   }
-  // addTime(minutes: number): void {
-  //   setPendingAction(true);
-  //   setTimeout(() => {
-  //     SetUtils.addByValue(this.proxy.timeTrack, {
-  //       minutes: minutes,
-  //       user: this.graph.rootKey,
-  //       creationDate: new Date(),
-  //     });
-  //     debugger;
-  //     displayMessageToast(displayToast, `blah blah blah`);
-  //     setPendingAction(false);
-  //   }, 1000);
-  // }
 
   addTime(minutes: number): void {
     SetUtils.addByValue(this.proxy.timeTrack, {
@@ -464,6 +452,24 @@ export class Note extends ContentVertex {
     child: Note
   ): MutationPack {
     return this._invalidateBodyOnChildChange(local, child.key);
+  }
+
+  childTimeTrackDidMutate(
+    local: boolean,
+    oldValue: Set<TimeTrackData> | undefined,
+    child: Note
+  ): MutationPack {
+    console.log('child- ', child.totalTimeSpent);
+    this._cachedTotalTimeSpent = undefined;
+    return ['totalTimeSpent', local, this._cachedTotalTimeSpent];
+  }
+
+  timeTrackDidMutate(
+    local: boolean,
+    oldValue: Set<TimeTrackData> | undefined
+  ): MutationPack {
+    this._cachedTotalTimeSpent = undefined;
+    console.log('this - ', this.totalTimeSpent);
   }
 
   // Invalidate our composite body if the title of an inner task are changes
@@ -1047,6 +1053,12 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
     'Note_title',
     SchemeNamespace.NOTES
   ),
+  timeTrack: triggerParent(
+    'childTimeTrackDidMutate',
+    'Note_TimeTrackParent',
+    SchemeNamespace.NOTES
+  ), //TODO: ask about Note_TimeTrackParent.
+
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
   isDeleted: triggerCompose(

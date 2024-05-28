@@ -338,6 +338,10 @@ const useStyles = makeStyles(
       width: '100%',
       gap: '8px',
     },
+    disabled: {
+      cursor: 'not-allowed',
+      opacity: '0.5',
+    },
   }),
   'workspaces-bar_881015'
 );
@@ -563,23 +567,22 @@ function WorkspaceToggleView({
               </MenuItem>
             </SecondaryMenuItem>
 
-            {view.selectedWorkspaces.size > 0 && (
-              <>
-                <SecondaryMenuItem
-                  className={styles.secondaryMenu}
-                  text={'Export timesheet'}
-                  IconComponent={(props: ImageIconProps) => (
-                    <ImageIcon
-                      {...props}
-                      src="/icons/design-system/Publish.svg"
-                      alt="ExportIcon"
-                    />
-                  )}>
-                  <ExportButton workspaces={view.selectedWorkspaces} />
-                </SecondaryMenuItem>
-                <DownloadButton />
-              </>
-            )}
+            <>
+              <SecondaryMenuItem
+                className={cn(styles.secondaryMenu)}
+                text={'Export timesheet'}
+                disabled={view.selectedWorkspaces.size < 1}
+                IconComponent={(props: ImageIconProps) => (
+                  <ImageIcon
+                    {...props}
+                    src="/icons/design-system/Publish.svg"
+                    alt="ExportIcon"
+                  />
+                )}>
+                <ExportButton workspaces={view.selectedWorkspaces} />
+              </SecondaryMenuItem>
+              <DownloadButton disabled={view.selectedWorkspaces.size < 1} />
+            </>
           </Menu>
         </div>
         {!ofSettings && (
@@ -1231,11 +1234,14 @@ function useExportSelectedWorkspaces() {
   return { exportSelectedWorkspaces };
 }
 
-const DownloadButton: React.FC = () => {
+function DownloadButton({ disabled }: { disabled: boolean }) {
   const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
   const styles = useStyles();
   return (
-    <MenuItem onClick={exportSelectedWorkspaces}>
+    <MenuItem
+      onClick={exportSelectedWorkspaces}
+      className={disabled ? styles.disabled : undefined}
+      disabled={disabled}>
       <img
         key="DownloadIcon"
         src="/icons/design-system/Download.svg"
@@ -1244,10 +1250,7 @@ const DownloadButton: React.FC = () => {
       <div>Download selected</div>
     </MenuItem>
   );
-};
-
-export default ExportButton;
-
+}
 function exportWorkspace(graph: GraphManager, wsId: string): void {
   const jsonString = prettyJSON(graph.exportSubGraph(wsId, 1));
   const url = window.URL.createObjectURL(
