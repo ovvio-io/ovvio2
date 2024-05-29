@@ -10,14 +10,14 @@ import { assert } from '../base/error.ts';
 import { ReadonlyJSONArray, ReadonlyJSONObject } from '../base/interfaces.ts';
 import { MovingAverage, randomInt } from '../base/math.ts';
 import { SerialScheduler } from '../base/serial-scheduler.ts';
-import { retry } from '../base/time.ts';
+import { retry, sleep } from '../base/time.ts';
 import { serviceUnavailable } from '../cfds/base/errors.ts';
 import { log } from '../logging/log.ts';
 import { RepositoryType } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { sendJSONToURL } from './rest-api.ts';
 
-const K_MAX_REQ_BATCH = 40;
+const K_MAX_REQ_BATCH = 10;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -191,11 +191,11 @@ export class SyncScheduler {
         trace: e.stack,
         url: this.url,
       });
-    } finally {
       this._fetchInProgress = false;
     }
 
     if (!respText) {
+      this._fetchInProgress = false;
       pendingRequests.forEach((r) => r.reject(serviceUnavailable()));
       return;
     }
@@ -206,7 +206,7 @@ export class SyncScheduler {
         let found = false;
         for (const resp of json as ReadonlyJSONObject[]) {
           if (resp.storage === req.req.storage && resp.id === req.req.id) {
-            const syncResp = new SyncMessage<SyncValueType>({
+            const syncResp = await SyncMessage.decodeAsync({
               decoder: new JSONCyclicalDecoder(resp.res as ReadonlyJSONObject),
               orgId: this.orgId,
             });
@@ -218,6 +218,7 @@ export class SyncScheduler {
         if (!found) {
           req.reject(serviceUnavailable());
         }
+        await sleep(5);
       }
     } catch (e) {
       log({
@@ -229,6 +230,8 @@ export class SyncScheduler {
       });
       pendingRequests.forEach((r) => r.reject(serviceUnavailable()));
       return;
+    } finally {
+      this._fetchInProgress = false;
     }
   }
 }

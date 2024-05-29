@@ -21,7 +21,7 @@ import { NextEventLoopCycleTimer, Timer } from './timer.ts';
 // Hopefully the UI is running at 60 fps
 const kSingleFrameMs = 1000 / 60;
 // 1/3 of a frame every event loop cycle
-const kSchedulerCycleTimeMs = kSingleFrameMs / 6;
+const kSchedulerCycleTimeMs = kSingleFrameMs / 3;
 
 /**
  * Coroutines wrapped as promises support cancellation out of the box
@@ -430,8 +430,33 @@ export class CoroutineScheduler implements Scheduler {
     mapper: (v: T) => O,
     priority = SchedulerPriority.Normal,
     name?: string,
+    skipErrors = false,
   ): CancellablePromise<O[]> {
-    return this.schedule(mapGenerator(iter, mapper), priority, name);
+    return this.schedule(
+      mapGenerator(iter, mapper, skipErrors),
+      priority,
+      name,
+    );
+  }
+
+  /**
+   * Runs the given function concurrently on all values.
+   * The resulting coroutine may be cancelled safely at any time.
+   *
+   * @param iter The iterable to map.
+   * @param mapper The mapping function.
+   * @param priority The priority for the newly created coroutine.
+   * @param name An optional name for the newly created coroutine.
+   *
+   * @returns A cancelable promise for the newly scheduled coroutine.
+   */
+  forEach<T>(
+    iter: Iterable<T>,
+    func: (v: T) => void,
+    priority = SchedulerPriority.Normal,
+    name?: string,
+  ): CancellablePromise<void> {
+    return this.schedule(forEach(iter, func), priority, name);
   }
 }
 
@@ -440,13 +465,27 @@ const kSharedScheduler = new CoroutineScheduler();
 function* mapGenerator<T, O = T>(
   iter: Iterable<T>,
   mapper: (v: T) => O,
+  skipErrors: boolean,
 ): Generator<O[], O[]> {
   const result: O[] = [];
   for (const v of iter) {
-    result.push(mapper(v));
+    if (skipErrors) {
+      try {
+        result.push(mapper(v));
+      } catch (_: unknown) {}
+    } else {
+      result.push(mapper(v));
+    }
     yield result;
   }
   return result;
+}
+
+function* forEach<T>(iter: Iterable<T>, func: (v: T) => void): Generator<void> {
+  for (const v of iter) {
+    func(v);
+    yield;
+  }
 }
 
 /**

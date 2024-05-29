@@ -1331,7 +1331,7 @@ export class Repository<
       }
     } else {
       // And asynchronously in the client
-      CoroutineScheduler.sharedScheduler().map(
+      CoroutineScheduler.sharedScheduler().forEach(
         result,
         (c) => this.emit('NewCommit', c),
         SchedulerPriority.Background,
