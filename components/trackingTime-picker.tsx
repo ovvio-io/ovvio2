@@ -373,7 +373,8 @@ export default function TimeTrackPicker({
             <img
               className={cn(
                 styles.plusIcon,
-                hoverIndex === index && styles.plusIconVisible
+                (hoverIndex === index || selectedIndex === index + 1) &&
+                  styles.plusIconVisible
               )}
               src="/icons/design-system/timeTracking/plus-big.svg"
             />
