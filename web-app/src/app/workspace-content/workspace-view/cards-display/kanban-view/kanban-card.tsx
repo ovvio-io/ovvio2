@@ -30,7 +30,7 @@ import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { NoteStatus } from '../../../../../../../cfds/base/scheme-types.ts';
 import { TaskCheckbox } from '../../../../../../../components/checkbox.tsx';
 import { WorkspaceIndicator } from '../../../../../../../components/workspace-indicator.tsx';
-import { CardFooter, DueDateIndicator } from '../card-item/card-footer.tsx';
+import { DueDateIndicator } from '../card-item/card-footer.tsx';
 import { PinCell, SelectIconContainer } from '../list-view/table/item.tsx';
 import { usePartialView } from '../../../../../core/cfds/react/graph.tsx';
 import { IconCollapseExpand } from '../../../../../../../styles/components/new-icons/icon-collapse-expand.tsx';
@@ -41,6 +41,9 @@ import { VertexId } from '../../../../../../../cfds/client/graph/vertex.ts';
 import { Workspace } from '../../../../../../../cfds/client/graph/vertices/workspace.ts';
 import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.tsx';
 import { IconMore } from '../../../../../../../styles/components/new-icons/icon-more.tsx';
+import { CardTagsNew } from '../card-item/card-tag-view-new.tsx';
+import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
+import { TimeTrackingContainer } from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 export enum CardSize {
   Regular = 'regular',
@@ -228,6 +231,20 @@ const useStyles = makeStyles((theme) => ({
   multiIsActive: {
     pointerEvents: 'none',
   },
+  usersAndExpanderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '4px 0',
+  },
+  timeTrackAndDueDateRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    paddingTop: '8px',
+    alignItems: 'center',
+  },
+  timeTracking: {
+    padding: '0 4px',
+  },
 }));
 
 function CardHeader({
@@ -370,8 +387,7 @@ export function MoreButtonCard({
         styles.RightHoverMoreButton
       )}
       style={style}
-      onClick={handleClick}
-    >
+      onClick={handleClick}>
       <div className={cn(styles.cardMoreTab)}>{children}</div>
     </div>
   );
@@ -415,6 +431,21 @@ const CardMenu = ({
     </MoreButtonCard>
   );
 };
+function TimeTrackingCard({
+  note,
+  isMouseOver,
+}: {
+  note: VertexManager<Note>;
+  isMouseOver: boolean;
+}) {
+  const styles = useStyles();
+
+  return (
+    <div className={styles.timeTracking}>
+      <TimeTrackingContainer card={note} hover={isMouseOver} />
+    </div>
+  );
+}
 
 interface ChildCardProps {
   card: VertexManager<Note>;
@@ -542,8 +573,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
       ref={ref}
       onMouseEnter={onMouseOver}
       onMouseLeave={onMouseLeave}
-      onClick={handleSelectInMulti}
-    >
+      onClick={handleSelectInMulti}>
       {(isMouseOver || isSelected) && !isChild && (
         <SelectIconContainer
           className={styles.SelectIconContainerzIndex}
@@ -563,8 +593,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
             isInAction && isSelected && styles.InAction,
             isSelected ? styles.selectedRow : styles.hoverableRow
           )}
-          onClick={onClick}
-        >
+          onClick={onClick}>
           <div className={cn(styles.headerContainer)}>
             <div className={cn(styles.taskCheckBoxContainer)}>
               {isTask ? (
@@ -583,8 +612,7 @@ export const KanbanCard = React.forwardRef(function CardItemView(
                     className={cn(
                       styles.titleText,
                       isDone && styles.strikethroughDone
-                    )}
-                  >
+                    )}>
                     {word}{' '}
                   </Text>
                 ))}
@@ -595,29 +623,39 @@ export const KanbanCard = React.forwardRef(function CardItemView(
             )}
           </div>
           <CardHeader card={card} showWorkspaceOnCard={showWorkspaceOnCard} />
-          <div className={cn(styles.footerAndExpand)}>
-            <CardFooter
-              isExpanded={isMouseOver}
-              size={size}
-              card={card}
+          <div className={cn(styles.usersAndExpanderRow)}>
+            <AssigneesView
+              cardManager={card}
+              cardType="small"
               source={source}
+              isExpanded={isMouseOver}
               multiIsActive={multiIsActive}
             />
-            <div className={cn(styles.expanderAndDate)}>
-              {childCards.length > 0 ? (
-                <CollapseExpanderToggle
-                  isExpanded={expanded}
-                  toggleExpanded={toggleExpanded}
-                />
-              ) : (
-                <div></div>
-              )}
-              <DueDateIndicator
-                card={card}
-                source={source}
-                isMouseOver={isMouseOver}
+            {childCards.length > 0 ? (
+              <CollapseExpanderToggle
+                isExpanded={expanded}
+                toggleExpanded={toggleExpanded}
               />
-            </div>
+            ) : (
+              <div></div>
+            )}
+          </div>
+          <CardTagsNew
+            size={size}
+            card={card}
+            isExpanded={isMouseOver}
+            multiIsActive={multiIsActive}
+          />
+          <div className={cn(styles.timeTrackAndDueDateRow)}>
+            <TimeTrackingCard
+              note={card}
+              isMouseOver={multiIsActive ? false : isMouseOver}
+            />
+            <DueDateIndicator
+              card={card}
+              source={source}
+              isMouseOver={isMouseOver}
+            />
           </div>
         </div>
       </div>

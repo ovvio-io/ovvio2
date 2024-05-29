@@ -202,8 +202,7 @@ export default function TagPicker({
           <div
             className={cn(styles.tableContent)}
             ref={inputRef}
-            onKeyDown={onKeyDown}
-          >
+            onKeyDown={onKeyDown}>
             {filteredTags.map((tag: Tag, index: number) => (
               <React.Fragment key={tag.key}>
                 <div
@@ -213,8 +212,7 @@ export default function TagPicker({
                     selectedIndex === index && styles.selectedItem,
                     styles.row
                   )}
-                  onClick={(event) => handleRowClick(tag, event)}
-                >
+                  onClick={(event) => handleRowClick(tag, event)}>
                   #&nbsp;
                   <span style={{ marginLeft: '8px' }}>{tag.name}</span>
                 </div>
@@ -228,8 +226,7 @@ export default function TagPicker({
                 <LineSeparator />
                 <div
                   className={cn(styles.row, styles.hoverableRow)}
-                  onClick={onRemove}
-                >
+                  onClick={onRemove}>
                   <div className={cn(styles.iconContainer)}>
                     <img
                       className={cn(styles.removeIcon)}
@@ -246,8 +243,7 @@ export default function TagPicker({
                 <LineSeparator />
                 <div
                   className={cn(styles.row, styles.hoverableRow)}
-                  onClick={onClearTags}
-                >
+                  onClick={onClearTags}>
                   <div className={cn(styles.iconContainer)}>
                     <img
                       className={cn(styles.removeIcon)}

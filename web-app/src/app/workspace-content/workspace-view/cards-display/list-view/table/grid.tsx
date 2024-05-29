@@ -14,6 +14,8 @@ import { QueryResults } from '../../../../../../../../cfds/client/graph/query.ts
 import { Note } from '../../../../../../../../cfds/client/graph/vertices/note.ts';
 import { brandLightTheme as theme } from '../../../../../../../../styles/theme.tsx';
 import { usePartialView } from '../../../../../../core/cfds/react/graph.tsx';
+import { minutesToHHMM } from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
+import { Clock } from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -46,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
     borderStyle: 'solid',
     borderWidth: '1px',
     borderColor: lightColorWheel.secondary.s2,
-    padding: [0, 0, styleguide.gridbase, 0],
+    padding: '0 0 8px 0 ',
   },
   columnHeader: {
     alignItems: 'center',
@@ -89,13 +91,19 @@ const useStyles = makeStyles((theme) => ({
     padding: styleguide.gridbase,
     width: '100%',
   },
-  newTaskText: {
-    color: '#3184DD',
+  timeTrack: {
+    color: '#4D4D4D',
     fontSize: '10px',
     fontWeight: '400',
     lineHeight: '14px',
     letterSpacing: '-0.1px',
     gap: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    opacity: '50%',
+  },
+  timeTrackHover: {
+    opacity: '100%',
   },
   hoverableRow: {
     ':hover': {
@@ -105,7 +113,7 @@ const useStyles = makeStyles((theme) => ({
   expander: {
     height: styleguide.gridbase * 4,
     width: '100%',
-    padding: [0, styleguide.gridbase * 2],
+    padding: '0px 16px 0px 16px',
     boxSizing: 'border-box',
     alignItems: 'left',
     gap: '4px',
@@ -169,11 +177,22 @@ function SectionTitle({
   onCreateCard,
   isHovered,
   groupBy,
+  totalTimeSpent,
 }: SectionTableProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
   const [isSticky, setIsSticky] = useState(false);
+  const formattedTime = minutesToHHMM(totalTimeSpent);
+  const [prevTotalTime, setPrevTotalTime] = useState<number | null>(null);
+
+  const deltaTime = prevTotalTime !== null ? totalTimeSpent - prevTotalTime : 0;
+
+  useEffect(() => {
+    if (prevTotalTime !== totalTimeSpent) {
+      setPrevTotalTime(totalTimeSpent);
+    }
+  }, [totalTimeSpent]);
 
   useEffect(() => {
     if (!sentinel) {
@@ -208,22 +227,26 @@ function SectionTitle({
   return (
     <div
       className={cn(styles.columnTitle, isSticky && styles.stickyShadow)}
-      style={{ position: 'sticky' }}
-    >
+      style={{ position: 'sticky' }}>
       <div className={cn(styles.columnHeader)}>
         <div
           className={cn(
             styles.titleText,
             groupBy === 'workspace' && styles.wsTitle
-          )}
-        >
+          )}>
           {header}
         </div>
         <div className={cn(layout.flexSpacer)} />
-        {/* <Button onClick={onCreateCard}>
-          {isHovered && <div className={cn(styles.newTaskText)}>New Task</div>}
-          <img key="IconNewTaskBoard" src="/icons/board/New-Task-plus.svg" />
-        </Button> */}
+        <div style={{ padding: '16px' }}>
+          <div
+            className={cn(
+              styles.timeTrack,
+              isHovered && styles.timeTrackHover
+            )}>
+            {formattedTime}
+            <Clock totalMinutes={deltaTime} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -260,8 +283,7 @@ const ShowMoreButton: React.FC<ShowMoreButtonProps> = ({
     <Button
       className={cn(styles.expander)}
       disabled={allUnpinned && allUnpinned.length - 3 > 0 ? false : true}
-      onClick={() => toggleExpandedShowMore(expandKey)}
-    >
+      onClick={() => toggleExpandedShowMore(expandKey)}>
       {show ? (
         <>
           <div className={cn(styles.expanderText)}>
@@ -293,6 +315,7 @@ export type SectionTableProps = React.PropsWithChildren<{
   allUnpinned?: QueryResults<Note> | undefined;
   groupString?: string;
   expandKey: string;
+  totalTimeSpent: number;
 }>;
 
 export function SectionTable({
@@ -301,6 +324,7 @@ export function SectionTable({
   header,
   allUnpinned,
   expandKey,
+  totalTimeSpent,
 }: SectionTableProps) {
   const styles = useStyles();
   const [isSectionHovered, setIsSectionHovered] = useState(false);
@@ -316,14 +340,14 @@ export function SectionTable({
     <div
       className={cn(styles.table)}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+      onMouseLeave={handleMouseLeave}>
       <SectionTitle
         header={header}
         groupBy={groupBy}
         isHovered={isSectionHovered}
         onCreateCard={() => {}}
         expandKey={''}
+        totalTimeSpent={totalTimeSpent}
       />
       <div>{children}</div>
       <ShowMoreButton

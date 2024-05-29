@@ -155,7 +155,7 @@ const gGroupByTagFunctions: {
 } = {};
 
 function groupByForTag(
-  parentName: string,
+  parentName: string
 ): GroupByFunction<Note, string | null> {
   let result = gGroupByTagFunctions[parentName];
   if (!result) {
@@ -211,7 +211,7 @@ export function createUnionWorkspacesSource(
   graph: GraphManager,
   selectedWorkspaces: VertexId<Workspace>[],
   sortBy: SortBy,
-  name: string,
+  name: string
 ): UnionQuery<Vertex, Note, string> {
   return new UnionQuery(
     selectedWorkspaces.sort(coreValueCompare).map((id) => {
@@ -220,17 +220,17 @@ export function createUnionWorkspacesSource(
         groupId: VertexIdGetKey(id),
       };
     }),
-    'NotesUnion/' + name,
+    'NotesUnion/' + name
   );
 }
 
 export type FilteredNotes<GT extends CoreValue = CoreValue> = readonly [
   pinned?: QueryOptions<Note, Note, GT>,
-  unpinned?: QueryOptions<Note, Note, GT>,
+  unpinned?: QueryOptions<Note, Note, GT>
 ];
 
 export function useFilteredNotes<GT extends CoreValue>(
-  name: string,
+  name: string
 ): FilteredNotes<GT> {
   const graph = useGraphManager();
   const view = usePartialView(
@@ -243,7 +243,7 @@ export function useFilteredNotes<GT extends CoreValue>(
     'selectedAssignees',
     'selectedTagIds',
     'viewType',
-    'dateFilter',
+    'dateFilter'
   );
   usePartialGlobalView('selectedWorkspaces');
   const unpinnedSource = useMemo(
@@ -251,10 +251,10 @@ export function useFilteredNotes<GT extends CoreValue>(
       createUnionWorkspacesSource(
         graph,
         Array.from(
-          graph.getVertexManager('ViewGlobal').record.get('selectedWorkspaces'),
+          graph.getVertexManager('ViewGlobal').record.get('selectedWorkspaces')
         ),
         view.sortBy,
-        name,
+        name
       ),
     [
       graph,
@@ -264,7 +264,7 @@ export function useFilteredNotes<GT extends CoreValue>(
         .join('-'),
       view.sortBy,
       name,
-    ],
+    ]
   );
   // const unpinnedSource = useSharedQuery('notDeleted');
   const result: FilteredNotes<GT> = useMemo(() => {
@@ -278,7 +278,7 @@ export function useFilteredNotes<GT extends CoreValue>(
             view.manager,
             unpinnedSource,
             true,
-            name + '-Pinned',
+            name + '-Pinned'
           ),
           undefined,
         ];
@@ -290,7 +290,7 @@ export function useFilteredNotes<GT extends CoreValue>(
             view.manager,
             unpinnedSource,
             undefined,
-            name + '-All',
+            name + '-All'
           ),
           undefined,
         ];
@@ -302,13 +302,13 @@ export function useFilteredNotes<GT extends CoreValue>(
             view.manager,
             unpinnedSource,
             true,
-            name + '-Pinned',
+            name + '-Pinned'
           ),
           buildQueryOptions(
             view.manager,
             unpinnedSource,
             false,
-            name + '-Unpinned',
+            name + '-Unpinned'
           ),
         ];
         break;
@@ -322,7 +322,7 @@ function buildQueryOptions<GT extends CoreValue>(
   viewMgr: VertexManager<View>,
   src: VertexSource,
   pinned: boolean | undefined,
-  name: string,
+  name: string
 ): QueryOptions<Note, Note, GT> {
   const view = viewMgr.getVertexProxy();
   const groupBy =
@@ -379,13 +379,14 @@ function buildQueryOptions<GT extends CoreValue>(
       'childCards',
       'title',
       'dueDate',
+      'timeTrack',
     ],
   };
-}
+} //TODO: add "timeTrack ^ "
 
 function noteMatchesTags(
   note: Note,
-  selectedTags: Map<string, string[]>,
+  selectedTags: Map<string, string[]>
 ): boolean {
   const noteTags = note.tags;
   for (const [parentName, childNames] of selectedTags) {

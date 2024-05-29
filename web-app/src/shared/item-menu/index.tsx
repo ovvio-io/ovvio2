@@ -1,16 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import Menu from '../../../../styles/components/menu.tsx'
-import { IconOverflow } from '../../../../styles/components/icons/index.ts'
 import {
   EditCardAction,
-  // UploadAttachmentAction,
   EditDueDateAction,
   ViewInNoteAction,
   DeleteCardAction,
-  // ExportMailAction,
-  // ExportPdfAction,
-  // DuplicateCardAction,
-  // CopyUrlAction,
   ConvertNoteAction,
   ToggleSubTasksAction,
   ClearDueDateAction,

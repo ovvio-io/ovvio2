@@ -13,7 +13,6 @@ import { layout } from '../../layout.ts';
 import { Button } from '../buttons.tsx';
 import TransitionGroup, { TRANSITION_STATES } from '../transition.tsx';
 import { brandLightTheme as theme } from '../../../styles/theme.tsx';
-import { UndoButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 import { WhiteActionButton } from '../../../web-app/src/app/settings/components/settings-buttons.tsx';
 
 const enterAnimation = keyframes(
@@ -65,25 +64,37 @@ const useStyles = makeStyles(
       zIndex: 10,
     },
     toast: {
-      borderColor: theme.primary.p4,
       paddingLeft: styleguide.gridbase * 3,
       borderRadius: 1,
       alignItems: 'center',
-      backgroundColor: theme.primary.p1,
       boxSizing: 'border-box',
       borderStyle: 'solid',
-      height: styleguide.gridbase * 7,
       width: styleguide.gridbase * 48,
       animation: `${enterAnimation} ${styleguide.transition.duration.standard}ms ${styleguide.transition.timing.standard} forwards`,
       boxShadow: theme.shadows.z2,
       basedOn: [layout.row],
+      height: 'auto',
+      minHeight: styleguide.gridbase * 7,
+    },
+    actionToast: {
+      borderColor: theme.primary.p4,
+      backgroundColor: theme.primary.p1,
+    },
+    successToast: {
+      borderColor: '#A5D27A',
+      backgroundColor: '#DCEBCD',
+      padding: '8px',
+    },
+    failureToast: {
+      borderColor: '#E24716',
+      backgroundColor: '#FDB797',
     },
     toastButton: {
       color: theme.primary.p10,
       padding: styleguide.gridbase * 3,
     },
     messageStyle: {
-      textAlign: 'center',
+      textAlign: 'left',
       fontSize: '14px',
       fontWeight: '500',
       lineHeight: '19.5px',
@@ -91,7 +102,7 @@ const useStyles = makeStyles(
     },
     closeIcon: {
       position: 'relative',
-      right: styleguide.gridbase * 2,
+      right: styleguide.gridbase,
       bottom: styleguide.gridbase,
     },
     actionButton: {
@@ -111,6 +122,7 @@ interface ToastInfo {
   id?: string;
   duration?: number;
   text: string;
+  type?: 'action' | 'success' | 'failure';
   action?: { text: string; fn: (dismiss: DismissFn) => void };
 }
 
@@ -152,8 +164,18 @@ function Toast({
 
   const isUndoAction = message.action && message.action.text === 'Undo';
 
+  const toastStyle = cn(
+    styles.toast,
+    message.type === 'failure'
+      ? styles.failureToast
+      : message.type === 'success'
+      ? styles.successToast
+      : styles.actionToast,
+    styles[transitionState.toLowerCase()]
+  );
+
   return (
-    <div className={cn(styles.toast, styles[transitionState.toLowerCase()])}>
+    <div className={toastStyle}>
       <div className={styles.closeIcon} onClick={dismiss}>
         <img src="/icons/design-system/Close-big.svg" />
       </div>
@@ -172,8 +194,7 @@ function Toast({
             <Button
               className={cn(styles.toastButton)}
               onClick={onClick}
-              disabled={processing}
-            >
+              disabled={processing}>
               {message.action.text}
             </Button>
           )}
@@ -182,7 +203,6 @@ function Toast({
     </div>
   );
 }
-
 function ToastsView({ messages, dismiss }) {
   const styles = useStyles();
   return ReactDOM.createPortal(
@@ -233,8 +253,7 @@ export function ToastProvider({ children }) {
     <toastContext.Provider
       value={{
         displayToast: presentToast,
-      }}
-    >
+      }}>
       {children}
       <ToastsView messages={messages} dismiss={dismiss} />
     </toastContext.Provider>

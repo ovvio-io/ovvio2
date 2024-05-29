@@ -6,5 +6,6 @@
     "Kanban",
     "ovvio"
   ],
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "prettier.bracketSameLine": true
 }

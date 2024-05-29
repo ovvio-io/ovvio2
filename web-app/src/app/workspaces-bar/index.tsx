@@ -20,7 +20,10 @@ import { Workspace } from '../../../../cfds/client/graph/vertices/workspace.ts';
 import { useBackdropStyles } from '../../../../styles/components/backdrop.tsx';
 import { Button } from '../../../../styles/components/buttons.tsx';
 import Layer from '../../../../styles/components/layer.tsx';
-import Menu, { MenuItem } from '../../../../styles/components/menu.tsx';
+import Menu, {
+  MenuItem,
+  SecondaryMenuItem,
+} from '../../../../styles/components/menu.tsx';
 import { IconPinOff } from '../../../../styles/components/new-icons/icon-pin-off.tsx';
 import { IconPinOn } from '../../../../styles/components/new-icons/icon-pin-on.tsx';
 import { brandLightTheme as theme } from '../../../../styles/theme.tsx';
@@ -67,6 +70,13 @@ import { resolveWritingDirection } from '../../../../base/string.ts';
 import { InfiniteVerticalScroll } from '../workspace-content/workspace-view/cards-display/list-view/infinite-scroll.tsx';
 import { LineSeparator } from '../../../../styles/components/menu.tsx';
 import { useMaxWidth } from '../index.tsx';
+import { prettyJSON } from '../../../../base/common.ts';
+import ExportButton from '../../shared/components/time-tracking/timeTracking-export.tsx';
+import { ToastProvider } from '../../../../styles/components/toast/index.tsx';
+import {
+  ImageIcon,
+  ImageIconProps,
+} from '../settings/components/tag-table.tsx';
 
 export const DEFAULT_WIDTH = styleguide.gridbase * 21;
 
@@ -86,10 +96,10 @@ const useStyles = makeStyles(
     },
     groupBy: {
       color: theme.mono.m10,
-      fontFeatureSettings: "'clig' off, 'liga' off",
+      // fontFeatureSettings: "'clig' off, 'liga' off",
       padding: '8px 16px 8px 8px',
       backgroundColor: theme.secondary.s0,
-      fontSize: '14px',
+      // fontSize: '14px',
       fontStyle: 'normal',
       fontFamily: 'PoppinsSemiBold, HeeboSemiBold',
       lineHeight: 'normal',
@@ -192,7 +202,7 @@ const useStyles = makeStyles(
       width: '100%',
       borderBottomRightRadius: styleguide.gridbase * 2,
       borderTopRightRadius: styleguide.gridbase * 2,
-      paddingLeft: styleguide.gridbase * 2,
+      paddingLeft: styleguide.gridbase,
       paddingRight: styleguide.gridbase,
       boxSizing: 'border-box',
       alignItems: 'center',
@@ -314,8 +324,26 @@ const useStyles = makeStyles(
     lastItem: {
       borderBottom: `1px solid #f5ecdc`,
     },
+    groupbyHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      backgroundColor: theme.secondary.s0,
+      padding: '0 4px 0 10px',
+      borderBottom: `2px solid $ ${theme.mono.m6}`,
+    },
+    iconsInGroupByMenu: {
+      marginRight: styleguide.gridbase,
+    },
+    secondaryMenu: {
+      width: '100%',
+      gap: '8px',
+    },
+    disabled: {
+      cursor: 'not-allowed',
+      opacity: '0.5',
+    },
   }),
-  'workspaces-bar_881015',
+  'workspaces-bar_881015'
 );
 
 const useStrings = createUseStrings(localization);
@@ -373,13 +401,13 @@ function compareWorkspaceGID(gid1: WorkspaceGID, gid2: WorkspaceGID): number {
   const marker1 = gid1 instanceof VertexManager ? 'groups' : gid1;
   const marker2 = gid2 instanceof VertexManager ? 'groups' : gid2;
   let idx1 = kWorkspaceGIDOrder.indexOf(
-    typeof marker1 === 'string' && marker1.length > 0 ? marker1 : null,
+    typeof marker1 === 'string' && marker1.length > 0 ? marker1 : null
   );
   if (idx1 < 0) {
     idx1 = kWorkspaceGIDOrder.indexOf('groups');
   }
   let idx2 = kWorkspaceGIDOrder.indexOf(
-    typeof marker2 === 'string' && marker2.length > 0 ? marker2 : null,
+    typeof marker2 === 'string' && marker2.length > 0 ? marker2 : null
   );
   if (idx2 < 0) {
     idx2 = kWorkspaceGIDOrder.indexOf('groups');
@@ -446,8 +474,7 @@ export function CheckIcon() {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      xmlns="http://www.w3.org/2000/svg">
       <path
         opacity="0.6"
         d="M6.82617 10.739L11 5"
@@ -472,7 +499,6 @@ interface WorkspaceToggleViewProps {
   ofSettings: boolean | undefined;
   query: Query<Workspace, Workspace, WorkspaceGID>;
 }
-
 function WorkspaceToggleView({
   query,
   onSelectAll,
@@ -484,7 +510,7 @@ function WorkspaceToggleView({
   const view = usePartialGlobalView(
     'workspaceGrouping',
     'workspaceBarCollapsed',
-    'selectedWorkspaces',
+    'selectedWorkspaces'
   );
   const selectedRatio =
     query.count && view.selectedWorkspaces.size / query.count;
@@ -492,88 +518,95 @@ function WorkspaceToggleView({
   const moreButtonRef = useRef(null); //ADDED
 
   return (
-    <div className={cn(styles.toggleView)}>
-      <div className={cn(styles.workspacesHeader)}>
-        <LabelSm>{strings.myWorkspaces}</LabelSm>
-        <Menu
-          renderButton={() => (
-            <div ref={moreButtonRef}>
-              <IconMore className={cn(styles.moreButton)} />
-            </div>
-          )}
-          popupClassName={cn(styles.workSpaceMenu)}
-          direction="out"
-          position="right"
-          align="end"
-        >
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: theme.secondary.s0,
-                padding: '0 4px 0 8px',
-              }}
-            >
-              <IconGroup />
-              <LabelSm className={styles.groupBy}>Group By:</LabelSm>
-            </div>
-          </div>
-
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'Team';
-            }}
-          >
-            {'Team'}
-            {view.workspaceGrouping === 'Team' && <IconCheck />}
-          </MenuItem>
-
-          <MenuItem
-            className={styles.lastItem}
-            onClick={() => {
-              view.workspaceGrouping = 'Employee';
-            }}
-          >
-            {'Employee'}
-            {view.workspaceGrouping === 'Employee' && <IconCheck />}
-          </MenuItem>
-          <div style={{ marginTop: '8px' }} />
-          <LineSeparator height={1} />
-          <MenuItem
-            onClick={() => {
-              view.workspaceGrouping = 'none';
-            }}
-            icon={(iconProps) => <IconUngroup color="blue" {...iconProps} />}
-          >
-            {'Ungroup'}
-            {view.workspaceGrouping === 'none' && <IconCheck />}
-          </MenuItem>
-        </Menu>
-      </div>
-      {!ofSettings && (
-        <div className={cn(styles.toggleActions)}>
-          <TextSm
-            onClick={onSelectAll}
-            className={cn(
-              styles.toggleViewButton,
-              selectedRatio === 1 && styles.toggleViewButtonDisabled,
+    <ToastProvider>
+      <div className={cn(styles.toggleView)}>
+        <div className={cn(styles.workspacesHeader)}>
+          <LabelSm>{strings.myWorkspaces}</LabelSm>
+          <Menu
+            renderButton={() => (
+              <div ref={moreButtonRef}>
+                <IconMore className={cn(styles.moreButton)} />
+              </div>
             )}
-          >
-            Select All
-          </TextSm>
-          <TextSm
-            onClick={onUnselectAll}
-            className={cn(
-              styles.toggleViewButton,
-              selectedRatio === 0 && styles.toggleViewButtonDisabled,
-            )}
-          >
-            Unselect All
-          </TextSm>
+            popupClassName={cn(styles.workSpaceMenu)}
+            direction="out"
+            position="right"
+            align="start">
+            <SecondaryMenuItem
+              className={styles.secondaryMenu}
+              IconComponent={(props: ImageIconProps) => (
+                <ImageIcon
+                  {...props}
+                  src="/icons/design-system/Group.svg"
+                  alt="GroupIcon"
+                />
+              )}
+              text="Group By">
+              <MenuItem
+                onClick={() => {
+                  view.workspaceGrouping = 'Team';
+                }}>
+                {'Team'}
+                {view.workspaceGrouping === 'Team' && <IconCheck />}
+              </MenuItem>
+              <MenuItem
+                className={styles.lastItem}
+                onClick={() => {
+                  view.workspaceGrouping = 'Employee';
+                }}>
+                {'Employee'}
+                {view.workspaceGrouping === 'Employee' && <IconCheck />}
+              </MenuItem>
+              <MenuItem
+                className={styles.lastItem}
+                onClick={() => {
+                  view.workspaceGrouping = 'none';
+                }}>
+                {'None'}
+                {view.workspaceGrouping === 'none' && <IconCheck />}
+              </MenuItem>
+            </SecondaryMenuItem>
+
+            <>
+              <SecondaryMenuItem
+                className={cn(styles.secondaryMenu)}
+                text={'Export timesheet'}
+                disabled={view.selectedWorkspaces.size < 1}
+                IconComponent={(props: ImageIconProps) => (
+                  <ImageIcon
+                    {...props}
+                    src="/icons/design-system/Publish.svg"
+                    alt="ExportIcon"
+                  />
+                )}>
+                <ExportButton workspaces={view.selectedWorkspaces} />
+              </SecondaryMenuItem>
+              <DownloadButton disabled={view.selectedWorkspaces.size < 1} />
+            </>
+          </Menu>
         </div>
-      )}
-    </div>
+        {!ofSettings && (
+          <div className={cn(styles.toggleActions)}>
+            <TextSm
+              onClick={onSelectAll}
+              className={cn(
+                styles.toggleViewButton,
+                selectedRatio === 1 && styles.toggleViewButtonDisabled
+              )}>
+              Select All
+            </TextSm>
+            <TextSm
+              onClick={onUnselectAll}
+              className={cn(
+                styles.toggleViewButton,
+                selectedRatio === 0 && styles.toggleViewButtonDisabled
+              )}>
+              Unselect All
+            </TextSm>
+          </div>
+        )}
+      </div>
+    </ToastProvider>
   );
 }
 
@@ -617,7 +650,7 @@ function WorkspaceListItem({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const repoId = Repository.id('data', workspace.key);
   const [loaded, setLoaded] = useState(graph.repositoryReady(repoId));
@@ -627,7 +660,7 @@ function WorkspaceListItem({
 
   function measureTextWidth(
     text: string,
-    font: string = '14px HeeboSemiBold',
+    font: string = '14px HeeboSemiBold'
   ): number {
     const canvas = new OffscreenCanvas(0, 0);
     const ctx = canvas.getContext('2d');
@@ -650,7 +683,7 @@ function WorkspaceListItem({
     if (isSelected) {
       const measuredWidthSelected = measureTextWidth(
         name,
-        '14px PoppinsSemiBold',
+        '14px PoppinsSemiBold'
       );
       updateMaxWidthSelected(measuredWidthSelected + extraPadding);
     }
@@ -670,7 +703,7 @@ function WorkspaceListItem({
         <IconMore />
       </div>
     ),
-    [],
+    []
   );
 
   const setWorkspaceState = useCallback(
@@ -687,7 +720,7 @@ function WorkspaceListItem({
         view.selectedWorkspaces.delete(vert);
       }
     },
-    [partialUserSettings, workspace, ofSettings],
+    [partialUserSettings, workspace, ofSettings]
   );
   const navigate = useNavigate();
   const mgrS = graph.getVertexManager<View>('ViewWsSettings');
@@ -724,15 +757,13 @@ function WorkspaceListItem({
       className={cn(
         styles.listItem,
         !view.workspaceBarCollapsed && styles.listItemExpanded,
-        isSelected && styles.listItemSelected,
+        isSelected && styles.listItemSelected
       )}
-      style={style}
-    >
+      style={style}>
       <div className={cn(styles.itemTab)} onClick={toggleSelected}>
         <div
           ref={textRef}
-          className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}
-        >
+          className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}>
           {name}
         </div>
         <WorkspaceCheckbox toggled={isSelected} />
@@ -740,9 +771,8 @@ function WorkspaceListItem({
       {!loaded && visible && isSelected ? (
         <div
           className={cn(
-            isSelected ? styles.loadingIndicatorContainer : styles.hidden,
-          )}
-        >
+            isSelected ? styles.loadingIndicatorContainer : styles.hidden
+          )}>
           <IndeterminateProgressIndicator
             className={cn(styles.loadingIndicator)}
           />
@@ -765,12 +795,11 @@ function WorkspaceListItem({
             <Button
               className={cn(
                 styles.pinButton,
-                groupId === 'pinned' && styles.pinButtonPinned,
+                groupId === 'pinned' && styles.pinButtonPinned
               )}
               onClick={() =>
                 setWorkspaceState(groupId === 'pinned' ? 'none' : 'pinned')
-              }
-            >
+              }>
               {groupId === 'pinned' ? <IconPinOn /> : <IconPinOff />}
             </Button>
           )}
@@ -779,14 +808,12 @@ function WorkspaceListItem({
               renderButton={renderButton}
               direction="out"
               position="right"
-              align="start"
-            >
+              align="start">
               {!isTemplate && (
                 <MenuItem
                   onClick={() =>
                     setWorkspaceState(groupId === 'hidden' ? 'none' : 'hidden')
-                  }
-                >
+                  }>
                   {groupId === 'hidden' ? (
                     <IconShow color={IconColor.Primary} />
                   ) : (
@@ -801,10 +828,9 @@ function WorkspaceListItem({
                 <MenuItem
                   onClick={() =>
                     setWorkspaceState(
-                      groupId === 'templates' ? 'none' : 'template',
+                      groupId === 'templates' ? 'none' : 'template'
                     )
-                  }
-                >
+                  }>
                   {groupId === 'templates' ? (
                     <IconTemplateUnset />
                   ) : (
@@ -842,7 +868,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
     'selectedWorkspaces',
-    'workspaceGrouping',
+    'workspaceGrouping'
   );
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [scrollY, setScrollY] = useState(0);
@@ -863,7 +889,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         expandedWorkspaceGroups.add(key);
       }
     },
-    [view],
+    [view]
   );
   const contents: JSX.Element[] = [];
   const groups = query.groups();
@@ -877,17 +903,17 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
         <div
           className={cn(styles.separator)}
           key={`wsBar/sep/${++separatorCount}`}
-        />,
+        />
       );
     }
     const rows = query.group(gid);
     const expanded = view.expandedWorkspaceGroups.has(
-      WorkspaceGIDToString(gid),
+      WorkspaceGIDToString(gid)
     );
     if (gid !== 'pinned' && gid !== null && gid !== 'myWorkspace') {
       const selectedCount = SetUtils.intersectionSize(
         view.selectedWorkspaces,
-        query.vertices(gid),
+        query.vertices(gid)
       );
 
       let groupTitle = '';
@@ -908,8 +934,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           key={`wsbar/${gid instanceof VertexManager ? gid.key : gid}/expander`}
           className={cn(styles.expander)}
           disabled={!rows.length}
-          onClick={() => toggleExpanded(gid)}
-        >
+          onClick={() => toggleExpanded(gid)}>
           <div className={cn(styles.expanderText)}>
             {groupTitle}
             {selectedCount > 0 ? ` [${selectedCount}]` : ''}
@@ -917,10 +942,10 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
           <ExpanderIcon
             className={cn(
               styles.expanderIcon,
-              expanded && styles.expanderIconOpen,
+              expanded && styles.expanderIconOpen
             )}
           />
-        </Button>,
+        </Button>
       );
     }
 
@@ -939,7 +964,7 @@ function WorkspacesList({ query, ofSettings }: WorkspaceListProps) {
             groupId={gid}
             ofSettings={ofSettings}
             visible={contents.length < limit}
-          />,
+          />
         );
       }
     }
@@ -970,8 +995,7 @@ export function ExpanderIcon({ className }: { className?: string }) {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      xmlns="http://www.w3.org/2000/svg">
       <path
         opacity="0.8"
         d="M10 8L6 4"
@@ -992,7 +1016,7 @@ export function ExpanderIcon({ className }: { className?: string }) {
 function shouldAutoSelectWorkspace(
   ws: Workspace,
   groups: Iterable<WorkspaceGID>,
-  expandedWorkspaceGroups: Set<string>,
+  expandedWorkspaceGroups: Set<string>
 ): boolean {
   if (ws.isTemplate) {
     return false;
@@ -1037,7 +1061,7 @@ function WorkspaceBarWrapper({ className, ofSettings }: WorkspacesBarProps) {
         contentSensitive: true,
         contentFields: ['isTemplate'],
       } as QueryOptions<Workspace, Workspace, GroupId<WorkspaceGID>>;
-    }, [graph, view, partialUserSettings]),
+    }, [graph, view, partialUserSettings])
   );
 
   return (
@@ -1080,7 +1104,7 @@ function WorkspaceBarInternal({
     'selectedWorkspaces',
     'expandedWorkspaceGroups',
     'workspaceBarCollapsed',
-    'noteType',
+    'noteType'
   );
   const [isHovered, setIsHovered] = useState(false);
   const { maxWidth } = useMaxWidth();
@@ -1092,13 +1116,13 @@ function WorkspaceBarInternal({
           shouldAutoSelectWorkspace(
             ws,
             query.groupsForKey(ws.key),
-            view.expandedWorkspaceGroups,
+            view.expandedWorkspaceGroups
           ),
-        (mgr) => mgr.getVertexProxy(),
-      ),
+        (mgr) => mgr.getVertexProxy()
+      )
     );
     view.selectedWorkspaces.add(
-      view.graph.getVertex<Workspace>(`${view.graph.rootKey}-ws`),
+      view.graph.getVertex<Workspace>(`${view.graph.rootKey}-ws`)
     );
     logger.log({
       severity: 'EVENT',
@@ -1127,8 +1151,7 @@ function WorkspaceBarInternal({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           style={{ ...style, width: isHovered ? maxWidth : DEFAULT_WIDTH }}
-          className={cn(styles.root, className)}
-        >
+          className={cn(styles.root, className)}>
           <div className={cn(styles.header)}>
             {ofSettings ? (
               <div></div>
@@ -1181,7 +1204,7 @@ function MobileBar({ ...rest }: WorkspacesBarProps) {
           <WorkspaceBarWrapper {...rest} />
         </React.Fragment>
       )}
-    </Layer>,
+    </Layer>
   );
 }
 
@@ -1196,4 +1219,50 @@ export function WorkspacesBar(props: WorkspacesBarProps) {
     return <MobileBar {...props} />;
   }
   return <DesktopBar {...props} />;
+}
+
+function useExportSelectedWorkspaces() {
+  const graph = useGraphManager();
+  const view = usePartialGlobalView('selectedWorkspaces');
+
+  const exportSelectedWorkspaces = () => {
+    for (const ws of view.selectedWorkspaces as Set<Workspace>) {
+      exportWorkspace(graph, ws.key);
+    }
+  };
+
+  return { exportSelectedWorkspaces };
+}
+
+function DownloadButton({ disabled }: { disabled: boolean }) {
+  const { exportSelectedWorkspaces } = useExportSelectedWorkspaces();
+  const styles = useStyles();
+  return (
+    <MenuItem
+      onClick={exportSelectedWorkspaces}
+      className={disabled ? styles.disabled : undefined}
+      disabled={disabled}>
+      <img
+        key="DownloadIcon"
+        src="/icons/design-system/Download.svg"
+        className={cn(styles.iconsInGroupByMenu)}
+      />{' '}
+      <div>Download selected</div>
+    </MenuItem>
+  );
+}
+function exportWorkspace(graph: GraphManager, wsId: string): void {
+  const jsonString = prettyJSON(graph.exportSubGraph(wsId, 1));
+  const url = window.URL.createObjectURL(
+    new Blob([jsonString], { type: 'text/json' })
+  );
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  // the filename you want
+  a.download = wsId + '.json';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
 }

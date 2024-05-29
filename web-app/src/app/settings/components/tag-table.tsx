@@ -205,7 +205,7 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-interface ImageIconProps {
+export interface ImageIconProps {
   width?: string;
   height?: string;
   src: string;
@@ -412,13 +412,11 @@ const TagPills: React.FC<TagPillsProps> = ({
       style={{
         backgroundColor:
           tag && (editMode || reorderMode) ? 'transparent' : '#E5E5E5',
-      }}
-    >
+      }}>
       {reorderMode && (
         <Button
           className={cn(styles.deleteIcon)}
-          onClick={() => onReorder(tag, 'right')}
-        >
+          onClick={() => onReorder(tag, 'right')}>
           <img key="MoveLeftTagSettings" src="/icons/settings/Move-left.svg" />
         </Button>
       )}
@@ -445,8 +443,7 @@ const TagPills: React.FC<TagPillsProps> = ({
       {reorderMode && (
         <Button
           className={cn(styles.deleteIcon)}
-          onClick={() => onReorder(tag, 'left')}
-        >
+          onClick={() => onReorder(tag, 'left')}>
           <img
             key="MoveRightTagSettings"
             src="/icons/settings/Move-right.svg"
@@ -599,8 +596,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             {isEditMode && (
               <Button
                 className={cn(styles.addButton)}
-                onClick={handleOnCreateTag}
-              >
+                onClick={handleOnCreateTag}>
                 <img key="AddTagSettings" src="/icons/settings/Add.svg" />
               </Button>
             )}
@@ -628,8 +624,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
             renderButton={renderButton}
             position="right"
             align="center"
-            direction="out"
-          >
+            direction="out">
             <MenuAction
               IconComponent={(props: ImageIconProps) => (
                 <ImageIcon
@@ -639,8 +634,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
                 />
               )}
               text="Edit"
-              onClick={toggleEditMode}
-            ></MenuAction>
+              onClick={toggleEditMode}></MenuAction>
             <MenuAction
               IconComponent={(props: ImageIconProps) => (
                 <ImageIcon
@@ -650,8 +644,7 @@ const TableRowCategory: React.FC<TableRowCategoryProps> = ({
                 />
               )}
               text="Reorder"
-              onClick={toggleReorderMode}
-            ></MenuAction>
+              onClick={toggleReorderMode}></MenuAction>
             <MenuAction
               IconComponent={(props: ImageIconProps) => (
                 <ImageIcon
@@ -720,8 +713,7 @@ export const TagsTable: React.FC<TagsTableProps> = ({
     <div className={cn(styles.tableContainer)}>
       <Button
         className={cn(styles.newCategory, styles.rowLayout)}
-        onClick={handleNewCategory}
-      >
+        onClick={handleNewCategory}>
         <div className={cn(styles.addButton)}>
           <img key="AddTagSettings" src="/icons/settings/Add.svg" />
           <div className={cn(styles.newCategoryText)}>New Category</div>

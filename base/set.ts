@@ -3,11 +3,18 @@ import { deepEqual, isImmutable } from './comparisons.ts';
 import { coreValueEquals } from './core-types/equals.ts';
 import { CoreValue } from './core-types/index.ts';
 
+export function isSet<T>(v: unknown): v is Set<T> {
+  return (
+    // deno-lint-ignore no-prototype-builtins
+    v instanceof Set || typeof (v as any).__wrappedValueForRecord === 'function'
+  );
+}
+
 export function intersection<T>(s1: Set<T>, s2: Set<T>): Set<T> {
-  if (!(s1 instanceof Set)) {
+  if (!isSet(s1)) {
     s1 = new Set(s1);
   }
-  if (!(s2 instanceof Set)) {
+  if (!isSet(s2)) {
     s2 = new Set(s2);
   }
   const result = new Set<T>();
@@ -46,12 +53,12 @@ export function intersects<T>(s1: Set<T>, s2: Set<T>): boolean {
 
 export function difference<T>(
   s1: Set<T> | Iterable<T>,
-  s2: Set<T> | Iterable<T>,
+  s2: Set<T> | Iterable<T>
 ): Set<T> {
-  if (!(s1 instanceof Set)) {
+  if (!isSet(s1)) {
     s1 = new Set(s1);
   }
-  if (!(s2 instanceof Set)) {
+  if (!isSet(s2)) {
     s2 = new Set(s2);
   }
   const result = new Set<T>();
@@ -73,7 +80,7 @@ export function difference<T>(
  * as new set. The original sets aren't modified.
  */
 export function subtract<T>(v1: Iterable<T>, v2: Iterable<T>): Set<T> {
-  const s2 = v2 instanceof Set ? v2 : new Set(v2);
+  const s2 = isSet(v2) ? v2 : new Set(v2);
 
   const result = new Set<T>();
   for (const v of v1) {
@@ -86,9 +93,9 @@ export function subtract<T>(v1: Iterable<T>, v2: Iterable<T>): Set<T> {
 
 export function* subtractIter<T>(
   v1: Iterable<T>,
-  v2: Iterable<T>,
+  v2: Iterable<T>
 ): Generator<T> {
-  const s2 = v2 instanceof Set ? v2 : new Set(v2);
+  const s2 = isSet(v2) ? v2 : new Set(v2);
 
   for (const v of v1) {
     if (!s2.has(v)) {
@@ -100,10 +107,10 @@ export function* subtractIter<T>(
 export function equals<T>(
   v1: Iterable<T>,
   v2: Iterable<T>,
-  filter?: (v: T) => boolean,
+  filter?: (v: T) => boolean
 ): boolean {
-  const s1 = v1 instanceof Set ? v1 : new Set(v1);
-  const s2 = v2 instanceof Set ? v2 : new Set(v2);
+  const s1 = isSet(v1) ? v1 : new Set(v1);
+  const s2 = isSet(v2) ? v2 : new Set(v2);
   if (filter === undefined && s1.size !== s2.size) {
     return false;
   }
@@ -136,12 +143,12 @@ export function equals<T>(
 export function union<T>(
   i1: Iterable<T> | undefined,
   i2: Iterable<T> | undefined,
-  inPlace = false,
+  inPlace = false
 ): Set<T> {
   let result: Set<T>;
   if (inPlace) {
     if (i1) {
-      if (i1 instanceof Set) {
+      if (isSet<T>(i1)) {
         result = i1;
       } else {
         result = new Set(i1);
@@ -163,7 +170,7 @@ export function union<T>(
 
 export function* unionIter<T>(
   i1: Iterable<T> | undefined,
-  i2: Iterable<T> | undefined,
+  i2: Iterable<T> | undefined
 ) {
   if (i1 === undefined || i2 === undefined) {
     const iter = i1 !== undefined ? i1 : i2;
@@ -178,10 +185,10 @@ export function* unionIter<T>(
   let set: Set<T>;
   let other: Iterable<T>;
 
-  if (i1 instanceof Set) {
+  if (isSet<T>(i1)) {
     set = i1;
     other = i2;
-  } else if (i2 instanceof Set) {
+  } else if (isSet<T>(i2)) {
     set = i2;
     other = i1;
   } else {
@@ -237,7 +244,7 @@ export function deleteAll<T>(s: Set<T>, iterable: Iterable<T>): Set<T> {
 
 export function from<T>(
   iterable: Iterable<T>,
-  mapper?: (v: T) => any,
+  mapper?: (v: T) => any
 ): Set<any> {
   // Shortcut - if no mapper was given, fall back to the native constructor
   if (!mapper) {
@@ -296,7 +303,7 @@ export function deleteByValue<T>(s: Set<T>, v: T): Set<T> {
   if (!s) {
     return s;
   }
-  if (!(s instanceof Set)) {
+  if (!isSet(s)) {
     s = new Set(s);
   }
   // Shortcut - exact match O(1)
@@ -329,7 +336,7 @@ export function addByValue<T>(s: Set<T>, v: T): Set<T> {
   if (!s) {
     return s;
   }
-  if (!(s instanceof Set)) {
+  if (!isSet(s)) {
     s = new Set(s);
   }
   // If the value is an immutable primitive we can safely just add() it.
@@ -359,10 +366,10 @@ export function addByValue<T>(s: Set<T>, v: T): Set<T> {
 }
 
 export function subtractByValue<T>(s1: Set<T>, s2: Set<T>): Set<T> {
-  if (!(s1 instanceof Set)) {
+  if (!isSet(s1)) {
     s1 = new Set(s1);
   }
-  if (!(s2 instanceof Set)) {
+  if (!isSet(s2)) {
     s2 = new Set(s2);
   }
   const result = new Set<T>();
@@ -377,9 +384,9 @@ export function subtractByValue<T>(s1: Set<T>, s2: Set<T>): Set<T> {
 export function unionByValue<T>(
   i1: Iterable<T>,
   i2: Iterable<T>,
-  inPlace = false,
+  inPlace = false
 ): Set<T> {
-  const result = inPlace && i1 instanceof Set ? i1 : new Set(i1);
+  const result = inPlace && isSet<T>(i1) ? i1 : new Set(i1);
   for (const v of i2) {
     addByValue(result, v);
   }
@@ -387,10 +394,10 @@ export function unionByValue<T>(
 }
 
 export function equalsByValue<T>(s1: Set<T>, s2: Set<T>): boolean {
-  if (!(s1 instanceof Set)) {
+  if (!isSet(s1)) {
     s1 = new Set(s1);
   }
-  if (!(s2 instanceof Set)) {
+  if (!isSet(s2)) {
     s2 = new Set(s2);
   }
   if (s1.size !== s2.size) {

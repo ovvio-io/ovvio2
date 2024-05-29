@@ -173,6 +173,12 @@ export interface AttachmentData extends CoreObject {
   inProgress?: boolean;
 }
 
+export interface TimeTrackData extends CoreObject {
+  user: string;
+  minutes: number;
+  creationDate: Date;
+}
+
 export type SchemeFields = { [key: string]: ValueType };
 
 export enum NoteStatus {

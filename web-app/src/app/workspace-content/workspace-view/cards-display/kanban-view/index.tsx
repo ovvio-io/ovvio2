@@ -35,6 +35,7 @@ import { useWorkspaceColor } from '../../../../../shared/workspace-icon/index.ts
 import { resolveWritingDirection } from '../../../../../../../base/string.ts';
 import { usePendingAction } from '../index.tsx';
 import { useDisable } from '../../../../index.tsx';
+import { Query } from '../../../../../../../cfds/client/graph/query.ts';
 
 const useStyles = makeStyles((theme) => ({
   boardRoot: {
@@ -116,14 +117,13 @@ export function WorkspaceIndicatorCard({
       '--ws-inactive': color.inactive,
       '--ws-active': color.active,
     }),
-    [color],
+    [color]
   );
   const dir = resolveWritingDirection(name);
   return (
     <div
       className={cn(styles.listItem, styles.listItemSelected)}
-      style={internalStyle}
-    >
+      style={internalStyle}>
       <Tooltip text={name} disabled={true} position="right">
         <div className={cn(styles.itemTab)}>
           <div className={cn(styles.itemText, dir === 'rtl' && styles.rtl)}>
@@ -194,7 +194,7 @@ export function KanbanView({
       SetUtils.update(s, unpinnedQuery.groups());
     }
     return Array.from(s).sort(
-      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare,
+      (pinnedQuery || unpinnedQuery)?.groupComparator || coreValueCompare
     );
   }, [pinnedQuery, unpinnedQuery]);
 
@@ -220,6 +220,30 @@ export function KanbanView({
     showWorkspaceOnCard = false;
   }
 
+  const calculateGroupTotalTimeSpent = (group: CoreValue) => {
+    let totalTime = 0;
+
+    const addTimesFromQuery = (query: Query<Note, Note, CoreValue>) => {
+      query.group(group).forEach((noteMgr: VertexManager<Note>) => {
+        const note = noteMgr.getVertexProxy();
+        totalTime += note.totalTimeSpent || 0;
+      });
+    };
+
+    addTimesFromQuery(pinnedQuery!);
+    addTimesFromQuery(unpinnedQuery!);
+
+    return totalTime;
+  };
+
+  const getGroupStringKey = (group: CoreValue, index: number): string => {
+    return typeof group === 'string'
+      ? group + { index }
+      : group instanceof VertexManager
+      ? group.getVertexProxy().name
+      : 'Untitled';
+  };
+
   return (
     <Scroller>
       {(ref) => (
@@ -228,62 +252,58 @@ export function KanbanView({
           className={cn(
             styles.boardRoot,
             isDisabled && styles.multiSelectActive,
-            className,
-          )}
-        >
-          {groups.slice(0, xLimit).map((group, index) => (
-            <KanbanColumn
-              header={headerForGroupId(group)}
-              key={
-                typeof group === 'string'
-                  ? group + { index }
-                  : group instanceof VertexManager
-                  ? group.getVertexProxy().name
-                  : 'Untitled'
-              }
-              groupBy={groupBy}
-            >
-              {pinnedQuery
-                ?.group(group)
-                .slice(0, yLimit)
-                .map((noteMgr) => (
-                  <KanbanCard
-                    card={noteMgr}
-                    size={CardSize.Small}
-                    key={noteMgr.key}
-                    showWorkspaceOnCard={showWorkspaceOnCard}
-                    handleSelectClick={handleSelectClick}
-                    isSelected={selectedCards.has(noteMgr)}
-                    multiIsActive={selectedCards.size > 0}
-                    isInAction={pendingAction}
-                  />
-                ))}
-              {pinnedQuery && pinnedQuery.group(group).length > 0 && (
-                <div style={{ height: '16px' }}></div>
-              )}
-
-              {unpinnedQuery
-                ?.group(group)
-                .slice(0, yLimit)
-                .map((noteMgr, index) => (
-                  <KanbanCard
-                    card={noteMgr}
-                    size={CardSize.Small}
-                    key={noteMgr.key + index}
-                    showWorkspaceOnCard={showWorkspaceOnCard}
-                    handleSelectClick={handleSelectClick}
-                    isSelected={selectedCards.has(noteMgr)}
-                    multiIsActive={selectedCards.size > 0}
-                    isInAction={pendingAction}
-                  />
-                ))}
-            </KanbanColumn>
-          ))}
+            className
+          )}>
+          {groups.slice(0, xLimit).map((group, index) => {
+            const groupKey = getGroupStringKey(group, index);
+            const groupTotalTimeSpent = calculateGroupTotalTimeSpent(group);
+            return (
+              <KanbanColumn
+                header={headerForGroupId(group)}
+                key={groupKey}
+                groupBy={groupBy}
+                totalTimeSpent={groupTotalTimeSpent}>
+                {pinnedQuery
+                  ?.group(group)
+                  .slice(0, yLimit)
+                  .map((noteMgr) => (
+                    <KanbanCard
+                      card={noteMgr}
+                      size={CardSize.Small}
+                      key={noteMgr.key}
+                      showWorkspaceOnCard={showWorkspaceOnCard}
+                      handleSelectClick={handleSelectClick}
+                      isSelected={selectedCards.has(noteMgr)}
+                      multiIsActive={selectedCards.size > 0}
+                      isInAction={pendingAction}
+                    />
+                  ))}
+                {pinnedQuery && pinnedQuery.group(group).length > 0 && (
+                  <div style={{ height: '16px' }}></div>
+                )}
+                {unpinnedQuery
+                  ?.group(group)
+                  .slice(0, yLimit)
+                  .map((noteMgr, index) => (
+                    <KanbanCard
+                      card={noteMgr}
+                      size={CardSize.Small}
+                      key={noteMgr.key + index}
+                      showWorkspaceOnCard={showWorkspaceOnCard}
+                      handleSelectClick={handleSelectClick}
+                      isSelected={selectedCards.has(noteMgr)}
+                      multiIsActive={selectedCards.size > 0}
+                      isInAction={pendingAction}
+                    />
+                  ))}
+              </KanbanColumn>
+            );
+          })}
           <InfiniteVerticalScroll
             limit={yLimit}
             setLimit={setYLimit}
             pageSize={PAGE_SIZE}
-            recordsLength={maxColSize}
+            recordsLength={unpinnedQuery?.count || 0}
             isVisible={false}
           />
           <InfiniteHorizontalScroll

@@ -59,6 +59,10 @@ import { SortDescriptor } from '../query.ts';
 import { coreObjectClone } from '../../../../base/core-types/clone.ts';
 import { Dictionary } from '../../../../base/collections/dict.ts';
 import { coreValueCompare } from '../../../../base/core-types/comparable.ts';
+import { TimeTrackData } from '../../../base/scheme-types.ts';
+import { displayMessageToast } from '../../../../web-app/src/shared/components/time-tracking/TimeTracking.tsx';
+import { usePendingAction } from '../../../../web-app/src/app/workspace-content/workspace-view/cards-display/index.tsx';
+import { useToastController } from '../../../../styles/components/toast/index.tsx';
 
 export enum NoteType {
   Task = 'task',
@@ -74,11 +78,12 @@ export class Note extends ContentVertex {
   private _cachedPlaintextTitle?: string;
   private _lastManualAssigneeChange: number;
   private _lastManualTagChange: number;
+  private _cachedTotalTimeSpent?: number;
 
   constructor(
     mgr: VertexManager,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined,
+    config: VertexConfig | undefined
   ) {
     super(mgr, prevVertex, config);
     if (prevVertex instanceof Note) {
@@ -103,7 +108,7 @@ export class Note extends ContentVertex {
 
   parentNoteDidMutate(
     local: boolean,
-    oldValue: Note | undefined,
+    oldValue: Note | undefined
   ): MutationPack {
     return [
       ['parent', local, oldValue],
@@ -114,14 +119,14 @@ export class Note extends ContentVertex {
   get assignees(): Set<User> {
     const wsUsers = this.workspace.users;
     return SetUtils.filter(this.vertSetForField<User>('assignees'), (u) =>
-      wsUsers.has(u),
+      wsUsers.has(u)
     );
   }
 
   set assignees(users: Set<User>) {
     this.record.set(
       'assignees',
-      SetUtils.map(users, (u) => u.key),
+      SetUtils.map(users, (u) => u.key)
     );
   }
 
@@ -131,7 +136,7 @@ export class Note extends ContentVertex {
 
   parentAssigneesDidMutate(
     origin: MutationOrigin,
-    oldValue: Set<User> | undefined,
+    oldValue: Set<User> | undefined
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
       return;
@@ -201,6 +206,49 @@ export class Note extends ContentVertex {
   //   }
   // }
 
+  get totalTimeSpent(): number {
+    const calculateTotalTime = (note: Note): number => {
+      const ownTime = Array.from(note.timeTrack).reduce(
+        (acc, entry) => acc + entry.minutes,
+        0
+      );
+      const childTime = note.childCards.reduce((acc, childNote) => {
+        return acc + calculateTotalTime(childNote);
+      }, 0);
+      return ownTime + childTime;
+    };
+    return calculateTotalTime(this);
+  }
+
+  get timeTrack(): Set<TimeTrackData> {
+    const timeTrack = this.record.get('timeTrack') as Set<TimeTrackData>;
+    if (timeTrack === undefined || timeTrack.size === 0) {
+      return new Set<TimeTrackData>();
+    }
+    return SetUtils.map(timeTrack, (v) => coreObjectClone(v));
+  }
+
+  set timeTrack(set: Set<TimeTrackData>) {
+    const copy = SetUtils.map(set, (v) => coreObjectClone(v));
+    this.record.set('timeTrack', copy);
+  }
+
+  addTime(minutes: number): void {
+    SetUtils.addByValue(this.proxy.timeTrack, {
+      minutes: minutes,
+      user: this.graph.rootKey,
+      creationDate: new Date(),
+    });
+  }
+
+  subtractTime(minutes: number): void {
+    SetUtils.addByValue(this.proxy.timeTrack, {
+      minutes: -1 * minutes,
+      user: this.graph.rootKey,
+      creationDate: new Date(),
+    });
+  }
+
   get attachments(): Set<AttachmentData> {
     const attachments = this.record.get('attachments') as Set<AttachmentData>;
     if (attachments === undefined || attachments.size === 0) {
@@ -236,8 +284,8 @@ export class Note extends ContentVertex {
             return note.record.get('title') as RichText;
           },
           this.record.get('body') || initRichText(),
-          true,
-        ),
+          true
+        )
       );
     }
     return this._cachedBody;
@@ -247,7 +295,7 @@ export class Note extends ContentVertex {
     // Take a snapshot of the out refs before changing the value
     const oldRefs = this.getBodyRefs();
     rt = projectRanges(this.body, rt, (ptr) =>
-      this.graph.ptrFilterFunc(ptr.key),
+      this.graph.ptrFilterFunc(ptr.key)
     );
     this._cachedBody = undefined;
     const graph = this.graph;
@@ -272,7 +320,7 @@ export class Note extends ContentVertex {
                 workspace: this.workspace.key,
                 assignees: new Set([this.graph.rootKey]),
               },
-              key,
+              key
             );
           }
         } else {
@@ -282,7 +330,7 @@ export class Note extends ContentVertex {
         childV.titleRT = rt;
       },
       docToRT(rt),
-      true,
+      true
     );
     this.record.set('body', updatedBody);
     this._cachedBody = undefined;
@@ -348,7 +396,7 @@ export class Note extends ContentVertex {
 
   private _invalidateBodyOnChildChange(
     local: boolean,
-    childKey: string,
+    childKey: string
   ): MutationPack {
     // The UI will typically first create the child task, then insert the ref
     // to the parent note's body. If we emit a mutation before the body actually
@@ -392,7 +440,7 @@ export class Note extends ContentVertex {
   childParentNoteDidMutate(
     local: boolean,
     oldValue: Note | undefined,
-    child: Note,
+    child: Note
   ): MutationPack {
     return this._invalidateChildCards(local);
   }
@@ -401,16 +449,34 @@ export class Note extends ContentVertex {
   childTitleDidMutate(
     local: boolean,
     oldValue: RichText,
-    child: Note,
+    child: Note
   ): MutationPack {
     return this._invalidateBodyOnChildChange(local, child.key);
+  }
+
+  childTimeTrackDidMutate(
+    local: boolean,
+    oldValue: Set<TimeTrackData> | undefined,
+    child: Note
+  ): MutationPack {
+    console.log('child- ', child.totalTimeSpent);
+    this._cachedTotalTimeSpent = undefined; //1. i dont understand why. 2. isn't cache for performance issues?
+    return ['totalTimeSpent', local, this._cachedTotalTimeSpent];
+  }
+
+  timeTrackDidMutate(
+    local: boolean,
+    oldValue: Set<TimeTrackData> | undefined
+  ): MutationPack {
+    this._cachedTotalTimeSpent = undefined;
+    console.log('this - ', this.totalTimeSpent);
   }
 
   // Invalidate our composite body if the title of an inner task are changes
   childIsLoadingDidMutate(
     local: boolean,
     oldValue: RichText,
-    child: Note,
+    child: Note
   ): MutationPack {
     return this._invalidateBodyOnChildChange(local, child.key);
   }
@@ -433,7 +499,7 @@ export class Note extends ContentVertex {
 
   parentDueDateChanged(
     origin: MutationOrigin,
-    oldValue: Date | undefined,
+    oldValue: Date | undefined
   ): MutationPack {
     if (!mutationSourceIsUser(origin)) {
       return;
@@ -479,9 +545,9 @@ export class Note extends ContentVertex {
           flattenRichText(
             this.record.get('title') || initRichText(),
             true,
-            false,
-          ),
-        ),
+            false
+          )
+        )
       );
     }
     return this._cachedTitleRT!;
@@ -496,10 +562,10 @@ export class Note extends ContentVertex {
       rt,
       (ptr) => this.graph.ptrFilterFunc(ptr.key),
       true,
-      true,
+      true
     );
     rt = reconstructRichText(
-      stripFormattingFilter(flattenRichText(rt, true, false)),
+      stripFormattingFilter(flattenRichText(rt, true, false))
     );
     this._cachedTitle = undefined;
     this._cachedTitleRT = undefined;
@@ -508,7 +574,7 @@ export class Note extends ContentVertex {
 
   titleRTDidMutate(
     local: boolean,
-    oldValue: RichText | undefined,
+    oldValue: RichText | undefined
   ): MutationPack {
     this._cachedTitle = undefined;
     const prevPlaintextTitle = this._cachedPlaintextTitle;
@@ -585,7 +651,7 @@ export class Note extends ContentVertex {
       this.type,
       this.record.get('status'),
       this.tags,
-      this.childCards,
+      this.childCards
     );
   }
 
@@ -607,7 +673,7 @@ export class Note extends ContentVertex {
 
   statusDidMutate(
     local: boolean,
-    oldValue: NoteStatus | undefined,
+    oldValue: NoteStatus | undefined
   ): MutationPack {
     const completionDate = this.completionDate;
     if (this.isChecked) {
@@ -700,7 +766,7 @@ export class Note extends ContentVertex {
   }
 
   *getChildManagers<T extends Vertex>(
-    ns?: SchemeNamespace,
+    ns?: SchemeNamespace
   ): Generator<VertexManager<T>> {
     if (ns === SchemeNamespace.NOTES) {
       for (const k of this.bodyRefs) {
@@ -711,7 +777,7 @@ export class Note extends ContentVertex {
 
   parentBodyRefsDidMutate(
     local: boolean,
-    oldValue: Set<string> | undefined,
+    oldValue: Set<string> | undefined
   ): MutationPack {
     const hadRef = (oldValue && oldValue.has(this.key)) === true;
     if (!oldValue || hadRef !== this.parentNote?.bodyRefs.has(this.key)) {
@@ -721,7 +787,7 @@ export class Note extends ContentVertex {
 
   parentNoteTypeDidMutate(
     local: boolean,
-    oldValue: NoteType | undefined,
+    oldValue: NoteType | undefined
   ): MutationPack {
     if (oldValue !== this.parentType) {
       return ['parentType', local, oldValue];
@@ -758,13 +824,13 @@ export class Note extends ContentVertex {
   childNoteIsDeletedDidMutate(
     local: boolean,
     oldValue: number,
-    child: Note,
+    child: Note
   ): MutationPack {
     if ((oldValue === 1) !== (child.isDeleted === 1)) {
       return mutationPackAppend(
         // TODO: Actually go and remove the RefMarkers from the rich text
         // this._invalidateBodyOnChildChange(local, child.key),
-        this._invalidateChildCards(local),
+        this._invalidateChildCards(local)
       );
     }
   }
@@ -798,13 +864,13 @@ export class Note extends ContentVertex {
 
   childCardsDidMutate(
     local: boolean,
-    oldValue: Note[] | undefined,
+    oldValue: Note[] | undefined
   ): MutationPack {
     const oldChecked = computeCheckedForNote(
       this.type,
       this.status,
       this.tags,
-      oldValue,
+      oldValue
     );
     if (oldChecked !== this.isChecked) {
       return ['isChecked', local, oldChecked];
@@ -814,7 +880,7 @@ export class Note extends ContentVertex {
   childStatusDidMutate(
     local: boolean,
     oldValue: NoteStatus,
-    child: Note,
+    child: Note
   ): MutationPack {
     const childCards = this.childCards;
     if (!childCards.length) {
@@ -839,7 +905,7 @@ export class Note extends ContentVertex {
       }
       return mutationPackAppend(
         result,
-        this._invalidateBodyOnChildChange(local, child.key),
+        this._invalidateBodyOnChildChange(local, child.key)
       );
     }
   }
@@ -868,7 +934,7 @@ function computeCheckedForNote(
   type: NoteType,
   status: NoteStatus | undefined,
   tags: Dictionary<Tag, Tag> | undefined,
-  childCards: Note[] | undefined,
+  childCards: Note[] | undefined
 ): boolean {
   if (type === NoteType.Task) {
     if (status === NoteStatus.Checked) {
@@ -899,7 +965,7 @@ function computeCheckedForNote(
           child.type,
           child.status,
           child.tags,
-          child.childCards,
+          child.childCards
         )
       ) {
         return false;
@@ -985,35 +1051,41 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   title: triggerParent(
     'childTitleDidMutate',
     'Note_title',
-    SchemeNamespace.NOTES,
+    SchemeNamespace.NOTES
   ),
+  timeTrack: triggerParent(
+    'childTimeTrackDidMutate',
+    'Note_TimeTrackParent',
+    SchemeNamespace.NOTES
+  ), //TODO: ask about Note_TimeTrackParent.
+
   // Note: Any trigger installed by a superclass gets automatically triggered
   // before these triggers
   isDeleted: triggerCompose(
     triggerParent(
       'childNoteIsDeletedDidMutate',
       'Note_isDeleted_parent',
-      SchemeNamespace.NOTES,
+      SchemeNamespace.NOTES
     ),
     triggerChildren('parentIsDeletedChanged', 'Note_isDeleted_children', {
       fieldName: 'parentNote',
     }),
-    'Note_isDeletedComposite',
+    'Note_isDeletedComposite'
   ),
   parentNote: triggerParent(
     'childParentNoteDidMutate',
     'Note_parentNote',
-    SchemeNamespace.NOTES,
+    SchemeNamespace.NOTES
   ),
   type: triggerChildren(
     'parentNoteTypeDidMutate',
     'Note_type',
-    SchemeNamespace.NOTES,
+    SchemeNamespace.NOTES
   ),
   status: triggerParent(
     'childStatusDidMutate',
     'Note_status',
-    SchemeNamespace.NOTES,
+    SchemeNamespace.NOTES
   ),
   dueDate: triggerChildren('parentDueDateChanged', 'Note_dueDate', {
     namespace: SchemeNamespace.NOTES,
@@ -1032,7 +1104,7 @@ const kFieldTriggersNote: FieldTriggers<Note> = {
   bodyRefs: triggerChildren(
     'parentBodyRefsDidMutate',
     'Note_bodyRefs',
-    SchemeNamespace.NOTES,
+    SchemeNamespace.NOTES
   ),
 };
 

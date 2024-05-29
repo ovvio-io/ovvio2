@@ -6,26 +6,17 @@ import { usePartialVertex } from '../../../../../core/cfds/react/vertex.ts';
 import { useDueDate } from '../../../../../shared/components/due-date-editor/index.tsx';
 import { layout, styleguide } from '../../../../../../../styles/index.ts';
 import { Button } from '../../../../../../../styles/components/buttons.tsx';
-import {
-  IconAttachment,
-  IconDueDate,
-} from '../../../../../../../styles/components/icons/index.ts';
+import { IconDueDate } from '../../../../../../../styles/components/icons/index.ts';
 import { IconContent } from '../../../../../../../styles/components/new-icons/icon-content.tsx';
-import Menu from '../../../../../../../styles/components/menu.tsx';
 import { Text } from '../../../../../../../styles/components/texts.tsx';
 import {
   makeStyles,
   cn,
 } from '../../../../../../../styles/css-objects/index.ts';
-import { useTheme } from '../../../../../../../styles/theme.tsx';
 import { CardSize } from './index.tsx';
 // import localization from './card.strings.json' assert { type: 'json' };
 import { UISource } from '../../../../../../../logging/client-events.ts';
-import { useLogger } from '../../../../../core/cfds/react/logger.tsx';
 import { DueDateState } from '../../../../../../../styles/components/new-icons/icon-due-date.tsx';
-import AssigneesView from '../../../../../shared/card/assignees-view.tsx';
-import CardMenuView from '../../../../../shared/item-menu/index.tsx';
-import { CardTagsNew } from './card-tag-view-new.tsx';
 
 export const FOOTER_HEIGHT = styleguide.gridbase * 2;
 
@@ -38,11 +29,10 @@ const useStyles = makeStyles((theme) => ({
   },
   footerItem: {
     display: 'flex',
-    marginTop: styleguide.gridbase * 0.5,
+    width: '89px',
     height: FOOTER_HEIGHT,
     paddingLeft: styleguide.gridbase * 0.5,
     gap: styleguide.gridbase * 0.5,
-    width: '88px',
     justifyContent: 'flex-start',
   },
   footerItemBoard: {
@@ -151,8 +141,7 @@ export function DueDateIndicator({
           className,
           source === 'board' ? styles.footerItemBoard : ''
         )}
-        onClick={onClick}
-      >
+        onClick={onClick}>
         {isMouseOver ? (
           <img src="/icons/design-system/dueDate/addDueDateHovered.svg" />
         ) : (
@@ -180,8 +169,7 @@ export function DueDateIndicator({
         className,
         source === 'board' ? styles.footerItemBoard : ''
       )}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       <IconDueDate
         state={
           isOverdue
@@ -206,36 +194,6 @@ function ContentIndicator({ card }: { card: VertexManager<Note> }) {
   return (
     <div className={cn(styles.footerItem, styles.margin)}>
       <IconContent />
-    </div>
-  );
-}
-
-export function CardFooter({
-  card,
-  source,
-  isExpanded,
-  className,
-  multiIsActive,
-  size = CardSize.Regular,
-}: CardFooterProps) {
-  const styles = useStyles();
-  return (
-    <div className={cn(styles.tagsAndAssignees)}>
-      <AssigneesView
-        cardManager={card}
-        cardType="small"
-        source={source}
-        isExpanded={isExpanded}
-        multiIsActive={multiIsActive}
-      />
-      <div className={cn(styles.tagsContainer)}>
-        <CardTagsNew
-          size={size}
-          card={card}
-          isExpanded={isExpanded}
-          multiIsActive={multiIsActive}
-        />
-      </div>
     </div>
   );
 }

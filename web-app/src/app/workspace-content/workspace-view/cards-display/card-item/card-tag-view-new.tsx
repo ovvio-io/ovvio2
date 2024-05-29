@@ -118,13 +118,6 @@ export function CardTagsNew({
 
   return (
     <div className={cn(styles.tagsView, size === CardSize.Small)}>
-      {!multiIsActive && (
-        <TagButton
-          onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
-          noteId={card}
-          className={cn(!isExpanded && styles.hide)}
-        />
-      )}
       {cardTags.sort(coreValueCompare).map((tag) => (
         <TagPill
           key={tag.key}
@@ -135,6 +128,13 @@ export function CardTagsNew({
           ofBoard={true}
         />
       ))}
+      {!multiIsActive && (
+        <TagButton
+          onTagged={(t) => onTag(t.manager as VertexManager<Tag>)}
+          noteId={card}
+          className={cn(!isExpanded && styles.hide)}
+        />
+      )}
     </div>
   );
 }

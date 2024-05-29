@@ -9,6 +9,11 @@ import { layout } from '../../../../../../../styles/layout.ts';
 import { styleguide } from '../../../../../../../styles/styleguide.ts';
 import { useScrollParent } from '../../../../../core/react-utils/scrolling.tsx';
 import { lightColorWheel } from '../../../../../../../styles/theme.tsx';
+import { Button } from '../../../../../../../styles/components/buttons.tsx';
+import {
+  Clock,
+  minutesToHHMM,
+} from '../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 const useStyles = makeStyles((theme) => ({
   column: {
@@ -25,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
     borderStyle: 'solid',
     borderWidth: '1px',
     borderColor: lightColorWheel.secondary.s2,
-    padding: [0, 0, styleguide.gridbase, 0],
+    padding: '0 0 8px 0',
     hoverableRow: {
       ':hover': {
         backgroundColor: '#F5ECDC',
@@ -40,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
     background: 'inherit',
     position: 'sticky',
     top: 0,
-    padding: [styleguide.gridbase, 0, styleguide.gridbase, 0],
+    padding: '8px 0 8px 0',
     ...styleguide.transition.short,
     transitionProperty: 'box-shadow',
   },
@@ -66,6 +71,20 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: '-0.1px',
     gap: '4px',
   },
+  timeTrack: {
+    color: '#4D4D4D',
+    fontSize: '10px',
+    fontWeight: '400',
+    lineHeight: '14px',
+    letterSpacing: '-0.1px',
+    gap: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    opacity: '50%',
+  },
+  timeTrackHover: {
+    opacity: '100%',
+  },
 }));
 
 export interface KanbanColumnProps {
@@ -73,13 +92,30 @@ export interface KanbanColumnProps {
   header: React.ReactNode;
   isColumnHovered?: boolean;
   onCreateCard?: () => void;
+  totalTimeSpent: number;
 }
 
-function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
+function ColumnTitle({
+  header,
+  onCreateCard,
+  groupBy,
+  isColumnHovered,
+  totalTimeSpent,
+}: KanbanColumnProps) {
   const styles = useStyles();
   const [sentinel, setSentinel] = useState<HTMLDivElement>();
   const scrollParent = useScrollParent();
   const [isSticky, setIsSticky] = useState(false);
+  const formattedTime = minutesToHHMM(totalTimeSpent);
+  const [prevTotalTime, setPrevTotalTime] = useState<number | null>(null);
+
+  const deltaTime = prevTotalTime !== null ? totalTimeSpent - prevTotalTime : 0;
+
+  useEffect(() => {
+    if (prevTotalTime !== totalTimeSpent) {
+      setPrevTotalTime(totalTimeSpent);
+    }
+  }, [totalTimeSpent]);
 
   useEffect(() => {
     if (!sentinel) {
@@ -116,27 +152,22 @@ function ColumnTitle({ header, onCreateCard, groupBy }: KanbanColumnProps) {
       {(style) => (
         <div
           className={cn(styles.columnTitle, isSticky && styles.stickyShadow)}
-          style={style}
-        >
+          style={style}>
           <div className={cn(styles.columnHeader)}>
-            <H4
-              className={cn(
-                styles.titleText,
-                groupBy !== 'workspace' && styles.TextTitle
-              )}
-            >
+            <H4 className={cn(groupBy !== 'workspace' && styles.TextTitle)}>
               {header}
             </H4>
             <div className={cn(layout.flexSpacer)} />
-            {/* <Button onClick={onCreateCard}>
-              {isColumnHovered && (
-                <div className={cn(styles.newTaskText)}>New Task</div>
-              )}
-              <img
-                key="IconNewTaskBoard"
-                src="/icons/board/New-Task-plus.svg"
-              />
-            </Button> */}
+            <div style={{ padding: '0 8px 0 0' }}>
+              <div
+                className={cn(
+                  styles.timeTrack,
+                  isColumnHovered && styles.timeTrackHover
+                )}>
+                {formattedTime}
+                <Clock totalMinutes={deltaTime} />
+              </div>
+            </div>
           </div>
           <div
             className={cn(styles.stickyNotifier)}
@@ -152,6 +183,7 @@ export function KanbanColumn({
   groupBy,
   children,
   header,
+  totalTimeSpent,
 }: React.PropsWithChildren<KanbanColumnProps>) {
   const styles = useStyles();
   const [isColumnHovered, setIsColumnHovered] = useState(false);
@@ -165,13 +197,13 @@ export function KanbanColumn({
     <div
       className={cn(styles.column)}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+      onMouseLeave={handleMouseLeave}>
       <ColumnTitle
         header={header}
         groupBy={groupBy}
         isColumnHovered={isColumnHovered}
         onCreateCard={() => {}}
+        totalTimeSpent={totalTimeSpent}
       />
       <div>{children}</div>
     </div>

@@ -7,6 +7,7 @@ import React, {
   useContext,
   MouseEvent,
   Children,
+  useEffect,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { makeStyles, cn } from '../css-objects/index.ts';
@@ -38,26 +39,6 @@ const useStyles = makeStyles((theme) => ({
   backdropHovered: {
     backgroundColor: theme1.secondary.s3,
   },
-  // item: {
-  //   ...styleguide.textStyles.text,
-  //   backgroundColor: 'white',
-  //   boxSizing: 'border-box',
-  //   height: styleguide.gridbase * 4,
-  //   minWidth: styleguide.gridbase * 15,
-  //   maxWidth: styleguide.gridbase * 27,
-  //   padding: '8px 16px 8px 8px',
-  //   color: theme.background.text,
-  //   cursor: 'pointer',
-  //   ':hover': {
-  //     backgroundColor: theme1.secondary.s3,
-  //   },
-  //   flexShrink: 0,
-  //   transition: 'background-color 0.15s linear',
-  //   alignItems: 'center',
-  //   basedOn: [layout.row],
-  //   display: 'flex',
-  //   width: 'auto',
-  // },
   item: {
     ...styleguide.textStyles.text,
     backgroundColor: 'white',
@@ -78,7 +59,6 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     // width: 'auto',
     borderBottom: `2px solid ${theme1.secondary.s2}`,
-
     width: '100%',
     // gap: styleguide.gridbase,
     // ':last-child': {
@@ -155,6 +135,10 @@ const useStyles = makeStyles((theme) => ({
     overflowX: 'clip',
   },
   secondaryBox: {},
+  disabled: {
+    cursor: 'not-allowed',
+    opacity: '0.5',
+  },
 }));
 
 const MenuContext = React.createContext({
@@ -173,6 +157,7 @@ export type SecondaryMenuItemProps = React.PropsWithChildren<{
   text: string;
   IconComponent?: any;
   isWsList?: boolean;
+  disabled?: boolean;
 }>;
 
 export function SecondaryMenuItem({
@@ -181,13 +166,21 @@ export function SecondaryMenuItem({
   className,
   IconComponent,
   isWsList,
+  disabled,
 }: SecondaryMenuItemProps) {
   const styles = useStyles();
+
   const renderButton = useCallback(() => {
     return (
-      <div className={cn(className, styles.item, styles.secondaryBox)}>
+      <div
+        className={cn(
+          className,
+          styles.item,
+          styles.secondaryBox,
+          disabled && styles.disabled
+        )}>
         {IconComponent && <IconComponent className={cn(styles.actionIcon)} />}
-        <Text className={cn(isWsList && styles.actionText)}>{text}</Text>
+        <Text className={cn(isWsList && styles.actionText)}>{text}</Text>{' '}
         <div className={cn(layout.flexSpacer)} />
         <img
           key="iconExpender"
@@ -211,9 +204,8 @@ export function SecondaryMenuItem({
       align="start"
       withoutArrow={true}
       popupClassName={isWsList ? cn(styles.workspacesList) : 'none'}
-      className={className}
-    >
-      {children}
+      className={className}>
+      {!disabled && children}
     </Menu>
   );
 }
@@ -223,6 +215,7 @@ interface MenuItemProps {
   className?: string;
   children?: React.ReactNode;
   selected?: boolean;
+  disabled?: boolean;
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
 
@@ -240,6 +233,7 @@ export const MenuItem = React.forwardRef<
     children,
     className,
     onClick = () => true,
+    disabled,
     icon: IconItem = null,
     ...props
   },
@@ -249,24 +243,32 @@ export const MenuItem = React.forwardRef<
   const ctx = useContext(MenuContext);
   const [isHovered, setIsHovered] = useState(false);
 
+  // const invoke = (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   Promise.resolve(onClick()).then((r) => {
+  //     if (typeof r === 'undefined' || r) {
+  //       ctx.close();
+  //     }
+  //   });
+  // };
   const invoke = (e: MouseEvent) => {
     e.stopPropagation();
-    Promise.resolve(onClick()).then((r) => {
-      if (typeof r === 'undefined' || r) {
-        ctx.close();
-      }
-    });
+    if (!disabled) {
+      Promise.resolve(onClick()).then((r) => {
+        if (typeof r === 'undefined' || r) {
+          ctx.close();
+        }
+      });
+    }
   };
-
   return (
     <div
-      className={cn(className, styles.item)}
+      className={cn(className, styles.item, disabled && styles.disabled)}
       {...props}
       onClick={invoke}
       ref={ref}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+      onMouseLeave={() => setIsHovered(false)}>
       {IconItem && <IconItem className={cn(styles.icon)} />}
       {children}
     </div>
@@ -326,8 +328,7 @@ export const Backdrop = React.forwardRef<
             visible && styles.backdropVisible
           )}
           style={{ zIndex, marginBottom: '8px' }}
-          {...rest}
-        >
+          {...rest}>
           {children}
         </div>
       )}
@@ -411,18 +412,6 @@ export default function Menu({
     [menuCtx, toggleMenu]
   );
 
-  // const close = useCallback(
-  //   (e?: MouseEvent) => {
-  //     setOpen(false);
-  //     if (e) {
-  //       e.preventDefault();
-  //       e.stopPropagation();
-  //     }
-  //     menuCtx.close();
-  //   },
-  //   [menuCtx]
-  // );
-
   const newContext = useMemo(
     () => ({
       close() {
@@ -444,13 +433,6 @@ export default function Menu({
     onClick();
   };
 
-  // const openMenu = (e: React.MouseEvent) => {
-  //   e.stopPropagation();
-  //   e.preventDefault();
-  //   setOpen((x) => !x);
-  //   onClick();
-  // };
-
   useLayoutEffect(() => {
     if (isElement(anchor.current) && sizeByButton) {
       const width = (anchor.current as any).getBoundingClientRect().width;
@@ -467,12 +449,10 @@ export default function Menu({
       open={open}
       position={position!}
       align={align}
-      direction={direction}
-    >
+      direction={direction}>
       <div
         className={cn(popupClassName, styles.dropDown)}
-        style={minWidthStyle}
-      >
+        style={minWidthStyle}>
         <div className={styles.MenuContainer}>{Children.toArray(children)}</div>
         {!withoutArrow && (
           <Arrow
@@ -484,37 +464,6 @@ export default function Menu({
         )}
       </div>
     </Popper>
-
-    // <Popper
-    //   className={undefined}
-    //   anchor={anchor.current!}
-    //   open={open}
-    //   position={position!}
-    //   align={align}
-    //   direction={direction}
-    // >
-    //   <div
-    //     className={cn(popupClassName, styles.dropDown)}
-    //     style={minWidthStyle}
-    //   >
-    //     <div className={styles.MenuContainer}>
-    //       {Children.toArray(children).map((child, index) => (
-    //         <React.Fragment key={index}>
-    //           {index > 0 && <LineSeparator />}
-    //           {child}
-    //         </React.Fragment>
-    //       ))}
-    //     </div>
-    //     {!withoutArrow && (
-    //       <Arrow
-    //         containerPosition={`${position!}ArrowContainer`}
-    //         position={position!}
-    //         shadowPosition={`${position!}Shadow`}
-    //         oneCellMenu={oneCellMenu}
-    //       />
-    //     )}
-    //   </div>
-    // </Popper>
   );
 
   return (
@@ -523,8 +472,7 @@ export default function Menu({
       ref={anchor}
       onClick={openMenu}
       contentEditable={false}
-      style={style}
-    >
+      style={style}>
       {renderButton({ close, isOpen: open })}
       {open && (
         <MenuContext.Provider value={newContext}>
@@ -535,8 +483,7 @@ export default function Menu({
               visible={open}
               ref={backdrop}
               className={cn(backdropClassName)}
-              onClick={close}
-            >
+              onClick={close}>
               {content}
             </Backdrop>
           )}

@@ -133,8 +133,7 @@ export const IconVector: React.FC<IconVectorProps> = ({ color }) => {
       width="58"
       height="2"
       viewBox="0 0 58 2"
-      fill="none"
-    >
+      fill="none">
       <path
         d="M1 1H57"
         stroke={color === 'done' ? '#FFF' : '#ABD4EE'}
@@ -167,8 +166,7 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
       width="24"
       height="24"
       viewBox="0 0 24 24"
-      fill="none"
-    >
+      fill="none">
       <circle
         cx="12"
         cy="12"
@@ -184,8 +182,7 @@ export const IconEllipse: React.FC<IconEllipseProps> = ({
         fill={color === 'done' ? '#FFF' : '#ABD4EE'}
         strokeWidth="0.5px"
         dy="0.38em"
-        style={textStyles}
-      >
+        style={textStyles}>
         {stepNumber}
       </text>
     </svg>
@@ -228,30 +225,36 @@ export function RemoveMultiButton<T>({
   const { pendingAction, setPendingAction } = usePendingAction();
 
   const captureSelectedCardsState = () => {
-    //TODO: ask ofri if its ok for undo or do we need to change isDeleted = -1 back for each card.
     return new Set(selectedCards);
   };
+  const undoDeleteCards = (prevSelected: Set<VertexManager<Note>>) => {
+    selectedCards.forEach((cardM) => {
+      cardM.vertex.isDeleted = 0;
+    });
+    setSelectedCards!(prevSelected);
+  };
+
   const itemText = isTask
     ? `${selectedCards.size === 1 ? 'task' : 'tasks'}`
     : `${selectedCards.size === 1 ? 'note' : 'notes'}`;
 
+  //TODO: i have problem in the undo toast - when i set a state (setSelectedCards!(new Set());) in the handleDeleteClick the toaster doest show off. need to be fixed.
+
   const handleDeleteClick = () => {
     setPendingAction(true);
+    const prevSelected: Set<VertexManager<Note>> = captureSelectedCardsState();
 
     setTimeout(() => {
-      const prevState = captureSelectedCardsState();
       selectedCards.forEach((cardM) => {
         cardM.vertex.isDeleted = 1;
       });
-
       displayUndoToast(
         displayToast,
         `Deleted ${selectedCards.size} ${itemText}.`,
-        () => setSelectedCards!(prevState)
+        () => undoDeleteCards(prevSelected)
       );
       setPendingAction(false);
-      setSelectedCards && setSelectedCards(new Set());
-    }, 2000);
+    }, 1000);
   };
 
   const handleCancelClick = () => {};
@@ -268,8 +271,7 @@ export function RemoveMultiButton<T>({
       direction="out"
       position="bottom"
       align="end"
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <ConfirmationDialog
         nCards={nCards}
         approveButtonText={'Delete'}
@@ -378,8 +380,7 @@ export function AssignMultiButton<T>({
       align="end"
       direction="out"
       className={className}
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <MemberPicker
         users={intersectionUsersArray
           .filter((user) => user.manager)
@@ -460,13 +461,6 @@ export function AddTagMultiButton<T>({
     (tagId) => tagMap.get(tagId)!
   );
 
-  // let intersectionTagsArray: Tag[] = [];
-  // allEncodedTags.forEach((tagId) => {
-  //   // const [parent, child] = decodeTagId(tagId);
-  //   const tagChild = tagMap.get(tagId)!; //TODO: ask ofri about the tagMap (is dont like this impl)
-  //   intersectionTagsArray = [...intersectionTagsArray, tagChild];
-  // });
-
   const captureTagState = (): Map<VertexManager<Note>, Set<Tag>> => {
     const previousTags = new Map<VertexManager<Note>, Set<Tag>>();
     selectedCards.forEach((card: VertexManager<Note>) => {
@@ -537,8 +531,7 @@ export function AddTagMultiButton<T>({
       align="end"
       direction="out"
       className={className}
-      popupClassName={cn(styles.popup)}
-    >
+      popupClassName={cn(styles.popup)}>
       <TagPicker
         tags={intersectionTagsArray}
         onRowSelect={onRowSelect}

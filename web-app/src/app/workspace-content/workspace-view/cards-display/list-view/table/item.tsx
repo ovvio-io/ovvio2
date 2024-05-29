@@ -60,6 +60,11 @@ import { useWorkspaceColor } from '../../../../../../shared/workspace-icon/index
 import { VertexId } from '../../../../../../../../cfds/client/graph/vertex.ts';
 import { SelectIcon, SelectedIcon } from '../../../select-icons.tsx';
 import { AssignMultiButton } from '../../../multi-select-bar.tsx';
+import {
+  IconTimeTracking,
+  TimeTracking,
+  TimeTrackingContainer,
+} from '../../../../../../shared/components/time-tracking/TimeTracking.tsx';
 
 export const ROW_HEIGHT = styleguide.gridbase * 5.5;
 const showAnim = keyframes({
@@ -79,7 +84,7 @@ const useStyles = makeStyles(() => ({
     backgroundColor: theme.mono.m1,
     height: styleguide.gridbase * 2,
     minWidth: styleguide.gridbase * 3,
-    padding: [0, styleguide.gridbase],
+    padding: '0 8px',
     flexShrink: 0,
     fontSize: 12,
     borderRadius: styleguide.gridbase,
@@ -174,7 +179,7 @@ const useStyles = makeStyles(() => ({
     // flexShrink: '2',
     flexShrink: '1', //7.3.24
     flexBasis: 'auto',
-    width: 'calc(45% - 156px)',
+    width: 'calc(40% - 156px)',
     minWidth: '20%',
     minHeight: '20px',
     cursor: 'pointer',
@@ -191,7 +196,7 @@ const useStyles = makeStyles(() => ({
     flexShrink: '1',
     flexBasis: 'auto',
     alignItems: 'center',
-    padding: [0, styleguide.gridbase * 0.5],
+    padding: '0 4px',
   },
   wsColumnForChild: {
     width: 'calc(21% - 170px)',
@@ -223,7 +228,7 @@ const useStyles = makeStyles(() => ({
     overflow: 'clip',
     display: 'flex',
     position: 'relative',
-    padding: [0, styleguide.gridbase],
+    padding: '0 8px',
     minHeight: styleguide.gridbase * 2,
   },
   tag: {
@@ -268,7 +273,7 @@ const useStyles = makeStyles(() => ({
     maxWidth: styleguide.gridbase * 12,
   },
   cardMiddle: {
-    padding: [styleguide.gridbase, 0, 0, 0],
+    padding: '8px 0 0 0 ',
     display: 'flex',
     alignItems: 'center',
   },
@@ -299,6 +304,15 @@ const useStyles = makeStyles(() => ({
   },
   InAction: {
     backgroundColor: '#FBEAC8',
+  },
+  timeTracking: {
+    // width: 'calc(10% - 156px)',
+    minWidth: '46px',
+    basedOn: [layout.row],
+    alignItems: 'center',
+    padding: '0 16px',
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
 }));
 
@@ -337,8 +351,7 @@ export function SelectIconContainer({
         className
       )}
       style={style}
-      onClick={() => handleSelectClick(card)}
-    >
+      onClick={() => handleSelectClick(card)}>
       {isSelected ? (
         <SelectIcon
           rectColor={'var(--ws-background)'}
@@ -561,8 +574,7 @@ const TagsCell = ({ note }: { note: VertexManager<Note> }) => {
           ref={(el) => el && tagsRef.current.set(tag.key, el)}
           data-tag-key={tag.key}
           key={index}
-          data-tag-name={tag.getVertexProxy().name}
-        >
+          data-tag-name={tag.getVertexProxy().name}>
           <TagView
             className={cn(styles.tag)}
             showMenu="hover"
@@ -656,8 +668,7 @@ function WorkspaceIndicatorCell({
               <Tooltip
                 text={vNote.parentNote.titlePlaintext}
                 position="top"
-                align="center"
-              >
+                align="center">
                 <div className={cn(styles.breadCrumbsTitle)}>
                   {vNote.parentNote.titlePlaintext}
                 </div>
@@ -762,8 +773,7 @@ export function Row({
       className={cn(styles.row, className)}
       style={style}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
+      onMouseLeave={onMouseLeave}>
       <div>{children}</div>
     </div>
   );
@@ -847,8 +857,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
         className={cn(styles.rowContainer)}
         onMouseOver={onMouseOver}
         onMouseLeave={onMouseLeave}
-        onClick={handleSelectInMulti}
-      >
+        onClick={handleSelectInMulti}>
         {!isChild && (isMouseOver || isSelected) && (
           <SelectIconContainer
             workspace={workspace.manager}
@@ -861,8 +870,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
           className={cn(
             isChild && styles.isChild,
             multiIsActive && styles.multiIsActive
-          )}
-        >
+          )}>
           <div
             className={cn(
               isChild ? styles.childRow : styles.row,
@@ -874,8 +882,7 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
               width: isChild ? childWidth : undefined,
               left: isChild ? leftIndentation : undefined,
             }}
-            ref={ref}
-          >
+            ref={ref}>
             <TypeCell note={note} />
             <TitleCell note={note} onClick={onClickImpl} />
             {isChild ? (
@@ -892,6 +899,11 @@ export const ItemRow = React.forwardRef<HTMLTableRowElement, ItemRowProps>(
             />
             <AssigneesCell note={note} />
             <TagsCell note={note} />
+            <TimeTrackingContainer
+              className={styles.timeTracking}
+              card={note}
+              hover={multiIsActive ? false : isMouseOver}
+            />
             <DueDateIndicator
               card={note}
               source={'list'}
