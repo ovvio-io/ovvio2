@@ -384,31 +384,34 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const currentHead = repo.headForKey(this.key);
-    if (!currentHead || currentHead.id === this._headId) {
-      return;
-    }
-    const baseRecord = this._headId
-      ? repo.recordForCommit(this._headId)
-      : Record.nullRecord();
-    const repoRecord = repo.recordForCommit(currentHead);
-    if (repoRecord.isEqual(this.record)) {
-      this._headId = currentHead.id;
-      return;
-    }
-    if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
-      baseRecord.upgradeScheme(repoRecord.scheme);
-    }
-    if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
-      baseRecord.upgradeScheme(this.record.scheme);
-    }
-    const changes = concatChanges(
-      baseRecord.diff(repoRecord, false),
-      baseRecord.diff(this.record, true),
+    // const currentHead = repo.headForKey(this.key);
+    // if (!currentHead || currentHead.id === this._headId) {
+    //   return;
+    // }
+    // const baseRecord = this._headId
+    //   ? repo.recordForCommit(this._headId)
+    //   : Record.nullRecord();
+    // const repoRecord = repo.recordForCommit(currentHead);
+    // if (repoRecord.isEqual(this.record)) {
+    //   this._headId = currentHead.id;
+    //   return;
+    // }
+    // if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
+    //   baseRecord.upgradeScheme(repoRecord.scheme);
+    // }
+    // if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
+    //   baseRecord.upgradeScheme(this.record.scheme);
+    // }
+    // const changes = concatChanges(
+    //   baseRecord.diff(repoRecord, false),
+    //   baseRecord.diff(this.record, true),
+    // );
+    // baseRecord.patch(changes);
+    [this.record, this._headId] = repo.rebase(
+      this.key,
+      this.record,
+      this._headId,
     );
-    baseRecord.patch(changes);
-    this._headId = currentHead.id;
-    this.record = baseRecord;
   }
 
   touch(): Promise<void> {
