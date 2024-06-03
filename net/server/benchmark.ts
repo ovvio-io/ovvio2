@@ -16,9 +16,14 @@ export interface BenchmarkResults extends JSONObject {
   avgInsertTime: number;
   totalGetTime: number;
   avgGetTime: number;
+  chunkSize: number;
+  concurrentGroups: number;
 }
 
-export function newBenchmarkResults(): BenchmarkResults {
+export function newBenchmarkResults(
+  chunkSize: number,
+  concurrentGroups: number
+): BenchmarkResults {
   return {
     benchmarkId: uniqueId(),
     testSize: 0,
@@ -26,6 +31,8 @@ export function newBenchmarkResults(): BenchmarkResults {
     avgInsertTime: 0,
     totalGetTime: 0,
     avgGetTime: 0,
+    chunkSize,
+    concurrentGroups,
   };
 }
 
@@ -42,6 +49,8 @@ export function benchmarkResultsJoin(
     totalGetTime: r1.totalGetTime + r2.totalGetTime,
     avgGetTime:
       (r1.totalGetTime + r2.totalGetTime) / (r1.testSize + r2.testSize),
+    chunkSize: r1.chunkSize,
+    concurrentGroups: r1.concurrentGroups,
   };
 }
 
@@ -98,7 +107,7 @@ export async function runInsertBenchmark(
   chunkSize: number = K_TEST_SIZE
 ): Promise<BenchmarkResults> {
   if (!results) {
-    results = newBenchmarkResults();
+    results = newBenchmarkResults(chunkSize, 1);
   }
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const startTime = performance.now();
@@ -120,7 +129,7 @@ export function runReadBenchmark(
   results?: BenchmarkResults
 ): BenchmarkResults {
   if (!results) {
-    results = newBenchmarkResults();
+    results = newBenchmarkResults(CHUNK_SIZE, 1);
   }
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const keys = shuffle(Array.from(repo.keys()));
@@ -138,9 +147,10 @@ export function runReadBenchmark(
 
 async function runSingleBenchmark(
   services: ServerServices,
-  chunkSize: number
+  chunkSize: number,
+  concurrentGroups: number
 ): Promise<BenchmarkResults> {
-  let results = newBenchmarkResults();
+  let results = newBenchmarkResults(chunkSize, concurrentGroups);
   const iterations = Math.ceil(K_TEST_SIZE / chunkSize);
 
   for (let i = 0; i < iterations; ++i) {
@@ -155,15 +165,18 @@ export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
   const numConcurrentTests = 10; // Number of concurrent benchmark groups
+  const chunkSize = CHUNK_SIZE;
   const benchmarkPromises: Promise<BenchmarkResults>[] = [];
 
   for (let i = 0; i < numConcurrentTests; ++i) {
-    benchmarkPromises.push(runSingleBenchmark(services, CHUNK_SIZE));
+    benchmarkPromises.push(
+      runSingleBenchmark(services, chunkSize, numConcurrentTests)
+    );
   }
 
   const allResults = await Promise.all(benchmarkPromises);
 
-  let finalResults = newBenchmarkResults();
+  let finalResults = newBenchmarkResults(chunkSize, numConcurrentTests);
   for (const result of allResults) {
     finalResults = benchmarkResultsJoin(finalResults, result);
   }
