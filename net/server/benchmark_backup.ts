@@ -136,49 +136,16 @@ export function runReadBenchmark(
   return results;
 }
 
-async function runSingleBenchmark(
-  services: ServerServices,
-  chunkSize: number
+export async function runBenchmarks(
+  services: ServerServices
 ): Promise<BenchmarkResults> {
   let results = newBenchmarkResults();
-  const iterations = Math.ceil(K_TEST_SIZE / chunkSize);
+  const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE);
 
   for (let i = 0; i < iterations; ++i) {
-    await runInsertBenchmark(services, results, chunkSize);
+    await runInsertBenchmark(services, results, CHUNK_SIZE);
     runReadBenchmark(services, results);
   }
 
   return results;
 }
-
-export async function runBenchmarks(
-  services: ServerServices
-): Promise<BenchmarkResults> {
-  const numConcurrentTests = 10; // Number of concurrent benchmark groups
-  const benchmarkPromises: Promise<BenchmarkResults>[] = [];
-
-  for (let i = 0; i < numConcurrentTests; ++i) {
-    benchmarkPromises.push(runSingleBenchmark(services, CHUNK_SIZE));
-  }
-
-  const allResults = await Promise.all(benchmarkPromises);
-
-  let finalResults = newBenchmarkResults();
-  for (const result of allResults) {
-    finalResults = benchmarkResultsJoin(finalResults, result);
-  }
-
-  return finalResults;
-}
-
-// }
-// const promises: Promise<BenchmarkResults>[] = [];
-// for (let i = 0; i < 10; ++i) {
-//   promises.push(runInsertBenchmark(services));
-// }
-// await Promise.allSettled(promises);
-// for (const p of promises) {
-//   const b = await p;
-//   runReadBenchmark(services, b);
-//   results = benchmarkResultsJoin(results, b);
-// }
