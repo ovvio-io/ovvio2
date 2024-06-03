@@ -7,6 +7,7 @@ import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
 const K_TEST_SIZE = 100000;
+const CHUNK_SIZE = 50000;
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -30,7 +31,7 @@ export function newBenchmarkResults(): BenchmarkResults {
 
 export function benchmarkResultsJoin(
   r1: BenchmarkResults,
-  r2: BenchmarkResults,
+  r2: BenchmarkResults
 ): BenchmarkResults {
   return {
     benchmarkId: uniqueId(),
@@ -94,6 +95,7 @@ const kSampleRecord = Record.fromJS({
 export async function runInsertBenchmark(
   services: ServerServices,
   results?: BenchmarkResults,
+  chunkSize: number = K_TEST_SIZE
 ): Promise<BenchmarkResults> {
   if (!results) {
     results = newBenchmarkResults();
@@ -101,21 +103,21 @@ export async function runInsertBenchmark(
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const startTime = performance.now();
   const promises: Promise<Commit | undefined>[] = [];
-  for (let i = 0; i < K_TEST_SIZE; ++i) {
+  for (let i = 0; i < chunkSize; ++i) {
     promises.push(repo.setValueForKey(uniqueId(), kSampleRecord, undefined));
   }
   await Promise.allSettled(promises);
   await services.sync.waitForBackup(Repository.id('data', results.benchmarkId));
   const testTime = performance.now() - startTime;
-  results.testSize = K_TEST_SIZE;
-  results.totalInsertTime = testTime;
-  results.avgInsertTime = testTime / K_TEST_SIZE;
+  results.testSize += chunkSize;
+  results.totalInsertTime += testTime;
+  results.avgInsertTime = results.totalInsertTime / results.testSize;
   return results;
 }
 
 export function runReadBenchmark(
   services: ServerServices,
-  results?: BenchmarkResults,
+  results?: BenchmarkResults
 ): BenchmarkResults {
   if (!results) {
     results = newBenchmarkResults();
@@ -135,20 +137,27 @@ export function runReadBenchmark(
 }
 
 export async function runBenchmarks(
-  services: ServerServices,
+  services: ServerServices
 ): Promise<BenchmarkResults> {
   let results = newBenchmarkResults();
-  await runInsertBenchmark(services, results);
-  runReadBenchmark(services, results);
-  // const promises: Promise<BenchmarkResults>[] = [];
-  // for (let i = 0; i < 10; ++i) {
-  //   promises.push(runInsertBenchmark(services));
-  // }
-  // await Promise.allSettled(promises);
-  // for (const p of promises) {
-  //   const b = await p;
-  //   runReadBenchmark(services, b);
-  //   results = benchmarkResultsJoin(results, b);
-  // }
+  const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE);
+
+  for (let i = 0; i < iterations; ++i) {
+    await runInsertBenchmark(services, results, CHUNK_SIZE);
+    runReadBenchmark(services, results);
+  }
+
   return results;
 }
+
+// }
+// const promises: Promise<BenchmarkResults>[] = [];
+// for (let i = 0; i < 10; ++i) {
+//   promises.push(runInsertBenchmark(services));
+// }
+// await Promise.allSettled(promises);
+// for (const p of promises) {
+//   const b = await p;
+//   runReadBenchmark(services, b);
+//   results = benchmarkResultsJoin(results, b);
+// }
