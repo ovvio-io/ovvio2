@@ -144,7 +144,6 @@ export function runReadBenchmark(
   results.avgGetTime = testTime / testSize;
   return results;
 }
-
 async function runSingleBenchmark(
   services: ServerServices,
   chunkSize: number,
@@ -156,6 +155,11 @@ async function runSingleBenchmark(
   for (let i = 0; i < iterations; ++i) {
     await runInsertBenchmark(services, results, chunkSize);
     runReadBenchmark(services, results);
+    console.log(
+      `Progress: ${
+        i + 1
+      }/${iterations} iterations completed for group with chunk size ${chunkSize}`
+    );
   }
 
   return results;
@@ -169,6 +173,7 @@ export async function runBenchmarks(
   const benchmarkPromises: Promise<BenchmarkResults>[] = [];
 
   for (let i = 0; i < numConcurrentTests; ++i) {
+    console.log(`Starting benchmark group ${i + 1}/${numConcurrentTests}`);
     benchmarkPromises.push(
       runSingleBenchmark(services, chunkSize, numConcurrentTests)
     );
@@ -181,6 +186,7 @@ export async function runBenchmarks(
     finalResults = benchmarkResultsJoin(finalResults, result);
   }
 
+  console.log('All benchmark groups completed.');
   return finalResults;
 }
 
