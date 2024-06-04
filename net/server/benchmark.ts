@@ -151,12 +151,15 @@ export async function runBenchmarks(
   const numConcurrentTests = 10; // Number of concurrent benchmark groups
   const chunkSize = CHUNK_SIZE;
   const benchmarkPromises: Promise<BenchmarkResults>[] = [];
+  const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE);
 
   for (let i = 0; i < numConcurrentTests; ++i) {
-    console.log(
-      `Starting insert benchmark group ${i + 1}/${numConcurrentTests}`
-    );
-    benchmarkPromises.push(runInsertBenchmark(services, undefined, chunkSize));
+    for (let j = 0; j < iterations; ++j) {
+      console.log(`Starting insert benchmark group ${i + 1}/${iterations}`);
+      benchmarkPromises.push(
+        runInsertBenchmark(services, undefined, chunkSize)
+      );
+    }
   }
 
   const allInsertResults = await Promise.all(benchmarkPromises);
