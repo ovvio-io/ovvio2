@@ -144,26 +144,6 @@ export function runReadBenchmark(
   results.avgGetTime = testTime / testSize;
   return results;
 }
-async function runSingleBenchmark(
-  services: ServerServices,
-  chunkSize: number,
-  concurrentGroups: number
-): Promise<BenchmarkResults> {
-  let results = newBenchmarkResults(chunkSize, concurrentGroups);
-  const iterations = Math.ceil(K_TEST_SIZE / chunkSize);
-
-  for (let i = 0; i < iterations; ++i) {
-    await runInsertBenchmark(services, results, chunkSize);
-    runReadBenchmark(services, results);
-    console.log(
-      `Progress: ${
-        i + 1
-      }/${iterations} iterations completed for group with chunk size ${chunkSize}`
-    );
-  }
-
-  return results;
-}
 
 export async function runBenchmarks(
   services: ServerServices
@@ -173,31 +153,24 @@ export async function runBenchmarks(
   const benchmarkPromises: Promise<BenchmarkResults>[] = [];
 
   for (let i = 0; i < numConcurrentTests; ++i) {
-    console.log(`Starting benchmark group ${i + 1}/${numConcurrentTests}`);
-    benchmarkPromises.push(
-      runSingleBenchmark(services, chunkSize, numConcurrentTests)
+    console.log(
+      `Starting insert benchmark group ${i + 1}/${numConcurrentTests}`
     );
+    benchmarkPromises.push(runInsertBenchmark(services, undefined, chunkSize));
   }
 
-  const allResults = await Promise.all(benchmarkPromises);
+  const allInsertResults = await Promise.all(benchmarkPromises);
 
+  // Combine all insert results into one
   let finalResults = newBenchmarkResults(chunkSize, numConcurrentTests);
-  for (const result of allResults) {
+  for (const result of allInsertResults) {
     finalResults = benchmarkResultsJoin(finalResults, result);
   }
+
+  // Run read benchmark after all insertions are complete
+  console.log('Starting read benchmark');
+  finalResults = runReadBenchmark(services, finalResults);
 
   console.log('All benchmark groups completed.');
   return finalResults;
 }
-
-// }
-// const promises: Promise<BenchmarkResults>[] = [];
-// for (let i = 0; i < 10; ++i) {
-//   promises.push(runInsertBenchmark(services));
-// }
-// await Promise.allSettled(promises);
-// for (const p of promises) {
-//   const b = await p;
-//   runReadBenchmark(services, b);
-//   results = benchmarkResultsJoin(results, b);
-// }
