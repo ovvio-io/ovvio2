@@ -6,9 +6,9 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 100000; // Total number of operations
+const K_TEST_SIZE = 1000000;
 const CHUNK_SIZE = 50000; // Number of operations per batch
-const numConcurrentTests = 10; // Number of concurrent benchmark groups
+const numConcurrentTests = 5; // Number of concurrent benchmark groups
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -149,7 +149,6 @@ export function runReadBenchmark(
 export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
-  const numConcurrentTests = 10;
   const chunkSize = CHUNK_SIZE;
   const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE / numConcurrentTests);
   let finalResults = newBenchmarkResults(chunkSize, numConcurrentTests);
