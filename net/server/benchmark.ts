@@ -118,11 +118,8 @@ export async function runInsertBenchmark(
 
 export function runReadBenchmark(
   services: ServerServices,
-  results?: BenchmarkResults
+  results: BenchmarkResults
 ): BenchmarkResults {
-  if (!results) {
-    results = newBenchmarkResults();
-  }
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const keys = shuffle(Array.from(repo.keys()));
   const startTime = performance.now();
@@ -132,8 +129,8 @@ export function runReadBenchmark(
     repo.valueForKey(k);
   }
   const testTime = performance.now() - startTime;
-  results.totalGetTime = testTime;
-  results.avgGetTime = testTime / testSize;
+  results.totalGetTime += testTime;
+  results.avgGetTime = results.totalGetTime / (results.testSize || testSize);
   return results;
 }
 
