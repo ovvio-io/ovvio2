@@ -6,8 +6,8 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 10000;
-const CHUNK_SIZE = 1000;
+const K_TEST_SIZE = 1000000;
+const CHUNK_SIZE = 50000;
 const NUM_CONCURRENT_TESTS = 10;
 
 export interface BenchmarkResults extends JSONObject {
@@ -130,7 +130,7 @@ export function runReadBenchmark(
   }
   const testTime = performance.now() - startTime;
   results.totalGetTime += testTime;
-  results.avgGetTime = results.totalGetTime / (results.testSize || testSize);
+  results.avgGetTime = (results.avgGetTime + testTime / testSize) / 2;
   return results;
 }
 
@@ -141,10 +141,8 @@ export async function runBenchmarks(
     K_TEST_SIZE / (CHUNK_SIZE * NUM_CONCURRENT_TESTS)
   );
   let results = newBenchmarkResults();
-
   for (let i = 0; i < iterations; ++i) {
     const benchmarkPromises: Promise<BenchmarkResults>[] = [];
-
     for (let j = 0; j < NUM_CONCURRENT_TESTS; ++j) {
       console.log(
         `Starting insert benchmark iteration ${
@@ -155,19 +153,15 @@ export async function runBenchmarks(
         runInsertBenchmark(services, undefined, CHUNK_SIZE)
       );
     }
-
     const insertResults = await Promise.all(benchmarkPromises);
-
     for (const result of insertResults) {
+      console.log(
+        `Starting read benchmark after iteration ${i + 1}/${iterations}`
+      );
+      results = runReadBenchmark(services, results);
       results = benchmarkResultsJoin(results, result);
     }
-
-    console.log(
-      `Starting read benchmark after iteration ${i + 1}/${iterations}`
-    );
-    results = runReadBenchmark(services, results);
   }
-
   console.log('All benchmark groups completed.');
   return results;
 }
