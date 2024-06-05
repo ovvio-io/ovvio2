@@ -6,8 +6,9 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 100000;
-const CHUNK_SIZE = 50000;
+const K_TEST_SIZE = 100000; // Total number of operations
+const CHUNK_SIZE = 50000; // Number of operations per batch
+const numConcurrentTests = 10; // Number of concurrent benchmark groups
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -148,31 +149,36 @@ export function runReadBenchmark(
 export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
-  const numConcurrentTests = 10; // Number of concurrent benchmark groups
+  const numConcurrentTests = 10;
   const chunkSize = CHUNK_SIZE;
-  const benchmarkPromises: Promise<BenchmarkResults>[] = [];
-  const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE);
+  const iterations = Math.ceil(K_TEST_SIZE / CHUNK_SIZE / numConcurrentTests);
+  let finalResults = newBenchmarkResults(chunkSize, numConcurrentTests);
 
-  for (let i = 0; i < numConcurrentTests; ++i) {
-    for (let j = 0; j < iterations; ++j) {
-      console.log(`Starting insert benchmark group ${i + 1}/${iterations}`);
+  for (let i = 0; i < iterations; ++i) {
+    const benchmarkPromises: Promise<BenchmarkResults>[] = [];
+
+    for (let j = 0; j < numConcurrentTests; ++j) {
+      console.log(
+        `Starting insert benchmark iteration ${
+          i + 1
+        }/${iterations}, concurrent group ${j + 1}/${numConcurrentTests}`
+      );
       benchmarkPromises.push(
         runInsertBenchmark(services, undefined, chunkSize)
       );
     }
+
+    const results = await Promise.all(benchmarkPromises);
+
+    for (const result of results) {
+      finalResults = benchmarkResultsJoin(finalResults, result);
+    }
+
+    console.log(
+      `Starting read benchmark after iteration ${i + 1}/${iterations}`
+    );
+    finalResults = runReadBenchmark(services, finalResults);
   }
-
-  const allInsertResults = await Promise.all(benchmarkPromises);
-
-  // Combine all insert results into one
-  let finalResults = newBenchmarkResults(chunkSize, numConcurrentTests);
-  for (const result of allInsertResults) {
-    finalResults = benchmarkResultsJoin(finalResults, result);
-  }
-
-  // Run read benchmark after all insertions are complete
-  console.log('Starting read benchmark');
-  finalResults = runReadBenchmark(services, finalResults);
 
   console.log('All benchmark groups completed.');
   return finalResults;
