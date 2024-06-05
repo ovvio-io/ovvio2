@@ -6,7 +6,9 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 100000;
+const K_TEST_SIZE = 10000;
+const CHUNK_SIZE = 1000;
+const NUM_CONCURRENT_TESTS = 10;
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -93,7 +95,8 @@ const kSampleRecord = Record.fromJS({
 
 export async function runInsertBenchmark(
   services: ServerServices,
-  results?: BenchmarkResults
+  results?: BenchmarkResults,
+  chunkSize: number = K_TEST_SIZE
 ): Promise<BenchmarkResults> {
   if (!results) {
     results = newBenchmarkResults();
@@ -101,15 +104,15 @@ export async function runInsertBenchmark(
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const startTime = performance.now();
   const promises: Promise<Commit | undefined>[] = [];
-  for (let i = 0; i < K_TEST_SIZE; ++i) {
+  for (let i = 0; i < chunkSize; ++i) {
     promises.push(repo.setValueForKey(uniqueId(), kSampleRecord, undefined));
   }
   await Promise.allSettled(promises);
   await services.sync.waitForBackup(Repository.id('data', results.benchmarkId));
   const testTime = performance.now() - startTime;
-  results.testSize = K_TEST_SIZE;
-  results.totalInsertTime = testTime;
-  results.avgInsertTime = testTime / K_TEST_SIZE;
+  results.testSize += chunkSize;
+  results.totalInsertTime += testTime;
+  results.avgInsertTime = results.totalInsertTime / results.testSize;
   return results;
 }
 
@@ -137,18 +140,37 @@ export function runReadBenchmark(
 export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
+  const iterations = Math.ceil(
+    K_TEST_SIZE / (CHUNK_SIZE * NUM_CONCURRENT_TESTS)
+  );
   let results = newBenchmarkResults();
-  await runInsertBenchmark(services, results);
-  runReadBenchmark(services, results);
-  // const promises: Promise<BenchmarkResults>[] = [];
-  // for (let i = 0; i < 10; ++i) {
-  //   promises.push(runInsertBenchmark(services));
-  // }
-  // await Promise.allSettled(promises);
-  // for (const p of promises) {
-  //   const b = await p;
-  //   runReadBenchmark(services, b);
-  //   results = benchmarkResultsJoin(results, b);
-  // }
+
+  for (let i = 0; i < iterations; ++i) {
+    const benchmarkPromises: Promise<BenchmarkResults>[] = [];
+
+    for (let j = 0; j < NUM_CONCURRENT_TESTS; ++j) {
+      console.log(
+        `Starting insert benchmark iteration ${
+          i + 1
+        }/${iterations}, concurrent group ${j + 1}/${NUM_CONCURRENT_TESTS}`
+      );
+      benchmarkPromises.push(
+        runInsertBenchmark(services, undefined, CHUNK_SIZE)
+      );
+    }
+
+    const insertResults = await Promise.all(benchmarkPromises);
+
+    for (const result of insertResults) {
+      results = benchmarkResultsJoin(results, result);
+    }
+
+    console.log(
+      `Starting read benchmark after iteration ${i + 1}/${iterations}`
+    );
+    results = runReadBenchmark(services, results);
+  }
+
+  console.log('All benchmark groups completed.');
   return results;
 }
