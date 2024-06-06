@@ -100,7 +100,7 @@ export class Repository<
     Promise<Commit | undefined>
   >;
   private readonly _cachedCommitsPerUser: Map<string | undefined, string[]>;
-  private readonly _commitIsCorruptedResult: Map<string, boolean>;
+  private readonly _verifiedNotCorruptedCommits: Set<string>;
 
   allowMerge = true;
 
@@ -145,7 +145,7 @@ export class Repository<
     }
     this._pendingMergePromises = new Map();
     this._cachedCommitsPerUser = new Map();
-    this._commitIsCorruptedResult = new Map();
+    this._verifiedNotCorruptedCommits = new Set();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -607,24 +607,23 @@ export class Repository<
     if (commitContentsIsRecord(c.contents)) {
       return false;
     }
-    if (this._commitIsCorruptedResult.has(c.id)) {
-      return this._commitIsCorruptedResult.get(c.id)!;
+    if (this._verifiedNotCorruptedCommits.has(c.id)) {
+      return false;
     }
     const contents: DeltaContents = c.contents as DeltaContents;
     // Assume everything is good if we don't have the base commit to check with
     if (!this.hasCommit(contents.base)) {
-      this._commitIsCorruptedResult.set(c.id, false);
+      this._verifiedNotCorruptedCommits.add(c.id);
       return false;
     }
     const result = this.recordForCommit(contents.base).clone();
     if (result.checksum === contents.edit.srcChecksum) {
       result.patch(contents.edit.changes);
       if (result.checksum === contents.edit.dstChecksum) {
-        this._commitIsCorruptedResult.set(c.id, false);
+        this._verifiedNotCorruptedCommits.add(c.id);
         return false;
       }
     }
-    this._commitIsCorruptedResult.set(c.id, true);
     return true;
   }
 
@@ -665,68 +664,59 @@ export class Repository<
     return undefined;
   }
 
-  static callCount = 0;
-
   recordForCommit(c: Commit | string, readonly?: boolean): CFDSRecord {
-    try {
-      if (++Repository.callCount === 10) {
-        debugger;
+    let result = this._cachedRecordForCommit.get(
+      typeof c === 'string' ? c : c.id,
+    );
+    if (!result) {
+      if (typeof c === 'string') {
+        c = this.getCommit(c);
       }
-      let result = this._cachedRecordForCommit.get(
-        typeof c === 'string' ? c : c.id,
-      );
-      if (!result) {
-        if (typeof c === 'string') {
-          c = this.getCommit(c);
-        }
-        if (commitContentsIsRecord(c.contents)) {
-          result = c.contents.record;
-        } else {
-          const contents: DeltaContents = c.contents as DeltaContents;
-          result = this.recordForCommit(contents.base).clone();
-          let commitCorrupted = false;
-          if (result.checksum === contents.edit.srcChecksum) {
-            result.patch(contents.edit.changes);
-            if (result.checksum !== contents.edit.dstChecksum) {
-              commitCorrupted = true;
-            }
-          } else {
+      if (commitContentsIsRecord(c.contents)) {
+        result = c.contents.record;
+      } else {
+        const contents: DeltaContents = c.contents as DeltaContents;
+        result = this.recordForCommit(contents.base).clone();
+        let commitCorrupted = false;
+        if (result.checksum === contents.edit.srcChecksum) {
+          result.patch(contents.edit.changes);
+          if (result.checksum !== contents.edit.dstChecksum) {
             commitCorrupted = true;
           }
-          if (commitCorrupted) {
-            // if (!readonly) {
-            //   const goodCommitsToMerge =
-            //     this.findNonCorruptedParentsFromCommits(c.parents);
-            //   if (goodCommitsToMerge.length > 0) {
-            //     // If any of the checksums didn't match, we create a new commit that
-            //     // reverts the bad one we've just found. While discarding data, this
-            //     // allows parties to continue their work without being stuck.
-            //     this.createMergeCommit(
-            //       goodCommitsToMerge,
-            //       undefined,
-            //       c.id,
-            //       false,
-            //     );
-            //   }
-            // }
-            const lastGoodCommit = this.findLatestNonCorruptedCommitForKey(
-              c.key,
-            );
-            // No good parents are available. This key is effectively null.
-            result = lastGoodCommit
-              ? this.recordForCommit(lastGoodCommit)
-              : CFDSRecord.nullRecord();
-          }
-          // assert(result.checksum === contents.edit.srcChecksum);
-          // result.patch(contents.edit.changes);
-          // assert(result.checksum === contents.edit.dstChecksum);
+        } else {
+          commitCorrupted = true;
         }
-        this._cachedRecordForCommit.set(c.id, result);
+        if (commitCorrupted) {
+          if (!readonly) {
+            const goodCommitsToMerge = this.findNonCorruptedParentsFromCommits(
+              c.parents,
+            );
+            debugger;
+            if (goodCommitsToMerge.length > 0) {
+              // If any of the checksums didn't match, we create a new commit that
+              // reverts the bad one we've just found. While discarding data, this
+              // allows parties to continue their work without being stuck.
+              this.createMergeCommit(
+                goodCommitsToMerge,
+                undefined,
+                c.id,
+                false,
+              );
+            }
+          }
+          const lastGoodCommit = this.findLatestNonCorruptedCommitForKey(c.key);
+          // No good parents are available. This key is effectively null.
+          return lastGoodCommit
+            ? this.recordForCommit(lastGoodCommit)
+            : CFDSRecord.nullRecord();
+        }
+        // assert(result.checksum === contents.edit.srcChecksum);
+        // result.patch(contents.edit.changes);
+        // assert(result.checksum === contents.edit.dstChecksum);
       }
-      return readonly ? result : result.clone();
-    } finally {
-      --Repository.callCount;
+      this._cachedRecordForCommit.set(c.id, result);
     }
+    return readonly ? result : result.clone();
   }
 
   private cacheHeadForKey(
