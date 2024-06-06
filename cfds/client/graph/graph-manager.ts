@@ -90,7 +90,7 @@ export enum CacheLoadingStatus {
 
 export type StatusChangedCallback = (
   status: ClientStatus,
-  graph: GraphManager,
+  graph: GraphManager
 ) => void;
 
 interface RepositoryPlumbing {
@@ -145,7 +145,7 @@ export class GraphManager
     // );
     this._processPendingMutationsTimer = new CoroutineTimer(
       CoroutineScheduler.sharedScheduler(),
-      () => this._processPendingMutations(),
+      () => this._processPendingMutations()
     );
     this._executedFieldTriggers = new Map();
     this._undoManager = new UndoManager(this);
@@ -154,14 +154,14 @@ export class GraphManager
     this._repoById = new Map();
     this._openQueries = new HashMap<string, [QueryOptions, Query]>(
       coreValueHash,
-      coreValueEquals,
+      coreValueEquals
     );
     if (baseServerUrl) {
       this._syncScheduler = new SyncScheduler(
         `${baseServerUrl}/batch-sync`,
         kSyncConfigClient,
         trustPool,
-        getOrganizationId(),
+        getOrganizationId()
       );
     }
     this._reportedInitialMutations = new Set();
@@ -295,7 +295,7 @@ export class GraphManager
               for (const k of keys) {
                 this.getVertexManager(k).touch();
               }
-            },
+            }
           );
         }
         plumbing.active = true;
@@ -318,7 +318,7 @@ export class GraphManager
         if (Repository.parseId(id)[0] === 'events') {
           this.syncRepository(id);
         }
-      },
+      }
     );
     return plumbing.loadingPromise;
   }
@@ -344,7 +344,7 @@ export class GraphManager
                   for (const k of keys) {
                     this.getVertexManager(k).touch();
                   }
-                },
+                }
               );
             }
             plumbing.repo.allowMerge = true;
@@ -391,7 +391,7 @@ export class GraphManager
         this.trustPool,
         Repository.namespacesForType(Repository.parseId(id)[0]),
         undefined,
-        undefined,
+        undefined
       );
       repo.allowMerge = false;
       plumbing = {
@@ -409,7 +409,7 @@ export class GraphManager
         if (repoReady) {
           plumbing!.client?.touch();
         }
-        if (!c.key /*|| !repo.commitIsLeaf(c)*/ || !repoReady) {
+        if (!c.key /*|| !repo.commitIsLeaf(c)*/ /*|| !repoReady*/) {
           return;
         }
         if (c.createdLocally) {
@@ -429,16 +429,16 @@ export class GraphManager
           namespace !== SchemeNamespace.EVENTS
         ) {
           const mgr = this.getVertexManager(c.key);
-          // if (
-          //   c.session !== this.trustPool.currentSession.id ||
-          //   c.parents.length > 1
-          // ) {
-          if (plumbing.syncFinished && mgr.hasPendingChanges) {
-            mgr.commit();
-          } else {
+          if (
+            c.session !== this.trustPool.currentSession.id ||
+            c.parents.length > 1
+          ) {
+            // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+            //   mgr.commit();
+            // } else {
             mgr.touch();
+            // }
           }
-          // }
           // else {
           //   mgr.touch();
           // }
@@ -461,7 +461,7 @@ export class GraphManager
           resId,
           kSyncConfigClient,
           this._syncScheduler,
-          getOrganizationId(),
+          getOrganizationId()
         );
         plumbing.client = client;
         client.on(EVENT_STATUS_CHANGED, () => {
@@ -520,7 +520,7 @@ export class GraphManager
   }
 
   repositoryForKey(
-    key: string,
+    key: string
   ): [string | undefined, Repository<MemRepoStorage> | undefined] {
     for (const [id, { repo }] of this._repoById) {
       if (repo.hasKey(key)) {
@@ -592,24 +592,24 @@ export class GraphManager
     namespace: SchemeNamespace,
     initialData: CoreObject,
     key?: string,
-    local = false,
+    local = false
   ): T {
     return this._createVertIfNeeded<T>(
       key || uniqueId(),
       namespace,
       initialData,
-      local,
+      local
     ).getVertexProxy();
   }
 
   getVertexManager<V extends Vertex = Vertex>(key: string): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>,
+    key: VertexId<V>
   ): VertexManager<V>;
 
   getVertexManager<V extends Vertex = Vertex>(
-    key: VertexId<V>,
+    key: VertexId<V>
   ): VertexManager<V> {
     return this._createVertIfNeeded<V>(VertexIdGetKey(key));
   }
@@ -617,7 +617,7 @@ export class GraphManager
   query<
     IT extends Vertex = Vertex,
     OT extends IT = IT,
-    GT extends CoreValue = CoreValue,
+    GT extends CoreValue = CoreValue
   >(options: QueryOptions<IT, OT, GT>): Query<IT, OT, GT> {
     const name = options.name;
     if (typeof name === 'undefined') {
@@ -647,7 +647,7 @@ export class GraphManager
     key: string,
     ns?: SchemeNamespace,
     initialData?: CoreObject,
-    local = false,
+    local = false
   ): VertexManager<V> {
     let mgr = this._vertManagers.get(key);
 
@@ -674,7 +674,7 @@ export class GraphManager
       if (
         record &&
         [(SchemeNamespace.SESSIONS, SchemeNamespace.EVENTS)].includes(
-          record.scheme.namespace,
+          record.scheme.namespace
         )
       ) {
         return this.getRootVertexManager();
@@ -683,7 +683,7 @@ export class GraphManager
         this,
         key,
         initialData ? record : undefined,
-        local,
+        local
       );
       this._vertManagers.set(key, mgr);
       this._setupVertexManager(mgr);
@@ -702,14 +702,14 @@ export class GraphManager
   private _setupVertexManager(mgr: VertexManager): void {
     const key = mgr.key;
     mgr.attach(EVENT_DID_CHANGE, (pack: MutationPack) =>
-      this._vertexDidChange(key, pack),
+      this._vertexDidChange(key, pack)
     );
     // mgr.on(EVENT_CRITICAL_ERROR, () => this.emit(EVENT_CRITICAL_ERROR));
     const session = this.trustPool.currentSession;
     new MicroTaskTimer(() =>
       mgr.reportInitialFields(
-        mgr.repository?.headForKey(mgr.key)?.session === session.id,
-      ),
+        mgr.repository?.headForKey(mgr.key)?.session === session.id
+      )
     ).schedule();
   }
 
@@ -739,7 +739,7 @@ export class GraphManager
         }
       }
       creationMutations.forEach(([mgr]) =>
-        this._pendingMutations.delete(mgr.key),
+        this._pendingMutations.delete(mgr.key)
       );
       for (const [key, pack] of this._pendingMutations) {
         if (editMutations.length >= batchSize) {
@@ -818,7 +818,7 @@ export class GraphManager
     srcKey: string,
     distance: number,
     excludeNs: string[] = [],
-    editRecord: (r: Record) => void = () => {},
+    editRecord: (r: Record) => void = () => {}
   ): ReadonlyJSONObject {
     const rootKey = this.rootKey;
     const result: JSONObject = {};
@@ -886,7 +886,7 @@ export class GraphManager
    */
   importSubGraph(
     encodedGraph: ReadonlyJSONObject,
-    local: boolean,
+    local: boolean
   ): VertexManager[] {
     const vertManagers = this._vertManagers;
     const decodedGraph = this.decodeGraph(encodedGraph);
@@ -1008,8 +1008,8 @@ export class GraphManager
     return Array.from(
       SetUtils.subtract(
         Array.from(names).map((n) => normalizeWsName(n)),
-        this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name)),
-      ),
+        this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name))
+      )
     );
   }
 }
