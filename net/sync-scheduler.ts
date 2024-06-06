@@ -17,7 +17,7 @@ import { RepositoryType } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { sendJSONToURL } from './rest-api.ts';
 
-const K_MAX_REQ_BATCH = 40;
+const K_MAX_REQ_BATCH = 20;
 
 export interface SyncConfig {
   minSyncFreqMs: number;

@@ -54,7 +54,7 @@ export type MutableFieldTriggers<T extends Vertex> = {
  * A mapping between field name and a single trigger.
  */
 export type FieldTriggers<T extends Vertex, DT extends Vertex = T> = {
-  readonly [key in keyof T | 'isLoading']?: FieldChangeTrigger<DT>;
+  readonly [key in keyof T]?: FieldChangeTrigger<DT>;
 };
 
 type VertCls = {
@@ -285,9 +285,9 @@ export class Vertex implements Comparable {
   }
 
   *getChildren<T extends Vertex>(ns?: SchemeNamespace): Generator<T> {
-    for (const mgr of this.getChildManagers(ns)) {
-      if (ns === undefined || mgr.scheme.namespace === ns) {
-        yield mgr.getVertexProxy();
+    for (const [vert] of this.inEdges('parent')) {
+      if (ns === undefined || vert.manager.scheme.namespace === ns) {
+        yield vert as T;
       }
     }
   }
@@ -358,8 +358,6 @@ export class Vertex implements Comparable {
   onVertexChanged(callback: (mutations: MutationPack) => void): () => void {
     return this.manager.onVertexChanged(callback);
   }
-
-  vertexDidLoad(): void {}
 
   /******************************************************************
    ******************* Methods for VertexManager *******************
@@ -529,9 +527,6 @@ export class Vertex implements Comparable {
       this._cachedVertSetsByField.set(fieldName, result);
     }
     return SetUtils.map(result, (mgr) => mgr.getVertexProxy<T>());
-  }
-  protected invalidateCachedVertSetForField(fieldName: string): void {
-    this._cachedVertSetsByField.delete(fieldName);
   }
 }
 

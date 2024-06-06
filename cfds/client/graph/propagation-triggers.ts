@@ -59,9 +59,11 @@ export function triggerParent<T extends Vertex>(
         const callback: NeighborDidMutateCallback = parent[vertCallback] as any;
         assert(
           callback !== undefined,
-          `Parent mutation handler '${String(
-            vertCallback,
-          )}' does not exist on vertex of type '${vert.namespace}'`,
+          `Parent mutation handler '${
+            String(
+              vertCallback,
+            )
+          }' does not exist on vertex of type '${vert.namespace}'`,
         );
         const sideEffects = callback.call(
           parent,

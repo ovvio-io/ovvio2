@@ -8,7 +8,6 @@ import {
   mutationPackIsEmpty,
   mutationPackIter,
   mutationPackOptimize,
-  mutationPackSubtractFields,
 } from './mutations.ts';
 import { RichText } from '../../richtext/tree.ts';
 import {
@@ -23,11 +22,7 @@ import {
   ReadonlyCoreObject,
 } from '../../../base/core-types/index.ts';
 import vertexBuilder from './vertices/vertex-builder.ts';
-import {
-  MicroTaskTimer,
-  NextEventLoopCycleTimer,
-  SimpleTimer,
-} from '../../../base/timer.ts';
+import { MicroTaskTimer, SimpleTimer } from '../../../base/timer.ts';
 import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
 import { ValueType } from '../../base/types/index.ts';
 import { assert } from '../../../base/error.ts';
@@ -47,6 +42,7 @@ import { serviceUnavailable } from '../../base/errors.ts';
 import { ServerError } from '../../base/errors.ts';
 import { Code } from '../../base/errors.ts';
 import { concatChanges } from '../../base/object.ts';
+import { mutationPackSubtractFields } from './mutations.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -112,6 +108,8 @@ export class VertexManager<V extends Vertex = Vertex>
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _commitPromise: Promise<void> | undefined;
   private _reportedInitialFields = false;
+  private readonly _emitDelayTimer: MicroTaskTimer;
+  private _pendingMutationsToEmit: MutationPack;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -123,7 +121,7 @@ export class VertexManager<V extends Vertex = Vertex>
     initialState?: Record,
     local?: boolean,
   ) {
-    super((callback) => new NextEventLoopCycleTimer(callback));
+    super();
     this._graph = graph;
     this._key = key;
     this._vertexConfig = {
@@ -131,6 +129,9 @@ export class VertexManager<V extends Vertex = Vertex>
     };
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     this._cachedFieldProxies = new Map();
+    this._emitDelayTimer = new MicroTaskTimer(() =>
+      this.flushPendingMutations(),
+    );
     // Run local lookup for this key in all known repositories
     let repo: Repository<MemRepoStorage> | undefined =
       graph.repositoryForKey(key)[1];
@@ -194,6 +195,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const dynamicFields = this.captureDynamicFields();
     this._record = newRecord;
+    this._shadowRecord = this._record.clone();
     this.rebuildVertex();
     pack = mutationPackAppend(pack, [VERT_PROXY_CHANGE_FIELD, true, undefined]);
     if (!mutationPackIsEmpty(pack)) {
@@ -595,22 +597,29 @@ export class VertexManager<V extends Vertex = Vertex>
     //   removed: removedEdges,
     // };
     // Broadcast the mutations of our vertex
-    this.emit(EVENT_DID_CHANGE, mutations);
-    // this._pendingMutationsToEmit = mutationPackOptimize(
-    //   mutationPackAppend(this._pendingMutationsToEmit, mutations),
-    // );
-    // this._emitDelayTimer.schedule();
+    // this.emit(EVENT_DID_CHANGE, mutations);
+    this._pendingMutationsToEmit = mutationPackOptimize(
+      mutationPackAppend(this._pendingMutationsToEmit, mutations),
+    );
+    this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
-    // const sideEffects = mutationPackSubtractFields(
-    //   vertex.didMutate(mutations),
-    //   mutations,
-    // );
-    const sideEffects = vertex.didMutate(mutations);
+  }
+
+  flushPendingMutations(): void {
+    this._emitDelayTimer.unschedule();
+    const mutations = this._pendingMutationsToEmit;
+    const sideEffects = mutationPackSubtractFields(
+      this.getVertex().didMutate(mutations),
+      mutations,
+    );
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
-    }
-    if (this.graph.repositoryReady(this.repositoryId)) {
-      this.scheduleCommitIfNeeded();
+    } else {
+      this._pendingMutationsToEmit = undefined;
+      this.emit(EVENT_DID_CHANGE, mutations);
+      if (this.graph.repositoryReady(this.repositoryId)) {
+        this.scheduleCommitIfNeeded();
+      }
     }
   }
 
@@ -666,10 +675,9 @@ export class VertexManager<V extends Vertex = Vertex>
    * Never call this directly. Reserved for GraphManager.
    */
   reportInitialFields(local: boolean): void {
-    if (!this._reportedInitialFields && !this.scheme.isNull) {
+    if (!this._reportedInitialFields) {
       this._reportedInitialFields = true;
       this.vertexDidMutate(this.getCurrentStateMutations(local));
-      this.getVertexProxy().vertexDidLoad();
     }
   }
 

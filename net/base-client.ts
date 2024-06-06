@@ -12,7 +12,7 @@ import {
   SyncPriority,
   SyncScheduler,
 } from './sync-scheduler.ts';
-import { Repository, RepositoryType } from '../repo/repo.ts';
+import { RepositoryType } from '../repo/repo.ts';
 import { randomInt } from '../base/math.ts';
 
 export type ClientStatus = 'idle' | 'sync' | 'offline';
@@ -96,9 +96,7 @@ export abstract class BaseClient<
     if (!this.isOnline) {
       return 'offline';
     }
-    return this._syncActive || this.needsReplication() || !this.ready
-      ? 'sync'
-      : 'idle';
+    return this._syncActive || this.needsReplication() ? 'sync' : 'idle';
   }
 
   get previousServerFilter(): BloomFilter | undefined {
@@ -304,21 +302,21 @@ export abstract class BaseClient<
   }
 
   needsReplication(): boolean {
-    // if (performance.now() - this._lastComputedNeedsReplication >= 100) {
-    const serverFilter = this._previousServerFilter;
-    if (!serverFilter) {
-      this._cachedNeedsReplication = false;
-    } else {
-      this._cachedNeedsReplication = false;
-      for (const id of this.localIds()) {
-        if (!serverFilter.has(id)) {
-          this._cachedNeedsReplication = true;
-          break;
+    if (performance.now() - this._lastComputedNeedsReplication >= 100) {
+      const serverFilter = this._previousServerFilter;
+      if (!serverFilter) {
+        this._cachedNeedsReplication = false;
+      } else {
+        this._cachedNeedsReplication = false;
+        for (const id of this.localIds()) {
+          if (!serverFilter.has(id)) {
+            this._cachedNeedsReplication = true;
+            break;
+          }
         }
       }
+      this._lastComputedNeedsReplication = performance.now();
     }
-    //   this._lastComputedNeedsReplication = performance.now();
-    // }
     return this._cachedNeedsReplication;
     // const serverFilter = this._previousServerFilter;
     // if (!serverFilter) {

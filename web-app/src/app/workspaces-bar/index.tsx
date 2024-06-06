@@ -687,7 +687,7 @@ function WorkspaceListItem({
       );
       updateMaxWidthSelected(measuredWidthSelected + extraPadding);
     }
-  }, [name, view]);
+  }, [name, view.selectedWorkspaces]);
 
   useEffect(() => {
     if (isSelected) {

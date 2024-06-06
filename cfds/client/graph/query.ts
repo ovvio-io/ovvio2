@@ -211,7 +211,6 @@ export class Query<
 
   constructor(opts: QueryOptions<IT, OT, GT>) {
     super((callback) => new MicroTaskTimer(callback), opts.alwaysActive);
-    // super(undefined, opts.alwaysActive);
     this.startTime = Date.now();
     this._id = ++gQueryId;
     this._vertexChangedListener = (key, mutations) =>
@@ -438,10 +437,9 @@ export class Query<
 
   forEach(f: (vert: OT, idx: number, groupId: GroupId<GT>) => void): void {
     for (const [groupId, storage] of this._results.entries()) {
-      let idx = 0;
-      for (const mgr of storage.results) {
-        f(mgr.getVertexProxy(), idx++, groupId);
-      }
+      storage.results.forEach((mgr, idx) =>
+        f(mgr.getVertexProxy(), idx, groupId),
+      );
     }
   }
 

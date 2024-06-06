@@ -1,8 +1,6 @@
 import React, {
   MouseEventHandler,
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -41,16 +39,8 @@ import { createUseStrings } from '../../../../../../core/localization/index.tsx'
 import { FilterCheckbox, FilterCheckboxState } from './filter-checkbox.tsx';
 import localization from './filters.strings.json' assert { type: 'json' };
 import { VertexManager } from '../../../../../../../../cfds/client/graph/vertex-manager.ts';
-import {
-  Tag,
-  Workspace,
-} from '../../../../../../../../cfds/client/graph/vertices/index.ts';
-import { View } from '../../../../../../../../cfds/client/graph/vertices/view.ts';
+import { Tag } from '../../../../../../../../cfds/client/graph/vertices/index.ts';
 import { Query } from '../../../../../../../../cfds/client/graph/query.ts';
-import { SimpleTimer } from '../../../../../../../../base/timer.ts';
-import { coreValueEquals } from '../../../../../../../../base/core-types/equals.ts';
-import { kSecondMs } from '../../../../../../../../base/date.ts';
-import { GraphManager } from '../../../../../../../../cfds/client/graph/graph-manager.ts';
 
 const useStyles = makeStyles(
   () => ({
@@ -84,7 +74,7 @@ const useStyles = makeStyles(
       maxHeight: styleguide.gridbase * 30,
       overflowY: 'auto',
       boxSizing: 'border-box',
-      padding: `${styleguide.gridbase * 2}px 0px`,
+      padding: [styleguide.gridbase * 2, 0],
       flexWrap: 'wrap',
       basedOn: [layout.row],
     },
@@ -129,7 +119,7 @@ const useStyles = makeStyles(
       basedOn: [layout.column, layout.centerCenter],
     },
   }),
-  'filters_965b1f',
+  'filters_965b1f'
 );
 
 const useStrings = createUseStrings(localization);
@@ -179,11 +169,11 @@ function FilterBackdrop({
         onClick();
       }
     },
-    [onClick],
+    [onClick]
   );
 
   return createUniversalPortal(
-    <div style={style} className={styles.backdrop} onClick={click} />,
+    <div style={style} className={styles.backdrop} onClick={click} />
   );
 }
 
@@ -209,7 +199,7 @@ export function FiltersView({ className }: FiltersViewProps) {
               className={cn(
                 className,
                 styles.animator,
-                !view.showFilters && styles.hide,
+                !view.showFilters && styles.hide
               )}
               style={{ zIndex: style.zIndex + 1 }}
             >
@@ -236,7 +226,7 @@ function useUnifiedTagCategory(name: string): UnifiedTagDisplay {
 }
 
 function useTagSectionState(
-  parentName: string,
+  parentName: string
 ): [FilterCheckboxState, () => void] {
   const view = usePartialView('selectedTagIds');
   let [, ...values] = useUnifiedTagCategory(parentName);
@@ -290,7 +280,7 @@ function TagSection({ parentTagName }: { parentTagName: string }) {
         view.selectedTagIds.add(id);
       }
     },
-    [view, parentTagName],
+    [view, parentTagName]
   );
 
   return (
@@ -338,7 +328,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
         ? -1
         : b.key === rootUser.key
         ? 1
-        : b.name.localeCompare(a.name),
+        : b.name.localeCompare(a.name)
     );
     const hasMore = assignees.length > SECTION_SIZE;
     return [
@@ -351,7 +341,7 @@ function useUnifiedAssignees(showMore: boolean): UnifiedAssignees {
   useEffect(
     () =>
       view.deleteFromSet('selectedAssignees', (u) => !assignees.includes(u)),
-    [assignees, view],
+    [assignees, view]
   );
 
   return result;
@@ -376,83 +366,39 @@ export function canUnifyParentTags(t1: Tag, t2: Tag): boolean {
 
 type UnifiedTagDisplay = [name: string, ...value: string[]];
 
-const UnifiedTagsContext = createContext<UnifiedTagDisplay[]>([]);
-
-function _calcUnifiedTagsDisplay(graph: GraphManager): UnifiedTagDisplay[] {
-  const selectedWorkspaces =
-    graph.getVertex<View>('ViewGlobal').selectedWorkspaces;
-  const parentTagsByName = graph.sharedQuery('parentTagsByName');
-  const childTagsByWs = graph.sharedQuery('childTags');
-  const childTags = childTagsByWs.transform(
-    (t) => selectedWorkspaces.has(t.workspace),
-    (t) => t.getVertexProxy(),
-  );
-  const result: UnifiedTagDisplay[] = [];
-  for (const name of parentTagsByName.groups()) {
-    if (!name) {
-      continue;
-    }
-    const values = new Set<string>();
-    for (const parent of parentTagsByName.group(name)) {
-      const t = parent.getVertexProxy();
-      if (selectedWorkspaces.has(t.workspace)) {
-        for (const child of childTags) {
-          if (child.record.get('parentTag') === t.key) {
-            values.add(child.name);
-          }
-        }
-      }
-    }
-    if (values.size > 0) {
-      result.push([name!, ...Array.from(values).sort(coreValueCompare)]);
-    }
-  }
-  return result;
-}
-
-function UnifiedTagsContextProvider({ children }: React.PropsWithChildren) {
+function useUnifiedTags(): UnifiedTagDisplay[] {
   const view = usePartialView('selectedWorkspaces');
   const parentTagsByName = useSharedQuery('parentTagsByName');
   const childTagsByWs = useSharedQuery('childTags');
   const childTags = usePartialVertices(
     childTagsByWs.transform((t) => view.selectedWorkspaces.has(t.workspace)),
-    ['name', 'parentTag'],
+    ['name', 'parentTag']
   );
-  const childTagsSignature = useMemo(
-    () =>
-      Array.from(
-        childTagsByWs.transform(
-          (t) => view.selectedWorkspaces.has(t.workspace),
-          (t) => t.key,
-        ),
-      )
-        .sort()
-        .join('-'),
-    [childTagsByWs],
-  );
-  const selectedWorkspacesSignature = useMemo(
-    () =>
-      Array.from(view.selectedWorkspaces)
-        .map((ws) => ws.key)
-        .sort()
-        .join('-'),
-    [view],
-  );
-  const graph = useGraphManager();
-  const [result, setResult] = useState(_calcUnifiedTagsDisplay(graph));
-  const updateCallback = useCallback(() => {
-    const updatedValue = _calcUnifiedTagsDisplay(graph);
-    if (!coreValueEquals(updatedValue, result)) {
-      setResult(updatedValue);
+  const result = useMemo(() => {
+    const result: UnifiedTagDisplay[] = [];
+    const selectedWorkspaces = view.selectedWorkspaces;
+    for (const name of parentTagsByName.groups()) {
+      if (!name) {
+        continue;
+      }
+      const values = new Set<string>();
+      for (const parent of parentTagsByName.group(name)) {
+        const t = parent.getVertexProxy();
+        if (selectedWorkspaces.has(t.workspace)) {
+          SetUtils.update(
+            values,
+            childTags
+              .filter((child) => child.parentTag === t)
+              .map((t) => t.name)
+          );
+        }
+      }
+      if (values.size > 0) {
+        result.push([name!, ...Array.from(values).sort(coreValueCompare)]);
+      }
     }
-  }, [graph, result, setResult]);
-  const [refreshTimer] = useState(new SimpleTimer(1000, false, updateCallback));
-  useEffect(() => {
-    refreshTimer.schedule();
-    return () => {
-      refreshTimer.unschedule();
-    };
-  }, [selectedWorkspacesSignature, parentTagsByName, childTagsSignature]);
+    return result;
+  }, [view, parentTagsByName]);
 
   useEffect(() => {
     view.deleteFromSet('selectedTagIds', (id) => {
@@ -464,61 +410,8 @@ function UnifiedTagsContextProvider({ children }: React.PropsWithChildren) {
       }
       return true;
     });
-  }, [result, selectedWorkspacesSignature]);
-  return (
-    <UnifiedTagsContext.Provider value={result}>
-      {children}
-    </UnifiedTagsContext.Provider>
-  );
-}
-
-function useUnifiedTags(): UnifiedTagDisplay[] {
-  return useContext(UnifiedTagsContext);
-  // const view = usePartialView('selectedWorkspaces');
-  // const parentTagsByName = useSharedQuery('parentTagsByName');
-  // const childTagsByWs = useSharedQuery('childTags');
-  // const childTags = usePartialVertices(
-  //   childTagsByWs.transform((t) => view.selectedWorkspaces.has(t.workspace)),
-  //   ['name', 'parentTag'],
-  // );
-  // const result = useMemo(() => {
-  //   const result: UnifiedTagDisplay[] = [];
-  //   const selectedWorkspaces = view.selectedWorkspaces;
-  //   for (const name of parentTagsByName.groups()) {
-  //     if (!name) {
-  //       continue;
-  //     }
-  //     const values = new Set<string>();
-  //     for (const parent of parentTagsByName.group(name)) {
-  //       const t = parent.getVertexProxy();
-  //       if (selectedWorkspaces.has(t.workspace)) {
-  //         SetUtils.update(
-  //           values,
-  //           childTags
-  //             .filter((child) => child.parentTag === t)
-  //             .map((t) => t.name),
-  //         );
-  //       }
-  //     }
-  //     if (values.size > 0) {
-  //       result.push([name!, ...Array.from(values).sort(coreValueCompare)]);
-  //     }
-  //   }
-  //   return result;
-  // }, [view, parentTagsByName]);
-
-  // useEffect(() => {
-  //   view.deleteFromSet('selectedTagIds', (id) => {
-  //     const [parent, child] = decodeTagId(id);
-  //     for (const [cat, ...values] of result) {
-  //       if (cat === parent && values.includes(child!)) {
-  //         return false;
-  //       }
-  //     }
-  //     return true;
-  //   });
-  // }, [result, view]);
-  // return result;
+  }, [result, view]);
+  return result;
 }
 
 function UnifiedTagsFilterViewSection() {
@@ -526,7 +419,7 @@ function UnifiedTagsFilterViewSection() {
   return (
     <>
       {unifiedTags.map(([title, ...values]) =>
-        title === 'Status' ? null : <TagSection parentTagName={title} />,
+        title === 'Status' ? null : <TagSection parentTagName={title} />
       )}
     </>
   );
@@ -545,24 +438,22 @@ function InternalFiltersView({ hidden }: InternalFiltersViewProps) {
   return (
     <div className={cn(styles.filtersView)}>
       {hidden !== true && (
-        <UnifiedTagsContextProvider>
-          <div className={cn(styles.section)}>
-            <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
-            {...assignees.map((assignee) => (
-              <AssigneeView user={assignee.manager} />
-            ))}
-            {hasMore && (
-              <div
-                onClick={() => setShowMore((x) => !x)}
-                className={cn(styles.showMore)}
-              >
-                {showMore ? strings.showLess : strings.showMore}
-              </div>
-            )}
-          </div>
-          <UnifiedTagsFilterViewSection />
-        </UnifiedTagsContextProvider>
+        <div className={cn(styles.section)}>
+          <div className={cn(styles.sectionHeader)}>{strings.assignees}</div>
+          {...assignees.map((assignee) => (
+            <AssigneeView user={assignee.manager} />
+          ))}
+          {hasMore && (
+            <div
+              onClick={() => setShowMore((x) => !x)}
+              className={cn(styles.showMore)}
+            >
+              {showMore ? strings.showLess : strings.showMore}
+            </div>
+          )}
+        </div>
       )}
+      {hidden !== true && <UnifiedTagsFilterViewSection />}
     </div>
   );
 }
