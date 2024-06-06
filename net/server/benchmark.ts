@@ -8,7 +8,7 @@ import { shuffle } from '../../base/array.ts';
 
 const K_TEST_SIZE = 1000000;
 const CHUNK_SIZE = 50000;
-const NUM_CONCURRENT_TESTS = 10;
+const NUM_CONCURRENT_TESTS = 5;
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -141,6 +141,7 @@ export async function runBenchmarks(
     K_TEST_SIZE / (CHUNK_SIZE * NUM_CONCURRENT_TESTS)
   );
   let results = newBenchmarkResults();
+  let insertResults;
   for (let i = 0; i < iterations; ++i) {
     const benchmarkPromises: Promise<BenchmarkResults>[] = [];
     for (let j = 0; j < NUM_CONCURRENT_TESTS; ++j) {
@@ -153,15 +154,14 @@ export async function runBenchmarks(
         runInsertBenchmark(services, undefined, CHUNK_SIZE)
       );
     }
-    const insertResults = await Promise.all(benchmarkPromises);
-    for (const result of insertResults) {
-      console.log(
-        `Starting read benchmark after iteration ${i + 1}/${iterations}`
-      );
-      results = runReadBenchmark(services, results);
-      results = benchmarkResultsJoin(results, result);
-    }
+    insertResults = await Promise.all(benchmarkPromises);
   }
+
+  for (const result of insertResults) {
+    runReadBenchmark(services, results);
+    results = benchmarkResultsJoin(results, result);
+  }
+
   console.log('All benchmark groups completed.');
   return results;
 }
