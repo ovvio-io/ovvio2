@@ -414,9 +414,7 @@ export class GraphManager
         if (plumbing?.syncFinished) {
           plumbing!.client?.touch();
         }
-        if (
-          !c.key /*|| !repo.commitIsHighProbabilityLeaf(c)*/ /*|| !repoReady*/
-        ) {
+        if (!c.key || !repo.commitIsHighProbabilityLeaf(c) /*|| !repoReady*/) {
           return;
         }
         if (c.createdLocally) {
