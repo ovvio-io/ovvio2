@@ -433,11 +433,11 @@ export class GraphManager
             c.session !== this.trustPool.currentSession.id ||
             c.parents.length > 1
           ) {
-            // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
-            //   mgr.commit();
-            // } else {
-            mgr.touch();
-            // }
+            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+              mgr.commit();
+            } else {
+              mgr.touch();
+            }
           }
           // else {
           //   mgr.touch();
@@ -1011,6 +1011,14 @@ export class GraphManager
         this.sharedQuery('workspaces').map((ws) => normalizeWsName(ws.name))
       )
     );
+  }
+
+  totalNumberOfCommits(): number {
+    let count = 0;
+    for (const [id, repo] of this.repositories()) {
+      count += repo.numberOfCommits();
+    }
+    return count;
   }
 }
 
