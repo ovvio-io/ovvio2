@@ -429,16 +429,16 @@ export class GraphManager
           namespace !== SchemeNamespace.EVENTS
         ) {
           const mgr = this.getVertexManager(c.key);
-          if (
-            c.session !== this.trustPool.currentSession.id ||
-            c.parents.length > 1
-          ) {
-            if (plumbing?.syncFinished && mgr.hasPendingChanges) {
-              mgr.commit();
-            } else {
-              mgr.touch();
-            }
-          }
+          // if (
+          //   c.session !== this.trustPool.currentSession.id ||
+          //   c.parents.length > 1
+          // ) {
+          // if (plumbing?.syncFinished && mgr.hasPendingChanges) {
+          //   mgr.commit();
+          // } else {
+          mgr.touch();
+          // }
+          // }
           // else {
           //   mgr.touch();
           // }

@@ -77,7 +77,7 @@ export interface VertexBuilder {
     manager: VertexManager,
     record: Record,
     prevVertex: Vertex | undefined,
-    config: VertexConfig | undefined,
+    config: VertexConfig | undefined
   ): Vertex;
 }
 
@@ -119,7 +119,7 @@ export class VertexManager<V extends Vertex = Vertex>
     graph: GraphManager,
     key: string,
     initialState?: Record,
-    local?: boolean,
+    local?: boolean
   ) {
     super();
     this._graph = graph;
@@ -130,14 +130,14 @@ export class VertexManager<V extends Vertex = Vertex>
     this._commitDelayTimer = new SimpleTimer(300, false, () => this.commit());
     this._cachedFieldProxies = new Map();
     this._emitDelayTimer = new MicroTaskTimer(() =>
-      this.flushPendingMutations(),
+      this.flushPendingMutations()
     );
     // Run local lookup for this key in all known repositories
     let repo: Repository<MemRepoStorage> | undefined =
       graph.repositoryForKey(key)[1];
     if (!repo && initialState) {
       repo = graph.repository(
-        repositoryForRecord(key, initialState, graph.rootKey),
+        repositoryForRecord(key, initialState, graph.rootKey)
       );
     }
     if (repo && repo.hasKey(key)) {
@@ -346,7 +346,7 @@ export class VertexManager<V extends Vertex = Vertex>
       const newHead = await repo.setValueForKey(
         this.key,
         this.record,
-        this._headId,
+        this._headId
       );
       if (newHead) {
         // If no local changes have been made while committing, we can simply
@@ -402,7 +402,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const changes = concatChanges(
       baseRecord.diff(repoRecord, false),
-      baseRecord.diff(this.record, true),
+      baseRecord.diff(this.record, true)
     );
     baseRecord.patch(changes);
     this._headId = currentHead.id;
@@ -437,7 +437,7 @@ export class VertexManager<V extends Vertex = Vertex>
       this,
       this.record,
       this._vertex,
-      this._vertexConfig,
+      this._vertexConfig
     );
     this.rebuildVertexProxy();
   }
@@ -461,7 +461,7 @@ export class VertexManager<V extends Vertex = Vertex>
         } else if (this.scheme.hasField(prop)) {
           assert(
             this.scheme.isRequiredField(prop) === false,
-            `Attempting to delete required field '${prop} of '${this.namespace}'`,
+            `Attempting to delete required field '${prop} of '${this.namespace}'`
           );
           success = target.record.delete(prop);
         } else {
@@ -551,7 +551,7 @@ export class VertexManager<V extends Vertex = Vertex>
    */
   vertexDidMutate(
     mutations: MutationPack,
-    dynamicFields?: DynamicFieldsSnapshot,
+    dynamicFields?: DynamicFieldsSnapshot
   ): void {
     mutations = mutationPackOptimize(mutations);
     const vertex = this.getVertex();
@@ -599,18 +599,13 @@ export class VertexManager<V extends Vertex = Vertex>
     // Broadcast the mutations of our vertex
     // this.emit(EVENT_DID_CHANGE, mutations);
     this._pendingMutationsToEmit = mutationPackOptimize(
-      mutationPackAppend(this._pendingMutationsToEmit, mutations),
+      mutationPackAppend(this._pendingMutationsToEmit, mutations)
     );
     this._emitDelayTimer.schedule();
     // Let our vertex a chance to apply side effects
-  }
-
-  flushPendingMutations(): void {
-    this._emitDelayTimer.unschedule();
-    const mutations = this._pendingMutationsToEmit;
     const sideEffects = mutationPackSubtractFields(
-      this.getVertex().didMutate(mutations),
-      mutations,
+      vertex.didMutate(mutations),
+      mutations
     );
     if (!mutationPackIsEmpty(sideEffects)) {
       this.vertexDidMutate(sideEffects);
@@ -632,7 +627,7 @@ export class VertexManager<V extends Vertex = Vertex>
 
   private mutationsForDynamicFields(
     outMutations: MutationPack,
-    snapshot: DynamicFieldsSnapshot,
+    snapshot: DynamicFieldsSnapshot
   ): MutationPack {
     if (snapshot.hasPendingChanges !== this.hasPendingChanges) {
       outMutations = mutationPackAppend(outMutations, [
@@ -700,7 +695,7 @@ export class VertexManager<V extends Vertex = Vertex>
           vertex.record.scheme.getFieldType(fieldName) === ValueType.RICHTEXT_V3
         ) {
           newRecValue = projectPointers(oldRecValue, newRecValue, (ptr) =>
-            this.graph.ptrFilterFunc(ptr.key),
+            this.graph.ptrFilterFunc(ptr.key)
           );
         }
         vertex.record.set(fieldName, newRecValue);
@@ -740,7 +735,7 @@ export class VertexManager<V extends Vertex = Vertex>
     for (const key of vertex.getLocalFields()) {
       if (onlyFields && !onlyFields.includes(key)) continue;
       local[key] = coreValueClone(
-        vertex[key as keyof Vertex] as unknown as CoreValue,
+        vertex[key as keyof Vertex] as unknown as CoreValue
       );
     }
 
@@ -775,7 +770,7 @@ function getDeleteMethodName(prop: string): string {
 function projectRichTextPointers(
   srcRec: Record,
   dstRec: Record,
-  filter: (ptr: PointerValue) => boolean,
+  filter: (ptr: PointerValue) => boolean
 ): void {
   const srcScheme = srcRec.scheme;
   for (const [fieldName, type] of Object.entries(dstRec.scheme.getFields())) {
@@ -885,7 +880,7 @@ class DictionaryProxy<K, V>
 
   constructor(
     target: Dictionary<K, V>,
-    callback: DidMutateCallback<Dictionary<K, V>>,
+    callback: DidMutateCallback<Dictionary<K, V>>
   ) {
     this._target = target;
     this._didMutateCallback = callback;
@@ -924,7 +919,7 @@ class DictionaryProxy<K, V>
     if (
       !coreValueEquals(
         target.get(key) as unknown as CoreValue,
-        value as unknown as CoreValue,
+        value as unknown as CoreValue
       )
     ) {
       const oldValue = new Map(target);
