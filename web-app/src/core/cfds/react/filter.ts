@@ -36,7 +36,11 @@ import {
 import { User } from '../../../../../cfds/client/graph/vertices/user.ts';
 import { View } from '../../../../../cfds/client/graph/vertices/view.ts';
 import { Workspace } from '../../../../../cfds/client/graph/vertices/workspace.ts';
-import { useGraphManager, usePartialView } from './graph.tsx';
+import {
+  useGraphManager,
+  usePartialGlobalView,
+  usePartialView,
+} from './graph.tsx';
 
 export const kDueDateColumns = [
   'Overdue',
