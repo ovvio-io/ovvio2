@@ -6,7 +6,7 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 1000000;
+const K_TEST_SIZE = 500000;
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -138,19 +138,25 @@ export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
   let results = newBenchmarkResults();
-  await runInsertBenchmark(services, results);
-  runReadBenchmark(services, results);
-  // const promises: Promise<BenchmarkResults>[] = [];
-  // for (let i = 0; i < 10; ++i) {
-  //   console.log(`Starting insert benchmark iteration ${i + 1}`);
-  //   promises.push(runInsertBenchmark(services));
-  // }
-  // await Promise.allSettled(promises);
-  // for (const p of promises) {
-  //   const b = await p;
-  //   runReadBenchmark(services, b);
-  //   results = benchmarkResultsJoin(results, b);
-  // }
+  // await runInsertBenchmark(services, results);
+  // runReadBenchmark(services, results);
+  const promises: Promise<BenchmarkResults>[] = [];
+  for (let i = 0; i < 10; ++i) {
+    promises.push(runInsertBenchmark(services));
+  }
+
+  // Wait for all insert benchmarks to complete
+  const settledPromises = await Promise.allSettled(promises); // Modified line
+
+  for (const p of settledPromises) {
+    // Modified line
+    if (p.status === 'fulfilled') {
+      // Modified line
+      const b = p.value; // Modified line
+      runReadBenchmark(services, b);
+      results = benchmarkResultsJoin(results, b);
+    }
+  }
   return results;
 }
 
