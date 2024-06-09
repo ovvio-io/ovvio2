@@ -138,19 +138,19 @@ export async function runBenchmarks(
   services: ServerServices
 ): Promise<BenchmarkResults> {
   let results = newBenchmarkResults();
-  // await runInsertBenchmark(services, results);
-  // runReadBenchmark(services, results);
-  const promises: Promise<BenchmarkResults>[] = [];
-  for (let i = 0; i < 10; ++i) {
-    console.log(`Starting insert benchmark iteration ${i + 1}`);
-    promises.push(runInsertBenchmark(services));
-  }
-  await Promise.allSettled(promises);
-  for (const p of promises) {
-    const b = await p;
-    runReadBenchmark(services, b);
-    results = benchmarkResultsJoin(results, b);
-  }
+  await runInsertBenchmark(services, results);
+  runReadBenchmark(services, results);
+  // const promises: Promise<BenchmarkResults>[] = [];
+  // for (let i = 0; i < 10; ++i) {
+  //   console.log(`Starting insert benchmark iteration ${i + 1}`);
+  //   promises.push(runInsertBenchmark(services));
+  // }
+  // await Promise.allSettled(promises);
+  // for (const p of promises) {
+  //   const b = await p;
+  //   runReadBenchmark(services, b);
+  //   results = benchmarkResultsJoin(results, b);
+  // }
   return results;
 }
 
