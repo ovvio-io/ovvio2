@@ -6,7 +6,8 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 1000;
+const K_TEST_SIZE = 100000;
+const CHUNK_SIZE = 10000; // Define the chunk size
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
@@ -100,11 +101,15 @@ export async function runInsertBenchmark(
   }
   const repo = services.sync.getRepository('data', results.benchmarkId);
   const startTime = performance.now();
-  const promises: Promise<Commit | undefined>[] = [];
-  for (let i = 0; i < K_TEST_SIZE; ++i) {
-    promises.push(repo.setValueForKey(uniqueId(), kSampleRecord, undefined));
+
+  for (let chunkStart = 0; chunkStart < K_TEST_SIZE; chunkStart += CHUNK_SIZE) {
+    const promises: Promise<Commit | undefined>[] = [];
+    for (let i = 0; i < CHUNK_SIZE && chunkStart + i < K_TEST_SIZE; ++i) {
+      promises.push(repo.setValueForKey(uniqueId(), kSampleRecord, undefined));
+    }
+    await Promise.allSettled(promises);
   }
-  await Promise.allSettled(promises);
+
   await services.sync.waitForBackup(Repository.id('data', results.benchmarkId));
   const testTime = performance.now() - startTime;
   results.testSize = K_TEST_SIZE;
@@ -140,23 +145,8 @@ export async function runBenchmarks(
   let results = newBenchmarkResults();
   await runInsertBenchmark(services, results);
   runReadBenchmark(services, results);
-  // const promises: Promise<BenchmarkResults>[] = [];
-  // for (let i = 0; i < 10; ++i) {
-  //   promises.push(runInsertBenchmark(services));
-  // }
-
-  // const settledPromises = await Promise.allSettled(promises);
-
-  // for (const p of settledPromises) {
-  //   if (p.status === 'fulfilled') {
-  //     const b = p.value;
-  //     runReadBenchmark(services, b);
-  //     results = benchmarkResultsJoin(results, b);
-  //   }
-  // }
   return results;
 }
-
 // import { uniqueId } from '../../base/common.ts';
 // import { JSONObject } from '../../base/interfaces.ts';
 // import { Record } from '../../cfds/base/record.ts';
