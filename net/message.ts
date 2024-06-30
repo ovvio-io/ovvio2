@@ -182,7 +182,7 @@ export class SyncMessage<T extends SyncValueType>
 
   serialize(
     encoder: Encoder<string, CoreValue, CoreValue, unknown>,
-    _options?: unknown,
+    _options?: unknown
   ): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('f', this.filter);
@@ -191,7 +191,7 @@ export class SyncMessage<T extends SyncValueType>
       case SyncValueFlag.Commit:
         encoder.set(
           'c',
-          (this.values as Commit[]).map((c) => c.toJS()),
+          (this.values as Commit[]).map((c) => c.toJS())
         );
         break;
 
@@ -206,7 +206,7 @@ export class SyncMessage<T extends SyncValueType>
 
   deserialize(
     decoder: Decoder<string, DecodedValue>,
-    _options?: unknown,
+    _options?: unknown
   ): void {
     this._buildVersion = decoder.get<VersionNumber>('ver')!;
     if (!this._filter) {
@@ -236,7 +236,7 @@ export class SyncMessage<T extends SyncValueType>
     expectedSyncCycles: number,
     orgId: string,
     includeMissing = true,
-    lowAccuracy = false,
+    lowAccuracy = false
   ): SyncMessage<T> {
     const numberOfEntries = Math.max(1, localSize, peerSize);
     // To calculate the desired False-Positive-Rate (fpr), we use the following
@@ -259,7 +259,7 @@ export class SyncMessage<T extends SyncValueType>
       ? 0.5
       : Math.min(
           0.5,
-          1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles)),
+          1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles))
         );
     const localFilter = new BloomFilter({
       size: numberOfEntries,

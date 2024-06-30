@@ -6,8 +6,8 @@ import { Repository } from '../../repo/repo.ts';
 import { ServerServices } from './server.ts';
 import { shuffle } from '../../base/array.ts';
 
-const K_TEST_SIZE = 100000;
-const CHUNK_SIZE = 10000; // Define the chunk size
+const K_TEST_SIZE = 10000;
+const CHUNK_SIZE = 10000;
 
 export interface BenchmarkResults extends JSONObject {
   benchmarkId: string;
