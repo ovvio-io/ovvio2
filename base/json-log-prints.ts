@@ -26,6 +26,7 @@ export class JSONLogFile {
 
   *open(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
     if (this._file) {
+      console.log('File already open');
       return;
     }
     if (this.write) {
@@ -36,13 +37,16 @@ export class JSONLogFile {
         write: true,
         create: true,
       });
+      console.log('File opened for writing:', this.path);
     } else {
       try {
         this._file = Deno.openSync(this.path, {
           read: true,
           write: false,
         });
+        console.log('File opened for reading:', this.path);
       } catch (_: unknown) {
+        console.log('File open failed, treating as empty log file:', this.path);
         // Open failed. No worries. We just count this as an empty log file.
         return;
       }
@@ -56,6 +60,7 @@ export class JSONLogFile {
     progressCallback?: ProgressUpdateCallback
   ): Promise<AsyncGenerator<JSONObject>> {
     if (this._file) {
+      console.log('File already open');
       if (!this._didScan) {
         const scanGen = this.scanAsync(progressCallback);
         for await (const _ of scanGen) {
@@ -74,13 +79,16 @@ export class JSONLogFile {
         write: true,
         create: true,
       });
+      console.log('File opened for writing:', this.path);
     } else {
       try {
         this._file = await Deno.open(this.path, {
           read: true,
           write: false,
         });
+        console.log('File opened for reading:', this.path);
       } catch (_: unknown) {
+        console.log('File open failed, treating as empty log file:', this.path);
         return this.emptyAsyncGenerator();
       }
     }
@@ -118,26 +126,34 @@ export class JSONLogFile {
 
   append(entries: readonly JSONObject[]): Promise<void> {
     assert(this.write, 'Attempting to write to a readonly log');
+    console.log('Starting append operation');
     return this._scheduler.run(async () => {
       const file = this._file;
       if (!file) {
+        console.log('File not open');
         return;
       }
       assert(
         this._didScan,
         'Attempting to append to log before initial scan completed'
       );
+      console.log(`entries: ${entries}`);
       const encodedEntries =
         '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+      console.log(`encodedEntries: ${encodedEntries}`);
 
       const encodedBuf = new TextEncoder().encode(encodedEntries);
+      console.log(`encodedBuf: ${encodedBuf}`);
 
       let bytesWritten = 0;
       await file.seek(0, Deno.SeekMode.End);
+      console.log('File seek complete');
       while (bytesWritten < encodedBuf.byteLength) {
         const arr = encodedBuf.subarray(bytesWritten);
         bytesWritten += await file.write(arr);
+        console.log(`Bytes written: ${bytesWritten}`);
       }
+      console.log('Append operation complete');
     });
   }
 
@@ -169,6 +185,7 @@ export class JSONLogFile {
   *scan(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
     const file = this._file;
     if (!file) {
+      console.log('File not open for scanning');
       return;
     }
     const totalFileBytes = file.seekSync(0, Deno.SeekMode.End);
@@ -222,6 +239,7 @@ export class JSONLogFile {
               objectBuf.subarray(0, objectBufOffset)
             );
             const obj = JSON.parse(text);
+            console.log('Scanned entry:', obj);
             yield obj;
             lastGoodFileOffset += objectBufOffset + 2;
             objectBufOffset = 0;
@@ -249,6 +267,7 @@ export class JSONLogFile {
   ): AsyncGenerator<JSONObject> {
     const file = this._file;
     if (!file) {
+      console.log('File not open for scanning');
       return;
     }
     const totalFileBytes = await file.seek(0, Deno.SeekMode.End);
@@ -302,6 +321,7 @@ export class JSONLogFile {
               objectBuf.subarray(0, objectBufOffset)
             );
             const obj = JSON.parse(text);
+            console.log('Scanned entry:', obj);
             yield obj;
             lastGoodFileOffset += objectBufOffset + 1; // +1 for newline character
             objectBufOffset = 0;
@@ -329,6 +349,7 @@ export class JSONLogFile {
   ): Generator<JSONObject> {
     const file = this._file;
     if (!file) {
+      console.log('File not open for scanning');
       return;
     }
     const totalFileBytes = file.seekSync(0, Deno.SeekMode.End);
@@ -381,9 +402,11 @@ export class JSONLogFile {
               objectBuf.subarray(0, objectBufOffset)
             );
             const obj = JSON.parse(text);
+            console.log('Scanned entry:', obj);
             yield obj;
             objectBufOffset = 0;
           } catch (_: unknown) {
+            console.log('Skipping broken entry');
             objectBufOffset = 0;
           }
         }
@@ -394,8 +417,11 @@ export class JSONLogFile {
       try {
         const text = textDecoder.decode(objectBuf.subarray(0, objectBufOffset));
         const obj = JSON.parse(text);
+        console.log('Scanned entry:', obj);
         yield obj;
-      } catch (_: unknown) {}
+      } catch (_: unknown) {
+        console.log('Skipping broken entry at the start');
+      }
     }
 
     this._didScan = true;
@@ -407,10 +433,11 @@ export class JSONLogFile {
   ): AsyncGenerator<JSONObject> {
     const file = this._file;
     if (!file) {
+      console.log('File not open for scanning');
       return;
     }
     const totalFileBytes = await file.seek(0, Deno.SeekMode.End);
-    let fileOffset = totalFileBytes;
+    let fileOffset = totalFileBytes; // Start reading from the end of the file
     const readBuf = new Uint8Array(FILE_READ_BUF_SIZE_BYTES);
     const textDecoder = new TextDecoder();
     let objectBuf = allocateBuffer(PAGE_SIZE);
@@ -459,9 +486,11 @@ export class JSONLogFile {
               objectBuf.subarray(0, objectBufOffset)
             );
             const obj = JSON.parse(text);
+            console.log('Scanned entry:', obj);
             yield obj;
             objectBufOffset = 0;
           } catch (_: unknown) {
+            console.log('Skipping broken entry');
             objectBufOffset = 0;
           }
         }
@@ -472,8 +501,11 @@ export class JSONLogFile {
       try {
         const text = textDecoder.decode(objectBuf.subarray(0, objectBufOffset));
         const obj = JSON.parse(text);
+        console.log('Scanned entry:', obj);
         yield obj;
-      } catch (_: unknown) {}
+      } catch (_: unknown) {
+        console.log('Skipping broken entry at the start');
+      }
     }
 
     this._didScan = true;
@@ -486,6 +518,7 @@ export class JSONLogFile {
   ): JSONObject[] {
     const result: JSONObject[] = [];
     for (const obj of this.scan()) {
+      console.log('Query checking entry:', obj);
       if (predicate(obj)) {
         result.push(obj);
         if (result.length === limit) {
@@ -493,6 +526,7 @@ export class JSONLogFile {
         }
       }
     }
+    console.log('Query result:', result);
     return result;
   }
 
@@ -505,6 +539,7 @@ export class JSONLogFile {
       await this.openAsync();
     }
     for await (const obj of this.scanAsync()) {
+      console.log('Query checking entry:', obj);
       if (predicate(obj)) {
         result.push(obj);
         if (result.length === limit) {
@@ -512,6 +547,7 @@ export class JSONLogFile {
         }
       }
     }
+    console.log('Query result:', result);
     return result;
   }
 }
