@@ -61,14 +61,7 @@ export class JSONLogFile {
   ): Promise<AsyncGenerator<JSONObject>> {
     if (this._file) {
       console.log('File already open');
-      if (!this._didScan) {
-        const scanGen = this.scanAsync(progressCallback);
-        for await (const _ of scanGen) {
-          // Ensure the scan is fully consumed
-        }
-        this._didScan = true; // Ensure this flag is set correctly
-      }
-      return this.emptyAsyncGenerator(); // Return empty generator to indicate no further scan needed
+      return this.emptyAsyncGenerator();
     }
 
     if (this.write) {
@@ -92,15 +85,15 @@ export class JSONLogFile {
         return this.emptyAsyncGenerator();
       }
     }
-
-    const scanGen = this.scanAsync(progressCallback);
-    for await (const _ of scanGen) {
-      // Ensure the scan is fully consumed
+    if (this._didScan) {
+      const scanGen = this.scanAsync(progressCallback);
+      for await (const _ of scanGen) {
+        // Ensure the scan is fully consumed
+      }
     }
-    this._didScan = true; // Ensure this flag is set correctly
-    return this.scanAsync(progressCallback);
+    this._didScan = true;
+    return this.emptyAsyncGenerator();
   }
-
   private async *emptyAsyncGenerator(): AsyncGenerator<JSONObject> {
     // Empty async generator
   }

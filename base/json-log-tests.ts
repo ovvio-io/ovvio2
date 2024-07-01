@@ -1,6 +1,6 @@
 import { assertEquals } from 'https://deno.land/std@0.114.0/testing/asserts.ts';
 import { JSONObject } from './interfaces.ts';
-import { JSONLogFile } from './json-log.ts';
+import { JSONLogFile } from './json-log-prints.ts';
 
 const TEST_DIR = './test_logs';
 
@@ -143,17 +143,17 @@ Deno.test('JSONLogFile: Append Entries (Async)', async () => {
   await logFile.openAsync();
 
   const entries: JSONObject[] = [{ key: 'value1' }, { key: 'value2' }];
-  await logFile.appendSync(entries);
+  logFile.appendSync(entries);
 
   await logFile.closeAsync();
 
   const readLogFile = new JSONLogFile(filePath, false);
-  const readGen = await readLogFile.openAsync();
+  await readLogFile.openAsync();
+
   const readEntries = [];
-  for await (const entry of readGen) {
+  for await (const entry of readLogFile.scanAsync()) {
     readEntries.push(entry);
   }
-
   assertEquals(readEntries, entries);
   await readLogFile.closeAsync();
 
@@ -186,7 +186,7 @@ Deno.test('JSONLogFile: Scan Entries (Async)', async () => {
   assertEquals(readEntries, entries);
 
   await readLogFile.closeAsync();
-  await cleanup();
+  // await cleanup();
 });
 
 Deno.test('JSONLogFile: Reverse Scan Entries (Async)', async () => {
@@ -207,6 +207,7 @@ Deno.test('JSONLogFile: Reverse Scan Entries (Async)', async () => {
   const readLogFile = new JSONLogFile(filePath, false);
   const readGen = await readLogFile.openAsync();
 
+  // deno-lint-ignore no-empty
   for await (const _ of readGen) {
   }
 
