@@ -26,6 +26,7 @@ export class JSONLogFile {
 
   *open(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {
     if (this._file) {
+      console.log('File already open');
       return;
     }
     if (this.write) {
@@ -36,13 +37,16 @@ export class JSONLogFile {
         write: true,
         create: true,
       });
+      console.log('File opened for writing:', this.path);
     } else {
       try {
         this._file = Deno.openSync(this.path, {
           read: true,
           write: false,
         });
+        console.log('File opened for reading:', this.path);
       } catch (_: unknown) {
+        console.log('File open failed, treating as empty log file:', this.path);
         // Open failed. No worries. We just count this as an empty log file.
         return;
       }
@@ -52,11 +56,11 @@ export class JSONLogFile {
     }
   }
 
-  async openAsync(
+  async *openAsync(
     progressCallback?: ProgressUpdateCallback
-  ): Promise<AsyncGenerator<JSONObject>> {
+  ): AsyncGenerator<JSONObject> {
     if (this._file) {
-      return this.emptyAsyncGenerator();
+      return;
     }
 
     if (this.write) {
@@ -73,22 +77,14 @@ export class JSONLogFile {
           read: true,
           write: false,
         });
-      } catch (_: unknown) {
-        return this.emptyAsyncGenerator();
+      } catch (_err) {
+        // Open failed. No worries. We just count this as an empty log file.
+        return;
       }
     }
-    if (this._didScan) {
-      const scanGen = this.scanAsync(progressCallback);
-      for await (const _ of scanGen) {
-        // Ensure the scan is fully consumed
-      }
+    for await (const c of this.scanAsync(progressCallback)) {
+      yield c;
     }
-    this._didScan = true;
-    return this.emptyAsyncGenerator();
-  }
-
-  private async *emptyAsyncGenerator(): AsyncGenerator<JSONObject> {
-    // Empty async generator
   }
 
   close(): Promise<void> {
@@ -101,20 +97,12 @@ export class JSONLogFile {
     });
   }
 
-  async closeAsync(): Promise<void> {
-    await this._scheduler.run(async () => {
-      if (this._file) {
-        await this._file.close();
-        this._file = undefined;
-      }
-    });
-  }
-
-  append(entries: readonly JSONObject[]): Promise<void> {
+  appendAsync(entries: readonly JSONObject[]): Promise<void> {
     assert(this.write, 'Attempting to write to a readonly log');
     return this._scheduler.run(async () => {
       const file = this._file;
       if (!file) {
+        console.log('File not open');
         return;
       }
       assert(
@@ -122,7 +110,7 @@ export class JSONLogFile {
         'Attempting to append to log before initial scan completed'
       );
       const encodedEntries =
-        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
 
       const encodedBuf = new TextEncoder().encode(encodedEntries);
 
@@ -139,7 +127,7 @@ export class JSONLogFile {
     return this._scheduler.run(() => Promise.resolve());
   }
 
-  appendSync(entries: readonly JSONObject[]): void {
+  append(entries: readonly JSONObject[]): void {
     assert(this.write, 'Attempting to write to a readonly log');
     const file = this._file;
     if (!file) {
@@ -150,7 +138,7 @@ export class JSONLogFile {
       'Attempting to append to log before initial scan completed'
     );
     const encodedEntries =
-      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
     const encodedBuf = new TextEncoder().encode(encodedEntries);
     let bytesWritten = 0;
     file.seekSync(0, Deno.SeekMode.End);
@@ -245,7 +233,6 @@ export class JSONLogFile {
     if (!file) {
       return;
     }
-    debugger;
     const totalFileBytes = await file.seek(0, Deno.SeekMode.End);
     await file.seek(0, Deno.SeekMode.Start);
     let fileOffset = 0;
@@ -390,6 +377,7 @@ export class JSONLogFile {
         const text = textDecoder.decode(objectBuf.subarray(0, objectBufOffset));
         const obj = JSON.parse(text);
         yield obj;
+        // deno-lint-ignore no-empty
       } catch (_: unknown) {}
     }
 
@@ -405,7 +393,7 @@ export class JSONLogFile {
       return;
     }
     const totalFileBytes = await file.seek(0, Deno.SeekMode.End);
-    let fileOffset = totalFileBytes;
+    let fileOffset = totalFileBytes; // Start reading from the end of the file
     const readBuf = new Uint8Array(FILE_READ_BUF_SIZE_BYTES);
     const textDecoder = new TextDecoder();
     let objectBuf = allocateBuffer(PAGE_SIZE);
@@ -468,6 +456,7 @@ export class JSONLogFile {
         const text = textDecoder.decode(objectBuf.subarray(0, objectBufOffset));
         const obj = JSON.parse(text);
         yield obj;
+        // deno-lint-ignore no-empty
       } catch (_: unknown) {}
     }
 

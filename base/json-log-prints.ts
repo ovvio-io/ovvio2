@@ -56,12 +56,12 @@ export class JSONLogFile {
     }
   }
 
-  async openAsync(
+  async *openAsync(
     progressCallback?: ProgressUpdateCallback
-  ): Promise<AsyncGenerator<JSONObject>> {
+  ): AsyncGenerator<JSONObject> {
     if (this._file) {
       console.log('File already open');
-      return this.emptyAsyncGenerator();
+      return;
     }
 
     if (this.write) {
@@ -80,22 +80,16 @@ export class JSONLogFile {
           write: false,
         });
         console.log('File opened for reading:', this.path);
-      } catch (_: unknown) {
+      } catch (_err) {
         console.log('File open failed, treating as empty log file:', this.path);
-        return this.emptyAsyncGenerator();
+        // Open failed. No worries. We just count this as an empty log file.
+        return;
       }
     }
-    if (this._didScan) {
-      const scanGen = this.scanAsync(progressCallback);
-      for await (const _ of scanGen) {
-        // Ensure the scan is fully consumed
-      }
+    for await (const c of this.scanAsync(progressCallback)) {
+      yield c;
     }
-    this._didScan = true;
-    return this.emptyAsyncGenerator();
-  }
-  private async *emptyAsyncGenerator(): AsyncGenerator<JSONObject> {
-    // Empty async generator
+    console.log('File done reading:', this.path);
   }
 
   close(): Promise<void> {
@@ -108,16 +102,7 @@ export class JSONLogFile {
     });
   }
 
-  async closeAsync(): Promise<void> {
-    await this._scheduler.run(async () => {
-      if (this._file) {
-        await this._file.close();
-        this._file = undefined;
-      }
-    });
-  }
-
-  append(entries: readonly JSONObject[]): Promise<void> {
+  appendAsync(entries: readonly JSONObject[]): Promise<void> {
     assert(this.write, 'Attempting to write to a readonly log');
     console.log('Starting append operation');
     return this._scheduler.run(async () => {
@@ -130,13 +115,10 @@ export class JSONLogFile {
         this._didScan,
         'Attempting to append to log before initial scan completed'
       );
-      console.log(`entries: ${entries}`);
       const encodedEntries =
-        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
-      console.log(`encodedEntries: ${encodedEntries}`);
+        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
 
       const encodedBuf = new TextEncoder().encode(encodedEntries);
-      console.log(`encodedBuf: ${encodedBuf}`);
 
       let bytesWritten = 0;
       await file.seek(0, Deno.SeekMode.End);
@@ -144,7 +126,6 @@ export class JSONLogFile {
       while (bytesWritten < encodedBuf.byteLength) {
         const arr = encodedBuf.subarray(bytesWritten);
         bytesWritten += await file.write(arr);
-        console.log(`Bytes written: ${bytesWritten}`);
       }
       console.log('Append operation complete');
     });
@@ -154,7 +135,7 @@ export class JSONLogFile {
     return this._scheduler.run(() => Promise.resolve());
   }
 
-  appendSync(entries: readonly JSONObject[]): void {
+  append(entries: readonly JSONObject[]): void {
     assert(this.write, 'Attempting to write to a readonly log');
     const file = this._file;
     if (!file) {
@@ -165,7 +146,7 @@ export class JSONLogFile {
       'Attempting to append to log before initial scan completed'
     );
     const encodedEntries =
-      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
     const encodedBuf = new TextEncoder().encode(encodedEntries);
     let bytesWritten = 0;
     file.seekSync(0, Deno.SeekMode.End);

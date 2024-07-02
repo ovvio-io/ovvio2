@@ -1,6 +1,6 @@
 import { assertEquals } from 'https://deno.land/std@0.114.0/testing/asserts.ts';
 import { JSONObject } from './interfaces.ts';
-import { JSONLogFile } from './json-log-prints.ts';
+import { JSONLogFile } from './json-log.ts';
 
 const TEST_DIR = './test_logs';
 
@@ -18,11 +18,11 @@ Deno.test('JSONLogFile: Append Entries (Sync)', () => {
   const filePath = `${TEST_DIR}/test_append_sync.log`;
   const logFile = new JSONLogFile(filePath, true);
   const gen = logFile.open();
-  for (const entry of gen) {
-    // Consume the generator to ensure file operations are completed
+  for (const _ of gen) {
+    //
   }
   const entries: JSONObject[] = [{ key: 'value1' }, { key: 'value2' }];
-  logFile.appendSync(entries);
+  logFile.append(entries);
   logFile.close();
   const readLogFile = new JSONLogFile(filePath, false);
   const readEntries = Array.from(readLogFile.open());
@@ -42,7 +42,7 @@ Deno.test('JSONLogFile: Scan and Fix Broken Entries', async () => {
   for (const entry of logFile.open()) {
     /* consume generator */
   }
-  logFile.appendSync(validEntries);
+  logFile.append(validEntries);
   const file = logFile.file;
   if (file) {
     for (const brokenEntry of brokenEntries) {
@@ -89,15 +89,15 @@ Deno.test('JSONLogFile: Query Entries', () => {
     { key: 'value3' },
   ];
   const logFile = new JSONLogFile(filePath, true);
-  for (const entry of logFile.open()) {
-    /* consume generator */
+  for (const _ of logFile.open()) {
+    //
   }
-  logFile.appendSync(entries);
+  logFile.append(entries);
   logFile.close();
   console.log('Entries appended:', entries);
   const readLogFile = new JSONLogFile(filePath, false);
-  for (const entry of readLogFile.open()) {
-    /* consume generator */
+  for (const _ of readLogFile.open()) {
+    //
   }
   const result = readLogFile.query((obj) => obj.key === 'value2');
   console.log("Query result for key='value2':", result);
@@ -126,42 +126,18 @@ Deno.test('JSONLogFile: Open and Close (Async)', async () => {
   await Deno.mkdir(TEST_DIR, { recursive: true });
 
   const logFile = new JSONLogFile(filePath, true);
-  const gen = await logFile.openAsync();
+  const gen = logFile.openAsync();
   assertEquals((await gen.next()).done, true); // File should be empty initially
 
-  await logFile.closeAsync();
+  await logFile.close();
   assertEquals(logFile.file, undefined); // File should be closed
 
   await cleanup();
 });
 
-Deno.test('JSONLogFile: Append Entries (Async)', async () => {
-  const filePath = `${TEST_DIR}/test_append_async.log`;
-  await Deno.mkdir(TEST_DIR, { recursive: true });
-
-  const logFile = new JSONLogFile(filePath, true);
-  await logFile.openAsync();
-
-  const entries: JSONObject[] = [{ key: 'value1' }, { key: 'value2' }];
-  logFile.appendSync(entries);
-
-  await logFile.closeAsync();
-
-  const readLogFile = new JSONLogFile(filePath, false);
-  await readLogFile.openAsync();
-
-  const readEntries = [];
-  for await (const entry of readLogFile.scanAsync()) {
-    readEntries.push(entry);
-  }
-  assertEquals(readEntries, entries);
-  await readLogFile.closeAsync();
-
-  await cleanup();
-});
-
-Deno.test('JSONLogFile: Scan Entries (Async)', async () => {
+Deno.test('JSONLogFile: Append And Scan Entries (Async)', async () => {
   const filePath = `${TEST_DIR}/test_scan_async.log`;
+
   await Deno.mkdir(TEST_DIR, { recursive: true });
 
   const entries: JSONObject[] = [
@@ -171,22 +147,24 @@ Deno.test('JSONLogFile: Scan Entries (Async)', async () => {
   ];
 
   const logFile = new JSONLogFile(filePath, true);
-  await logFile.openAsync();
-  logFile.appendSync(entries);
-  await logFile.closeAsync();
+  for await (const _ of logFile.openAsync()) {
+    // Consume the generator to ensure file operations are completed
+  }
+  logFile.appendAsync(entries);
+  await logFile.close();
 
   const readLogFile = new JSONLogFile(filePath, false);
-  await readLogFile.openAsync();
+  const readGen = readLogFile.openAsync();
+  const readEntries: JSONObject[] = [];
 
-  const readEntries = [];
-  for await (const entry of readLogFile.scanAsync()) {
+  for await (const entry of readGen) {
     readEntries.push(entry);
   }
 
   assertEquals(readEntries, entries);
 
-  await readLogFile.closeAsync();
-  // await cleanup();
+  await readLogFile.close();
+  await cleanup();
 });
 
 Deno.test('JSONLogFile: Reverse Scan Entries (Async)', async () => {
@@ -200,15 +178,19 @@ Deno.test('JSONLogFile: Reverse Scan Entries (Async)', async () => {
   ];
 
   const logFile = new JSONLogFile(filePath, true);
-  await logFile.openAsync();
-  logFile.appendSync(entries);
-  await logFile.closeAsync();
+  for await (const _ of logFile.openAsync()) {
+    //
+  }
+  logFile.appendAsync(entries);
+  await logFile.close();
 
   const readLogFile = new JSONLogFile(filePath, false);
-  const readGen = await readLogFile.openAsync();
+  const readGen = readLogFile.openAsync();
 
-  // deno-lint-ignore no-empty
-  for await (const _ of readGen) {
+  const readEntries: JSONObject[] = [];
+
+  for await (const entry of readGen) {
+    readEntries.push(entry);
   }
 
   const reverseEntries = [];
@@ -218,7 +200,7 @@ Deno.test('JSONLogFile: Reverse Scan Entries (Async)', async () => {
 
   assertEquals(reverseEntries, entries.reverse());
 
-  await readLogFile.closeAsync();
+  await readLogFile.close();
   await cleanup();
 });
 
@@ -233,19 +215,27 @@ Deno.test('JSONLogFile: Query Entries (Async)', async () => {
   ];
 
   const logFile = new JSONLogFile(filePath, true);
-  await logFile.openAsync();
-  logFile.appendSync(entries);
-  await logFile.closeAsync();
+  for await (const _ of logFile.openAsync()) {
+    //
+  }
+  logFile.appendAsync(entries);
+  await logFile.close();
 
   const readLogFile = new JSONLogFile(filePath, false);
-  await readLogFile.openAsync();
+  const readGen = readLogFile.openAsync();
+  const readEntries: JSONObject[] = [];
+
+  for await (const entry of readGen) {
+    readEntries.push(entry);
+  }
+
   const result = await readLogFile.queryAsync((obj) => obj.key === 'value2');
   assertEquals(result, [{ key: 'value2' }]);
 
   const limitedResult = await readLogFile.queryAsync(() => true, 2);
   assertEquals(limitedResult.length, 2);
 
-  await readLogFile.closeAsync();
+  await readLogFile.close();
 
   await cleanup();
 });
