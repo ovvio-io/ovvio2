@@ -54,7 +54,7 @@ export interface RepoStorage<T extends RepoStorage<T>> {
   allCommitsIds(): Iterable<string>;
   commitsForKey(key: string | null): Iterable<Commit>;
   allKeys(): Iterable<string>;
-  persistCommits(c: Iterable<Commit>, repo: Repository<T>): Iterable<Commit>;
+  persistCommits(c: Iterable<Commit>): Iterable<Commit>;
   close(): void;
 }
 
@@ -1408,7 +1408,7 @@ export class Repository<
   private _persistCommitsBatchToStorage(batch: Iterable<Commit>): Commit[] {
     const storage = this.storage;
     const result: Commit[] = [];
-    for (const persistedCommit of storage.persistCommits(batch, this)) {
+    for (const persistedCommit of storage.persistCommits(batch)) {
       this._cachedHeadsByKey.delete(persistedCommit.key);
       result.push(persistedCommit);
     }

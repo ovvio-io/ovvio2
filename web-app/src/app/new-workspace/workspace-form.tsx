@@ -146,12 +146,12 @@ export function WorkspaceForm({
     });
     // Hack for sandbox - mass workspace creation
     // if (getOrganizationId() === 'sandbox') {
-    //   for (let i = 1; i <= 100; ++i) {
-    //     const copyName = `${name} (${i})`;
-    //     createNewWorkspace(copyName, graph, {
-    //       copyFrom: duplicateWs,
-    //     });
-    //   }
+    for (let i = 1; i <= 100; ++i) {
+      const copyName = `${name} (${i})`;
+      createNewWorkspace(copyName, graph, {
+        copyFrom: duplicateWs,
+      });
+    }
     // }
     logger.log({
       severity: 'EVENT',
@@ -199,8 +199,7 @@ export function WorkspaceForm({
           disabled={name.trim().length === 0}
           className={cn(styles.input)}
           onClick={createWorkspace}
-          ref={createRef}
-        >
+          ref={createRef}>
           <span>Create new workspace</span>
         </RaisedButton>
       </React.Fragment>

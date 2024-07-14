@@ -27,7 +27,7 @@ import { accessDenied } from '../../cfds/base/errors.ts';
 import { copyToClipboard } from '../../base/development.ts';
 import { SchemeNamespace } from '../../cfds/base/scheme-types.ts';
 import { MemRepoStorage, Repository } from '../../repo/repo.ts';
-import { SysDirIndexes } from './sync.ts';
+import { ServerRepoStorage, SysDirIndexes } from './sync.ts';
 import { kAllUserPermissions } from '../../cfds/base/scheme-types.ts';
 import { sleep } from '../../base/time.ts';
 import { isDevelopmentBuild } from '../../base/development.ts';
@@ -298,7 +298,7 @@ export async function persistSession(
 }
 
 export function fetchEncodedRootSessions(
-  sysDir: Repository<MemRepoStorage, SysDirIndexes>,
+  sysDir: Repository<ServerRepoStorage, SysDirIndexes>,
 ): EncodedSession[] {
   const result: EncodedSession[] = [];
   const rootSessions = sysDir.indexes!.rootSessions;

@@ -13,6 +13,6 @@
     "direction": "https://unpkg.com/direction@1.0.3",
     "yargs": "https://deno.land/x/yargs@v17.7.2-deno/deno.ts",
     "esbuild": "https://deno.land/x/esbuild@v0.19.12/mod.js",
-    "sqlite3": "https://deno.land/x/sqlite3@0.10.0/mod.ts"
+    "sqlite3": "jsr:@db/sqlite@0.11"
   }
 }

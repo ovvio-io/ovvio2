@@ -59,6 +59,11 @@ import { RendezvousHash } from '../../base/rendezvous-hash.ts';
 import { randomInt } from '../../base/math.ts';
 import { kDayMs } from '../../base/date.ts';
 import { sendJSONToURL } from '../rest-api.ts';
+import {
+  SQLite3RepoStorage,
+  SQLite3ServerStorage,
+} from '../../server/sqlite-storage.ts';
+import { RepositorySQLite3Index } from '../../repo/sql.ts';
 
 const gSyncSchedulers = new Map<string, SyncScheduler>();
 
@@ -75,24 +80,28 @@ function syncSchedulerForURL(
   return res;
 }
 
-export interface SysDirIndexes extends RepositoryIndexes<MemRepoStorage> {
-  users: RepositoryIndex<MemRepoStorage>;
-  rootSessions: RepositoryIndex<MemRepoStorage>;
+export type ServerRepoStorage = MemRepoStorage | SQLite3RepoStorage;
+
+export interface SysDirIndexes extends RepositoryIndexes<ServerRepoStorage> {
+  users: RepositoryIndex<ServerRepoStorage>;
+  rootSessions: RepositoryIndex<ServerRepoStorage>;
 }
 
 export class SyncService extends BaseService<ServerServices> {
   private readonly _repositories: Dictionary<
     string,
-    Repository<MemRepoStorage>
+    Repository<ServerRepoStorage>
   >;
   private readonly _clientsForRepo: Dictionary<
     string,
-    RepoClient<MemRepoStorage>[]
+    RepoClient<ServerRepoStorage>[]
   >;
   readonly name = 'sync';
 
   private readonly _backupForRepo: Dictionary<string, JSONLogRepoBackup>;
   private readonly _rendezvousHash: RendezvousHash<number>;
+  private _storage: SQLite3ServerStorage | undefined;
+  private _index: RepositorySQLite3Index<ServerRepoStorage>;
 
   constructor() {
     super();
@@ -100,6 +109,7 @@ export class SyncService extends BaseService<ServerServices> {
     this._clientsForRepo = new Map();
     this._backupForRepo = new Map();
     this._rendezvousHash = new RendezvousHash();
+    this._index = new RepositorySQLite3Index();
   }
 
   get ready(): boolean {
@@ -108,6 +118,9 @@ export class SyncService extends BaseService<ServerServices> {
 
   async setup(services: ServerServices): Promise<void> {
     super.setup(services);
+    this._storage = new SQLite3ServerStorage(
+      joinPath(services.dir, 'data.sqlite'),
+    );
     const sysDir = this.getSysDir();
     const trustPool = services.trustPool;
     await setupTrustPool(trustPool, sysDir);
@@ -121,12 +134,12 @@ export class SyncService extends BaseService<ServerServices> {
     type: RepositoryType,
     id: string,
     indexes?: (
-      repo: Repository<MemRepoStorage, RepositoryIndexes<MemRepoStorage>>,
-    ) => RepositoryIndexes<MemRepoStorage>,
-  ): Repository<MemRepoStorage> {
+      repo: Repository<ServerRepoStorage, RepositoryIndexes<ServerRepoStorage>>,
+    ) => RepositoryIndexes<ServerRepoStorage>,
+  ): Repository<ServerRepoStorage> {
     const repoId = Repository.id(type, id);
     assert(!this._repositories.has(repoId));
-    let authorizer: Authorizer<MemRepoStorage>;
+    let authorizer: Authorizer<ServerRepoStorage>;
     switch (type) {
       case 'sys':
         assert(id === 'dir'); // Sanity check
@@ -155,7 +168,7 @@ export class SyncService extends BaseService<ServerServices> {
         break;
     }
     const repo = new Repository(
-      new MemRepoStorage(),
+      new MemRepoStorage(), //this._storage!.get(this.services.organizationId, repoId),
       this.services.trustPool,
       Repository.namespacesForType(type),
       authorizer,
@@ -212,7 +225,7 @@ export class SyncService extends BaseService<ServerServices> {
 
   private loadRepoFromBackup(
     repoId: string,
-    repo: Repository<MemRepoStorage>,
+    repo: Repository<ServerRepoStorage>,
     backup: JSONLogRepoBackup,
   ): void {
     repo.allowMerge = false;
@@ -247,6 +260,7 @@ export class SyncService extends BaseService<ServerServices> {
         }
       }
     });
+    this._index.register(this.services.organizationId, repoId, repo);
   }
 
   waitForBackup(repoId: string): Promise<void> {
@@ -254,10 +268,10 @@ export class SyncService extends BaseService<ServerServices> {
     return backup!.logFile!.barrier();
   }
 
-  getRepository<T extends RepositoryIndexes<MemRepoStorage>>(
+  getRepository<T extends RepositoryIndexes<ServerRepoStorage>>(
     type: RepositoryType,
     id: string,
-  ): Repository<MemRepoStorage, T> {
+  ): Repository<ServerRepoStorage, T> {
     const repoId = Repository.id(type, id);
     let repo = this._repositories.get(repoId);
     if (!repo) {
@@ -281,14 +295,14 @@ export class SyncService extends BaseService<ServerServices> {
         repo = this.setupRepository(type, id);
       }
     }
-    return repo as Repository<MemRepoStorage, T>;
+    return repo as Repository<ServerRepoStorage, T>;
   }
 
-  getSysDir(): Repository<MemRepoStorage, SysDirIndexes> {
+  getSysDir(): Repository<ServerRepoStorage, SysDirIndexes> {
     return this.getRepository('sys', 'dir');
   }
 
-  clientsForRepo(id: string): RepoClient<MemRepoStorage>[] {
+  clientsForRepo(id: string): RepoClient<ServerRepoStorage>[] {
     return this._clientsForRepo.get(id)!;
   }
 
@@ -587,7 +601,7 @@ export class SyncEndpoint implements Endpoint {
 
 export async function setupTrustPool(
   trustPool: TrustPool,
-  sysDir: Repository<MemRepoStorage, SysDirIndexes>,
+  sysDir: Repository<ServerRepoStorage, SysDirIndexes>,
 ): Promise<void> {
   await Promise.allSettled(
     fetchEncodedRootSessions(sysDir).map(async (encodedSession) => {

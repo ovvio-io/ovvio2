@@ -70,7 +70,7 @@ export class JSONLogFile {
         'Attempting to append to log before initial scan completed',
       );
       const encodedEntries =
-        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
       const encodedBuf = new TextEncoder().encode(encodedEntries);
       let bytesWritten = 0;
       await file.seek(0, Deno.SeekMode.End);

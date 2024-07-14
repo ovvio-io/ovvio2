@@ -161,8 +161,8 @@ export class SharedQueriesManager implements GlobalSharedQueriesManager {
     if (!query) {
       query = new Query({
         source: this.notDeleted,
-        predicate: (vert: Vertex) =>
-          vert instanceof Note && vert.parentType !== NoteType.Task,
+        predicate: (vert: Vertex) => false,
+        // vert instanceof Note && vert.parentType !== NoteType.Task,
         sortBy: NOTE_SORT_BY[sortBy],
         groupBy: (note) => note.workspace.key,
         name: 'SharedSortedNotes-' + sortBy,
