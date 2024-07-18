@@ -45,8 +45,8 @@ export abstract class BaseClient<
   private _closed = false;
   private _pendingSyncPromise: Promise<boolean> | undefined;
   private _syncActive = false;
-  private _lastComputedNeedsReplication = 0;
   private _cachedNeedsReplication = false;
+  private _requestInProgress = false;
 
   constructor(
     readonly storage: RepositoryType,
@@ -96,7 +96,7 @@ export abstract class BaseClient<
     if (!this.isOnline) {
       return 'offline';
     }
-    return this._syncActive || this.needsReplication() || !this.ready
+    return /*this._syncActive ||*/ this.needsReplication() || !this.ready
       ? 'sync'
       : 'idle';
   }
@@ -195,6 +195,7 @@ export abstract class BaseClient<
     if (this.closed) {
       return false;
     }
+    this._requestInProgress = true;
     const startingStatus = this.status;
     let priority = SyncPriority.normal;
     if (this.needsReplication()) {
@@ -221,6 +222,7 @@ export abstract class BaseClient<
         trace: e.stack,
       });
       this._setIsOnline(false);
+      this._requestInProgress = false;
       return false;
     }
 
@@ -259,6 +261,8 @@ export abstract class BaseClient<
         });
       }
     }
+
+    this._requestInProgress = false;
     if (this.closed) {
       return false;
     }

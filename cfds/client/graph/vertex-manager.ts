@@ -27,6 +27,7 @@ import {
   MicroTaskTimer,
   NextEventLoopCycleTimer,
   SimpleTimer,
+  Timer,
 } from '../../../base/timer.ts';
 import { PointerValue, projectPointers } from '../../richtext/flat-rep.ts';
 import { ValueType } from '../../base/types/index.ts';
@@ -47,6 +48,7 @@ import { serviceUnavailable } from '../../base/errors.ts';
 import { ServerError } from '../../base/errors.ts';
 import { Code } from '../../base/errors.ts';
 import { concatChanges } from '../../base/object.ts';
+import { DelayedAction } from '../../../base/delayed-action.ts';
 
 export const K_VERT_DEPTH = 'depth';
 
@@ -112,6 +114,7 @@ export class VertexManager<V extends Vertex = Vertex>
   private _revocableProxy?: { proxy: Vertex; revoke: () => void };
   private _commitPromise: Promise<void> | undefined;
   private _reportedInitialFields = false;
+  private _touchAction: DelayedAction<void>;
 
   static setVertexBuilder(f: VertexBuilder): void {
     gVertexBuilder = f;
@@ -148,6 +151,7 @@ export class VertexManager<V extends Vertex = Vertex>
     }
     const hasInitialState = initialState !== undefined;
     this._record = initialState?.clone() || Record.nullRecord();
+    this._touchAction = new DelayedAction(100, () => this._touchImpl());
     this.rebuildVertex();
     if (hasInitialState) {
       this.scheduleCommitIfNeeded();
@@ -380,34 +384,48 @@ export class VertexManager<V extends Vertex = Vertex>
     if (!repo) {
       return;
     }
-    const currentHead = repo.headForKey(this.key);
-    if (!currentHead || currentHead.id === this._headId) {
-      return;
-    }
-    const baseRecord = this._headId
-      ? repo.recordForCommit(this._headId)
-      : Record.nullRecord();
-    const repoRecord = repo.recordForCommit(currentHead);
-    if (repoRecord.isEqual(this.record)) {
-      this._headId = currentHead.id;
-      return;
-    }
-    if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
-      baseRecord.upgradeScheme(repoRecord.scheme);
-    }
-    if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
-      baseRecord.upgradeScheme(this.record.scheme);
-    }
-    const changes = concatChanges(
-      baseRecord.diff(repoRecord, false),
-      baseRecord.diff(this.record, true),
+    // const currentHead = repo.headForKey(this.key);
+    // if (!currentHead || currentHead.id === this._headId) {
+    //   return;
+    // }
+    // const baseRecord = this._headId
+    //   ? repo.recordForCommit(this._headId)
+    //   : Record.nullRecord();
+    // const repoRecord = repo.recordForCommit(currentHead);
+    // if (repoRecord.isEqual(this.record)) {
+    //   this._headId = currentHead.id;
+    //   return;
+    // }
+    // if (!repoRecord.isNull && !baseRecord.scheme.isEqual(repoRecord.scheme)) {
+    //   baseRecord.upgradeScheme(repoRecord.scheme);
+    // }
+    // if (!this.record.isNull && !baseRecord.scheme.isEqual(this.record.scheme)) {
+    //   baseRecord.upgradeScheme(this.record.scheme);
+    // }
+    // const changes = concatChanges(
+    //   baseRecord.diff(repoRecord, false),
+    //   baseRecord.diff(this.record, true),
+    // );
+    // baseRecord.patch(changes);
+    [this.record, this._headId] = repo.rebase(
+      this.key,
+      this.record,
+      this._headId,
     );
-    baseRecord.patch(changes);
-    this._headId = currentHead.id;
-    this.record = baseRecord;
   }
 
-  async touch(): Promise<void> {
+  touch(): Promise<void> {
+    return this._touchAction.schedule();
+    // if (this._touchPromise === undefined) {
+    //   this._needsTouch = false;
+    //   this._touchPromise = this._touchImpl();
+    // } else {
+    //   this._needsTouch = true;
+    // }
+    // return this._touchPromise;
+  }
+
+  private async _touchImpl(): Promise<void> {
     if (this.isLocal) {
       this.reportInitialFields(true);
       return;
@@ -424,6 +442,10 @@ export class VertexManager<V extends Vertex = Vertex>
     //   mutations = mutationPackAppend(mutations, [field, true, origRecord.get(field)]);
     // }
     this.reportInitialFields(true);
+    // this._touchPromise = undefined;
+    // if (this._needsTouch) {
+    //   this.touch();
+    // }
   }
 
   scheduleCommitIfNeeded(): void {

@@ -303,24 +303,24 @@ export class GraphManager
         plumbing.loadingFinished = true;
         plumbing.syncFinished =
           localStorage[`syncFinished:${Repository.normalizeId(id)}`] === true;
-        // const numberOfCommits = repo.numberOfCommits();
+        const numberOfCommits = repo.numberOfCommits();
 
-        // if (
-        //   (id === Repository.sysDirId &&
-        //     this.hasVertex(this.rootKey) &&
-        //     this.getRootVertexManager().scheme.namespace ===
-        //       SchemeNamespace.USERS) ||
-        //   (id !== Repository.sysDirId && numberOfCommits > 0)
-        // ) {
-        //   plumbing.loadedLocalContents = true;
-        //   if (client) {
-        //     client.ready = true;
-        //     client.startSyncing();
-        //   }
-        // }
-        if (Repository.parseId(id)[0] === 'events') {
-          this.syncRepository(id);
+        if (
+          (id === Repository.sysDirId &&
+            this.hasVertex(this.rootKey) &&
+            this.getRootVertexManager().scheme.namespace ===
+              SchemeNamespace.USERS) ||
+          (id !== Repository.sysDirId && numberOfCommits > 0)
+        ) {
+          plumbing.loadedLocalContents = true;
+          if (client) {
+            client.ready = true;
+            client.startSyncing();
+          }
         }
+        // if (Repository.parseId(id)[0] === 'events') {
+        //   this.syncRepository(id);
+        // }
       },
     );
     return plumbing.loadingPromise;
@@ -329,7 +329,7 @@ export class GraphManager
   async syncRepository(id: string): Promise<void> {
     const plumbing = this.plumbingForRepository(id);
     if (!plumbing.syncPromise) {
-      plumbing.syncPromise = MultiSerialScheduler.get('RepoSync')
+      plumbing.syncPromise = SerialScheduler.get('RepoSync')
         .run(async () => {
           const client = plumbing.client;
           await this.loadRepository(id);
@@ -375,12 +375,12 @@ export class GraphManager
     await this.loadRepository(repoId);
 
     if (!plumbing.syncFinished) {
-      if (plumbing.loadedLocalContents) {
-        this.syncRepository(repoId).finally(() => this.startSyncing(repoId));
-      } else {
-        await this.syncRepository(repoId);
-        this.startSyncing(repoId);
-      }
+      // if (plumbing.loadedLocalContents) {
+      //   this.syncRepository(repoId).finally(() => this.startSyncing(repoId));
+      // } else {
+      await this.syncRepository(repoId);
+      this.startSyncing(repoId);
+      // }
     } else {
       this.startSyncing(repoId);
     }
@@ -422,6 +422,7 @@ export class GraphManager
         if (c.createdLocally) {
           return;
         }
+        // console.log(c.key);
         // The following line does two major things:
         //
         // 1. It creates the vertex manager if it doesn't already exist.

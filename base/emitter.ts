@@ -26,7 +26,11 @@ export class Emitter<T extends string> {
         const emissions = this._pendingEmissions;
         this._pendingEmissions = [];
         for (const [e, args] of emissions) {
-          this.emitInPlace(e as T, ...args);
+          try {
+            this.emitInPlace(e as T, ...args);
+          } catch (err: unknown) {
+            console.error(`Uncaught error in delayed emission: ${err}`);
+          }
         }
       });
     }
@@ -79,9 +83,10 @@ export class Emitter<T extends string> {
   ): () => void {
     const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
-      const arr = e === 'EmitterSuspended'
-        ? this._suspendCallbacks
-        : this._resumeCallbacks;
+      const arr =
+        e === 'EmitterSuspended'
+          ? this._suspendCallbacks
+          : this._resumeCallbacks;
       if (!arr.includes(callback)) {
         arr.push(callback);
       }
@@ -107,9 +112,10 @@ export class Emitter<T extends string> {
   detach<C extends Function, E extends T | EmitterEvent>(e: E, c: C): void {
     const callback = c as unknown as EmitterCallback;
     if (e === 'EmitterSuspended' || e === 'EmitterResumed') {
-      const arr = e === 'EmitterSuspended'
-        ? this._suspendCallbacks
-        : this._resumeCallbacks;
+      const arr =
+        e === 'EmitterSuspended'
+          ? this._suspendCallbacks
+          : this._resumeCallbacks;
       const idx = arr.indexOf(callback);
       if (idx >= 0) {
         arr.splice(idx, 1);

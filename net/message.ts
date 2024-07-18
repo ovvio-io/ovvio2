@@ -13,6 +13,7 @@ import {
   ReadonlyDecodedArray,
 } from '../base/core-types/encoding/types.ts';
 import { isDecoderConfig } from '../base/core-types/encoding/utils.ts';
+import { CoroutineScheduler, SchedulerPriority } from '../base/coroutine.ts';
 import { ReadonlyJSONObject } from '../base/interfaces.ts';
 import { VersionNumber } from '../base/version-number.ts';
 import { NormalizedLogEntry } from '../logging/entry.ts';
@@ -228,6 +229,35 @@ export class SyncMessage<T extends SyncValueType>
     }
   }
 
+  static async decodeAsync(
+    decoderConfig: SyncMessageDecoderConfig,
+  ): Promise<SyncMessage<Commit>> {
+    const decoder: Decoder<string, DecodedValue> = decoderConfig.decoder;
+    const buildVersion = decoder.get<VersionNumber>('ver')!;
+    const filter = new BloomFilter({ size: 1, fpr: 0.5 });
+    filter.deserialize(decoder.getDecoder('f'));
+    const size = decoder.get<number>('s')!;
+    const accessDenied = decoder.get('ad', []);
+    const values: Commit[] | undefined = !decoder.has('c')
+      ? undefined
+      : await CoroutineScheduler.sharedScheduler().map(
+          decoder.get<ReadonlyDecodedArray>('c', [])!,
+          (obj) =>
+            Commit.fromJS(decoderConfig.orgId, obj as ReadonlyJSONObject),
+          SchedulerPriority.Normal,
+          'SyncMessageDecode',
+          true,
+        );
+    return new this({
+      filter,
+      size,
+      orgId: decoderConfig.orgId,
+      values,
+      accessDenied,
+      buildVersion,
+    });
+  }
+
   static build<T extends SyncValueType>(
     peerFilter: BloomFilter | undefined,
     values: Iterable<[id: string, value: T]>,
@@ -275,6 +305,62 @@ export class SyncMessage<T extends SyncValueType>
           missingPeerValues.push(v);
         }
       }
+    }
+    return new this({
+      filter: localFilter,
+      size: localSize,
+      orgId,
+      values: missingPeerValues,
+    });
+  }
+
+  static async buildAsync<T extends SyncValueType>(
+    peerFilter: BloomFilter | undefined,
+    values: Iterable<[id: string, value: T]>,
+    localSize: number,
+    peerSize: number,
+    expectedSyncCycles: number,
+    orgId: string,
+    includeMissing = true,
+    lowAccuracy = false,
+  ): Promise<SyncMessage<T>> {
+    const numberOfEntries = Math.max(1, localSize, peerSize);
+    // To calculate the desired False-Positive-Rate (fpr), we use the following
+    // approximation: 2log[fpr](numberOfEntries) = expectedSyncCycles
+    // This appears to hold well in practice, while producing compact enough
+    // filters.
+    //
+    // 2log[fpr](N) = C =>
+    // log[fpr](N) = 0.5 * C =>
+    // fpr ^ 0.5C = N =>
+    // fpr = sqr[0.5C](N) =>
+    // fpr = N ^ (1 / 0.5C)
+    //
+    // Note that the resulting FPR is a ratio rather than a fraction, so the
+    // final value is 1 / fpr.
+    //
+    // Finally, a bloom filter with fpr >= 0.5 isn't very useful (more than 50%
+    // false positives), so we cap the computed value at 0.5.
+    const fpr = lowAccuracy
+      ? 0.5
+      : Math.min(
+          0.5,
+          1 / Math.pow(numberOfEntries, 1 / (0.5 * expectedSyncCycles)),
+        );
+    const localFilter = new BloomFilter({
+      size: numberOfEntries,
+      fpr,
+    });
+    const missingPeerValues: T[] = [];
+    if (peerFilter && includeMissing) {
+      localSize = 0;
+      await CoroutineScheduler.sharedScheduler().forEach(values, ([id, v]) => {
+        localFilter.add(id);
+        ++localSize;
+        if (!peerFilter.has(id)) {
+          missingPeerValues.push(v);
+        }
+      });
     }
     return new this({
       filter: localFilter,

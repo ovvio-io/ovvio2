@@ -32,12 +32,12 @@ export class RepoClient<T extends RepoStorage<T>> extends BaseClient<Commit> {
     return this._repo.numberOfCommits(this.repo.trustPool.currentSession);
   }
 
-  protected async buildSyncMessage(
+  protected buildSyncMessage(
     includeMissing: boolean,
   ): Promise<SyncMessage<Commit>> {
     const repo = this.repo;
     const session = repo.trustPool.currentSession;
-    return SyncMessage.build(
+    return SyncMessage.buildAsync(
       this.previousServerFilter,
       this.valuesForMessage(),
       repo.numberOfCommits(session),

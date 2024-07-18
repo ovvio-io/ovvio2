@@ -1128,6 +1128,50 @@ export class Repository<
     return (await this.mergeIfNeeded(key)) || signedCommit;
   }
 
+  /**
+   * Given a key and an edited record for this key, this method rebases the
+   * changes from the record on top of the any changes made concurrently for
+   * this key. Use it to merge remote changes with any local edits before
+   * committing them.
+   *
+   * @param key The key to rebase.
+   * @param record The locally edited record.
+   * @param headId The commit from which the edited record was derived from.
+   *
+   * @returns A new record with local changes rebased on top of remote changes.
+   *          This record can be used to safely update the UI, as well as update
+   *          the repo value.
+   */
+  rebase(
+    key: string,
+    record: CFDSRecord,
+    headId: string | Commit | undefined,
+  ): [CFDSRecord, string | undefined] {
+    const currentHead = this.headForKey(key);
+    if (!currentHead || currentHead.id === headId) {
+      return [record, headId instanceof Commit ? headId.id : undefined];
+    }
+    const baseRecord = headId
+      ? this.recordForCommit(headId)
+      : CFDSRecord.nullRecord();
+    const headRecord = this.recordForCommit(currentHead);
+    if (headRecord.isEqual(record)) {
+      return [record, headId instanceof Commit ? headId.id : undefined];
+    }
+    if (!headRecord.isNull && !baseRecord.scheme.isEqual(headRecord.scheme)) {
+      baseRecord.upgradeScheme(headRecord.scheme);
+    }
+    if (!record.isNull && !baseRecord.scheme.isEqual(record.scheme)) {
+      baseRecord.upgradeScheme(record.scheme);
+    }
+    const changes = concatChanges(
+      baseRecord.diff(headRecord, false),
+      baseRecord.diff(record, true),
+    );
+    baseRecord.patch(changes);
+    return [baseRecord, currentHead.id];
+  }
+
   private deltaCompressIfNeeded(fullCommit: Commit): Commit {
     assert(commitContentsIsRecord(fullCommit.contents));
     if (
@@ -1331,7 +1375,7 @@ export class Repository<
       }
     } else {
       // And asynchronously in the client
-      CoroutineScheduler.sharedScheduler().map(
+      CoroutineScheduler.sharedScheduler().forEach(
         result,
         (c) => this.emit('NewCommit', c),
         SchedulerPriority.Background,
