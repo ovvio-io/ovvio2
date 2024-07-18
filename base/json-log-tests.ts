@@ -39,8 +39,8 @@ Deno.test('JSONLogFile: Scan and Fix Broken Entries', async () => {
     '{"key": "value3"}\n{\n', // Incomplete nested object
   ];
   const logFile = new JSONLogFile(filePath, true);
-  for (const entry of logFile.open()) {
-    /* consume generator */
+  // deno-lint-ignore no-empty
+  for (const _ of logFile.open()) {
   }
   logFile.append(validEntries);
   const file = logFile.file;
@@ -147,8 +147,8 @@ Deno.test('JSONLogFile: Append And Scan Entries (Async)', async () => {
   ];
 
   const logFile = new JSONLogFile(filePath, true);
+  // deno-lint-ignore no-empty
   for await (const _ of logFile.openAsync()) {
-    // Consume the generator to ensure file operations are completed
   }
   logFile.appendAsync(entries);
   await logFile.close();
