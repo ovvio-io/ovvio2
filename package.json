@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.456.0",
-    "@aws-sdk/lib-storage": "^3.456.0"
+    "@aws-sdk/lib-storage": "^3.456.0",
+    "@types/emscripten": "^1.39.13"
   }
 }

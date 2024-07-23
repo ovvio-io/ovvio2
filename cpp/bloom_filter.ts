@@ -23,7 +23,7 @@ declare global {
 }
 let moduleLoadPromise: Promise<void>;
 
-async function initializeModule(): Promise<void> {
+function initializeModule(): Promise<void> {
   if (!moduleLoadPromise) {
     moduleLoadPromise = (async () => {
       const wasmUrl = new URL('./bloom_filter.wasm', import.meta.url);
@@ -52,32 +52,6 @@ async function initializeModule(): Promise<void> {
   return moduleLoadPromise;
 }
 
-// let moduleLoadPromise: Promise<void>;
-
-// function initializeModule(): Promise<void> {
-//   // TODO: Browser handling (Deno)
-//   if (!moduleLoadPromise) {
-//     moduleLoadPromise = (async () => {
-//       const wasmBinary = await Deno.readFile('bloom_filter.wasm');
-//       const moduleScript = await Deno.readTextFile('bloom_filter.js');
-
-//       return new Promise<void>((resolve) => {
-//         const Module = {
-//           wasmBinary,
-//           onRuntimeInitialized: () => {
-//             (globalThis as any).Module = Module;
-//             resolve();
-//           },
-//         };
-
-//         const runScript = new Function('Module', moduleScript);
-//         runScript(Module);
-//       });
-//     })();
-//   }
-//   return moduleLoadPromise;
-// }
-
 export class BloomFilter {
   private ptr: number;
   private static create_bloom_filter: (size: number, fpr: number) => number;
@@ -90,8 +64,16 @@ export class BloomFilter {
   private static get_debug_log: (ptr: number) => string;
 
   static async create(size: number, fpr: number): Promise<BloomFilter> {
+    if (size <= 0 || fpr <= 0 || fpr >= 1) {
+      console.warn('Invalid parameters. Adjusting to minimum values.');
+      size = Math.max(1, size);
+      fpr = Math.max(0.000001, Math.min(0.999999, fpr));
+    }
     await initializeModule();
-
+    if (size === 0) {
+      size = 1;
+      fpr = 1;
+    }
     if (!this.create_bloom_filter) {
       this.create_bloom_filter = Module.cwrap('create_bloom_filter', 'number', [
         'number',
@@ -122,6 +104,9 @@ export class BloomFilter {
     }
 
     const ptr = this.create_bloom_filter(size, fpr);
+    if (ptr === 0) {
+      console.error('Failed to create BloomFilter');
+    }
     // console.log('Debug log after creation:');
     // console.log(this.get_debug_log(ptr));
     return new BloomFilter(ptr);

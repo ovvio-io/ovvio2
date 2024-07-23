@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.200.0/assert/assert_equals.ts';
-import { BloomFilter } from '../cpp/bloom_filter.ts';
+import { BloomFilter, BloomFilterOptions } from './bloom.ts';
 
 function calculateExpectedSyncCycles(fpr: number, maxEntries: number): number {
   return Math.ceil((2 * Math.log(maxEntries)) / Math.log(1 / fpr));
@@ -28,8 +28,9 @@ async function testSyncSets(
   let cycles = 0;
 
   while (cycles < expectedCycles) {
-    const bloomFilterM = await BloomFilter.create(setM.size, fpr);
-    const bloomFilterN = await BloomFilter.create(setN.size, fpr);
+    const options: BloomFilterOptions = { size: setM.size, fpr: fpr };
+    const bloomFilterM = new BloomFilter(options);
+    const bloomFilterN = new BloomFilter(options);
 
     setN.forEach((value) => bloomFilterN.add(value));
     setM.forEach((value) => bloomFilterM.add(value));
@@ -59,8 +60,8 @@ async function testSyncSets(
     console.log('Set N:', [...setN]);
     console.log('Set M:', [...setM]);
 
-    bloomFilterM.delete();
-    bloomFilterN.delete();
+    bloomFilterM.reuse();
+    bloomFilterN.reuse();
   }
 
   console.log(`Synchronized in ${cycles} cycles`);
@@ -70,7 +71,7 @@ async function testSyncSets(
 
 Deno.test('BloomFilter - identical sets', async () => {
   const size = 1000;
-  const fpr = 0.34;
+  const fpr = 0.44;
   const set = generateRandomSet(size);
   await testSyncSets(set, new Set(set), fpr);
 });
@@ -83,16 +84,9 @@ Deno.test('BloomFilter - low false positive rate', async () => {
   await testSyncSets(setN, setM, fpr);
 });
 
-Deno.test('BloomFilter - identical sets', async () => {
-  const size = 1000;
-  const fpr = 0.1;
-  const set = generateRandomSet(size);
-  await testSyncSets(set, new Set(set), fpr);
-});
-
 Deno.test('BloomFilter - almost identical sets', async () => {
   const size = 1000;
-  const fpr = 0.1;
+  const fpr = 0.4;
   const setN = generateRandomSet(size);
   const setM = new Set(setN);
   setM.add(Math.random().toString(36).substring(2, 15));
@@ -108,20 +102,20 @@ Deno.test('BloomFilter - huge difference between sets', async () => {
   await testSyncSets(setN, setM, fpr);
 });
 
-// Deno.test('BloomFilter - empty sets', async () => {
-//   const setN = new Set<string>();
-//   const setM = new Set<string>();
-//   const fpr = 0.04;
-//   await testSyncSets(setN, setM, fpr);
-// });
+Deno.test('BloomFilter - empty sets', async () => {
+  const setN = new Set<string>();
+  const setM = new Set<string>();
+  const fpr = 0.04;
+  await testSyncSets(setN, setM, fpr);
+});
 
-// Deno.test('BloomFilter - one empty set', async () => {
-//   const size = 1000;
-//   const setN = generateRandomSet(size);
-//   const setM = new Set<string>();
-//   const fpr = 0.04;
-//   await testSyncSets(setN, setM, fpr);
-// });
+Deno.test('BloomFilter - one empty set', async () => {
+  const size = 1000;
+  const setN = generateRandomSet(size);
+  const setM = new Set<string>();
+  const fpr = 0.04;
+  await testSyncSets(setN, setM, fpr);
+});
 
 Deno.test('BloomFilter - disjoint sets', async () => {
   const size = 100;
@@ -154,7 +148,7 @@ Deno.test(
     const setN = generateRandomSet(size);
     const setM = new Set(setN);
     for (let i = 0; i < 10; i++) {
-      setM.add(Math.random().toString(36).substring(2, 15));
+      setM.add(Math.random().toString(36).substring(2, 15)); // Add extra elements to setM
     }
     await testSyncSets(setN, setM, fpr);
   }

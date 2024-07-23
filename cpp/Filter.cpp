@@ -8,7 +8,6 @@
 #include <emscripten.h>
 #include <random>
 #include <chrono>
-#include <limits>
 
 // BloomFilter implementation
 BloomFilter::BloomFilter(size_t size, double fpr, size_t maxHashes)
@@ -20,6 +19,7 @@ BloomFilter::BloomFilter(size_t size, double fpr, size_t maxHashes)
     {
         _numHashes = maxHashes;
     }
+
     std::ostringstream oss;
     oss << "BloomFilter constructor:\n"
         << "  Requested size: " << size << "\n"
@@ -39,22 +39,14 @@ BloomFilter::BloomFilter(size_t size, double fpr, size_t maxHashes)
 
     debugLog += oss.str();
 }
-
 void BloomFilter::setBit(size_t index)
 {
-    if (index < _size)
-    {
-        bits[index / 64] |= (1ULL << (index % 64));
-    }
+    bits[index / 64] |= (1ULL << (index % 64));
 }
 
 bool BloomFilter::getBit(size_t index) const
 {
-    if (index < _size)
-    {
-        return (bits[index / 64] & (1ULL << (index % 64))) != 0;
-    }
-    return false;
+    return (bits[index / 64] & (1ULL << (index % 64))) != 0;
 }
 
 void BloomFilter::add(const std::string &value)
@@ -78,7 +70,6 @@ bool BloomFilter::has(const std::string &value) const
     }
     return true;
 }
-
 uint32_t BloomFilter::hashString(const std::string &value, uint32_t seed) const
 {
     uint32_t hash;
@@ -134,7 +125,11 @@ BloomFilter BloomFilter::deserialize(const std::string &serialized)
 
     std::getline(iss, token, '|');
     size_t filterSize = std::stoull(token);
-    BloomFilter bf(filterSize, 0.01);
+    // Note: The current deserialization method doesn't preserve
+    // the original false positive rate (FPR). If you need to preserve this,
+    //  you should include it in the serialized string and use it when
+    // constructing the new BloomFilter in the deserialization method.
+    BloomFilter bf(filterSize, 0.01); // We'll set the correct number of hashes later
 
     std::getline(iss, token, '|');
     size_t blockIndex = 0;
@@ -168,19 +163,14 @@ BloomFilter BloomFilter::deserialize(const std::string &serialized)
 
     return bf;
 }
-
 size_t BloomFilter::calculateOptimalM(size_t size, double fpr)
 {
-    if (size == 0 || fpr <= 0 || fpr >= 1)
-        return 1;
     return static_cast<size_t>(std::ceil(-(size * std::log(fpr)) / (std::log(2) * std::log(2))));
 }
 
 size_t BloomFilter::calculateOptimalK(size_t size, size_t m)
 {
-    if (size == 0 || m == 0)
-        return 1;
-    return static_cast<size_t>(std::round((m / static_cast<double>(size)) * std::log(2)));
+    return static_cast<size_t>(std::round((m / size) * std::log(2)));
 }
 
 std::string BloomFilter::debugInfo() const
@@ -294,36 +284,24 @@ std::string BloomFilter::getHashInfo(const std::string &value) const
     // }
     return oss.str();
 }
-
 extern "C"
 {
-    EMSCRIPTEN_KEEPALIVE
+EMSCRIPTEN_KEEPALIVE
     BloomFilter *create_bloom_filter(size_t size, double fpr)
     {
-        if (size == 0 || fpr <= 0 || fpr >= 1)
-        {
-            return nullptr;
-        }
         return new BloomFilter(size, fpr);
     }
 
     EMSCRIPTEN_KEEPALIVE
     void add_to_filter(BloomFilter *filter, const char *value)
     {
-        if (filter && value)
-        {
-            filter->add(std::string(value));
-        }
+        filter->add(std::string(value));
     }
 
     EMSCRIPTEN_KEEPALIVE
     bool check_in_filter(BloomFilter *filter, const char *value)
     {
-        if (filter && value)
-        {
-            return filter->has(std::string(value));
-        }
-        return false;
+        return filter->has(std::string(value));
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -383,11 +361,7 @@ extern "C"
     const char *get_debug_log(BloomFilter *filter)
     {
         static std::string log;
-        if (filter)
-        {
-            log = filter->getDebugLog();
-            return log.c_str();
-        }
-        return "";
+        log = filter->getDebugLog();
+        return log.c_str();
     }
 }
