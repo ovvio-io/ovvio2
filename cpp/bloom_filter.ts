@@ -21,15 +21,19 @@ interface BloomFilterModule extends EmscriptenModule {
 declare global {
   let Module: BloomFilterModule;
 }
-
 let moduleLoadPromise: Promise<void>;
 
-function initializeModule(): Promise<void> {
-  // TODO: Browser handling (Deno)
+async function initializeModule(): Promise<void> {
   if (!moduleLoadPromise) {
     moduleLoadPromise = (async () => {
-      const wasmBinary = await Deno.readFile('bloom_filter.wasm');
-      const moduleScript = await Deno.readTextFile('bloom_filter.js');
+      const wasmUrl = new URL('./bloom_filter.wasm', import.meta.url);
+      const jsUrl = new URL('./bloom_filter.js', import.meta.url);
+
+      const wasmResponse = await fetch(wasmUrl);
+      const wasmBinary = await wasmResponse.arrayBuffer();
+
+      const jsResponse = await fetch(jsUrl);
+      const moduleScript = await jsResponse.text();
 
       return new Promise<void>((resolve) => {
         const Module = {
@@ -47,6 +51,32 @@ function initializeModule(): Promise<void> {
   }
   return moduleLoadPromise;
 }
+
+// let moduleLoadPromise: Promise<void>;
+
+// function initializeModule(): Promise<void> {
+//   // TODO: Browser handling (Deno)
+//   if (!moduleLoadPromise) {
+//     moduleLoadPromise = (async () => {
+//       const wasmBinary = await Deno.readFile('bloom_filter.wasm');
+//       const moduleScript = await Deno.readTextFile('bloom_filter.js');
+
+//       return new Promise<void>((resolve) => {
+//         const Module = {
+//           wasmBinary,
+//           onRuntimeInitialized: () => {
+//             (globalThis as any).Module = Module;
+//             resolve();
+//           },
+//         };
+
+//         const runScript = new Function('Module', moduleScript);
+//         runScript(Module);
+//       });
+//     })();
+//   }
+//   return moduleLoadPromise;
+// }
 
 export class BloomFilter {
   private ptr: number;

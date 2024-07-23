@@ -1,44 +1,42 @@
-#ifndef BLOOMFILTER_H
-#define BLOOMFILTER_H
+#ifndef BLOOM_FILTER_2_H
+#define BLOOM_FILTER_2_H
 
 #include <vector>
 #include <string>
-#include <cmath>
 #include <cstdint>
-#include <iostream>
-
-class BitField
-{
-private:
-    std::vector<bool> buffer;
-
-public:
-    BitField(size_t size);
-    size_t bitSize() const;
-    const std::vector<bool> &getBuffer() const;
-    void setBuffer(const std::vector<bool> &newBuffer);
-    bool get(size_t idx) const;
-    void set(size_t idx, bool value);
-    void clear();
-};
 
 class BloomFilter
 {
 private:
-    BitField filter;
-    std::vector<uint32_t> seeds;
-    int numHashes;
+    std::vector<uint64_t> bits;
+    std::vector<uint32_t> _seeds;
+    size_t _numHashes;
+    size_t _size; // Total number of bits
+
+    static size_t calculateOptimalM(size_t size, double fpr);
+    static size_t calculateOptimalK(size_t size, size_t m);
+    uint32_t hashString(const std::string &value, uint32_t seed) const;
+    mutable std::string debugLog;
+    void setBit(size_t index);
+    bool getBit(size_t index) const;
 
 public:
-    BloomFilter(size_t size, double fpr, size_t m = 0, size_t k = 0, size_t maxHashes = 0);
-    static size_t calculateM(size_t size, double fpr);
-    static int calculateK(size_t size, size_t m, size_t maxHashes);
+    BloomFilter(size_t size, double fpr = 0.01, size_t maxHashes = 0);
     void add(const std::string &value);
-    bool possiblyContains(const std::string &value) const;
+    bool has(const std::string &value) const;
     void clear();
+    double fillRate() const;
+    size_t byteSize() const;
     std::string serialize() const;
-    void deserialize(const std::string &data);
-    void printBuffer() const;
+    static BloomFilter deserialize(const std::string &serialized);
+    std::string getFilterInfo() const;
+    std::string getDetailedInfo() const;
+    std::string getHashInfo(const std::string &value) const;
+    std::string debugInfo() const;
+    std::string debugAdd(const std::string &value);
+    std::string debugHas(const std::string &value) const;
+    std::string getDebugLog() const { return debugLog; }
+    size_t getNumberOfHashes() const { return _numHashes; }
 };
 
-#endif // BLOOMFILTER_H
+#endif
