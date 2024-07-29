@@ -370,14 +370,14 @@ export class Vertex implements Comparable {
     for (const [fieldName] of mutationPackIter(pack)) {
       this._cachedVertSetsByField.delete(fieldName);
     }
-    const result = this._dispatchMutationCallback(pack);
+    // const result = this._dispatchMutationCallback(pack);
     // if (this.isLocal || !this.graph.sharedQueriesManager.notDeleted.isLoading) {
-    this._runFieldTriggers(pack);
+    // this._runFieldTriggers(pack);
     // }
     // for (const [fieldName] of mutationPackIter(pack)) {
     //   this._cachedVertSetsByField.delete(fieldName);
     // }
-    return result;
+    // return result;
   }
 
   private _dispatchMutationCallback(pack: MutationPack): MutationPack {

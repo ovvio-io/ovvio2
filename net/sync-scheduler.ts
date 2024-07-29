@@ -17,7 +17,8 @@ import { RepositoryType } from '../repo/repo.ts';
 import { SyncMessage, SyncValueType } from './message.ts';
 import { sendJSONToURL } from './rest-api.ts';
 
-const K_MAX_REQ_BATCH = 10;
+const K_MAX_REQ_BATCH = 3;
+const K_MAX_CONNECTIONS = 30;
 
 export interface SyncConfig {
   minSyncFreqMs: number;
@@ -83,7 +84,7 @@ export class SyncScheduler {
   private readonly _syncFreqAvg: MovingAverage;
   private _pendingRequests: Map<SyncPriority, PendingSyncRequest[]>;
   private _intervalId: number;
-  private _fetchInProgress = false;
+  private _fetchCount = 0;
 
   constructor(
     readonly url: string,
@@ -95,7 +96,7 @@ export class SyncScheduler {
       syncConfigGetCycles(kSyncConfigClient) * 2,
     );
     this._pendingRequests = new Map();
-    this._intervalId = setInterval(() => this.sendPendingRequests(), 200);
+    this._intervalId = setInterval(this.sendPendingRequests.bind(this), 200);
   }
 
   get syncCycles(): number {
@@ -131,7 +132,7 @@ export class SyncScheduler {
   }
 
   private async sendPendingRequests(): Promise<void> {
-    if (this._fetchInProgress) {
+    if (this._fetchCount >= K_MAX_CONNECTIONS) {
       return;
     }
     const pendingRequests: PendingSyncRequest[] = [];
@@ -161,7 +162,7 @@ export class SyncScheduler {
 
     let respText: string | undefined;
     try {
-      this._fetchInProgress = true;
+      ++this._fetchCount;
       const start = performance.now();
       const resp = await sendJSONToURL(
         this.url,
@@ -191,11 +192,11 @@ export class SyncScheduler {
         trace: e.stack,
         url: this.url,
       });
-      this._fetchInProgress = false;
+      --this._fetchCount;
     }
 
     if (!respText) {
-      this._fetchInProgress = false;
+      --this._fetchCount;
       pendingRequests.forEach((r) => r.reject(serviceUnavailable()));
       return;
     }
@@ -231,7 +232,7 @@ export class SyncScheduler {
       pendingRequests.forEach((r) => r.reject(serviceUnavailable()));
       return;
     } finally {
-      this._fetchInProgress = false;
+      --this._fetchCount;
     }
   }
 }

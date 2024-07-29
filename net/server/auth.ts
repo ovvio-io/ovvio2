@@ -267,9 +267,9 @@ export class AuthEndpoint implements Endpoint {
         repo.headForKey(session.id),
       );
       // Let the updated session time to replicate
-      if (!isDevelopmentBuild()) {
-        await sleep(3 * kSecondMs);
-      }
+      // if (!isDevelopmentBuild()) {
+      //   await sleep(3 * kSecondMs);
+      // }
       // userRecord.set('lastLoggedIn', new Date());
       // repo.setValueForKey(userKey, userRecord);
       return this.redirectHome(services);

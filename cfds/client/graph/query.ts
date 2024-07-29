@@ -3,9 +3,9 @@ import { GraphManager } from './graph-manager.ts';
 import { GroupId, VertexSource, VertexSourceEvent } from './vertex-source.ts';
 import { Vertex } from './vertex.ts';
 import { VertexManager } from './vertex-manager.ts';
-import { MutationPack, mutationPackHasField } from './mutations.ts';
+import { MutationPack } from './mutations.ts';
 import { QueryStorage } from './query-storage.ts';
-import { CoreValue, Equatable } from '../../../base/core-types/base.ts';
+import { CoreValue } from '../../../base/core-types/base.ts';
 import {
   CancellablePromise,
   CoroutineQueue,
@@ -23,6 +23,9 @@ import { assert, notReached } from '../../../base/error.ts';
 import { coreValueCompare } from '../../../base/core-types/comparable.ts';
 import { unionIter } from '../../../base/common.ts';
 import { Emitter } from '../../../base/emitter.ts';
+import { BloomFilter } from '../../../base/bloom.ts';
+
+const HAS_FILTER_FPR = 0.01;
 
 export type Predicate<IT extends Vertex = Vertex, OT extends IT = IT> =
   | ((vertex: IT) => boolean)
@@ -114,6 +117,9 @@ export class Query<
   private _attached = false;
   private _proxy: typeof this;
   private _cachedGroups: GroupId<GT>[] | undefined;
+  private _bloomFilter: BloomFilter;
+  private _bloomFilterSize: number;
+  private _bloomFilterCount = 0;
 
   /**
    * A single use async query for the times you only need a one-off and don't
@@ -227,7 +233,7 @@ export class Query<
     this._vertexDeletedListener = (key) => this.vertexDeleted(key);
     // this._resultKeys = new Set();
     this._results = new Map();
-    this._clientsNotifyTimer = new SimpleTimer(300, false, () =>
+    this._clientsNotifyTimer = new SimpleTimer(500, false, () =>
       this._notifyQueryChanged(),
     );
     this._isLoading = true;
@@ -251,6 +257,11 @@ export class Query<
     this._contentSensitive = opts?.contentSensitive === true;
     this._waitForSource = opts?.waitForSource === true;
     this._proxy = new Proxy(this, {});
+    this._bloomFilter = new BloomFilter({
+      size: 1000,
+      fpr: HAS_FILTER_FPR,
+    });
+    this._bloomFilterSize = 1000;
   }
 
   protected suspend(): void {
@@ -405,7 +416,11 @@ export class Query<
   }
 
   hasVertex(key: string): boolean {
-    return this.source.hasVertex(key) && this.hasVertexInStorage(key);
+    return (
+      this._bloomFilter.has(key) &&
+      this.hasVertexInStorage(key) &&
+      this.source.hasVertex(key)
+    );
   }
 
   private hasVertexInStorage(key: string): boolean {
@@ -534,6 +549,19 @@ export class Query<
     this._cachedGroups = undefined;
   }
 
+  private _rebuildBloomFilter(): void {
+    this._bloomFilterSize *= 10;
+    this._bloomFilter = new BloomFilter({
+      size: this._bloomFilterSize,
+      fpr: HAS_FILTER_FPR,
+    });
+    this._bloomFilterCount = 0;
+    for (const mgr of this.results) {
+      this._bloomFilter.add(mgr.key);
+      ++this._bloomFilterCount;
+    }
+  }
+
   private vertexChanged(key: string, pack: MutationPack): void {
     const sourceGID = this._sourceGroupId;
     if (sourceGID && !this.source.keyInGroup(key, sourceGID)) {
@@ -580,6 +608,10 @@ export class Query<
       // TODO: Wrap in a micro task timer to avoid timing issues around
       // coroutine cancellation. This is currently not an issue since we're
       // using cancelImmediately() rather than cancel().
+      if (++this._bloomFilterCount >= this._bloomFilterSize) {
+        this._rebuildBloomFilter();
+      }
+      this._bloomFilter.add(key);
       this.emit('vertex-changed', key, pack);
     } else if (wasInSourceKeys) {
       // TODO: Wrap in a micro task timer to avoid timing issues around
@@ -593,22 +625,22 @@ export class Query<
     // ) {
     //   debugger;
     // }
-    if (wasInSourceKeys !== this.hasVertex(key) && shouldNotify) {
-      // console.log(
-      //   `${performance.now()} Query ${this.name} changed. Count = ${
-      //     this.count
-      //   }, group count = ${this.groupCount}`
-      // );
-      this._clientsNotifyTimer.schedule();
-    } else if (
-      wasInSourceKeys &&
-      this._contentSensitive &&
-      (!this._contentFields ||
-        this._contentFields.length <= 0 ||
-        mutationPackHasField(pack, ...this._contentFields))
-    ) {
-      this._clientsNotifyTimer.schedule();
-    }
+    // if (wasInSourceKeys !== this.hasVertex(key) && shouldNotify) {
+    //   // console.log(
+    //   //   `${performance.now()} Query ${this.name} changed. Count = ${
+    //   //     this.count
+    //   //   }, group count = ${this.groupCount}`
+    //   // );
+    //   this._clientsNotifyTimer.schedule();
+    // } else if (
+    //   wasInSourceKeys &&
+    //   this._contentSensitive &&
+    //   (!this._contentFields ||
+    //     this._contentFields.length <= 0 ||
+    //     mutationPackHasField(pack, ...this._contentFields))
+    // ) {
+    //   this._clientsNotifyTimer.schedule();
+    // }
   }
 
   private vertexDeleted(key: string): void {

@@ -272,8 +272,8 @@ export class GraphManager
     }
 
     const repo = plumbing.repo;
-    plumbing.loadingPromise = MultiSerialScheduler.get('repoLoad').run(
-      async () => {
+    plumbing.loadingPromise = //MultiSerialScheduler.get('repoLoad').run(
+      (async () => {
         if (backup) {
           const commits = await backup.loadCommits(id);
           if (commits instanceof Array) {
@@ -321,43 +321,41 @@ export class GraphManager
         // if (Repository.parseId(id)[0] === 'events') {
         //   this.syncRepository(id);
         // }
-      },
-    );
+      })();
     return plumbing.loadingPromise;
   }
 
   async syncRepository(id: string): Promise<void> {
     const plumbing = this.plumbingForRepository(id);
     if (!plumbing.syncPromise) {
-      plumbing.syncPromise = SerialScheduler.get('RepoSync')
-        .run(async () => {
+      plumbing.syncPromise = //SerialScheduler.get('RepoSync').run(
+        (async () => {
           const client = plumbing.client;
           await this.loadRepository(id);
           if (client && client.isOnline) {
             await client.sync();
-            // if (id === Repository.sysDirId) {
-            //   for (const key of plumbing.repo.keys()) {
-            //     this.getVertexManager(key).touch();
-            //   }
-            // } else {
-            //   // Load all keys from this repo
-            //   await CoroutineScheduler.sharedScheduler().map(
-            //     slices(plumbing.repo.keys(), 10),
-            //     (keys) => {
-            //       for (const k of keys) {
-            //         this.getVertexManager(k).touch();
-            //       }
-            //     },
-            //   );
-            // }
+            if (id === Repository.sysDirId) {
+              for (const key of plumbing.repo.keys()) {
+                this.getVertexManager(key).touch();
+              }
+            } else {
+              // Load all keys from this repo
+              // await CoroutineScheduler.sharedScheduler().forEach(
+              //   slices(plumbing.repo.keys(), 10),
+              //   (keys) => {
+              //     for (const k of keys) {
+              //       this.getVertexManager(k).touch();
+              //     }
+              //   },
+              // );
+            }
             plumbing.repo.allowMerge = true;
             plumbing.syncFinished = true;
             client.ready = true;
             client.startSyncing();
             localStorage[`syncFinished:${Repository.normalizeId(id)}`] = true;
           }
-        })
-        .finally(() => (plumbing.syncPromise = undefined));
+        })().finally(() => (plumbing.syncPromise = undefined));
     }
     return plumbing.syncPromise;
   }

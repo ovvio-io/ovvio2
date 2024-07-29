@@ -47,7 +47,7 @@ interface BaseServerContext {
   readonly dir: string;
   readonly replicas: string[];
   readonly port: number;
-  readonly silent?: boolean;
+  readonly verbose?: boolean;
   readonly sesRegion?: string;
   readonly serverProcessIndex: number;
   readonly serverProcessCount: number;
@@ -183,10 +183,11 @@ export class Server {
           default: [],
           description: 'A base64 url encoded JSON array of replicas',
         })
-        .option('silent', {
+        .option('verbose', {
+          alias: 'v',
           type: 'boolean',
           default: false,
-          description: 'Disables metric logging to stdout',
+          description: 'Enable metric logging to stdout',
         })
         .option('dir', {
           alias: 'd',
@@ -227,7 +228,7 @@ export class Server {
       new JSONLogStream(path.join(dir, `log-${serverProcessIndex}.jsonl`)),
       // prometeusLogStream,
     ];
-    if (args?.silent !== true) {
+    if (args?.verbose) {
       logStreams.splice(0, 0, new ConsoleLogStream());
     }
     setGlobalLoggerStreams(logStreams);
@@ -256,7 +257,7 @@ export class Server {
       serverProcessCount,
       email: new EmailService(sesRegion),
       logger: newLogger(logStreams),
-      silent: args?.silent === true,
+      verbose: args?.verbose === true,
       staticAssets,
       sesRegion,
     } as ServerContext;
@@ -483,7 +484,7 @@ export class Server {
       },
       this.processRequest.bind(this),
     );
-    if (this._baseContext.silent === true) {
+    if (this._baseContext.verbose === true) {
       console.log('STARTED');
     }
     sleep(kSecondMs).then(() => {

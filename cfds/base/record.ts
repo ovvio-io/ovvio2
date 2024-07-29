@@ -373,6 +373,7 @@ export class Record implements ReadonlyRecord, Encodable {
 
   lock(): void {
     this._locked = true;
+    this.checksum; // Force calculate checksum
   }
 
   unlock(): void {

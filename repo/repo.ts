@@ -101,6 +101,7 @@ export class Repository<
   >;
   private readonly _cachedCommitsPerUser: Map<string | undefined, string[]>;
   private readonly _commitIsCorruptedResult: Map<string, boolean>;
+  private readonly _cachedCommitsWithRecord: Set<string>;
 
   allowMerge = true;
 
@@ -146,6 +147,7 @@ export class Repository<
     this._pendingMergePromises = new Map();
     this._cachedCommitsPerUser = new Map();
     this._commitIsCorruptedResult = new Map();
+    this._cachedCommitsWithRecord = new Set();
   }
 
   static id(type: RepositoryType, id: string): string {
@@ -589,6 +591,9 @@ export class Repository<
   }
 
   hasRecordForCommit(c: Commit | string): boolean {
+    if (this._cachedCommitsWithRecord.has(typeof c === 'string' ? c : c.id)) {
+      return true;
+    }
     if (typeof c === 'string') {
       if (!this.hasCommit(c)) {
         return false;
@@ -596,11 +601,17 @@ export class Repository<
       c = this.getCommit(c);
     }
     if (commitContentsIsRecord(c.contents)) {
+      this._cachedCommitsWithRecord.add(c.id);
       return true;
     }
-    return (
-      this.hasRecordForCommit(c.contents.base) && !this.commitIsCorrupted(c)
-    );
+    if (
+      this.hasRecordForCommit(c.contents.base)
+      //&& !this.commitIsCorrupted(c)
+    ) {
+      this._cachedCommitsWithRecord.add(c.id);
+      return true;
+    }
+    return false;
   }
 
   commitIsCorrupted(c: Commit): boolean {
@@ -721,6 +732,7 @@ export class Repository<
           // result.patch(contents.edit.changes);
           // assert(result.checksum === contents.edit.dstChecksum);
         }
+        result.lock();
         this._cachedRecordForCommit.set(c.id, result);
       }
       return readonly ? result : result.clone();

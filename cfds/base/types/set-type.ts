@@ -49,13 +49,13 @@ export class SetTypeOperations extends CoreTypeOperations<
   }
 
   fillRefs(refs: Set<string>, value: Set<ConcreteCoreValue>): void {
-    if (this.isRef && value && value instanceof Set) {
-      for (const val of value) {
-        if (typeof val === 'string') {
-          refs.add(val);
-        }
-      }
-    }
+    // if (this.isRef && value && value instanceof Set) {
+    //   for (const val of value) {
+    //     if (typeof val === 'string') {
+    //       refs.add(val);
+    //     }
+    //   }
+    // }
   }
 
   rewriteRefs(

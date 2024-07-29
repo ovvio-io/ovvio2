@@ -575,36 +575,36 @@ export class VertexManager<V extends Vertex = Vertex>
   ): void {
     mutations = mutationPackOptimize(mutations);
     const vertex = this.getVertex();
-    const addedEdges: Edge[] = [];
-    const removedEdges: Edge[] = [];
+    // const addedEdges: Edge[] = [];
+    // const removedEdges: Edge[] = [];
     this._cachedFieldProxies.clear();
     // Update our graph on ref changes
-    for (const [prop, local, oldValue] of mutationPackIter(mutations)) {
-      if (prop === VERT_PROXY_CHANGE_FIELD) {
-        continue;
-      }
-      const newValue = vertex.valueForRefCalc(prop as keyof Vertex);
-      if (newValue === kNoRefsValue) {
-        continue;
-      }
-      const newRefs = extractFieldRefs(newValue, true);
-      const oldRefs = extractFieldRefs(oldValue as any, true);
-      if (oldRefs.size > 0 || newRefs.size > 0) {
-        const graph = this.graph;
-        const adjList = graph.adjacencyList;
-        const addedRefs = SetUtils.subtract(newRefs, oldRefs);
-        const removedRefs = SetUtils.subtract(oldRefs, newRefs);
-        const srcKey = this.key;
-        for (const dstKey of addedRefs) {
-          adjList.addEdge(srcKey, dstKey, prop);
-          addedEdges.push([dstKey, prop]);
-        }
-        for (const dstKey of removedRefs) {
-          adjList.deleteEdge(srcKey, dstKey, prop);
-          removedEdges.push([dstKey, prop]);
-        }
-      }
-    }
+    // for (const [prop, local, oldValue] of mutationPackIter(mutations)) {
+    //   if (prop === VERT_PROXY_CHANGE_FIELD) {
+    //     continue;
+    //   }
+    // const newValue = vertex.valueForRefCalc(prop as keyof Vertex);
+    // if (newValue === kNoRefsValue) {
+    //   continue;
+    // }
+    // const newRefs = extractFieldRefs(newValue, true);
+    // const oldRefs = extractFieldRefs(oldValue as any, true);
+    // if (oldRefs.size > 0 || newRefs.size > 0) {
+    //   const graph = this.graph;
+    //   const adjList = graph.adjacencyList;
+    //   const addedRefs = SetUtils.subtract(newRefs, oldRefs);
+    //   const removedRefs = SetUtils.subtract(oldRefs, newRefs);
+    //   const srcKey = this.key;
+    //   for (const dstKey of addedRefs) {
+    //     adjList.addEdge(srcKey, dstKey, prop);
+    //     addedEdges.push([dstKey, prop]);
+    //   }
+    //   for (const dstKey of removedRefs) {
+    //     adjList.deleteEdge(srcKey, dstKey, prop);
+    //     removedEdges.push([dstKey, prop]);
+    //   }
+    // }
+    // }
     // Dynamic fields support
     if (dynamicFields) {
       mutations = this.mutationsForDynamicFields(mutations, dynamicFields);

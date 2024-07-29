@@ -49,12 +49,12 @@ export class JSONLogFile {
   }
 
   close(): Promise<void> {
-    return this._scheduler.run(() => {
+    return this._scheduler.run(async () => {
       if (this._file) {
+        await this._file.sync();
         this._file.close();
         this._file = undefined;
       }
-      return Promise.resolve();
     });
   }
 
@@ -70,7 +70,7 @@ export class JSONLogFile {
         'Attempting to append to log before initial scan completed',
       );
       const encodedEntries =
-        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+        '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
       const encodedBuf = new TextEncoder().encode(encodedEntries);
       let bytesWritten = 0;
       await file.seek(0, Deno.SeekMode.End);
@@ -78,6 +78,7 @@ export class JSONLogFile {
         const arr = encodedBuf.subarray(bytesWritten);
         bytesWritten += await file.write(arr);
       }
+      // await file.syncData();
     });
   }
 
@@ -96,7 +97,7 @@ export class JSONLogFile {
       'Attempting to append to log before initial scan completed',
     );
     const encodedEntries =
-      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n') + '\n';
+      '\n' + entries.map((obj) => JSON.stringify(obj)).join('\n\n') + '\n';
     const encodedBuf = new TextEncoder().encode(encodedEntries);
     let bytesWritten = 0;
     file.seekSync(0, Deno.SeekMode.End);
@@ -104,6 +105,7 @@ export class JSONLogFile {
       const arr = encodedBuf.subarray(bytesWritten);
       bytesWritten += file.writeSync(arr);
     }
+    // file.syncDataSync();
   }
 
   *scan(progressCallback?: ProgressUpdateCallback): Generator<JSONObject> {

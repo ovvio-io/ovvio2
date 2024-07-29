@@ -148,9 +148,7 @@ export class IDBRepositoryBackup {
                   if (IDBRepositoryBackup._didLogout) {
                     return;
                   }
-                  await store.put(
-                    JSONCyclicalEncoder.serialize(c) as EncodedCommit,
-                  );
+                  await store.put(c.toJS() as EncodedCommit);
                   this._persistedCommitIds.add(c.id);
                   ++result;
                 }

@@ -36,6 +36,8 @@ const REPO_DIR_EXT = '.repo';
 interface Arguments {
   path: string;
   tenant: string;
+  src: string;
+  dst: string;
 }
 
 function populateRepoFromLog(
@@ -183,6 +185,57 @@ function dedupDir(dirPath: string): void {
   }
 }
 
+function unionFile(srcPath: string, dstFile: JSONLogFile): void {
+  const srcFile = new JSONLogFile(srcPath, false);
+  const progressBar = new ProgressIndicator(ProgressIndicatorType.PERCENT);
+  console.log(`Scanning ${srcPath}...`);
+  let pendingEntries: JSONObject[] = [];
+  for (const json of srcFile.open((value) => progressBar.update(1, value))) {
+    pendingEntries.push(json);
+    if (pendingEntries.length >= 50) {
+      dstFile.appendSync(pendingEntries);
+      pendingEntries = [];
+    }
+  }
+  if (pendingEntries.length > 0) {
+    dstFile.appendSync(pendingEntries);
+  }
+  srcFile.close();
+}
+
+function unionRepo(repoPath: string, dstFile: JSONLogFile): void {
+  for (const info of Deno.readDirSync(repoPath)) {
+    if (info.isFile && info.name.endsWith('.jsonl')) {
+      unionFile(path.join(repoPath, info.name), dstFile);
+    }
+  }
+}
+
+async function unionDir(
+  dirPath: string,
+  dst: string | JSONLogFile,
+): Promise<void> {
+  if (typeof dst === 'string') {
+    dst = new JSONLogFile(dst, true);
+    for (const _ of dst.open()) {
+      // Force open the dst log
+    }
+  }
+  for (const info of Deno.readDirSync(dirPath)) {
+    if (info.isDirectory) {
+      const subDir = path.join(dirPath, info.name);
+      if (info.name.endsWith('.repo')) {
+        unionRepo(subDir, dst);
+      } else {
+        unionDir(subDir, dst);
+      }
+    }
+  }
+  await dst.close();
+  console.log(`Done`);
+  Deno.exit(0);
+}
+
 async function sendUsageReport(
   tenantPath: string,
   domains: string[],
@@ -253,6 +306,13 @@ export function main(): void {
       handler: (args: Arguments) => {
         const dirPath = toAbsolutePath(args.path);
         dedupDir(dirPath);
+      },
+    })
+    .command({
+      command: 'union <src> <dst>',
+      desc: 'Creates a union repo of all repos from src to dst',
+      handler: (args: Arguments) => {
+        unionDir(toAbsolutePath(args.src), toAbsolutePath(args.dst));
       },
     })
     .command({

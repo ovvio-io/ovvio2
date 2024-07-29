@@ -279,6 +279,12 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       result = new Commit({ decoder, orgId });
       result._frozen = true;
       FROZEN_COMMITS.set(id, result);
+      if (
+        ((obj.c as ReadonlyJSONObject).r as ReadonlyJSONObject | undefined)
+          ?.cs !== undefined
+      ) {
+        SERIALIZED_COMMITS.set(id, obj);
+      }
     }
     // assert(
     //   !result.orgId || result.orgId === orgId,
