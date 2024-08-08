@@ -51,29 +51,24 @@ function initializeModule(): Promise<void> {
   }
   return moduleLoadPromise;
 }
-
 export class BloomFilter {
   private ptr: number;
   private static create_bloom_filter: (size: number, fpr: number) => number;
   private static add_to_filter: (ptr: number, str: string) => void;
   private static check_in_filter: (ptr: number, str: string) => number;
   private static delete_bloom_filter: (ptr: number) => void;
-  private static get_filter_info: (ptr: number) => string;
-  private static get_detailed_info: (ptr: number) => string;
-  private static get_hash_info: (ptr: number, value: string) => string;
-  private static get_debug_log: (ptr: number) => string;
-
   static async create(size: number, fpr: number): Promise<BloomFilter> {
-    if (size <= 0 || fpr <= 0 || fpr >= 1) {
-      console.warn('Invalid parameters. Adjusting to minimum values.');
-      size = Math.max(1, size);
-      fpr = Math.max(0.000001, Math.min(0.999999, fpr));
-    }
     await initializeModule();
-    if (size === 0) {
-      size = 1;
-      fpr = 1;
+    await this.initFunctions();
+
+    const ptr = this.create_bloom_filter(size, fpr);
+    if (ptr === 0) {
+      throw new Error('Failed to create BloomFilter');
     }
+    return new BloomFilter(ptr);
+  }
+
+  private static async initFunctions() {
     if (!this.create_bloom_filter) {
       this.create_bloom_filter = Module.cwrap('create_bloom_filter', 'number', [
         'number',
@@ -90,26 +85,7 @@ export class BloomFilter {
       this.delete_bloom_filter = Module.cwrap('delete_bloom_filter', 'void', [
         'number',
       ]);
-      this.get_filter_info = Module.cwrap('get_filter_info', 'string', [
-        'number',
-      ]);
-      this.get_detailed_info = Module.cwrap('get_detailed_info', 'string', [
-        'number',
-      ]);
-      this.get_hash_info = Module.cwrap('get_hash_info', 'string', [
-        'number',
-        'string',
-      ]);
-      this.get_debug_log = Module.cwrap('get_debug_log', 'string', ['number']);
     }
-
-    const ptr = this.create_bloom_filter(size, fpr);
-    if (ptr === 0) {
-      console.error('Failed to create BloomFilter');
-    }
-    // console.log('Debug log after creation:');
-    // console.log(this.get_debug_log(ptr));
-    return new BloomFilter(ptr);
   }
 
   constructor(ptr: number) {
@@ -118,31 +94,14 @@ export class BloomFilter {
 
   add(value: string): void {
     BloomFilter.add_to_filter(this.ptr, value);
-    // console.log(`Debug log after adding '${value}':`);
-    // console.log(BloomFilter.get_debug_log(this.ptr));
   }
 
   has(value: string): boolean {
-    const result = BloomFilter.check_in_filter(this.ptr, value) !== 0;
-    // console.log(`Debug log after checking for '${value}':`);
-    // console.log(BloomFilter.get_debug_log(this.ptr));
-    return result;
+    return BloomFilter.check_in_filter(this.ptr, value) !== 0;
   }
 
   delete(): void {
     BloomFilter.delete_bloom_filter(this.ptr);
-  }
-
-  getFilterInfo(): string {
-    return BloomFilter.get_filter_info(this.ptr);
-  }
-
-  getDetailedInfo(): string {
-    return BloomFilter.get_detailed_info(this.ptr);
-  }
-
-  getHashInfo(value: string): string {
-    return BloomFilter.get_hash_info(this.ptr, value);
   }
 }
 
@@ -233,9 +192,6 @@ async function runTests() {
         addedItems.add(item);
       }
 
-      // Verify bits are set
-      console.log(detailedFilter.getFilterInfo());
-
       let falsePositives = 0;
       const testCount = 10000;
       for (let i = 0; i < testCount; i++) {
@@ -245,7 +201,6 @@ async function runTests() {
           falsePositives++;
           if (falsePositives <= 5) {
             console.log(`False positive found: ${testItem}`);
-            console.log(detailedFilter.getHashInfo(testItem));
           }
         }
       }
