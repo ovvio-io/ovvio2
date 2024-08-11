@@ -5,7 +5,8 @@
   "cSpell.words": [
     "Emscripten",
     "Kanban",
-    "ovvio"
+    "ovvio",
+    "llvmlibc"
   ],
   "editor.formatOnSave": true,
   "prettier.bracketSameLine": true,
@@ -50,7 +51,76 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "algorithm": "cpp",
-    "memory": "cpp"
+    "memory": "cpp",
+    "__hash_table": "cpp",
+    "__node_handle": "cpp",
+    "bitset": "cpp",
+    "charconv": "cpp",
+    "deque": "cpp",
+    "forward_list": "cpp",
+    "optional": "cpp",
+    "ostream": "cpp",
+    "print": "cpp",
+    "queue": "cpp",
+    "stack": "cpp",
+    "unordered_map": "cpp",
+    "chrono": "c",
+    "random": "cpp"
   },
-  "C_Cpp.errorSquiggles": "disabled"
+  // Enable clang-tidy for code analysis
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+  // Run code analysis automatically
+  "C_Cpp.codeAnalysis.runAutomatically": true,
+  // Use Google style as fallback for clang-format
+  "C_Cpp.clang_format_fallbackStyle": "Google",
+  // Use default IntelliSense engine
+  "C_Cpp.intelliSenseEngine": "default",
+  // C++ specific settings
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true
+  },
+  // Use clang-format for C++ formatting
+  "C_Cpp.formatting": "clangFormat",
+  // Path to clang-tidy executable
+  "C_Cpp.codeAnalysis.clangTidy.path": "/opt/homebrew/opt/llvm/bin/clang-tidy",
+  // Path to clang-format executable
+  "C_Cpp.clang_format_path": "/opt/homebrew/opt/llvm/bin/clang-format",
+  // Path to the C++ compiler
+  "C_Cpp.default.compilerPath": "/opt/homebrew/opt/llvm/bin/clang++",
+  // Include paths for headers
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/**",
+    "/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
+    "/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1"
+  ],
+  /**
+   * C_Cpp.default.includePath - Tells the compiler and tools like clang-tidy where to find header files.
+   * Helps distinguish between project headers, Emscripten headers, and system headers.
+   */
+  // Define Emscripten macro
+  "C_Cpp.default.defines": [
+    "EMSCRIPTEN"
+  ],
+
+  "C_Cpp.default.cppStandard": "c++20",
+
+  "C_Cpp.codeAnalysis.clangTidy.args": [
+    "--config-file=${workspaceFolder}/.clang-tidy",
+    "--system-headers=false",
+    "--extra-arg=-isystem/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
+    "--extra-arg=-isystem/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1"
+  ],
+    // // Compiler flags to help clang-tidy understand the project setup
+  "C_Cpp.default.compilerArgs": [
+    "-isystem/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
+    "-isystem/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1",
+    "-D__EMSCRIPTEN__"
+  ]
+  
+  /**
+   * C_Cpp.default.compilerArgs - Additional flags for the compiler:
+   * -isystem: Marks the following path as a system include directory, which affects how warnings are generated
+   * These flags help clang-tidy distinguish between your project headers and system/library headers
+   */
 }

@@ -21,14 +21,14 @@ class FalsePositiveRate {
 
 class BloomFilter {
  private:
-  std::vector<uint64_t> bits;
-  std::vector<uint32_t> _seeds;
-  size_t _numHashes;
-  size_t _size;  // Total number of bits
-  static size_t calculateOptimalM(size_t size, double fpr);
-  static size_t calculateOptimalK(size_t size, size_t m);
-  uint32_t hashString(const std::string& value, uint32_t seed) const;
-  mutable std::string debugLog;
+  std::vector<uint64_t> bits{};
+  std::vector<uint32_t> _seeds{};
+  size_t _numHashes{0};
+  size_t _size{0};
+  static size_t calculateOptNumHashes(size_t size, double fpr);
+  static size_t calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySize);
+  static uint32_t hashString(const std::string& value, uint32_t seed);
+  mutable std::string debugLog{};
   void setBit(size_t index);
   bool getBit(size_t index) const;
 
@@ -38,7 +38,6 @@ class BloomFilter {
   bool has(const std::string& value) const;
   void clear();
   double fillRate() const;
-  size_t byteSize() const;
   std::string serialize() const;
   static BloomFilter deserialize(const std::string& serialized);
   std::string getDebugLog() const { return debugLog; }

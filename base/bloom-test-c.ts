@@ -108,20 +108,20 @@ Deno.test('BloomFilter - huge difference between sets', async () => {
   await testSyncSets(setN, setM, fpr);
 });
 
-// Deno.test('BloomFilter - empty sets', async () => {
-//   const setN = new Set<string>();
-//   const setM = new Set<string>();
-//   const fpr = 0.04;
-//   await testSyncSets(setN, setM, fpr);
-// });
+Deno.test('BloomFilter - empty sets', async () => {
+  const setN = new Set<string>();
+  const setM = new Set<string>();
+  const fpr = 0.04;
+  await testSyncSets(setN, setM, fpr);
+});
 
-// Deno.test('BloomFilter - one empty set', async () => {
-//   const size = 1000;
-//   const setN = generateRandomSet(size);
-//   const setM = new Set<string>();
-//   const fpr = 0.04;
-//   await testSyncSets(setN, setM, fpr);
-// });
+Deno.test('BloomFilter - one empty set', async () => {
+  const size = 1000;
+  const setN = generateRandomSet(size);
+  const setM = new Set<string>();
+  const fpr = 0.04;
+  await testSyncSets(setN, setM, fpr);
+});
 
 Deno.test('BloomFilter - disjoint sets', async () => {
   const size = 100;

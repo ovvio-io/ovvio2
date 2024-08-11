@@ -20,7 +20,6 @@ async function testSyncSets(
 ): Promise<void> {
   const maxEntries = Math.max(setN.size, setM.size);
   const expectedCycles = calculateExpectedSyncCycles(fpr, maxEntries);
-
   console.log('Initial Sets:');
   console.log('Set N:', [...setN]);
   console.log('Set M:', [...setM]);

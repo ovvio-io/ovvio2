@@ -8,10 +8,10 @@ then
 fi
 
 # Compile C++ to WebAssembly
-emcc -std=c++17 -O3 -s WASM=1 \
+emcc -std=c++20 -O3 -s WASM=1 \
 -I. \
 -I../external \
--s EXPORTED_FUNCTIONS="['_create_bloom_filter', '_add_to_filter', '_check_in_filter', '_delete_bloom_filter']" \
+-s EXPORTED_FUNCTIONS="['_createBloomFilter', '_addToFilter', '_checkInFilter', '_deleteBloomFilter']" \
 -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" \
 -s ALLOW_MEMORY_GROWTH=1 \
 -s MAXIMUM_MEMORY=4GB \
