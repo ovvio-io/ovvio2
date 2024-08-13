@@ -5,8 +5,9 @@
   "cSpell.words": [
     "Emscripten",
     "Kanban",
-    "ovvio",
-    "llvmlibc"
+    "llvmlibc",
+    "opfs",
+    "ovvio"
   ],
   "editor.formatOnSave": true,
   "prettier.bracketSameLine": true,

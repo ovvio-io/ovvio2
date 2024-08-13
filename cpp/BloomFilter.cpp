@@ -2,6 +2,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>

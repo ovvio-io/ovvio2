@@ -70,7 +70,7 @@ export class IDBRepositoryBackup {
 
   constructor(
     readonly dbName: string,
-    readonly repo: Repository<MemRepoStorage>,
+    readonly repo: Repository<MemRepoStorage>
   ) {
     this._persistedCommitIds = new Set();
     this._backupTimer = new EaseInOutSineTimer(
@@ -97,7 +97,7 @@ export class IDBRepositoryBackup {
         }
       },
       true,
-      'IDB Background Save',
+      'IDB Background Save'
     ).schedule();
   }
 
@@ -118,7 +118,7 @@ export class IDBRepositoryBackup {
     }
 
     const newCommits = Array.from(
-      filterIterable(commits, (c) => !this._persistedCommitIds.has(c.id)),
+      filterIterable(commits, (c) => !this._persistedCommitIds.has(c.id))
     );
     if (!newCommits.length) {
       return Promise.resolve(0);
@@ -134,7 +134,7 @@ export class IDBRepositoryBackup {
       let result = 0;
       for (const chunk of slices(
         filterIterable(newCommits, (c) => !this._persistedCommitIds.has(c.id)),
-        50,
+        50
       )) {
         for (const c of chunk) {
           if (IDBRepositoryBackup._didLogout) {
@@ -149,7 +149,7 @@ export class IDBRepositoryBackup {
                     return;
                   }
                   await store.put(
-                    JSONCyclicalEncoder.serialize(c) as EncodedCommit,
+                    JSONCyclicalEncoder.serialize(c) as EncodedCommit
                   );
                   this._persistedCommitIds.add(c.id);
                   ++result;
@@ -166,7 +166,7 @@ export class IDBRepositoryBackup {
                 });
                 throw e;
               }
-            })(),
+            })()
           );
         }
       }
@@ -202,7 +202,7 @@ export class IDBRepositoryBackup {
         console.log(
           `Loading from IDB Backup took ${
             performance.now() - startTime
-          }ms for ${this.dbName}`,
+          }ms for ${this.dbName}`
         );
         const result: Commit[] = [];
         const [storageType, id] = Repository.parseId(repoId);
