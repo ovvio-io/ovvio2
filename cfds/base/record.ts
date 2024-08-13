@@ -31,6 +31,7 @@ import { DataType, kRecordIdField } from './scheme-types.ts';
 import {
   ChecksumEncoderOpts,
   MD5Checksum,
+  Murmur3Checksum,
 } from '../../base/core-types/encoding/checksum.ts';
 import { ReadonlyJSONObject } from '../../base/interfaces.ts';
 import { CoreValue, Encodable, Encoder } from '../../base/core-types/index.ts';
@@ -128,7 +129,7 @@ export class Record implements ReadonlyRecord, Encodable {
   get checksum(): string {
     this.normalize();
     if (this._checksum === undefined) {
-      const csEncoder = new MD5Checksum();
+      const csEncoder = new Murmur3Checksum();
       serialize(csEncoder, this._scheme.fields, this._data, checksumSerOptions);
       this._checksum = csEncoder.getOutput();
     }
@@ -325,6 +326,7 @@ export class Record implements ReadonlyRecord, Encodable {
     encoder.set('n', this._normalized);
     // if (this._checksum) {
     encoder.set('cs', this.checksum);
+    debugger;
     // }
   }
 
@@ -337,7 +339,7 @@ export class Record implements ReadonlyRecord, Encodable {
     this._normalized = decoder.get<boolean>('n') || false;
     this.normalize();
     this.assertValidData();
-    this._checksum = decoder.get('cs');
+    // this._checksum = decoder.get('cs');
   }
 
   toJS(local = false): ReadonlyJSONObject {

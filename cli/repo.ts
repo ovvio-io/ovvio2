@@ -191,11 +191,11 @@ function unionFile(srcPath: string, dstFile: JSONLogFile): void {
   console.log(`Scanning ${srcPath}...`);
   let pendingEntries: JSONObject[] = [];
   for (const json of srcFile.open((value) => progressBar.update(1, value))) {
-    pendingEntries.push(json);
-    if (pendingEntries.length >= 50) {
-      dstFile.appendSync(pendingEntries);
-      pendingEntries = [];
-    }
+    pendingEntries.push(Commit.fromJS('baluka', json).toJS());
+    // if (pendingEntries.length >= 50) {
+    //   dstFile.appendSync(pendingEntries);
+    //   pendingEntries = [];
+    // }
   }
   if (pendingEntries.length > 0) {
     dstFile.appendSync(pendingEntries);

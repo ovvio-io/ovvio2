@@ -4,7 +4,7 @@ import {
   Equatable,
   ReadonlyCoreObject,
 } from '../base/core-types/base.ts';
-import { Record } from '../cfds/base/record.ts';
+import { Document } from '../cfds/base/document.ts';
 import { Edit } from '../cfds/base/edit.ts';
 import {
   ConstructorDecoderConfig,
@@ -29,7 +29,7 @@ import { BloomFilter } from '../base/bloom.ts';
 export type CommitResolver = (commitId: string) => Commit;
 
 export interface RecordContents extends ReadonlyCoreObject {
-  readonly record: Record;
+  readonly record: Document;
 }
 
 export interface DeltaContents extends ReadonlyCoreObject {
@@ -47,8 +47,8 @@ export interface CommitConfig {
   id?: string;
   session: string;
   orgId: string;
-  key?: string | null;
-  contents: Record | CommitContents;
+  key: string;
+  contents: Document | CommitContents;
   parents?: string | Iterable<string>;
   ancestorsFilter: BloomFilter;
   ancestorsCount: number;
@@ -63,6 +63,7 @@ export interface CommitConfig {
 
 export interface CommitSerializeOptions {
   signed?: boolean;
+  local?: boolean;
 }
 
 const FROZEN_COMMITS = new Map<string, Commit>();
@@ -80,7 +81,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _buildVersion!: VersionNumber;
   private _id!: string;
   private _session!: string;
-  private _key: string | undefined;
+  private _key!: string;
   private _parents: string[] | undefined;
   private _ancestorsFilter?: BloomFilter;
   private _ancestorsCount?: number;
@@ -90,10 +91,10 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
   private _mergeBase?: string;
   private _mergeLeader?: string;
   private _revert?: string;
-  private _cachedJSON?: ReadonlyJSONObject;
   private _cachedChecksum?: string;
   private _frozen: boolean = false;
   private _connectionId = CONNECTION_ID;
+  private _age?: number;
 
   constructor(config: CommitConfig | CommitDecoderConfig) {
     if (isDecoderConfig(config)) {
@@ -108,7 +109,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       } else {
         parents = Array.from(parents);
       }
-      if (contents instanceof Record) {
+      if (contents instanceof Document) {
         contents = {
           record: contents,
         };
@@ -117,7 +118,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
       this._id = config.id || uniqueId();
       this._session = config.session;
       this.orgId = config.orgId;
-      this._key = config.key || undefined;
+      this._key = config.key;
       this._parents = Array.from(parents);
       this._ancestorsFilter = config.ancestorsFilter;
       this._ancestorsCount = config.ancestorsCount;
@@ -141,8 +142,8 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._id;
   }
 
-  get key(): string | null {
-    return this._key || null;
+  get key(): string {
+    return this._key;
   }
 
   get session(): string {
@@ -169,7 +170,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._contents;
   }
 
-  get record(): Record | undefined {
+  get record(): Document | undefined {
     const c = this.contents;
     return commitContentsIsRecord(c) ? c.record : undefined;
   }
@@ -222,12 +223,19 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     return this._connectionId === CONNECTION_ID;
   }
 
+  get age(): number | undefined {
+    return this._age;
+  }
+
+  set age(v: number) {
+    assert(this._age === undefined);
+    this._age = v;
+  }
+
   serialize(encoder: Encoder, opts?: CommitSerializeOptions): void {
     encoder.set('ver', this.buildVersion);
     encoder.set('id', this.id);
-    if (this.key) {
-      encoder.set('k', this.key);
-    }
+    encoder.set('k', this.key);
     encoder.set('s', this.session);
     encoder.set('ts', this.timestamp);
     encoder.set('org', this.orgId);
@@ -259,13 +267,16 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     if (this.connectionId) {
       encoder.set('cid', this.connectionId);
     }
+    if (opts?.local === true && this.age !== undefined) {
+      encoder.set('age', this.age);
+    }
   }
 
-  toJS(): ReadonlyJSONObject {
+  toJS(opts?: CommitSerializeOptions): ReadonlyJSONObject {
     const id = this.id;
     let result = SERIALIZED_COMMITS.get(id);
     if (!result) {
-      result = JSONCyclicalEncoder.serialize(this);
+      result = JSONCyclicalEncoder.serialize(this, opts);
       SERIALIZED_COMMITS.set(id, result);
     }
     return result;
@@ -302,7 +313,7 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     // );
     this._buildVersion = decoder.get<number>('ver')!;
     this._id = decoder.get<string>('id', uniqueId())!;
-    this._key = decoder.get<string | null>('k', null)!;
+    this._key = decoder.get<string>('k')!;
     this._session = decoder.get<string>('s', 'unknown-' + uniqueId())!;
     this._timestamp = decoder.get<Date>('ts', new Date())!;
     this._parents = decoder.get<string[]>('p');
@@ -317,9 +328,9 @@ export class Commit implements Encodable, Decodable, Equatable, Comparable {
     this._mergeBase = decoder.get<string | undefined>('mb');
     this._mergeLeader = decoder.get<string | undefined>('ml');
     this._revert = decoder.get<string | undefined>('revert');
-    this._cachedJSON = undefined;
     this._cachedChecksum = undefined;
     this._connectionId = decoder.get<string>('cid') || CONNECTION_ID;
+    this._age = decoder.get<number>('age');
   }
 
   isEqual(other: Commit): boolean {
@@ -344,7 +355,7 @@ export function commitContentsIsDelta(c: CommitContents): c is DeltaContents {
 }
 
 export function commitContentsIsRecord(c: CommitContents): c is RecordContents {
-  return c.record instanceof Record;
+  return c.record instanceof Document;
 }
 
 export function commitContentsSerialize(
@@ -361,7 +372,7 @@ export function commitContentsSerialize(
 
 export function commitContentsDeserialize(decoder: Decoder): CommitContents {
   if (decoder.has('r')) {
-    const record = new Record({ decoder: decoder.getDecoder('r') });
+    const record = new Document({ decoder: decoder.getDecoder('r') });
     record.lock();
     return {
       record: record,
