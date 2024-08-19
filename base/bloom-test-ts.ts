@@ -1,4 +1,5 @@
-import { assertEquals } from 'https://deno.land/std@0.200.0/assert/assert_equals.ts';
+// import { assertEquals } from 'https://deno.land/std@0.200.0/assert/assert_equals.ts';
+import { assertEquals } from 'std/assert/assert_equals.ts';
 import { BloomFilter, BloomFilterOptions } from './bloom.ts';
 
 function calculateExpectedSyncCycles(fpr: number, maxEntries: number): number {

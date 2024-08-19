@@ -2,6 +2,7 @@
 #define BLOOM_FILTER_2_H
 
 #include <cstdint>
+#include <msgpack.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -38,10 +39,11 @@ class BloomFilter {
   bool has(const std::string& value) const;
   void clear();
   double fillRate() const;
-  std::string serialize() const;
   static BloomFilter deserialize(const std::string& serialized);
   std::string getDebugLog() const { return debugLog; }
   size_t getNumberOfHashes() const { return _numHashes; }
+  msgpack::sbuffer serialize() const;
+  void deserialize(const char* data, size_t size);
 };
 
 #endif

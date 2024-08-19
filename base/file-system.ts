@@ -1,6 +1,5 @@
-import { readAll } from 'https://deno.land/std/io/read_all.ts';
+import { readAll } from 'std/io/read_all.ts';
 
-// Deno-specific type
 type DenoFileSystem = {
   type: 'deno';
   readFile: (path: string) => Promise<Uint8Array>;
@@ -8,7 +7,6 @@ type DenoFileSystem = {
   deleteFile: (path: string) => Promise<void>;
 };
 
-// OPFS-specific type
 type OPFSFileSystem = {
   type: 'opfs';
   root: FileSystemDirectoryHandle;
@@ -17,7 +15,6 @@ type OPFSFileSystem = {
   deleteFile: (path: string) => Promise<void>;
 };
 
-// Union type for FileSystem
 export type FileSystem = DenoFileSystem | OPFSFileSystem;
 
 const createDenoFileSystem = (): DenoFileSystem => ({
@@ -58,7 +55,7 @@ const createOPFSFileSystem = (
 });
 
 // Function to create the appropriate file system based on the environment
-const createFileSystem = async (): Promise<FileSystem> => {
+export const createFileSystem = async (): Promise<FileSystem> => {
   if (typeof Deno !== 'undefined') {
     return createDenoFileSystem();
   } else if (typeof navigator !== 'undefined' && 'storage' in navigator) {
@@ -70,7 +67,7 @@ const createFileSystem = async (): Promise<FileSystem> => {
 };
 
 // Helper function to perform operations based on the file system type
-const performFileOperation = async <T>(
+export const performFileOperation = async <T>(
   fs: FileSystem,
   denoOp: (fs: DenoFileSystem) => T | Promise<T>,
   opfsOp: (fs: OPFSFileSystem) => T | Promise<T>
@@ -81,5 +78,3 @@ const performFileOperation = async <T>(
     return opfsOp(fs);
   }
 };
-
-export { createFileSystem, performFileOperation };

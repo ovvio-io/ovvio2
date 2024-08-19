@@ -86,24 +86,6 @@ double BloomFilter::fillRate() const {
   return static_cast<double>(count) / (double)_size;
 }
 
-std::string BloomFilter::serialize() const {
-  std::ostringstream oss;
-  oss << _size << "|";
-  for (const auto& block : bits) {
-    for (int i = 0; i < 64; ++i) {
-      oss << ((block & (1ULL << i)) ? '1' : '0');
-    }
-  }
-  oss << "|";
-  for (size_t i = 0; i < _seeds.size(); ++i) {
-    if (i > 0) {
-      oss << ",";
-    }
-    oss << _seeds[i];
-  }
-  return oss.str();
-}
-
 size_t BloomFilter::calculateOptNumHashes(size_t size, double fpr) {
   if (size == 0 || fpr <= 0 || fpr >= 1) {
     return 1;
@@ -123,6 +105,32 @@ size_t BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySi
 
 std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr) {
   return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
+}
+msgpack::sbuffer BloomFilter::serialize() const {
+  msgpack::sbuffer buffer;
+  msgpack::packer<msgpack::sbuffer> pk(&buffer);
+
+  pk.pack_array(4);
+  pk.pack(_size);
+  pk.pack(_numHashes);
+  pk.pack(bits);
+  pk.pack(_seeds);
+
+  return buffer;
+}
+
+void BloomFilter::deserialize(const char* data, size_t size) {
+  msgpack::object_handle oh = msgpack::unpack(data, size);
+  msgpack::object obj = oh.get();
+
+  if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 4) {
+    throw std::runtime_error("Invalid serialized data");
+  }
+
+  obj.via.array.ptr[0].convert(_size);
+  obj.via.array.ptr[1].convert(_numHashes);
+  obj.via.array.ptr[2].convert(bits);
+  obj.via.array.ptr[3].convert(_seeds);
 }
 
 extern "C" {
@@ -152,5 +160,26 @@ void deleteBloomFilter(BloomFilter* filter) {
   // Using raw pointer for WebAssembly/Emscripten compatibility
   // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
   delete filter;
+}
+EMSCRIPTEN_KEEPALIVE
+const char* serializeBloomFilter(BloomFilter* filter, int* size) {
+  if (filter != nullptr) {
+    static msgpack::sbuffer serialized;
+    serialized = filter->serialize();
+    *size = static_cast<int>(serialized.size());
+    return serialized.data();
+  }
+  return nullptr;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void deserializeBloomFilter(BloomFilter* filter, const char* data, int size) {
+  if (filter != nullptr && data != nullptr && size > 0) {
+    try {
+      filter->deserialize(data, static_cast<size_t>(size));
+    } catch (const std::exception& e) {
+      // Handle deserialization error
+    }
+  }
 }
 }

@@ -93,7 +93,8 @@
   "C_Cpp.default.includePath": [
     "${workspaceFolder}/**",
     "/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
-    "/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1"
+    "/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1",
+    "/opt/homebrew/include" 
   ],
   /**
    * C_Cpp.default.includePath - Tells the compiler and tools like clang-tidy where to find header files.
@@ -110,12 +111,14 @@
     "--config-file=${workspaceFolder}/.clang-tidy",
     "--system-headers=false",
     "--extra-arg=-isystem/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
-    "--extra-arg=-isystem/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1"
+    "--extra-arg=-isystem/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1",
+    "--extra-arg=-isystem/opt/homebrew/include" 
   ],
     // // Compiler flags to help clang-tidy understand the project setup
   "C_Cpp.default.compilerArgs": [
     "-isystem/Users/amit-steiner/Documents/GitHub/ovvio2/emsdk/upstream/emscripten/cache/sysroot/include",
     "-isystem/opt/homebrew/Cellar/llvm/18.1.8/include/c++/v1",
+    "-isystem/opt/homebrew/include", 
     "-D__EMSCRIPTEN__"
   ]
   
