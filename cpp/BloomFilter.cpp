@@ -106,17 +106,14 @@ size_t BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySi
 std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr) {
   return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
 }
-msgpack::sbuffer BloomFilter::serialize() const {
-  msgpack::sbuffer buffer;
-  msgpack::packer<msgpack::sbuffer> pk(&buffer);
 
-  pk.pack_array(4);
-  pk.pack(_size);
-  pk.pack(_numHashes);
-  pk.pack(bits);
-  pk.pack(_seeds);
+void BloomFilter::serialize(msgpack::sbuffer& buffer) const {
+  msgpack::packer<msgpack::sbuffer> msgpk(&buffer);
 
-  return buffer;
+  msgpk.pack(_size);
+  msgpk.pack(_numHashes);
+  msgpk.pack(bits);
+  msgpk.pack(_seeds);
 }
 
 void BloomFilter::deserialize(const char* data, size_t size) {
