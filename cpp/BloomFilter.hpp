@@ -39,7 +39,6 @@ class BloomFilter {
   bool has(const std::string& value) const;
   void clear();
   double fillRate() const;
-  // static BloomFilter deserialize(const std::string& serialized);
   std::string getDebugLog() const { return debugLog; }
   size_t getNumberOfHashes() const { return _numHashes; }
   void serialize(msgpack::sbuffer& buffer) const;

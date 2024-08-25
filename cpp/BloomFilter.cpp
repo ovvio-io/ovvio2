@@ -38,15 +38,10 @@ BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
   }
 }
 
-// uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
-//   uint32_t hash = 0;
-//   MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, &hash);
-//   return hash;
-// }
 uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
-  uint64_t hash[2] = {0, 0}; // Use a larger buffer
+  uint64_t hash[2] = {0, 0};
   MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash);
-  return static_cast<uint32_t>(hash[0]); // Return only the first 32 bits
+  return static_cast<uint32_t>(hash[0]);
 }
 
 void BloomFilter::setBit(size_t index) {  // this linter's suggestion is wrong.
@@ -183,26 +178,6 @@ void deleteBloomFilter(BloomFilter* filter) {
   delete filter;
 }
 
-// EMSCRIPTEN_KEEPALIVE
-// char* serializeBloomFilter(BloomFilter* filter) {
-//   if (filter != nullptr) {
-//     msgpack::sbuffer sbuf;
-//     filter->serialize(sbuf);
-
-//     // Allocate memory for size + serialized data
-//     size_t totalSize = sizeof(uint32_t) + sbuf.size();
-//     char* result = (char*)malloc(totalSize);
-
-//     // Write size
-//     *reinterpret_cast<uint32_t*>(result) = static_cast<uint32_t>(sbuf.size());
-
-//     // Write serialized data
-//     memcpy(result + sizeof(uint32_t), sbuf.data(), sbuf.size());
-
-//     return result;
-//   }
-//   return nullptr;
-// }
 EMSCRIPTEN_KEEPALIVE
 char* serializeBloomFilter(BloomFilter* filter) {
   if (filter == nullptr) {
@@ -260,17 +235,14 @@ const char* deserializeBloomFilter(BloomFilter* filter, const char* data) {
   if (data == nullptr) {
     return "Error: data is null";
   }
-
-  // Read size
   uint32_t size = *reinterpret_cast<const uint32_t*>(data);
   emscripten_log(EM_LOG_INFO, "Deserialized size: %u", size);
 
-  if (size == 0 || size > MAX_SERIALIZED_SIZE) {
+  if (size == 0 || size > 10000000) {
     return "Error: Invalid size";
   }
 
   try {
-    // Deserialize
     filter->deserialize(data + sizeof(uint32_t), size);
     return nullptr;  // Success
   } catch (const std::exception& e) {
