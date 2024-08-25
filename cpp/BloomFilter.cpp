@@ -14,8 +14,10 @@
 #include <string>
 #include <vector>
 
-#include "BloomFilter.h"
+#include "BloomFilter.hpp"
 #include "MurmurHash3.h"
+
+#define MAX_SERIALIZED_SIZE 1000000000
 
 BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
     : _size(calculateOptNumHashes(size, fpr.getValue())),
@@ -36,10 +38,15 @@ BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
   }
 }
 
+// uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
+//   uint32_t hash = 0;
+//   MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, &hash);
+//   return hash;
+// }
 uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
-  uint32_t hash = 0;
-  MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, &hash);
-  return hash;
+  uint64_t hash[2] = {0, 0}; // Use a larger buffer
+  MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash);
+  return static_cast<uint32_t>(hash[0]); // Return only the first 32 bits
 }
 
 void BloomFilter::setBit(size_t index) {  // this linter's suggestion is wrong.
@@ -107,27 +114,44 @@ std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr) {
   return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
 }
 
-void BloomFilter::serialize(msgpack::sbuffer& buffer) const {
-  msgpack::packer<msgpack::sbuffer> msgpk(&buffer);
-
-  msgpk.pack(_size);
-  msgpk.pack(_numHashes);
-  msgpk.pack(bits);
-  msgpk.pack(_seeds);
+void BloomFilter::serialize(msgpack::sbuffer& sbuf) const {
+  msgpack::packer<msgpack::sbuffer> packer(sbuf);
+  packer.pack_array(4);  // Explicitly state we're packing 4 items
+  packer.pack(_size);
+  packer.pack(_numHashes);
+  packer.pack(bits);
+  packer.pack(_seeds);
+  emscripten_log(EM_LOG_INFO,
+                 "Serialized. Size: %zu, NumHashes: %zu, Bits size: %zu, Seeds size: %zu", _size,
+                 _numHashes, bits.size(), _seeds.size());
 }
 
 void BloomFilter::deserialize(const char* data, size_t size) {
-  msgpack::object_handle oh = msgpack::unpack(data, size);
-  msgpack::object obj = oh.get();
+  try {
+    msgpack::object_handle oh = msgpack::unpack(data, size);
+    msgpack::object obj = oh.get();
 
-  if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 4) {
-    throw std::runtime_error("Invalid serialized data");
+    emscripten_log(EM_LOG_INFO, "Unpacked object type: %d", obj.type);
+    emscripten_log(EM_LOG_INFO, "Unpacked object size: %zu", obj.via.array.size);
+
+    if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 4) {
+      throw std::runtime_error("Invalid serialized data format");
+    }
+
+    obj.via.array.ptr[0].convert(_size);
+    obj.via.array.ptr[1].convert(_numHashes);
+    obj.via.array.ptr[2].convert(bits);
+    obj.via.array.ptr[3].convert(_seeds);
+
+    emscripten_log(EM_LOG_INFO, "Deserialization successful. Size: %zu, NumHashes: %zu", _size,
+                   _numHashes);
+  } catch (const msgpack::v1::type_error& e) {
+    emscripten_log(EM_LOG_ERROR, "MessagePack type error: %s", e.what());
+    throw;
+  } catch (const std::exception& e) {
+    emscripten_log(EM_LOG_ERROR, "Error during deserialization: %s", e.what());
+    throw;
   }
-
-  obj.via.array.ptr[0].convert(_size);
-  obj.via.array.ptr[1].convert(_numHashes);
-  obj.via.array.ptr[2].convert(bits);
-  obj.via.array.ptr[3].convert(_seeds);
 }
 
 extern "C" {
@@ -158,25 +182,104 @@ void deleteBloomFilter(BloomFilter* filter) {
   // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
   delete filter;
 }
+
+// EMSCRIPTEN_KEEPALIVE
+// char* serializeBloomFilter(BloomFilter* filter) {
+//   if (filter != nullptr) {
+//     msgpack::sbuffer sbuf;
+//     filter->serialize(sbuf);
+
+//     // Allocate memory for size + serialized data
+//     size_t totalSize = sizeof(uint32_t) + sbuf.size();
+//     char* result = (char*)malloc(totalSize);
+
+//     // Write size
+//     *reinterpret_cast<uint32_t*>(result) = static_cast<uint32_t>(sbuf.size());
+
+//     // Write serialized data
+//     memcpy(result + sizeof(uint32_t), sbuf.data(), sbuf.size());
+
+//     return result;
+//   }
+//   return nullptr;
+// }
 EMSCRIPTEN_KEEPALIVE
-const char* serializeBloomFilter(BloomFilter* filter, int* size) {
-  if (filter != nullptr) {
-    static msgpack::sbuffer serialized;
-    serialized = filter->serialize();
-    *size = static_cast<int>(serialized.size());
-    return serialized.data();
+char* serializeBloomFilter(BloomFilter* filter) {
+  if (filter == nullptr) {
+    emscripten_log(EM_LOG_ERROR, "Error: filter is null");
+    return nullptr;
   }
-  return nullptr;
+
+  try {
+    msgpack::sbuffer sbuf;
+    filter->serialize(sbuf);
+
+    if (sbuf.size() > std::numeric_limits<uint32_t>::max()) {
+      emscripten_log(EM_LOG_ERROR, "Error: serialized data too large");
+      return nullptr;
+    }
+
+    // Allocate memory for size + serialized data
+    size_t totalSize = sizeof(uint32_t) + sbuf.size();
+    char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, totalSize);
+
+    if (result == nullptr) {
+      emscripten_log(EM_LOG_ERROR, "Error: memory allocation failed");
+      return nullptr;
+    }
+
+    // Write size
+    *reinterpret_cast<uint32_t*>(result) = static_cast<uint32_t>(sbuf.size());
+
+    // Write serialized data
+    memcpy(result + sizeof(uint32_t), sbuf.data(), sbuf.size());
+
+    return result;
+  } catch (const std::exception& e) {
+    emscripten_log(EM_LOG_ERROR, "Error during serialization: %s", e.what());
+    return nullptr;
+  } catch (...) {
+    emscripten_log(EM_LOG_ERROR, "Unknown error during serialization");
+    return nullptr;
+  }
+}
+
+// Helper function to free memory from JavaScript
+EMSCRIPTEN_KEEPALIVE
+void freeSerializedData(char* data) {
+  if (data != nullptr) {
+    EM_ASM({ Module._free($0); }, data);
+  }
 }
 
 EMSCRIPTEN_KEEPALIVE
-void deserializeBloomFilter(BloomFilter* filter, const char* data, int size) {
-  if (filter != nullptr && data != nullptr && size > 0) {
-    try {
-      filter->deserialize(data, static_cast<size_t>(size));
-    } catch (const std::exception& e) {
-      // Handle deserialization error
-    }
+const char* deserializeBloomFilter(BloomFilter* filter, const char* data) {
+  if (filter == nullptr) {
+    return "Error: filter is null";
+  }
+  if (data == nullptr) {
+    return "Error: data is null";
+  }
+
+  // Read size
+  uint32_t size = *reinterpret_cast<const uint32_t*>(data);
+  emscripten_log(EM_LOG_INFO, "Deserialized size: %u", size);
+
+  if (size == 0 || size > MAX_SERIALIZED_SIZE) {
+    return "Error: Invalid size";
+  }
+
+  try {
+    // Deserialize
+    filter->deserialize(data + sizeof(uint32_t), size);
+    return nullptr;  // Success
+  } catch (const std::exception& e) {
+    static std::string error_message;
+    error_message = "Caught exception in deserializeBloomFilter: ";
+    error_message += e.what();
+    return error_message.c_str();
+  } catch (...) {
+    return "Caught unknown exception in deserializeBloomFilter";
   }
 }
 }

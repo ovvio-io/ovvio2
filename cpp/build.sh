@@ -7,21 +7,25 @@ then
     exit 1
 fi
 
-# Compile C++ to WebAssembly
-emcc -std=c++20 -O3 -s WASM=1 \
+# Compile C++ to WebAssembly with AddressSanitizer
+emcc -std=c++20 -O1 -s WASM=1 \
+-fsanitize=address \
 -I. \
 -I../external \
--s EXPORTED_FUNCTIONS="['_createBloomFilter', '_addToFilter', '_checkInFilter', '_deleteBloomFilter']" \
--s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" \
+-I/opt/homebrew/include \
+-s EXPORTED_FUNCTIONS="['_malloc', '_free', '_createBloomFilter', '_addToFilter', '_checkInFilter', '_deleteBloomFilter', '_serializeBloomFilter', '_deserializeBloomFilter', '_freeSerializedData']" \
+-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'UTF8ToString']" \
+-s DISABLE_EXCEPTION_CATCHING=0 \
 -s ALLOW_MEMORY_GROWTH=1 \
 -s MAXIMUM_MEMORY=4GB \
 -s NO_EXIT_RUNTIME=1 \
 -s ENVIRONMENT='web' \
 --no-entry \
+-s ERROR_ON_UNDEFINED_SYMBOLS=0 \
+-s ASSERTIONS=1 \
 -o bloom_filter.js BloomFilter.cpp ../external/MurmurHash3.cpp
 
-echo "Compilation complete. Output files: bloom_filter.js and bloom_filter.wasm"
-
+echo "Compilation complete with AddressSanitizer. Output files: bloom_filter.js and bloom_filter.wasm"
 
 # git clone https://github.com/emscripten-core/emsdk.git
 # cd emsdk
