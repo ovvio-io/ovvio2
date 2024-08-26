@@ -4,9 +4,11 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <random>
 #include <sstream>
@@ -17,7 +19,7 @@
 #include "BloomFilter.hpp"
 #include "MurmurHash3.h"
 
-#define MAX_SERIALIZED_SIZE 1000000000
+constexpr uint64_t MAX_SERIALIZED_SIZE = 1000000000;
 
 BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
     : _size(calculateOptNumHashes(size, fpr.getValue())),
@@ -39,8 +41,8 @@ BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
 }
 
 uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
-  uint64_t hash[2] = {0, 0};
-  MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash);
+  std::array<uint64_t, 2> hash = {0, 0};
+  MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash.data());
   return static_cast<uint32_t>(hash[0]);
 }
 
@@ -126,17 +128,19 @@ void BloomFilter::deserialize(const char* data, size_t size) {
     msgpack::object_handle oh = msgpack::unpack(data, size);
     msgpack::object obj = oh.get();
 
-    emscripten_log(EM_LOG_INFO, "Unpacked object type: %d", obj.type);
-    emscripten_log(EM_LOG_INFO, "Unpacked object size: %zu", obj.via.array.size);
+    emscripten_log(EM_LOG_INFO, "Unpacked object type: %d", static_cast<int>(obj.type));
+    std::vector<msgpack::object> array;
+    obj.convert(array);
 
-    if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 4) {
+    emscripten_log(EM_LOG_INFO, "Unpacked object size: %zu", array.size());
+
+    if (obj.type != msgpack::type::ARRAY || array.size() != 4) {
       throw std::runtime_error("Invalid serialized data format");
     }
-
-    obj.via.array.ptr[0].convert(_size);
-    obj.via.array.ptr[1].convert(_numHashes);
-    obj.via.array.ptr[2].convert(bits);
-    obj.via.array.ptr[3].convert(_seeds);
+    array[0].convert(_size);
+    array[1].convert(_numHashes);
+    array[2].convert(bits);
+    array[3].convert(_seeds);
 
     emscripten_log(EM_LOG_INFO, "Deserialization successful. Size: %zu, NumHashes: %zu", _size,
                    _numHashes);
@@ -204,10 +208,11 @@ char* serializeBloomFilter(BloomFilter* filter) {
     }
 
     // Write size
-    *reinterpret_cast<uint32_t*>(result) = static_cast<uint32_t>(sbuf.size());
+    uint32_t sizeValue = static_cast<uint32_t>(sbuf.size());
+    std::memcpy(result, &sizeValue, sizeof(uint32_t));
 
     // Write serialized data
-    memcpy(result + sizeof(uint32_t), sbuf.data(), sbuf.size());
+    std::copy(sbuf.data(), sbuf.data() + sbuf.size(), std::next(result, sizeof(uint32_t)));
 
     return result;
   } catch (const std::exception& e) {
@@ -235,7 +240,8 @@ const char* deserializeBloomFilter(BloomFilter* filter, const char* data) {
   if (data == nullptr) {
     return "Error: data is null";
   }
-  uint32_t size = *reinterpret_cast<const uint32_t*>(data);
+  uint32_t size = 0;
+  std::memcpy(&size, data, sizeof(uint32_t));
   emscripten_log(EM_LOG_INFO, "Deserialized size: %u", size);
 
   if (size == 0 || size > 10000000) {
@@ -243,8 +249,8 @@ const char* deserializeBloomFilter(BloomFilter* filter, const char* data) {
   }
 
   try {
-    filter->deserialize(data + sizeof(uint32_t), size);
-    return nullptr;  // Success
+    filter->deserialize(std::next(data, sizeof(uint32_t)), size);
+    return nullptr;
   } catch (const std::exception& e) {
     static std::string error_message;
     error_message = "Caught exception in deserializeBloomFilter: ";

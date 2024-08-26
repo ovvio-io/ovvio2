@@ -41,7 +41,7 @@ class BloomFilter {
   double fillRate() const;
   std::string getDebugLog() const { return debugLog; }
   size_t getNumberOfHashes() const { return _numHashes; }
-  void serialize(msgpack::sbuffer& buffer) const;
+  void serialize(msgpack::sbuffer& sbuf) const;
   void deserialize(const char* data, size_t size);
 };
 

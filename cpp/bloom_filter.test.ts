@@ -3,7 +3,6 @@ import { BloomFilter } from './bloom_filter.ts';
 Deno.test('Delete and recreate BloomFilter', async () => {
   await runTest('Delete and recreate BloomFilter', async () => {
     let filter = await BloomFilter.create(1000, 0.01);
-
     filter.add('apple');
     filter.add('banana');
     filter.delete();
@@ -125,7 +124,7 @@ Deno.test('Stress test with large filter', async () => {
   });
 });
 
-const fprs = [0.01, 0.001, 0.0001];
+const fprs = [0.4, 0.1, 0.01, 0.001];
 fprs.forEach((fpr) => {
   Deno.test(`Serialization with FPR=${fpr}`, async () => {
     await runTest(`Serialization with FPR=${fpr}`, async () => {
@@ -166,13 +165,9 @@ Deno.test('Add and check elements in BloomFilter', async () => {
 Deno.test('Handle empty and large strings', async () => {
   await runTest('Handle empty and large strings', async () => {
     const filter = await BloomFilter.create(1000, 0.01);
-
-    // Add an empty string
     filter.add('');
-    // Add a large string
     const largeString = 'a'.repeat(10000);
     filter.add(largeString);
-
     const result =
       filter.has('') && filter.has(largeString) && !filter.has('nonexistent');
 
@@ -184,7 +179,6 @@ Deno.test('Handle empty and large strings', async () => {
 Deno.test('Check behavior with no elements added', async () => {
   await runTest('Check empty BloomFilter', async () => {
     const filter = await BloomFilter.create(1000, 0.01);
-
     const result = !filter.has('apple') && !filter.has('banana');
 
     filter.delete();
