@@ -43,7 +43,7 @@ BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
   }
 }
 
-uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
+auto BloomFilter::hashString(const std::string& value, uint32_t seed) -> uint32_t {
   std::array<uint64_t, 2> hash = {0, 0};
   MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash.data());
   return static_cast<uint32_t>(hash[0]);
@@ -55,7 +55,7 @@ void BloomFilter::setBit(size_t index) {  // this linter's suggestion is wrong.
   }
 }
 
-bool BloomFilter::getBit(size_t index) const {
+auto BloomFilter::getBit(size_t index) const -> bool {
   if (index < size_) {
     return (bits[index / 64] & (1ULL << (index % 64))) != 0;
   }
@@ -70,7 +70,7 @@ void BloomFilter::add(const std::string& value) {
   }
 }
 
-bool BloomFilter::has(const std::string& value) const {
+auto BloomFilter::has(const std::string& value) const -> bool {
   for (size_t i = 0; i < num_hashes; ++i) {
     uint32_t hash = 0;
     hash = BloomFilter::hashString(value, seeds[i]);
@@ -85,7 +85,7 @@ void BloomFilter::clear() {
   std::fill(bits.begin(), bits.end(), 0);
 }
 
-double BloomFilter::fillRate() const {
+auto BloomFilter::fillRate() const -> double {
   size_t count = 0;
   for (const auto& block : bits) {
     count += __builtin_popcountll(block);
@@ -93,7 +93,7 @@ double BloomFilter::fillRate() const {
   return static_cast<double>(count) / (double)size_;
 }
 
-size_t BloomFilter::calculateOptNumHashes(size_t size, double fpr) {
+auto BloomFilter::calculateOptNumHashes(size_t size, double fpr) -> size_t {
   if (size == 0 || fpr <= 0 || fpr >= 1) {
     return 1;
   }
@@ -102,7 +102,7 @@ size_t BloomFilter::calculateOptNumHashes(size_t size, double fpr) {
       std::ceil(-((double)size * std::log(fpr)) / (std::log(2) * std::log(2))));
 }
 
-size_t BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySize) {
+auto BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySize) -> size_t {
   if (itemCount == 0 || bitArraySize == 0) {
     return 1;
   }
@@ -110,7 +110,7 @@ size_t BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySi
       std::round(static_cast<double>(bitArraySize) / itemCount * std::log(2)));
 }
 
-std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr) {
+auto createBloomFilterUnique(size_t size, double fpr) -> std::unique_ptr<BloomFilter> {
   return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
 }
 
@@ -158,7 +158,7 @@ void BloomFilter::deserialize(const char* data, size_t size) {
 
 extern "C" {
 EMSCRIPTEN_KEEPALIVE
-BloomFilter* createBloomFilter(size_t size, double fpr) {
+auto createBloomFilter(size_t size, double fpr) -> BloomFilter* {
   auto filter = createBloomFilterUnique(size, fpr);
   return filter.release();  // Transfers ownership to the caller
 }
@@ -171,7 +171,7 @@ void addToFilter(BloomFilter* filter, const char* value) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-int checkInFilter(BloomFilter* filter, const char* value) {
+auto checkInFilter(BloomFilter* filter, const char* value) -> int {
   if ((filter != nullptr) && (value != nullptr)) {
     return filter->has(std::string(value)) ? 1 : 0;
   }
@@ -186,7 +186,7 @@ void deleteBloomFilter(BloomFilter* filter) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-char* serializeBloomFilter(BloomFilter* filter) {
+auto serializeBloomFilter(BloomFilter* filter) -> char* {
   if (filter == nullptr) {
     emscripten_log(EM_LOG_ERROR, "Error: filter is null");
     return nullptr;
@@ -209,7 +209,7 @@ char* serializeBloomFilter(BloomFilter* filter) {
       emscripten_log(EM_LOG_ERROR, "Error: memory allocation failed");
       return nullptr;
     }
-    uint32_t size_value = static_cast<uint32_t>(sbuf.size());
+    auto size_value = static_cast<uint32_t>(sbuf.size());
     std::memcpy(result, &size_value, sizeof(uint32_t));
 
     // Write serialized data
@@ -234,7 +234,7 @@ void freeSerializedData(const char* data) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-const char* deserializeBloomFilter(BloomFilter* filter, const char* data) {
+auto deserializeBloomFilter(BloomFilter* filter, const char* data) -> const char* {
   if (filter == nullptr) {
     return "Error: filter is null";
   }
