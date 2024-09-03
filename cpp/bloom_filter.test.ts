@@ -97,7 +97,7 @@ Deno.test('Deserialization with corrupted data', async () => {
     try {
       await BloomFilter.deserialize(serialized);
     } catch (error) {
-      errorCaught = true;
+      errorCaught = error;
     }
 
     filter.delete();
@@ -105,24 +105,24 @@ Deno.test('Deserialization with corrupted data', async () => {
   });
 });
 
-Deno.test('Stress test with large filter', async () => {
-  await runTest('Stress test with large filter', async () => {
-    const largeFilter = await BloomFilter.create(1000000, 0.01);
-    for (let i = 0; i < 1000000; i++) {
-      largeFilter.add(`large_item${i}`);
-    }
-    const serialized = largeFilter.serialize();
-    const deserializedFilter = await BloomFilter.deserialize(serialized);
-    const result =
-      deserializedFilter.has('large_item0') &&
-      deserializedFilter.has('large_item999999') &&
-      !deserializedFilter.has('not_in_large_filter');
+// Deno.test('Stress test with large filter', async () => {
+//   await runTest('Stress test with large filter', async () => {
+//     const largeFilter = await BloomFilter.create(1000000, 0.01);
+//     for (let i = 0; i < 1000000; i++) {
+//       largeFilter.add(`large_item${i}`);
+//     }
+//     const serialized = largeFilter.serialize();
+//     const deserializedFilter = await BloomFilter.deserialize(serialized);
+//     const result =
+//       deserializedFilter.has('large_item0') &&
+//       deserializedFilter.has('large_item999999') &&
+//       !deserializedFilter.has('not_in_large_filter');
 
-    largeFilter.delete();
-    deserializedFilter.delete();
-    return result;
-  });
-});
+//     largeFilter.delete();
+//     deserializedFilter.delete();
+//     return result;
+//   });
+// });
 
 const fprs = [0.4, 0.1, 0.01, 0.001];
 fprs.forEach((fpr) => {

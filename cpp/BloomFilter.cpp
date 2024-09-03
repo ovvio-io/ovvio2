@@ -22,21 +22,24 @@
 constexpr uint64_t MAX_SERIALIZED_SIZE = 1000000000;
 
 BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
-    : _size(calculateOptNumHashes(size, fpr.getValue())),
-      _numHashes(calculateOptMaxNumHashes(size, calculateOptNumHashes(size, fpr.getValue()))),
+    : size_(calculateOptNumHashes(size, fpr.getValue())),
+      num_hashes(calculateOptMaxNumHashes(size, calculateOptNumHashes(size, fpr.getValue()))),
       // "rounding up" to the nearest multiple of 64.
       bits((calculateOptNumHashes(size, fpr.getValue()) + 63) / 64, 0) {
-  if (maxHashes > 0 && _numHashes > maxHashes) {
-    _numHashes = maxHashes;
+  if (maxHashes > 0 && num_hashes > maxHashes) {
+    num_hashes = maxHashes;
   }
-  _seeds.resize(_numHashes);
+  seeds.resize(num_hashes);
+
   // Creates a seed for the random number generator based on the current time.
   const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+
   // Creates a Mersenne Twister random number generator
   std::mt19937 gen{static_cast<std::mt19937::result_type>(seed)};
   std::uniform_int_distribution<> dis(0, std::numeric_limits<int>::max());
-  for (auto& seed : _seeds) {
-    seed = dis(gen);
+
+  for (auto& s : seeds) {
+    s = dis(gen);
   }
 }
 
@@ -47,31 +50,31 @@ uint32_t BloomFilter::hashString(const std::string& value, uint32_t seed) {
 }
 
 void BloomFilter::setBit(size_t index) {  // this linter's suggestion is wrong.
-  if (index < _size) {
+  if (index < size_) {
     bits[index / 64] |= (1ULL << (index % 64));
   }
 }
 
 bool BloomFilter::getBit(size_t index) const {
-  if (index < _size) {
+  if (index < size_) {
     return (bits[index / 64] & (1ULL << (index % 64))) != 0;
   }
   return false;
 }
 
 void BloomFilter::add(const std::string& value) {
-  for (size_t i = 0; i < _numHashes; ++i) {
+  for (size_t i = 0; i < num_hashes; ++i) {
     uint32_t hash = 0;
-    hash = BloomFilter::hashString(value, _seeds[i]);
-    setBit(hash % _size);
+    hash = BloomFilter::hashString(value, seeds[i]);
+    setBit(hash % size_);
   }
 }
 
 bool BloomFilter::has(const std::string& value) const {
-  for (size_t i = 0; i < _numHashes; ++i) {
+  for (size_t i = 0; i < num_hashes; ++i) {
     uint32_t hash = 0;
-    hash = BloomFilter::hashString(value, _seeds[i]);
-    if (!getBit(hash % _size)) {
+    hash = BloomFilter::hashString(value, seeds[i]);
+    if (!getBit(hash % size_)) {
       return false;
     }
   }
@@ -87,7 +90,7 @@ double BloomFilter::fillRate() const {
   for (const auto& block : bits) {
     count += __builtin_popcountll(block);
   }
-  return static_cast<double>(count) / (double)_size;
+  return static_cast<double>(count) / (double)size_;
 }
 
 size_t BloomFilter::calculateOptNumHashes(size_t size, double fpr) {
@@ -114,19 +117,19 @@ std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr) {
 void BloomFilter::serialize(msgpack::sbuffer& sbuf) const {
   msgpack::packer<msgpack::sbuffer> packer(sbuf);
   packer.pack_array(4);  // Explicitly state we're packing 4 items
-  packer.pack(_size);
-  packer.pack(_numHashes);
+  packer.pack(size_);
+  packer.pack(num_hashes);
   packer.pack(bits);
-  packer.pack(_seeds);
+  packer.pack(seeds);
   emscripten_log(EM_LOG_INFO,
-                 "Serialized. Size: %zu, NumHashes: %zu, Bits size: %zu, Seeds size: %zu", _size,
-                 _numHashes, bits.size(), _seeds.size());
+                 "Serialized. Size: %zu, NumHashes: %zu, Bits size: %zu, Seeds size: %zu", size_,
+                 num_hashes, bits.size(), seeds.size());
 }
 
 void BloomFilter::deserialize(const char* data, size_t size) {
   try {
-    msgpack::object_handle oh = msgpack::unpack(data, size);
-    msgpack::object obj = oh.get();
+    msgpack::object_handle obj_handle = msgpack::unpack(data, size);
+    msgpack::object obj = obj_handle.get();
 
     emscripten_log(EM_LOG_INFO, "Unpacked object type: %d", static_cast<int>(obj.type));
     std::vector<msgpack::object> array;
@@ -137,13 +140,13 @@ void BloomFilter::deserialize(const char* data, size_t size) {
     if (obj.type != msgpack::type::ARRAY || array.size() != 4) {
       throw std::runtime_error("Invalid serialized data format");
     }
-    array[0].convert(_size);
-    array[1].convert(_numHashes);
+    array[0].convert(size_);
+    array[1].convert(num_hashes);
     array[2].convert(bits);
-    array[3].convert(_seeds);
+    array[3].convert(seeds);
 
-    emscripten_log(EM_LOG_INFO, "Deserialization successful. Size: %zu, NumHashes: %zu", _size,
-                   _numHashes);
+    emscripten_log(EM_LOG_INFO, "Deserialization successful. Size: %zu, NumHashes: %zu", size_,
+                   num_hashes);
   } catch (const msgpack::v1::type_error& e) {
     emscripten_log(EM_LOG_ERROR, "MessagePack type error: %s", e.what());
     throw;
@@ -199,15 +202,15 @@ char* serializeBloomFilter(BloomFilter* filter) {
     }
 
     // Allocate memory for size + serialized data
-    size_t totalSize = sizeof(uint32_t) + sbuf.size();
-    char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, totalSize);
+    size_t total_size = sizeof(uint32_t) + sbuf.size();
+    char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, total_size);
 
     if (result == nullptr) {
       emscripten_log(EM_LOG_ERROR, "Error: memory allocation failed");
       return nullptr;
     }
-    uint32_t sizeValue = static_cast<uint32_t>(sbuf.size());
-    std::memcpy(result, &sizeValue, sizeof(uint32_t));
+    uint32_t size_value = static_cast<uint32_t>(sbuf.size());
+    std::memcpy(result, &size_value, sizeof(uint32_t));
 
     // Write serialized data
     std::copy(sbuf.data(), sbuf.data() + sbuf.size(), std::next(result, sizeof(uint32_t)));
@@ -224,7 +227,7 @@ char* serializeBloomFilter(BloomFilter* filter) {
 
 // Helper function to free memory from JavaScript
 EMSCRIPTEN_KEEPALIVE
-void freeSerializedData(char* data) {
+void freeSerializedData(const char* data) {
   if (data != nullptr) {
     EM_ASM({ Module._free($0); }, data);
   }
