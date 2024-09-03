@@ -206,8 +206,6 @@ char* serializeBloomFilter(BloomFilter* filter) {
       emscripten_log(EM_LOG_ERROR, "Error: memory allocation failed");
       return nullptr;
     }
-
-    // Write size
     uint32_t sizeValue = static_cast<uint32_t>(sbuf.size());
     std::memcpy(result, &sizeValue, sizeof(uint32_t));
 

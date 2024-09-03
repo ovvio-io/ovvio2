@@ -2,17 +2,17 @@
 import type { EmscriptenModule } from 'https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/emscripten/index.d.ts';
 
 interface BloomFilterModule extends EmscriptenModule {
-  ccall: (
+  ccall: <R = number | string | boolean | void>(
     ident: string,
     returnType: string,
     argTypes: string[],
-    args: any[]
-  ) => any;
-  cwrap: (
+    args: (number | string | boolean)[]
+  ) => R;
+  cwrap: <R = number, A extends any[] = (number | string | boolean)[]>(
     ident: string,
     returnType: string,
     argTypes: string[]
-  ) => (...args: any[]) => any;
+  ) => (...args: A) => R;
   _malloc: (size: number) => number;
   _free: (ptr: number) => void;
   HEAPU8: Uint8Array;
@@ -135,6 +135,7 @@ export class BloomFilter {
   delete(): void {
     BloomFilter.delete_bloom_filter(this.ptr);
   }
+
   serialize(): Uint8Array {
     const serializedPtr = BloomFilter.serialize_bloom_filter(this.ptr);
     if (serializedPtr === 0) {
@@ -169,11 +170,8 @@ export class BloomFilter {
     }
 
     try {
-      // Write the size
       this.HEAPU32[dataPtr / 4] = data.length;
-      // Write the data
       this.HEAPU8.set(data, dataPtr + 4);
-      // Deserialize
       const errorPtr = this.deserialize_bloom_filter(filter.ptr, dataPtr);
       if (errorPtr !== 0) {
         const errorMessage = Module.UTF8ToString(errorPtr);
