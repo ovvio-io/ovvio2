@@ -9,7 +9,6 @@ Deno.test('Delete and recreate BloomFilter', async () => {
     // Recreate filter and ensure it starts empty
     filter = await BloomFilter.create(1000, 0.01);
     const result = !filter.has('apple') && !filter.has('banana');
-
     filter.delete();
     return result;
   });
