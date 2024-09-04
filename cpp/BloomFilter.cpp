@@ -5,13 +5,11 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <iterator>
 #include <limits>
 #include <random>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -22,10 +20,10 @@
 constexpr uint64_t MAX_SERIALIZED_SIZE = 1000000000;
 
 BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
-    : size_(calculateOptNumHashes(size, fpr.getValue())),
-      num_hashes(calculateOptMaxNumHashes(size, calculateOptNumHashes(size, fpr.getValue()))),
+    : size_(calculateTotalBits(size, fpr.getValue())),
+      num_hashes(calculateOptMaxNumHashes(size, calculateTotalBits(size, fpr.getValue()))),
       // "rounding up" to the nearest multiple of 64.
-      bits((calculateOptNumHashes(size, fpr.getValue()) + 63) / 64, 0) {
+      bits((calculateTotalBits(size, fpr.getValue()) + 63) / 64, 0) {
   if (maxHashes > 0 && num_hashes > maxHashes) {
     num_hashes = maxHashes;
   }
@@ -49,7 +47,7 @@ auto BloomFilter::hashString(const std::string& value, uint32_t seed) -> uint32_
   return static_cast<uint32_t>(hash[0]);
 }
 
-void BloomFilter::setBit(size_t index) {  // this linter's suggestion is wrong.
+void BloomFilter::setBit(size_t index) {
   if (index < size_) {
     bits[index / 64] |= (1ULL << (index % 64));
   }
@@ -93,13 +91,13 @@ auto BloomFilter::fillRate() const -> double {
   return static_cast<double>(count) / (double)size_;
 }
 
-auto BloomFilter::calculateOptNumHashes(size_t size, double fpr) -> size_t {
+auto BloomFilter::calculateTotalBits(size_t size, double fpr) -> size_t {
   if (size == 0 || fpr <= 0 || fpr >= 1) {
     return 1;
   }
 
   return static_cast<size_t>(
-      std::ceil(-((double)size * std::log(fpr)) / (std::log(2) * std::log(2))));
+      std::ceil((size * std::log(fpr)) / std::log(1 / std::pow(2, std::log(2)))));
 }
 
 auto BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySize) -> size_t {
@@ -144,6 +142,13 @@ void BloomFilter::deserialize(const char* data, size_t size) {
     array[1].convert(num_hashes);
     array[2].convert(bits);
     array[3].convert(seeds);
+
+    if (bits.size() != ((size_ + 63) / 64)) {
+      throw std::runtime_error("Bits array size does not match the expected size");
+    }
+    if (seeds.size() != num_hashes) {
+      throw std::runtime_error("Seeds array size does not match the number of hashes");
+    }
 
     emscripten_log(EM_LOG_INFO, "Deserialization successful. Size: %zu, NumHashes: %zu", size_,
                    num_hashes);
@@ -202,7 +207,7 @@ auto serializeBloomFilter(BloomFilter* filter) -> char* {
     }
 
     // Allocate memory for size + serialized data
-    size_t total_size = sizeof(uint32_t) + sbuf.size();
+    size_t const total_size = sizeof(uint32_t) + sbuf.size();
     char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, total_size);
 
     if (result == nullptr) {
@@ -212,7 +217,6 @@ auto serializeBloomFilter(BloomFilter* filter) -> char* {
     auto size_value = static_cast<uint32_t>(sbuf.size());
     std::memcpy(result, &size_value, sizeof(uint32_t));
 
-    // Write serialized data
     std::copy(sbuf.data(), sbuf.data() + sbuf.size(), std::next(result, sizeof(uint32_t)));
 
     return result;
@@ -225,7 +229,6 @@ auto serializeBloomFilter(BloomFilter* filter) -> char* {
   }
 }
 
-// Helper function to free memory from JavaScript
 EMSCRIPTEN_KEEPALIVE
 void freeSerializedData(const char* data) {
   if (data != nullptr) {

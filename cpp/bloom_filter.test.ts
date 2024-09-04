@@ -6,7 +6,6 @@ Deno.test('Delete and recreate BloomFilter', async () => {
     filter.add('apple');
     filter.add('banana');
     filter.delete();
-
     // Recreate filter and ensure it starts empty
     filter = await BloomFilter.create(1000, 0.01);
     const result = !filter.has('apple') && !filter.has('banana');
@@ -105,24 +104,24 @@ Deno.test('Deserialization with corrupted data', async () => {
   });
 });
 
-// Deno.test('Stress test with large filter', async () => {
-//   await runTest('Stress test with large filter', async () => {
-//     const largeFilter = await BloomFilter.create(1000000, 0.01);
-//     for (let i = 0; i < 1000000; i++) {
-//       largeFilter.add(`large_item${i}`);
-//     }
-//     const serialized = largeFilter.serialize();
-//     const deserializedFilter = await BloomFilter.deserialize(serialized);
-//     const result =
-//       deserializedFilter.has('large_item0') &&
-//       deserializedFilter.has('large_item999999') &&
-//       !deserializedFilter.has('not_in_large_filter');
+Deno.test('Stress test with large filter', async () => {
+  await runTest('Stress test with large filter', async () => {
+    const largeFilter = await BloomFilter.create(1000000, 0.01);
+    for (let i = 0; i < 1000000; i++) {
+      largeFilter.add(`large_item${i}`);
+    }
+    const serialized = largeFilter.serialize();
+    const deserializedFilter = await BloomFilter.deserialize(serialized);
+    const result =
+      deserializedFilter.has('large_item0') &&
+      deserializedFilter.has('large_item999999') &&
+      !deserializedFilter.has('not_in_large_filter');
 
-//     largeFilter.delete();
-//     deserializedFilter.delete();
-//     return result;
-//   });
-// });
+    largeFilter.delete();
+    deserializedFilter.delete();
+    return result;
+  });
+});
 
 const fprs = [0.4, 0.1, 0.01, 0.001];
 fprs.forEach((fpr) => {
@@ -205,6 +204,29 @@ Deno.test('Serialize and deserialize BloomFilter', async () => {
     deserializedFilter.delete();
     return result;
   });
+});
+
+Deno.test('Check serialization and deserialization buffer sizes', async () => {
+  await runTest(
+    'Check serialization and deserialization buffer sizes',
+    async () => {
+      const filter = await BloomFilter.create(1000, 0.01);
+
+      filter.add('apple');
+      filter.add('banana');
+      filter.add('mango');
+
+      const serialized = filter.serialize();
+      const deserializedFilter = await BloomFilter.deserialize(serialized);
+
+      const result =
+        serialized.length === deserializedFilter.serialize().length;
+
+      filter.delete();
+      deserializedFilter.delete();
+      return result;
+    }
+  );
 });
 
 async function runTest(

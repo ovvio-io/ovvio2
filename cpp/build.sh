@@ -1,4 +1,45 @@
+# #!/bin/bash
+
+# # Check if Emscripten is installed
+# if ! command -v emcc &> /dev/null
+# then
+#     echo "Emscripten could not be found. Please install it and make sure it's in your PATH."
+#     exit 1
+# fi
+
+# # Compile C++ to WebAssembly with AddressSanitizer
+# emcc -std=c++20 -O1 -s WASM=1 \
+# -fsanitize=address \
+# -I. \
+# -I../external \
+# -I/opt/homebrew/include \
+# -s EXPORTED_FUNCTIONS="['_malloc', '_free', '_createBloomFilter', '_addToFilter', '_checkInFilter', '_deleteBloomFilter', '_serializeBloomFilter', '_deserializeBloomFilter', '_freeSerializedData']" \
+# -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'UTF8ToString']" \
+# -s DISABLE_EXCEPTION_CATCHING=0 \
+# -s ALLOW_MEMORY_GROWTH=1 \
+# -s INITIAL_MEMORY=256MB \
+# -s MAXIMUM_MEMORY=4GB \
+# -s NO_EXIT_RUNTIME=1 \
+# -s ENVIRONMENT='web' \
+# --no-entry \
+# -s ERROR_ON_UNDEFINED_SYMBOLS=0 \
+# -s ASSERTIONS=1 \
+# -o bloom_filter.js BloomFilter.cpp ../external/MurmurHash3.cpp
+
+# echo "Compilation complete with AddressSanitizer. Output files: bloom_filter.js and bloom_filter.wasm"
+
 #!/bin/bash
+
+OPTIMIZATION="-O1"
+SANITIZER=""
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -O0|-O1|-O2|-O3|-Os|-Oz) OPTIMIZATION="$1"; shift ;;
+        --sanitize=*) SANITIZER="${1#*=}"; shift ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+done
 
 # Check if Emscripten is installed
 if ! command -v emcc &> /dev/null
@@ -7,27 +48,43 @@ then
     exit 1
 fi
 
-# Compile C++ to WebAssembly with AddressSanitizer
-emcc -std=c++20 -O1 -s WASM=1 \
--fsanitize=address \
--I. \
--I../external \
--I/opt/homebrew/include \
--s EXPORTED_FUNCTIONS="['_malloc', '_free', '_createBloomFilter', '_addToFilter', '_checkInFilter', '_deleteBloomFilter', '_serializeBloomFilter', '_deserializeBloomFilter', '_freeSerializedData']" \
--s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'UTF8ToString']" \
--s DISABLE_EXCEPTION_CATCHING=0 \
--s ALLOW_MEMORY_GROWTH=1 \
--s INITIAL_MEMORY=256MB \
--s MAXIMUM_MEMORY=4GB \
--s NO_EXIT_RUNTIME=1 \
--s ENVIRONMENT='web' \
---no-entry \
--s ERROR_ON_UNDEFINED_SYMBOLS=0 \
--s ASSERTIONS=1 \
--o bloom_filter.js BloomFilter.cpp ../external/MurmurHash3.cpp
+# Base compilation flags
+CFLAGS=(-std=c++20 -s WASM=1
+    -I.
+    -I../external
+    -I/opt/homebrew/include
+    -s EXPORTED_FUNCTIONS='["_malloc", "_free", "_createBloomFilter", "_addToFilter", "_checkInFilter", "_deleteBloomFilter", "_serializeBloomFilter", "_deserializeBloomFilter", "_freeSerializedData"]'
+    -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "UTF8ToString"]'
+    -s DISABLE_EXCEPTION_CATCHING=0
+    -s ALLOW_MEMORY_GROWTH=1
+    -s INITIAL_MEMORY=256MB
+    -s MAXIMUM_MEMORY=4GB
+    -s NO_EXIT_RUNTIME=1
+    -s ENVIRONMENT='web'
+    --no-entry
+    -s ERROR_ON_UNDEFINED_SYMBOLS=0
+    -s ASSERTIONS=1
+)
 
-echo "Compilation complete with AddressSanitizer. Output files: bloom_filter.js and bloom_filter.wasm"
+# Add optimization flag
+CFLAGS+=($OPTIMIZATION)
 
+# Add sanitizer if specified
+if [ ! -z "$SANITIZER" ]; then
+    CFLAGS+=(-fsanitize="$SANITIZER")
+fi
+
+# Compile C++ to WebAssembly
+emcc "${CFLAGS[@]}" -o bloom_filter.js BloomFilter.cpp ../external/MurmurHash3.cpp
+
+echo "Compilation complete. Output files: bloom_filter.js and bloom_filter.wasm"
+echo "Optimization level: $OPTIMIZATION"
+if [ ! -z "$SANITIZER" ]; then
+    echo "Sanitizer: $SANITIZER"
+fi
+
+
+# can i do it in another way? i dont really know the shell language and i prefer writing it in JavaScript. what do you think? is it possible?
 # git clone https://github.com/emscripten-core/emsdk.git
 # cd emsdk
 # ./emsdk install latest

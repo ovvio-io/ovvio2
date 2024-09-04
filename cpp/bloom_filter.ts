@@ -143,7 +143,9 @@ export class BloomFilter {
     }
     try {
       const sizePtr = serializedPtr;
-      const size = BloomFilter.HEAPU32[sizePtr / 4];
+      const view = new DataView(BloomFilter.HEAPU8.buffer);
+      const size = view.getUint32(sizePtr, true);
+
       if (size === 0 || size > 1000000000) {
         throw new Error(`Invalid serialized size: ${size}`);
       }
@@ -151,6 +153,7 @@ export class BloomFilter {
       const result = new Uint8Array(
         BloomFilter.HEAPU8.buffer.slice(dataPtr, dataPtr + size)
       );
+
       return result;
     } finally {
       BloomFilter.free_serialized_data(serializedPtr);
