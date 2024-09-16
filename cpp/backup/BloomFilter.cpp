@@ -19,31 +19,47 @@
 
 constexpr uint64_t MAX_SERIALIZED_SIZE = 1000000000;
 
-BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes)
+static std::mt19937 _gGen{static_cast<std::mt19937::result_type>(
+    std::chrono::system_clock::now().time_since_epoch().count())};
+static std::uniform_int_distribution<> _gDis(0, std::numeric_limits<int>::max());
+
+static inline uint32_t genRandomSeed() {
+  return _gDis(_gGen);
+}
+
+BloomFilter::BloomFilter(size_t size, FalsePositiveRate fpr, size_t maxHashes, uint64_t* ptr)
     : size_(calculateTotalBits(size, fpr.getValue())),
       num_hashes(calculateOptMaxNumHashes(size, calculateTotalBits(size, fpr.getValue()))),
       // "rounding up" to the nearest multiple of 64.
-      bits((calculateTotalBits(size, fpr.getValue()) + 63) / 64, 0) {
+      bits(std::ceil<uint64_t>(calculateTotalBits(size, fpr.getValue() / 64)), 0) {
+  // if (ptr)
+  // {
+  //   bits = std::vector<uint64_t>(ptr, ptr + size);
+  // }
+  // else
+  // {
+  //   bits = std::vector<uint64_t>(std::ceil<uint64_t>(calculateOptNumHashes(size, fpr.getValue() /
+  //   64)), 0);
+  // }
   if (maxHashes > 0 && num_hashes > maxHashes) {
     num_hashes = maxHashes;
   }
   seeds.resize(num_hashes);
-
   // Creates a seed for the random number generator based on the current time.
-  const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-  // Creates a Mersenne Twister random number generator
-  std::mt19937 gen{static_cast<std::mt19937::result_type>(seed)};
-  std::uniform_int_distribution<> dis(0, std::numeric_limits<int>::max());
-
-  for (auto& s : seeds) {
-    s = dis(gen);
+  // const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+  // // Creates a Mersenne Twister random number generator
+  // std::mt19937 gen{static_cast<std::mt19937::result_type>(seed)};
+  // std::uniform_int_distribution<> dis(0, std::numeric_limits<int>::max());
+  for (auto& seed : seeds) {
+    seed = genRandomSeed();
   }
 }
 
 auto BloomFilter::hashString(const std::string& value, uint32_t seed) -> uint32_t {
   std::array<uint64_t, 2> hash = {0, 0};
   MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash.data());
+  // MurmurHash3_x64_128(value.data(), static_cast<int>(value.length()), seed, hash);
+
   return static_cast<uint32_t>(hash[0]);
 }
 
@@ -108,8 +124,12 @@ auto BloomFilter::calculateOptMaxNumHashes(size_t itemCount, size_t bitArraySize
       std::round(static_cast<double>(bitArraySize) / itemCount * std::log(2)));
 }
 
-auto createBloomFilterUnique(size_t size, double fpr) -> std::unique_ptr<BloomFilter> {
-  return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
+// auto createBloomFilterUnique(size_t size, double fpr) -> std::unique_ptr<BloomFilter> {
+//   return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr));
+// }
+
+std::unique_ptr<BloomFilter> createBloomFilterUnique(size_t size, double fpr, uint64_t* ptr) {
+  return std::make_unique<BloomFilter>(size, FalsePositiveRate(fpr), 0, ptr);
 }
 
 void BloomFilter::serialize(msgpack::sbuffer& sbuf) const {
@@ -162,9 +182,14 @@ void BloomFilter::deserialize(const char* data, size_t size) {
 }
 
 extern "C" {
+// EMSCRIPTEN_KEEPALIVE
+// auto createBloomFilter(size_t size, double fpr, uint64_t* ptr) -> BloomFilter* {
+//   auto filter = createBloomFilterUnique(size, fpr);
+//   return filter.release();  // Transfers ownership to the caller
+// }
 EMSCRIPTEN_KEEPALIVE
-auto createBloomFilter(size_t size, double fpr) -> BloomFilter* {
-  auto filter = createBloomFilterUnique(size, fpr);
+BloomFilter* createBloomFilter(size_t size, double fpr, uint64_t* ptr) {
+  auto filter = createBloomFilterUnique(size, fpr, ptr);
   return filter.release();  // Transfers ownership to the caller
 }
 
@@ -191,7 +216,7 @@ void deleteBloomFilter(BloomFilter* filter) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-auto serializeBloomFilter(BloomFilter* filter) -> char* {
+char* serializeBloomFilter(BloomFilter* filter) {
   if (filter == nullptr) {
     emscripten_log(EM_LOG_ERROR, "Error: filter is null");
     return nullptr;
@@ -207,17 +232,19 @@ auto serializeBloomFilter(BloomFilter* filter) -> char* {
     }
 
     // Allocate memory for size + serialized data
-    size_t const total_size = sizeof(uint32_t) + sbuf.size();
-    char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, total_size);
+    size_t totalSize = sizeof(uint32_t) + sbuf.size();
+    char* result = (char*)EM_ASM_INT({ return Module._malloc($0); }, totalSize);
 
     if (result == nullptr) {
       emscripten_log(EM_LOG_ERROR, "Error: memory allocation failed");
       return nullptr;
     }
-    auto size_value = static_cast<uint32_t>(sbuf.size());
-    std::memcpy(result, &size_value, sizeof(uint32_t));
 
-    std::copy(sbuf.data(), sbuf.data() + sbuf.size(), std::next(result, sizeof(uint32_t)));
+    // Write size
+    *reinterpret_cast<uint32_t*>(result) = static_cast<uint32_t>(sbuf.size());
+
+    // Write serialized data
+    memcpy(result + sizeof(uint32_t), sbuf.data(), sbuf.size());
 
     return result;
   } catch (const std::exception& e) {
@@ -237,23 +264,20 @@ void freeSerializedData(const char* data) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-auto deserializeBloomFilter(BloomFilter* filter, const char* data) -> const char* {
+auto deserializeBloomFilter(BloomFilter* filter, const char* data, size_t size) -> const char* {
   if (filter == nullptr) {
     return "Error: filter is null";
   }
   if (data == nullptr) {
     return "Error: data is null";
   }
-  uint32_t size = 0;
-  std::memcpy(&size, data, sizeof(uint32_t));
-  emscripten_log(EM_LOG_INFO, "Deserialized size: %u", size);
-
   if (size == 0 || size > 10000000) {
     return "Error: Invalid size";
   }
 
   try {
-    filter->deserialize(std::next(data, sizeof(uint32_t)), size);
+    // filter->deserialize(std::next(data, sizeof(uint32_t)), size);
+    filter->deserialize(data, size);
     return nullptr;
   } catch (const std::exception& e) {
     static std::string error_message;

@@ -1,34 +1,5 @@
-import { BloomFilter } from './bloom_filter.ts';
-
-Deno.test('Delete and recreate BloomFilter', async () => {
-  await runTest('Delete and recreate BloomFilter', async () => {
-    let filter = await BloomFilter.create(1000, 0.01);
-    filter.add('apple');
-    filter.add('banana');
-    filter.delete();
-    // Recreate filter and ensure it starts empty
-    filter = await BloomFilter.create(1000, 0.01);
-    const result = !filter.has('apple') && !filter.has('banana');
-    filter.delete();
-    return result;
-  });
-});
-
-Deno.test('Basic serialization/deserialization', async () => {
-  await runTest('Basic serialization/deserialization', async () => {
-    const filter = await BloomFilter.create(1000, 0.01);
-    filter.add('test');
-    const serialized = filter.serialize();
-    const deserializedFilter = await BloomFilter.deserialize(serialized);
-
-    const result =
-      deserializedFilter.has('test') && !deserializedFilter.has('not_test');
-
-    filter.delete();
-    deserializedFilter.delete();
-    return result;
-  });
-});
+import { BloomFilter } from './bloom_filter_bckup.ts';
+import { assert } from 'https://deno.land/std@0.196.0/assert/mod.ts';
 
 Deno.test('Serialization of empty filter', async () => {
   await runTest('Serialization of empty filter', async () => {
@@ -41,6 +12,80 @@ Deno.test('Serialization of empty filter', async () => {
     emptyFilter.delete();
     deserializedFilter.delete();
     return result;
+  });
+});
+Deno.test('BloomFilter - Serialization and Deserialization', async () => {
+  //   await BloomFilter.initNativeFunctions();
+  await runTest('BloomFilter - Serialization and Deserialization', async () => {
+    const originalFilter = await BloomFilter.create(1000, 0.01);
+
+    //   const originalFilter = new BloomFilter({ size: 1000, fpr: 0.01 });
+
+    originalFilter.add('red');
+    originalFilter.add('green');
+    originalFilter.add('blue');
+
+    // Serialize the filter
+    const serialized = originalFilter.serialize();
+
+    // Deserialize into a new filter
+    const deserializedFilter = await BloomFilter.deserialize(serialized);
+
+    // Check if the deserialized filter contains the same elements
+    //   assert(
+    //     deserializedFilter.has('red'),
+    //     "Deserialized filter should contain 'red'"
+    //   );
+    //   assert(
+    //     deserializedFilter.has('green'),
+    //     "Deserialized filter should contain 'green'"
+    //   );
+    //   assert(
+    //     deserializedFilter.has('blue'),
+    //     "Deserialized filter should contain 'blue'"
+    //   );
+    //   assert(
+    //     !deserializedFilter.has('yellow'),
+    //     "Deserialized filter should not contain 'yellow'"
+    //   );
+
+    const result =
+      deserializedFilter.has('red') &&
+      deserializedFilter.has('green') &&
+      deserializedFilter.has('blue') &&
+      !deserializedFilter.has('yellow');
+
+    return result;
+  });
+});
+
+Deno.test('BloomFilter - False Positive Rate', async () => {
+  await runTest('BloomFilter - False Positive Rate', async () => {
+    // await BloomFilter.initNativeFunctions();
+    // const filter = new BloomFilter({ size: 10000, fpr: 0.01 });
+    const filter = await BloomFilter.create(1000, 0.01);
+
+    // Add a number of elements
+    for (let i = 0; i < 1000; i++) {
+      filter.add(`element-${i}`);
+    }
+
+    // Test for false positives
+    let falsePositives = 0;
+    for (let i = 1000; i < 2000; i++) {
+      if (filter.has(`element-${i}`)) {
+        falsePositives++;
+      }
+    }
+
+    // The actual false positive rate should be close to the specified rate
+    const actualFPR = falsePositives / 1000;
+    console.log(`Actual false positive rate: ${actualFPR}`);
+    assert(
+      actualFPR < 0.02,
+      `False positive rate ${actualFPR} is higher than expected`
+    );
+    return actualFPR < 0.02;
   });
 });
 

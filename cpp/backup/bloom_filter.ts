@@ -1,4 +1,5 @@
 // @deno-types="https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/emscripten/index.d.ts"
+import { encodeBase64 } from 'std/encoding/base64.ts';
 import type { EmscriptenModule } from 'https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/emscripten/index.d.ts';
 
 interface BloomFilterModule extends EmscriptenModule {
@@ -56,14 +57,19 @@ function initializeModule(): Promise<void> {
 
 export class BloomFilter {
   private ptr: number;
-  private static create_bloom_filter: (size: number, fpr: number) => number;
+  private static create_bloom_filter: (
+    size: number,
+    fpr: number,
+    _ptr: number
+  ) => number;
   private static add_to_filter: (ptr: number, str: string) => void;
   private static check_in_filter: (ptr: number, str: string) => number;
   private static delete_bloom_filter: (ptr: number) => void;
   private static serialize_bloom_filter: (ptr: number) => number;
   private static deserialize_bloom_filter: (
     ptr: number,
-    data: number
+    data: number,
+    length: number
   ) => number;
   private static free_serialized_data: (ptr: number) => void;
   private static _malloc: (size: number) => number;
@@ -71,20 +77,11 @@ export class BloomFilter {
   private static HEAPU8: Uint8Array;
   private static HEAPU32: Uint32Array;
 
-  static async create(size: number, fpr: number): Promise<BloomFilter> {
-    await initializeModule();
-    this.initFunctions();
-
-    const ptr = this.create_bloom_filter(size, fpr);
-    if (ptr === 0) {
-      throw new Error('Failed to create BloomFilter');
-    }
-    return new BloomFilter(ptr);
-  }
-
-  private static initFunctions() {
+  static async initNativeFunctions(): Promise<void> {
     if (!this.create_bloom_filter) {
+      await initializeModule();
       this.create_bloom_filter = Module.cwrap('createBloomFilter', 'number', [
+        'number',
         'number',
         'number',
       ]);
@@ -120,8 +117,23 @@ export class BloomFilter {
     }
   }
 
-  constructor(ptr: number) {
-    this.ptr = ptr;
+  constructor({
+    size,
+    fpr,
+    _ptr,
+  }: {
+    size: number;
+    fpr?: number;
+    _ptr?: number;
+  }) {
+    if (fpr !== undefined && (fpr <= 0 || fpr >= 1)) {
+      throw new Error('FPR must be between 0 and 1');
+    }
+    if (_ptr) {
+      this.ptr = BloomFilter.create_bloom_filter(size, 0, _ptr);
+    } else {
+      this.ptr = BloomFilter.create_bloom_filter(size, fpr || 0.01, 0);
+    }
   }
 
   add(value: string): void {
@@ -136,7 +148,8 @@ export class BloomFilter {
     BloomFilter.delete_bloom_filter(this.ptr);
   }
 
-  serialize(): Uint8Array {
+  // serialize(): Uint8Array {
+  serialize(): string {
     const serializedPtr = BloomFilter.serialize_bloom_filter(this.ptr);
     if (serializedPtr === 0) {
       throw new Error('Serialization failed');
@@ -153,35 +166,30 @@ export class BloomFilter {
       const result = new Uint8Array(
         BloomFilter.HEAPU8.buffer.slice(dataPtr, dataPtr + size)
       );
-
-      return result;
+      return encodeBase64(result);
+      // return result;
     } finally {
       BloomFilter.free_serialized_data(serializedPtr);
     }
   }
 
-  static async deserialize(
-    data: Uint8Array,
-    existingFilter?: BloomFilter
-  ): Promise<BloomFilter> {
-    await initializeModule();
-    this.initFunctions();
-    const filter = existingFilter || (await this.create(1, 0.01));
-    const dataPtr = this._malloc(data.length + 4); // Allocate memory including space for size
-    if (dataPtr === 0) {
-      throw new Error('Memory allocation failed');
+  static deserialize(b64: string): BloomFilter {
+    const binString = atob(b64);
+    const size = binString.length;
+    const dataPtr = this._malloc(size);
+    const bytes = new DataView(this.HEAPU8.buffer, dataPtr, size);
+    for (let i = 0; i < size; i++) {
+      bytes.setUint8(i, binString.charCodeAt(i));
     }
-
+    const filter = existingFilter || new this({ size, _ptr: dataPtr });
     try {
-      this.HEAPU32[dataPtr / 4] = data.length;
-      this.HEAPU8.set(data, dataPtr + 4);
-      const errorPtr = this.deserialize_bloom_filter(filter.ptr, dataPtr);
+      const errorPtr = this.deserialize_bloom_filter(filter.ptr, dataPtr, size);
       if (errorPtr !== 0) {
         const errorMessage = Module.UTF8ToString(errorPtr);
         throw new Error(`Deserialization failed: ${errorMessage}`);
       }
     } finally {
-      this._free(dataPtr);
+      // this._free(dataPtr);
     }
 
     return filter;
